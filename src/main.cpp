@@ -21,9 +21,15 @@ void setup()
     splash_screen->init(&_device);
     splash_screen->show();
 
+    // Handle all tasks, to allow screen to render
+    Ticker::handle_lv_tasks();
+
     auto *demo_screen = new DemoScreen();
     demo_screen->init(&_device);
     demo_screen->show();
+
+    // Handle all tasks, to allow screen to render
+    Ticker::handle_lv_tasks();
 
     SerialLogger().log_point("main::setup()", "Completed");
   }
