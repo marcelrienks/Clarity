@@ -47,21 +47,21 @@ void SplashScreen::show()
 }
 
 void SplashScreen::fade_in_splash_screen() {
-    SerialLogger().log_point("SplashScreen::show()", "fade_in_splash_screen Entry");
+    SerialLogger().log_point("SplashScreen::fade_in_splash_screen()", "fade_in_splash_screen Entry");
 
     lv_scr_load_anim(this->_virtual_screen, LV_SCR_LOAD_ANIM_FADE_IN, ANIMATION_TIME, DELAY_TIME, false);
     
-    SerialLogger().log_point("SplashScreen::show()", "splash animated");
+    SerialLogger().log_point("SplashScreen::fade_in_splash_screen()", "splash animated");
 }
 
 void SplashScreen::fade_out_splash_screen() {
-    SerialLogger().log_point("SplashScreen::show()", "fade_out Entry");
+    SerialLogger().log_point("SplashScreen::fade_out_splash_screen()", "fade_out_splash_screen Entry");
 
     auto *blank = lv_obj_create(NULL);//TODO: rather than creating a new screen, can I reload the original blank? Possibly by having that passed in, and then creating and deleting a new one for splash
     LvTools().init_blank_screen(blank);
     lv_scr_load_anim(blank, LV_SCR_LOAD_ANIM_FADE_IN, ANIMATION_TIME, DISPLAY_TIME, false);
 
-    SerialLogger().log_point("SplashScreen::show()", "blank animated");
+    SerialLogger().log_point("SplashScreen::fade_out_splash_screen()", "blank animated");
 }
 
 /// @brief Update the reading on the screen

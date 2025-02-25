@@ -12,6 +12,7 @@ void setup()
 {
   try
   {
+    SerialLogger().init();
     SerialLogger().log_point("main::setup()", "Entry");
 
     _device.prepare();
@@ -51,7 +52,7 @@ void loop()
       SerialLogger().log_point("main::loop()", "splash running...");
 
     // Handle all tasks, to allow screen to render
-    Ticker::tick();
+    Ticker::handle_lv_tasks();
 
     //_demo_screen->update();
     delay(250);

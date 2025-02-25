@@ -2,11 +2,24 @@
 
 /// @brief Logs a message that is supplied verbatim
 /// @param message The message to be logged
-void SerialLogger::log_message(const String &message)
+void SerialLogger::init()
 {
 #ifdef CLARITY_DEBUG
   Serial.begin(115200);
-  Serial.println(message.c_str());
+#endif
+}
+
+/// @brief Logs a message and prefixes it with the point in code that is supplied. e.g. "DemoSensor::get_reading() -> Busy getting reading"
+void SerialLogger::log_message(const String &message)
+{
+#ifdef CLARITY_DEBUG
+  char log[100];
+  char elapsed[5];
+
+  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
+  snprintf(log, sizeof(log), "%sms:  %.90s", elapsed, message.c_str());  // Limits message to 90 chars
+
+  Serial.println(log);
 #endif
 }
 
@@ -16,9 +29,13 @@ void SerialLogger::log_message(const String &message)
 void SerialLogger::log_point(const String &point, const String &message)
 {
 #ifdef CLARITY_DEBUG
-  char log[80];
-  snprintf(log, sizeof(log), "%s -> %s", point.c_str(), message.c_str());
-  SerialLogger::log_message(log);
+  char log[100];
+  char elapsed[5];
+
+  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
+  snprintf(log, sizeof(log), "%sms:  %s -> %.90s", elapsed, point.c_str(), message.c_str());  // Limits message to 90 chars
+
+  Serial.println(log);
 #endif
 }
 
@@ -29,9 +46,13 @@ void SerialLogger::log_point(const String &point, const String &message)
 void SerialLogger::log_value(const String &point, const String &variable_name, const String &value)
 {
 #ifdef CLARITY_DEBUG
-  char log[80];
-  snprintf(log, sizeof(log), "%s -> %s is = %s", point.c_str(), variable_name.c_str(), value.c_str());
-  SerialLogger::log_message(log);
+  char log[100];
+  char elapsed[5];
+
+  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
+  snprintf(log, sizeof(log), "%sms:  %s -> %s is = %.90s", elapsed, point.c_str(), variable_name.c_str(), value.c_str());  // Limits message to 90 chars
+
+  Serial.println(log);
 #endif
 }
 
@@ -41,8 +62,12 @@ void SerialLogger::log_value(const String &point, const String &variable_name, c
 void SerialLogger::log_exception(const String &point, const String &exception)
 {
 #ifdef CLARITY_DEBUG
-  char log[80];
-  snprintf(log, sizeof(log), "%s -> EXCEPTION - %s", point.c_str(), exception.c_str());
-  SerialLogger::log_message(log);
+  char log[100];
+  char elapsed[5];
+
+  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
+  snprintf(log, sizeof(log), "%sms:  %s -> EXCEPTION - %.90s", elapsed, point.c_str(), exception.c_str());  // Limits message to 90 chars
+
+  Serial.println(log);
 #endif
 }
