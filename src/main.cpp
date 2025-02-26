@@ -17,19 +17,14 @@ void setup()
 
     _device.prepare();
 
-    auto *splash_screen = new SplashScreen();
-    splash_screen->init(&_device);
-    splash_screen->show();
+    // Splash screen
+    _splash_panel = new SplashPanel();
+    _splash_panel->init(&_device);
+    _splash_panel->show();
 
-    // Handle all tasks, to allow screen to render
-    Ticker::handle_lv_tasks();
-
-    auto *demo_screen = new DemoScreen();
-    demo_screen->init(&_device);
-    demo_screen->show();
-
-    // Handle all tasks, to allow screen to render
-    Ticker::handle_lv_tasks();
+    // _demo_panel = new DemoPanel();
+    // _demo_panel->init(&_device);
+    // _demo_panel->show();
 
     SerialLogger().log_point("main::setup()", "Completed");
   }
@@ -51,11 +46,11 @@ void loop()
   {
     SerialLogger().log_point("main::loop()", "Entry");
 
-    if (_device._is_splash_complete)
-      _demo_screen->update();
+    // if (_device._is_splash_complete)
+    //   _demo_panel->update();
 
-    else
-      SerialLogger().log_point("main::loop()", "splash running...");
+    // else
+    //   SerialLogger().log_point("main::loop()", "splash running...");
 
     // Handle all tasks, to allow screen to render
     Ticker::handle_lv_tasks();

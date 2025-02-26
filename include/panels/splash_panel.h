@@ -1,7 +1,7 @@
-#ifndef SPLASH_SCREEN_H
-#define SPLASH_SCREEN_H
+#ifndef SPLASH_PANEL_H
+#define SPLASH_PANEL_H
 
-#include "interfaces/i_screen.h"
+#include "interfaces/i_panel.h"
 #include "components/clarity_component.h"
 #include "utilities/serial_logger.h"
 #include "utilities/lv_tools.h"
@@ -12,24 +12,24 @@
 #define DELAY_TIME 0
 #define DISPLAY_TIME 500
 
-static void transition_timer_callback(lv_timer_t *timer);
-
-class SplashScreen : public IScreen
+class SplashPanel : public IPanel
 {
 private:
     IDevice *_device;
-    lv_obj_t *_virtual_screen;
+    lv_obj_t *_screen;
+    lv_obj_t *_blank_screen;
     ClarityComponent *_component;
 
+    static void fade_in_timer_callback(lv_timer_t *timer);
+    static void fade_out_timer_callback(lv_timer_t *timer);
+
 public:
-    SplashScreen();
-    ~SplashScreen();
+    SplashPanel();
+    ~SplashPanel();
 
     void init(IDevice *device);
     void show();
-    void fade_in_splash_screen();
-    void fade_out_splash_screen();
     void update();
 };
 
-#endif // SPLASH_SCREEN_H
+#endif // SPLASH_PANEL_H

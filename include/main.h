@@ -5,8 +5,8 @@
 
 #include "utilities/serial_logger.h"
 #include "utilities/ticker.h"
-#include "screens/demo_screen.h"
-#include "screens/splash_screen.h"
+#include "panels/demo_panel.h"
+#include "panels/splash_panel.h"
 #include "device.h"
 
 #include <Arduino.h>
@@ -18,6 +18,7 @@ Device _device;
 Preferences _preferences;
 
 // Components
-DemoScreen *_demo_screen;
+SplashPanel *_splash_panel;
+DemoPanel *_demo_panel;
 
 #endif

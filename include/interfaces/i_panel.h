@@ -1,5 +1,5 @@
-#ifndef I_SCREEN_H
-#define I_SCREEN_H
+#ifndef I_PANEL_H
+#define I_PANEL_H
 
 #include "interfaces/i_device.h"
 #include "interfaces/i_component.h"
@@ -7,11 +7,11 @@
 
 #include <lvgl.h>
 
-class IScreen
+class IPanel
 {
 private:
     IDevice *_device;
-    lv_obj_t *_virtual_screen;
+    lv_obj_t *_screen;
 
 public:
     virtual void init(IDevice *device) = 0;
@@ -19,4 +19,4 @@ public:
     virtual void update() = 0;
 };
 
-#endif // I_SCREEN_H
+#endif // I_PANEL_H

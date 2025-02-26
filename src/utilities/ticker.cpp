@@ -1,4 +1,5 @@
 #include "utilities/ticker.h"
+#include "utilities/serial_logger.h"
 
 /// @brief get the elapsed time since the last call to this function
 /// @return elapsed time since last get
@@ -16,4 +17,5 @@ uint32_t Ticker::get_elapsed_millis() {
 void Ticker::handle_lv_tasks() {
     lv_tick_inc(Ticker::get_elapsed_millis());
     lv_task_handler();
+    SerialLogger().log_point("Ticker::handle_lv_tasks()", "Completed");
 }

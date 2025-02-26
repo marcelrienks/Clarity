@@ -2,7 +2,7 @@
 
 DemoComponent *g_demo_component_instance = nullptr;
 
-/// @brief DemoScreen constructor, generates a _scale with a needle line
+/// @brief DemoPanel constructor, generates a _scale with a needle line
 DemoComponent::DemoComponent()
 {
     g_demo_component_instance = this;
