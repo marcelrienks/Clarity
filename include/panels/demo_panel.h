@@ -15,6 +15,7 @@ private:
     lv_obj_t *_screen;
     DemoComponent *_component;
     DemoSensor *_sensor;
+    PanelCompletionCallback _completion_callback;
 
 public:
     DemoPanel();
@@ -23,6 +24,7 @@ public:
     void init(IDevice *device);
     void show();
     void update();
+    void set_completion_callback(PanelCompletionCallback callback) override;
 };
 
 #endif // DEMO_PANEL_H

@@ -10,6 +10,13 @@ DemoPanel::DemoPanel()
     _sensor = new DemoSensor();
 }
 
+/// @brief Set the callback to be called on panel completion
+void DemoPanel::set_completion_callback(PanelCompletionCallback callback)
+{
+    _completion_callback = callback;
+    SerialLogger().log_point("DemoPanel::set_completion_callback()", "Callback set");
+}
+
 /// @brief Initialize the screen with component and sensor 
 void DemoPanel::init(IDevice *device)
 {
@@ -24,6 +31,8 @@ void DemoPanel::init(IDevice *device)
 /// @brief Show the screen
 void DemoPanel::show()
 {
+    SerialLogger().log_point("DemoPanel::show()", "Entry");
+
     lv_scr_load(this->_screen);
 
     SerialLogger().log_point("DemoPanel::show()", "Completed");
@@ -32,6 +41,8 @@ void DemoPanel::show()
 /// @brief Update the reading on the screen
 void DemoPanel::update()
 {
+    SerialLogger().log_point("DemoPanel::update()", "Entry");
+    
     int reading = _sensor->get_reading();
     _component->update(std::make_shared<int>(reading));
 

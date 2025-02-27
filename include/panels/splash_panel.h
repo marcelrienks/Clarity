@@ -19,9 +19,11 @@ private:
     lv_obj_t *_screen;
     lv_obj_t *_blank_screen;
     ClarityComponent *_component;
+    PanelCompletionCallback _completion_callback;
 
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
+    static void animation_completion_callback(lv_timer_t *timer);
 
 public:
     SplashPanel();
@@ -30,6 +32,9 @@ public:
     void init(IDevice *device);
     void show();
     void update();
+
+    // Implementation of the callback setter
+    void set_completion_callback(PanelCompletionCallback callback) override;
 };
 
 #endif // SPLASH_PANEL_H
