@@ -15,7 +15,19 @@ uint32_t Ticker::get_elapsed_millis() {
 
 /// @brief Handle lv tasks by calculating the time differences since start up
 void Ticker::handle_lv_tasks() {
-    lv_tick_inc(Ticker::get_elapsed_millis());
+    static uint32_t last_tick_increment = 0;
+    static uint32_t last_task_run = 0;
+    
+    uint32_t current_time = millis();
+    
+    // Increment tick counter with the elapsed time
+    uint32_t elapsed = current_time - last_tick_increment;
+    if (elapsed > 0) {
+        lv_tick_inc(elapsed);
+        last_tick_increment = current_time;
+    }
+    
+    // Process all pending tasks
     lv_task_handler();
-    SerialLogger().log_point("Ticker::handle_lv_tasks()", "Completed");
+    last_task_run = current_time;
 }
