@@ -27,11 +27,10 @@ void setup()
     // Set up the callback for when splash screen completes
     _splash_panel->set_completion_callback([&]() {
       SerialLogger().log_point("SplashPanel Callback", "Showing demo panel");
-      _demo_panel->show();
-  });
-  
-  // Start with splash panel
-  _splash_panel->show();
+      _demo_panel->show(); });
+
+    // Start with splash panel
+    _splash_panel->show();
 
     SerialLogger().log_point("main::setup()", "Completed");
   }
@@ -52,18 +51,23 @@ void loop()
   try
   {
     SerialLogger().log_point("main::loop()", "Entry");
+    uint32_t start_time = millis();
 
-    if (_device._is_splash_complete)
+    // First process any pending LVGL tasks
+    Ticker::handle_lv_tasks();
+
+    if (_device._is_splash_complete) {
       _demo_panel->update();
+
+      // Process LVGL tasks again to render the changes immediately
+      Ticker::handle_lv_tasks();
+    }
 
     else
       SerialLogger().log_point("main::loop()", "splash running...");
 
-    // Handle all tasks, to allow screen to render
-    Ticker::handle_lv_tasks();
-
-    //_demo_screen->update();
-    delay(50);
+      // Adaptive Timing to generate a ~60fps refresh rate
+      Ticker::handle_dynamic_delay(start_time);
 
     SerialLogger().log_point("main::loop()", "Completed");
   }
