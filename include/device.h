@@ -46,8 +46,6 @@ public:
     ~Device();
 
     lv_obj_t *screen;
-    bool _is_splash_complete = false;
-
     static void display_flush_wrapper(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 
     void prepare();

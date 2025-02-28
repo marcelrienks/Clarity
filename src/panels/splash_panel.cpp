@@ -12,6 +12,7 @@ void SplashPanel::set_completion_callback(PanelCompletionCallback callback)
     _completion_callback = callback;
     SerialLogger().log_point("SplashPanel::set_completion_callback()", "Callback set");
 }
+
 /// @brief Initialize the screen with component and sensor
 void SplashPanel::init(IDevice *device)
 {
@@ -81,9 +82,9 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
                      false);
 
     // Create a timer for the completion callback
-    lv_timer_t *completion_timer = lv_timer_create(SplashPanel::animation_completion_callback, 
-        ANIMATION_TIME + 50, // Small extra delay to ensure animation is complete
-        panel);
+    lv_timer_t *completion_timer = lv_timer_create(SplashPanel::animation_completion_callback,
+                                                   ANIMATION_TIME + 50, // Small extra delay to ensure animation is complete
+                                                   panel);
 
     // Remove the timer after transition, this replaces having to set a repeat on the timer
     lv_timer_del(timer);
@@ -95,24 +96,33 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 void SplashPanel::animation_completion_callback(lv_timer_t *timer)
 {
     SerialLogger().log_point("SplashPanel::animation_completion_callback()", "Entry");
-    
+
     // Get the splash panel instance
-    SplashPanel *panel = static_cast<SplashPanel*>(lv_timer_get_user_data(timer));
-    
-    // Set the splash complete flag
+    SplashPanel *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
+
+    SerialLogger().log_point("SplashPanel::animation_completion_callback()",
+                             "Setting _is_splash_complete flag to true. Device address: " +
+                                 String((uintptr_t)panel->_device, HEX));
+
+    // Debug check in the callback
+    bool current_value = panel->_device->_is_splash_complete;
     panel->_device->_is_splash_complete = true;
-    
+    bool after_value = panel->_device->_is_splash_complete;
+    SerialLogger().log_point("Flag Debug", "Before: " + String(current_value) +
+                                               " After: " + String(after_value));
+
     // Call the completion callback if it exists
-    if (panel->_completion_callback) {
+    if (panel->_completion_callback)
+    {
         SerialLogger().log_point("SplashPanel::animation_completion_callback()", "Executing callback");
         panel->_completion_callback();
-
-    } else
+    }
+    else
         SerialLogger().log_point("SplashPanel::animation_completion_callback()", "No callback set");
-    
+
     // Delete the timer
     lv_timer_del(timer);
-    
+
     SerialLogger().log_point("SplashPanel::animation_completion_callback()", "Completed");
 }
 

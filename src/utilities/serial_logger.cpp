@@ -13,7 +13,7 @@ void SerialLogger::init()
 void SerialLogger::log_message(const String &message)
 {
 #ifdef CLARITY_DEBUG
-  char log[100];
+  char log[150];
   char elapsed[5];
 
   sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
@@ -29,7 +29,7 @@ void SerialLogger::log_message(const String &message)
 void SerialLogger::log_point(const String &point, const String &message)
 {
 #ifdef CLARITY_DEBUG
-  char log[100];
+  char log[150];
   char elapsed[5];
 
   sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
@@ -46,7 +46,7 @@ void SerialLogger::log_point(const String &point, const String &message)
 void SerialLogger::log_value(const String &point, const String &variable_name, const String &value)
 {
 #ifdef CLARITY_DEBUG
-  char log[100];
+  char log[150];
   char elapsed[5];
 
   sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
@@ -62,7 +62,7 @@ void SerialLogger::log_value(const String &point, const String &variable_name, c
 void SerialLogger::log_exception(const String &point, const String &exception)
 {
 #ifdef CLARITY_DEBUG
-  char log[100];
+  char log[150];
   char elapsed[5];
 
   sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
