@@ -10,7 +10,6 @@ SplashPanel::SplashPanel()
 void SplashPanel::set_completion_callback(PanelCompletionCallback callback)
 {
     _completion_callback = callback;
-    SerialLogger().log_point("SplashPanel::set_completion_callback()", "Callback set");
 }
 
 /// @brief Initialize the screen with component and sensor
@@ -99,18 +98,7 @@ void SplashPanel::animation_completion_callback(lv_timer_t *timer)
 
     // Get the splash panel instance
     SplashPanel *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
-
-    SerialLogger().log_point("SplashPanel::animation_completion_callback()",
-                             "Setting _is_splash_complete flag to true. Device address: " +
-                                 String((uintptr_t)panel->_device, HEX));
-
-    // Debug check in the callback
-    bool current_value = panel->_device->_is_splash_complete;
     panel->_device->_is_splash_complete = true;
-    bool after_value = panel->_device->_is_splash_complete;
-    SerialLogger().log_point("Flag Debug", "Before: " + String(current_value) +
-                                               " After: " + String(after_value));
-
     // Call the completion callback if it exists
     if (panel->_completion_callback)
     {
