@@ -4,8 +4,9 @@
 Device *g_device_instance = nullptr;
 
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
-Device::Device(void)
+Device::Device()
 {
+    //_is_splash_complete = false;
     g_device_instance = this;
 
     {
@@ -72,6 +73,10 @@ Device::Device(void)
 /// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
+    SerialLogger().log_point("Device::prepare()", "Entry");
+
+    // TODO: do some research on all the function below and determine if they are all required
+
     // Initialise screen
     init();
     initDMA();
@@ -82,21 +87,21 @@ void Device::prepare()
 
     lv_init();
 
+    SerialLogger().log_point("Device::prepare()", "Initialisations completed");
+
     // setup screen
-    static auto *lvDisplay = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
-    lv_display_set_color_format(lvDisplay, LV_COLOR_FORMAT_RGB565);
-    lv_display_set_flush_cb(lvDisplay, Device::display_flush_wrapper);
-    lv_display_set_buffers(lvDisplay, lv_buffer[0], lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
+    lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
+    lv_display_set_flush_cb(display, Device::display_flush_wrapper);
+    lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+    SerialLogger().log_point("Device::prepare()", "Display configured");
 
     screen = lv_obj_create(NULL);
-    lv_obj_set_style_bg_color(screen, lv_color_black(), LV_PART_MAIN);
-    lv_obj_set_style_bg_opa(screen, LV_OPA_COVER, LV_PART_MAIN);
-}
-
-/// @brief Displays the screen
-void Device::load()
-{
+    LvTools().init_blank_screen(screen);
     lv_scr_load(screen);
+
+    SerialLogger().log_point("Device::prepare()", "Completed");
 }
 
 /// @brief static Display Flush Wrapper function

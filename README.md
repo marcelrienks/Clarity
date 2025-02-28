@@ -9,16 +9,16 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 * [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
 
 ## Architecture:
-Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can have many `screen` configurations, each of which having many `components` together comprising a screen. _Note: components can be part of many screen configurations (many to many relationship)_
-> Device > Display > Screens > Components
+Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can show one of many `panel` configurations, each of which having one or many `component(s)` shown together. _Note: components can be part of many panel configurations (many to many relationship)_
+> Device > Display > Panels > Components
 
 This is designed around an MVP pattern.  
-A sensor will represent the model, and be responsible for handling data reading. A component will represent the view, and be responsible for building the view for the sensor data. And the screen will represent the presenter, and will be responsible for building and displaying one or more components per screen.
-> Sensor(model) <> Screen(presenter) <> Component(view)  
+A sensor will represent the model, and be responsible for handling data reading. A component will represent the view, and be responsible for building the view for the sensor data. And the panel will represent the presenter, and will be responsible for building and displaying one or more components at once.
+> Sensor(model) <> Panel(presenter) <> Component(view)  
 
-Based on an input (either from sensor signal or from a button press) the device/display will load different screens. For example an emergency screen can be shown when a sensor signal moves beyond a threshold, replacing the screen that was configured to display using a button input which normally cycles through multiple screen configurations.
+Based on an input (either from sensor signal or from a button press) the device/display will load different screens. For example an emergency panel can be shown when a sensor signal moves beyond a threshold, replacing the panel that was configured to display using a button input which normally cycles through multiple screen configurations.
 
-_This would also allow for future extension with more screen configurations and sensors._
+_This would also allow for future extension with more panels configurations and sensors._
 
 ## Screens list:
 ### Current:

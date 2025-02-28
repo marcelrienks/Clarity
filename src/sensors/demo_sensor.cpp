@@ -1,29 +1,38 @@
-#include <sensors/demo_sensor.h>
+#include "sensors/demo_sensor.h"
 
 DemoSensor::DemoSensor()
-    : _engine(std::random_device{}()), _distribution(0, 100) // Initialize the generator and distribution
 {
-    // Seed the engine with a random number from the random device
-    // This is a good way to seed the engine, as it is guaranteed to be random
-    // The distribution is set to be between 25 and 75, as this is a common range for temperature sensors
-    // This is just an example, and the range could be anything
+    _engine = std::mt19937(std::random_device{}());
+    _distribution = std::uniform_int_distribution<int>(0, 100);
+}
+
+void DemoSensor::init()
+{
+    //TODO: once compiling, confirm that this is needed, due to interface
+    // Not needed but required to satisfy interface
 }
 
 /// @brief Fakes getting a temperature reading from a sensor
 /// @return temperature reading
 int DemoSensor::get_reading()
 {
-    char logMessage[50];
-    uint32_t elapsedTime;
-    elapsedTime = millis() - this->lastReadTime;
+    uint32_t elapsed_time = millis() - this->last_read_time;
+
     // This is where the sensor would be read, and potentially the data interpreted to some degree
-    if (this->lastReadTime == 0 || elapsedTime > 2000) 
+    if (this->last_read_time == 0 || elapsed_time > 1000) //TODO: convert this into the global variable mentioned on Main
     {
-        this->lastReadTime = millis();
-        // Generate a random number in the range [25, 75]
-        this->currentReading = _distribution(_engine);
-        sprintf(logMessage, "DemoSensor::get_reading = %d", this->currentReading);
-        log(logMessage);
+        this->last_read_time = millis();
+
+        // Generate a random number in the range [0, 100]
+        this->current_reading = _distribution(_engine);
+
+        SerialLogger().log_value("DemoSensor::get_reading()", "currentReading", String(this->current_reading));//TODO: the currentReading value is not being shown in the logs
     }
-    return this->currentReading;
+    
+    return this->current_reading;
+}
+
+DemoSensor::~DemoSensor() {
+    //TODO: once compiling, confirm that this is needed, due to interface
+    // Not needed but required to satisfy interface
 }
