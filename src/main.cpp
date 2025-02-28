@@ -2,27 +2,46 @@
 
 #include "main.h"
 
+// TODO: create a screen level duration variable to control the duration of the animation / or delays if that screen does not animate
+// TODO: create an interface for screen & component, with generics, so that swapping them in and out is standardised
+// TODO: create a screen manager to handle the screen transitions
+// TODO: refactor startup screen function to use screen manager
+// TODO: see if any refactoring of splash screen is needed
+
 void setup()
 {
   try
   {
-    Serial.begin(115200);
+    SerialLogger().init();
+    SerialLogger().log_point("main::setup()", "Entry");
 
     _device.prepare();
 
-    // Create and initialise the demo screen by passing device as a dependency
-    _demo_screen = new DemoScreen(_device.screen);
-    _demo_screen->init();
+    // Splash screen
+    _splash_panel = new SplashPanel();
+    _splash_panel->init(&_device);
 
-    // Load all screens associated with device
-    _device.load();
+    _demo_panel = new DemoPanel();
+    _demo_panel->init(&_device);
 
-    // Handle all tasks, to allow screen to render
-    Ticker::tick();
+    // Set up the callback for when splash screen completes
+    _splash_panel->set_completion_callback([&]() {
+      SerialLogger().log_point("SplashPanel Callback", "Showing demo panel");
+      _demo_panel->show(); });
+
+    // Start with splash panel
+    _splash_panel->show();
+
+    SerialLogger().log_point("main::setup()", "Completed");
   }
   catch (const std::exception &e)
   {
-    Serial.println(e.what());
+    SerialLogger().log_message(e.what());
+    throw;
+  }
+  catch (...)
+  {
+    SerialLogger().log_point("main::setup()", "Unknown exception occurred");
     throw;
   }
 }
@@ -31,18 +50,36 @@ void loop()
 {
   try
   {
-    // Update the reading on the screen
-    _demo_screen->update_reading();
+    SerialLogger().log_point("main::loop()", "Entry");
+    uint32_t start_time = millis();
 
-    // Handle all tasks, to allow screen to render
-    Ticker::tick();
+    // First process any pending LVGL tasks
+    Ticker::handle_lv_tasks();
 
-    // Delay to control the refresh rate (e.g., 30 FPS)
-    delay(33); // 33 milliseconds delay for approximately 30 FPS
+    if (_device._is_splash_complete)
+    {
+      _demo_panel->update();
+
+      // Process LVGL tasks again to render the changes immediately
+      Ticker::handle_lv_tasks();
+    }
+
+    else
+      SerialLogger().log_point("main::loop()", "splash running...");
+
+    // Adaptive Timing to generate a ~60fps refresh rate
+    Ticker::handle_dynamic_delay(start_time);
+
+    SerialLogger().log_point("main::loop()", "Completed");
   }
   catch (const std::exception &e)
   {
-    Serial.println(e.what());
+    SerialLogger().log_message(e.what());
+    throw;
+  }
+  catch (...)
+  {
+    SerialLogger().log_point("main::loop()", "Unknown exception occurred");
     throw;
   }
 }

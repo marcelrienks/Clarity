@@ -2,6 +2,11 @@
 #define DEVICE_H
 
 #define LGFX_USE_V1
+
+#include "interfaces/i_device.h"
+#include "utilities/serial_logger.h"
+#include "utilities/lv_tools.h"
+
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
 
@@ -26,7 +31,7 @@
 #define BL 3
 #define BUZZER -1
 
-class Device : public lgfx::LGFX_Device
+class Device : public IDevice
 {
 private:
     lgfx::Panel_GC9A01 _panel_instance;
@@ -34,19 +39,17 @@ private:
     lgfx::Bus_SPI _bus_instance;
 
     const static unsigned int _lv_buffer_size = SCREEN_WIDTH * 10;
-    uint8_t lv_buffer[2][_lv_buffer_size];
+    uint8_t _lv_buffer[2][_lv_buffer_size];
 
 public:
     Device();
     ~Device();
 
     lv_obj_t *screen;
-
     static void display_flush_wrapper(lv_display_t *display, const lv_area_t *area, unsigned char *data);
-    void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 
     void prepare();
-    void load();
+    void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 };
 
 // Global instance of the Device instantiated in the constructor (externally)
