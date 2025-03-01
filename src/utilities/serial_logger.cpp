@@ -1,73 +1,121 @@
 #include "utilities/serial_logger.h"
 
-/// @brief Logs a message that is supplied verbatim
-/// @param message The message to be logged
-void SerialLogger::init()
+// Define static class members here
+bool SerialLogger::_initialized = false;
+std::string SerialLogger::_last_message = "";
+uint32_t SerialLogger::_duplicate_count = 0;
+unsigned long SerialLogger::_last_log_time = 0;
+
+/**
+ * @brief Initialize the serial logger
+ * @param baud_rate The baud rate to use (default: 115200)
+ */
+void SerialLogger::init(unsigned long baud_rate)
 {
-#ifdef CLARITY_DEBUG
-  Serial.begin(115200);
+  #ifdef CLARITY_DEBUG
+  if (!_initialized) {
+    Serial.begin(115200);
+    _initialized = true;
+  }
 #endif
 }
 
-/// @brief Logs a message and prefixes it with the point in code that is supplied. e.g. "DemoSensor::get_reading() -> Busy getting reading"
-void SerialLogger::log_message(const String &message)
+/**
+ * @brief Log a message with deduplication
+ * @param message The message to log
+ * @param force_print Force printing even if it's a duplicate (default: false)
+ * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
+ */
+void SerialLogger::log(const String &message, bool force_print, unsigned long time_threshold)
 {
-#ifdef CLARITY_DEBUG
-  char log[150];
-  char elapsed[5];
+  std::string msg_str = message.c_str();
+  unsigned long current_time = millis();
 
-  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
-  snprintf(log, sizeof(log), "%sms:  %.90s", elapsed, message.c_str());  // Limits message to 90 chars
+  // If it's a new message or force print is enabled
+  if (msg_str != _last_message || force_print)
+  {
+    // Print duplicate summary if we had duplicates
+    if (_duplicate_count > 0)
+    {
+      Serial.print("Last message repeated ");
+      Serial.print(_duplicate_count);
+      Serial.println(" times");
+      _duplicate_count = 0;
+    }
 
-  Serial.println(log);
-#endif
+    // Print the new message
+    Serial.println(message);
+    _last_message = msg_str;
+    _last_log_time = current_time;
+  }
+  // If it's a duplicate
+  else
+  {
+    _duplicate_count++;
+
+    // Periodically print duplicate count for long-running duplicates
+    if (current_time - _last_log_time >= time_threshold)
+    {
+      Serial.print("Message repeated ");
+      Serial.print(_duplicate_count);
+      Serial.println(" times so far...");
+      _last_log_time = current_time;
+      // Don't reset duplicate_count here, we'll include these in the final count
+    }
+  }
 }
 
-/// @brief Logs a message and prefixes it with the point in code that is supplied. e.g. "DemoSensor::get_reading() -> Busy getting reading"
-/// @param point
-/// @param message
-void SerialLogger::log_point(const String &point, const String &message)
+/**
+ * @brief Log a message with timestamp and deduplication
+ * @param message The message to log
+ * @param force_print Force printing even if it's a duplicate (default: false)
+ * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
+ */
+void SerialLogger::log_with_time(const String &message, bool force_print, unsigned long time_threshold)
 {
-#ifdef CLARITY_DEBUG
-  char log[150];
-  char elapsed[5];
-
-  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
-  snprintf(log, sizeof(log), "%sms:  %s -> %.90s", elapsed, point.c_str(), message.c_str());  // Limits message to 90 chars
-
-  Serial.println(log);
-#endif
+  char timestamp[16];
+  snprintf(timestamp, sizeof(timestamp), "[%lu ms] ", millis());
+  String full_message = timestamp + message;
+  log(full_message, force_print, time_threshold);
 }
 
-/// @brief Logs a variable and prefixes it with the point in code that is supplied, and post fixes it with the value supplied. e.g. "DemoSensor::get_reading() -> currentReading is = 42"
-/// @param point
-/// @param variable_name
-/// @param value
-void SerialLogger::log_value(const String &point, const String &variable_name, const String &value)
+/**
+ * @brief Log a message with point and deduplication
+ * @param point The point in code
+ * @param message The message to log
+ * @param force_print Force printing even if it's a duplicate (default: false)
+ * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
+ */
+void SerialLogger::log_point(const String &point, const String &message, bool force_print, unsigned long time_threshold)
 {
-#ifdef CLARITY_DEBUG
-  char log[150];
-  char elapsed[5];
-
-  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
-  snprintf(log, sizeof(log), "%sms:  %s -> %s is = %.90s", elapsed, point.c_str(), variable_name.c_str(), value.c_str());  // Limits message to 90 chars
-
-  Serial.println(log);
-#endif
+  String full_message = point + " -> " + message;
+  log(full_message, force_print, time_threshold);
 }
 
-/// @brief Logs an exception and prefixes it with the point in code that is supplied. e.g. "DemoSensor::get_reading() -> EXCEPTION - Busy getting reading"
-/// @param point
-/// @param message
-void SerialLogger::log_exception(const String &point, const String &exception)
+/**
+ * @brief Log a variable value with point and deduplication
+ * @param point The point in code
+ * @param variable_name The name of the variable
+ * @param value The value of the variable
+ * @param force_print Force printing even if it's a duplicate (default: false)
+ * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
+ */
+void SerialLogger::log_value(const String &point, const String &variable_name, const String &value, bool force_print, unsigned long time_threshold)
 {
-#ifdef CLARITY_DEBUG
-  char log[150];
-  char elapsed[5];
+  String full_message = point + " -> " + variable_name + " = " + value;
+  log(full_message, force_print, time_threshold);
+}
 
-  sprintf(elapsed, "%04d", Ticker::get_elapsed_millis() % 10000);
-  snprintf(log, sizeof(log), "%sms:  %s -> EXCEPTION - %.90s", elapsed, point.c_str(), exception.c_str());  // Limits message to 90 chars
-
-  Serial.println(log);
-#endif
+/**
+ * @brief Flush any pending duplicate message count before program ends
+ */
+void SerialLogger::flush()
+{
+  if (_duplicate_count > 0)
+  {
+    Serial.print("Last message repeated ");
+    Serial.print(_duplicate_count);
+    Serial.println(" times");
+    _duplicate_count = 0;
+  }
 }

@@ -36,7 +36,7 @@ void setup()
   }
   catch (const std::exception &e)
   {
-    SerialLogger().log_message(e.what());
+    SerialLogger().log(e.what());
     throw;
   }
   catch (...)
@@ -50,7 +50,7 @@ void loop()
 {
   try
   {
-    SerialLogger().log_point("main::loop()", "Entry");
+    //SerialLogger().log_point("main::loop()", "Entry");
     uint32_t start_time = millis();
 
     // First process any pending LVGL tasks
@@ -70,11 +70,11 @@ void loop()
     // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(start_time);
 
-    SerialLogger().log_point("main::loop()", "Completed");
+    //SerialLogger().log_point("main::loop()", "Completed");
   }
   catch (const std::exception &e)
   {
-    SerialLogger().log_message(e.what());
+    SerialLogger().log(e.what());
     throw;
   }
   catch (...)

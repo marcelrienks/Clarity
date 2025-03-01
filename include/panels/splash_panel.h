@@ -20,10 +20,10 @@ private:
     lv_obj_t *_blank_screen;
     ClarityComponent *_component;
     std::function<void()> _callback_function;
+    int _animation_sequence;
 
-    static void animation_complete_callback(lv_anim_t * animation);
-
-    void register_animation(lv_obj_t *screen, lv_screen_load_anim_t screen_load, uint32_t animation_time, uint32_t delay_time, lv_anim_completed_cb_t _callback_function);
+    static void animation_callback(lv_anim_t * animation);
+    void run_animation_workflow_handler();
 
 public:
     SplashPanel();
