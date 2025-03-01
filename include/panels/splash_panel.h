@@ -33,6 +33,9 @@ public:
     void show() override;
     void update() override;
     void set_callback(std::function<void()> callback_function) override;
+    
+    // New method to advance animation sequence
+    void advance_animation();
 };
 
 #endif // SPLASH_PANEL_H
