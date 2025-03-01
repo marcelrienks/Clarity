@@ -25,7 +25,7 @@ void setup()
     _demo_panel->init(&_device);
 
     // Set up the callback for when splash screen completes
-    _splash_panel->set_completion_callback([&]() {
+    _splash_panel->set_callback([&]() {
       SerialLogger().log_point("SplashPanel Callback", "Showing demo panel");
       _demo_panel->show(); });
 

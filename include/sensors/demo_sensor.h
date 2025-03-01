@@ -15,7 +15,7 @@ private:
     std::uniform_int_distribution<> _distribution; // Uniform distribution
 
     uint32_t last_read_time = 0;
-    int current_reading = 0;
+    uint32_t current_reading = 0;
 public:
     DemoSensor();
     ~DemoSensor();

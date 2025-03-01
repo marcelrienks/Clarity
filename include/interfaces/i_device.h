@@ -4,6 +4,8 @@
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
 
+//TODO: I don't think this is valuable, unless I create integration tests, there will never be multiple implementations of this
+
 class IDevice : public lgfx::LGFX_Device
 {
 public:

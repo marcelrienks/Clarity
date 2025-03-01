@@ -98,10 +98,8 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
 
 /// @brief Change the value of the needle line
 /// @param value the value to set the needle line to
-void DemoComponent::update(std::shared_ptr<void> ptr)
+void DemoComponent::update(uint32_t value)
 {
-    int value = *std::static_pointer_cast<int>(ptr);  // Cast to int
-
     if (millis() - _start_time < 3000)
     {
         this->_current_reading = 0;

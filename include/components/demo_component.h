@@ -12,7 +12,7 @@ private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
     uint32_t _start_time;
-    int _current_reading;
+    uint32_t _current_reading;
 
     static void set_needle_line_value_callback_wrapper(void *object, int32_t value);
 
@@ -24,7 +24,7 @@ public:
     ~DemoComponent();
 
     void init(lv_obj_t *virtual_screen);
-    void update(std::shared_ptr<void> ptr);
+    void update(uint32_t value);
 };
 
 extern DemoComponent *g_demo_component_instance;

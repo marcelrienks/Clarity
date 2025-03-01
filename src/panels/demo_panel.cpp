@@ -10,11 +10,11 @@ DemoPanel::DemoPanel()
     _sensor = new DemoSensor();
 }
 
-/// @brief Set the callback to be called on panel completion
-void DemoPanel::set_completion_callback(PanelCompletionCallback callback)
+/// @brief Set the function to be called on completion of this panel animations
+/// @param callback_function the function to be executed when animation is complete
+void DemoPanel::set_callback(std::function<void()> callback_function)
 {
-    _completion_callback = callback;
-    SerialLogger().log_point("DemoPanel::set_completion_callback()", "Callback set");
+    _callback_function = callback_function;
 }
 
 /// @brief Initialize the screen with component and sensor 
@@ -42,9 +42,9 @@ void DemoPanel::show()
 void DemoPanel::update()
 {
     SerialLogger().log_point("DemoPanel::update()", "Entry");
-    
-    int reading = _sensor->get_reading();
-    _component->update(std::make_shared<int>(reading));
+
+    uint32_t reading = _sensor->get_reading();
+    _component->update(reading);
 
     SerialLogger().log_point("DemoPanel::update()", "Completed");
 }
