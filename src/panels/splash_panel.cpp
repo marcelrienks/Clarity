@@ -65,8 +65,15 @@ void SplashPanel::animation_callback(lv_anim_t *animation)
         SerialLogger().log_point("SplashPanel::animation_callback()", "ERROR: Panel is null");
 }
 
+/// @brief Handles the dequence of animations to run through in order to show a splash screen
 void SplashPanel::run_animation_workflow_handler()
 {
+    /*
+     * NOTE this function manually builds an animation, rather than using the lv_scr_load_anim() function in order to leverage callbacks
+     * If lv_scr_load_anim() function is used to simplify logic, you have to implement timers, matching the animation time.
+     * The benefit of below benefits from having callbacks wired up which I think is safer
+     */
+
     SerialLogger().log_point("SplashPanel::run_animation_workflow_handler()", "Sequence: " + String(_animation_sequence));
 
     switch (_animation_sequence)
@@ -159,7 +166,7 @@ void SplashPanel::run_animation_workflow_handler()
         // Call the callback if set
         if (_callback_function)
             _callback_function();
-            
+
         else
             SerialLogger().log_point("SplashPanel::run_animation_workflow_handler()", "No callback set");
 
