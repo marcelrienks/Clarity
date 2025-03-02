@@ -6,6 +6,7 @@ DemoComponent *g_demo_component_instance = nullptr;
 DemoComponent::DemoComponent()
 {
     g_demo_component_instance = this;
+    _current_reading = "0";
 }
 
 /// @brief Initialize the component
@@ -91,31 +92,31 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
 
     // Clock check animation
-    DemoComponent::animate_needle(1000, 1000, _current_reading, 100);
+    DemoComponent::animate_needle(1000, 1000, Tools::string_to_int(_current_reading), 100);
 
     this->_start_time = millis();
 }
 
 /// @brief Change the value of the needle line
 /// @param value the value to set the needle line to
-void DemoComponent::update(uint32_t value)
+void DemoComponent::update(std::string value)
 {
     if (millis() - _start_time < 3000)
     {
-        this->_current_reading = 0;
+        this->_current_reading.clear();
         return;
     }
 
     if (this->_current_reading == value)
         return;
 
-    if (value >= 75)
+    if (Tools::string_to_int(value) >= 75)
         lv_obj_set_style_line_color(_needle_line, lv_palette_darken(LV_PALETTE_RED, 3), 0);
 
     else
         lv_obj_set_style_line_color(_needle_line, lv_palette_lighten(LV_PALETTE_INDIGO, 3), 0);
 
-    DemoComponent::animate_needle(1000, 0, _current_reading, value);
+    DemoComponent::animate_needle(1000, 0, Tools::string_to_int(_current_reading), Tools::string_to_int(value));
 
     this->_current_reading = value;
 }

@@ -3,6 +3,7 @@
 
 #include "interfaces/i_sensor.h"
 #include "utilities/serial_logger.h"
+#include "utilities/tools.h"
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
@@ -14,14 +15,14 @@ private:
     std::mt19937 _engine;                          // Mersenne Twister engine
     std::uniform_int_distribution<> _distribution; // Uniform distribution
 
-    uint32_t last_read_time = 0;
-    uint32_t current_reading = 0;
+    std::string last_read_time;
+    std::string current_reading;
 public:
     DemoSensor();
     ~DemoSensor();
 
     void init();
-    int get_reading();
+    std::string get_reading();
 };
 
 #endif // DEMO_SENSOR_H

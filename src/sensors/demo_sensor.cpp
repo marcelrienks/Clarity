@@ -14,19 +14,19 @@ void DemoSensor::init()
 
 /// @brief Fakes getting a temperature reading from a sensor
 /// @return temperature reading
-int DemoSensor::get_reading()
+std::string DemoSensor::get_reading()
 {
-    uint32_t elapsed_time = millis() - this->last_read_time;
+    uint32_t elapsed_time = millis() - Tools::string_to_int(this->last_read_time);
 
     // This is where the sensor would be read, and potentially the data interpreted to some degree
-    if (this->last_read_time == 0 || elapsed_time > 1000) //TODO: convert this into the global variable mentioned on Main
+    if (Tools::string_to_int(this->last_read_time) == 0 || elapsed_time > 1000) //TODO: convert this into the global variable mentioned on Main
     {
         this->last_read_time = millis();
 
         // Generate a random number in the range [0, 100]
         this->current_reading = _distribution(_engine);
 
-        SerialLogger().log_value("DemoSensor::get_reading()", "currentReading", String(this->current_reading));//TODO: the currentReading value is not being shown in the logs
+        SerialLogger().log_value("DemoSensor::get_reading()", "currentReading", this->current_reading);//TODO: the currentReading value is not being shown in the logs
     }
     
     return this->current_reading;

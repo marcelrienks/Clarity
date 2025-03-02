@@ -5,6 +5,7 @@
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
+#include "utilities/tools.h"
 
 class DemoComponent : public IComponent
 {
@@ -12,7 +13,7 @@ private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
     uint32_t _start_time;
-    uint32_t _current_reading;
+    std::string _current_reading;
 
     static void set_needle_line_value_callback_wrapper(void *object, int32_t value);
 
@@ -24,7 +25,7 @@ public:
     ~DemoComponent();
 
     void init(lv_obj_t *virtual_screen);
-    void update(uint32_t value);
+    void update(std::string value);
 };
 
 extern DemoComponent *g_demo_component_instance;

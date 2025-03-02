@@ -7,7 +7,7 @@ class ClarityComponent : public IComponent
 {
 public:
     void init(lv_obj_t *virtual_screen);
-    void update(uint32_t value);
+    void update(std::string value);
 };
 
 #endif // CLARITY_COMPONENT_H
