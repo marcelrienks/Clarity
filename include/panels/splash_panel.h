@@ -19,11 +19,11 @@ private:
     lv_obj_t *_screen;
     lv_obj_t *_blank_screen;
     ClarityComponent *_component;
-    PanelCompletionCallback _completion_callback;
+    std::function<void()> _callback_function;
 
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
-    static void animation_completion_callback(lv_timer_t *timer);
+    static void animation_complete_timer_callback(lv_timer_t *timer);
 
 public:
     SplashPanel();
@@ -34,7 +34,7 @@ public:
     void update();
 
     // Implementation of the callback setter
-    void set_completion_callback(PanelCompletionCallback callback) override;
+    void set_completion_callback(std::function<void()> callback_function) override;
 };
 
 #endif // SPLASH_PANEL_H

@@ -8,7 +8,7 @@ class IComponent
 {
 public:    
     virtual void init(lv_obj_t *virtual_screen) = 0;
-    virtual void update(std::shared_ptr<void> ptr) = 0;
+    virtual void update(uint32_t value) = 0;
 };
 
 #endif // I_COMPONENT_H

@@ -6,13 +6,15 @@ SplashPanel::SplashPanel()
     _component = new ClarityComponent();
 }
 
-/// @brief Set the callback to be called when splash animation completes
-void SplashPanel::set_completion_callback(PanelCompletionCallback callback)
+/// @brief Set the function to be called on completion of this panel animations
+/// @param callback_function the function to be executed when animation is complete
+void SplashPanel::set_completion_callback(std::function<void()> callback_function)
 {
-    _completion_callback = callback;
+    _callback_function = callback_function;
 }
 
 /// @brief Initialize the screen with component and sensor
+/// @param device the device housing the screens
 void SplashPanel::init(IDevice *device)
 {
     _device = device;
@@ -36,11 +38,15 @@ void SplashPanel::show()
     // Initially show a blank screen, than fade in the splash
     lv_scr_load(_blank_screen);
 
-    lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
+    lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback,
+                                                   100,
+                                                   this);
 
     SerialLogger().log_point("SplashPanel::show()", "Completed");
 }
 
+/// @brief Callback function for the fade in timer completion
+/// @param timer the timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *timer)
 {
     SerialLogger().log_point("SplashPanel::fade_in_timer_callback()", "Entry");
@@ -66,6 +72,8 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *timer)
     SerialLogger().log_point("SplashPanel::fade_in_timer_callback()", "Completed");
 }
 
+/// @brief Callback function for the fade out timer completion
+/// @param timer the timer that has completed
 void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 {
     SerialLogger().log_point("SplashPanel::fade_out_timer_callback()", "Entry");
@@ -81,7 +89,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
                      false);
 
     // Create a timer for the completion callback
-    lv_timer_t *completion_timer = lv_timer_create(SplashPanel::animation_completion_callback,
+    lv_timer_t *completion_timer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
                                                    ANIMATION_TIME + 50, // Small extra delay to ensure animation is complete
                                                    panel);
 
@@ -92,26 +100,26 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 }
 
 /// @brief Callback for when the animation is complete
-void SplashPanel::animation_completion_callback(lv_timer_t *timer)
+void SplashPanel::animation_complete_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("SplashPanel::animation_completion_callback()", "Entry");
+    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Entry");
 
     // Get the splash panel instance
     SplashPanel *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
-    panel->_device->_is_splash_complete = true;
+
     // Call the completion callback if it exists
-    if (panel->_completion_callback)
+    if (panel->_callback_function)
     {
-        SerialLogger().log_point("SplashPanel::animation_completion_callback()", "Executing callback");
-        panel->_completion_callback();
+        SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Executing callback");
+        panel->_callback_function();
     }
     else
-        SerialLogger().log_point("SplashPanel::animation_completion_callback()", "No callback set");
+        SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "No callback set");
 
     // Delete the timer
     lv_timer_del(timer);
 
-    SerialLogger().log_point("SplashPanel::animation_completion_callback()", "Completed");
+    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Completed");
 }
 
 /// @brief Update the reading on the screen
@@ -123,9 +131,9 @@ void SplashPanel::update()
 /// @brief SplashPanel destructor to clean up dynamically allocated objects
 SplashPanel::~SplashPanel()
 {
+    if (_device)
+        delete _device;
+
     if (_component)
         delete _component;
-
-    // if (_transition_timer)
-    //     lv_timer_del(_transition_timer);
 }
