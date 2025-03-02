@@ -22,7 +22,7 @@ void DemoPanel::init(IDevice *device)
 {
     _device = device;
 
-    this->_screen = lv_obj_create(NULL);
+    this->_screen = LvTools::create_blank_screen();
     _component->init(this->_screen);
 
     SerialLogger().log_point("DemoPanel::init()", "Completed");
