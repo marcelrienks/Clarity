@@ -31,7 +31,7 @@ void Ticker::handle_lv_tasks() {
     lv_task_handler();
     last_task_run = current_time;
 
-    //SerialLogger().log_point("Ticker::handle_lv_tasks()", "Completed");
+    SerialLogger().log_point("Ticker::handle_lv_tasks()", "Completed");
 }
 
 /// @brief Adaptive Timing to generate a ~60fps refresh rate

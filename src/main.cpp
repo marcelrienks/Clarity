@@ -25,9 +25,10 @@ void setup()
     _demo_panel->init(&_device);
 
     // Set up the callback for when splash screen completes
-    _splash_panel->set_callback([&]() {
-      SerialLogger().log_point("SplashPanel Callback", "Showing demo panel");
-      _demo_panel->show(); });
+    _splash_panel->set_completion_callback([&]() {
+      SerialLogger().log_point("main::set_completion_callback", "Completion callback running");
+      _is_setup_complete = true;
+      _demo_panel->show(); });//TODO: should this be pulled out into a separate method, also considering generics
 
     // Start with splash panel
     _splash_panel->show();
@@ -56,7 +57,7 @@ void loop()
     // First process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    if (_device._is_splash_complete)
+    if (_is_setup_complete)
     {
       _demo_panel->update();
 

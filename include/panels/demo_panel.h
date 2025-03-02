@@ -24,7 +24,7 @@ public:
     void init(IDevice *device) override;
     void show() override;
     void update() override;
-    void set_callback(std::function<void()> callback_function) override;
+    void set_completion_callback(std::function<void()> callback_function) override;
 };
 
 #endif // DEMO_PANEL_H

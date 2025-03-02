@@ -21,4 +21,6 @@ Preferences _preferences;
 SplashPanel *_splash_panel;
 DemoPanel *_demo_panel;
 
+static bool _is_setup_complete = false;
+
 #endif

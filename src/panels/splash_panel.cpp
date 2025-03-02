@@ -1,147 +1,125 @@
 #include "panels/splash_panel.h"
 
-/// @brief SplashPanel constructor, generates a component
+/// @brief SplashPanel constructor, generates a component and sensor
 SplashPanel::SplashPanel()
 {
     _component = new ClarityComponent();
-    _animation_sequence = 0;
-}
-
-/// @brief Initialize the screen with component and device
-void SplashPanel::init(IDevice *device)
-{
-    SerialLogger().log_point("SplashPanel::init()", "Entry");
-    _device = device;
-
-    // Create splash screen
-    _screen = lv_obj_create(NULL);
-    _component->init(_screen);
-    
-    // Initially set the screen as transparent
-    lv_obj_set_style_opa(_screen, LV_OPA_TRANSP, 0);
-
-    // Create blank screen to be loaded initially, and faded out to again at the end
-    _blank_screen = lv_obj_create(NULL);
-    LvTools().init_blank_screen(_blank_screen);
-
-    SerialLogger().log_point("SplashPanel::init()", "Completed");
 }
 
 /// @brief Set the function to be called on completion of this panel animations
 /// @param callback_function the function to be executed when animation is complete
-void SplashPanel::set_callback(std::function<void()> callback_function)
+void SplashPanel::set_completion_callback(std::function<void()> callback_function)
 {
     _callback_function = callback_function;
 }
 
-/// @brief Show the panel with sequential animations using callbacks
+/// @brief Initialize the screen with component and sensor
+/// @param device the device housing the screens
+void SplashPanel::init(IDevice *device)
+{
+    _device = device;
+
+    // create blank screen to be loaded initially, and faded out to again at the end
+    _blank_screen = lv_obj_create(NULL);
+    LvTools().init_blank_screen(_blank_screen);
+
+    // Create splash screen
+    _screen = lv_obj_create(NULL);
+    _component->init(_screen);
+
+    SerialLogger().log_point("SplashPanel::init()", "Completed");
+}
+
+/// @brief Show the screen
 void SplashPanel::show()
 {
     SerialLogger().log_point("SplashPanel::show()", "Entry");
 
-    // Reset animation sequence counter
-    _animation_sequence = 0;
-
-    // Initially load the blank screen without animation
+    // Initially show a blank screen, than fade in the splash
     lv_scr_load(_blank_screen);
 
-    // Reset the opacity of the splash screen before the animation starts
-    lv_obj_set_style_opa(_screen, LV_OPA_TRANSP, 0);
-    
-    // Start the animation sequence
-    run_animation_workflow_handler();
-
-    // Process LVGL tasks to start the animation immediately
-    Ticker::handle_lv_tasks();
+    lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback,
+                                                   100,
+                                                   this);
 
     SerialLogger().log_point("SplashPanel::show()", "Completed");
 }
 
-/// @brief Callback function for animation completion
-/// @param animation Animation that just completed
-void SplashPanel::animation_callback(lv_anim_t *animation)
+/// @brief Callback function for the fade in timer completion
+/// @param timer the timer that has completed
+void SplashPanel::fade_in_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("SplashPanel::animation_callback()", "Entry");
+    SerialLogger().log_point("SplashPanel::fade_in_timer_callback()", "Entry");
 
-    // Get the panel from user data
-    auto *panel = static_cast<SplashPanel *>(lv_anim_get_user_data(animation));
-    if (panel)
-        panel->run_animation_workflow_handler();
-    else
-        SerialLogger().log_point("SplashPanel::animation_callback()", "ERROR: Panel is null");
-}
-
-// Static timer callbacks for each animation stage
-static void animation_timer_cb(lv_timer_t *timer) {
+    // Get the screen pointer that was added to the user data
     SplashPanel *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
-    if (panel) {
-        panel->advance_animation();
-    }
+
+    // Transition to the next screen with a fade-in animation
+    lv_scr_load_anim(panel->_screen,
+                     LV_SCR_LOAD_ANIM_FADE_IN,
+                     ANIMATION_TIME,
+                     DELAY_TIME,
+                     false);
+
+    // Schedule the fade-out animation
+    lv_timer_t *fade_out_timer = lv_timer_create(SplashPanel::fade_out_timer_callback,
+                                                 ANIMATION_TIME + DISPLAY_TIME,
+                                                 panel);
+
+    // Remove the timer after transition, this replaces having to set a repeat on the timer
     lv_timer_del(timer);
+
+    SerialLogger().log_point("SplashPanel::fade_in_timer_callback()", "Completed");
 }
 
-/// @brief Advances to the next animation step
-void SplashPanel::advance_animation() {
-    _animation_sequence++;
-    run_animation_workflow_handler();
-}
-
-/// @brief Handles the sequence of animations to run through in order to show a splash screen
-void SplashPanel::run_animation_workflow_handler()
+/// @brief Callback function for the fade out timer completion
+/// @param timer the timer that has completed
+void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("SplashPanel::run_animation_workflow_handler()", "Sequence: " + String(_animation_sequence));
+    SerialLogger().log_point("SplashPanel::fade_out_timer_callback()", "Entry");
 
-    switch (_animation_sequence)
+    // Get the splash panel instance
+    SplashPanel *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
+
+    // Fade out back to blank screen
+    lv_scr_load_anim(panel->_blank_screen,
+                     LV_SCR_LOAD_ANIM_FADE_OUT,
+                     ANIMATION_TIME,
+                     0,
+                     false);
+
+    // Create a timer for the completion callback
+    lv_timer_t *completion_timer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
+                                                   ANIMATION_TIME + 50, // Small extra delay to ensure animation is complete
+                                                   panel);
+
+    // Remove the timer after transition, this replaces having to set a repeat on the timer
+    lv_timer_del(timer);
+
+    SerialLogger().log_point("SplashPanel::fade_out_timer_callback()", "Completed");
+}
+
+/// @brief Callback for when the animation is complete
+void SplashPanel::animation_complete_timer_callback(lv_timer_t *timer)
+{
+    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Entry");
+
+    // Get the splash panel instance
+    SplashPanel *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
+
+    // Call the completion callback if it exists
+    if (panel->_callback_function)
     {
-    case 0:
-    {
-        // Step 1: Fade in splash screen
-        
-        // Load the splash screen with fade-in animation
-        lv_scr_load_anim(_screen, LV_SCR_LOAD_ANIM_FADE_IN, ANIMATION_TIME, 0, false);
-        
-        // Set up a timer for the next step
-        lv_timer_t *timer = lv_timer_create(animation_timer_cb, ANIMATION_TIME, this);
-        
-        break;
+        SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Executing callback");
+        panel->_callback_function();
     }
+    else
+        SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "No callback set");
 
-    case 1:
-    {
-        // Step 2: Display time - pause before fading out
-        lv_timer_t *timer = lv_timer_create(animation_timer_cb, DISPLAY_TIME, this);
-        
-        break;
-    }
+    // Delete the timer
+    lv_timer_del(timer);
 
-    case 2:
-    {
-        // Step 3: Fade out splash screen to the blank screen
-        lv_scr_load_anim(_blank_screen, LV_SCR_LOAD_ANIM_FADE_OUT, ANIMATION_TIME, 0, false);
-        
-        // Set up a timer for the next step
-        lv_timer_t *timer = lv_timer_create(animation_timer_cb, ANIMATION_TIME, this);
-        
-        break;
-    }
-
-    case 3:
-    {
-        // Step 4: Animation sequence complete
-        SerialLogger().log_point("SplashPanel::run_animation_workflow_handler()", "Animation sequence complete");
-
-        // Set the splash complete flag
-        _device->_is_splash_complete = true;
-
-        // Call the callback if set
-        if (_callback_function)
-            _callback_function();
-        else
-            SerialLogger().log_point("SplashPanel::run_animation_workflow_handler()", "No callback set");
-
-        break;
-    }
-    }
+    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Completed");
 }
 
 /// @brief Update the reading on the screen
@@ -153,6 +131,9 @@ void SplashPanel::update()
 /// @brief SplashPanel destructor to clean up dynamically allocated objects
 SplashPanel::~SplashPanel()
 {
+    if (_device)
+        delete _device;
+
     if (_component)
         delete _component;
 }

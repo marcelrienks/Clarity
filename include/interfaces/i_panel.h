@@ -20,7 +20,7 @@ public:
     virtual void init(IDevice *device) = 0;
     virtual void show() = 0;
     virtual void update() = 0;
-    virtual void set_callback(std::function<void()> callback_function) = 0;
+    virtual void set_completion_callback(std::function<void()> callback_function) = 0;
 };
 
 #endif // I_PANEL_H
