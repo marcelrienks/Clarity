@@ -43,7 +43,7 @@ void DemoPanel::update()
 {
     SerialLogger().log_point("DemoPanel::update()", "Entry");
 
-    std::string reading = _sensor->get_reading();
+    Reading reading = _sensor->get_reading();
     _component->update(reading);
 
     SerialLogger().log_point("DemoPanel::update()", "Completed");

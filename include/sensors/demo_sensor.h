@@ -1,9 +1,8 @@
-#ifndef DEMO_SENSOR_H
-#define DEMO_SENSOR_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_sensor.h"
 #include "utilities/serial_logger.h"
-#include "utilities/tools.h"
+#include "utilities/common_types.h"
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
@@ -15,14 +14,13 @@ private:
     std::mt19937 _engine;                          // Mersenne Twister engine
     std::uniform_int_distribution<> _distribution; // Uniform distribution
 
-    std::string last_read_time;
-    std::string current_reading;
+    int last_read_time;
+    int current_reading;
+
 public:
     DemoSensor();
     ~DemoSensor();
 
-    void init();
-    std::string get_reading();
+    void init() override;
+    Reading get_reading() const override;
 };
-
-#endif // DEMO_SENSOR_H

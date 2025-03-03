@@ -1,5 +1,4 @@
-#ifndef I_DEVICE_H
-#define I_DEVICE_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
@@ -12,5 +11,3 @@ public:
     virtual void prepare() = 0;
     virtual void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data) = 0;
 };
-
-#endif // I_DEVICE_H

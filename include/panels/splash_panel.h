@@ -1,5 +1,4 @@
-#ifndef SPLASH_PANEL_H
-#define SPLASH_PANEL_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
 #include "components/clarity_component.h"
@@ -36,5 +35,3 @@ public:
     // Implementation of the callback setter
     void set_completion_callback(std::function<void()> callback_function) override;
 };
-
-#endif // SPLASH_PANEL_H

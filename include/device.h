@@ -1,5 +1,4 @@
-#ifndef DEVICE_H
-#define DEVICE_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #define LGFX_USE_V1
 
@@ -54,5 +53,3 @@ public:
 
 // Global instance of the Device instantiated in the constructor (externally)
 extern Device *g_device_instance;
-
-#endif // DEVICE_H

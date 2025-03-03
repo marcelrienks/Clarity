@@ -1,13 +1,10 @@
-#ifndef I_SENSOR_H
-#define I_SENSOR_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include <string>
+#include <utilities/common_types.h>
 
 class ISensor
 {
 public:    
-    virtual void init();
-    virtual std::string get_reading();
+    virtual void init() = 0;
+    virtual Reading get_reading() const = 0;
 };
-
-#endif // I_SENSOR_H

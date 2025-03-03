@@ -1,14 +1,11 @@
-#ifndef I_COMPONENT_H
-#define I_COMPONENT_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include <lvgl.h>
-#include <string>
+#include <utilities/common_types.h>
 
 class IComponent
 {
 public:    
     virtual void init(lv_obj_t *virtual_screen) = 0;
-    virtual void update(std::string value) = 0;
+    virtual void update(Reading value) = 0;
 };
-
-#endif // I_COMPONENT_H

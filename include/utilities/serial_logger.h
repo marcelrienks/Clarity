@@ -1,5 +1,4 @@
-#ifndef SERIAL_LOGGER_H
-#define SERIAL_LOGGER_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/ticker.h"
 
@@ -21,5 +20,3 @@ public:
     static void log_value(const std::string &point, const std::string &variable_name, const std::string &value, bool force_print = false, unsigned long time_threshold = 5000);
     static void flush();
 };
-
-#endif // SERIAL_LOGGER_H
