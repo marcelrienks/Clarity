@@ -6,7 +6,7 @@ DemoComponent *g_demo_component_instance = nullptr;
 DemoComponent::DemoComponent()
 {
     g_demo_component_instance = this;
-    _current_reading = "0";
+    _current_reading = 0;
 }
 
 /// @brief Initialize the component
@@ -93,34 +93,35 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
 
     // Clock check animation
 
-    int32_t value = CommonTypes::get_value_from_reading<int32_t>(_current_reading);
-    DemoComponent::animate_needle(1000, 1000, value, 100);
+    DemoComponent::animate_needle(1000, 1000, _current_reading, 100);
 
     this->_start_time = millis();
 }
 
 /// @brief Change the value of the needle line
 /// @param value the value to set the needle line to
-void DemoComponent::update(Reading value)
+void DemoComponent::update(Reading reading)
 {
+    int32_t *value = std::get_if<int32_t>(&reading);
+
     if (millis() - _start_time < 3000)
     {
-        this->_current_reading = std::monostate{};
+        this->_current_reading = 0;
         return;
     }
 
-    if (this->_current_reading == value)
+    if (this->_current_reading == *value)
         return;
 
-    if (CommonTypes::get_value_from_reading(*value) >= 75)
+    if (*value >= 75)
         lv_obj_set_style_line_color(_needle_line, lv_palette_darken(LV_PALETTE_RED, 3), 0);
 
     else
         lv_obj_set_style_line_color(_needle_line, lv_palette_lighten(LV_PALETTE_INDIGO, 3), 0);
 
-    DemoComponent::animate_needle(1000, 0, CommonTypes::get_value_from_reading(*_current_reading), CommonTypes::get_value_from_reading(*value));
+    DemoComponent::animate_needle(1000, 0, _current_reading, *value);
 
-    this->_current_reading = value;
+    this->_current_reading = *value;
 }
 
 /// @brief Animate the needle line smoothly

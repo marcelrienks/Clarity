@@ -6,5 +6,5 @@ class ISensor
 {
 public:    
     virtual void init() = 0;
-    virtual Reading get_reading() const = 0;
+    virtual Reading get_reading() = 0;
 };

@@ -14,13 +14,13 @@ private:
     std::mt19937 _engine;                          // Mersenne Twister engine
     std::uniform_int_distribution<> _distribution; // Uniform distribution
 
-    int last_read_time;
-    int current_reading;
+    int32_t last_read_time;
+    int32_t current_reading;
 
 public:
     DemoSensor();
     ~DemoSensor();
 
     void init() override;
-    Reading get_reading() const override;
+    Reading get_reading() override;
 };
