@@ -1,5 +1,4 @@
-#ifndef DEVICE_H
-#define DEVICE_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #define LGFX_USE_V1
 
@@ -41,18 +40,17 @@ private:
     const static unsigned int _lv_buffer_size = SCREEN_WIDTH * 10;
     uint8_t _lv_buffer[2][_lv_buffer_size];
 
+    static void display_flush_wrapper(lv_display_t *display, const lv_area_t *area, unsigned char *data);
+    void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
+
 public:
     Device();
     ~Device();
 
     lv_obj_t *screen;
-    static void display_flush_wrapper(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 
-    void prepare();
-    void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
+    void prepare() override;
 };
 
 // Global instance of the Device instantiated in the constructor (externally)
 extern Device *g_device_instance;
-
-#endif // DEVICE_H

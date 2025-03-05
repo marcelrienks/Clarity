@@ -1,5 +1,4 @@
-#ifndef SPLASH_PANEL_H
-#define SPLASH_PANEL_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
 #include "components/clarity_component.h"
@@ -29,12 +28,8 @@ public:
     SplashPanel();
     ~SplashPanel();
 
-    void init(IDevice *device);
-    void show();
-    void update();
-
-    // Implementation of the callback setter
+    void init(IDevice *device) override;
+    void show() override;
+    void update() override;
     void set_completion_callback(std::function<void()> callback_function) override;
 };
-
-#endif // SPLASH_PANEL_H

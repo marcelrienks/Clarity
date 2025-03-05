@@ -1,5 +1,4 @@
-#ifndef DEMO_PANEL_H
-#define DEMO_PANEL_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
 #include "components/demo_component.h"
@@ -26,5 +25,3 @@ public:
     void update() override;
     void set_completion_callback(std::function<void()> callback_function) override;
 };
-
-#endif // DEMO_PANEL_H

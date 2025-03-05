@@ -26,7 +26,7 @@ void SerialLogger::init(unsigned long baud_rate)
  * @param force_print Force printing even if it's a duplicate (default: false)
  * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
  */
-void SerialLogger::log(const String &message, bool force_print, unsigned long time_threshold)
+void SerialLogger::log(const std::string &message, bool force_print, unsigned long time_threshold)
 {
   std::string msg_str = message.c_str();
   unsigned long current_time = millis();
@@ -44,7 +44,7 @@ void SerialLogger::log(const String &message, bool force_print, unsigned long ti
     }
 
     // Print the new message
-    Serial.println(message);
+    Serial.println(message.c_str());
     _last_message = msg_str;
     _last_log_time = current_time;
   }
@@ -71,11 +71,11 @@ void SerialLogger::log(const String &message, bool force_print, unsigned long ti
  * @param force_print Force printing even if it's a duplicate (default: false)
  * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
  */
-void SerialLogger::log_with_time(const String &message, bool force_print, unsigned long time_threshold)
+void SerialLogger::log_with_time(const std::string &message, bool force_print, unsigned long time_threshold)
 {
   char timestamp[16];
   snprintf(timestamp, sizeof(timestamp), "[%lu ms] ", millis());
-  String full_message = timestamp + message;
+  std::string full_message = timestamp + message;
   log(full_message, force_print, time_threshold);
 }
 
@@ -86,9 +86,9 @@ void SerialLogger::log_with_time(const String &message, bool force_print, unsign
  * @param force_print Force printing even if it's a duplicate (default: false)
  * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
  */
-void SerialLogger::log_point(const String &point, const String &message, bool force_print, unsigned long time_threshold)
+void SerialLogger::log_point(const std::string &point, const std::string &message, bool force_print, unsigned long time_threshold)
 {
-  String full_message = point + " -> " + message;
+  std::string full_message = point + " -> " + message;
   log(full_message, force_print, time_threshold);
 }
 
@@ -100,9 +100,9 @@ void SerialLogger::log_point(const String &point, const String &message, bool fo
  * @param force_print Force printing even if it's a duplicate (default: false)
  * @param time_threshold Minimum time between duplicate summaries in ms (default: 5000)
  */
-void SerialLogger::log_value(const String &point, const String &variable_name, const String &value, bool force_print, unsigned long time_threshold)
+void SerialLogger::log_value(const std::string &point, const std::string &variable_name, const std::string &value, bool force_print, unsigned long time_threshold)
 {
-  String full_message = point + " -> " + variable_name + " = " + value;
+  std::string full_message = point + " -> " + variable_name + " = " + value;
   log(full_message, force_print, time_threshold);
 }
 

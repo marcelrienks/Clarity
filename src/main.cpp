@@ -2,18 +2,16 @@
 
 #include "main.h"
 
-// TODO: create a screen level duration variable to control the duration of the animation / or delays if that screen does not animate
-// TODO: create an interface for screen & component, with generics, so that swapping them in and out is standardised
-// TODO: create a screen manager to handle the screen transitions
-// TODO: refactor startup screen function to use screen manager
-// TODO: see if any refactoring of splash screen is needed
-
 void setup()
 {
   try
   {
+//TODO: convert this logic into a list of Panels that get rendered in order, using a Panel manager
+// This will allow for generic configuration of any screen to be shown, pending configs
+// Also see if it's possible to allow for a default transition, but each Panel can override that
+
     SerialLogger().init();
-    SerialLogger().log_point("main::setup()", "Entry");
+    SerialLogger().log_point("main::setup()", "Entry...");
 
     _device.prepare();
 
@@ -26,14 +24,12 @@ void setup()
 
     // Set up the callback for when splash screen completes
     _splash_panel->set_completion_callback([&]() {
-      SerialLogger().log_point("main::set_completion_callback", "Completion callback running");
+      SerialLogger().log_point("main::set_completion_callback", "Splash Panel Completion...");
       _is_setup_complete = true;
-      _demo_panel->show(); });//TODO: should this be pulled out into a separate method, also considering generics
+      _demo_panel->show(); });
 
     // Start with splash panel
     _splash_panel->show();
-
-    SerialLogger().log_point("main::setup()", "Completed");
   }
   catch (const std::exception &e)
   {

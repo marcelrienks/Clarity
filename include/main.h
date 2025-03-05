@@ -1,5 +1,4 @@
-#ifndef MAIN_H
-#define MAIN_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #define UI_VERSION "4.1.0"
 
@@ -22,5 +21,3 @@ SplashPanel *_splash_panel;
 DemoPanel *_demo_panel;
 
 static bool _is_setup_complete = false;
-
-#endif

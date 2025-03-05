@@ -1,4 +1,5 @@
 #include "components/demo_component.h"
+#include <utilities/ticker.h>
 
 DemoComponent *g_demo_component_instance = nullptr;
 
@@ -6,6 +7,7 @@ DemoComponent *g_demo_component_instance = nullptr;
 DemoComponent::DemoComponent()
 {
     g_demo_component_instance = this;
+    _current_reading = 0;
 }
 
 /// @brief Initialize the component
@@ -90,34 +92,33 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     lv_obj_set_style_line_rounded(_needle_line, true, LV_PART_MAIN);
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
 
-    // Clock check animation
-    DemoComponent::animate_needle(1000, 1000, _current_reading, 100);
-
     this->_start_time = millis();
 }
 
 /// @brief Change the value of the needle line
 /// @param value the value to set the needle line to
-void DemoComponent::update(uint32_t value)
+void DemoComponent::update(Reading reading)
 {
+    int32_t *value = std::get_if<int32_t>(&reading);
+
     if (millis() - _start_time < 3000)
     {
         this->_current_reading = 0;
         return;
     }
 
-    if (this->_current_reading == value)
+    if (this->_current_reading == *value)
         return;
 
-    if (value >= 75)
+    if (*value >= 75)
         lv_obj_set_style_line_color(_needle_line, lv_palette_darken(LV_PALETTE_RED, 3), 0);
 
     else
         lv_obj_set_style_line_color(_needle_line, lv_palette_lighten(LV_PALETTE_INDIGO, 3), 0);
 
-    DemoComponent::animate_needle(1000, 0, _current_reading, value);
+    DemoComponent::animate_needle(1000, 0, _current_reading, *value);
 
-    this->_current_reading = value;
+    this->_current_reading = *value;
 }
 
 /// @brief Animate the needle line smoothly
@@ -125,7 +126,7 @@ void DemoComponent::update(uint32_t value)
 /// @param playback_duration the duration of the playback
 /// @param start the starting value of the needle line
 /// @param end the ending value of the needle line
-void DemoComponent::animate_needle(int16_t animation_duration, int16_t playback_duration, int32_t start, int32_t end)
+void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end)
 {
     static lv_anim_t animate_scale_line;
 

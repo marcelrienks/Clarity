@@ -1,5 +1,4 @@
-#ifndef TICKER_H
-#define TICKER_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include <Arduino.h>
 #include <lvgl.h>
@@ -11,5 +10,3 @@ public:
     static void handle_lv_tasks();
     static void handle_dynamic_delay(uint32_t start_time);
 };
-
-#endif // TICKER_H

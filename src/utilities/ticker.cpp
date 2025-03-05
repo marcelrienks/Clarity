@@ -15,6 +15,8 @@ uint32_t Ticker::get_elapsed_millis() {
 
 /// @brief Handle lv tasks by calculating the time differences since start up
 void Ticker::handle_lv_tasks() {
+    SerialLogger().log_point("Ticker::handle_lv_tasks()", "Entry...");
+
     static uint32_t last_tick_increment = 0;
     static uint32_t last_task_run = 0;
     
@@ -30,8 +32,6 @@ void Ticker::handle_lv_tasks() {
     // Process all pending tasks
     lv_task_handler();
     last_task_run = current_time;
-
-    SerialLogger().log_point("Ticker::handle_lv_tasks()", "Completed");
 }
 
 /// @brief Adaptive Timing to generate a ~60fps refresh rate

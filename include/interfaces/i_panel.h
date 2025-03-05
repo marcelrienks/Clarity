@@ -1,5 +1,4 @@
-#ifndef I_PANEL_H
-#define I_PANEL_H
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_device.h"
 #include "interfaces/i_component.h"
@@ -22,5 +21,3 @@ public:
     virtual void update() = 0;
     virtual void set_completion_callback(std::function<void()> callback_function) = 0;
 };
-
-#endif // I_PANEL_H
