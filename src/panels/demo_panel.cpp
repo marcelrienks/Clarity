@@ -20,33 +20,29 @@ void DemoPanel::set_completion_callback(std::function<void()> callback_function)
 /// @brief Initialize the screen with component and sensor
 void DemoPanel::init(IDevice *device)
 {
+    SerialLogger().log_point("DemoPanel::init()", "Entry...");
+
     _device = device;
 
     this->_screen = LvTools::create_blank_screen();
     _component->init(this->_screen);
-
-    SerialLogger().log_point("DemoPanel::init()", "Completed");
 }
 
 /// @brief Show the screen
 void DemoPanel::show()
 {
-    SerialLogger().log_point("DemoPanel::show()", "Entry");
+    SerialLogger().log_point("DemoPanel::show()", "Entry...");
 
     lv_scr_load(this->_screen);
-
-    SerialLogger().log_point("DemoPanel::show()", "Completed");
 }
 
 /// @brief Update the reading on the screen
 void DemoPanel::update()
 {
-    SerialLogger().log_point("DemoPanel::update()", "Entry");
+    SerialLogger().log_point("DemoPanel::update()", "Entry...");
 
     Reading reading = _sensor->get_reading();
     _component->update(reading);
-
-    SerialLogger().log_point("DemoPanel::update()", "Completed");
 }
 
 /// @brief DemoPanel destructor to clean up dynamically allocated objects

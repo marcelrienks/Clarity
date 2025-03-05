@@ -8,7 +8,6 @@ DemoSensor::DemoSensor()
 
 void DemoSensor::init()
 {
-    //TODO: once compiling, confirm that this is needed, due to interface
     // Not needed but required to satisfy interface
 }
 
@@ -26,13 +25,8 @@ Reading DemoSensor::get_reading()
         // Generate a random number in the range [0, 100]
         this->current_reading = _distribution(_engine);
 
-        SerialLogger().log_value("DemoSensor::get_reading()", "currentReading", std::to_string(this->current_reading));//TODO: the currentReading value is not being shown in the logs
+        SerialLogger().log_value("DemoSensor::get_reading()", "currentReading", std::to_string(this->current_reading));
     }
     
     return this->current_reading;
-}
-
-DemoSensor::~DemoSensor() {
-    //TODO: once compiling, confirm that this is needed, due to interface
-    // Not needed but required to satisfy interface
 }

@@ -74,8 +74,6 @@ void Device::prepare()
 {
     SerialLogger().log_point("Device::prepare()", "Entry");
 
-    // TODO: do some research on all the function below and determine if they are all required
-
     // Initialise screen
     init();
     initDMA();
@@ -86,15 +84,13 @@ void Device::prepare()
 
     lv_init();
 
-    SerialLogger().log_point("Device::prepare()", "Initialisations completed");
-
+    SerialLogger().log_point("Device::prepare()", "Display configuration...");
+    
     // setup screen
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     lv_display_set_flush_cb(display, Device::display_flush_wrapper);
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-    SerialLogger().log_point("Device::prepare()", "Display configured");
 }
 
 /// @brief static Display Flush Wrapper function
