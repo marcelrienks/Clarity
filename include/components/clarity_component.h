@@ -5,6 +5,6 @@
 class ClarityComponent : public IComponent
 {
 public:
-    void init(lv_obj_t *virtual_screen);
-    void update(Reading value);
+    void init(lv_obj_t *virtual_screen) override;
+    void update(Reading value) override;
 };

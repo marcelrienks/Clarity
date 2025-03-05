@@ -28,10 +28,8 @@ public:
     SplashPanel();
     ~SplashPanel();
 
-    void init(IDevice *device);
-    void show();
-    void update();
-
-    // Implementation of the callback setter
+    void init(IDevice *device) override;
+    void show() override;
+    void update() override;
     void set_completion_callback(std::function<void()> callback_function) override;
 };

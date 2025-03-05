@@ -23,8 +23,8 @@ public:
     DemoComponent();
     ~DemoComponent();
 
-    void init(lv_obj_t *virtual_screen);
-    void update(Reading reading);
+    void init(lv_obj_t *virtual_screen) override;
+    void update(Reading reading) override;
 };
 
 extern DemoComponent *g_demo_component_instance;
