@@ -1,4 +1,5 @@
 #include "components/demo_component.h"
+#include <utilities/ticker.h>
 
 DemoComponent *g_demo_component_instance = nullptr;
 
@@ -90,10 +91,6 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     lv_obj_set_style_line_width(_needle_line, 6, LV_PART_MAIN);
     lv_obj_set_style_line_rounded(_needle_line, true, LV_PART_MAIN);
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
-
-    // Clock check animation
-
-    DemoComponent::animate_needle(1000, 1000, _current_reading, 100);
 
     this->_start_time = millis();
 }
