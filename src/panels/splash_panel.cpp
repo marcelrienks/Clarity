@@ -1,9 +1,9 @@
 #include "panels/splash_panel.h"
 
-/// @brief SplashPanel constructor, generates a component and sensor
+/// @brief SplashPanel constructor, generates a component
 SplashPanel::SplashPanel()
 {
-    _component = new ClarityComponent();
+    _clarity_component = std::make_shared<ClarityComponent>();
 }
 
 /// @brief Set the function to be called on completion of this panel animations
@@ -13,11 +13,11 @@ void SplashPanel::set_completion_callback(std::function<void()> callback_functio
     _callback_function = callback_function;
 }
 
-/// @brief Initialize the screen with component and sensor
+/// @brief Initialize the screen with component
 /// @param device the device housing the screens
 void SplashPanel::init(IDevice *device)
 {
-    SerialLogger().log_point("DemoPanel::init()", "Entry...");
+    SerialLogger().log_point("SplashPanel::init()", "Entry...");
 
     _device = device;
 
@@ -27,18 +27,18 @@ void SplashPanel::init(IDevice *device)
 
     // Create splash screen
     _screen = lv_obj_create(NULL);
-    _component->init(_screen);
+    _clarity_component->init(_screen);
 }
 
 /// @brief Show the screen
 void SplashPanel::show()
 {
-    SerialLogger().log_point("DemoPanel::show()", "Entry...");
+    SerialLogger().log_point("SplashPanel::show()", "Entry...");
 
     // Initially show a blank screen, than fade in the splash
     lv_scr_load(_blank_screen);
 
-    lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback,100,this);
+    lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Callback function for the fade in timer completion
@@ -121,9 +121,6 @@ void SplashPanel::update()
 /// @brief SplashPanel destructor to clean up dynamically allocated objects
 SplashPanel::~SplashPanel()
 {
-    if (_device)
-        delete _device;
-
-    if (_component)
-        delete _component;
+    // LVGL screens will be automatically deleted by LVGL
+    // when new screens are loaded, no need to delete them here
 }

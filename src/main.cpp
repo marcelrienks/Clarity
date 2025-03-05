@@ -6,30 +6,45 @@ void setup()
 {
   try
   {
-//TODO: convert this logic into a list of Panels that get rendered in order, using a Panel manager
-// This will allow for generic configuration of any screen to be shown, pending configs
-// Also see if it's possible to allow for a default transition, but each Panel can override that
-
     SerialLogger().init();
     SerialLogger().log_point("main::setup()", "Entry...");
 
+    // Initialize device
     _device.prepare();
 
-    // Splash screen
-    _splash_panel = new SplashPanel();
-    _splash_panel->init(&_device);
-
-    _demo_panel = new DemoPanel();
-    _demo_panel->init(&_device);
-
-    // Set up the callback for when splash screen completes
-    _splash_panel->set_completion_callback([&]() {
-      SerialLogger().log_point("main::set_completion_callback", "Splash Panel Completion...");
+    // Create panel manager
+    _panel_manager = std::make_shared<PanelManager>(&_device);
+    
+    // Create panels
+    _splash_panel = std::make_shared<SplashPanel>();
+    _demo_panel = std::make_shared<DemoPanel>();
+    
+    // Register panels with the manager
+    _panel_manager->register_panel("splash", _splash_panel);
+    _panel_manager->register_panel("demo", _demo_panel);
+    
+    // Set default transition
+    TransitionConfig defaultTransition;
+    defaultTransition.type = TransitionType::FADE_IN;
+    defaultTransition.duration = 500;
+    defaultTransition.delay = 0;
+    _panel_manager->set_default_transition(defaultTransition);
+    
+    // Start with splash panel and set callback for when it completes
+    TransitionConfig splashTransition;
+    splashTransition.type = TransitionType::FADE_IN;
+    splashTransition.duration = 1000;
+    
+    _panel_manager->show_panel("splash", splashTransition, []() {
+      SerialLogger().log_point("main::setup()", "Splash panel completed...");
       _is_setup_complete = true;
-      _demo_panel->show(); });
-
-    // Start with splash panel
-    _splash_panel->show();
+      
+      // Show demo panel with fade transition
+      TransitionConfig demoTransition;
+      demoTransition.type = TransitionType::FADE_IN;
+      demoTransition.duration = 500;
+      _panel_manager->show_panel("demo", demoTransition);
+    });
   }
   catch (const std::exception &e)
   {
@@ -47,27 +62,26 @@ void loop()
 {
   try
   {
-    //SerialLogger().log_point("main::loop()", "Entry");
     uint32_t start_time = millis();
 
-    // First process any pending LVGL tasks
+    // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
     if (_is_setup_complete)
     {
-      _demo_panel->update();
+      // Update the current panel via the panel manager
+      _panel_manager->update();
 
       // Process LVGL tasks again to render the changes immediately
       Ticker::handle_lv_tasks();
     }
-
     else
+    {
       SerialLogger().log_point("main::loop()", "splash running...");
+    }
 
     // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(start_time);
-
-    //SerialLogger().log_point("main::loop()", "Completed");
   }
   catch (const std::exception &e)
   {

@@ -3,6 +3,7 @@
 #include <lvgl.h>
 #include <utilities/common_types.h>
 
+/// @brief UI elements
 class IComponent
 {
 public:    

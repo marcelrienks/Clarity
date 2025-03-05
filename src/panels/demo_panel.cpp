@@ -6,8 +6,8 @@
 /// @brief DemoPanel constructor, generates a component and sensor
 DemoPanel::DemoPanel()
 {
-    _component = new DemoComponent();
-    _sensor = new DemoSensor();
+    _component = std::make_shared<DemoComponent>();
+    _sensor = std::make_shared<DemoSensor>();
 }
 
 /// @brief Set the function to be called on completion of this panel animations
@@ -23,9 +23,13 @@ void DemoPanel::init(IDevice *device)
     SerialLogger().log_point("DemoPanel::init()", "Entry...");
 
     _device = device;
+    _screen = LvTools::create_blank_screen();
 
-    this->_screen = LvTools::create_blank_screen();
-    _component->init(this->_screen);
+    // Initialize the sensor
+    _sensor->init();
+
+    // Initialize the component with the screen
+    _component->init(_screen);
 }
 
 /// @brief Show the screen
@@ -33,13 +37,19 @@ void DemoPanel::show()
 {
     SerialLogger().log_point("DemoPanel::show()", "Entry...");
 
-    lv_scr_load(this->_screen);
+    lv_scr_load(_screen);
+
+    // Call the completion callback immediately since we have no animations
+    if (_callback_function)
+    {
+        _callback_function();
+    }
 }
 
 /// @brief Update the reading on the screen
 void DemoPanel::update()
 {
-    SerialLogger().log_point("DemoPanel::update()", "Entry...");
+    //SerialLogger().log_point("DemoPanel::update()", "Entry...");
 
     Reading reading = _sensor->get_reading();
     _component->update(reading);
@@ -48,12 +58,5 @@ void DemoPanel::update()
 /// @brief DemoPanel destructor to clean up dynamically allocated objects
 DemoPanel::~DemoPanel()
 {
-    if (_device)
-        delete _device;
-
-    if (_component)
-        delete _component;
-
-    if (_sensor)
-        delete _sensor;
+    // Component and sensor are managed by shared_ptr and will be cleaned up automatically
 }

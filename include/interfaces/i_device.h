@@ -3,6 +3,7 @@
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
 
+/// @brief Hardware abstraction
 class IDevice : public lgfx::LGFX_Device
 {
 private:

@@ -2,6 +2,7 @@
 
 #include <utilities/common_types.h>
 
+/// @brief Data sources
 class ISensor
 {
 public:    

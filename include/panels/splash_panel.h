@@ -6,6 +6,7 @@
 #include "utilities/lv_tools.h"
 
 #include <lvgl.h>
+#include <memory>
 
 #define ANIMATION_TIME 1000
 #define DELAY_TIME 0
@@ -14,11 +15,8 @@
 class SplashPanel : public IPanel
 {
 private:
-    IDevice *_device;
-    lv_obj_t *_screen;
     lv_obj_t *_blank_screen;
-    ClarityComponent *_component;
-    std::function<void()> _callback_function;
+    std::shared_ptr<ClarityComponent> _clarity_component;
 
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
@@ -26,7 +24,7 @@ private:
 
 public:
     SplashPanel();
-    ~SplashPanel();
+    ~SplashPanel() override;
 
     void init(IDevice *device) override;
     void show() override;
