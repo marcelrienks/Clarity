@@ -93,8 +93,8 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
 
     // Clock check animation
 
-    int32_t* tset = CommonTypes::get_value_from_reading<int32_t>(_current_reading);
-    DemoComponent::animate_needle(1000, 1000, *tset, 100);
+    int32_t value = CommonTypes::get_value_from_reading<int32_t>(_current_reading);
+    DemoComponent::animate_needle(1000, 1000, value, 100);
 
     this->_start_time = millis();
 }

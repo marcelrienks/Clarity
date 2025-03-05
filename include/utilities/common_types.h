@@ -10,5 +10,5 @@ class CommonTypes
 {
 public:
     template<typename T>
-    static T* get_value_from_reading(Reading *reading);
+    static T* get_value_from_reading(Reading reading);
 };
