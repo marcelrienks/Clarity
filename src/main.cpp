@@ -1,5 +1,6 @@
 #include "main.h"
 
+// How can the show_panel/show_panels_recursively be used, in setup vs main, in order to show all panels, in a loop, but also allow regular updates of panels
 // TODO: Update all method comments, and ensure they are copied to headers
 // TODO: in the headers put all private declarations at the bottom, all constructor/deconstructors together at the top, and match the order in the classes
 
@@ -16,15 +17,9 @@ void setup()
     // Create panel manager
     _panel_manager = std::make_shared<PanelManager>(&_device);
 
-    // Create panels
-    _splash_panel = std::make_shared<SplashPanel>();
-    _demo_panel = std::make_shared<DemoPanel>();
-
     // Register panels with the manager
-    _panel_manager->register_panel(_splash_panel);
-    _panel_manager->register_panel(_demo_panel);
-
-
+    _panel_manager->register_panel(std::make_shared<SplashPanel>());
+    _panel_manager->register_panel(std::make_shared<DemoPanel>());
   }
   catch (const std::exception &e)
   {
@@ -47,18 +42,11 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    if (_is_setup_complete)
-    {
-      // Update the current panel via the panel manager
-      _panel_manager->update();
+    // Update the current panel via the panel manager
+    _panel_manager->update_current_panel();
 
-      // Process LVGL tasks again to render the changes immediately
-      Ticker::handle_lv_tasks();
-    }
-    else
-    {
-      SerialLogger().log_point("main::loop()", "splash running...");
-    }
+    // Process LVGL tasks again to render the changes immediately
+    Ticker::handle_lv_tasks();
 
     // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(start_time);

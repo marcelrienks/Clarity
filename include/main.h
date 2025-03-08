@@ -21,9 +21,3 @@ Preferences _preferences;
 
 // Panel manager
 std::shared_ptr<PanelManager> _panel_manager;
-
-// Panel instances
-std::shared_ptr<SplashPanel> _splash_panel;
-std::shared_ptr<DemoPanel> _demo_panel;
-
-static bool _is_setup_complete = false;

@@ -90,7 +90,7 @@ void PanelManager::show_panels_recursively()
  * @brief Update the current panel
  * @note This should be called from the main loop
  */
-void PanelManager::update()
+void PanelManager::update_current_panel()
 {
     // If no current panel, nothing to update
     if (!_current_panel)

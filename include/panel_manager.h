@@ -29,7 +29,7 @@ public:
     void register_panel(std::shared_ptr<IPanel> panel);
     void show_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback = nullptr);
     void show_panels_recursively();
-    void update();
+    void update_current_panel();
 
     static void show_panel_timer_completion_callback(lv_timer_t *timer);
 };
