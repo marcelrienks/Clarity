@@ -1,4 +1,4 @@
-#include "panel_manager.h"
+#include "panels/panel_manager.h"
 
 #include <iostream>
 
