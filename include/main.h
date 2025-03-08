@@ -6,7 +6,7 @@
 #include "utilities/ticker.h"
 #include "panels/demo_panel.h"
 #include "panels/splash_panel.h"
-#include "managers/panel_manager.h"
+#include "panel_manager.h"
 #include "device.h"
 
 #include <Arduino.h>

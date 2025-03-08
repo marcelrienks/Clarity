@@ -19,7 +19,6 @@ private:
 
 public:
     DemoSensor();
-    ~DemoSensor();
 
     void init() override;
     Reading get_reading() override;

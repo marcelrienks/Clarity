@@ -10,6 +10,19 @@ DemoComponent::DemoComponent()
     _current_reading = 0;
 }
 
+/// @brief DemoComponent destructor to clean up dynamically allocated objects
+DemoComponent::~DemoComponent()
+{
+    if (g_demo_component_instance)
+        delete g_demo_component_instance;
+
+    if (_needle_line)
+        lv_obj_del(_needle_line);
+
+    if (_scale)
+        lv_obj_del(_scale);
+}
+
 /// @brief Initialize the component
 void DemoComponent::init(lv_obj_t *virtual_screen)
 {
@@ -152,17 +165,4 @@ void DemoComponent::set_needle_line_value_callback_wrapper(void *object, int32_t
 void DemoComponent::set_needle_line_value_callback(void *object, int32_t value)
 {
     lv_scale_set_line_needle_value(this->_scale, this->_needle_line, 60, value);
-}
-
-/// @brief DemoComponent destructor to clean up dynamically allocated objects
-DemoComponent::~DemoComponent()
-{
-    if (g_demo_component_instance)
-        delete g_demo_component_instance;
-
-    if (_needle_line)
-        lv_obj_del(_needle_line);
-
-    if (_scale)
-        lv_obj_del(_scale);
 }

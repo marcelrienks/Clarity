@@ -3,14 +3,25 @@
 #include "interfaces/i_device.h"
 #include "interfaces/i_component.h"
 #include "interfaces/i_sensor.h"
+#include "utilities/serial_logger.h"
+#include "utilities/lv_tools.h"
 
 #include <lvgl.h>
 #include <functional>
 #include <memory>
+#include <typeinfo>
+
+enum class PanelType
+{
+    Splash,
+    Sensor,
+    Config
+};
 
 class IPanel
 {
 protected:
+// TODO: ensure that any properties that don't need to be edited in external classes, are protected, and gave get/set if needed
     IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
@@ -18,31 +29,10 @@ protected:
     std::function<void()> _callback_function;
 
 public:
-    /**
-     * @brief Initialize the panel with the device
-     * @param device The device to initialize with
-     */
     virtual void init(IDevice *device) = 0;
-    
-    /**
-     * @brief Show the panel, applying any transitions or animations
-     */
-    virtual void show() = 0;
-    
-    /**
-     * @brief Update the panel state
-     * This should be called regularly from the main loop
-     */
+    virtual void show(std::function<void()> callback_function) = 0;
     virtual void update() = 0;
-    
-    /**
-     * @brief Set a callback to be executed when the panel animation completes
-     * @param callback_function The function to call when animation is complete
-     */
-    virtual void set_completion_callback(std::function<void()> callback_function) = 0;
-    
-    /**
-     * @brief Virtual destructor
-     */
-    virtual ~IPanel() = default;
+
+    virtual PanelType get_type() const = 0;
+    virtual std::string get_name() const = 0;
 };

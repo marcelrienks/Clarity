@@ -1,6 +1,7 @@
-#define LGFX_USE_V1
-
 #include "main.h"
+
+// TODO: Update all method comments, and ensure they are copied to headers
+// TODO: in the headers put all private declarations at the bottom, all constructor/deconstructors together at the top, and match the order in the classes
 
 void setup()
 {
@@ -14,37 +15,16 @@ void setup()
 
     // Create panel manager
     _panel_manager = std::make_shared<PanelManager>(&_device);
-    
+
     // Create panels
     _splash_panel = std::make_shared<SplashPanel>();
     _demo_panel = std::make_shared<DemoPanel>();
-    
+
     // Register panels with the manager
-    _panel_manager->register_panel("splash", _splash_panel);
-    _panel_manager->register_panel("demo", _demo_panel);
-    
-    // Set default transition
-    TransitionConfig defaultTransition;
-    defaultTransition.type = TransitionType::FADE_IN;
-    defaultTransition.duration = 500;
-    defaultTransition.delay = 0;
-    _panel_manager->set_default_transition(defaultTransition);
-    
-    // Start with splash panel and set callback for when it completes
-    TransitionConfig splashTransition;
-    splashTransition.type = TransitionType::FADE_IN;
-    splashTransition.duration = 1000;
-    
-    _panel_manager->show_panel("splash", splashTransition, []() {
-      SerialLogger().log_point("main::setup()", "Splash panel completed...");
-      _is_setup_complete = true;
-      
-      // Show demo panel with fade transition
-      TransitionConfig demoTransition;
-      demoTransition.type = TransitionType::FADE_IN;
-      demoTransition.duration = 500;
-      _panel_manager->show_panel("demo", demoTransition);
-    });
+    _panel_manager->register_panel(_splash_panel);
+    _panel_manager->register_panel(_demo_panel);
+
+
   }
   catch (const std::exception &e)
   {
