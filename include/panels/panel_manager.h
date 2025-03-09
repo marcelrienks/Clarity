@@ -15,6 +15,15 @@
 
 class PanelManager
 {
+public:
+    PanelManager(IDevice *device);
+    ~PanelManager();
+
+    void register_panel(std::shared_ptr<IPanel> panel);
+    void show_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback = nullptr);
+    void show_panels_recursively();
+    void update_current_panel();
+
 private:
     IDevice *_device; // TODO: is this required, is it being used?
     std::list<std::shared_ptr<IPanel>> _panels;
@@ -25,13 +34,4 @@ private:
     bool _panel_locked = false;
 
     static void show_panel_timer_completion_callback(lv_timer_t *timer);
-
-public:
-    PanelManager(IDevice *device);
-    ~PanelManager();
-
-    void register_panel(std::shared_ptr<IPanel> panel);
-    void show_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback = nullptr);
-    void show_panels_recursively();
-    void update_current_panel();
 };

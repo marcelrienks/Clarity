@@ -69,6 +69,12 @@ Device::Device()
     setPanel(&_panel_instance);
 }
 
+Device::~Device()
+{
+    if (g_device_instance == this)
+        g_device_instance = nullptr;
+}
+
 /// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
@@ -85,22 +91,18 @@ void Device::prepare()
     lv_init();
 
     SerialLogger().log_point("Device::prepare()", "Display configuration...");
-    
+
     // setup screen
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
-    lv_display_set_flush_cb(display, Device::display_flush_wrapper);
+    lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 }
 
-/// @brief static Display Flush Wrapper function
-void Device::display_flush_wrapper(lv_display_t *display, const lv_area_t *area, unsigned char *data)
-{
-    if (g_device_instance != nullptr)
-        g_device_instance->display_flush_callback(display, area, data);
-}
-
-/// @brief Display Flush Callback function
+/// @brief Static Display Flush Wrapper function
+/// @param display
+/// @param area
+/// @param data
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
     uint32_t w = lv_area_get_width(area);
@@ -112,11 +114,4 @@ void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area
 
     g_device_instance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
     lv_disp_flush_ready(display);
-}
-
-/// @brief Device destructor to clean up global instance
-Device::~Device()
-{
-    if (g_device_instance == this)
-        g_device_instance = nullptr;
 }

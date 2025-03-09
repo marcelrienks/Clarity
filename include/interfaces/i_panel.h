@@ -20,14 +20,6 @@ enum class PanelType
 
 class IPanel
 {
-protected:
-// TODO: ensure that any properties that don't need to be edited in external classes, are protected, and gave get/set if needed
-    IDevice *_device;
-    lv_obj_t *_screen;
-    std::shared_ptr<IComponent> _component;
-    std::shared_ptr<ISensor> _sensor;
-    std::function<void()> _callback_function;
-
 public:
     virtual void init(IDevice *device) = 0;
     virtual void show(std::function<void()> callback_function) = 0;
@@ -35,4 +27,12 @@ public:
 
     virtual PanelType get_type() const = 0;
     virtual std::string get_name() const = 0;
+
+protected:
+    // TODO: ensure that any properties that don't need to be edited in external classes, are protected, and gave get/set if needed
+    IDevice *_device;
+    lv_obj_t *_screen;
+    std::shared_ptr<IComponent> _component;
+    std::shared_ptr<ISensor> _sensor;
+    std::function<void()> _callback_function;
 };

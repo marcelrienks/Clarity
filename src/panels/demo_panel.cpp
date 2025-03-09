@@ -2,20 +2,19 @@
 #include "components/demo_component.h"
 #include "sensors/demo_sensor.h"
 
-/// @brief DemoPanel constructor, generates a component and sensor
 DemoPanel::DemoPanel()
 {
     _component = std::make_shared<DemoComponent>();
     _sensor = std::make_shared<DemoSensor>();
 }
 
-/// @brief DemoPanel destructor to clean up dynamically allocated objects
 DemoPanel::~DemoPanel()
 {
     // Component and sensor are managed by shared_ptr and will be cleaned up automatically
 }
 
-/// @brief Initialize the screen with component and sensor
+/// @brief Initialize the panel for illustrating a demo
+/// @param device 
 void DemoPanel::init(IDevice *device)
 {
     SerialLogger().log_point("DemoPanel::init()", "Entry...");
@@ -30,7 +29,8 @@ void DemoPanel::init(IDevice *device)
     _component->init(_screen);
 }
 
-/// @brief Show the screen
+/// @brief Show the panel
+/// @param callback_function to be called when the panel show is completed
 void DemoPanel::show(std::function<void()> callback_function)
 {
     SerialLogger().log_point("DemoPanel::show()", "Entry...");
@@ -47,7 +47,7 @@ void DemoPanel::show(std::function<void()> callback_function)
 /// @brief Update the reading on the screen
 void DemoPanel::update()
 {
-    //SerialLogger().log_point("DemoPanel::update()", "Entry...");
+    SerialLogger().log_point("DemoPanel::update()", "Entry...");
 
     Reading reading = _sensor->get_reading();
     _component->update(reading);

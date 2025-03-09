@@ -2,10 +2,6 @@
 
 #include <iostream>
 
-/**
- * @brief Construct a new Panel Manager
- * @param device Pointer to the device instance
- */
 PanelManager::PanelManager(IDevice *device)
 {
     SerialLogger().log_point("PanelManager::PanelManager", "Entry...");
@@ -14,20 +10,14 @@ PanelManager::PanelManager(IDevice *device)
     _device = device;
 }
 
-/**
- * @brief Destroy the Panel Manager
- */
 PanelManager::~PanelManager()
 {
     SerialLogger().log_point("PanelManager::~PanelManager", "Entry...");
     _panels.clear();
 }
 
-/**
- * @brief Register a panel with the manager
- * @param panel The panel to register
- * @return True if successful, false if name already exists
- */
+/// @brief Register a panel with the manager
+/// @param panel The panel to register
 void PanelManager::register_panel(std::shared_ptr<IPanel> panel)
 {
     SerialLogger().log_point("PanelManager::register_panel", "Registering panel: " + panel->get_name());
@@ -40,13 +30,9 @@ void PanelManager::register_panel(std::shared_ptr<IPanel> panel)
     panel->init(_device);
 }
 
-/**
- * @brief Show a panel by its registered name
- * @param name The name of the panel to show
- * @param transition Optional transition config (uses default if not provided)
- * @param completion_callback Optional callback function to execute when transition completes
- * @return True if successful, false if panel not found
- */
+/// @brief Show the given panel
+/// @param panel the panel to be shown
+/// @param completion_callback the function to be called when the panel show is complete
 void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback)
 {
     auto name = panel->get_name();
@@ -61,10 +47,7 @@ void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void(
     _current_panel = panel.get();
 }
 
-/**
- * @brief Show the next panel in a sequence
- * @param depth depth of the current iteration of the recursion
- */
+/// @brief Show the next panel in a sequence
 void PanelManager::show_panels_recursively()
 {
     if (!_recursion_locked)
@@ -80,6 +63,8 @@ void PanelManager::show_panels_recursively()
         PanelManager::show_panel(*_panel_iterator,
                                  [this]()
                                  {
+                                    SerialLogger().log_point("PanelManager::show_panels_recursively", "show_panel completion callback...");
+
                                      // Unlock and return from recursion if we've reached the end of the list
                                      if (this->_recursion_depth != 0 && this->_panel_iterator == this->_panels.end())
                                      {
@@ -95,10 +80,7 @@ void PanelManager::show_panels_recursively()
     }
 }
 
-/**
- * @brief Update the current panel
- * @note This should be called from the main loop
- */
+/// @brief Update the reading on the currently loaded panel
 void PanelManager::update_current_panel()
 {
     SerialLogger().log_point("PanelManager::update_current_panel", "Entry...");
@@ -111,9 +93,8 @@ void PanelManager::update_current_panel()
     _current_panel->update();
 }
 
-/**
- * @brief Handle transition completion
- */
+/// @brief Callback function after the display time of the current panel has elapsed
+/// @param timer the timer that has elapsed
 void PanelManager::show_panel_timer_completion_callback(lv_timer_t *timer)
 {
     SerialLogger().log_point("PanelManager::show_panel_timer_completion_callback", "Entry...");

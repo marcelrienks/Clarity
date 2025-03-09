@@ -1,12 +1,10 @@
 #include "panels/splash_panel.h"
 
-/// @brief SplashPanel constructor, generates a component
 SplashPanel::SplashPanel()
 {
     _clarity_component = std::make_shared<ClarityComponent>();
 }
 
-/// @brief SplashPanel destructor to clean up dynamically allocated objects
 SplashPanel::~SplashPanel()
 {
     // LVGL screens will be automatically deleted by LVGL
@@ -31,6 +29,7 @@ void SplashPanel::init(IDevice *device)
 }
 
 /// @brief Show the screen
+/// @param callback_function the function to call when the splash screen is complete
 void SplashPanel::show(std::function<void()> callback_function)
 {
     SerialLogger().log_point("SplashPanel::show()", "Entry...");
@@ -100,6 +99,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 }
 
 /// @brief Callback for when the animation is complete
+/// @param timer the timer that has completed
 void SplashPanel::animation_complete_timer_callback(lv_timer_t *timer)
 {
     SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Entry...");

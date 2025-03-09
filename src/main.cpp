@@ -37,6 +37,7 @@ void loop()
 {
   try
   {
+    SerialLogger().log_point("main::loop()", "Entry...");
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks

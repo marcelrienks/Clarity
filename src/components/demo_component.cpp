@@ -3,14 +3,12 @@
 
 DemoComponent *g_demo_component_instance = nullptr;
 
-/// @brief DemoPanel constructor, generates a _scale with a needle line
 DemoComponent::DemoComponent()
 {
     g_demo_component_instance = this;
     _current_reading = 0;
 }
 
-/// @brief DemoComponent destructor to clean up dynamically allocated objects
 DemoComponent::~DemoComponent()
 {
     if (g_demo_component_instance)
@@ -23,7 +21,7 @@ DemoComponent::~DemoComponent()
         lv_obj_del(_scale);
 }
 
-/// @brief Initialize the component
+/// @brief Initialize a demo component to illustrate the use of a scale component
 void DemoComponent::init(lv_obj_t *virtual_screen)
 {
     _scale = lv_scale_create(virtual_screen);
@@ -108,8 +106,8 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     this->_start_time = millis();
 }
 
-/// @brief Change the value of the needle line
-/// @param value the value to set the needle line to
+/// @brief Update the reading of the needle
+/// @param reading the value of the reading to be used for updating the needle
 void DemoComponent::update(Reading reading)
 {
     int32_t *value = std::get_if<int32_t>(&reading);
@@ -145,7 +143,7 @@ void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_
 
     lv_anim_init(&animate_scale_line);
     lv_anim_set_var(&animate_scale_line, this->_needle_line);
-    lv_anim_set_exec_cb(&animate_scale_line, DemoComponent::set_needle_line_value_callback_wrapper);
+    lv_anim_set_exec_cb(&animate_scale_line, DemoComponent::set_needle_line_value_callback);
     lv_anim_set_duration(&animate_scale_line, animation_duration);
     lv_anim_set_repeat_count(&animate_scale_line, 0);
     lv_anim_set_playback_duration(&animate_scale_line, playback_duration);
@@ -153,16 +151,10 @@ void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_
     lv_anim_start(&animate_scale_line);
 }
 
-/// @brief Wrapper for the callback function to set the needle line value
-/// @param obj
-/// @param v
-void DemoComponent::set_needle_line_value_callback_wrapper(void *object, int32_t value)
-{
-    g_demo_component_instance->set_needle_line_value_callback(object, value);
-}
-
-/// @brief Callback function to set the needle line value
+/// @brief Callback function called repeatedly by the animation of the needle
+/// @param object the object to be animated
+/// @param value the value of the needle line
 void DemoComponent::set_needle_line_value_callback(void *object, int32_t value)
 {
-    lv_scale_set_line_needle_value(this->_scale, this->_needle_line, 60, value);
+    lv_scale_set_line_needle_value(g_demo_component_instance->_scale, g_demo_component_instance->_needle_line, 60, value);
 }
