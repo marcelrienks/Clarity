@@ -52,6 +52,8 @@ void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void(
     auto name = panel->get_name();
     SerialLogger().log_point("PanelManager::show_panel", "Entry: " + name);
 
+    _panel_locked = true;
+
     // Show the panel with the appropriate transition
     panel->show(completion_callback);
 
@@ -65,25 +67,32 @@ void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void(
  */
 void PanelManager::show_panels_recursively()
 {
-    SerialLogger().log_point("PanelManager::show_panels_iteratively", "Entry...");
+    if (!_recursion_locked)
+    {
+        SerialLogger().log_point("PanelManager::show_panels_recursively", "Entry...");
+        _recursion_locked = true;
 
-    // Initialise iterator if needed
-    if (_depth == 0 && _panel_iterator == _panels.end())
-        _panel_iterator = _panels.begin();
+        // Initialise iterator if needed
+        if (_recursion_depth == 0 && _panel_iterator == _panels.end())
+            _panel_iterator = _panels.begin();
 
-    PanelManager::show_panel(*_panel_iterator,
-                             [this]() // use a lambda rather than a callback function so that 'this' can be captured
-                             {
-                                 // Return if we've reached the end of the list
-                                 if (this->_depth != 0 && this->_panel_iterator == this->_panels.end())
+        // Show the next panel, and use a lambda rather than a separate callback function so that 'this' can be captured
+        PanelManager::show_panel(*_panel_iterator,
+                                 [this]()
                                  {
-                                    this->_depth = 0; // reset depth
-                                     return;
-                                 }
+                                     // Unlock and return from recursion if we've reached the end of the list
+                                     if (this->_recursion_depth != 0 && this->_panel_iterator == this->_panels.end())
+                                     {
+                                         this->_recursion_depth = 0; // reset depth
+                                         _recursion_locked = false;
+                                         return;
+                                     }
 
-                                 // Show the next panel after a configured display time
-                                 lv_timer_create(show_panel_timer_completion_callback, PANEL_DISPLAY_TIME, this);
-                             });
+                                     // Unlock panel for updates, and show the next panel after a configured display time
+                                     _panel_locked = false;
+                                     lv_timer_create(show_panel_timer_completion_callback, PANEL_DISPLAY_TIME, this);
+                                 });
+    }
 }
 
 /**
@@ -92,8 +101,10 @@ void PanelManager::show_panels_recursively()
  */
 void PanelManager::update_current_panel()
 {
-    // If no current panel, nothing to update
-    if (!_current_panel)
+    SerialLogger().log_point("PanelManager::update_current_panel", "Entry...");
+
+    // Return if there is no panel, or if it's locked during loading
+    if (!_current_panel || _panel_locked)
         return;
 
     // Update the current panel
@@ -105,8 +116,10 @@ void PanelManager::update_current_panel()
  */
 void PanelManager::show_panel_timer_completion_callback(lv_timer_t *timer)
 {
+    SerialLogger().log_point("PanelManager::show_panel_timer_completion_callback", "Entry...");
+
     auto *panel_manager = static_cast<PanelManager *>(lv_timer_get_user_data(timer));
     panel_manager->_panel_iterator++;
-    panel_manager->_depth++;
+    panel_manager->_recursion_depth++;
     panel_manager->show_panels_recursively();
 }

@@ -42,6 +42,8 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
+    _panel_manager->show_panels_recursively();
+
     // Update the current panel via the panel manager
     _panel_manager->update_current_panel();
 
