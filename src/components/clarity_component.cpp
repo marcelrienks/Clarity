@@ -3,7 +3,7 @@
 /// @brief Initialises the Clarity Component by rendering a splash screen
 /// @param screen the screen on which to render the component
 void ClarityComponent::init(lv_obj_t *screen) {
-    SerialLogger().log_point("ClarityComponent::init", "Entry...");
+    SerialLogger().log_point("ClarityComponent::init", "...");
     
     lv_obj_set_style_bg_color(screen, lv_color_black(), 0);
   

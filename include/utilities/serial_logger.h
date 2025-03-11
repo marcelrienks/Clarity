@@ -14,7 +14,7 @@ public:
     static void log_value(const std::string &point, const std::string &variable_name, const std::string &value, bool force_print = false, unsigned long time_threshold = 5000);
 
 private:
-    static bool _initialized;
+    static bool _is_initialized;
     static std::string _last_message;
     static uint32_t _duplicate_count;
     static unsigned long _last_log_time;

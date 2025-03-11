@@ -15,7 +15,7 @@ SplashPanel::~SplashPanel()
 /// @param device the device housing the screens
 void SplashPanel::init(IDevice *device)
 {
-    SerialLogger().log_point("SplashPanel::init()", "Entry...");
+    SerialLogger().log_point("SplashPanel::init()", "...");
 
     _device = device;
 
@@ -32,7 +32,7 @@ void SplashPanel::init(IDevice *device)
 /// @param callback_function the function to call when the splash screen is complete
 void SplashPanel::show(std::function<void()> callback_function)
 {
-    SerialLogger().log_point("SplashPanel::show()", "Entry...");
+    SerialLogger().log_point("SplashPanel::show()", "...");
 
     _callback_function = callback_function;
 
@@ -52,7 +52,7 @@ void SplashPanel::update()
 /// @param timer the timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("SplashPanel::fade_in_timer_callback()", "Entry...");
+    SerialLogger().log_point("SplashPanel::fade_in_timer_callback()", "...");
 
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
@@ -77,7 +77,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *timer)
 /// @param timer the timer that has completed
 void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("SplashPanel::fade_out_timer_callback()", "Entry...");
+    SerialLogger().log_point("SplashPanel::fade_out_timer_callback()", "...");
 
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));
@@ -102,7 +102,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *timer)
 /// @param timer the timer that has completed
 void SplashPanel::animation_complete_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Entry...");
+    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "...");
 
     // Get the splash panel instance
     auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(timer));

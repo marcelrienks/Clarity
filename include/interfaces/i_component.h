@@ -1,6 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include <lvgl.h>
+#include <lvgl.h>//TODO: review all includes
 #include <utilities/common_types.h>
 
 /// @brief UI elements

@@ -24,6 +24,8 @@ DemoComponent::~DemoComponent()
 /// @brief Initialize a demo component to illustrate the use of a scale component
 void DemoComponent::init(lv_obj_t *virtual_screen)
 {
+    SerialLogger().log_point("DemoComponent::init()", "...");
+
     _scale = lv_scale_create(virtual_screen);
     lv_obj_set_size(_scale, 150, 150);
     lv_scale_set_label_show(_scale, true);
@@ -110,6 +112,8 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
 /// @param reading the value of the reading to be used for updating the needle
 void DemoComponent::update(Reading reading)
 {
+    SerialLogger().log_point("DemoComponent::update()", "...");
+
     int32_t *value = std::get_if<int32_t>(&reading);
 
     if (millis() - _start_time < 3000)
@@ -139,6 +143,8 @@ void DemoComponent::update(Reading reading)
 /// @param end the ending value of the needle line
 void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end)
 {
+    SerialLogger().log_point("DemoComponent::animate_needle()", "...");
+
     static lv_anim_t animate_scale_line;
 
     lv_anim_init(&animate_scale_line);
@@ -156,5 +162,7 @@ void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_
 /// @param value the value of the needle line
 void DemoComponent::set_needle_line_value_callback(void *object, int32_t value)
 {
+    SerialLogger().log_point("DemoComponent::set_needle_line_value_callback()", "...");
+
     lv_scale_set_line_needle_value(g_demo_component_instance->_scale, g_demo_component_instance->_needle_line, 60, value);
 }

@@ -1,7 +1,7 @@
 #include "utilities/serial_logger.h"
 
 // Define static class members here
-bool SerialLogger::_initialized = false;
+bool SerialLogger::_is_initialized = false;
 std::string SerialLogger::_last_message = "";
 uint32_t SerialLogger::_duplicate_count = 0;
 unsigned long SerialLogger::_last_log_time = 0;
@@ -11,10 +11,10 @@ unsigned long SerialLogger::_last_log_time = 0;
 void SerialLogger::init(unsigned long baud_rate)
 {
 #ifdef CLARITY_DEBUG
-  if (!_initialized)
+  if (!_is_initialized)
   {
     Serial.begin(115200);
-    _initialized = true;
+    _is_initialized = true;
   }
 #endif
 }

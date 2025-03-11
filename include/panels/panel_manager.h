@@ -21,7 +21,7 @@ public:
 
     void register_panel(std::shared_ptr<IPanel> panel);
     void show_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback = nullptr);
-    void show_panels_recursively();
+    void show_all_panels();
     void update_current_panel();
 
 private:
@@ -29,9 +29,13 @@ private:
     std::list<std::shared_ptr<IPanel>> _panels;
     std::list<std::shared_ptr<IPanel>>::iterator _panel_iterator;
     IPanel *_current_panel;
-    int32_t _recursion_depth = 0;
-    bool _recursion_locked = false;
-    bool _panel_locked = false;
+    bool _is_recursion_locked = false; // this allows the panel manager to be locked during a cycle of recursion
+    bool _is_panel_locked = false; // this allows the panel to be locked during loading (animation, etc.)
 
-    static void show_panel_timer_completion_callback(lv_timer_t *timer);
+    void show_panel_from_iterator();
+
+    static void show_panel_completion_callback();
+    static void display_timer_callback(lv_timer_t *timer);
 };
+
+extern PanelManager *g_panel_manager_instance;

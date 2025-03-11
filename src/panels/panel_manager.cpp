@@ -2,17 +2,17 @@
 
 #include <iostream>
 
+// TODO: implement logic to prevent rendering splash types more than once
+PanelManager *g_panel_manager_instance = nullptr;
+
 PanelManager::PanelManager(IDevice *device)
 {
-    SerialLogger().log_point("PanelManager::PanelManager", "Entry...");
-
     // Set default transition
     _device = device;
 }
 
 PanelManager::~PanelManager()
 {
-    SerialLogger().log_point("PanelManager::~PanelManager", "Entry...");
     _panels.clear();
 }
 
@@ -36,9 +36,10 @@ void PanelManager::register_panel(std::shared_ptr<IPanel> panel)
 void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback)
 {
     auto name = panel->get_name();
-    SerialLogger().log_point("PanelManager::show_panel", "Entry: " + name);
+    SerialLogger().log_point("PanelManager::show_panel", "Panel: " + name);
 
-    _panel_locked = true;
+    // Lock the panel to prevent updating during loading
+    _is_panel_locked = true;
 
     // Show the panel with the appropriate transition
     panel->show(completion_callback);
@@ -47,60 +48,77 @@ void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void(
     _current_panel = panel.get();
 }
 
-/// @brief Show the next panel in a sequence
-void PanelManager::show_panels_recursively()
+void PanelManager::show_all_panels()
 {
-    if (!_recursion_locked)
+    if (!_is_recursion_locked && _panels.size() > 0)
     {
-        SerialLogger().log_point("PanelManager::show_panels_recursively", "Entry...");
-        _recursion_locked = true;
-
-        // Initialise iterator if needed
-        if (_recursion_depth == 0 && _panel_iterator == _panels.end())
-            _panel_iterator = _panels.begin();
-
-        // Show the next panel, and use a lambda rather than a separate callback function so that 'this' can be captured
-        PanelManager::show_panel(*_panel_iterator,
-                                 [this]()
-                                 {
-                                    SerialLogger().log_point("PanelManager::show_panels_recursively", "show_panel completion callback...");
-
-                                     // Unlock and return from recursion if we've reached the end of the list
-                                     if (this->_recursion_depth != 0 && this->_panel_iterator == this->_panels.end())
-                                     {
-                                         this->_recursion_depth = 0; // reset depth
-                                         _recursion_locked = false;
-                                         return;
-                                     }
-
-                                     // Unlock panel for updates, and show the next panel after a configured display time
-                                     _panel_locked = false;
-                                     lv_timer_create(show_panel_timer_completion_callback, PANEL_DISPLAY_TIME, this);
-                                 });
+        SerialLogger().log_point("PanelManager::show_all_panels", "...");
+        _is_recursion_locked = true;
+        _panel_iterator = _panels.begin();
+        PanelManager::show_panel_from_iterator();
     }
+}
+
+/// @brief Show the next panel in a sequence
+void PanelManager::show_panel_from_iterator()
+{
+    SerialLogger().log_point("PanelManager::show_panel_from_iterator", "...");
+
+    // Show the next panel, and use a lambda rather than a separate callback function so that 'this' can be captured
+    PanelManager::show_panel(*_panel_iterator, PanelManager::show_panel_completion_callback);
 }
 
 /// @brief Update the reading on the currently loaded panel
 void PanelManager::update_current_panel()
 {
-    SerialLogger().log_point("PanelManager::update_current_panel", "Entry...");
-
     // Return if there is no panel, or if it's locked during loading
-    if (!_current_panel || _panel_locked)
-        return;
+    if (_current_panel && !_is_panel_locked)
+    {
+        // Update the current panel
+        SerialLogger().log_point("PanelManager::update_current_panel", "...");
+        _current_panel->update();
+    }
+}
 
-    // Update the current panel
-    _current_panel->update();
+void PanelManager::show_panel_completion_callback()
+{
+    SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
+
+    // Unlock and return from recursion if we've reached the end of the list
+    if (g_panel_manager_instance->_is_recursion_locked && g_panel_manager_instance->_panel_iterator == g_panel_manager_instance->_panels.end())
+    {
+        SerialLogger().log_point("PanelManager::show_panel_completion_callback", "show_panel -> List end, unlock recursion");
+        g_panel_manager_instance->_is_recursion_locked = false;
+    }
+
+    // Unlock panel for updates, and show the next panel after a configured display time
+    else
+    {
+        SerialLogger().log_point("PanelManager::show_panel_completion_callback", "show_panel -> create display timer");
+        g_panel_manager_instance->_is_panel_locked = false;
+
+        //TODO: this causes a crash, why...
+        auto type = g_panel_manager_instance->_current_panel->get_type();
+
+        // create a display timer to show the current panel for an amount of time, unless it's a splash type
+        auto display_time = type == PanelType::Splash ? 1 : PANEL_DISPLAY_TIME;
+
+        lv_timer_create(display_timer_callback, display_time, g_panel_manager_instance);
+    }
 }
 
 /// @brief Callback function after the display time of the current panel has elapsed
 /// @param timer the timer that has elapsed
-void PanelManager::show_panel_timer_completion_callback(lv_timer_t *timer)
+void PanelManager::display_timer_callback(lv_timer_t *timer)
 {
-    SerialLogger().log_point("PanelManager::show_panel_timer_completion_callback", "Entry...");
-
+    SerialLogger().log_point("PanelManager::display_timer_callback", "...");
     auto *panel_manager = static_cast<PanelManager *>(lv_timer_get_user_data(timer));
+
+    // Remove the timer after transition, this replaces having to set a repeat on the timer
+    lv_timer_del(timer);
+
+    SerialLogger().log_point("PanelManager::increment", "...");
+    panel_manager->_current_panel = nullptr;
     panel_manager->_panel_iterator++;
-    panel_manager->_recursion_depth++;
-    panel_manager->show_panels_recursively();
+    panel_manager->show_panel_from_iterator();
 }

@@ -9,7 +9,7 @@ void setup()
   try
   {
     SerialLogger().init();
-    SerialLogger().log_point("main::setup()", "Entry...");
+    SerialLogger().log_point("main::setup()", "...");
 
     // Initialize device
     _device.prepare();
@@ -37,13 +37,13 @@ void loop()
 {
   try
   {
-    SerialLogger().log_point("main::loop()", "Entry...");
+    SerialLogger().log_point("main::loop()", "...");
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    _panel_manager->show_panels_recursively();
+    _panel_manager->show_all_panels();
 
     // Update the current panel via the panel manager
     _panel_manager->update_current_panel();

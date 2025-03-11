@@ -78,7 +78,7 @@ Device::~Device()
 /// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
-    SerialLogger().log_point("Device::prepare()", "Entry");
+    SerialLogger().log_point("Device::prepare()", "...");
 
     // Initialise screen
     init();

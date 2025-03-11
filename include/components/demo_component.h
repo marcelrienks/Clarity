@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_component.h"
+#include "utilities/serial_logger.h"
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>

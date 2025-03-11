@@ -17,7 +17,7 @@ DemoPanel::~DemoPanel()
 /// @param device 
 void DemoPanel::init(IDevice *device)
 {
-    SerialLogger().log_point("DemoPanel::init()", "Entry...");
+    SerialLogger().log_point("DemoPanel::init()", "...");
 
     _device = device;
     _screen = LvTools::create_blank_screen();
@@ -33,7 +33,7 @@ void DemoPanel::init(IDevice *device)
 /// @param callback_function to be called when the panel show is completed
 void DemoPanel::show(std::function<void()> callback_function)
 {
-    SerialLogger().log_point("DemoPanel::show()", "Entry...");
+    SerialLogger().log_point("DemoPanel::show()", "...");
 
     _callback_function = callback_function;
 
@@ -47,7 +47,7 @@ void DemoPanel::show(std::function<void()> callback_function)
 /// @brief Update the reading on the screen
 void DemoPanel::update()
 {
-    SerialLogger().log_point("DemoPanel::update()", "Entry...");
+    SerialLogger().log_point("DemoPanel::update()", "...");
 
     Reading reading = _sensor->get_reading();
     _component->update(reading);
