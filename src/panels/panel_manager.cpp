@@ -9,6 +9,14 @@ PanelManager::PanelManager(IDevice *device)
 {
     // Set default transition
     _device = device;
+
+    // Initialize the global instance pointer
+    g_panel_manager_instance = this;
+
+    // Initialize other members
+    _current_panel = nullptr;
+    _is_recursion_locked = false;
+    _is_panel_locked = false;
 }
 
 PanelManager::~PanelManager()
@@ -41,11 +49,11 @@ void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void(
     // Lock the panel to prevent updating during loading
     _is_panel_locked = true;
 
-    // Show the panel with the appropriate transition
-    panel->show(completion_callback);
-
     // Save as current panel
     _current_panel = panel.get();
+
+    // Show the panel with the appropriate transition
+    panel->show(completion_callback);
 }
 
 void PanelManager::show_all_panels()
@@ -64,8 +72,12 @@ void PanelManager::show_panel_from_iterator()
 {
     SerialLogger().log_point("PanelManager::show_panel_from_iterator", "...");
 
-    // Show the next panel, and use a lambda rather than a separate callback function so that 'this' can be captured
-    PanelManager::show_panel(*_panel_iterator, PanelManager::show_panel_completion_callback);
+    // Show the next panel in list, unless we're at the end of the list
+    if (_panel_iterator != _panels.end())
+        PanelManager::show_panel(*_panel_iterator, PanelManager::show_panel_completion_callback); // TODO: can this be converted to a lambda which captures 'this' an either executes the call back directly or implements it?
+
+    else
+        SerialLogger().log_point("PanelManager::show_panel_from_iterator", "we've reached the end of the list");
 }
 
 /// @brief Update the reading on the currently loaded panel
@@ -84,6 +96,13 @@ void PanelManager::show_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
 
+    // Check if the instance is valid
+    if (!g_panel_manager_instance)
+    {
+        SerialLogger().log_point("PanelManager::show_panel_completion_callback", "Error: g_panel_manager_instance is null");
+        return;
+    }
+
     // Unlock and return from recursion if we've reached the end of the list
     if (g_panel_manager_instance->_is_recursion_locked && g_panel_manager_instance->_panel_iterator == g_panel_manager_instance->_panels.end())
     {
@@ -91,19 +110,34 @@ void PanelManager::show_panel_completion_callback()
         g_panel_manager_instance->_is_recursion_locked = false;
     }
 
-    // Unlock panel for updates, and show the next panel after a configured display time
-    else
+    else // Unlock panel for updates, and show the next panel after a configured display time
     {
         SerialLogger().log_point("PanelManager::show_panel_completion_callback", "show_panel -> create display timer");
         g_panel_manager_instance->_is_panel_locked = false;
 
-        //TODO: this causes a crash, why...
-        auto type = g_panel_manager_instance->_current_panel->get_type();
+        // Check if current_panel is valid before accessing it
+        if (g_panel_manager_instance->_current_panel)
+        {
+            // Create a display timer to show the current panel for an amount of time, unless it's a splash type
+            auto display_time = g_panel_manager_instance->_current_panel->get_type() == PanelType::Splash ? 1 : PANEL_DISPLAY_TIME;
+            lv_timer_create(display_timer_callback, display_time, g_panel_manager_instance);
 
-        // create a display timer to show the current panel for an amount of time, unless it's a splash type
-        auto display_time = type == PanelType::Splash ? 1 : PANEL_DISPLAY_TIME;
+            // TODO: alternative, I think the below means that 'display_timer_callback' does not need to be static, and will have access to itself
+            //  lv_timer_create([this](lv_timer_t* timer) {
+            //      this->display_timer_callback(timer);
+            //  }, display_time, g_panel_manager_instance);
+        }
 
-        lv_timer_create(display_timer_callback, display_time, g_panel_manager_instance);
+        else // Handle the null case - perhaps try to move to the next panel directly
+        {
+            SerialLogger().log_point("PanelManager::show_panel_completion_callback", "Error: _current_panel is null");
+
+            if (g_panel_manager_instance->_is_recursion_locked)
+            {
+                g_panel_manager_instance->_panel_iterator++;
+                g_panel_manager_instance->show_panel_from_iterator();
+            }
+        }
     }
 }
 
@@ -114,11 +148,12 @@ void PanelManager::display_timer_callback(lv_timer_t *timer)
     SerialLogger().log_point("PanelManager::display_timer_callback", "...");
     auto *panel_manager = static_cast<PanelManager *>(lv_timer_get_user_data(timer));
 
+    SerialLogger().log_point("PanelManager::display_timer_callback", "completed display of panel " + panel_manager->_current_panel->get_name());
+
     // Remove the timer after transition, this replaces having to set a repeat on the timer
     lv_timer_del(timer);
 
     SerialLogger().log_point("PanelManager::increment", "...");
-    panel_manager->_current_panel = nullptr;
     panel_manager->_panel_iterator++;
     panel_manager->show_panel_from_iterator();
 }

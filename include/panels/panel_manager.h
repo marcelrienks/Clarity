@@ -29,8 +29,8 @@ private:
     std::list<std::shared_ptr<IPanel>> _panels;
     std::list<std::shared_ptr<IPanel>>::iterator _panel_iterator;
     IPanel *_current_panel;
-    bool _is_recursion_locked = false; // this allows the panel manager to be locked during a cycle of recursion
-    bool _is_panel_locked = false; // this allows the panel to be locked during loading (animation, etc.)
+    bool _is_recursion_locked = false; // this allows the panel manager to be locked during a cycle of recursion from show_all_panels()
+    bool _is_panel_locked = false; // this allows the panel to be locked during loading from show_panel()
 
     void show_panel_from_iterator();
 
