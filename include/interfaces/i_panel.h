@@ -29,7 +29,6 @@ public:
     virtual std::string get_name() const = 0;
 
 protected:
-    // TODO: ensure that any properties that don't need to be edited in external classes, are protected, and gave get/set if needed
     IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;

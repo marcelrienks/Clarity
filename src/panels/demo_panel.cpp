@@ -10,11 +10,18 @@ DemoPanel::DemoPanel()
 
 DemoPanel::~DemoPanel()
 {
-    // Component and sensor are managed by shared_ptr and will be cleaned up automatically
+    if (_screen)
+        lv_obj_clean(_screen);
+
+    if (_component)
+        _component.reset();
+
+    if (_sensor)
+        _sensor.reset();
 }
 
 /// @brief Initialize the panel for illustrating a demo
-/// @param device 
+/// @param device
 void DemoPanel::init(IDevice *device)
 {
     SerialLogger().log_point("DemoPanel::init()", "...");

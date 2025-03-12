@@ -34,8 +34,6 @@ private:
 
     void show_panel_from_iterator();
 
-    static void show_panel_completion_callback();
+    void show_panel_completion_callback();
     static void display_timer_callback(lv_timer_t *timer);
 };
-
-extern PanelManager *g_panel_manager_instance;

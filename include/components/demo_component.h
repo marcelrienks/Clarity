@@ -7,6 +7,13 @@
 #include <LovyanGFX.hpp>
 #include "utilities/common_types.h"
 
+struct NeedleAnimationContext
+{
+    IComponent *component;
+    lv_obj_t *needle_line;
+    lv_obj_t *scale;
+};
+
 class DemoComponent : public IComponent
 {
 public:
@@ -26,5 +33,3 @@ private:
 
     void animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end);
 };
-
-extern DemoComponent *g_demo_component_instance;
