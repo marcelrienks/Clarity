@@ -4,7 +4,6 @@
 
 #include "interfaces/i_device.h"
 #include "utilities/serial_logger.h"
-#include "utilities/lv_tools.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>

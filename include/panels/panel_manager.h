@@ -4,8 +4,6 @@
 #include "interfaces/i_device.h"
 #include "utilities/serial_logger.h"
 
-#include <vector>
-#include <map>
 #include <string>
 #include <functional>
 #include <memory>
@@ -24,13 +22,15 @@ public:
     void show_all_panels();
     void update_current_panel();
 
+protected:
+    IDevice *_device;
+
 private:
-    IDevice *_device; // TODO: is this required, is it being used?
     std::list<std::shared_ptr<IPanel>> _panels;
     std::list<std::shared_ptr<IPanel>>::iterator _panel_iterator;
     IPanel *_current_panel;
     bool _is_recursion_locked = false; // this allows the panel manager to be locked during a cycle of recursion from show_all_panels()
-    bool _is_panel_locked = false; // this allows the panel to be locked during loading from show_panel()
+    bool _is_panel_locked = false;     // this allows the panel to be locked during loading from show_panel()
 
     void show_panel_from_iterator();
 

@@ -9,7 +9,6 @@
 #include "panels/panel_manager.h"
 #include "device.h"
 
-#include <Arduino.h>
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
 #include <Preferences.h>

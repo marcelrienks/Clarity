@@ -1,7 +1,5 @@
 #include "panels/panel_manager.h"
 
-#include <iostream>
-
 PanelManager::PanelManager(IDevice *device)
 {
     // Set default transition
@@ -117,8 +115,8 @@ void PanelManager::show_panel_completion_callback()
         {
             SerialLogger().log_point("PanelManager::show_panel_completion_callback", "Error: _current_panel is null");
 
-            panel_manager_instance->_panel_iterator++;
-            panel_manager_instance->show_panel_from_iterator();
+            _panel_iterator++;
+            show_panel_from_iterator();
         }
     }
 }

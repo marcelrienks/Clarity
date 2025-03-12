@@ -4,12 +4,10 @@
 #include "interfaces/i_component.h"
 #include "interfaces/i_sensor.h"
 #include "utilities/serial_logger.h"
-#include "utilities/lv_tools.h"
 
 #include <lvgl.h>
 #include <functional>
 #include <memory>
-#include <typeinfo>
 
 enum class PanelType
 {

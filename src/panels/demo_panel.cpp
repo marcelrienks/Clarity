@@ -1,6 +1,7 @@
 #include "panels/demo_panel.h"
 #include "components/demo_component.h"
 #include "sensors/demo_sensor.h"
+#include "utilities/lv_tools.h"
 
 DemoPanel::DemoPanel()
 {

@@ -1,5 +1,4 @@
 #include "components/demo_component.h"
-#include <utilities/ticker.h>
 
 DemoComponent::DemoComponent()
 {
