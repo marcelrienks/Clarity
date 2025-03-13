@@ -6,18 +6,17 @@
 #include "utilities/ticker.h"
 #include "panels/demo_panel.h"
 #include "panels/splash_panel.h"
+#include "panels/panel_manager.h"
 #include "device.h"
 
-#include <Arduino.h>
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
 #include <Preferences.h>
+#include <memory>
 
+// Global device and preferences
 Device _device;
 Preferences _preferences;
 
-// Components
-SplashPanel *_splash_panel;
-DemoPanel *_demo_panel;
-
-static bool _is_setup_complete = false;
+// Panel manager
+std::shared_ptr<PanelManager> _panel_manager;

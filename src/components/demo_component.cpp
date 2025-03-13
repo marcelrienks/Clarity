@@ -1,18 +1,24 @@
 #include "components/demo_component.h"
-#include <utilities/ticker.h>
 
-DemoComponent *g_demo_component_instance = nullptr;
-
-/// @brief DemoPanel constructor, generates a _scale with a needle line
 DemoComponent::DemoComponent()
 {
-    g_demo_component_instance = this;
     _current_reading = 0;
 }
 
-/// @brief Initialize the component
+DemoComponent::~DemoComponent()
+{
+    if (_needle_line)
+        lv_obj_del(_needle_line);
+
+    if (_scale)
+        lv_obj_del(_scale);
+}
+
+/// @brief Initialize a demo component to illustrate the use of a scale component
 void DemoComponent::init(lv_obj_t *virtual_screen)
 {
+    SerialLogger().log_point("DemoComponent::init()", "...");
+
     _scale = lv_scale_create(virtual_screen);
     lv_obj_set_size(_scale, 150, 150);
     lv_scale_set_label_show(_scale, true);
@@ -95,10 +101,12 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     this->_start_time = millis();
 }
 
-/// @brief Change the value of the needle line
-/// @param value the value to set the needle line to
+/// @brief Update the reading of the needle
+/// @param reading the value of the reading to be used for updating the needle
 void DemoComponent::update(Reading reading)
 {
+    SerialLogger().log_point("DemoComponent::update()", "...");
+
     int32_t *value = std::get_if<int32_t>(&reading);
 
     if (millis() - _start_time < 3000)
@@ -128,41 +136,37 @@ void DemoComponent::update(Reading reading)
 /// @param end the ending value of the needle line
 void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end)
 {
-    static lv_anim_t animate_scale_line;
+    SerialLogger().log_point("DemoComponent::animate_needle()", "...");
 
+    auto *context = new NeedleAnimationContext{
+        this,
+        _needle_line,
+        _scale};
+
+    static lv_anim_t animate_scale_line;
     lv_anim_init(&animate_scale_line);
-    lv_anim_set_var(&animate_scale_line, this->_needle_line);
-    lv_anim_set_exec_cb(&animate_scale_line, DemoComponent::set_needle_line_value_callback_wrapper);
+    lv_anim_set_var(&animate_scale_line, context);
+    lv_anim_set_exec_cb(&animate_scale_line, set_needle_line_value_callback);
     lv_anim_set_duration(&animate_scale_line, animation_duration);
     lv_anim_set_repeat_count(&animate_scale_line, 0);
     lv_anim_set_playback_duration(&animate_scale_line, playback_duration);
     lv_anim_set_values(&animate_scale_line, start, end);
+
+    // Add deleted callback to clean up the context that was stored in the animation
+    lv_anim_set_deleted_cb(&animate_scale_line, [](lv_anim_t *animation)
+                           { delete static_cast<NeedleAnimationContext *>(animation->var); });
+
     lv_anim_start(&animate_scale_line);
 }
 
-/// @brief Wrapper for the callback function to set the needle line value
-/// @param obj
-/// @param v
-void DemoComponent::set_needle_line_value_callback_wrapper(void *object, int32_t value)
+/// @brief Callback function called repeatedly by the animation of the needle
+/// @param object the object to be animated
+/// @param value the value of the needle line
+void DemoComponent::set_needle_line_value_callback(void *callback_context, int32_t value)
 {
-    g_demo_component_instance->set_needle_line_value_callback(object, value);
-}
+    SerialLogger().log_point("DemoComponent::set_needle_line_value_callback()", "...");
 
-/// @brief Callback function to set the needle line value
-void DemoComponent::set_needle_line_value_callback(void *object, int32_t value)
-{
-    lv_scale_set_line_needle_value(this->_scale, this->_needle_line, 60, value);
-}
-
-/// @brief DemoComponent destructor to clean up dynamically allocated objects
-DemoComponent::~DemoComponent()
-{
-    if (g_demo_component_instance)
-        delete g_demo_component_instance;
-
-    if (_needle_line)
-        lv_obj_del(_needle_line);
-
-    if (_scale)
-        lv_obj_del(_scale);
+    auto *needle_animation_context = static_cast<NeedleAnimationContext *>(callback_context);
+    if (needle_animation_context && needle_animation_context->component)
+        lv_scale_set_line_needle_value(needle_animation_context->scale, needle_animation_context->needle_line, 60, value);
 }

@@ -4,7 +4,6 @@
 
 #include "interfaces/i_device.h"
 #include "utilities/serial_logger.h"
-#include "utilities/lv_tools.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
@@ -32,6 +31,14 @@
 
 class Device : public IDevice
 {
+public:
+    Device();
+    ~Device();
+
+    lv_obj_t *Screen;
+
+    void prepare() override;
+
 private:
     lgfx::Panel_GC9A01 _panel_instance;
     lgfx::Light_PWM _light_instance;
@@ -40,16 +47,7 @@ private:
     const static unsigned int _lv_buffer_size = SCREEN_WIDTH * 10;
     uint8_t _lv_buffer[2][_lv_buffer_size];
 
-    static void display_flush_wrapper(lv_display_t *display, const lv_area_t *area, unsigned char *data);
-    void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
-
-public:
-    Device();
-    ~Device();
-
-    lv_obj_t *screen;
-
-    void prepare() override;
+    static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 };
 
 // Global instance of the Device instantiated in the constructor (externally)

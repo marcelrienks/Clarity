@@ -1,35 +1,25 @@
-#define LGFX_USE_V1
-
 #include "main.h"
+
+// How can the show_panel/show_panels_recursively be used, in setup vs main, in order to show all panels, in a loop, but also allow regular updates of panels
+// TODO: Update all method comments, and ensure they are copied to headers
+// TODO: in the headers put all private declarations at the bottom, all constructor/deconstructors together at the top, and match the order in the classes
 
 void setup()
 {
   try
   {
-//TODO: convert this logic into a list of Panels that get rendered in order, using a Panel manager
-// This will allow for generic configuration of any screen to be shown, pending configs
-// Also see if it's possible to allow for a default transition, but each Panel can override that
-
     SerialLogger().init();
-    SerialLogger().log_point("main::setup()", "Entry...");
+    SerialLogger().log_point("main::setup()", "...");
 
+    // Initialize device
     _device.prepare();
 
-    // Splash screen
-    _splash_panel = new SplashPanel();
-    _splash_panel->init(&_device);
+    // Create panel manager
+    _panel_manager = std::make_shared<PanelManager>(&_device);
 
-    _demo_panel = new DemoPanel();
-    _demo_panel->init(&_device);
-
-    // Set up the callback for when splash screen completes
-    _splash_panel->set_completion_callback([&]() {
-      SerialLogger().log_point("main::set_completion_callback", "Splash Panel Completion...");
-      _is_setup_complete = true;
-      _demo_panel->show(); });
-
-    // Start with splash panel
-    _splash_panel->show();
+    // Register panels with the manager
+    _panel_manager->register_panel(std::make_shared<SplashPanel>());
+    _panel_manager->register_panel(std::make_shared<DemoPanel>());
   }
   catch (const std::exception &e)
   {
@@ -47,27 +37,22 @@ void loop()
 {
   try
   {
-    //SerialLogger().log_point("main::loop()", "Entry");
+    SerialLogger().log_point("main::loop()", "...");
     uint32_t start_time = millis();
 
-    // First process any pending LVGL tasks
+    // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    if (_is_setup_complete)
-    {
-      _demo_panel->update();
+    _panel_manager->show_all_panels();
 
-      // Process LVGL tasks again to render the changes immediately
-      Ticker::handle_lv_tasks();
-    }
+    // Update the current panel via the panel manager
+    _panel_manager->update_current_panel();
 
-    else
-      SerialLogger().log_point("main::loop()", "splash running...");
+    // Process LVGL tasks again to render the changes immediately
+    Ticker::handle_lv_tasks();
 
     // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(start_time);
-
-    //SerialLogger().log_point("main::loop()", "Completed");
   }
   catch (const std::exception &e)
   {

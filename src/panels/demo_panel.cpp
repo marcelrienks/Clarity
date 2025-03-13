@@ -1,59 +1,62 @@
 #include "panels/demo_panel.h"
 #include "components/demo_component.h"
 #include "sensors/demo_sensor.h"
-#include "device.h"
+#include "utilities/lv_tools.h"
 
-/// @brief DemoPanel constructor, generates a component and sensor
 DemoPanel::DemoPanel()
 {
-    _component = new DemoComponent();
-    _sensor = new DemoSensor();
+    _component = std::make_shared<DemoComponent>();
+    _sensor = std::make_shared<DemoSensor>();
 }
 
-/// @brief Set the function to be called on completion of this panel animations
-/// @param callback_function the function to be executed when animation is complete
-void DemoPanel::set_completion_callback(std::function<void()> callback_function)
+DemoPanel::~DemoPanel()
 {
-    _callback_function = callback_function;
+    if (_screen)
+        lv_obj_clean(_screen);
+
+    if (_component)
+        _component.reset();
+
+    if (_sensor)
+        _sensor.reset();
 }
 
-/// @brief Initialize the screen with component and sensor
+/// @brief Initialize the panel for illustrating a demo
+/// @param device
 void DemoPanel::init(IDevice *device)
 {
-    SerialLogger().log_point("DemoPanel::init()", "Entry...");
+    SerialLogger().log_point("DemoPanel::init()", "...");
 
     _device = device;
+    _screen = LvTools::create_blank_screen();
 
-    this->_screen = LvTools::create_blank_screen();
-    _component->init(this->_screen);
+    // Initialize the sensor
+    _sensor->init();
+
+    // Initialize the component with the screen
+    _component->init(_screen);
 }
 
-/// @brief Show the screen
-void DemoPanel::show()
+/// @brief Show the panel
+/// @param callback_function to be called when the panel show is completed
+void DemoPanel::show(std::function<void()> callback_function)
 {
-    SerialLogger().log_point("DemoPanel::show()", "Entry...");
+    SerialLogger().log_point("DemoPanel::show()", "...");
 
-    lv_scr_load(this->_screen);
+    _callback_function = callback_function;
+
+    lv_scr_load(_screen);
+
+    // Call the completion callback immediately since we have no animations
+    if (_callback_function)
+        _callback_function();
 }
 
 /// @brief Update the reading on the screen
 void DemoPanel::update()
 {
-    SerialLogger().log_point("DemoPanel::update()", "Entry...");
+    SerialLogger().log_point("DemoPanel::update()", "...");
 
     Reading reading = _sensor->get_reading();
     _component->update(reading);
-}
-
-/// @brief DemoPanel destructor to clean up dynamically allocated objects
-DemoPanel::~DemoPanel()
-{
-    if (_device)
-        delete _device;
-
-    if (_component)
-        delete _component;
-
-    if (_sensor)
-        delete _sensor;
 }
