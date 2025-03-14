@@ -2,25 +2,37 @@
 
 PanelManager::PanelManager(IDevice *device)
 {
-    // Set default transition
     _device = device;
 
-    // Initialize other members
-    _current_panel = nullptr;
     _is_recursion_locked = false;
     _is_panel_locked = false;
+
+    // Set current panel as the splash for initial loading
+    _current_panel = new SplashPanel();
+    _current_panel->init(_device);
+    is_splash_locked = false;
 }
 
 PanelManager::~PanelManager()
 {
     _panels.clear();
-    _current_panel = nullptr;
-    _device = nullptr;
+
+    if (_current_panel)
+    {
+        delete _current_panel;
+        _current_panel = nullptr;
+    }
+
+    if (_device)
+    {
+        delete _device;
+        _device = nullptr;
+    }
 }
 
 /// @brief Register a panel with the manager
 /// @param panel The panel to register
-void PanelManager::register_panel(std::shared_ptr<IPanel> panel)
+void PanelManager::register_panel(IPanel *panel)
 {
     SerialLogger().log_point("PanelManager::register_panel", "Registering panel: " + panel->get_name());
 
@@ -35,8 +47,10 @@ void PanelManager::register_panel(std::shared_ptr<IPanel> panel)
 /// @brief Show the given panel
 /// @param panel the panel to be shown
 /// @param show_panel_completion_callback the function to be called when the panel show is complete
-void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void()> show_panel_completion_callback)
+void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_completion_callback)
 {
+    SerialLogger().log_point("PanelManager::show_panel", "...");
+
     auto name = panel->get_name();
     SerialLogger().log_point("PanelManager::show_panel", "Panel: " + name);
 
@@ -44,28 +58,46 @@ void PanelManager::show_panel(std::shared_ptr<IPanel> panel, std::function<void(
     _is_panel_locked = true;
 
     // Save as current panel
-    _current_panel = panel.get();
+    _current_panel = panel;
 
     // Show the panel with the appropriate transition
     panel->show(show_panel_completion_callback);
 }
 
 /// @brief Show all panels in the list
-void PanelManager::show_all_panels()
+void PanelManager::show_all_panels_recursively()
 {
-    if (_panels.size() == 0)
+    if (_is_recursion_locked)
     {
-        SerialLogger().log_point("PanelManager::show_all_panels", "panel list is empty");
+        SerialLogger().log_point("PanelManager::show_all_panels", "recursion locked");
         return;
     }
 
-    if (!_is_recursion_locked)
+    SerialLogger().log_point("PanelManager::show_all_panels", "...");
+    _is_recursion_locked = true;
+
+    // Show Splash panel first, unless it's been disabled
+    if (!is_splash_locked)
     {
-        SerialLogger().log_point("PanelManager::show_all_panels", "showing panel from list");
-        _is_recursion_locked = true;
-        _panel_iterator = _panels.begin();
-        PanelManager::show_panel_from_iterator();
+        SerialLogger().log_point("PanelManager::show_all_panels", "handling splash panel");
+        is_splash_locked = true;
+        PanelManager::show_panel(_current_panel, [this]()
+                                 { PanelManager::show_panel_completion_callback(); });
+
+        return;
     }
+
+    if (_panels.size() == 0)
+    {
+        SerialLogger().log_point("PanelManager::show_all_panels", "panel list is empty");
+        // TODO: set up defaults
+        return;
+    }
+
+    SerialLogger().log_point("PanelManager::show_all_panels", "showing panel from list");
+    _is_recursion_locked = true;
+    _panel_iterator = _panels.begin();
+    PanelManager::show_panel_from_iterator();
 }
 
 /// @brief Show the next panel in a sequence

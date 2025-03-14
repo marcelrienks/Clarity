@@ -18,8 +18,8 @@ void setup()
     _panel_manager = std::make_shared<PanelManager>(&_device);
 
     // Register panels with the manager
-    _panel_manager->register_panel(std::make_shared<SplashPanel>());
-    _panel_manager->register_panel(std::make_shared<DemoPanel>());
+    //TODO: move this to panelmanager
+    _panel_manager->register_panel(new DemoPanel());
   }
   catch (const std::exception &e)
   {
@@ -43,7 +43,7 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    _panel_manager->show_all_panels();
+    _panel_manager->show_all_panels_recursively();
 
     // Update the current panel via the panel manager
     _panel_manager->update_current_panel();
