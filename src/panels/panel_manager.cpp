@@ -30,6 +30,11 @@ PanelManager::~PanelManager()
     }
 }
 
+void PanelManager::init() {
+    // Register panels with the manager
+    register_panel(new DemoPanel());
+}
+
 /// @brief Register a panel with the manager
 /// @param panel The panel to register
 void PanelManager::register_panel(IPanel *panel)

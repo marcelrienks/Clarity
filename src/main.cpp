@@ -16,10 +16,7 @@ void setup()
 
     // Create panel manager
     _panel_manager = std::make_shared<PanelManager>(&_device);
-
-    // Register panels with the manager
-    //TODO: move this to panelmanager
-    _panel_manager->register_panel(new DemoPanel());
+    _panel_manager->init();
   }
   catch (const std::exception &e)
   {

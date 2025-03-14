@@ -4,6 +4,7 @@
 #include "interfaces/i_device.h"
 #include "utilities/serial_logger.h"
 #include "splash_panel.h"
+#include "demo_panel.h"
 
 #include <string>
 #include <functional>
@@ -18,6 +19,7 @@ public:
     PanelManager(IDevice *device);
     ~PanelManager();
 
+    void init();
     void register_panel(IPanel *panel);
     void show_panel(IPanel *panel, std::function<void()> completion_callback = nullptr);
     void show_all_panels_recursively();
