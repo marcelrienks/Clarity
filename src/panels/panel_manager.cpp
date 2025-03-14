@@ -75,6 +75,7 @@ void PanelManager::show_all_panels_recursively()
 
     SerialLogger().log_point("PanelManager::show_all_panels", "...");
     _is_recursion_locked = true;
+    _panel_iterator = _panels.begin();
 
     // Show Splash panel first, unless it's been disabled
     if (!is_splash_locked)
@@ -94,9 +95,10 @@ void PanelManager::show_all_panels_recursively()
         return;
     }
 
+    // If recursion is not locked, splash has been handled, and list is not empty, start the recursion
+    // note show_panel_from_iterator will only be run from here again, once recursion is unlocked
+    // but it will continue to be called recursively from the display timer callback
     SerialLogger().log_point("PanelManager::show_all_panels", "showing panel from list");
-    _is_recursion_locked = true;
-    _panel_iterator = _panels.begin();
     PanelManager::show_panel_from_iterator();
 }
 
