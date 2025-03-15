@@ -1,5 +1,7 @@
 #include "panels/panel_manager.h"
 
+// TODO: I think panels should be shred pointers
+
 PanelManager::PanelManager(IDevice *device)
 {
     _device = device;
@@ -30,7 +32,8 @@ PanelManager::~PanelManager()
     }
 }
 
-void PanelManager::init() {
+void PanelManager::init()
+{
     // Register panels with the manager
     register_panel(new DemoPanel());
 }
@@ -56,16 +59,18 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 {
     SerialLogger().log_point("PanelManager::show_panel", "...");
 
+    if (panel == _current_panel)
+    {
+        SerialLogger().log_point("PanelManager::show_panel", "panel is currently already shown");
+        return;
+    }
+
     auto name = panel->get_name();
     SerialLogger().log_point("PanelManager::show_panel", "Panel: " + name);
 
     // Lock the panel to prevent updating during loading
     _is_panel_locked = true;
-
-    // Save as current panel
     _current_panel = panel;
-
-    // Show the panel with the appropriate transition
     panel->show(show_panel_completion_callback);
 }
 

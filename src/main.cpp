@@ -1,6 +1,13 @@
 #include "main.h"
 
-// How can the show_panel/show_panels_recursively be used, in setup vs main, in order to show all panels, in a loop, but also allow regular updates of panels
+// TODO: analyse all classes, and their objects between stack vs heap, or use smart pointers (like std::unique_ptr or std::shared_ptr)
+// based on research dynamic allocation is preferred for lv objects
+// Automatic storage (stack allocation, tied to a specific scope)
+//    SomeClass localObj;       // Object on stack
+//    SomeClass* ptr = &localObj; // Pointer to stack object
+// and Dynamic allocation (heap allocation, independent of scope, manually managed)
+//    SomeClass* ptr = new SomeClass(); // Object on heap
+
 // TODO: Update all method comments, and ensure they are copied to headers
 // TODO: in the headers put all private declarations at the bottom, all constructor/deconstructors together at the top, and match the order in the classes
 
@@ -34,12 +41,10 @@ void loop()
 {
   try
   {
-    SerialLogger().log_point("main::loop()", "...");
+    // SerialLogger().log_point("main::loop()", "...");
     uint32_t start_time = millis();
-
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
-
     _panel_manager->show_all_panels_recursively();
 
     // Update the current panel via the panel manager

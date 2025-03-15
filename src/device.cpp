@@ -1,7 +1,7 @@
 #include <device.h>
 
 /// @brief Global instance of the Device instantiated in the constructor used for static callback
-Device *g_device_instance = nullptr;
+Device *g_device_instance = nullptr;//TODO: how can I remove this?
 
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
 Device::Device()
@@ -47,8 +47,8 @@ Device::Device()
         cfg.dlen_16bit = false;
         cfg.bus_shared = false;
 
-#ifdef INVERT // this is causing colour inversion on builds
-        cfg.invert = true;
+#ifdef INVERT
+        cfg.invert = true; // Inverts all colours, background and contents, waveshare 1.28" requires true
 #endif
 
         _panel_instance.config(cfg);
@@ -84,7 +84,6 @@ void Device::prepare()
     init();
     initDMA();
     startWrite();
-    fillScreen(TFT_BLACK);
     setRotation(0);
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
@@ -105,6 +104,8 @@ void Device::prepare()
 /// @param data
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
+    //SerialLogger().log_point("Device::display_flush_callback()", "...");
+
     uint32_t w = lv_area_get_width(area);
     uint32_t h = lv_area_get_height(area);
     lv_draw_sw_rgb565_swap(data, w * h);

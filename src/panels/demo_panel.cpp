@@ -12,7 +12,7 @@ DemoPanel::DemoPanel()
 DemoPanel::~DemoPanel()
 {
     if (_screen)
-        lv_obj_clean(_screen);
+        lv_obj_delete(_screen);
 
     if (_component)
         _component.reset();
@@ -29,7 +29,7 @@ void DemoPanel::init(IDevice *device)
 
     _device = device;
     _screen = LvTools::create_blank_screen();
-
+    
     // Initialize the sensor
     _sensor->init();
 

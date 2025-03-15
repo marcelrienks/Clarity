@@ -32,11 +32,10 @@ void SplashPanel::init(IDevice *device)
     _device = device;
 
     // create blank screen to be loaded initially, and faded out to again at the end
-    _blank_screen = lv_obj_create(NULL);
-    LvTools().init_blank_screen(_blank_screen);
+    _blank_screen = LvTools::create_blank_screen();
 
     // Create splash screen
-    _screen = lv_obj_create(NULL);
+    _screen = LvTools::create_blank_screen();
     _clarity_component->init(_screen);
 }
 
