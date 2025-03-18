@@ -9,22 +9,17 @@
 #include <functional>
 #include <memory>
 
-enum class PanelType
-{
-    Splash,
-    Sensor,
-    Config
-};
-
 class IPanel
 {
 public:
+    PanelIteration Panel_Iteration;
+
+    virtual std::string get_name() const = 0;
+    virtual PanelType get_type() const = 0;
+
     virtual void init(IDevice *device) = 0;
     virtual void show(std::function<void()> callback_function) = 0;
     virtual void update() = 0;
-
-    virtual PanelType get_type() const = 0;
-    virtual std::string get_name() const = 0;
 
 protected:
     IDevice *_device;

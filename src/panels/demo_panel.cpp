@@ -3,10 +3,11 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-DemoPanel::DemoPanel()
+DemoPanel::DemoPanel(PanelIteration panel_iteration)
 {
     _component = std::make_shared<DemoComponent>();
     _sensor = std::make_shared<DemoSensor>();
+    Panel_Iteration = panel_iteration;
 }
 
 DemoPanel::~DemoPanel()
@@ -29,11 +30,7 @@ void DemoPanel::init(IDevice *device)
 
     _device = device;
     _screen = LvTools::create_blank_screen();
-    
-    // Initialize the sensor
     _sensor->init();
-
-    // Initialize the component with the screen
     _component->init(_screen);
 }
 

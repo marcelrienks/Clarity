@@ -1,8 +1,9 @@
 #include "panels/splash_panel.h"
 
-SplashPanel::SplashPanel()
+SplashPanel::SplashPanel(PanelIteration panel_iteration)
 {
-    _clarity_component = std::make_shared<ClarityComponent>();
+    _component = std::make_shared<ClarityComponent>();
+    Panel_Iteration = panel_iteration;
 }
 
 SplashPanel::~SplashPanel()
@@ -18,9 +19,6 @@ SplashPanel::~SplashPanel()
 
     if (_sensor)
         _sensor.reset();
-
-    if (_clarity_component)
-        _clarity_component.reset();
 }
 
 /// @brief Initialize the screen with component
@@ -30,13 +28,9 @@ void SplashPanel::init(IDevice *device)
     SerialLogger().log_point("SplashPanel::init()", "...");
 
     _device = device;
-
-    // create blank screen to be loaded initially, and faded out to again at the end
     _blank_screen = LvTools::create_blank_screen();
-
-    // Create splash screen
     _screen = LvTools::create_blank_screen();
-    _clarity_component->init(_screen);
+    _component->init(_screen);
 }
 
 /// @brief Show the screen
