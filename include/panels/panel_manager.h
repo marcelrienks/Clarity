@@ -33,16 +33,15 @@ protected:
     IDevice *_device;
 
 private:
-    std::list<std::shared_ptr<IPanel>> _panel_ptrs;
+    std::list<std::shared_ptr<IPanel>> _panels_ptr;
     std::list<std::shared_ptr<IPanel>>::iterator _panels_iterator;
     IPanel *_current_panel;
     bool _is_show_all_locked = false; // this allows the panel manager to be locked during a cycle of recursion from show_all_panels()
-    bool _is_panel_locked = false;     // this allows the panel to be locked during loading from show_panel()
+    bool _is_show_panel_locked = false;     // this allows the panel to be locked during loading from show_panel()
 
     static void display_timer_callback(lv_timer_t *timer);
 
     void init_default_panels();
     void register_panel(std::shared_ptr<IPanel> panel_ptr);
-    void show_next_panel();
     void show_panel_completion_callback();
 };

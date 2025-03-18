@@ -35,12 +35,12 @@ PanelManager::PanelManager(IDevice *device)
     _device = device;
     _current_panel = nullptr;
     _is_show_all_locked = false;
-    _is_panel_locked = false;
+    _is_show_panel_locked = false;
 }
 
 PanelManager::~PanelManager()
 {
-    _panel_ptrs.clear();
+    _panels_ptr.clear();
 
     if (_current_panel)
         _current_panel = nullptr;
@@ -56,10 +56,10 @@ void PanelManager::init()
 {
     // TODO: implement preferences
 
-    if (_panel_ptrs.size() == 0)
+    if (_panels_ptr.size() == 0)
         PanelManager::init_default_panels();
 
-    _panels_iterator = _panel_ptrs.begin();
+    _panels_iterator = _panels_ptr.begin();
 }
 
 void PanelManager::init_default_panels()
@@ -76,8 +76,8 @@ void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
     SerialLogger().log_point("PanelManager::register_panel", "Registering panel: " + panel_ptr->get_name());
 
     // Check if the panel already exists
-    if (std::find(_panel_ptrs.begin(), _panel_ptrs.end(), panel_ptr) == _panel_ptrs.end())
-        _panel_ptrs.push_back(panel_ptr); // Register the panel
+    if (std::find(_panels_ptr.begin(), _panels_ptr.end(), panel_ptr) == _panels_ptr.end())
+        _panels_ptr.push_back(panel_ptr); // Register the panel
 
     // Initialize the panel with the device
     panel_ptr->init(_device);
@@ -95,37 +95,17 @@ void PanelManager::show_all_panels()
     SerialLogger().log_point("PanelManager::show_all_panels", "...");
     _is_show_all_locked = true;
 
+    // List end logic
+    if (_panels_iterator == _panels_ptr.end())
+    {
+        SerialLogger().log_point("PanelManager::show_iterator_panel", "end of the list, resetting");
+        _panels_iterator = _panels_ptr.begin();
+    }
+
     // If recursion is not locked, and splash has been handled, start the recursion, this is meant for loop from main
     // Note: show_panel_from_iterator will only be run from here again, once recursion is unlocked
     // but will continue to be called recursively from the display timer callback
-    PanelManager::show_next_panel();
-}
-
-/// @brief Show the next panel in a sequence
-void PanelManager::show_next_panel()
-{
-    SerialLogger().log_point("PanelManager::show_panel_from_iterator", "...");
-
-    // Increment logic
-    if (_panels_iterator == _panel_ptrs.begin() && _current_panel != nullptr)
-    {
-        SerialLogger().log_point("PanelManager::show_panel_from_iterator", "incrementing panel iterator");
-        _panels_iterator++;
-    }
-
-    // List end logic
-    if (_panels_iterator == _panel_ptrs.end())
-    {
-        SerialLogger().log_point("PanelManager::show_panel_from_iterator", "we've reached the end of the list, unlocking recursion");
-        _is_show_all_locked = false;
-        _panels_iterator = _panel_ptrs.begin();
-        _current_panel = nullptr;
-        return;
-    }
-
-    auto panel = _panels_iterator->get();
-
-    PanelManager::show_panel(panel, [this]()
+    PanelManager::show_panel(_panels_iterator->get(), [this]()
                              { PanelManager::show_panel_completion_callback(); });
 }
 
@@ -136,9 +116,9 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 {
     SerialLogger().log_point("PanelManager::show_panel", "...");
 
-    if (_is_panel_locked)
+    if (_is_show_panel_locked)
     {
-        SerialLogger().log_point("PanelManager::show_all_panels", "show panel locked");
+        SerialLogger().log_point("PanelManager::show_panel", "show panel locked");
         return;
     }
 
@@ -156,17 +136,16 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
     }
 
     // Lock the panel to prevent updating during loading
-    _is_panel_locked = true;
+    _is_show_panel_locked = true;
     _current_panel = panel;
 
-    SerialLogger().log_point("PanelManager::show_panel", "Showing Panel: " + panel->get_name());
     panel->show(show_panel_completion_callback);
 }
 
 /// @brief Update the reading on the currently loaded panel
 void PanelManager::update_current_panel()
 {
-    if (_current_panel && !_is_panel_locked)
+    if (_current_panel && !_is_show_panel_locked)
     {
         SerialLogger().log_point("PanelManager::update_current_panel", "...");
         _current_panel->update();
@@ -176,7 +155,8 @@ void PanelManager::update_current_panel()
 void PanelManager::show_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
-    _is_panel_locked = false;
+    _is_show_panel_locked = false;
+    _panels_iterator++;
     int display_time = PANEL_DISPLAY_TIME;
 
     // Handle completion of Splash screen
@@ -198,10 +178,10 @@ void PanelManager::display_timer_callback(lv_timer_t *display_timer)
 {
     SerialLogger().log_point("PanelManager::display_timer_callback", "...");
     auto *panel_manager_instance = static_cast<PanelManager *>(lv_timer_get_user_data(display_timer));
+    panel_manager_instance->_is_show_all_locked = false;
 
     SerialLogger().log_point("PanelManager::display_timer_callback", "completed display of panel " + panel_manager_instance->_current_panel->get_name());
 
     // Remove the timer after transition, this replaces having to set a repeat on the timer
     lv_timer_del(display_timer);
-    panel_manager_instance->show_next_panel();
 }
