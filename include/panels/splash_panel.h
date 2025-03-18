@@ -4,9 +4,9 @@
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
 
-#define SPLASH_ANIMATION_TIME 1000
+#define SPLASH_ANIMATION_TIME 2000
 #define SPLASH_DELAY_TIME 0
-#define SPLASH_DISPLAY_TIME 500
+#define SPLASH_DISPLAY_TIME 850
 
 class SplashPanel : public IPanel
 {
