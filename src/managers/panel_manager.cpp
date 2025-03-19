@@ -1,34 +1,4 @@
-#include "panels/panel_manager.h"
-
-/*
-Show All
-    if Recursive
-        lock Recursive
-        Show Next
-
-Show Next
-    Increment
-
-    if Panel end
-        unlock Recursive
-        return
-
-    if Panel load
-        Show (Callback)
-
-Show (Callback)
-    if already shown
-        return
-
-    if Panel not Disabled
-        lock Panel load
-        Callback
-
-Callback
-    unlock Panel load
-    Show Next
-
-*/
+#include "managers/panel_manager.h"
 
 PanelManager::PanelManager(IDevice *device)
 {
@@ -52,6 +22,7 @@ PanelManager::~PanelManager()
     }
 }
 
+/// @brief initialises the Panel Manager for the first run
 void PanelManager::init()
 {
     // TODO: implement preferences
@@ -59,9 +30,10 @@ void PanelManager::init()
     if (_panels_ptr.size() == 0)
         PanelManager::init_default_panels();
 
-    _panels_iterator = _panels_ptr.begin();
+    _panels_ptr_it = _panels_ptr.begin();
 }
 
+/// @brief initialises a default list of panels
 void PanelManager::init_default_panels()
 {
     // Register panels with the manager
@@ -96,16 +68,16 @@ void PanelManager::show_all_panels()
     _is_show_all_locked = true;
 
     // List end logic
-    if (_panels_iterator == _panels_ptr.end())
+    if (_panels_ptr_it == _panels_ptr.end())
     {
         SerialLogger().log_point("PanelManager::show_iterator_panel", "end of the list, resetting");
-        _panels_iterator = _panels_ptr.begin();
+        _panels_ptr_it = _panels_ptr.begin();
     }
 
     // If recursion is not locked, and splash has been handled, start the recursion, this is meant for loop from main
     // Note: show_panel_from_iterator will only be run from here again, once recursion is unlocked
     // but will continue to be called recursively from the display timer callback
-    PanelManager::show_panel(_panels_iterator->get(), [this]()
+    PanelManager::show_panel(_panels_ptr_it->get(), [this]()
                              { PanelManager::show_panel_completion_callback(); });
 }
 
@@ -152,11 +124,12 @@ void PanelManager::update_current_panel()
     }
 }
 
+/// @brief callback function to be executed on panel show completion
 void PanelManager::show_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
     _is_show_panel_locked = false;
-    _panels_iterator++;
+    _panels_ptr_it++;
     int display_time = PANEL_DISPLAY_TIME;
 
     // Handle completion of Splash screen
@@ -172,7 +145,7 @@ void PanelManager::show_panel_completion_callback()
     lv_timer_create(PanelManager::display_timer_callback, display_time, this);
 }
 
-/// @brief Callback function after the display time of the current panel has elapsed
+/// @brief callback function to be executed when display time of the current panel has elapsed
 /// @param display_timer the timer that has elapsed
 void PanelManager::display_timer_callback(lv_timer_t *display_timer)
 {

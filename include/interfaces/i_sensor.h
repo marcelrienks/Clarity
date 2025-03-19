@@ -1,6 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include <utilities/common_types.h>
+#include <utilities/types.h>
 
 /// @brief Data sources
 class ISensor

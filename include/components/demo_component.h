@@ -4,7 +4,7 @@
 #include "utilities/serial_logger.h"
 
 #include <lvgl.h>
-#include "utilities/common_types.h"
+#include "utilities/types.h"
 
 struct NeedleAnimationContext
 {

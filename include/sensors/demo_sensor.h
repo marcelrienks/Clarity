@@ -2,7 +2,7 @@
 
 #include "interfaces/i_sensor.h"
 #include "utilities/serial_logger.h"
-#include "utilities/common_types.h"
+#include "utilities/types.h"
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
