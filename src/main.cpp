@@ -43,11 +43,12 @@ void loop()
   {
     // SerialLogger().log_point("main::loop()", "...");
     uint32_t start_time = millis();
+
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
-    _panel_manager->show_all_panels();
 
     // Update the current panel via the panel manager
+    _panel_manager->show_all_panels();
     _panel_manager->update_current_panel();
 
     // Process LVGL tasks again to render the changes immediately

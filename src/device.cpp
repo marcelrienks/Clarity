@@ -96,6 +96,9 @@ void Device::prepare()
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+    // Default theme with Dark screen
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x000000), LV_PART_MAIN);
 }
 
 /// @brief Static Display Flush Wrapper function
