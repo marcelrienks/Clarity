@@ -19,7 +19,7 @@ public:
     DemoComponent();
     ~DemoComponent();
 
-    void init(lv_obj_t *virtual_screen) override;
+    void init(lv_obj_t *screen) override;
     void update(Reading reading) override;
 
 private:

@@ -7,6 +7,6 @@
 class IComponent
 {
 public:    
-    virtual void init(lv_obj_t *virtual_screen) = 0;
+    virtual void init(lv_obj_t *screen) = 0;
     virtual void update(Reading value) = 0;
 };

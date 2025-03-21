@@ -11,6 +11,8 @@
 // TODO: Update all method comments, and ensure they are copied to headers
 // TODO: in the headers put all private declarations at the bottom, all constructor/deconstructors together at the top, and match the order in the classes
 
+// TODO: Interfaces should define behavior, not data members, so move all props to concrete class, but define get/set in interface, to force the access
+
 void setup()
 {
   try

@@ -15,11 +15,11 @@ DemoComponent::~DemoComponent()
 }
 
 /// @brief Initialize a demo component to illustrate the use of a scale component
-void DemoComponent::init(lv_obj_t *virtual_screen)
+void DemoComponent::init(lv_obj_t *screen)
 {
     SerialLogger().log_point("DemoComponent::init()", "...");
 
-    _scale = lv_scale_create(virtual_screen);
+    _scale = lv_scale_create(screen);
     lv_obj_set_size(_scale, 150, 150);
     lv_scale_set_label_show(_scale, true);
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_OUTER);
