@@ -13,27 +13,28 @@
 
 // TODO: Interfaces should define behavior, not data members, so move all props to concrete class, but define get/set in interface, to force the access
 
-void setup()
-{
-  try
-  {
+void setup() {
+  try {
     SerialLogger().init();
     SerialLogger().log_point("main::setup()", "...");
 
     // Initialize device
     _device.prepare();
+    
+    // Initialize preferences
+    if (!_preferences.begin()) {
+      SerialLogger().log_point("main::setup()", "Failed to initialize preferences");
+    }
 
-    // Create panel manager
-    _panel_manager = std::make_shared<PanelManager>(&_device);
+    // Create panel manager with preferences
+    _panel_manager = std::make_shared<PanelManager>(&_device, &_preferences);
     _panel_manager->init();
   }
-  catch (const std::exception &e)
-  {
+  catch (const std::exception& e) {
     SerialLogger().log(e.what());
     throw;
   }
-  catch (...)
-  {
+  catch (...) {
     SerialLogger().log_point("main::setup()", "Unknown exception occurred");
     throw;
   }

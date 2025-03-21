@@ -1,9 +1,10 @@
 #include "managers/panel_manager.h"
+#include "panels/splash_panel.h"
+#include "panels/demo_panel.h"
 
-PanelManager::PanelManager(IDevice *device)
+PanelManager::PanelManager(IDevice *device, PreferenceManager *preference_manager)
+    : _device(device), _preference_manager(preference_manager), _current_panel(nullptr)
 {
-    _device = device;
-    _current_panel = nullptr;
     _is_show_all_locked = false;
     _is_show_panel_locked = false;
 }
@@ -11,38 +12,66 @@ PanelManager::PanelManager(IDevice *device)
 PanelManager::~PanelManager()
 {
     _panels_ptr.clear();
-
-    if (_current_panel)
-        _current_panel = nullptr;
-
-    if (_device)
-    {
-        delete _device;
-        _device = nullptr;
-    }
+    _current_panel = nullptr;
 }
 
-/// @brief initialises the Panel Manager for the first run
 void PanelManager::init()
 {
-    // TODO: implement preferences
+    // Register all available panel types with the factory
+    register_panel_types();
 
-    if (_panels_ptr.size() == 0)
-        PanelManager::init_default_panels();
+    // Load panel configuration from preferences
+    load_panels_from_preferences();
 
     _panels_ptr_it = _panels_ptr.begin();
 }
 
-/// @brief initialises a default list of panels
-void PanelManager::init_default_panels()
+void PanelManager::register_panel_types()
 {
-    // Register panels with the manager
-    PanelManager::register_panel(std::make_shared<SplashPanel>(PanelIteration::Once));
-    PanelManager::register_panel(std::make_shared<DemoPanel>(PanelIteration::Infinite));
+    // Register all known panel types with the factory
+    PanelFactory &factory = PanelFactory::get_instance();
+    factory.register_panel_type<SplashPanel>("SplashPanel");
+    factory.register_panel_type<DemoPanel>("DemoPanel");
+
+    // Register more panel types here as they are added
 }
 
-/// @brief Register a panel with the manager
-/// @param panel_ptr The panel to register
+void PanelManager::load_panels_from_preferences()
+{
+    // Clear any existing panels
+    _panels_ptr.clear();
+
+    // Attempt to load panel configuration from preferences
+    std::vector<PanelConfig> configs = _preference_manager->load_panel_configs();
+
+    // If no configurations were found, save and load defaults
+    if (configs.empty())
+    {
+        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "No panel configurations found. Using defaults.");
+        _preference_manager->save_default_panel_configs();
+        configs = _preference_manager->load_panel_configs();
+    }
+
+    // Create and register each panel from the configuration
+    PanelFactory &factory = PanelFactory::get_instance();
+    for (const auto &config : configs)
+    {
+        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Loading panel: " + config.type_name);
+
+        if (factory.is_panel_type_registered(config.type_name))
+        {
+            auto panel = factory.create_panel(config.type_name, config.iteration);
+            if (panel)
+                register_panel(panel);
+
+            else
+                SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Failed to create panel: " + config.type_name);
+        }
+        else
+            SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Unknown panel type: " + config.type_name);
+    }
+}
+
 void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
 {
     SerialLogger().log_point("PanelManager::register_panel", "Registering panel: " + panel_ptr->get_name());

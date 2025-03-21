@@ -41,9 +41,6 @@ void SplashPanel::show(std::function<void()> show_panel_completion_callback)
 
     _callback_function = show_panel_completion_callback;
 
-    // Initially show a blank screen, than fade in the splash
-    lv_scr_load(_blank_screen);// TODO: Confirm if i need this
-
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
