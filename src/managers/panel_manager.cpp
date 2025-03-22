@@ -30,8 +30,8 @@ void PanelManager::register_panel_types()
 {
     // Register all known panel types with the factory
     PanelFactory &factory = PanelFactory::get_instance();
-    factory.register_panel_type<SplashPanel>("SplashPanel");
-    factory.register_panel_type<DemoPanel>("DemoPanel");
+    factory.register_panel<SplashPanel>("SplashPanel");
+    factory.register_panel<DemoPanel>("DemoPanel");
 
     // Register more panel types here as they are added
 }
@@ -56,19 +56,19 @@ void PanelManager::load_panels_from_preferences()
     PanelFactory &factory = PanelFactory::get_instance();
     for (const auto &config : configs)
     {
-        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Loading panel: " + config.type_name);
+        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Loading panel: " + config.panel_name);
 
-        if (factory.is_panel_type_registered(config.type_name))
+        if (factory.is_panel_type_registered(config.panel_name))
         {
-            auto panel = factory.create_panel(config.type_name, config.iteration);
+            auto panel = factory.create_panel(config.panel_name, config.iteration);
             if (panel)
                 register_panel(panel);
 
             else
-                SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Failed to create panel: " + config.type_name);
+                SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Failed to create panel: " + config.panel_name);
         }
         else
-            SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Unknown panel type: " + config.type_name);
+            SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Unknown panel type: " + config.panel_name);
     }
 }
 
@@ -130,7 +130,7 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
         return;
     }
 
-    if (panel->Panel_Iteration == PanelIteration::Disabled)
+    if (panel->get_iteration() == PanelIteration::Disabled)
     {
         SerialLogger().log_point("PanelManager::show_panel", panel->get_name() + " is disabled");
         return;
@@ -165,8 +165,8 @@ void PanelManager::show_panel_completion_callback()
     if (_current_panel->get_type() == PanelType::Splash)
     {
         display_time = 100;
-        if (_current_panel->Panel_Iteration == PanelIteration::Once)
-            _current_panel->Panel_Iteration = PanelIteration::Disabled;
+        if (_current_panel->get_iteration() == PanelIteration::Once)
+            _current_panel->set_iteration(PanelIteration::Disabled);
     }
 
     // Create a display timer to show the current panel for an amount of time, unless it's a splash type

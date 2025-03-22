@@ -6,19 +6,14 @@
 #include <string>
 #include "utilities/types.h"
 
-struct PanelConfig {
-    std::string type_name;
-    PanelIteration iteration;
-};
-
 class PreferenceManager {
 private:
     Preferences _preferences;
-    const char* _namespace;
+    const char *_namespace;
     bool _is_initialized;
 
 public:
-    PreferenceManager(const char* name = "clarity");
+    PreferenceManager(const char *name = "clarity");
     ~PreferenceManager();
     
     bool begin();

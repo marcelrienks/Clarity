@@ -3,13 +3,6 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-DemoPanel::DemoPanel(PanelIteration panel_iteration)
-{
-    _component = std::make_shared<DemoComponent>();
-    _sensor = std::make_shared<DemoSensor>();
-    Panel_Iteration = panel_iteration;
-}
-
 DemoPanel::~DemoPanel()
 {
     if (_screen)

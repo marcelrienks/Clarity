@@ -4,24 +4,35 @@
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
 
-#define SPLASH_ANIMATION_TIME 2000
-#define SPLASH_DELAY_TIME 0
-#define SPLASH_DISPLAY_TIME 850
-
 class SplashPanel : public IPanel
 {
 public:
-    SplashPanel(PanelIteration panel_iteration);
+    SplashPanel(PanelIteration panel_iteration) : _component(std::make_shared<ClarityComponent>()),
+                                                  _iteration(panel_iteration) {};
     ~SplashPanel();
 
-    std::string get_name() const {return "SplashPanel";};
-    PanelType get_type() const {return PanelType::Splash;};
+    std::string get_name() const { return _name; };
+    PanelType get_type() const { return _type; };
+    PanelIteration get_iteration() const { return _iteration; };
+    void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
 
     void init(IDevice *device) override;
     void show(std::function<void()> callback_function) override;
     void update() override;
 
 private:
+    // Panel specific constants
+    static constexpr const char *_name = "Splash";
+    static constexpr const PanelType _type = PanelType::Splash;
+    static constexpr const int _animation_time = 2000;
+    static constexpr const int _delay_time = 0;
+    static constexpr const int _display_time = 850;
+    PanelIteration _iteration = PanelIteration::Once; // this must be modifiable to allow for personalization
+
+    // Components
+    IDevice *_device;
+    lv_obj_t *_screen;
+    std::shared_ptr<IComponent> _component;
     lv_obj_t *_blank_screen;
 
     static void fade_in_timer_callback(lv_timer_t *timer);

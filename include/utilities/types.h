@@ -6,9 +6,6 @@
 // Define the possible return types for the sensor readings
 using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>;
 
-//TODO: is there value in a seperate file, or within th eheader they relate to
-
-//TODO: is there value in this?
 enum class PanelType
 {
     Splash,
@@ -21,4 +18,9 @@ enum class PanelIteration
     Infinite,
     Disabled,
     Once
+};
+
+struct PanelConfig {
+    std::string panel_name;
+    PanelIteration iteration;
 };

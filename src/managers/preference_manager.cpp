@@ -33,10 +33,10 @@ bool PreferenceManager::save_panel_configs(const std::vector<PanelConfig> &confi
     _preferences.putUInt("panel_count", configs.size());
     
     for (size_t i = 0; i < configs.size(); i++) {
-        std::string key_name = "panel_" + std::to_string(i) + "_name";
-        std::string key_iteration = "panel_" + std::to_string(i) + "_iteration";
+        std::string key_name = "pnl_" + std::to_string(i) + "_nm";
+        std::string key_iteration = "pnl_" + std::to_string(i) + "_it";
         
-        _preferences.putString(key_name.c_str(), configs[i].type_name.c_str());
+        _preferences.putString(key_name.c_str(), configs[i].panel_name.c_str());
         _preferences.putUChar(key_iteration.c_str(), static_cast<uint8_t>(configs[i].iteration));
     }
     
@@ -54,11 +54,11 @@ std::vector<PanelConfig> PreferenceManager::load_panel_configs() {
     uint32_t panelCount = _preferences.getUInt("panel_count", 0);
     
     for (uint32_t i = 0; i < panelCount; i++) {
-        std::string key_name = "panel_" + std::to_string(i) + "_name";
-        std::string key_iteration = "panel_" + std::to_string(i) + "_iteration";
+        std::string key_name = "pnl_" + std::to_string(i) + "_nm";
+        std::string key_iteration = "pnl_" + std::to_string(i) + "_it";
         
         PanelConfig config;
-        config.type_name = _preferences.getString(key_name.c_str(), "").c_str();
+        config.panel_name = _preferences.getString(key_name.c_str(), "").c_str();
         config.iteration = static_cast<PanelIteration>(_preferences.getUChar(key_iteration.c_str(), 
             static_cast<uint8_t>(PanelIteration::Infinite)));
         
@@ -74,6 +74,8 @@ bool PreferenceManager::clear_panel_configs() {
 }
 
 bool PreferenceManager::save_default_panel_configs() {
+    SerialLogger().log_point("PreferenceManager::save_default_panel_configs", "...");
+
     std::vector<PanelConfig> defaultConfigs = {
         {"SplashPanel", PanelIteration::Once},
         {"DemoPanel", PanelIteration::Infinite}
