@@ -11,6 +11,10 @@ private:
     Preferences _preferences;
     const char *_namespace;
     bool _is_initialized;
+    
+    // Serialization helpers
+    std::vector<uint8_t> serialize_panel_configs(const std::vector<PanelConfig>& configs);
+    std::vector<PanelConfig> deserialize_panel_configs(const std::vector<uint8_t>& data);
 
 public:
     PreferenceManager(const char *name = "clarity");
