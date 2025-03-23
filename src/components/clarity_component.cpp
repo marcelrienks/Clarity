@@ -13,7 +13,7 @@ void ClarityComponent::init(lv_obj_t *screen) {
     lv_obj_set_style_img_recolor_opa(splash, LV_OPA_COVER, 0);
 }
 
-void ClarityComponent::update(Reading value)
+void ClarityComponent::update(Reading reading, std::function<void()> update_component_completion_callback)
 {
     // Not needed but required to satisfy interface
 }

@@ -29,24 +29,29 @@ void DemoPanel::init(IDevice *device)
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> callback_function)
+void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::show()", "...");
+    _show_panel_completion_callback = show_panel_completion_callback;
 
-    _callback_function = callback_function;
+    lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback,
+                        LV_EVENT_SCREEN_LOADED, this);
 
     lv_scr_load(_screen);
-
-    // Call the completion callback immediately since we have no animations
-    if (_callback_function)
-        _callback_function();
 }
 
 /// @brief Update the reading on the screen
-void DemoPanel::update()
+void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::update()", "...");
+    _update_panel_completion_callback = update_panel_completion_callback;
 
     Reading reading = _sensor->get_reading();
-    _component->update(reading);
+    _component->update(reading, update_panel_completion_callback);
+}
+
+void DemoPanel::show_panel_completion_callback(lv_event_t *event)
+{
+    auto this_instance = static_cast<DemoPanel*>(lv_event_get_user_data(event));
+    this_instance->_show_panel_completion_callback();
 }

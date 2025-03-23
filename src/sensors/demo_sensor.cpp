@@ -15,18 +15,21 @@ void DemoSensor::init()
 /// @return temperature reading
 Reading DemoSensor::get_reading()
 {
-    int elapsed_time = millis() - this->last_read_time;
+    int millies = millis();
+    int elapsed_time = millies - this->last_read_time;
 
     // This is where the sensor would be read, and potentially the data interpreted to some degree
     if (this->last_read_time == 0 || elapsed_time > 1000)
     {
-        this->last_read_time = millis();
+        this->last_read_time = millies;
 
         // Generate a random number in the range [0, 100]
         this->current_reading = _distribution(_engine);
 
         SerialLogger().log_value("DemoSensor::get_reading()", "currentReading", std::to_string(this->current_reading));
     }
-    
+    else
+        SerialLogger().log_value("DemoSensor::get_reading()", "Reading bypassed because elapsed_time", std::to_string(elapsed_time));
+
     return this->current_reading;
 }

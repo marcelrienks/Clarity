@@ -30,13 +30,12 @@ void SplashPanel::show(std::function<void()> show_panel_completion_callback)
 {
     SerialLogger().log_point("SplashPanel::show()", "...");
 
-    _callback_function = show_panel_completion_callback;
-
+    _show_panel_completion_callback = show_panel_completion_callback;
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::update()
+void SplashPanel::update(std::function<void()> update_panel_completion_callback)
 {
     // Not needed but required to satisfy interface
 }
@@ -101,10 +100,10 @@ void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
     auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
 
     // Call the completion callback if it exists
-    if (this_instance->_callback_function)
+    if (this_instance->_show_panel_completion_callback)
     {
         SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Executing splash callback");
-        this_instance->_callback_function();
+        this_instance->_show_panel_completion_callback();
     }
     else
         SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "No callback set");

@@ -19,8 +19,8 @@ public:
     void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
 
     void init(IDevice *device) override;
-    void show(std::function<void()> callback_function) override;
-    void update() override;
+    void show(std::function<void()> show_panel_completion_callback) override;
+    void update(std::function<void()> update_panel_completion_callback = nullptr) override;
 
 private:
     // Panel specific constants
@@ -33,4 +33,7 @@ private:
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     std::shared_ptr<ISensor> _sensor;
+
+    static void show_panel_completion_callback(lv_event_t* event);
+    static void update_panel_completion_callback(lv_event_t* event);
 };

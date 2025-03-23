@@ -6,7 +6,7 @@ PanelManager::PanelManager(IDevice *device, PreferenceManager *preference_manage
     : _device(device), _preference_manager(preference_manager), _current_panel(nullptr)
 {
     _is_show_all_locked = false;
-    _is_show_panel_locked = false;
+    _is_panel_locked = false;
 }
 
 PanelManager::~PanelManager()
@@ -107,7 +107,7 @@ void PanelManager::show_all_panels()
     // Note: show_panel_from_iterator will only be run from here again, once recursion is unlocked
     // but will continue to be called recursively from the display timer callback
     PanelManager::show_panel(_panels_ptr_it->get(), [this]()
-                             { PanelManager::show_panel_completion_callback(); });
+                             { this->show_panel_completion_callback(); });
 }
 
 /// @brief Show the given panel
@@ -117,7 +117,8 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 {
     SerialLogger().log_point("PanelManager::show_panel", "...");
 
-    if (_is_show_panel_locked)
+    // Panel locked for loading or updating
+    if (_is_panel_locked)
     {
         SerialLogger().log_point("PanelManager::show_panel", "show panel locked");
         return;
@@ -137,7 +138,7 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
     }
 
     // Lock the panel to prevent updating during loading
-    _is_show_panel_locked = true;
+    _is_panel_locked = true;
     _current_panel = panel;
 
     panel->show(show_panel_completion_callback);
@@ -146,10 +147,12 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 /// @brief Update the reading on the currently loaded panel
 void PanelManager::update_current_panel()
 {
-    if (_current_panel && !_is_show_panel_locked)
+    if (_current_panel && !_is_panel_locked)
     {
         SerialLogger().log_point("PanelManager::update_current_panel", "...");
-        _current_panel->update();
+        _is_panel_locked = true;
+        _current_panel->update([this]()
+                               { this->update_current_panel_completion_callback(); });
     }
 }
 
@@ -157,7 +160,7 @@ void PanelManager::update_current_panel()
 void PanelManager::show_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
-    _is_show_panel_locked = false;
+    _is_panel_locked = false;
     _panels_ptr_it++;
     int display_time = PANEL_DISPLAY_TIME;
 
@@ -172,6 +175,12 @@ void PanelManager::show_panel_completion_callback()
     // Create a display timer to show the current panel for an amount of time, unless it's a splash type
     SerialLogger().log_point("PanelManager::show_panel_completion_callback", "show_panel -> create display timer");
     lv_timer_create(PanelManager::display_timer_callback, display_time, this);
+}
+
+void PanelManager::update_current_panel_completion_callback()
+{
+    SerialLogger().log_point("PanelManager::update_current_panel_completion_callback", "...");
+    _is_panel_locked = false;
 }
 
 /// @brief callback function to be executed when display time of the current panel has elapsed

@@ -11,6 +11,7 @@ struct NeedleAnimationContext
     IComponent *component;
     lv_obj_t *needle_line;
     lv_obj_t *scale;
+    std::function<void()> component_animation_completion_callback;
 };
 
 class DemoComponent : public IComponent
@@ -20,7 +21,7 @@ public:
     ~DemoComponent();
 
     void init(lv_obj_t *screen) override;
-    void update(Reading reading) override;
+    void update(Reading reading, std::function<void()> update_component_completion_callback = nullptr) override;
 
 private:
     lv_obj_t *_scale;
@@ -28,7 +29,5 @@ private:
     int32_t _start_time;
     int32_t _current_reading;
 
-    static void set_needle_line_value_callback(void *object, int32_t value);
-
-    void animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end);
+    void animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end, std::function<void()> component_animation_completion_callback);
 };

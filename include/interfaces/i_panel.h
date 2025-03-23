@@ -19,8 +19,8 @@ public:
 
     virtual void init(IDevice *device) = 0;
     virtual void show(std::function<void()> callback_function) = 0;
-    virtual void update() = 0;
+    virtual void update(std::function<void()> callback_function) = 0;
 
-protected: //TODO: move these to header, Interfaces are meant to dictate behavoir not members
-    std::function<void()> _callback_function;
+    std::function<void()> _show_panel_completion_callback;
+    std::function<void()> _update_panel_completion_callback;
 };
