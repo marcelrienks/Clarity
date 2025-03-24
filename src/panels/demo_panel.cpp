@@ -3,6 +3,9 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
+//TODO: there is a blurring of lines here, for init/show all logic is in panel, and only graphics is in component
+// But for update componenet contains graphics and logic. I need to figure out where the line is, and clean things up
+
 DemoPanel::~DemoPanel()
 {
     if (_screen)
@@ -44,10 +47,9 @@ void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::update()", "...");
-    _update_panel_completion_callback = update_panel_completion_callback;
 
     Reading reading = _sensor->get_reading();
-    _component->update(reading, update_panel_completion_callback);
+    _component->render_reading(reading, update_panel_completion_callback);
 }
 
 void DemoPanel::show_panel_completion_callback(lv_event_t *event)

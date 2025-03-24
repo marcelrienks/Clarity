@@ -139,6 +139,8 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 
     // Lock the panel to prevent updating during loading
     _is_panel_locked = true;
+    SerialLogger().log_value("PanelManager::show_panel", "_is_panel_locked", std::to_string(_is_panel_locked));
+
     _current_panel = panel;
 
     panel->show(show_panel_completion_callback);
@@ -147,20 +149,29 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 /// @brief Update the reading on the currently loaded panel
 void PanelManager::update_current_panel()
 {
-    if (_current_panel && !_is_panel_locked)
+    SerialLogger().log_point("PanelManager::update_current_panel", "...");
+    
+    if (!_current_panel || _is_panel_locked)
     {
-        SerialLogger().log_point("PanelManager::update_current_panel", "...");
-        _is_panel_locked = true;
-        _current_panel->update([this]()
-                               { this->update_current_panel_completion_callback(); });
+        SerialLogger().log_point("PanelManager::update_current_panel", "panel locked");
+        return;
     }
+
+    _is_panel_locked = true;
+    SerialLogger().log_value("PanelManager::update_current_panel", "_is_panel_locked", std::to_string(_is_panel_locked));
+
+    _current_panel->update([this]()
+                           { this->update_current_panel_completion_callback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
 void PanelManager::show_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
+
     _is_panel_locked = false;
+    SerialLogger().log_value("PanelManager::show_panel_completion_callback", "_is_panel_locked", std::to_string(_is_panel_locked));
+
     _panels_ptr_it++;
     int display_time = PANEL_DISPLAY_TIME;
 
@@ -180,7 +191,9 @@ void PanelManager::show_panel_completion_callback()
 void PanelManager::update_current_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::update_current_panel_completion_callback", "...");
+
     _is_panel_locked = false;
+    SerialLogger().log_value("PanelManager::update_current_panel_completion_callback", "_is_panel_locked", std::to_string(_is_panel_locked));
 }
 
 /// @brief callback function to be executed when display time of the current panel has elapsed

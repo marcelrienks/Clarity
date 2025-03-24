@@ -37,7 +37,8 @@ void SplashPanel::show(std::function<void()> show_panel_completion_callback)
 /// @brief Update the reading on the screen
 void SplashPanel::update(std::function<void()> update_panel_completion_callback)
 {
-    // Not needed but required to satisfy interface
+    // Immediately call the completion callback so that lock/unlock logic is processed
+    update_panel_completion_callback();
 }
 
 /// @brief Callback function for the fade in fade_in_timer completion
