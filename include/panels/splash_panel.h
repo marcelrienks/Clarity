@@ -7,8 +7,7 @@
 class SplashPanel : public IPanel
 {
 public:
-    SplashPanel(PanelIteration panel_iteration) : _component(std::make_shared<ClarityComponent>()),
-                                                  _iteration(panel_iteration) {};
+    SplashPanel(PanelIteration panel_iteration);
     ~SplashPanel();
 
     std::string get_name() const { return _name; };

@@ -3,8 +3,11 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-//TODO: there is a blurring of lines here, for init/show all logic is in panel, and only graphics is in component
-// But for update componenet contains graphics and logic. I need to figure out where the line is, and clean things up
+// TODO: there is a blurring of lines here, for init/show all logic is in panel, and only graphics is in component
+//  But for update componenet contains graphics and logic. I need to figure out where the line is, and clean things up
+
+DemoPanel::DemoPanel(PanelIteration panel_iteration)
+    : _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()), _iteration(panel_iteration) {}
 
 DemoPanel::~DemoPanel()
 {
@@ -54,6 +57,6 @@ void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 
 void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 {
-    auto this_instance = static_cast<DemoPanel*>(lv_event_get_user_data(event));
+    auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
     this_instance->_show_panel_completion_callback();
 }

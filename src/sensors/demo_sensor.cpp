@@ -1,10 +1,7 @@
 #include "sensors/demo_sensor.h"
 
 DemoSensor::DemoSensor()
-{
-    _engine = std::mt19937(std::random_device{}());
-    _distribution = std::uniform_int_distribution<int>(0, 100);
-}
+    : _engine(std::mt19937(std::random_device{}())), _distribution(std::uniform_int_distribution<int>(0, 100)) {}
 
 void DemoSensor::init()
 {

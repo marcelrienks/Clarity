@@ -3,11 +3,7 @@
 #include "panels/demo_panel.h"
 
 PanelManager::PanelManager(IDevice *device, PreferenceManager *preference_manager)
-    : _device(device), _preference_manager(preference_manager), _current_panel(nullptr)
-{
-    _is_show_all_locked = false;
-    _is_panel_locked = false;
-}
+    : _device(device), _preference_manager(preference_manager), _current_panel(nullptr), _is_show_all_locked(false), _is_panel_locked(false) {}
 
 PanelManager::~PanelManager()
 {
@@ -150,7 +146,7 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 void PanelManager::update_current_panel()
 {
     SerialLogger().log_point("PanelManager::update_current_panel", "...");
-    
+
     if (!_current_panel || _is_panel_locked)
     {
         SerialLogger().log_point("PanelManager::update_current_panel", "panel locked");

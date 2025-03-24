@@ -1,9 +1,6 @@
 #include "components/demo_component.h"
 
-DemoComponent::DemoComponent()
-{
-    _current_value = 0;
-}
+DemoComponent::DemoComponent() : _current_value(0) {}
 
 DemoComponent::~DemoComponent()
 {

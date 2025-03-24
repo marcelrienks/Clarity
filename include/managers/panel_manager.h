@@ -14,13 +14,10 @@
 #include <vector>
 
 #define PANEL_DISPLAY_TIME 3000
-// TODO: Implement preferences that will store a list of configured panel names
-// TODO: Implement a default function in PanelManager that creates a list of all possible panels
-//       If reading the config settings fails, use this default to save a new config
-// TODO: Set up mechanism to disable splash after first showing
+
 class PanelManager {
 public:
-    PanelManager(IDevice *device, PreferenceManager *preference_manager); //TODO: convert all constructors to be an initialization list - PanelManager(IDevice *device) : _device(device)
+    PanelManager(IDevice *device, PreferenceManager *preference_manager);
     ~PanelManager();
 
     void init();

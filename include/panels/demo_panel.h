@@ -7,9 +7,7 @@
 class DemoPanel : public IPanel
 {
 public:
-    DemoPanel(PanelIteration panel_iteration) : _component(std::make_shared<DemoComponent>()),
-                                                _sensor(std::make_shared<DemoSensor>()),
-                                                _iteration(panel_iteration) {};
+    DemoPanel(PanelIteration panel_iteration);
 
     ~DemoPanel();
 

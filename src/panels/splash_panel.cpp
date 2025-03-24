@@ -1,5 +1,8 @@
 #include "panels/splash_panel.h"
 
+SplashPanel::SplashPanel(PanelIteration panel_iteration)
+    : _component(std::make_shared<ClarityComponent>()), _iteration(panel_iteration) {}
+
 SplashPanel::~SplashPanel()
 {
     if (_screen)
