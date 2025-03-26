@@ -21,6 +21,5 @@ public:
     virtual void show(std::function<void()> callback_function) = 0;
     virtual void update(std::function<void()> callback_function) = 0;
 
-    std::function<void()> _show_panel_completion_callback;
-    std::function<void()> _update_panel_completion_callback;
+    std::function<void()> _callback_function;
 };

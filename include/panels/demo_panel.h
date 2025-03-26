@@ -17,8 +17,8 @@ public:
     void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
 
     void init(IDevice *device) override;
-    void show(std::function<void()> show_panel_completion_callback) override;
-    void update(std::function<void()> update_panel_completion_callback = nullptr) override;
+    void show(std::function<void()> callback_function) override;
+    void update(std::function<void()> callback_function = nullptr) override;
 
 private:
     // Panel specific constants
