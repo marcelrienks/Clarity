@@ -11,6 +11,7 @@ PanelManager::~PanelManager()
     _current_panel = nullptr;
 }
 
+/// @brief Initialise the panel manager to control the flow and rendering of all panels
 void PanelManager::init()
 {
     // Register all available panel types with the factory
@@ -22,6 +23,7 @@ void PanelManager::init()
     _panels_ptr_it = _panels_ptr.begin();
 }
 
+/// @brief Register all panel types available to this application
 void PanelManager::register_panel_types()
 {
     // Register all known panel types with the factory
@@ -32,6 +34,7 @@ void PanelManager::register_panel_types()
     // Register more panel types here as they are added
 }
 
+/// @brief Load configured panels from preferences that should be rendered in order
 void PanelManager::load_panels_from_preferences()
 {
     // Clear any existing panels
@@ -68,6 +71,8 @@ void PanelManager::load_panels_from_preferences()
     }
 }
 
+/// @brief Register panel with application
+/// @param panel_ptr shared pointer to the panel
 void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
 {
     SerialLogger().log_point("PanelManager::register_panel", "Registering panel: " + panel_ptr->get_name());
@@ -184,6 +189,7 @@ void PanelManager::show_panel_completion_callback()
     lv_timer_create(PanelManager::display_timer_callback, display_time, this);
 }
 
+/// @brief Request panel to update it's reading and render that
 void PanelManager::update_current_panel_completion_callback()
 {
     SerialLogger().log_point("PanelManager::update_current_panel_completion_callback", "...");

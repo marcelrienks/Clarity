@@ -7,11 +7,14 @@ PreferenceManager::~PreferenceManager() {
     end();
 }
 
+/// @brief Start the preferences configuration
+/// @return True if initilisation was successful
 bool PreferenceManager::begin() {
     _is_initialized = _preferences.begin(_namespace, false); // false = read/write mode
     return _is_initialized;
 }
 
+/// @brief End the preferences configuration
 void PreferenceManager::end() {
     if (_is_initialized) {
         _preferences.end();
@@ -19,6 +22,9 @@ void PreferenceManager::end() {
     }
 }
 
+/// @brief Save serialised panel configuration
+/// @param configs the panel configuration to be saved
+/// @return True if the save was successful
 bool PreferenceManager::save_panel_configs(const std::vector<PanelConfig> &configs) {
     if (!_is_initialized) {
         SerialLogger().log_point("PreferenceManager::savePanelConfigs", "Not initialized");
@@ -42,6 +48,8 @@ bool PreferenceManager::save_panel_configs(const std::vector<PanelConfig> &confi
     return success;
 }
 
+/// @brief Load all the configured panels from Preferences
+/// @return list of configured panels to be shown
 std::vector<PanelConfig> PreferenceManager::load_panel_configs() {
     std::vector<PanelConfig> configs;
     
@@ -80,11 +88,15 @@ std::vector<PanelConfig> PreferenceManager::load_panel_configs() {
     return configs;
 }
 
+/// @brief Clear all the panels from preferences
+/// @return True if the clearing was successful
 bool PreferenceManager::clear_panel_configs() {
     if (!_is_initialized) return false;
     return _preferences.remove("panel_configs");
 }
 
+/// @brief Create and save a list of default panels
+/// @return true if the save was successful
 bool PreferenceManager::save_default_panel_configs() {
     SerialLogger().log_point("PreferenceManager::save_default_panel_configs", "...");
 
@@ -96,8 +108,9 @@ bool PreferenceManager::save_default_panel_configs() {
     return save_panel_configs(defaultConfigs);
 }
 
-// Helper methods for serialization/deserialization
-
+/// @brief Serialise panel configs for storage using preferences
+/// @param configs the configurations to be stored in preferences
+/// @return serialised data to be stored
 std::vector<uint8_t> PreferenceManager::serialize_panel_configs(const std::vector<PanelConfig>& configs) {
     std::vector<uint8_t> data;
     
@@ -126,6 +139,9 @@ std::vector<uint8_t> PreferenceManager::serialize_panel_configs(const std::vecto
     return data;
 }
 
+/// @brief Deserialise Panel configurations
+/// @param data the data retrieved from preferences
+/// @return list of panel configs
 std::vector<PanelConfig> PreferenceManager::deserialize_panel_configs(const std::vector<uint8_t>& data) {
     std::vector<PanelConfig> configs;
     

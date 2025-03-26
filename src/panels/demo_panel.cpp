@@ -55,6 +55,8 @@ void DemoPanel::update(std::function<void()> update_panel_completion_callback)
     _component->render_reading(reading, update_panel_completion_callback);
 }
 
+/// @brief The callback to be run once show panel has completed
+/// @param event LVGL event that was used to call this
 void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 {
     auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));

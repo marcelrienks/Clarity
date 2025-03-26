@@ -32,10 +32,9 @@
 class Device : public IDevice
 {
 public:
-    Device();
-
     lv_obj_t *Screen;
 
+    Device();
     void prepare() override;
 
 private:

@@ -8,11 +8,6 @@
 // and Dynamic allocation (heap allocation, independent of scope, manually managed)
 //    SomeClass* ptr = new SomeClass(); // Object on heap
 
-// TODO: Update all method comments, and ensure they are copied to headers
-// TODO: in the headers put all private declarations at the bottom, all constructor/deconstructors together at the top, and match the order in the classes
-
-// TODO: Interfaces should define behavior, not data members, so move all props to concrete class, but define get/set in interface, to force the access
-
 void setup() {
   try {
     SerialLogger().init();
@@ -50,7 +45,6 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    // Update the current panel via the panel manager
     _panel_manager->show_all_panels();
     _panel_manager->update_current_panel();
 

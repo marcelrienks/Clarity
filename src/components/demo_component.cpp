@@ -1,5 +1,7 @@
 #include "components/demo_component.h"
 
+#include <memory>
+
 DemoComponent::DemoComponent() : _current_value(0) {}
 
 DemoComponent::~DemoComponent()
@@ -12,6 +14,7 @@ DemoComponent::~DemoComponent()
 }
 
 /// @brief Initialize a demo component to illustrate the use of a scale component
+/// @param screen the screen on which to render the component
 void DemoComponent::init(lv_obj_t *screen)
 {
     SerialLogger().log_point("DemoComponent::init()", "...");
@@ -96,6 +99,9 @@ void DemoComponent::init(lv_obj_t *screen)
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
 }
 
+/// @brief Update the component by rendering the new reading
+/// @param reading the reading that was received from the sensor
+/// @param render_completion_callback the call back to be executed once rendering is complete
 void DemoComponent::render_reading(Reading reading, std::function<void()> render_completion_callback)
 {
     SerialLogger().log_point("DemoComponent::render_reading()", "...");
@@ -121,17 +127,13 @@ void DemoComponent::render_reading(Reading reading, std::function<void()> render
     lv_anim_set_playback_duration(&animate_scale_line, _playback_duration);
     lv_anim_set_values(&animate_scale_line, _current_value, value);
 
-    // TODO: if all these lamda's work, it means you don't have to use static methods as callbacks, convert splash accordingly
-
     // LVGL uses this lambda to repeatedly update the line value until the animation is completed smoothly,
     // by using the NeedleAnimationContext that was passed into the animation
     lv_anim_set_exec_cb(&animate_scale_line, [](void *callback_context, int32_t value)
-                        {
-        SerialLogger().log_point("DemoComponent::set_needle_line_value_callback()", "...");
-
-        NeedleAnimationContext *needle_animation_context = static_cast<NeedleAnimationContext *>(callback_context);
-        if (needle_animation_context && needle_animation_context->component)
-            lv_scale_set_line_needle_value(needle_animation_context->scale, needle_animation_context->needle_line, 60, value); });
+                        {SerialLogger().log_point("DemoComponent::render_reading_anum_callback()", "...");
+                        NeedleAnimationContext *needle_animation_context = static_cast<NeedleAnimationContext *>(callback_context);
+                        if (needle_animation_context && needle_animation_context->component)
+                            lv_scale_set_line_needle_value(needle_animation_context->scale, needle_animation_context->needle_line, 60, value); });
 
     // Using lambda to retrieve callback function that was assigned to the NeedleAnimationContext that was passed into the animation
     lv_anim_set_completed_cb(&animate_scale_line, [](lv_anim_t *animation)
