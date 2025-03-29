@@ -23,7 +23,7 @@ DemoPanel::~DemoPanel()
 
 /// @brief Initialize the panel for illustrating a demo
 /// @param device
-void DemoPanel::init(IDevice *device)//TODO: convert logic here into a render function, to seperate init and rendering
+void DemoPanel::init(IDevice *device)
 {
     SerialLogger().log_point("DemoPanel::init()", "...");
 
@@ -35,10 +35,10 @@ void DemoPanel::init(IDevice *device)//TODO: convert logic here into a render fu
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> callback_function)// Ensure show calls render function, to mach flow of update
+void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::show()", "...");
-    _callback_function = callback_function;
+    _show_panel_completion_callback = show_panel_completion_callback;
 
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback,
                         LV_EVENT_SCREEN_LOADED, this);
@@ -47,13 +47,12 @@ void DemoPanel::show(std::function<void()> callback_function)// Ensure show call
 }
 
 /// @brief Update the reading on the screen
-void DemoPanel::update(std::function<void()> callback_function)
+void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::update()", "...");
-    _callback_function = callback_function;
+
     Reading reading = _sensor->get_reading();
-    
-    _component->render_reading(reading, callback_function);
+    _component->render_reading(reading, update_panel_completion_callback);
 }
 
 /// @brief The callback to be run once show panel has completed
@@ -61,13 +60,5 @@ void DemoPanel::update(std::function<void()> callback_function)
 void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 {
     auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
-    this_instance->_callback_function();
-}
-
-/// @brief The callback to be run once update panel has completed
-/// @param event LVGL event that was used to call this
-void DemoPanel::update_panel_completion_callback(lv_event_t *event)
-{
-    auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
-    this_instance->_callback_function();
+    this_instance->_show_panel_completion_callback();
 }

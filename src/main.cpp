@@ -1,5 +1,13 @@
 #include "main.h"
 
+// TODO: analyse all classes, and their objects between stack vs heap, or use smart pointers (like std::unique_ptr or std::shared_ptr)
+// based on research dynamic allocation is preferred for lv objects
+// Automatic storage (stack allocation, tied to a specific scope)
+//    SomeClass localObj;       // Object on stack
+//    SomeClass* ptr = &localObj; // Pointer to stack object
+// and Dynamic allocation (heap allocation, independent of scope, manually managed)
+//    SomeClass* ptr = new SomeClass(); // Object on heap
+
 void setup() {
   try {
     SerialLogger().init();

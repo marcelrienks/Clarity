@@ -15,7 +15,7 @@ DemoComponent::~DemoComponent()
 
 /// @brief Initialize a demo component to illustrate the use of a scale component
 /// @param screen the screen on which to render the component
-void DemoComponent::init(lv_obj_t *screen)//TODO: convert logic here into a render function, to seperate init and rendering
+void DemoComponent::init(lv_obj_t *screen)
 {
     SerialLogger().log_point("DemoComponent::init()", "...");
 
@@ -106,7 +106,6 @@ void DemoComponent::render_reading(Reading reading, std::function<void()> render
 {
     SerialLogger().log_point("DemoComponent::render_reading()", "...");
 
-    // Note this has to be a dynamic (heap allocated) object as it must persist for lambda callback methods
     auto *context = new NeedleAnimationContext{
         this,
         _needle_line,
@@ -114,7 +113,9 @@ void DemoComponent::render_reading(Reading reading, std::function<void()> render
         render_completion_callback};
 
     auto value = std::get<int32_t>(reading);
+
     lv_obj_set_style_line_color(_needle_line, lv_palette_lighten(LV_PALETTE_INDIGO, 3), 0);
+
     if (value >= 75)
         lv_obj_set_style_line_color(_needle_line, lv_palette_darken(LV_PALETTE_RED, 3), 0);
 
@@ -143,14 +144,6 @@ void DemoComponent::render_reading(Reading reading, std::function<void()> render
                            { delete static_cast<NeedleAnimationContext *>(animation->var); });
 
     lv_anim_start(&animate_scale_line);
-    _current_value = value;
 
-    // Start the animation and check if it succeeded
-    if (lv_anim_start(&animate_scale_line) == NULL)
-    {
-        // Animation failed to start, clean up the context manually
-        delete context;
-        if (render_completion_callback)
-            render_completion_callback();
-    }
+    _current_value = value;
 }
