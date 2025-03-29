@@ -8,6 +8,8 @@
 // and Dynamic allocation (heap allocation, independent of scope, manually managed)
 //    SomeClass* ptr = new SomeClass(); // Object on heap
 
+//TODO: review all static variables, in terms of lifecycle and cleaning up
+
 void setup() {
   try {
     SerialLogger().init();

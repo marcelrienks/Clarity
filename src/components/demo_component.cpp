@@ -2,7 +2,7 @@
 
 #include <memory>
 
-DemoComponent::DemoComponent() : _current_value(0) {}
+DemoComponent::DemoComponent() {}
 
 DemoComponent::~DemoComponent()
 {
@@ -15,9 +15,9 @@ DemoComponent::~DemoComponent()
 
 /// @brief Initialize a demo component to illustrate the use of a scale component
 /// @param screen the screen on which to render the component
-void DemoComponent::init(lv_obj_t *screen)
+void DemoComponent::render_show(lv_obj_t *screen)
 {
-    SerialLogger().log_point("DemoComponent::init()", "...");
+    SerialLogger().log_point("DemoComponent::render_show()", "...");
 
     _scale = lv_scale_create(screen);
     lv_obj_set_size(_scale, 150, 150);
@@ -35,7 +35,7 @@ void DemoComponent::init(lv_obj_t *screen)
     static const char *custom_labels[] = {"0 °C", "25 °C", "50 °C", "75 °C", "100 °C", NULL};
     lv_scale_set_text_src(_scale, custom_labels);
 
-    static lv_style_t indicator_style;
+    static lv_style_t indicator_style;//TODO: where and how should these static types be cleaned up?
     lv_style_init(&indicator_style);
 
     // Label style properties
@@ -102,48 +102,26 @@ void DemoComponent::init(lv_obj_t *screen)
 /// @brief Update the component by rendering the new reading
 /// @param reading the reading that was received from the sensor
 /// @param render_completion_callback the call back to be executed once rendering is complete
-void DemoComponent::render_reading(Reading reading, std::function<void()> render_completion_callback)
+void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
-    SerialLogger().log_point("DemoComponent::render_reading()", "...");
+    SerialLogger().log_point("DemoComponent::render_update()", "...");
 
-    auto *context = new NeedleAnimationContext{
-        this,
-        _needle_line,
-        _scale,
-        render_completion_callback};
+    lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
+    if (start >= 75)
+        color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
 
-    auto value = std::get<int32_t>(reading);
+    lv_obj_set_style_line_color(_needle_line, color, 0);
 
-    lv_obj_set_style_line_color(_needle_line, lv_palette_lighten(LV_PALETTE_INDIGO, 3), 0);
+    lv_anim_init(animation);
+    lv_anim_set_duration(animation, _animation_duration);
+    lv_anim_set_repeat_count(animation, 0);
+    lv_anim_set_playback_duration(animation, _playback_duration);
+    lv_anim_set_values(animation, start, end);
+}
 
-    if (value >= 75)
-        lv_obj_set_style_line_color(_needle_line, lv_palette_darken(LV_PALETTE_RED, 3), 0);
-
-    static lv_anim_t animate_scale_line;
-    lv_anim_init(&animate_scale_line);
-    lv_anim_set_var(&animate_scale_line, context);
-    lv_anim_set_duration(&animate_scale_line, _animation_duration);
-    lv_anim_set_repeat_count(&animate_scale_line, 0);
-    lv_anim_set_playback_duration(&animate_scale_line, _playback_duration);
-    lv_anim_set_values(&animate_scale_line, _current_value, value);
-
-    // LVGL uses this lambda to repeatedly update the line value until the animation is completed smoothly,
-    // by using the NeedleAnimationContext that was passed into the animation
-    lv_anim_set_exec_cb(&animate_scale_line, [](void *callback_context, int32_t value)
-                        {SerialLogger().log_point("DemoComponent::render_reading_anum_callback()", "...");
-                        NeedleAnimationContext *needle_animation_context = static_cast<NeedleAnimationContext *>(callback_context);
-                        if (needle_animation_context && needle_animation_context->component)
-                            lv_scale_set_line_needle_value(needle_animation_context->scale, needle_animation_context->needle_line, 60, value); });
-
-    // Using lambda to retrieve callback function that was assigned to the NeedleAnimationContext that was passed into the animation
-    lv_anim_set_completed_cb(&animate_scale_line, [](lv_anim_t *animation)
-                             { static_cast<NeedleAnimationContext *>(animation->var)->render_completion_callback(); });
-
-    // Using lambda to clean up the context that was stored in the animation
-    lv_anim_set_deleted_cb(&animate_scale_line, [](lv_anim_t *animation)
-                           { delete static_cast<NeedleAnimationContext *>(animation->var); });
-
-    lv_anim_start(&animate_scale_line);
-
-    _current_value = value;
+/// @brief Set the value of the line needle
+/// @param value the value to set the line needle to
+void DemoComponent::set_value(int32_t value) {
+    SerialLogger().log_value("DemoComponent::set_value()", "value", std::to_string(value));
+    lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
 }

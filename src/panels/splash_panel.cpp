@@ -24,7 +24,7 @@ void SplashPanel::init(IDevice *device)
     _device = device;
     _blank_screen = LvTools::create_blank_screen();
     _screen = LvTools::create_blank_screen();
-    _component->init(_screen);
+    _component->render_show(_screen);
 }
 
 /// @brief Show the screen

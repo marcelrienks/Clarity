@@ -3,9 +3,6 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-// TODO: there is a blurring of lines here, for init/show all logic is in panel, and only graphics is in component
-//  But for update componenet contains graphics and logic. I need to figure out where the line is, and clean things up
-
 DemoPanel::DemoPanel(PanelIteration panel_iteration)
     : _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()), _iteration(panel_iteration) {}
 
@@ -30,19 +27,20 @@ void DemoPanel::init(IDevice *device)
     _device = device;
     _screen = LvTools::create_blank_screen();
     _sensor->init();
-    _component->init(_screen);
+    _current_value = 0;
 }
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> show_panel_completion_callback)
+void DemoPanel::show(std::function<void()> show_panel_completion_callback) // TODO: convert show, to actually call init, than the pattern will match with update, which calls render
 {
     SerialLogger().log_point("DemoPanel::show()", "...");
     _show_panel_completion_callback = show_panel_completion_callback;
 
-    lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback,
-                        LV_EVENT_SCREEN_LOADED, this);
+    _component->render_show(_screen);
+    lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
+    SerialLogger().log_point("DemoPanel::show()", "load");
     lv_scr_load(_screen);
 }
 
@@ -50,15 +48,46 @@ void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::update()", "...");
+    _update_panel_completion_callback = update_panel_completion_callback;
 
-    Reading reading = _sensor->get_reading();
-    _component->render_reading(reading, update_panel_completion_callback);
+    auto value = std::get<int32_t>(_sensor->get_reading());
+    static lv_anim_t update_animation;// this must be static, to ensure it remains available for callback methods
+    _component->render_update(&update_animation, _current_value, value);
+
+    lv_anim_set_var(&update_animation, this);
+    lv_anim_set_exec_cb(&update_animation, DemoPanel::execute_animation_callback);
+    lv_anim_set_completed_cb(&update_animation, DemoPanel::update_panel_completion_callback);
+
+    SerialLogger().log_point("DemoPanel::update()", "animate");
+    lv_anim_start(&update_animation);
 }
 
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this
 void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 {
+    SerialLogger().log_point("DemoPanel::show_panel_completion_callback()", "...");
     auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
     this_instance->_show_panel_completion_callback();
+}
+
+/// @brief Callback when animation has completed. aka update complete
+/// @param animation the object that was animated
+void DemoPanel::update_panel_completion_callback(lv_anim_t *animation)
+{
+    SerialLogger().log_point("DemoPanel::update_panel_completion_callback()", "...");
+    auto this_instance = static_cast<DemoPanel *>(animation->var);
+    this_instance->_current_value = animation->current_value;
+    this_instance->_update_panel_completion_callback();
+}
+
+/// @brief callback used by the animation to set the values smoothly until ultimate value is reached
+/// @param target the object being animated
+/// @param value the next value in a sequence to create a smooth transition
+void DemoPanel::execute_animation_callback(void *target, int32_t value)
+{
+    SerialLogger().log_point("DemoPanel::execute_animation_callback()", "...");
+    lv_anim_t *animation = lv_anim_get(target, execute_animation_callback); // get the animation
+    auto this_instance = static_cast<DemoPanel *>(animation->var); // use the animation to get the var which is this instance
+    this_instance->_component.get()->set_value(value);
 }

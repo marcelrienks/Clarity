@@ -8,7 +8,6 @@ class DemoPanel : public IPanel
 {
 public:
     DemoPanel(PanelIteration panel_iteration);
-
     ~DemoPanel();
 
     std::string get_name() const { return _name; };
@@ -31,7 +30,9 @@ private:
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     std::shared_ptr<ISensor> _sensor;
+    int32_t _current_value;
 
     static void show_panel_completion_callback(lv_event_t* event);
-    static void update_panel_completion_callback(lv_event_t* event);
+    static void update_panel_completion_callback(lv_anim_t *animation);
+    static void execute_animation_callback(void *target, int32_t value);
 };
