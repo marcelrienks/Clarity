@@ -35,7 +35,7 @@ void DemoPanel::init(IDevice *device)
 void DemoPanel::show(std::function<void()> show_panel_completion_callback) // TODO: convert show, to actually call init, than the pattern will match with update, which calls render
 {
     SerialLogger().log_point("DemoPanel::show()", "...");
-    _show_panel_completion_callback = show_panel_completion_callback;
+    _callback_function = show_panel_completion_callback;
 
     _component->render_show(_screen);
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
@@ -48,7 +48,7 @@ void DemoPanel::show(std::function<void()> show_panel_completion_callback) // TO
 void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::update()", "...");
-    _update_panel_completion_callback = update_panel_completion_callback;
+    _callback_function = update_panel_completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
     static lv_anim_t update_animation;// this must be static, to ensure it remains available for callback methods
@@ -68,7 +68,7 @@ void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 {
     SerialLogger().log_point("DemoPanel::show_panel_completion_callback()", "...");
     auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
-    this_instance->_show_panel_completion_callback();
+    this_instance->_callback_function();
 }
 
 /// @brief Callback when animation has completed. aka update complete
@@ -78,7 +78,7 @@ void DemoPanel::update_panel_completion_callback(lv_anim_t *animation)
     SerialLogger().log_point("DemoPanel::update_panel_completion_callback()", "...");
     auto this_instance = static_cast<DemoPanel *>(animation->var);
     this_instance->_current_value = animation->current_value;
-    this_instance->_update_panel_completion_callback();
+    this_instance->_callback_function();
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
