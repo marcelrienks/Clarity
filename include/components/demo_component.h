@@ -6,17 +6,9 @@
 
 #include <lvgl.h>
 
-struct NeedleAnimationContext
-{
-    IComponent *component;
-    lv_obj_t *needle_line;
-    lv_obj_t *scale;
-};
-
 class DemoComponent : public IComponent
 {
 public:
-    DemoComponent();
     ~DemoComponent();
 
     void render_show(lv_obj_t *screen) override;

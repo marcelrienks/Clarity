@@ -3,7 +3,7 @@
 /// @brief Initialises the Clarity Component by rendering a splash screen
 /// @param screen the screen on which to render the component
 void ClarityComponent::render_show(lv_obj_t *screen) {
-    SerialLogger().log_point("ClarityComponent::init", "...");
+    SerialLogger().log_point("ClarityComponent::render_show", "...");
      
     lv_obj_t *splash = lv_img_create(screen);
     lv_img_set_src(splash, LV_SYMBOL_DUMMY "Clarity");

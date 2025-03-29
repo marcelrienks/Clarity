@@ -51,7 +51,7 @@ void DemoPanel::update(std::function<void()> update_panel_completion_callback)
     _callback_function = update_panel_completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
-    static lv_anim_t update_animation;// this must be static, to ensure it remains available for callback methods
+    static lv_anim_t update_animation; // this must be static, to ensure it remains available for callback methods
     _component->render_update(&update_animation, _current_value, value);
 
     lv_anim_set_var(&update_animation, this);
@@ -88,6 +88,6 @@ void DemoPanel::execute_animation_callback(void *target, int32_t value)
 {
     SerialLogger().log_point("DemoPanel::execute_animation_callback()", "...");
     lv_anim_t *animation = lv_anim_get(target, execute_animation_callback); // get the animation
-    auto this_instance = static_cast<DemoPanel *>(animation->var); // use the animation to get the var which is this instance
+    auto this_instance = static_cast<DemoPanel *>(animation->var);          // use the animation to get the var which is this instance
     this_instance->_component.get()->set_value(value);
 }

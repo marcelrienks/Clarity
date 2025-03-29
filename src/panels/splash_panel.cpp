@@ -24,7 +24,6 @@ void SplashPanel::init(IDevice *device)
     _device = device;
     _blank_screen = LvTools::create_blank_screen();
     _screen = LvTools::create_blank_screen();
-    _component->render_show(_screen);
 }
 
 /// @brief Show the screen
@@ -32,8 +31,9 @@ void SplashPanel::init(IDevice *device)
 void SplashPanel::show(std::function<void()> show_panel_completion_callback)
 {
     SerialLogger().log_point("SplashPanel::show()", "...");
-
     _callback_function = show_panel_completion_callback;
+
+    _component->render_show(_screen);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
@@ -103,14 +103,8 @@ void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
     // Get the splash panel instance
     auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
 
-    // Call the completion callback if it exists
-    if (this_instance->_callback_function)
-    {
-        SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Executing splash callback");
-        this_instance->_callback_function();
-    }
-    else
-        SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "No callback set");
+    SerialLogger().log_point("SplashPanel::animation_complete_timer_callback()", "Executing splash callback");
+    this_instance->_callback_function();
 
     // Delete the animation_timer
     lv_timer_del(animation_timer);

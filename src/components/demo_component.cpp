@@ -2,8 +2,6 @@
 
 #include <memory>
 
-DemoComponent::DemoComponent() {}
-
 DemoComponent::~DemoComponent()
 {
     if (_needle_line)
