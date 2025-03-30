@@ -106,8 +106,8 @@ void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t e
     SerialLogger().log_point("DemoComponent::render_update()", "...");
 
     lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
-    if (start >= 75)
-        color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
+    if (end >= 75)
+        color = lv_palette_darken(LV_PALETTE_RED, 3);
 
     lv_obj_set_style_line_color(_needle_line, color, 0);
 
