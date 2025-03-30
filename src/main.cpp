@@ -1,8 +1,5 @@
 #include "main.h"
 
-//TODO: Review all static variables, in terms of lifecycle and cleaning up
-//TODO: Review all destructors
-
 void setup() {
   try {
     SerialLogger().init();

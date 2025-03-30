@@ -17,7 +17,7 @@ public:
     virtual PanelIteration get_iteration() const = 0;
     virtual void set_iteration(PanelIteration panel_iteration) = 0;
 
-    virtual void init(IDevice *device) = 0;
+    virtual void init() = 0;
     virtual void show(std::function<void()> callback_function) = 0;
     virtual void update(std::function<void()> callback_function) = 0;
 

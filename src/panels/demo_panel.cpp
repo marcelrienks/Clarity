@@ -3,8 +3,8 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-DemoPanel::DemoPanel(PanelIteration panel_iteration)
-    : _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()), _iteration(panel_iteration) {}
+DemoPanel::DemoPanel(IDevice *device, PanelIteration panel_iteration)
+    : _device(device), _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()), _iteration(panel_iteration) {}
 
 DemoPanel::~DemoPanel()
 {
@@ -20,11 +20,9 @@ DemoPanel::~DemoPanel()
 
 /// @brief Initialize the panel for illustrating a demo
 /// @param device
-void DemoPanel::init(IDevice *device)
+void DemoPanel::init()
 {
     SerialLogger().log_point("DemoPanel::init()", "...");
-
-    _device = device;
     _screen = LvTools::create_blank_screen();
     _sensor->init();
     _current_value = 0;
@@ -32,7 +30,7 @@ void DemoPanel::init(IDevice *device)
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> show_panel_completion_callback) // TODO: convert show, to actually call init, than the pattern will match with update, which calls render
+void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::show()", "...");
     _callback_function = show_panel_completion_callback;
@@ -51,7 +49,7 @@ void DemoPanel::update(std::function<void()> update_panel_completion_callback)
     _callback_function = update_panel_completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
-    static lv_anim_t update_animation; // this must be static, to ensure it remains available for callback methods
+    static lv_anim_t update_animation;
     _component->render_update(&update_animation, _current_value, value);
 
     lv_anim_set_var(&update_animation, this);

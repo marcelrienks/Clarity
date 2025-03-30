@@ -1,15 +1,15 @@
 #include "panels/splash_panel.h"
 
-SplashPanel::SplashPanel(PanelIteration panel_iteration)
-    : _component(std::make_shared<ClarityComponent>()), _iteration(panel_iteration) {}
+SplashPanel::SplashPanel(IDevice *device, PanelIteration panel_iteration)
+    : _device(device), _component(std::make_shared<ClarityComponent>()), _iteration(panel_iteration) {}
 
 SplashPanel::~SplashPanel()
 {
     if (_screen)
-        lv_obj_clean(_screen);
+        lv_obj_del(_screen);
 
     if (_blank_screen)
-        lv_obj_clean(_blank_screen);
+        lv_obj_del(_blank_screen);
 
     if (_component)
         _component.reset();
@@ -17,11 +17,10 @@ SplashPanel::~SplashPanel()
 
 /// @brief Initialize the screen with component
 /// @param device the device housing the screens
-void SplashPanel::init(IDevice *device)
+void SplashPanel::init()
 {
     SerialLogger().log_point("SplashPanel::init()", "...");
 
-    _device = device;
     _blank_screen = LvTools::create_blank_screen();
     _screen = LvTools::create_blank_screen();
 }
