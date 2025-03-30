@@ -3,6 +3,8 @@
 # Clarity
 An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of components and sensors.
 
+_**Note:** this project is over complicated for general use cases of just creating a screen to do one task. This is intended to follow proper patterns and allow for easy implementation of multiple screens, and extension of more screens, which can be configured to show in a loop._
+
 ## Main Libraries:
 * Arduino
 * [LVGL](https://docs.lvgl.io/master/)

@@ -6,10 +6,10 @@ SplashPanel::SplashPanel(IDevice *device, PanelIteration panel_iteration)
 SplashPanel::~SplashPanel()
 {
     if (_screen)
-        lv_obj_clean(_screen);
+        lv_obj_del(_screen);
 
     if (_blank_screen)
-        lv_obj_clean(_blank_screen);
+        lv_obj_del(_blank_screen);
 
     if (_component)
         _component.reset();
