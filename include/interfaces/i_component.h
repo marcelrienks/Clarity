@@ -1,12 +1,16 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include <lvgl.h>//TODO: review all includes
-#include <utilities/common_types.h>
+#include "utilities/types.h"
+
+#include <lvgl.h>
+#include <functional>
 
 /// @brief UI elements
 class IComponent
 {
-public:    
-    virtual void init(lv_obj_t *virtual_screen) = 0;
-    virtual void update(Reading value) = 0;
+public:
+    // Overridable methods
+    virtual void render_show(lv_obj_t *screen) {};
+    virtual void render_update(lv_anim_t *animation, int32_t start, int32_t end) {};
+    virtual void set_value(int32_t value) {};
 };

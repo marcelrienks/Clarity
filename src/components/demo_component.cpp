@@ -1,9 +1,6 @@
 #include "components/demo_component.h"
 
-DemoComponent::DemoComponent()
-{
-    _current_reading = 0;
-}
+#include <memory>
 
 DemoComponent::~DemoComponent()
 {
@@ -15,11 +12,12 @@ DemoComponent::~DemoComponent()
 }
 
 /// @brief Initialize a demo component to illustrate the use of a scale component
-void DemoComponent::init(lv_obj_t *virtual_screen)
+/// @param screen the screen on which to render the component
+void DemoComponent::render_show(lv_obj_t *screen)
 {
-    SerialLogger().log_point("DemoComponent::init()", "...");
+    SerialLogger().log_point("DemoComponent::render_show()", "...");
 
-    _scale = lv_scale_create(virtual_screen);
+    _scale = lv_scale_create(screen);
     lv_obj_set_size(_scale, 150, 150);
     lv_scale_set_label_show(_scale, true);
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_OUTER);
@@ -35,34 +33,34 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     static const char *custom_labels[] = {"0 °C", "25 °C", "50 °C", "75 °C", "100 °C", NULL};
     lv_scale_set_text_src(_scale, custom_labels);
 
-    static lv_style_t indicator_style;
+    static lv_style_t indicator_style;//TODO: where and how should these static types be cleaned up?
     lv_style_init(&indicator_style);
 
-    /* Label style properties */
+    // Label style properties
     lv_style_set_text_font(&indicator_style, LV_FONT_DEFAULT);
     lv_style_set_text_color(&indicator_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
 
-    /* Major tick properties */
+    // Major tick properties
     lv_style_set_line_color(&indicator_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
-    lv_style_set_width(&indicator_style, 10U);     /*Tick length*/
-    lv_style_set_line_width(&indicator_style, 2U); /*Tick width*/
+    lv_style_set_width(&indicator_style, 10U);     // Tick length
+    lv_style_set_line_width(&indicator_style, 2U); // Tick width
     lv_obj_add_style(_scale, &indicator_style, LV_PART_INDICATOR);
 
     static lv_style_t minor_ticks_style;
     lv_style_init(&minor_ticks_style);
     lv_style_set_line_color(&minor_ticks_style, lv_palette_lighten(LV_PALETTE_BLUE, 2));
-    lv_style_set_width(&minor_ticks_style, 5U);      /*Tick length*/
-    lv_style_set_line_width(&minor_ticks_style, 2U); /*Tick width*/
+    lv_style_set_width(&minor_ticks_style, 5U);      // tick width
+    lv_style_set_line_width(&minor_ticks_style, 2U); // tick width
     lv_obj_add_style(_scale, &minor_ticks_style, LV_PART_ITEMS);
 
     static lv_style_t main_line_style;
     lv_style_init(&main_line_style);
-    /* Main line properties */
+    // Main line properties
     lv_style_set_arc_color(&main_line_style, lv_palette_darken(LV_PALETTE_BLUE, 3));
-    lv_style_set_arc_width(&main_line_style, 2U); /*Tick width*/
+    lv_style_set_arc_width(&main_line_style, 2U); // tick width
     lv_obj_add_style(_scale, &main_line_style, LV_PART_MAIN);
 
-    /* Add a section */
+    // Add a section
     static lv_style_t section_minor_tick_style;
     static lv_style_t section_label_style;
     static lv_style_t section_main_line_style;
@@ -71,21 +69,21 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     lv_style_init(&section_minor_tick_style);
     lv_style_init(&section_main_line_style);
 
-    /* Label style properties */
+    // Label style properties
     lv_style_set_text_font(&section_label_style, LV_FONT_DEFAULT);
     lv_style_set_text_color(&section_label_style, lv_palette_darken(LV_PALETTE_RED, 3));
 
     lv_style_set_line_color(&section_label_style, lv_palette_darken(LV_PALETTE_RED, 3));
-    lv_style_set_line_width(&section_label_style, 5U); /*Tick width*/
+    lv_style_set_line_width(&section_label_style, 5U); // tick width
 
     lv_style_set_line_color(&section_minor_tick_style, lv_palette_lighten(LV_PALETTE_RED, 2));
-    lv_style_set_line_width(&section_minor_tick_style, 4U); /*Tick width*/
+    lv_style_set_line_width(&section_minor_tick_style, 4U); // tick width
 
-    /* Main line properties */
+    // Main line properties
     lv_style_set_arc_color(&section_main_line_style, lv_palette_darken(LV_PALETTE_RED, 3));
-    lv_style_set_arc_width(&section_main_line_style, 4U); /*Tick width*/
+    lv_style_set_arc_width(&section_main_line_style, 4U); // tick width
 
-    /* Configure section styles */
+    // Configure section styles
     lv_scale_section_t *section = lv_scale_add_section(_scale);
     lv_scale_section_set_range(section, 75, 100);
     lv_scale_section_set_style(section, LV_PART_INDICATOR, &section_label_style);
@@ -97,76 +95,31 @@ void DemoComponent::init(lv_obj_t *virtual_screen)
     lv_obj_set_style_line_width(_needle_line, 6, LV_PART_MAIN);
     lv_obj_set_style_line_rounded(_needle_line, true, LV_PART_MAIN);
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
-
-    this->_start_time = millis();
 }
 
-/// @brief Update the reading of the needle
-/// @param reading the value of the reading to be used for updating the needle
-void DemoComponent::update(Reading reading)
+/// @brief Update the component by rendering the new reading
+/// @param reading the reading that was received from the sensor
+/// @param render_completion_callback the call back to be executed once rendering is complete
+void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
-    SerialLogger().log_point("DemoComponent::update()", "...");
+    SerialLogger().log_point("DemoComponent::render_update()", "...");
 
-    int32_t *value = std::get_if<int32_t>(&reading);
+    lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
+    if (start >= 75)
+        color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
 
-    if (millis() - _start_time < 3000)
-    {
-        this->_current_reading = 0;
-        return;
-    }
+    lv_obj_set_style_line_color(_needle_line, color, 0);
 
-    if (this->_current_reading == *value)
-        return;
-
-    if (*value >= 75)
-        lv_obj_set_style_line_color(_needle_line, lv_palette_darken(LV_PALETTE_RED, 3), 0);
-
-    else
-        lv_obj_set_style_line_color(_needle_line, lv_palette_lighten(LV_PALETTE_INDIGO, 3), 0);
-
-    DemoComponent::animate_needle(1000, 0, _current_reading, *value);
-
-    this->_current_reading = *value;
+    lv_anim_init(animation);
+    lv_anim_set_duration(animation, _animation_duration);
+    lv_anim_set_repeat_count(animation, 0);
+    lv_anim_set_playback_duration(animation, _playback_duration);
+    lv_anim_set_values(animation, start, end);
 }
 
-/// @brief Animate the needle line smoothly
-/// @param animation_duration the duration of the animation/transition
-/// @param playback_duration the duration of the playback
-/// @param start the starting value of the needle line
-/// @param end the ending value of the needle line
-void DemoComponent::animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end)
-{
-    SerialLogger().log_point("DemoComponent::animate_needle()", "...");
-
-    auto *context = new NeedleAnimationContext{
-        this,
-        _needle_line,
-        _scale};
-
-    static lv_anim_t animate_scale_line;
-    lv_anim_init(&animate_scale_line);
-    lv_anim_set_var(&animate_scale_line, context);
-    lv_anim_set_exec_cb(&animate_scale_line, set_needle_line_value_callback);
-    lv_anim_set_duration(&animate_scale_line, animation_duration);
-    lv_anim_set_repeat_count(&animate_scale_line, 0);
-    lv_anim_set_playback_duration(&animate_scale_line, playback_duration);
-    lv_anim_set_values(&animate_scale_line, start, end);
-
-    // Add deleted callback to clean up the context that was stored in the animation
-    lv_anim_set_deleted_cb(&animate_scale_line, [](lv_anim_t *animation)
-                           { delete static_cast<NeedleAnimationContext *>(animation->var); });
-
-    lv_anim_start(&animate_scale_line);
-}
-
-/// @brief Callback function called repeatedly by the animation of the needle
-/// @param object the object to be animated
-/// @param value the value of the needle line
-void DemoComponent::set_needle_line_value_callback(void *callback_context, int32_t value)
-{
-    SerialLogger().log_point("DemoComponent::set_needle_line_value_callback()", "...");
-
-    auto *needle_animation_context = static_cast<NeedleAnimationContext *>(callback_context);
-    if (needle_animation_context && needle_animation_context->component)
-        lv_scale_set_line_needle_value(needle_animation_context->scale, needle_animation_context->needle_line, 60, value);
+/// @brief Set the value of the line needle
+/// @param value the value to set the line needle to
+void DemoComponent::set_value(int32_t value) {
+    SerialLogger().log_value("DemoComponent::set_value()", "value", std::to_string(value));
+    lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
 }

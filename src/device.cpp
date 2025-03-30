@@ -1,13 +1,8 @@
 #include <device.h>
 
-/// @brief Global instance of the Device instantiated in the constructor used for static callback
-Device *g_device_instance = nullptr;
-
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
 Device::Device()
 {
-    g_device_instance = this;
-
     {
         auto cfg = _bus_instance.config();
         cfg.spi_host = SPI;
@@ -47,8 +42,8 @@ Device::Device()
         cfg.dlen_16bit = false;
         cfg.bus_shared = false;
 
-#ifdef INVERT // this is causing colour inversion on builds
-        cfg.invert = true;
+#ifdef INVERT
+        cfg.invert = true; // Inverts all colours, background and contents, waveshare 1.28" requires true
 #endif
 
         _panel_instance.config(cfg);
@@ -69,12 +64,6 @@ Device::Device()
     setPanel(&_panel_instance);
 }
 
-Device::~Device()
-{
-    if (g_device_instance == this)
-        g_device_instance = nullptr;
-}
-
 /// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
@@ -84,7 +73,6 @@ void Device::prepare()
     init();
     initDMA();
     startWrite();
-    fillScreen(TFT_BLACK);
     setRotation(0);
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
@@ -95,8 +83,12 @@ void Device::prepare()
     // setup screen
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
+    lv_display_set_user_data(display, this);
     lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+
+    // Default theme with Dark screen
+    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x000000), LV_PART_MAIN);
 }
 
 /// @brief Static Display Flush Wrapper function
@@ -105,13 +97,16 @@ void Device::prepare()
 /// @param data
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
+    // SerialLogger().log_point("Device::display_flush_callback()", "...");
+    Device *device_instance = (Device *)lv_display_get_user_data(display);
+
     uint32_t w = lv_area_get_width(area);
     uint32_t h = lv_area_get_height(area);
     lv_draw_sw_rgb565_swap(data, w * h);
 
-    if (g_device_instance->getStartCount() == 0)
-        g_device_instance->endWrite();
+    if (device_instance->getStartCount() == 0)
+        device_instance->endWrite();
 
-    g_device_instance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
+    device_instance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
     lv_disp_flush_ready(display);
 }

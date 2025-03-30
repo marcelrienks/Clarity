@@ -32,11 +32,9 @@
 class Device : public IDevice
 {
 public:
-    Device();
-    ~Device();
-
     lv_obj_t *Screen;
 
+    Device();
     void prepare() override;
 
 private:
@@ -49,6 +47,3 @@ private:
 
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 };
-
-// Global instance of the Device instantiated in the constructor (externally)
-extern Device *g_device_instance;

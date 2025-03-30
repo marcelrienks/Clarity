@@ -3,16 +3,13 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-DemoPanel::DemoPanel()
-{
-    _component = std::make_shared<DemoComponent>();
-    _sensor = std::make_shared<DemoSensor>();
-}
+DemoPanel::DemoPanel(PanelIteration panel_iteration)
+    : _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()), _iteration(panel_iteration) {}
 
 DemoPanel::~DemoPanel()
 {
     if (_screen)
-        lv_obj_clean(_screen);
+        lv_obj_delete(_screen);
 
     if (_component)
         _component.reset();
@@ -29,34 +26,68 @@ void DemoPanel::init(IDevice *device)
 
     _device = device;
     _screen = LvTools::create_blank_screen();
-
-    // Initialize the sensor
     _sensor->init();
-
-    // Initialize the component with the screen
-    _component->init(_screen);
+    _current_value = 0;
 }
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> callback_function)
+void DemoPanel::show(std::function<void()> show_panel_completion_callback) // TODO: convert show, to actually call init, than the pattern will match with update, which calls render
 {
     SerialLogger().log_point("DemoPanel::show()", "...");
+    _callback_function = show_panel_completion_callback;
 
-    _callback_function = callback_function;
+    _component->render_show(_screen);
+    lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
+    SerialLogger().log_point("DemoPanel::show()", "load");
     lv_scr_load(_screen);
-
-    // Call the completion callback immediately since we have no animations
-    if (_callback_function)
-        _callback_function();
 }
 
 /// @brief Update the reading on the screen
-void DemoPanel::update()
+void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
     SerialLogger().log_point("DemoPanel::update()", "...");
+    _callback_function = update_panel_completion_callback;
 
-    Reading reading = _sensor->get_reading();
-    _component->update(reading);
+    auto value = std::get<int32_t>(_sensor->get_reading());
+    static lv_anim_t update_animation; // this must be static, to ensure it remains available for callback methods
+    _component->render_update(&update_animation, _current_value, value);
+
+    lv_anim_set_var(&update_animation, this);
+    lv_anim_set_exec_cb(&update_animation, DemoPanel::execute_animation_callback);
+    lv_anim_set_completed_cb(&update_animation, DemoPanel::update_panel_completion_callback);
+
+    SerialLogger().log_point("DemoPanel::update()", "animate");
+    lv_anim_start(&update_animation);
+}
+
+/// @brief The callback to be run once show panel has completed
+/// @param event LVGL event that was used to call this
+void DemoPanel::show_panel_completion_callback(lv_event_t *event)
+{
+    SerialLogger().log_point("DemoPanel::show_panel_completion_callback()", "...");
+    auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
+    this_instance->_callback_function();
+}
+
+/// @brief Callback when animation has completed. aka update complete
+/// @param animation the object that was animated
+void DemoPanel::update_panel_completion_callback(lv_anim_t *animation)
+{
+    SerialLogger().log_point("DemoPanel::update_panel_completion_callback()", "...");
+    auto this_instance = static_cast<DemoPanel *>(animation->var);
+    this_instance->_current_value = animation->current_value;
+    this_instance->_callback_function();
+}
+
+/// @brief callback used by the animation to set the values smoothly until ultimate value is reached
+/// @param target the object being animated
+/// @param value the next value in a sequence to create a smooth transition
+void DemoPanel::execute_animation_callback(void *target, int32_t value)
+{
+    SerialLogger().log_point("DemoPanel::execute_animation_callback()", "...");
+    lv_anim_t *animation = lv_anim_get(target, execute_animation_callback); // get the animation
+    auto this_instance = static_cast<DemoPanel *>(animation->var);          // use the animation to get the var which is this instance
+    this_instance->_component.get()->set_value(value);
 }

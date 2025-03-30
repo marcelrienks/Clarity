@@ -2,33 +2,24 @@
 
 #include "interfaces/i_component.h"
 #include "utilities/serial_logger.h"
+#include "utilities/types.h"
 
 #include <lvgl.h>
-#include "utilities/common_types.h"
-
-struct NeedleAnimationContext
-{
-    IComponent *component;
-    lv_obj_t *needle_line;
-    lv_obj_t *scale;
-};
 
 class DemoComponent : public IComponent
 {
 public:
-    DemoComponent();
     ~DemoComponent();
 
-    void init(lv_obj_t *virtual_screen) override;
-    void update(Reading reading) override;
+    void render_show(lv_obj_t *screen) override;
+    void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
+    void set_value(int32_t value) override;
 
 private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
-    int32_t _start_time;
-    int32_t _current_reading;
 
-    static void set_needle_line_value_callback(void *object, int32_t value);
-
-    void animate_needle(int32_t animation_duration, int32_t playback_duration, int32_t start, int32_t end);
+    // Component specific constants
+    static constexpr const int32_t _animation_duration = 1000;
+    static constexpr const int32_t _playback_duration = 0;
 };
