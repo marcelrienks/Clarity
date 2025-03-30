@@ -7,7 +7,7 @@
 class DemoPanel : public IPanel
 {
 public:
-    DemoPanel(PanelIteration panel_iteration);
+    DemoPanel(IDevice *device, PanelIteration panel_iteration);
     ~DemoPanel();
 
     std::string get_name() const { return _name; };
@@ -15,7 +15,7 @@ public:
     PanelIteration get_iteration() const { return _iteration; };
     void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
 
-    void init(IDevice *device) override;
+    void init() override;
     void show(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;
 

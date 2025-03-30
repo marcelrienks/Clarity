@@ -59,7 +59,7 @@ void PanelManager::load_panels_from_preferences()
 
         if (factory.is_panel_type_registered(config.panel_name))
         {
-            auto panel = factory.create_panel(config.panel_name, config.iteration);
+            auto panel = factory.create_panel(_device, config.panel_name, config.iteration);
             if (panel)
                 register_panel(panel);
 
@@ -82,7 +82,7 @@ void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
         _panels_ptr.push_back(panel_ptr); // Register the panel
 
     // Initialize the panel with the device
-    panel_ptr->init(_device);
+    panel_ptr->init();
 }
 
 /// @brief Show all panels in the list

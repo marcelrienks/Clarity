@@ -11,10 +11,10 @@ PanelFactory &PanelFactory::get_instance() {
 /// @param panel_name the type name of the panel to be created
 /// @param panel_iteration the panel iteration type to be set on the newly created panel
 /// @return Interface type representing the panel
-std::shared_ptr<IPanel> PanelFactory::create_panel(const std::string &panel_name, PanelIteration panel_iteration) {
+std::shared_ptr<IPanel> PanelFactory::create_panel(IDevice *device, const std::string &panel_name, PanelIteration panel_iteration) {
     auto iterator = _panel_creators.find(panel_name);
     if (iterator != _panel_creators.end())
-        return iterator->second(panel_iteration);// Return the function stored in the map
+        return iterator->second(device, panel_iteration);// Return the function stored in the map
 
     return nullptr;
 }
