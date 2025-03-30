@@ -18,8 +18,16 @@ public:
 private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
+    
+    // Style variables as member variables
+    lv_style_t _indicator_style;
+    lv_style_t _minor_ticks_style;
+    lv_style_t _main_line_style;
+    lv_style_t _section_label_style;
+    lv_style_t _section_minor_tick_style;
+    lv_style_t _section_main_line_style;
 
     // Component specific constants
-    static constexpr const int32_t _animation_duration = 1000;
-    static constexpr const int32_t _playback_duration = 0;
+    static constexpr int32_t _animation_duration = 1000;
+    static constexpr int32_t _playback_duration = 0;
 };

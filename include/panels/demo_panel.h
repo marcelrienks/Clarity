@@ -23,6 +23,7 @@ private:
     // Panel specific constants
     static constexpr const char *_name = "Demo";
     static constexpr const PanelType _type = PanelType::Sensor;
+
     PanelIteration _iteration = PanelIteration::Infinite; // this must be modifiable to allow for personalization
 
     // Components
