@@ -1,4 +1,4 @@
-#include "managers/panel_manager.h"
+#include "handlers/panel_manager.h"
 #include "panels/splash_panel.h"
 #include "panels/demo_panel.h"
 

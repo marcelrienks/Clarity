@@ -1,4 +1,4 @@
-#include "managers/panel_factory.h"
+#include "handlers/panel_factory.h"
 
 /// @brief Get singleton instance of PanelFactory
 /// @return singleton instance of PanelFactory
