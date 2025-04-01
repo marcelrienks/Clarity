@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <ArduinoJson.h>
+#include <nvs_flash.h>
 
 class PreferenceManager
 {

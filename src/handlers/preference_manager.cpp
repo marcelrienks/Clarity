@@ -3,12 +3,6 @@
 PreferenceManager::PreferenceManager()
 {
     SerialLogger().log_point("PreferenceManager::PreferenceManager()", "...");
-
-    // Initialize preferences
-    if (!_preferences.begin("clarity"))
-        SerialLogger().log_point("main::setup()", "Failed to initialize preferences");
-
-    load_config();
 }
 
 PreferenceManager::~PreferenceManager()
@@ -19,6 +13,24 @@ PreferenceManager::~PreferenceManager()
 void PreferenceManager::init()
 {
     SerialLogger().log_point("PreferenceManager::Init()", "...");
+
+    // Initialize preferences
+    if (!_preferences.begin("clarity", false)) { // false = read/write mode
+        SerialLogger().log_point("PreferenceManager::init()", "Failed to initialize preferences, retrying after format");
+        
+        // Format NVS if opening failed
+        nvs_flash_erase();
+        
+        // Try again
+        if (!_preferences.begin("clarity", false))
+            SerialLogger().log_point("PreferenceManager::init()", "Failed to initialize preferences after format");
+        else
+            SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully after format");
+    } else {
+        SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully");
+    }
+    
+    load_config();
 }
 
 /// @brief converts an element of the iteration enum to it's equivelent string
