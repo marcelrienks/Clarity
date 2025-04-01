@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include <variant>
+#include <vector>
 #include <string>
 
 // Define the possible return types for the sensor readings
@@ -20,7 +21,20 @@ enum class PanelIteration
     Once
 };
 
-struct PanelConfig {
-    std::string panel_name;
-    PanelIteration iteration;
+struct PanelConfig
+{
+    std::string name = std::string();
+    PanelIteration iteration = PanelIteration::Once;
+};
+
+enum Theme
+{
+    Light,
+    Dark
+};
+
+struct Config
+{
+    Theme theme = Theme::Dark;
+    std::vector<PanelConfig> panels;
 };

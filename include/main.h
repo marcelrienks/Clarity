@@ -15,7 +15,7 @@
 
 // Global device and preferences
 Device _device;
-PreferenceManager _preferences("clarity");
+PreferenceManager _preferences;
 
 // Panel manager
 std::shared_ptr<PanelManager> _panel_manager;

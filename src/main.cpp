@@ -5,16 +5,12 @@ void setup() {
     SerialLogger().init();
     SerialLogger().log_point("main::setup()", "...");
 
-    // Initialize device
+    // Initialize 
+    _preferences.init();
     _device.prepare();
-    
-    // Initialize preferences
-    if (!_preferences.begin()) {
-      SerialLogger().log_point("main::setup()", "Failed to initialize preferences");
-    }
 
     // Create panel manager with preferences
-    _panel_manager = std::make_shared<PanelManager>(&_device, &_preferences);
+    _panel_manager = std::make_shared<PanelManager>(&_device);
     _panel_manager->init();
   }
   catch (const std::exception& e) {

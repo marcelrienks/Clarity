@@ -17,7 +17,7 @@
 
 class PanelManager {
 public:
-    PanelManager(IDevice *device, PreferenceManager *preference_manager);
+    PanelManager(IDevice *device);
     ~PanelManager();
 
     void init();
@@ -27,7 +27,6 @@ public:
 
 protected:
     IDevice *_device;
-    PreferenceManager *_preference_manager;
 
 private:
     std::list<std::shared_ptr<IPanel>> _panels_ptr;

@@ -2,8 +2,8 @@
 #include "panels/splash_panel.h"
 #include "panels/demo_panel.h"
 
-PanelManager::PanelManager(IDevice *device, PreferenceManager *preference_manager)
-    : _device(device), _preference_manager(preference_manager), _current_panel(nullptr), _is_show_all_locked(false), _is_panel_locked(false) {}
+PanelManager::PanelManager(IDevice *device)
+    : _device(device), _current_panel(nullptr), _is_show_all_locked(false), _is_panel_locked(false) {}
 
 PanelManager::~PanelManager()
 {
@@ -40,34 +40,23 @@ void PanelManager::load_panels_from_preferences()
     // Clear any existing panels
     _panels_ptr.clear();
 
-    // Attempt to load panel configuration from preferences
-    std::vector<PanelConfig> configs = _preference_manager->load_panel_configs();
-
-    // If no configurations were found, save and load defaults
-    if (configs.empty())
-    {
-        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "No panel configurations found. Using defaults.");
-        _preference_manager->save_default_panel_configs();
-        configs = _preference_manager->load_panel_configs();
-    }
-
     // Create and register each panel from the configuration
     PanelFactory &factory = PanelFactory::get_instance();
-    for (const auto &config : configs)
+    for (const auto &panel_config : PreferenceManager::config.panels)
     {
-        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Loading panel: " + config.panel_name);
+        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Loading panel: " + panel_config.name);
 
-        if (factory.is_panel_type_registered(config.panel_name))
+        if (factory.is_panel_type_registered(panel_config.name))
         {
-            auto panel = factory.create_panel(_device, config.panel_name, config.iteration);
+            auto panel = factory.create_panel(_device, panel_config.name, panel_config.iteration);
             if (panel)
                 register_panel(panel);
 
             else
-                SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Failed to create panel: " + config.panel_name);
+                SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Failed to create panel: " + panel_config.name);
         }
         else
-            SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Unknown panel type: " + config.panel_name);
+            SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Unknown panel type: " + panel_config.name);
     }
 }
 

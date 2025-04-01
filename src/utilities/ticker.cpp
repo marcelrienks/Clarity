@@ -30,7 +30,7 @@ void Ticker::handle_lv_tasks() {
     }
     
     // Process all pending tasks
-    lv_task_handler();
+    lv_timer_handler();
     last_task_run = current_time;
 }
 

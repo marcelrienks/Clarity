@@ -1,204 +1,144 @@
 #include "handlers/preference_manager.h"
-#include "utilities/serial_logger.h"
 
-PreferenceManager::PreferenceManager(const char* name) : _namespace(name), _is_initialized(false) {}
+PreferenceManager::PreferenceManager()
+{
+    SerialLogger().log_point("PreferenceManager::PreferenceManager()", "...");
 
-PreferenceManager::~PreferenceManager() {
-    end();
+    // Initialize preferences
+    if (!_preferences.begin("clarity"))
+        SerialLogger().log_point("main::setup()", "Failed to initialize preferences");
+
+    load_config();
 }
 
-/// @brief Start the preferences configuration
-/// @return True if initilisation was successful
-bool PreferenceManager::begin() {
-    _is_initialized = _preferences.begin(_namespace, false); // false = read/write mode
-    return _is_initialized;
+PreferenceManager::~PreferenceManager()
+{
+    _preferences.end();
 }
 
-/// @brief End the preferences configuration
-void PreferenceManager::end() {
-    if (_is_initialized) {
-        _preferences.end();
-        _is_initialized = false;
+void PreferenceManager::init()
+{
+    SerialLogger().log_point("PreferenceManager::Init()", "...");
+}
+
+/// @brief converts an element of the iteration enum to it's equivelent string
+/// @param panel_iteration the item from the enum to convert
+/// @return a string representing the name of the enum element
+const char *PreferenceManager::iteration_to_string(PanelIteration panel_iteration)
+{
+    switch (panel_iteration)
+    {
+    case PanelIteration::Infinite:
+        return "Infinite";
+    case PanelIteration::Disabled:
+        return "Disabled";
+    case PanelIteration::Once:
+        return "Once";
+    default:
+        return "Unknown";
     }
 }
 
-/// @brief Save serialised panel configuration
-/// @param configs the panel configuration to be saved
-/// @return True if the save was successful
-bool PreferenceManager::save_panel_configs(const std::vector<PanelConfig> &configs) {
-    if (!_is_initialized) {
-        SerialLogger().log_point("PreferenceManager::savePanelConfigs", "Not initialized");
-        return false;
-    }
-    
-    // Serialize the config vector to a byte array
-    std::vector<uint8_t> serialized_data = serialize_panel_configs(configs);
-    
-    // Store the serialized data
-    bool success = _preferences.putBytes("panel_configs", serialized_data.data(), serialized_data.size());
-    
-    if (success) {
-        SerialLogger().log_point("PreferenceManager::savePanelConfigs", 
-                                "Saved " + std::to_string(configs.size()) + " panel configs (" + 
-                                std::to_string(serialized_data.size()) + " bytes)");
-    } else {
-        SerialLogger().log_point("PreferenceManager::savePanelConfigs", "Failed to save panel configs");
-    }
-    
-    return success;
+/// @brief converts the name of an iteration enum to an element of the enum
+/// @param name a string representing the name of the enum element
+/// @return an element of the enum
+PanelIteration PreferenceManager::string_to_iteration(const char *name)
+{
+    if (strcmp(name, "Infinite") == 0)
+        return PanelIteration::Infinite;
+    if (strcmp(name, "Disabled") == 0)
+        return PanelIteration::Disabled;
+    if (strcmp(name, "Once") == 0)
+        return PanelIteration::Once;
+    return PanelIteration::Disabled; // Default value
 }
 
-/// @brief Load all the configured panels from Preferences
-/// @return list of configured panels to be shown
-std::vector<PanelConfig> PreferenceManager::load_panel_configs() {
-    std::vector<PanelConfig> configs;
-    
-    if (!_is_initialized) {
-        SerialLogger().log_point("PreferenceManager::loadPanelConfigs", "Not initialized");
-        return configs;
+bool PreferenceManager::save_config()
+{
+    SerialLogger().log_point("PreferenceManager::save_config", "...");
+    _preferences.remove(CONFIG_KEY);
+
+    const size_t panelCount = config.panels.size();
+    // Use the new JsonDocument instead of the deprecated classes
+    JsonDocument doc;
+
+    // Add config data to the JSON document
+    doc["theme"] = config.theme;
+
+    // Create panels array using the new syntax
+    doc["panels"] = JsonArray();
+    JsonArray panelsArray = doc["panels"].to<JsonArray>();
+
+    for (const auto &panel : config.panels)
+    {
+        // Add a new object to the array using the updated method
+        JsonObject panelObj = panelsArray.add<JsonObject>();
+        panelObj["name"] = panel.name;
+        panelObj["iteration"] = iteration_to_string(panel.iteration);
     }
-    
-    // Get the size of the stored data
-    size_t data_size = _preferences.getBytesLength("panel_configs");
-    
-    if (data_size == 0) {
-        SerialLogger().log_point("PreferenceManager::loadPanelConfigs", "No panel configs found");
-        return configs;
-    }
-    
-    // Create a buffer to hold the serialized data
-    std::vector<uint8_t> serialized_data(data_size);
-    
-    // Load the serialized data
-    size_t read_size = _preferences.getBytes("panel_configs", serialized_data.data(), data_size);
-    
-    if (read_size != data_size) {
-        SerialLogger().log_point("PreferenceManager::loadPanelConfigs", 
-                               "Error reading panel configs: read " + std::to_string(read_size) + 
-                               " of " + std::to_string(data_size) + " bytes");
-        return configs;
-    }
-    
-    // Deserialize the data
-    configs = deserialize_panel_configs(serialized_data);
-    
-    SerialLogger().log_point("PreferenceManager::loadPanelConfigs", 
-                           "Loaded " + std::to_string(configs.size()) + " panel configs");
-    
-    return configs;
+
+    // Serialize to JSON string
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+    // Save the JSON string to preferences
+    return _preferences.putString(CONFIG_KEY, jsonString);
 }
 
-/// @brief Clear all the panels from preferences
-/// @return True if the clearing was successful
-bool PreferenceManager::clear_panel_configs() {
-    if (!_is_initialized) return false;
-    return _preferences.remove("panel_configs");
+bool PreferenceManager::load_config()
+{
+    SerialLogger().log_point("PreferenceManager::load_config", "...");
+    String jsonString = _preferences.getString(CONFIG_KEY, "");
+
+    if (jsonString.length() > 0)
+    {
+        // Deserialize JSON using the new JsonDocument
+        const size_t jsonCapacity = jsonString.length() * 2; // 2x for safety
+        JsonDocument doc;
+        DeserializationError error = deserializeJson(doc, jsonString);
+
+        if (!error)
+        {
+            // Get all the config values
+            config.theme = doc["theme"];
+
+            // Process each panel
+            JsonArray panelsArray = doc["panels"].as<JsonArray>();
+            for (JsonObject panelObj : panelsArray)
+            {
+                PanelConfig panel;
+                panel.name = panelObj["name"].as<const char *>();
+                panel.iteration = string_to_iteration(panelObj["iteration"]);
+
+                // Add to config
+                config.panels.push_back(panel);
+            }
+            return true;
+        }
+        else
+        {
+            SerialLogger::log_point("PreferenceManager::load_config", "Error reading config");
+            return PreferenceManager::create_default_config();
+        };
+    }
+    else
+    {
+        // No existing config found, create default
+        return PreferenceManager::create_default_config();
+    }
 }
 
 /// @brief Create and save a list of default panels
 /// @return true if the save was successful
-bool PreferenceManager::save_default_panel_configs() {
-    SerialLogger().log_point("PreferenceManager::save_default_panel_configs", "...");
+bool PreferenceManager::create_default_config()
+{
+    SerialLogger().log_point("PreferenceManager::create_default_configs", "...");
 
-    std::vector<PanelConfig> defaultConfigs = {
-        {"SplashPanel", PanelIteration::Once},
-        {"DemoPanel", PanelIteration::Infinite}
-    };
-    
-    return save_panel_configs(defaultConfigs);
-}
+    config = {.theme = Theme::Dark,
+              .panels = {
+                  {"SplashPanel", PanelIteration::Once},
+                  {"DemoPanel", PanelIteration::Infinite}}};
 
-/// @brief Serialise panel configs for storage using preferences
-/// @param configs the configurations to be stored in preferences
-/// @return serialised data to be stored
-std::vector<uint8_t> PreferenceManager::serialize_panel_configs(const std::vector<PanelConfig>& configs) {
-    std::vector<uint8_t> data;
-    
-    // Add the number of configs (4 bytes)
-    uint32_t count = configs.size();
-    data.push_back((count >> 0) & 0xFF);
-    data.push_back((count >> 8) & 0xFF);
-    data.push_back((count >> 16) & 0xFF);
-    data.push_back((count >> 24) & 0xFF);
-    
-    // Add each config
-    for (const auto& config : configs) {
-        // Add string length (1 byte, assuming panel names are short)
-        uint8_t name_length = config.panel_name.length();
-        data.push_back(name_length);
-        
-        // Add the panel name
-        for (char c : config.panel_name) {
-            data.push_back(static_cast<uint8_t>(c));
-        }
-        
-        // Add the iteration value (1 byte)
-        data.push_back(static_cast<uint8_t>(config.iteration));
-    }
-    
-    return data;
-}
-
-/// @brief Deserialise Panel configurations
-/// @param data the data retrieved from preferences
-/// @return list of panel configs
-std::vector<PanelConfig> PreferenceManager::deserialize_panel_configs(const std::vector<uint8_t>& data) {
-    std::vector<PanelConfig> configs;
-    
-    // Check for minimum size (at least 4 bytes for the count)
-    if (data.size() < 4) {
-        SerialLogger().log_point("PreferenceManager::deserialize_panel_configs", 
-                               "Data too small to contain panel configs");
-        return configs;
-    }
-    
-    // Read the number of configs
-    uint32_t count = 0;
-    count |= static_cast<uint32_t>(data[0]) << 0;
-    count |= static_cast<uint32_t>(data[1]) << 8;
-    count |= static_cast<uint32_t>(data[2]) << 16;
-    count |= static_cast<uint32_t>(data[3]) << 24;
-    
-    // Sanity check on count
-    if (count > 100) { // Arbitrary limit to prevent memory issues
-        SerialLogger().log_point("PreferenceManager::deserialize_panel_configs", 
-                               "Invalid config count: " + std::to_string(count));
-        return configs;
-    }
-    
-    // Parse each config
-    size_t pos = 4; // Start after the count
-    
-    for (uint32_t i = 0; i < count && pos < data.size(); i++) {
-        // Read string length
-        uint8_t name_length = data[pos++];
-        
-        // Check if we have enough data for the name
-        if (pos + name_length > data.size()) {
-            SerialLogger().log_point("PreferenceManager::deserialize_panel_configs", 
-                                   "Unexpected end of data while reading panel name");
-            break;
-        }
-        
-        // Read the panel name
-        std::string panel_name;
-        for (uint8_t j = 0; j < name_length; j++) {
-            panel_name += static_cast<char>(data[pos++]);
-        }
-        
-        // Check if we have enough data for the iteration value
-        if (pos >= data.size()) {
-            SerialLogger().log_point("PreferenceManager::deserialize_panel_configs", 
-                                   "Unexpected end of data while reading iteration value");
-            break;
-        }
-        
-        // Read the iteration value
-        PanelIteration iteration = static_cast<PanelIteration>(data[pos++]);
-        
-        // Add the config
-        configs.push_back({panel_name, iteration});
-    }
-    
-    return configs;
+    PreferenceManager::save_config();
+    return PreferenceManager::load_config();
 }

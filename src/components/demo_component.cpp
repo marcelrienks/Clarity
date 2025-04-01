@@ -99,8 +99,9 @@ void DemoComponent::render_show(lv_obj_t *screen)
 }
 
 /// @brief Update the component by rendering the new reading
-/// @param reading the reading that was received from the sensor
-/// @param render_completion_callback the call back to be executed once rendering is complete
+/// @param animation the animation object that will render the updated value
+/// @param start the start value, this represents the initial value of the gauge currently
+/// @param end the final reading that is gauge must display
 void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
     SerialLogger().log_point("DemoComponent::render_update()", "...");

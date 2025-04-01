@@ -1,5 +1,18 @@
 #include "utilities/serial_logger.h"
 
+//TODO: investigate log_e() and all other ESP32 logging, and potentially replace all below with that
+// The ESP32 Arduino core provides several logging macros for different severity levels:
+
+// log_e(format, ...) - Error (highest severity)
+// log_w(format, ...) - Warning
+// log_i(format, ...) - Information
+// log_d(format, ...) - Debug
+// log_v(format, ...) - Verbose (lowest severity)
+
+// // In Arduino IDE:
+// esp_log_level_set("*", ESP_LOG_VERBOSE);  // Show all log messages
+// esp_log_level_set("*", ESP_LOG_ERROR);    // Show only error messages
+
 // Define static class members here
 bool SerialLogger::_is_initialized = false;
 std::string SerialLogger::_last_message = "";
