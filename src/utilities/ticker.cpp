@@ -15,8 +15,7 @@ uint32_t Ticker::get_elapsed_millis() {
 
 /// @brief Handle lv tasks by calculating the time differences since start up
 void Ticker::handle_lv_tasks() {
-    //SerialLogger().log_point("Ticker::handle_lv_tasks()", "...");
-
+    // SerialLogger().log(LogLevel::Verbose, "...");
     static uint32_t last_tick_increment = 0;
     static uint32_t last_task_run = 0;
     

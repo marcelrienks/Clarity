@@ -46,7 +46,7 @@ void PanelManager::load_panels_from_preferences()
     PanelFactory &factory = PanelFactory::get_instance();
     for (const auto &panel_config : PreferenceManager::config.panels)
     {
-        SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Loading panel: " + panel_config.name);
+        SerialLogger().log(LogLevel::Verbose, "Loading panel: %s", panel_config.name);
 
         if (factory.is_panel_type_registered(panel_config.name))
         {
@@ -55,10 +55,11 @@ void PanelManager::load_panels_from_preferences()
                 register_panel(panel);
 
             else
-                SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Failed to create panel: " + panel_config.name);
+                SerialLogger().log(LogLevel::Verbose, "Failed to create panel: %s", panel_config.name);
         }
         else
-            SerialLogger().log_point("PanelManager::load_panels_from_preferences", "Unknown panel type: " + panel_config.name);
+            SerialLogger().log(LogLevel::Verbose, "Unknown panel type: %s", panel_config.name);
+
     }
 }
 
@@ -66,7 +67,7 @@ void PanelManager::load_panels_from_preferences()
 /// @param panel_ptr shared pointer to the panel
 void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
 {
-    SerialLogger().log_point("PanelManager::register_panel", "Registering panel: " + panel_ptr->get_name());
+    SerialLogger().log(LogLevel::Verbose, "Registering panel: %s" , panel_ptr->get_name());
 
     // Check if the panel already exists
     if (std::find(_panels_ptr.begin(), _panels_ptr.end(), panel_ptr) == _panels_ptr.end())
@@ -79,19 +80,15 @@ void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
 /// @brief Show all panels in the list
 void PanelManager::show_all_panels()
 {
-    if (_is_show_all_locked)
-    {
-        SerialLogger().log_point("PanelManager::show_all_panels", "show all locked");
-        return;
-    }
+    SerialLogger().log(LogLevel::Verbose, "_is_show_all_locked is %i", _is_show_all_locked);
+    if (_is_show_all_locked) return;
 
-    SerialLogger().log_point("PanelManager::show_all_panels", "...");
     _is_show_all_locked = true;
 
     // List end logic
     if (_panels_ptr_it == _panels_ptr.end())
     {
-        SerialLogger().log_point("PanelManager::show_iterator_panel", "end of the list, resetting");
+        SerialLogger().log(LogLevel::Verbose, "end of the list, resetting");
         _panels_ptr_it = _panels_ptr.begin();
     }
 
@@ -107,31 +104,27 @@ void PanelManager::show_all_panels()
 /// @param show_panel_completion_callback the function to be called when the panel show is complete
 void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_completion_callback)
 {
-    SerialLogger().log_point("PanelManager::show_panel", "...");
+    SerialLogger().log(LogLevel::Verbose, "_is_panel_locked is %i", _is_panel_locked);
 
     // Panel locked for loading or updating
-    if (_is_panel_locked)
-    {
-        SerialLogger().log_point("PanelManager::show_panel", "show panel locked");
-        return;
-    }
+    if (_is_panel_locked) return;
 
     // Panel already shown logic
     if (panel == _current_panel)
     {
-        SerialLogger().log_point("PanelManager::show_panel", _current_panel->get_name() + " panel is already shown");
+        SerialLogger().log(LogLevel::Verbose, "panel %s is already shown", _current_panel->get_name());
         return;
     }
 
     if (panel->get_iteration() == PanelIteration::Disabled)
     {
-        SerialLogger().log_point("PanelManager::show_panel", panel->get_name() + " is disabled");
+        SerialLogger().log(LogLevel::Verbose, "panel %s is disabled", panel->get_name());
         return;
     }
 
     // Lock the panel to prevent updating during loading
     _is_panel_locked = true;
-    SerialLogger().log_value("PanelManager::show_panel", "_is_panel_locked", std::to_string(_is_panel_locked));
+    SerialLogger().log(LogLevel::Verbose, "_is_panel_locked is %i", _is_panel_locked);
 
     _current_panel = panel;
 
@@ -141,16 +134,12 @@ void PanelManager::show_panel(IPanel *panel, std::function<void()> show_panel_co
 /// @brief Update the reading on the currently loaded panel
 void PanelManager::update_current_panel()
 {
-    SerialLogger().log_point("PanelManager::update_current_panel", "...");
+    SerialLogger().log(LogLevel::Verbose, "_is_panel_locked is %i", _is_panel_locked);
 
-    if (!_current_panel || _is_panel_locked)
-    {
-        SerialLogger().log_point("PanelManager::update_current_panel", "panel locked");
-        return;
-    }
+    if (!_current_panel || _is_panel_locked) return;
 
     _is_panel_locked = true;
-    SerialLogger().log_value("PanelManager::update_current_panel", "_is_panel_locked", std::to_string(_is_panel_locked));
+    SerialLogger().log(LogLevel::Verbose, "_is_panel_locked is %i", _is_panel_locked);
 
     _current_panel->update([this]()
                            { this->update_current_panel_completion_callback(); });
@@ -159,10 +148,8 @@ void PanelManager::update_current_panel()
 /// @brief callback function to be executed on panel show completion
 void PanelManager::show_panel_completion_callback()
 {
-    SerialLogger().log_point("PanelManager::show_panel_completion_callback", "...");
-
     _is_panel_locked = false;
-    SerialLogger().log_value("PanelManager::show_panel_completion_callback", "_is_panel_locked", std::to_string(_is_panel_locked));
+    SerialLogger().log(LogLevel::Verbose, "_is_panel_locked is %i", _is_panel_locked);
 
     _panels_ptr_it++;
     int display_time = PANEL_DISPLAY_TIME;
@@ -176,28 +163,25 @@ void PanelManager::show_panel_completion_callback()
     }
 
     // Create a display timer to show the current panel for an amount of time, unless it's a splash type
-    SerialLogger().log_point("PanelManager::show_panel_completion_callback", "show_panel -> create display timer");
+    SerialLogger().log(LogLevel::Verbose, "create display timer");
     lv_timer_create(PanelManager::display_timer_callback, display_time, this);
 }
 
 /// @brief Request panel to update it's reading and render that
 void PanelManager::update_current_panel_completion_callback()
 {
-    SerialLogger().log_point("PanelManager::update_current_panel_completion_callback", "...");
-
     _is_panel_locked = false;
-    SerialLogger().log_value("PanelManager::update_current_panel_completion_callback", "_is_panel_locked", std::to_string(_is_panel_locked));
+    SerialLogger().log(LogLevel::Verbose, "_is_panel_locked is %i", _is_panel_locked);
 }
 
 /// @brief callback function to be executed when display time of the current panel has elapsed
 /// @param display_timer the timer that has elapsed
 void PanelManager::display_timer_callback(lv_timer_t *display_timer)
 {
-    SerialLogger().log_point("PanelManager::display_timer_callback", "...");
     auto *panel_manager_instance = static_cast<PanelManager *>(lv_timer_get_user_data(display_timer));
     panel_manager_instance->_is_show_all_locked = false;
 
-    SerialLogger().log_point("PanelManager::display_timer_callback", "completed display of panel " + panel_manager_instance->_current_panel->get_name());
+    SerialLogger().log(LogLevel::Verbose, "completed display of panel %s",  panel_manager_instance->_current_panel->get_name());
 
     // Remove the timer after transition, this replaces having to set a repeat on the timer
     lv_timer_del(display_timer);

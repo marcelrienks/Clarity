@@ -2,26 +2,24 @@
 
 void PreferenceManager::init()
 {
-    SerialLogger().log_point("PreferenceManager::Init()", "...");
-
     // Initialize preferences
     if (!_preferences.begin("clarity", false))
     { // false = read/write mode
-        SerialLogger().log_point("PreferenceManager::init()", "Failed to initialize preferences, retrying after format");
+        SerialLogger().log(LogLevel::Verbose, "Failed to initialize preferences, retrying after format");
 
         // Format NVS if opening failed
         nvs_flash_erase();
 
         // Try again
         if (!_preferences.begin("clarity", false))
-            SerialLogger().log_point("PreferenceManager::init()", "Failed to initialize preferences after format");
+            SerialLogger().log(LogLevel::Verbose, "Failed to initialize preferences after format");
 
         else
-            SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully after format");
+            SerialLogger().log(LogLevel::Verbose, "Preferences initialized successfully after format");
     }
 
     else
-        SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully");
+        SerialLogger().log(LogLevel::Verbose, "Preferences initialized successfully");
 
     load_config();
 }
@@ -60,7 +58,7 @@ PanelIteration PreferenceManager::string_to_iteration(const char *name)
 
 bool PreferenceManager::save_config()
 {
-    SerialLogger().log_point("PreferenceManager::save_config", "...");
+    SerialLogger().log(LogLevel::Verbose, "...");
     _preferences.remove(CONFIG_KEY);
 
     const size_t panelCount = config.panels.size();
@@ -92,7 +90,7 @@ bool PreferenceManager::save_config()
 
 bool PreferenceManager::load_config()
 {
-    SerialLogger().log_point("PreferenceManager::load_config", "...");
+    SerialLogger().log(LogLevel::Verbose, "...");
     String jsonString = _preferences.getString(CONFIG_KEY, "");
 
     if (jsonString.length() > 0)
@@ -122,7 +120,7 @@ bool PreferenceManager::load_config()
         }
         else
         {
-            SerialLogger::log_point("PreferenceManager::load_config", "Error reading config");
+            SerialLogger().log(LogLevel::Verbose, "Error reading config");
             return PreferenceManager::create_default_config();
         };
     }
@@ -135,7 +133,7 @@ bool PreferenceManager::load_config()
 /// @return true if the save was successful
 bool PreferenceManager::create_default_config()
 {
-    SerialLogger().log_point("PreferenceManager::create_default_configs", "...");
+    SerialLogger().log(LogLevel::Verbose, "...");
 
     config = {.theme = Theme::Dark,
               .panels = {
