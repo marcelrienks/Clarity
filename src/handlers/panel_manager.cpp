@@ -2,8 +2,8 @@
 #include "panels/splash_panel.h"
 #include "panels/demo_panel.h"
 
-PanelManager::PanelManager(IDevice *device)
-    : _device(device), _current_panel(nullptr), _is_show_all_locked(false), _is_panel_locked(false) {}
+PanelManager::PanelManager()
+    : _current_panel(nullptr), _is_show_all_locked(false), _is_panel_locked(false) {}
 
 PanelManager::~PanelManager()
 {
@@ -12,8 +12,10 @@ PanelManager::~PanelManager()
 }
 
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
-void PanelManager::init()
+void PanelManager::init(IDevice *device)
 {
+    _device = device;
+
     // Register all available panel types with the factory
     register_panel_types();
 

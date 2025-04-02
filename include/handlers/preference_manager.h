@@ -24,9 +24,6 @@ private:
 public:
     inline static Config config;
 
-    PreferenceManager();
-    ~PreferenceManager();
-
     void init();
     bool save_config();
     bool load_config();

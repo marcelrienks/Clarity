@@ -13,9 +13,6 @@
 #include <LovyanGFX.hpp>
 #include <memory>
 
-// Global device and preferences
 Device _device;
 PreferenceManager _preferences;
-
-// Panel manager
-std::shared_ptr<PanelManager> _panel_manager;
+PanelManager _panel_manager;

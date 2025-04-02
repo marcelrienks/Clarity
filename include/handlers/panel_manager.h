@@ -17,10 +17,10 @@
 
 class PanelManager {
 public:
-    PanelManager(IDevice *device);
+    PanelManager();
     ~PanelManager();
 
-    void init();
+    void init(IDevice *device);
     void show_all_panels();
     void show_panel(IPanel *panel, std::function<void()> completion_callback = nullptr);
     void update_current_panel();

@@ -8,10 +8,7 @@ void setup() {
     // Initialize 
     _preferences.init();
     _device.prepare();
-
-    // Create panel manager with preferences
-    _panel_manager = std::make_shared<PanelManager>(&_device);
-    _panel_manager->init();
+    _panel_manager.init(&_device);
   }
   catch (const std::exception& e) {
     SerialLogger().log(e.what());
@@ -33,8 +30,8 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    _panel_manager->show_all_panels();
-    _panel_manager->update_current_panel();
+    _panel_manager.show_all_panels();
+    _panel_manager.update_current_panel();
 
     // Process LVGL tasks again to render the changes immediately
     Ticker::handle_lv_tasks();

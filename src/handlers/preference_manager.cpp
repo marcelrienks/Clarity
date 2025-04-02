@@ -1,35 +1,28 @@
 #include "handlers/preference_manager.h"
 
-PreferenceManager::PreferenceManager()
-{
-    SerialLogger().log_point("PreferenceManager::PreferenceManager()", "...");
-}
-
-PreferenceManager::~PreferenceManager()
-{
-    _preferences.end();
-}
-
 void PreferenceManager::init()
 {
     SerialLogger().log_point("PreferenceManager::Init()", "...");
 
     // Initialize preferences
-    if (!_preferences.begin("clarity", false)) { // false = read/write mode
+    if (!_preferences.begin("clarity", false))
+    { // false = read/write mode
         SerialLogger().log_point("PreferenceManager::init()", "Failed to initialize preferences, retrying after format");
-        
+
         // Format NVS if opening failed
         nvs_flash_erase();
-        
+
         // Try again
         if (!_preferences.begin("clarity", false))
             SerialLogger().log_point("PreferenceManager::init()", "Failed to initialize preferences after format");
+
         else
             SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully after format");
-    } else {
-        SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully");
     }
-    
+
+    else
+        SerialLogger().log_point("PreferenceManager::init()", "Preferences initialized successfully");
+
     load_config();
 }
 
@@ -133,11 +126,9 @@ bool PreferenceManager::load_config()
             return PreferenceManager::create_default_config();
         };
     }
+    
     else
-    {
-        // No existing config found, create default
         return PreferenceManager::create_default_config();
-    }
 }
 
 /// @brief Create and save a list of default panels
