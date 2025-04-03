@@ -128,7 +128,13 @@ bool PreferenceManager::load_config()
         if (!error)
         {
             // Get all the config values
-            config.theme = doc["theme"];
+            if (doc.containsKey("theme")) {
+                const char* themeStr = doc["theme"].as<const char*>();
+                config.theme = string_to_theme(themeStr);
+            }
+            
+            else
+                config.theme = Theme::Dark; // Default theme
 
             // Process each panel
             JsonArray panelsArray = doc["panels"].as<JsonArray>();
