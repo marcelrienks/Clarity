@@ -5,10 +5,10 @@
 
 #include <lvgl.h>
 
-class DemoComponent : public IComponent
+class OilPressureComponent : public IComponent
 {
-public:
-    ~DemoComponent();
+    public:
+    ~OilPressureComponent();
 
     void render_show(lv_obj_t *screen) override;
     void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
@@ -17,7 +17,7 @@ public:
 private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
-
+    
     // Style variables as member variables
     lv_style_t _indicator_style;
     lv_style_t _minor_ticks_style;
@@ -27,6 +27,7 @@ private:
     lv_style_t _section_main_line_style;
 
     // Component specific constants
+    lv_style_selector_t _default_selector = LV_PART_MAIN | LV_STATE_DEFAULT; // selects the main part with a default stare
     static constexpr int32_t _animation_duration = 1000;
     static constexpr int32_t _playback_duration = 0;
 };

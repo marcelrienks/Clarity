@@ -7,18 +7,11 @@
 #include <LovyanGFX.hpp>
 #include <random>
 
-class DemoSensor : public ISensor
+class OilSensor : public ISensor
 {
 public:
-    DemoSensor();
+    OilSensor();
 
     void init() override;
     Reading get_reading() override;
-
-private:
-    std::mt19937 _engine;                          // Mersenne Twister engine
-    std::uniform_int_distribution<> _distribution; // Uniform distribution
-
-    int32_t last_read_time = 0;
-    int32_t current_reading;
 };

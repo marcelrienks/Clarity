@@ -1,33 +1,31 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
+#include "utilities/types.h"
+
+
 #include <Preferences.h>
 #include <Arduino.h>
 #include <vector>
 #include <string>
-#include "utilities/types.h"
+#include <ArduinoJson.h>
+#include <nvs_flash.h>
 
-class PreferenceManager {
+class PreferenceManager
+{
 private:
+    inline static const char *CONFIG_KEY = "config";
+    inline static const size_t JSON_CAPACITY_PER_PANEL = 256;
+
     Preferences _preferences;
-    const char *_namespace;
-    bool _is_initialized;
-    
-    // Serialization helpers
-    std::vector<uint8_t> serialize_panel_configs(const std::vector<PanelConfig>& configs);
-    std::vector<PanelConfig> deserialize_panel_configs(const std::vector<uint8_t>& data);
+
+    const char *iteration_to_string(PanelIteration iter);
+    PanelIteration string_to_iteration(const char *str);
 
 public:
-    PreferenceManager(const char *name = "clarity");
-    ~PreferenceManager();
-    
-    bool begin();
-    void end();
-    
-    // Panel configuration methods
-    bool save_panel_configs(const std::vector<PanelConfig> &configs);
-    std::vector<PanelConfig> load_panel_configs();
-    
-    // Helper methods
-    bool clear_panel_configs();
-    bool save_default_panel_configs();
+    inline static Config config;
+
+    void init();
+    bool save_config();
+    bool load_config();
+    bool create_default_config();
 };

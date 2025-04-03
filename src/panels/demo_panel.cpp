@@ -22,7 +22,7 @@ DemoPanel::~DemoPanel()
 /// @param device
 void DemoPanel::init()
 {
-    SerialLogger().log_point("DemoPanel::init()", "...");
+    log_d("...");
     _screen = LvTools::create_blank_screen();
     _sensor->init();
     _current_value = 0;
@@ -32,20 +32,20 @@ void DemoPanel::init()
 /// @param callback_function to be called when the panel show is completed
 void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 {
-    SerialLogger().log_point("DemoPanel::show()", "...");
+    log_i("...");
     _callback_function = show_panel_completion_callback;
 
     _component->render_show(_screen);
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
-    SerialLogger().log_point("DemoPanel::show()", "load");
+    log_d("load...");
     lv_scr_load(_screen);
 }
 
 /// @brief Update the reading on the screen
 void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 {
-    SerialLogger().log_point("DemoPanel::update()", "...");
+    log_i("...");
     _callback_function = update_panel_completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
@@ -56,7 +56,7 @@ void DemoPanel::update(std::function<void()> update_panel_completion_callback)
     lv_anim_set_exec_cb(&update_animation, DemoPanel::execute_animation_callback);
     lv_anim_set_completed_cb(&update_animation, DemoPanel::update_panel_completion_callback);
 
-    SerialLogger().log_point("DemoPanel::update()", "animate");
+    log_d("animate...");
     lv_anim_start(&update_animation);
 }
 
@@ -64,7 +64,7 @@ void DemoPanel::update(std::function<void()> update_panel_completion_callback)
 /// @param event LVGL event that was used to call this
 void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 {
-    SerialLogger().log_point("DemoPanel::show_panel_completion_callback()", "...");
+    log_d("...");
     auto this_instance = static_cast<DemoPanel *>(lv_event_get_user_data(event));
     this_instance->_callback_function();
 }
@@ -73,7 +73,7 @@ void DemoPanel::show_panel_completion_callback(lv_event_t *event)
 /// @param animation the object that was animated
 void DemoPanel::update_panel_completion_callback(lv_anim_t *animation)
 {
-    SerialLogger().log_point("DemoPanel::update_panel_completion_callback()", "...");
+    log_d("...");
     auto this_instance = static_cast<DemoPanel *>(animation->var);
     this_instance->_current_value = animation->current_value;
     this_instance->_callback_function();
@@ -84,7 +84,7 @@ void DemoPanel::update_panel_completion_callback(lv_anim_t *animation)
 /// @param value the next value in a sequence to create a smooth transition
 void DemoPanel::execute_animation_callback(void *target, int32_t value)
 {
-    SerialLogger().log_point("DemoPanel::execute_animation_callback()", "...");
+    log_d("...");
     lv_anim_t *animation = lv_anim_get(target, execute_animation_callback); // get the animation
     auto this_instance = static_cast<DemoPanel *>(animation->var);          // use the animation to get the var which is this instance
     this_instance->_component.get()->set_value(value);

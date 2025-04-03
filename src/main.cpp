@@ -2,27 +2,19 @@
 
 void setup() {
   try {
-    SerialLogger().init();
-    SerialLogger().log_point("main::setup()", "...");
+    log_d("...");
 
-    // Initialize device
+    // Initialize 
+    _preferences.init();
     _device.prepare();
-    
-    // Initialize preferences
-    if (!_preferences.begin()) {
-      SerialLogger().log_point("main::setup()", "Failed to initialize preferences");
-    }
-
-    // Create panel manager with preferences
-    _panel_manager = std::make_shared<PanelManager>(&_device, &_preferences);
-    _panel_manager->init();
+    _panel_manager.init(&_device);
   }
-  catch (const std::exception& e) {
-    SerialLogger().log(e.what());
+  catch (const std::exception &e) {
+    log_e("%s", e.what());
     throw;
   }
   catch (...) {
-    SerialLogger().log_point("main::setup()", "Unknown exception occurred");
+    log_e("Unknown exception occurred");
     throw;
   }
 }
@@ -31,14 +23,14 @@ void loop()
 {
   try
   {
-    // SerialLogger().log_point("main::loop()", "...");
+    // log_d("...");
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    _panel_manager->show_all_panels();
-    _panel_manager->update_current_panel();
+    _panel_manager.show_all_panels();
+    _panel_manager.update_current_panel();
 
     // Process LVGL tasks again to render the changes immediately
     Ticker::handle_lv_tasks();
@@ -48,12 +40,12 @@ void loop()
   }
   catch (const std::exception &e)
   {
-    SerialLogger().log(e.what());
+    log_e("%s", e.what());
     throw;
   }
   catch (...)
   {
-    SerialLogger().log_point("main::loop()", "Unknown exception occurred");
+    log_e("Unknown exception occurred");
     throw;
   }
 }

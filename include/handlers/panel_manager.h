@@ -3,7 +3,6 @@
 
 #include "interfaces/i_panel.h"
 #include "interfaces/i_device.h"
-#include "utilities/serial_logger.h"
 #include "handlers/preference_manager.h"
 #include "handlers/panel_factory.h"
 
@@ -17,17 +16,16 @@
 
 class PanelManager {
 public:
-    PanelManager(IDevice *device, PreferenceManager *preference_manager);
+    PanelManager();
     ~PanelManager();
 
-    void init();
+    void init(IDevice *device);
     void show_all_panels();
     void show_panel(IPanel *panel, std::function<void()> completion_callback = nullptr);
     void update_current_panel();
 
 protected:
     IDevice *_device;
-    PreferenceManager *_preference_manager;
 
 private:
     std::list<std::shared_ptr<IPanel>> _panels_ptr;

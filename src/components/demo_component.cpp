@@ -24,7 +24,7 @@ DemoComponent::~DemoComponent()
 /// @param screen the screen on which to render the component
 void DemoComponent::render_show(lv_obj_t *screen)
 {
-    SerialLogger().log_point("DemoComponent::render_show()", "...");
+    log_d("...");
 
     _scale = lv_scale_create(screen);
     lv_obj_set_size(_scale, 150, 150);
@@ -99,11 +99,12 @@ void DemoComponent::render_show(lv_obj_t *screen)
 }
 
 /// @brief Update the component by rendering the new reading
-/// @param reading the reading that was received from the sensor
-/// @param render_completion_callback the call back to be executed once rendering is complete
+/// @param animation the animation object that will render the updated value
+/// @param start the start value, this represents the initial value of the gauge currently
+/// @param end the final reading that is gauge must display
 void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
-    SerialLogger().log_point("DemoComponent::render_update()", "...");
+    log_d("...");
 
     lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
     if (end >= 75)
@@ -121,6 +122,6 @@ void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t e
 /// @brief Set the value of the line needle
 /// @param value the value to set the line needle to
 void DemoComponent::set_value(int32_t value) {
-    SerialLogger().log_value("DemoComponent::set_value()", "value", std::to_string(value));
+    log_i("value is %i", value);
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
 }

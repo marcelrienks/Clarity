@@ -67,7 +67,7 @@ Device::Device()
 /// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
-    SerialLogger().log_point("Device::prepare()", "...");
+    log_i("init...");
 
     // Initialise screen
     init();
@@ -77,8 +77,7 @@ void Device::prepare()
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
     lv_init();
-
-    SerialLogger().log_point("Device::prepare()", "Display configuration...");
+    log_i("Display configuration...");
 
     // setup screen
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -97,7 +96,6 @@ void Device::prepare()
 /// @param data
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
-    // SerialLogger().log_point("Device::display_flush_callback()", "...");
     Device *device_instance = (Device *)lv_display_get_user_data(display);
 
     uint32_t w = lv_area_get_width(area);

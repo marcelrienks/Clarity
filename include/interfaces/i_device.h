@@ -1,5 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
+#include <esp32-hal-log.h>
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
 
