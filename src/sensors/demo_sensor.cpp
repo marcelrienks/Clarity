@@ -23,10 +23,10 @@ Reading DemoSensor::get_reading()
         // Generate a random number in the range [0, 100]
         this->current_reading = _distribution(_engine);
 
-        SerialLogger().log(LogLevel::Verbose, "currentReading is %s", std::to_string(this->current_reading));
+        log_i("currentReading is %s", std::to_string(this->current_reading).c_str());
     }
     else
-        SerialLogger().log(LogLevel::Verbose, "Reading bypassed because elapsed_time is %i", elapsed_time);
+        log_d("Reading bypassed because elapsed_time is %i", elapsed_time);
 
     return this->current_reading;
 }

@@ -1,7 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_component.h"
-#include "utilities/serial_logger.h"
 #include "utilities/types.h"
 
 #include <lvgl.h>
@@ -18,7 +17,7 @@ public:
 private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
-    
+
     // Style variables as member variables
     lv_style_t _indicator_style;
     lv_style_t _minor_ticks_style;

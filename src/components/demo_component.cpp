@@ -24,7 +24,7 @@ DemoComponent::~DemoComponent()
 /// @param screen the screen on which to render the component
 void DemoComponent::render_show(lv_obj_t *screen)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
 
     _scale = lv_scale_create(screen);
     lv_obj_set_size(_scale, 150, 150);
@@ -104,7 +104,7 @@ void DemoComponent::render_show(lv_obj_t *screen)
 /// @param end the final reading that is gauge must display
 void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
 
     lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
     if (end >= 75)
@@ -122,6 +122,6 @@ void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t e
 /// @brief Set the value of the line needle
 /// @param value the value to set the line needle to
 void DemoComponent::set_value(int32_t value) {
-    SerialLogger().log(LogLevel::Verbose, "value is %i", value);
+    log_i("value is %i", value);
     lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
 }

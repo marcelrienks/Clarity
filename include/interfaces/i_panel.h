@@ -3,8 +3,8 @@
 #include "interfaces/i_device.h"
 #include "interfaces/i_component.h"
 #include "interfaces/i_sensor.h"
-#include "utilities/serial_logger.h"
 
+#include <esp32-hal-log.h>
 #include <lvgl.h>
 #include <functional>
 #include <memory>

@@ -19,7 +19,7 @@ SplashPanel::~SplashPanel()
 /// @param device the device housing the screens
 void SplashPanel::init()
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
 
     _blank_screen = LvTools::create_blank_screen();
     _screen = LvTools::create_blank_screen();
@@ -29,7 +29,7 @@ void SplashPanel::init()
 /// @param show_panel_completion_callback the function to call when the splash screen is complete
 void SplashPanel::show(std::function<void()> show_panel_completion_callback)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_i("...");
     _callback_function = show_panel_completion_callback;
 
     _component->render_show(_screen);
@@ -47,7 +47,7 @@ void SplashPanel::update(std::function<void()> update_panel_completion_callback)
 /// @param fade_in_timer the fade_in_timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_v("...");
 
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_in_timer));
@@ -72,7 +72,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
 /// @param fade_out_timer the animation_timer that has completed
 void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_v("...");
 
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_out_timer));
@@ -100,7 +100,7 @@ void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
     // Get the splash panel instance
     auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
 
-    SerialLogger().log(LogLevel::Verbose, "Executing splash callback");
+    log_v("Executing splash callback");
     this_instance->_callback_function();
 
     // Delete the animation_timer

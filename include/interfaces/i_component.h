@@ -2,6 +2,7 @@
 
 #include "utilities/types.h"
 
+#include <esp32-hal-log.h>
 #include <lvgl.h>
 #include <functional>
 

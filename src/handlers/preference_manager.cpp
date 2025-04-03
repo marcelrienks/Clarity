@@ -5,21 +5,21 @@ void PreferenceManager::init()
     // Initialize preferences
     if (!_preferences.begin("clarity", false))
     { // false = read/write mode
-        SerialLogger().log(LogLevel::Verbose, "Failed to initialize preferences, retrying after format");
+        log_w("Failed to initialize preferences, retrying after format");
 
         // Format NVS if opening failed
         nvs_flash_erase();
 
         // Try again
         if (!_preferences.begin("clarity", false))
-            SerialLogger().log(LogLevel::Verbose, "Failed to initialize preferences after format");
+            log_w("Failed to initialize preferences after format");
 
         else
-            SerialLogger().log(LogLevel::Verbose, "Preferences initialized successfully after format");
+            log_w("Preferences initialized successfully after format");
     }
 
     else
-        SerialLogger().log(LogLevel::Verbose, "Preferences initialized successfully");
+        log_i("Preferences initialized successfully");
 
     load_config();
 }
@@ -58,7 +58,7 @@ PanelIteration PreferenceManager::string_to_iteration(const char *name)
 
 bool PreferenceManager::save_config()
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
     _preferences.remove(CONFIG_KEY);
 
     const size_t panelCount = config.panels.size();
@@ -90,7 +90,7 @@ bool PreferenceManager::save_config()
 
 bool PreferenceManager::load_config()
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
     String jsonString = _preferences.getString(CONFIG_KEY, "");
 
     if (jsonString.length() > 0)
@@ -120,7 +120,7 @@ bool PreferenceManager::load_config()
         }
         else
         {
-            SerialLogger().log(LogLevel::Verbose, "Error reading config");
+            log_w("Error reading config");
             return PreferenceManager::create_default_config();
         };
     }
@@ -133,7 +133,7 @@ bool PreferenceManager::load_config()
 /// @return true if the save was successful
 bool PreferenceManager::create_default_config()
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_i("...");
 
     config = {.theme = Theme::Dark,
               .panels = {

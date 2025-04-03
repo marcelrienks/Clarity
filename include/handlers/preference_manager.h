@@ -1,7 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
-#include "utilities/serial_logger.h"
+
 
 #include <Preferences.h>
 #include <Arduino.h>

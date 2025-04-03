@@ -3,7 +3,6 @@
 
 #define UI_VERSION "4.1.0"
 
-#include "utilities/serial_logger.h"
 #include "utilities/ticker.h"
 #include "handlers/panel_manager.h"
 #include "handlers/preference_manager.h"

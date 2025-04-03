@@ -22,7 +22,7 @@ OilPressureComponent::~OilPressureComponent()
 /// @param screen the screen on which to render the component
 void OilPressureComponent::render_show(lv_obj_t *screen)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
 
     _scale = lv_scale_create(screen);
     lv_obj_set_style_pad_all(_scale, 10, _default_selector); // Set padding all around scale
@@ -35,12 +35,12 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
 /// @param end the final reading that is gauge must display
 void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
 }
 
 /// @brief Set the value of the line needle
 /// @param value the value to set the line needle to
 void OilPressureComponent::set_value(int32_t value)
 {
-    SerialLogger().log(LogLevel::Verbose, "value is %i", value);
+    log_i("value is %i", value);
 }

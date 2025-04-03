@@ -1,7 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_component.h"
-#include "utilities/serial_logger.h"
+
 
 class ClarityComponent : public IComponent
 {

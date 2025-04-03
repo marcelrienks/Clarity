@@ -2,20 +2,19 @@
 
 void setup() {
   try {
-    SerialLogger().init();
-    SerialLogger().log(LogLevel::Verbose, "...");
+    log_d("...");
 
     // Initialize 
     _preferences.init();
     _device.prepare();
     _panel_manager.init(&_device);
   }
-  catch (const std::exception& e) {
-    SerialLogger().log(LogLevel::Error, e.what());
+  catch (const std::exception &e) {
+    log_e("%s", e.what());
     throw;
   }
   catch (...) {
-    SerialLogger().log(LogLevel::Error, "Unknown exception occurred");
+    log_e("Unknown exception occurred");
     throw;
   }
 }
@@ -24,7 +23,7 @@ void loop()
 {
   try
   {
-    // SerialLogger().log(LogLevel::Verbose, "...");
+    // log_d("...");
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks
@@ -41,12 +40,12 @@ void loop()
   }
   catch (const std::exception &e)
   {
-    SerialLogger().log(LogLevel::Error, e.what());
+    log_e("%s", e.what());
     throw;
   }
   catch (...)
   {
-    SerialLogger().log(LogLevel::Error, "Unknown exception occurred");
+    log_e("Unknown exception occurred");
     throw;
   }
 }

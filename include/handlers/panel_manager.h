@@ -3,7 +3,6 @@
 
 #include "interfaces/i_panel.h"
 #include "interfaces/i_device.h"
-#include "utilities/serial_logger.h"
 #include "handlers/preference_manager.h"
 #include "handlers/panel_factory.h"
 

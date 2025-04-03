@@ -67,7 +67,7 @@ Device::Device()
 /// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
-    SerialLogger().log(LogLevel::Verbose, "init...");
+    log_i("init...");
 
     // Initialise screen
     init();
@@ -77,7 +77,7 @@ void Device::prepare()
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
     lv_init();
-    SerialLogger().log(LogLevel::Verbose, "Display configuration...");
+    log_i("Display configuration...");
 
     // setup screen
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
