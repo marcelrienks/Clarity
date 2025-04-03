@@ -3,6 +3,8 @@
 #define LGFX_USE_V1
 
 #include "interfaces/i_device.h"
+#include "handlers/style_manager.h"
+#include "handlers/preference_manager.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>

@@ -1,5 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
+#include "handlers/style_manager.h"
+
 #include <lvgl.h>
 
 class LvTools

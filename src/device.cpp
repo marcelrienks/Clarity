@@ -64,7 +64,6 @@ Device::Device()
     setPanel(&_panel_instance);
 }
 
-/// @brief Initialises the device and setting various screen properties
 void Device::prepare()
 {
     log_i("init...");
@@ -86,8 +85,11 @@ void Device::prepare()
     lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
-    // Default theme with Dark screen
-    lv_obj_set_style_bg_color(lv_scr_act(), lv_color_hex(0x000000), LV_PART_MAIN);
+    // Initialize the style manager with the current theme from preferences
+    StyleManager::get_instance().init(PreferenceManager::config.theme);
+    
+    // Apply the theme to the active screen
+    StyleManager::get_instance().apply_theme_to_screen(lv_scr_act());
 }
 
 /// @brief Static Display Flush Wrapper function

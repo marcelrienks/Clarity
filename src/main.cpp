@@ -4,9 +4,13 @@ void setup() {
   try {
     log_d("...");
 
-    // Initialize 
-    _preferences.init();
+    // Initialize preferences first to load theme settings
+    _preference_manager.init();
+    
+    // Initialize the device which will use the theme from preferences
     _device.prepare();
+    
+    // Initialize panel manager
     _panel_manager.init(&_device);
   }
   catch (const std::exception &e) {

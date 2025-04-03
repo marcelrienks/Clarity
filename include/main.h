@@ -13,5 +13,5 @@
 #include <memory>
 
 Device _device;
-PreferenceManager _preferences;
+PreferenceManager _preference_manager;
 PanelManager _panel_manager;

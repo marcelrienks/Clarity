@@ -24,9 +24,6 @@ void PreferenceManager::init()
     load_config();
 }
 
-/// @brief converts an element of the iteration enum to it's equivelent string
-/// @param panel_iteration the item from the enum to convert
-/// @return a string representing the name of the enum element
 const char *PreferenceManager::iteration_to_string(PanelIteration panel_iteration)
 {
     switch (panel_iteration)
@@ -54,6 +51,34 @@ PanelIteration PreferenceManager::string_to_iteration(const char *name)
     if (strcmp(name, "Once") == 0)
         return PanelIteration::Once;
     return PanelIteration::Disabled; // Default value
+}
+
+/// @brief Converts a Theme enum value to a string representation
+/// @param theme The theme enum value to convert
+/// @return A string representation of the theme
+const char *PreferenceManager::theme_to_string(Theme theme)
+{
+    switch (theme)
+    {
+    case Theme::Light:
+        return "Light";
+    case Theme::Dark:
+        return "Dark";
+    default:
+        return "Unknown";
+    }
+}
+
+/// @brief Converts a string representation of a theme to a Theme enum value
+/// @param str The string to convert
+/// @return The corresponding Theme enum value
+Theme PreferenceManager::string_to_theme(const char *str)
+{
+    if (strcmp(str, "Light") == 0)
+        return Theme::Light;
+    if (strcmp(str, "Dark") == 0)
+        return Theme::Dark;
+    return Theme::Dark; // Default value
 }
 
 bool PreferenceManager::save_config()

@@ -30,7 +30,7 @@ enum class PanelIteration
     Once
 };
 
-enum Theme
+enum class Theme
 {
     Light,
     Dark
