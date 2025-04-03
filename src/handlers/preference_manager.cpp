@@ -90,8 +90,8 @@ bool PreferenceManager::save_config()
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
 
-    // Add config data to the JSON document
-    doc["theme"] = config.theme;
+    // Add config data to the JSON document - convert theme enum to string
+    doc["theme"] = theme_to_string(config.theme);
 
     // Create panels array using the new syntax
     doc["panels"] = JsonArray();
@@ -127,8 +127,7 @@ bool PreferenceManager::load_config()
 
         if (!error)
         {
-            // Get all the config values
-            if (doc.containsKey("theme")) {
+            if (!doc["theme"].isNull()) {
                 const char* themeStr = doc["theme"].as<const char*>();
                 config.theme = string_to_theme(themeStr);
             }
