@@ -27,6 +27,7 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     _scale = lv_scale_create(screen);
     lv_obj_set_style_pad_all(_scale, 10, _default_selector); // Set padding all around scale
     //lv_obj_set_style_bg_color(_scale, palette, _default_selector);
+    
 }
 
 /// @brief Update the component by rendering the new reading
