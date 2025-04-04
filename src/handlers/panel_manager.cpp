@@ -14,13 +14,14 @@ PanelManager::~PanelManager()
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 void PanelManager::init(IDevice *device)
 {
+    log_v("...");
     _device = device;
 
     // Register all available panel types with the factory
     register_panel_types();
 
     // Load panel configuration from preferences
-    load_panels_from_preferences();
+    read_panels_from_preferences();
 
     _panels_ptr_it = _panels_ptr.begin();
 }
@@ -37,16 +38,17 @@ void PanelManager::register_panel_types()
 }
 
 /// @brief Load configured panels from preferences that should be rendered in order
-void PanelManager::load_panels_from_preferences()
+void PanelManager::read_panels_from_preferences()
 {
     // Clear any existing panels
     _panels_ptr.clear();
+    log_v("%i panels to be loaded", PreferenceManager::config.panels.size());
 
     // Create and register each panel from the configuration
     PanelFactory &factory = PanelFactory::get_instance();
     for (const auto &panel_config : PreferenceManager::config.panels)
     {
-        log_i("Loading panel: %s", panel_config.name.c_str());
+        log_v("Loading panel: %s", panel_config.name.c_str());
 
         if (factory.is_panel_type_registered(panel_config.name))
         {
@@ -67,7 +69,7 @@ void PanelManager::load_panels_from_preferences()
 /// @param panel_ptr shared pointer to the panel
 void PanelManager::register_panel(std::shared_ptr<IPanel> panel_ptr)
 {
-    log_i("Registering panel: %s" , panel_ptr->get_name().c_str());
+    log_d("Registering panel: %s" , panel_ptr->get_name().c_str());
 
     // Check if the panel already exists
     if (std::find(_panels_ptr.begin(), _panels_ptr.end(), panel_ptr) == _panels_ptr.end())

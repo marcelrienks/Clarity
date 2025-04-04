@@ -65,7 +65,7 @@ private:
     void init_styles();
     
     // Update styles with current theme colors
-    void update_styles();
+    void apply_theme_to_styles(Theme new_theme);
     
     // Clean up all styles
     void reset_styles();

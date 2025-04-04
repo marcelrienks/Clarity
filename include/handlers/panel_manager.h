@@ -36,7 +36,7 @@ private:
 
     static void display_timer_callback(lv_timer_t *timer);
 
-    void load_panels_from_preferences();
+    void read_panels_from_preferences();
     void register_panel_types();
     void register_panel(std::shared_ptr<IPanel> panel_ptr);
     void show_panel_completion_callback();

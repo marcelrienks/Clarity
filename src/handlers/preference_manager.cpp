@@ -2,9 +2,11 @@
 
 void PreferenceManager::init()
 {
+    log_v("...");
+    
     // Initialize preferences
     if (!_preferences.begin("clarity", false))
-    { // false = read/write mode
+    {
         log_w("Failed to initialize preferences, retrying after format");
 
         // Format NVS if opening failed
@@ -24,6 +26,7 @@ void PreferenceManager::init()
     load_config();
 }
 
+//TODO: move these conversion functions to a styles.cpp
 const char *PreferenceManager::iteration_to_string(PanelIteration panel_iteration)
 {
     switch (panel_iteration)
@@ -97,6 +100,7 @@ bool PreferenceManager::save_config()
     doc["panels"] = JsonArray();
     JsonArray panelsArray = doc["panels"].to<JsonArray>();
 
+    log_v("Saving %i panels to config", config.panels.size());
     for (const auto &panel : config.panels)
     {
         // Add a new object to the array using the updated method
@@ -127,6 +131,9 @@ bool PreferenceManager::load_config()
 
         if (!error)
         {
+            // Clear configs
+            config = {};
+
             if (!doc["theme"].isNull()) {
                 const char* themeStr = doc["theme"].as<const char*>();
                 config.theme = string_to_theme(themeStr);
@@ -146,6 +153,7 @@ bool PreferenceManager::load_config()
                 // Add to config
                 config.panels.push_back(panel);
             }
+
             return true;
         }
         else
@@ -163,7 +171,7 @@ bool PreferenceManager::load_config()
 /// @return true if the save was successful
 bool PreferenceManager::create_default_config()
 {
-    log_i("...");
+    log_d("...");
 
     config = {.theme = Theme::Dark,
               .panels = {
