@@ -2,6 +2,7 @@
 
 #include "interfaces/i_component.h"
 #include "utilities/types.h"
+#include "handlers/style_manager.h"
 
 #include <lvgl.h>
 

@@ -3,7 +3,7 @@
 void PreferenceManager::init()
 {
     log_v("...");
-    
+
     // Initialize preferences
     if (!_preferences.begin("clarity", false))
     {
@@ -26,7 +26,7 @@ void PreferenceManager::init()
     load_config();
 }
 
-//TODO: move these conversion functions to a styles.cpp
+// TODO: move these conversion functions to a styles.cpp
 const char *PreferenceManager::iteration_to_string(PanelIteration panel_iteration)
 {
     switch (panel_iteration)
@@ -134,11 +134,12 @@ bool PreferenceManager::load_config()
             // Clear configs
             config = {};
 
-            if (!doc["theme"].isNull()) {
-                const char* themeStr = doc["theme"].as<const char*>();
+            if (!doc["theme"].isNull())
+            {
+                const char *themeStr = doc["theme"].as<const char *>();
                 config.theme = string_to_theme(themeStr);
             }
-            
+
             else
                 config.theme = Theme::Dark; // Default theme
 
@@ -162,7 +163,7 @@ bool PreferenceManager::load_config()
             return PreferenceManager::create_default_config();
         };
     }
-    
+
     else
         return PreferenceManager::create_default_config();
 }
@@ -175,8 +176,9 @@ bool PreferenceManager::create_default_config()
 
     config = {.theme = Theme::Dark,
               .panels = {
-                  {"SplashPanel", PanelIteration::Once},
-                  {"DemoPanel", PanelIteration::Infinite}}};
+                  {SPLASH_PANEL, PanelIteration::Disabled},
+                  {DEMO_PANEL, PanelIteration::Disabled},
+                  {OIL_PANEL, PanelIteration::Infinite}}};
 
     PreferenceManager::save_config();
     return PreferenceManager::load_config();

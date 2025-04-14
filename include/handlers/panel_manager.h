@@ -5,6 +5,9 @@
 #include "interfaces/i_device.h"
 #include "handlers/preference_manager.h"
 #include "handlers/panel_factory.h"
+#include "panels/splash_panel.h"
+#include "panels/demo_panel.h"
+#include "panels/oil_panel.h"
 
 #include <string>
 #include <functional>
@@ -13,6 +16,10 @@
 #include <vector>
 
 #define PANEL_DISPLAY_TIME 3000
+#define SPLASH_PANEL "SplashPanel"
+#define DEMO_PANEL "DemoPanel"
+#define OIL_PANEL "OilPanel"
+
 
 class PanelManager {
 public:

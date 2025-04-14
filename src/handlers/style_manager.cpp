@@ -2,6 +2,8 @@
 #include <esp32-hal-log.h>
 
 StyleManager::StyleManager() : _current_theme(Theme::Dark) {
+    //TODO: fix the colours below
+
     // Initialize dark theme colors
     _dark_theme_colors = {
         .background = lv_color_hex(0x121212),    // Dark background

@@ -25,8 +25,31 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     log_d("...");
 
     _scale = lv_scale_create(screen);
+
+    lv_obj_set_size(_scale, 240, 240);
+    lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
+    lv_obj_set_style_bg_opa(_scale, LV_OPA_COVER, DEFAULT_SELECTOR);
+    lv_obj_set_style_bg_color(_scale, lv_palette_lighten(LV_PALETTE_RED, 5), DEFAULT_SELECTOR);
+    lv_obj_set_style_radius(_scale, LV_RADIUS_CIRCLE, DEFAULT_SELECTOR);
     lv_obj_set_style_pad_all(_scale, 10, _default_selector); // Set padding all around scale
-    //lv_obj_set_style_bg_color(_scale, palette, _default_selector);
+    lv_obj_set_style_clip_corner(_scale, true, DEFAULT_SELECTOR);
+    //lv_obj_align(_scale, LV_ALIGN_LEFT_MID, LV_PCT(2), 0);
+
+    lv_scale_set_label_show(_scale, true);
+
+    lv_scale_set_total_tick_count(_scale, 6);
+    lv_scale_set_major_tick_every(_scale, 1);
+
+    lv_obj_set_style_length(_scale, 5, LV_PART_ITEMS);
+    lv_obj_set_style_length(_scale, 10, LV_PART_INDICATOR);
+    lv_scale_set_range(_scale, 0, 5);
+
+    lv_scale_set_angle_range(_scale, 210);
+    lv_scale_set_rotation(_scale, 330);
+
+    auto needle_line = lv_line_create(_scale);
+    lv_obj_set_style_line_width(needle_line, 6, LV_PART_MAIN);
+    lv_obj_set_style_line_rounded(needle_line, true, LV_PART_MAIN);
     
 }
 

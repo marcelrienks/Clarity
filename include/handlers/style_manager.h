@@ -5,6 +5,8 @@
 #include <lvgl.h>
 #include <memory>
 
+#define DEFAULT_SELECTOR LV_PART_MAIN | LV_STATE_DEFAULT
+
 // Theme color definitions
 struct ThemeColors {
     lv_color_t background;     // Background color

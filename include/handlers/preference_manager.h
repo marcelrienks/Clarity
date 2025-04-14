@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
+#include "handlers/panel_manager.h"
 
 #include <Preferences.h>
 #include <nvs_flash.h>
