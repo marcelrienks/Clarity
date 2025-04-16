@@ -41,7 +41,7 @@ private:
     lgfx::Light_PWM _light_instance;
     lgfx::Bus_SPI _bus_instance;
 
-    const static unsigned int _lv_buffer_size = (SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(lv_color_t));
+    const static unsigned int _lv_buffer_size = (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
     uint8_t _lv_buffer[2][_lv_buffer_size];
 
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
