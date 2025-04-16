@@ -100,9 +100,9 @@ void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area
 {
     Device *device_instance = (Device *)lv_display_get_user_data(display);
 
-    uint32_t w = lv_area_get_width(area);
-    uint32_t h = lv_area_get_height(area);
-    lv_draw_sw_rgb565_swap(data, w * h);
+    uint32_t width = lv_area_get_width(area);
+    uint32_t height = lv_area_get_height(area);
+    lv_draw_sw_rgb565_swap(data, width * height);
 
     if (device_instance->getStartCount() == 0)
         device_instance->endWrite();
