@@ -103,17 +103,17 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 {
     log_d("...");
 
-    lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
-    if (end >= 75)
-        color = lv_palette_darken(LV_PALETTE_RED, 3);
+    // lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
+    // if (end >= 75)
+    //     color = lv_palette_darken(LV_PALETTE_RED, 3);
 
-    lv_obj_set_style_line_color(_needle_line, color, 0);
+    // lv_obj_set_style_line_color(_needle_line, color, 0);
 
-    lv_anim_init(animation);
-    lv_anim_set_duration(animation, _animation_duration);
-    lv_anim_set_repeat_count(animation, 0);
-    lv_anim_set_playback_duration(animation, _playback_duration);
-    lv_anim_set_values(animation, start, end);
+    // lv_anim_init(animation);
+    // lv_anim_set_duration(animation, _animation_duration);
+    // lv_anim_set_repeat_count(animation, 0);
+    // lv_anim_set_playback_duration(animation, _playback_duration);
+    // lv_anim_set_values(animation, start, end);
 }
 
 /// @brief Set the value of the line needle
@@ -121,5 +121,5 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 void OilPressureComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
-    lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
+    //lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
 }

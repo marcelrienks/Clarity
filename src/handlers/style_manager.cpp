@@ -6,26 +6,26 @@ StyleManager::StyleManager() : _current_theme(Theme::Dark) {
 
     // Initialize dark theme colors
     _dark_theme_colors = {
-        .background = lv_color_hex(0x121212),    // Dark background
-        .text = lv_color_hex(0xEEEEEE),          // Light text
-        .primary = lv_color_hex(0x0288D1),       // Blue primary
-        .secondary = lv_color_hex(0x03DAC6),     // Teal secondary
-        .warning = lv_color_hex(0xFFA000),       // Amber warning
-        .danger = lv_color_hex(0xCF6679),        // Red-pink danger
-        .gauge_normal = lv_color_hex(0x03DAC6),  // Teal for normal range
-        .gauge_warning = lv_color_hex(0xFFA000), // Amber for warning range
-        .gauge_danger = lv_color_hex(0xCF6679)   // Red-pink for danger range
+        .background = lv_color_hex(0x121212),
+        .text = lv_color_hex(0xEEEEEE),
+        .primary = lv_color_hex(0xEEEEEE),
+        .secondary = lv_color_hex(0x808080),
+        .warning = lv_color_hex(0xFB8C00),
+        .danger = lv_color_hex(0xB00020),
+        .gauge_normal = lv_color_hex(0xEEEEEE),  // Teal for normal range
+        .gauge_warning = lv_color_hex(0xFB8C00), // Amber for warning range
+        .gauge_danger = lv_color_hex(0xB00020)   // Red for danger range
     };
 
     // Initialize light theme colors
     _light_theme_colors = {
-        .background = lv_color_hex(0xFAFAFA),    // Light background
-        .text = lv_color_hex(0x121212),          // Dark text
-        .primary = lv_color_hex(0x1976D2),       // Blue primary
-        .secondary = lv_color_hex(0x018786),     // Teal secondary
-        .warning = lv_color_hex(0xFB8C00),       // Amber warning
-        .danger = lv_color_hex(0xB00020),        // Red danger
-        .gauge_normal = lv_color_hex(0x018786),  // Teal for normal range
+        .background = lv_color_hex(0xEEEEEE),
+        .text = lv_color_hex(0x121212),
+        .primary = lv_color_hex(0x121212),
+        .secondary = lv_color_hex(0x808080),
+        .warning = lv_color_hex(0xFB8C00),
+        .danger = lv_color_hex(0xB00020),
+        .gauge_normal = lv_color_hex(0x121212),  // Teal for normal range
         .gauge_warning = lv_color_hex(0xFB8C00), // Amber for warning range
         .gauge_danger = lv_color_hex(0xB00020)   // Red for danger range
     };
