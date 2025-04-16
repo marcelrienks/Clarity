@@ -52,24 +52,26 @@ void PanelManager::read_panels_from_preferences()
         if (panel_config.iteration == PanelIteration::Disabled)
         {
             log_v("Panel %s is disabled", panel_config.name.c_str());
-            return;
+            continue;
         }
 
         if (!factory.is_panel_type_registered(panel_config.name))
         {
             log_w("Unknown panel type: %s", panel_config.name);
-            return;
+            continue;
         }
 
         auto panel = factory.create_panel(_device, panel_config.name, panel_config.iteration);
         if (!panel)
         {
             log_w("Failed to create panel: %s", panel_config.name);
-            return;
+            continue;
         }
 
         register_panel(panel);
     }
+
+    log_v("%i panels loaded", _panels_ptr.size());
 }
 
 /// @brief Register panel with application

@@ -1,8 +1,8 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "components/demo_component.h"
-#include "sensors/demo_sensor.h"
+#include "components/oil_pressure_component.h"
+#include "sensors/oil_sensor.h"
 
 #include <utilities/lv_tools.h>
 
@@ -23,7 +23,7 @@ public:
 
 private:
     // Panel specific constants
-    static constexpr const char *_name = "Demo";
+    static constexpr const char *_name = "Oil";
     static constexpr const PanelType _type = PanelType::Sensor;
 
     PanelIteration _iteration = PanelIteration::Infinite; // this must be modifiable to allow for personalization
