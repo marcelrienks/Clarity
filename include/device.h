@@ -37,11 +37,11 @@ public:
     void prepare() override;
 
 private:
-    lgfx::Panel_GC9A01 _panel_instance;
+    lgfx::Panel_GC9A01 _panel_instance; // Waveshare Round 1.28inch LCD Display Module
     lgfx::Light_PWM _light_instance;
     lgfx::Bus_SPI _bus_instance;
 
-    const static unsigned int _lv_buffer_size = SCREEN_WIDTH * 10;
+    const static unsigned int _lv_buffer_size = (SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(lv_color_t));
     uint8_t _lv_buffer[2][_lv_buffer_size];
 
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
