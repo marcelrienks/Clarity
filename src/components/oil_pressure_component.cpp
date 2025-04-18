@@ -2,11 +2,10 @@
 
 OilPressureComponent::OilPressureComponent()
 {
-    // Set defaults
-    _indicator_part_style = StyleManager::get_instance().gauge_normal_style;
-    _items_part_style = StyleManager::get_instance().gauge_normal_style;
-    _main_part_style = StyleManager::get_instance().gauge_normal_style;
-    _danger_section_items_part_style = StyleManager::get_instance().gauge_danger_style;
+    lv_style_init(&_indicator_part_style);
+    lv_style_init(&_items_part_style);
+    lv_style_init(&_main_part_style);
+    lv_style_init(&_danger_section_items_part_style);
 }
 
 OilPressureComponent::~OilPressureComponent()
@@ -33,47 +32,55 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
 
     // Scale
     _scale = lv_scale_create(screen);
-    lv_obj_add_style(_scale, &StyleManager::get_instance().gauge_normal_style, MAIN_DEFAULT);
+
+    // Apply theme styles
+    const StyleManager &styleManager = StyleManager::get_instance();
+
+    // Apply theme color to our styles
+    const ThemeColors &colors = styleManager.get_current_colors();
+    lv_style_set_line_color(&_indicator_part_style, colors.gauge_normal);
+    lv_style_set_line_color(&_items_part_style, colors.gauge_normal);
+    lv_style_set_line_color(&_danger_section_items_part_style, colors.gauge_danger);
+
+    // Now use our initialized styles
+    lv_obj_add_style(_scale, &styleManager.background_style, MAIN_DEFAULT);
+
     lv_obj_set_pos(_scale, 0, 0);
     lv_obj_set_size(_scale, 240, 240);
     lv_obj_set_align(_scale, LV_ALIGN_TOP_MID);
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 210);
-    lv_scale_set_angle_range(_scale, 120);
+    lv_scale_set_rotation(_scale, 200);
+    lv_scale_set_angle_range(_scale, 140);
     lv_scale_set_range(_scale, 0, 6);
     lv_scale_set_total_tick_count(_scale, 13);
     lv_scale_set_major_tick_every(_scale, 2);
     lv_scale_set_label_show(_scale, false);
     lv_obj_set_style_align(_scale, LV_ALIGN_CENTER, MAIN_DEFAULT);
 
-    // TODO: is there value in having separate styles, as these can be set inline as per above?
-    //  Unless they could be re-used in updates, I don't see the point
-
-    // Main
+    // Main style
     lv_style_set_arc_width(&_main_part_style, 0U);
     lv_obj_add_style(_scale, &_main_part_style, MAIN_DEFAULT);
 
     // Indicator (Major ticks)
-    log_d("...0");
-    if (lv_style_is_empty(&_indicator_part_style))
-        log_d("null");
-    log_d("...1");
-    lv_style_set_width(&_indicator_part_style, 30);
-    log_d("...2");
-    lv_style_set_line_width(&_indicator_part_style, 6);
-    log_d("...3");
+    lv_style_set_length(&_indicator_part_style, 30U);
+    lv_style_set_line_width(&_indicator_part_style, 6U);
     lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
-    log_d("...4");
 
-    // // Items (Minor ticks)
-    // lv_style_set_length(&_items_part_style, 20U);
-    // lv_style_set_line_width(&_items_part_style, 3U);
-    // lv_obj_add_style(_scale, &_items_part_style, LV_PART_ITEMS);
+    // Items (Minor ticks)
+    lv_style_set_length(&_items_part_style, 18U);
+    lv_style_set_line_width(&_items_part_style, 3U);
+    lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
 
-    // // Configure section styles
-    // lv_scale_section_t *section = lv_scale_add_section(_scale);
-    // lv_scale_section_set_style(section, LV_PART_ITEMS, &_danger_section_items_part_style);
-    // lv_scale_section_set_range(section, 0U, 0.5);
+    // Configure section styles
+    lv_scale_section_t *danger_section = lv_scale_add_section(_scale);
+    lv_scale_section_set_style(danger_section, ITEMS_DEFAULT, &_danger_section_items_part_style);
+    lv_scale_section_set_range(danger_section, 0U, 0.5);
+
+    _needle_line = lv_line_create(_scale);
+    lv_obj_set_style_line_color(_needle_line, colors.gauge_normal, 0);
+    lv_obj_set_style_line_width(_needle_line, 6, MAIN_DEFAULT);
+    lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);
+    lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
 }
 
 /// @brief Update the component by rendering the new reading
@@ -84,17 +91,23 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 {
     log_d("...");
 
-    // lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
-    // if (end >= 75)
-    //     color = lv_palette_darken(LV_PALETTE_RED, 3);
+    const ThemeColors &colors = StyleManager::get_instance().get_current_colors();
+    lv_color_t color = colors.gauge_normal;
 
-    // lv_obj_set_style_line_color(_needle_line, color, 0);
+    // Change color based on value
+    if (end <= 0.5)
+        color = colors.gauge_danger;
 
-    // lv_anim_init(animation);
-    // lv_anim_set_duration(animation, _animation_duration);
-    // lv_anim_set_repeat_count(animation, 0);
-    // lv_anim_set_playback_duration(animation, _playback_duration);
-    // lv_anim_set_values(animation, start, end);
+    else if (end >= 5.5)
+        color = colors.gauge_warning;
+
+    lv_obj_set_style_line_color(_needle_line, color, 0);
+
+    lv_anim_init(animation);
+    lv_anim_set_duration(animation, _animation_duration);
+    lv_anim_set_repeat_count(animation, 0);
+    lv_anim_set_playback_duration(animation, _playback_duration);
+    lv_anim_set_values(animation, start, end);
 }
 
 /// @brief Set the value of the line needle
@@ -102,5 +115,8 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 void OilPressureComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
-    // lv_scale_set_line_needle_value(_scale, _needle_line, 60, value);
+
+    // Convert integer value to oil pressure range (assuming 0-100 input maps to 0-6 bar)
+    float oil_pressure = (value / 100.0f) * 6.0f;
+    lv_scale_set_line_needle_value(_scale, _needle_line, 60, oil_pressure);
 }
