@@ -9,6 +9,7 @@
 class OilPressureComponent : public IComponent
 {
     public:
+    OilPressureComponent();
     ~OilPressureComponent();
 
     void render_show(lv_obj_t *screen) override;
@@ -20,15 +21,13 @@ private:
     lv_obj_t *_needle_line;
     
     // Style variables as member variables
-    lv_style_t _indicator_style;
-    lv_style_t _minor_ticks_style;
-    lv_style_t _main_line_style;
-    lv_style_t _section_label_style;
-    lv_style_t _section_minor_tick_style;
-    lv_style_t _section_main_line_style;
+    lv_style_t _indicator_part_style;
+    lv_style_t _items_part_style;
+    lv_style_t _main_part_style;
+    lv_style_t _danger_section_items_part_style;
 
     // Component specific constants
-    lv_style_selector_t _default_selector = LV_PART_MAIN | LV_STATE_DEFAULT; // selects the main part with a default stare
+    lv_style_selector_t _default_selector = MAIN_DEFAULT; // selects the main part with a default stare
     static constexpr int32_t _animation_duration = 1000;
     static constexpr int32_t _playback_duration = 0;
 };

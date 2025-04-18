@@ -5,7 +5,8 @@
 #include <lvgl.h>
 #include <memory>
 
-#define DEFAULT_SELECTOR LV_PART_MAIN | LV_STATE_DEFAULT
+#define MAIN_DEFAULT LV_PART_MAIN | LV_STATE_DEFAULT
+#define INDICATOR_DEFAULT LV_PART_INDICATOR | LV_STATE_DEFAULT
 
 // Theme color definitions
 struct ThemeColors {
@@ -38,8 +39,6 @@ public:
     lv_style_t background_style;       // Style for backgrounds
     lv_style_t text_style;             // Style for general text
     lv_style_t heading_style;          // Style for headings
-    lv_style_t card_style;             // Style for card containers
-    lv_style_t button_style;           // Style for buttons
     lv_style_t gauge_normal_style;     // Style for gauges in normal range
     lv_style_t gauge_warning_style;    // Style for gauges in warning range
     lv_style_t gauge_danger_style;     // Style for gauges in danger range
@@ -60,8 +59,28 @@ private:
     Theme _current_theme;
     
     // Theme-specific color palettes
-    ThemeColors _dark_theme_colors;
-    ThemeColors _light_theme_colors;
+    ThemeColors _dark_theme_colors = {
+        .background = lv_color_hex(0x121212),
+        .text = lv_color_hex(0xEEEEEE),
+        .primary = lv_color_hex(0x121212),
+        .secondary = lv_color_hex(0xEEEEEE),
+        .warning = lv_color_hex(0xFB8C00),
+        .danger = lv_color_hex(0xB00020),
+        .gauge_normal = lv_color_hex(0xEEEEEE),
+        .gauge_warning = lv_color_hex(0xFB8C00),
+        .gauge_danger = lv_color_hex(0xB00020)
+    };
+    ThemeColors _light_theme_colors = {
+        .background = lv_color_hex(0xEEEEEE),
+        .text = lv_color_hex(0x121212),
+        .primary = lv_color_hex(0xEEEEEE),
+        .secondary = lv_color_hex(0x121212),
+        .warning = lv_color_hex(0xFB8C00),
+        .danger = lv_color_hex(0xB00020),
+        .gauge_normal = lv_color_hex(0x121212),
+        .gauge_warning = lv_color_hex(0xFB8C00),
+        .gauge_danger = lv_color_hex(0xB00020)
+    };
     
     // Initialize all style objects
     void init_styles();

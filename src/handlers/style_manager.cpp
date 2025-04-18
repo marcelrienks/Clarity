@@ -1,35 +1,7 @@
 #include "handlers/style_manager.h"
 #include <esp32-hal-log.h>
 
-StyleManager::StyleManager() : _current_theme(Theme::Dark) {
-    //TODO: fix the colours below
-
-    // Initialize dark theme colors
-    _dark_theme_colors = {
-        .background = lv_color_hex(0x121212),
-        .text = lv_color_hex(0xEEEEEE),
-        .primary = lv_color_hex(0xEEEEEE),
-        .secondary = lv_color_hex(0x808080),
-        .warning = lv_color_hex(0xFB8C00),
-        .danger = lv_color_hex(0xB00020),
-        .gauge_normal = lv_color_hex(0xEEEEEE),  // Teal for normal range
-        .gauge_warning = lv_color_hex(0xFB8C00), // Amber for warning range
-        .gauge_danger = lv_color_hex(0xB00020)   // Red for danger range
-    };
-
-    // Initialize light theme colors
-    _light_theme_colors = {
-        .background = lv_color_hex(0xEEEEEE),
-        .text = lv_color_hex(0x121212),
-        .primary = lv_color_hex(0x121212),
-        .secondary = lv_color_hex(0x808080),
-        .warning = lv_color_hex(0xFB8C00),
-        .danger = lv_color_hex(0xB00020),
-        .gauge_normal = lv_color_hex(0x121212),  // Teal for normal range
-        .gauge_warning = lv_color_hex(0xFB8C00), // Amber for warning range
-        .gauge_danger = lv_color_hex(0xB00020)   // Red for danger range
-    };
-}
+StyleManager::StyleManager() : _current_theme(Theme::Dark) {}
 
 StyleManager::~StyleManager() {
     reset_styles();
@@ -52,8 +24,6 @@ void StyleManager::init_styles() {
     lv_style_init(&background_style);
     lv_style_init(&text_style);
     lv_style_init(&heading_style);
-    lv_style_init(&card_style);
-    lv_style_init(&button_style);
     lv_style_init(&gauge_normal_style);
     lv_style_init(&gauge_warning_style);
     lv_style_init(&gauge_danger_style);
@@ -77,31 +47,10 @@ void StyleManager::apply_theme_to_styles(Theme theme) {
     lv_style_set_text_color(&heading_style, colors->primary);
     lv_style_set_text_font(&heading_style, &lv_font_montserrat_20);
     
-    // Card style
-    lv_style_set_bg_color(&card_style, lv_color_lighten(colors->background, 30));
-    lv_style_set_bg_opa(&card_style, LV_OPA_COVER);
-    lv_style_set_radius(&card_style, 10);
-    lv_style_set_pad_all(&card_style, 10);
-    lv_style_set_shadow_width(&card_style, 15);
-    lv_style_set_shadow_color(&card_style, lv_color_black());
-    lv_style_set_shadow_opa(&card_style, LV_OPA_20);
-    
-    // Button style
-    lv_style_set_bg_color(&button_style, colors->primary);
-    lv_style_set_bg_opa(&button_style, LV_OPA_COVER);
-    lv_style_set_text_color(&button_style, lv_color_white());
-    lv_style_set_radius(&button_style, 5);
-    lv_style_set_pad_all(&button_style, 10);
-    
     // Gauge styles
     lv_style_set_line_color(&gauge_normal_style, colors->gauge_normal);
-    lv_style_set_line_width(&gauge_normal_style, 3);
-    
     lv_style_set_line_color(&gauge_warning_style, colors->gauge_warning);
-    lv_style_set_line_width(&gauge_warning_style, 3);
-    
     lv_style_set_line_color(&gauge_danger_style, colors->gauge_danger);
-    lv_style_set_line_width(&gauge_danger_style, 3);
 }
 
 void StyleManager::reset_styles() {
@@ -111,8 +60,6 @@ void StyleManager::reset_styles() {
     lv_style_reset(&background_style);
     lv_style_reset(&text_style);
     lv_style_reset(&heading_style);
-    lv_style_reset(&card_style);
-    lv_style_reset(&button_style);
     lv_style_reset(&gauge_normal_style);
     lv_style_reset(&gauge_warning_style);
     lv_style_reset(&gauge_danger_style);
@@ -138,15 +85,13 @@ void StyleManager::apply_theme_to_screen(lv_obj_t* screen) {
         return;
     }
     
-    // Apply background style to the screen
-    lv_obj_add_style(screen, &background_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &text_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &heading_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &card_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &button_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &gauge_normal_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &gauge_warning_style, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_style(screen, &gauge_danger_style, LV_PART_MAIN | LV_STATE_DEFAULT);
+    // Apply style to the screen
+    lv_obj_add_style(screen, &background_style, MAIN_DEFAULT);
+    lv_obj_add_style(screen, &text_style, MAIN_DEFAULT);
+    lv_obj_add_style(screen, &heading_style, MAIN_DEFAULT);
+    lv_obj_add_style(screen, &gauge_normal_style, MAIN_DEFAULT);
+    lv_obj_add_style(screen, &gauge_warning_style, MAIN_DEFAULT);
+    lv_obj_add_style(screen, &gauge_danger_style, MAIN_DEFAULT);
     
     // If we're using the dark theme and INVERT is defined, we need to invert the colors
     // #ifdef INVERT
