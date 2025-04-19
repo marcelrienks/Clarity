@@ -43,21 +43,18 @@ void OilPanel::show(std::function<void()> show_panel_completion_callback)
 void OilPanel::update(std::function<void()> update_panel_completion_callback)
 {
     log_i("...");
-    // _callback_function = update_panel_completion_callback;
+    _callback_function = update_panel_completion_callback;
 
-    // auto value = std::get<int32_t>(_sensor->get_reading());
-    // static lv_anim_t update_animation;
-    // _component->render_update(&update_animation, _current_value, value);
+    auto value = std::get<int32_t>(_sensor->get_reading());
+    static lv_anim_t update_animation;
+    _component->render_update(&update_animation, _current_value, value);
 
-    // lv_anim_set_var(&update_animation, this);
-    // lv_anim_set_exec_cb(&update_animation, OilPanel::execute_animation_callback);
-    // lv_anim_set_completed_cb(&update_animation, OilPanel::update_panel_completion_callback);
+    lv_anim_set_var(&update_animation, this);
+    lv_anim_set_exec_cb(&update_animation, OilPanel::execute_animation_callback);
+    lv_anim_set_completed_cb(&update_animation, OilPanel::update_panel_completion_callback);
 
-    // log_d("animate...");
-    // lv_anim_start(&update_animation);
-
-    //temp
-    update_panel_completion_callback();
+    log_d("animate...");
+    lv_anim_start(&update_animation);
 }
 
 /// @brief The callback to be run once show panel has completed

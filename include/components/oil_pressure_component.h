@@ -28,6 +28,7 @@ private:
 
     // Component specific constants
     lv_style_selector_t _default_selector = MAIN_DEFAULT; // selects the main part with a default stare
-    static constexpr int32_t _animation_duration = 1000;
-    static constexpr int32_t _playback_duration = 0;
+    static constexpr int32_t _animation_duration = 1000U;
+    static constexpr int32_t _needle_length = 100U;
+    static constexpr int32_t _danger_zone = 5U;
 };

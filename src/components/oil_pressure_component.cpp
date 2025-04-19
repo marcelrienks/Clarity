@@ -73,23 +73,25 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
 
     // Items (Minor ticks)
-    lv_style_set_length(&_items_part_style, 22U);
+    lv_style_set_length(&_items_part_style, 25U);
     lv_style_set_line_width(&_items_part_style, 2U);
     lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
 
     // Configure section styles
     lv_scale_section_t *section = lv_scale_add_section(_scale);
+    lv_style_set_line_width(&_danger_section_items_part_style, 4U);
+    lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style); // Apply the same 0 arc width to the section
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_range(section, 0U, 5U);
+    lv_scale_section_set_range(section, 0U, _danger_zone);
 
     // Add needle line
     _needle_line = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_line, colors.gauge_normal, 0U);
-    lv_obj_set_style_line_width(_needle_line, 4U, MAIN_DEFAULT);
-    lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);
+    lv_obj_set_style_line_width(_needle_line, 5U, MAIN_DEFAULT);
+    lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
 
     // Set the line needle value
-    lv_scale_set_line_needle_value(_scale, _needle_line, 60U, 2U);
+    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, 2U);
 }
 
 /// @brief Update the component by rendering the new reading
@@ -103,22 +105,16 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
     const ThemeColors &colors = StyleManager::get_instance().get_current_colors();
     lv_color_t color = colors.gauge_normal;
 
-    // Change color based on value (adjusted for 0-600 scale)
-    if (end <= 50)
-    { // 0.5 bar = 50 in new scale
+    // Change color based on value
+    if (end <= _danger_zone)
         color = colors.gauge_danger;
-    }
-    else if (end >= 550)
-    { // 5.5 bar = 550 in new scale
-        color = colors.gauge_warning;
-    }
 
-    lv_obj_set_style_line_color(_needle_line, color, 0);
+    lv_obj_set_style_line_color(_needle_line, color, MAIN_DEFAULT);
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
-    lv_anim_set_repeat_count(animation, 0);
-    lv_anim_set_playback_duration(animation, _playback_duration);
+    lv_anim_set_repeat_count(animation, 0U);
+    lv_anim_set_playback_duration(animation, 0U);
     lv_anim_set_values(animation, start, end);
 }
 
@@ -126,10 +122,6 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 /// @param value the value to set the line needle to
 void OilPressureComponent::set_value(int32_t value)
 {
-    // Convert integer value to oil pressure range (assuming 0-100 input maps to 0-6 bar)
-    // Then multiply by 100 to work with our new 0-600 scale
-    int32_t scaled_pressure = (value * 6); // 0-100 input maps to 0-600 scale
-
-    log_d("Scaled pressure: %i (representing %.2f bar)", scaled_pressure, scaled_pressure / 100.0f);
-    lv_scale_set_line_needle_value(_scale, _needle_line, 60, scaled_pressure);
+    log_i("value is %i", value);
+    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, value);
 }
