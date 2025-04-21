@@ -3,6 +3,7 @@
 #include "interfaces/i_component.h"
 #include "utilities/types.h"
 #include "handlers/style_manager.h"
+#include "icons/oil_can_icon_data.h"
 
 #include <lvgl.h>
 
@@ -19,6 +20,7 @@ class OilPressureComponent : public IComponent
 private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
+    lv_obj_t *_oil_can_icon;
     
     // Style variables as member variables
     lv_style_t _indicator_part_style;

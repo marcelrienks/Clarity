@@ -1,4 +1,5 @@
 #include "components/oil_pressure_component.h"
+#include "icons/oil_can_icon_data.h"
 
 OilPressureComponent::OilPressureComponent()
 {
@@ -20,6 +21,9 @@ OilPressureComponent::~OilPressureComponent()
 
     if (_scale)
         lv_obj_del(_scale);
+        
+    if (_oil_can_icon)
+        lv_obj_del(_oil_can_icon);
 
     // Clean up styles
     lv_style_reset(&_indicator_part_style);
@@ -89,9 +93,14 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     lv_obj_set_style_line_color(_needle_line, colors.gauge_normal, 0U);
     lv_obj_set_style_line_width(_needle_line, 5U, MAIN_DEFAULT);
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
-
-    // Set the line needle value
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, 2U);
+    
+    // Create and position the oil can icon
+    _oil_can_icon = lv_image_create(_scale);
+    lv_image_set_src(_oil_can_icon, &oil_can_icon_data); // Using the imported oil_can_icon
+    lv_obj_set_style_image_recolor(_oil_can_icon, colors.gauge_normal, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, 45);
 }
 
 /// @brief Update the component by rendering the new reading
@@ -110,6 +119,9 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
         color = colors.gauge_danger;
 
     lv_obj_set_style_line_color(_needle_line, color, MAIN_DEFAULT);
+    
+    // Also update the oil can icon color to match the needle
+    lv_obj_set_style_image_recolor(_oil_can_icon, color, 0);
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
