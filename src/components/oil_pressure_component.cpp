@@ -98,10 +98,10 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     // Create and position the oil can icon
     _oil_can_icon = lv_image_create(screen);
     lv_image_set_src(_oil_can_icon, &oil_can_icon_data);
+    lv_obj_center(_oil_can_icon);
+    lv_obj_set_pos(_oil_can_icon, 0, -55); // Adjust position relative to center
+    lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_can_icon, colors.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, -55);
-    lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, 0);
 }
 
 /// @brief Update the component by rendering the new reading
@@ -122,7 +122,7 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
     lv_obj_set_style_line_color(_needle_line, color, MAIN_DEFAULT);
 
     // Also update the oil can icon color to match the needle
-    lv_obj_set_style_image_recolor(_oil_can_icon, color, 0);
+    //lv_obj_set_style_image_recolor(_oil_can_icon, color, 0);
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
