@@ -95,12 +95,14 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, 2U);
     
-    // Create and position the oil can icon
-    _oil_can_icon = lv_image_create(_scale);
+    // Create and position the oil can icon - FIX: Create directly on screen, not on scale
+    _oil_can_icon = lv_image_create(screen);
     lv_image_set_src(_oil_can_icon, &oil_can_icon_data); // Using the imported oil_can_icon
     lv_obj_set_style_image_recolor(_oil_can_icon, colors.gauge_normal, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, 45);
+    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, 15);
+    lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, 0);
+    lv_obj_set_size(_oil_can_icon, 32, 32);
 }
 
 /// @brief Update the component by rendering the new reading
