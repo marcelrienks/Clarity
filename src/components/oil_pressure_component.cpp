@@ -122,7 +122,8 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
     lv_obj_set_style_line_color(_needle_line, color, MAIN_DEFAULT);
 
     // Also update the oil can icon color to match the needle
-    //lv_obj_set_style_image_recolor(_oil_can_icon, color, 0);
+    lv_obj_set_style_image_recolor(_oil_can_icon, color, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
