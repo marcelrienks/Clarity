@@ -1,9 +1,7 @@
-// include/managers/panel_manager.h
-#pragma once
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
 #include "interfaces/i_device.h"
-#include "handlers/preference_manager.h"
 #include "handlers/panel_factory.h"
 #include "panels/splash_panel.h"
 #include "panels/demo_panel.h"
@@ -26,13 +24,11 @@ public:
     PanelManager();
     ~PanelManager();
 
-    void init(PreferenceManager *preference_manager, IDevice *device);
-    void show_all_panels();
+    void init(IDevice *device, std::string *configured_panel);
     void show_panel(IPanel *panel, std::function<void()> completion_callback = nullptr);
     void update_current_panel();
 
 protected:
-    PreferenceManager *_preference_manager;
     IDevice *_device;
 
 private:
@@ -41,7 +37,7 @@ private:
 
     static void display_timer_callback(lv_timer_t *timer);
 
-    void read_panel_from_preferences();
+    void load_configured_panel(std::string *configured_panel);
     void register_panel_types();
     void register_panel(std::shared_ptr<IPanel> panel_ptr);
     void show_panel_completion_callback();

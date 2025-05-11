@@ -9,17 +9,16 @@ PanelManager::~PanelManager()
 }
 
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
-void PanelManager::init(PreferenceManager *preference_manager, IDevice *device)
+void PanelManager::init(IDevice *device, std::string *configured_panel)
 {
     log_v("...");
-    _preference_manager = _preference_manager;
     _device = device;
 
     // Register all available panel types with the factory
     register_panel_types();
 
     // Load panel from configuration
-    read_panel_from_preferences();
+    load_configured_panel(configured_panel);
 }
 
 /// @brief Register all panel types available to this application
@@ -35,14 +34,13 @@ void PanelManager::register_panel_types()
 }
 
 /// @brief Load configured panels from preferences that should be rendered in order
-void PanelManager::read_panel_from_preferences()
+void PanelManager::load_configured_panel(std::string *configured_panel)
 {
     // Create and register each panel from the configuration
-    std::string panel = _preference_manager->config.panel;
-    log_v("Loading panel %s from config", panel);
+    log_v("Loading panel %s from config", configured_panel);
 
     auto &factory = PanelFactory::get_instance();
-    auto _panel = factory.create_panel(_device, panel);
+    auto _panel = factory.create_panel(_device, *configured_panel);
     _panel->init();
 }
 

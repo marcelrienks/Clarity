@@ -11,7 +11,7 @@ void setup() {
     _device.prepare();
     
     // Initialize panel manager
-    _panel_manager.init(&_preference_manager, &_device);
+    _panel_manager.init(&_device, &_preference_manager.config.panel);
   }
   catch (const std::exception &e) {
     log_e("%s", e.what());
@@ -33,7 +33,7 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    _panel_manager.show_all_panels();
+    //TODO: show splash, than configured screen should that be handled by this, or Panel_manager, either way new func in panel manager needed
     _panel_manager.update_current_panel();
 
     // Process LVGL tasks again to render the changes immediately
