@@ -2,20 +2,18 @@
 
 #include "interfaces/i_panel.h"
 #include "components/oil_pressure_component.h"
-#include "sensors/oil_sensor.h"
+#include "sensors/oil_pressure_sensor.h"
 
 #include <utilities/lv_tools.h>
 
 class OilPanel : public IPanel
 {
 public:
-    OilPanel(IDevice *device, PanelIteration panel_iteration);
+    OilPanel(IDevice *device);
     ~OilPanel();
 
     std::string get_name() const { return _name; };
     PanelType get_type() const { return _type; };
-    PanelIteration get_iteration() const { return _iteration; };
-    void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
 
     void init() override;
     void show(std::function<void()> callback_function) override;
@@ -25,8 +23,6 @@ private:
     // Panel specific constants
     static constexpr const char *_name = "Oil";
     static constexpr const PanelType _type = PanelType::Sensor;
-
-    PanelIteration _iteration = PanelIteration::Infinite; // this must be modifiable to allow for personalization
 
     // Components
     IDevice *_device;

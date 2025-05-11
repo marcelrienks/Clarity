@@ -23,27 +23,14 @@ enum class PanelType
     Config
 };
 
-enum class PanelIteration
-{
-    Infinite,
-    Disabled,
-    Once
-};
-
 enum class Theme
 {
     Light,
     Dark
 };
 
-struct PanelConfig
-{
-    std::string name = std::string();
-    PanelIteration iteration = PanelIteration::Once;
-};
-
 struct Config
 {
     Theme theme = Theme::Dark;
-    std::vector<PanelConfig> panels;
+    std::string panel = std::string();
 };

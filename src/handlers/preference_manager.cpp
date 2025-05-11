@@ -26,36 +26,6 @@ void PreferenceManager::init()
     load_config();
 }
 
-// TODO: move these conversion functions to a styles.cpp
-const char *PreferenceManager::iteration_to_string(PanelIteration panel_iteration)
-{
-    switch (panel_iteration)
-    {
-    case PanelIteration::Infinite:
-        return "Infinite";
-    case PanelIteration::Disabled:
-        return "Disabled";
-    case PanelIteration::Once:
-        return "Once";
-    default:
-        return "Unknown";
-    }
-}
-
-/// @brief converts the name of an iteration enum to an element of the enum
-/// @param name a string representing the name of the enum element
-/// @return an element of the enum
-PanelIteration PreferenceManager::string_to_iteration(const char *name)
-{
-    if (strcmp(name, "Infinite") == 0)
-        return PanelIteration::Infinite;
-    if (strcmp(name, "Disabled") == 0)
-        return PanelIteration::Disabled;
-    if (strcmp(name, "Once") == 0)
-        return PanelIteration::Once;
-    return PanelIteration::Disabled; // Default value
-}
-
 /// @brief Converts a Theme enum value to a string representation
 /// @param theme The theme enum value to convert
 /// @return A string representation of the theme
@@ -65,8 +35,10 @@ const char *PreferenceManager::theme_to_string(Theme theme)
     {
     case Theme::Light:
         return "Light";
+
     case Theme::Dark:
         return "Dark";
+
     default:
         return "Unknown";
     }
@@ -79,8 +51,10 @@ Theme PreferenceManager::string_to_theme(const char *str)
 {
     if (strcmp(str, "Light") == 0)
         return Theme::Light;
+
     if (strcmp(str, "Dark") == 0)
         return Theme::Dark;
+
     return Theme::Dark; // Default value
 }
 
@@ -89,25 +63,12 @@ bool PreferenceManager::save_config()
     log_d("...");
     _preferences.remove(CONFIG_KEY);
 
-    const size_t panelCount = config.panels.size();
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
 
     // Add config data to the JSON document - convert theme enum to string
     doc["theme"] = theme_to_string(config.theme);
-
-    // Create panels array using the new syntax
-    doc["panels"] = JsonArray();
-    JsonArray panelsArray = doc["panels"].to<JsonArray>();
-
-    log_v("Saving %i panels to config", config.panels.size());
-    for (const auto &panel : config.panels)
-    {
-        // Add a new object to the array using the updated method
-        JsonObject panelObj = panelsArray.add<JsonObject>();
-        panelObj["name"] = panel.name;
-        panelObj["iteration"] = iteration_to_string(panel.iteration);
-    }
+    doc["panel"] = config.panel;
 
     // Serialize to JSON string
     String jsonString;
@@ -122,50 +83,38 @@ bool PreferenceManager::load_config()
     log_d("...");
     String jsonString = _preferences.getString(CONFIG_KEY, "");
 
-    if (jsonString.length() > 0)
+    if (jsonString.length() == 0)
+        return PreferenceManager::create_default_config();
+
+    // Deserialize JSON using the new JsonDocument
+    const size_t jsonCapacity = jsonString.length() * 2; // 2x for safety
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, jsonString);
+
+    if (!error)
     {
-        // Deserialize JSON using the new JsonDocument
-        const size_t jsonCapacity = jsonString.length() * 2; // 2x for safety
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, jsonString);
+        log_w("Error reading config");
+        return PreferenceManager::create_default_config();
+    };
 
-        if (!error)
-        {
-            // Clear configs
-            config = {};
+    // Clear configs
+    config = {};
 
-            if (!doc["theme"].isNull())
-            {
-                const char *themeStr = doc["theme"].as<const char *>();
-                config.theme = string_to_theme(themeStr);
-            }
-
-            else
-                config.theme = Theme::Dark; // Default theme
-
-            // Process each panel
-            JsonArray panelsArray = doc["panels"].as<JsonArray>();
-            for (JsonObject panelObj : panelsArray)
-            {
-                PanelConfig panel;
-                panel.name = panelObj["name"].as<const char *>();
-                panel.iteration = string_to_iteration(panelObj["iteration"]);
-
-                // Add to config
-                config.panels.push_back(panel);
-            }
-
-            return true;
-        }
-        else
-        {
-            log_w("Error reading config");
-            return PreferenceManager::create_default_config();
-        };
+    config.theme = Theme::Dark; // Default theme
+    if (!doc["theme"].isNull())
+    {
+        const char *themeStr = doc["theme"].as<const char *>();
+        config.theme = string_to_theme(themeStr);
     }
 
-    else
-        return PreferenceManager::create_default_config();
+    config.panel = DEMO_PANEL; // Default
+    if (!doc["panel"].isNull())
+    {
+        const char *panelStr = doc["panel"].as<const char *>();
+        config.panel = panelStr;
+    }
+
+    return true;
 }
 
 /// @brief Create and save a list of default panels
@@ -175,10 +124,7 @@ bool PreferenceManager::create_default_config()
     log_d("...");
 
     config = {.theme = Theme::Dark,
-              .panels = {
-                  {SPLASH_PANEL, PanelIteration::Disabled},
-                  {DEMO_PANEL, PanelIteration::Disabled},
-                  {OIL_PANEL, PanelIteration::Infinite}}};
+              .panel = DEMO_PANEL};
 
     PreferenceManager::save_config();
     return PreferenceManager::load_config();

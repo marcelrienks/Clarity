@@ -11,7 +11,7 @@ void setup() {
     _device.prepare();
     
     // Initialize panel manager
-    _panel_manager.init(&_device);
+    _panel_manager.init(&_preference_manager, &_device);
   }
   catch (const std::exception &e) {
     log_e("%s", e.what());

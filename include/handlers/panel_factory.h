@@ -14,13 +14,13 @@ public:
     // Register a panel type with the factory
     template<typename T> // Note the implementation of a template type must exist in header
     void register_panel(const std::string &panel_name) {
-        _panel_creators[panel_name] = [](IDevice *device, PanelIteration panel_iteration) -> std::shared_ptr<IPanel> { 
-            return std::make_shared<T>(device, panel_iteration); 
+        _panel_creators[panel_name] = [](IDevice *device) -> std::shared_ptr<IPanel> { 
+            return std::make_shared<T>(device); 
         };
     }
     
     // Create a panel instance by type name
-    std::shared_ptr<IPanel> create_panel(IDevice *device, const std::string &panel_name, PanelIteration panel_iteration = PanelIteration::Infinite);
+    std::shared_ptr<IPanel> create_panel(IDevice *device, const std::string &panel_name);
     
     // Check if a panel type is registered
     bool is_panel_type_registered(const std::string &panel_name);
@@ -30,5 +30,5 @@ private:
     ~PanelFactory() = default;
     
     // Map of panel type names to creator functions for each of those names
-    std::map<std::string, std::function<std::shared_ptr<IPanel>(IDevice *, PanelIteration)>> _panel_creators;
+    std::map<std::string, std::function<std::shared_ptr<IPanel>(IDevice *)>> _panel_creators;
 };

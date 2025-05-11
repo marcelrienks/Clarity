@@ -15,9 +15,6 @@ private:
     inline static const size_t JSON_CAPACITY_PER_PANEL = 256;
 
     Preferences _preferences;
-
-    const char *iteration_to_string(PanelIteration iter);
-    PanelIteration string_to_iteration(const char *str);
     const char *theme_to_string(Theme theme);
     Theme string_to_theme(const char *str);
 
@@ -28,9 +25,4 @@ public:
     bool save_config();
     bool load_config();
     bool create_default_config();
-    
-    // Theme management functions
-    Theme get_theme() const { return config.theme; }
-    bool set_theme(Theme theme);
-    bool toggle_theme();
 };

@@ -1,7 +1,7 @@
 #include "panels/splash_panel.h"
 
-SplashPanel::SplashPanel(IDevice *device, PanelIteration panel_iteration)
-    : _device(device), _component(std::make_shared<ClarityComponent>()), _iteration(panel_iteration) {}
+SplashPanel::SplashPanel(IDevice *device)
+    : _device(device), _component(std::make_shared<ClarityComponent>()) {}
 
 SplashPanel::~SplashPanel()
 {

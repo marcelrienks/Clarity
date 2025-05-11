@@ -7,10 +7,10 @@
 #include <LovyanGFX.hpp>
 #include <random>
 
-class OilSensor : public ISensor
+class OilTemperatureSensor : public ISensor
 {
 public:
-    OilSensor();
+    OilTemperatureSensor();
 
     void init() override;
     Reading get_reading() override;

@@ -3,8 +3,8 @@
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
 
-DemoPanel::DemoPanel(IDevice *device, PanelIteration panel_iteration)
-    : _device(device), _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()), _iteration(panel_iteration) {}
+DemoPanel::DemoPanel(IDevice *device)
+    : _device(device), _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()) {}
 
 DemoPanel::~DemoPanel()
 {

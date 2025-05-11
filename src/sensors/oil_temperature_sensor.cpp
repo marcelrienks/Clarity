@@ -1,15 +1,15 @@
-#include "sensors/oil_sensor.h"
+#include "sensors/oil_temperature_sensor.h"
 
-OilSensor::OilSensor()
+OilTemperatureSensor::OilTemperatureSensor()
     : _engine(std::mt19937(std::random_device{}())), _distribution(std::uniform_int_distribution<int>(0, 60)) {}
 
-void OilSensor::init()
+void OilTemperatureSensor::init()
 {
     // Not needed but required to satisfy interface
 }
 
 // TODO: TEMP code for testing
-Reading OilSensor::get_reading()
+Reading OilTemperatureSensor::get_reading()
 {
     int millies = millis();
     int elapsed_time = millies - this->last_read_time;
