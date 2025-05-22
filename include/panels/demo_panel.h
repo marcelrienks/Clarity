@@ -7,7 +7,7 @@
 class DemoPanel : public IPanel
 {
 public:
-    DemoPanel(IDevice *device);
+    DemoPanel();
     ~DemoPanel();
 
     std::string get_name() const { return _name; };
@@ -23,7 +23,6 @@ private:
     static constexpr const PanelType _type = PanelType::Sensor;
 
     // Components
-    IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     std::shared_ptr<ISensor> _sensor;

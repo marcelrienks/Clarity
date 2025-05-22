@@ -1,7 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
-#include "handlers/panel_manager.h"
+#include "managers/panel_manager.h"
 
 #include <Preferences.h>
 #include <nvs_flash.h>
@@ -9,6 +9,16 @@
 
 class PreferenceManager
 {
+public:
+    inline static Config config;
+
+    static PreferenceManager &get_instance();
+
+    void init();
+    bool save_config();
+    bool load_config();
+    bool create_default_config();
+
 private:
     inline static const char *CONFIG_KEY = "config";
     inline static const char *THEME_KEY = "theme";
@@ -17,12 +27,4 @@ private:
     Preferences _preferences;
     const char *theme_to_string(Theme theme);
     Theme string_to_theme(const char *str);
-
-public:
-    inline static Config config;
-
-    void init();
-    bool save_config();
-    bool load_config();
-    bool create_default_config();
 };

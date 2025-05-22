@@ -1,7 +1,7 @@
 #include "panels/oil_panel.h"
 
-OilPanel::OilPanel(IDevice *device)
-    : _device(device), _component(std::make_shared<OilPressureComponent>()), _sensor(std::make_shared<OilPressureSensor>()) {}
+OilPanel::OilPanel()
+    : _component(std::make_shared<OilPressureComponent>()), _sensor(std::make_shared<OilPressureSensor>()) {}
 
 OilPanel::~OilPanel()
 {

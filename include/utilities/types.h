@@ -20,17 +20,17 @@ enum class PanelType
 {
     Splash,
     Sensor,
-    Config
+    Configuration
 };
 
 enum class Theme
 {
-    Light,
-    Dark
+    Night,
+    Day
 };
 
 struct Config
 {
-    Theme theme = Theme::Dark;
+    Theme theme = Theme::Night;
     std::string panel = std::string();
 };

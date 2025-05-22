@@ -106,11 +106,11 @@ void DemoComponent::render_update(lv_anim_t *animation, int32_t start, int32_t e
 {
     log_d("...");
 
-    lv_color_t color = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
+    lv_color_t colour = lv_palette_lighten(LV_PALETTE_INDIGO, 3);
     if (end >= 75)
-        color = lv_palette_darken(LV_PALETTE_RED, 3);
+        colour = lv_palette_darken(LV_PALETTE_RED, 3);
 
-    lv_obj_set_style_line_color(_needle_line, color, 0);
+    lv_obj_set_style_line_color(_needle_line, colour, 0);
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);

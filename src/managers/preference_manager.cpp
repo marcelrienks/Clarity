@@ -1,4 +1,12 @@
-#include "handlers/preference_manager.h"
+#include "managers/preference_manager.h"
+
+/// @brief Get the singleton instance of PanelManager
+/// @return instance of PanelManager
+PreferenceManager &PreferenceManager::get_instance()
+{
+    static PreferenceManager instance; // this ensures that the instance is created only once
+    return instance;
+}
 
 void PreferenceManager::init()
 {
@@ -33,10 +41,10 @@ const char *PreferenceManager::theme_to_string(Theme theme)
 {
     switch (theme)
     {
-    case Theme::Light:
+    case Theme::Night:
         return "Light";
 
-    case Theme::Dark:
+    case Theme::Night:
         return "Dark";
 
     default:
@@ -50,12 +58,12 @@ const char *PreferenceManager::theme_to_string(Theme theme)
 Theme PreferenceManager::string_to_theme(const char *str)
 {
     if (strcmp(str, "Light") == 0)
-        return Theme::Light;
+        return Theme::Night;
 
     if (strcmp(str, "Dark") == 0)
-        return Theme::Dark;
+        return Theme::Night;
 
-    return Theme::Dark; // Default value
+    return Theme::Night; // Default value
 }
 
 bool PreferenceManager::save_config()
@@ -100,14 +108,14 @@ bool PreferenceManager::load_config()
     // Clear configs
     config = {};
 
-    config.theme = Theme::Dark; // Default theme
+    config.theme = Theme::Night; // Default theme
     if (!doc["theme"].isNull())
     {
         const char *themeStr = doc["theme"].as<const char *>();
         config.theme = string_to_theme(themeStr);
     }
 
-    config.panel = DEMO_PANEL; // Default
+    config.panel = PANEL_DEMO; // Default
     if (!doc["panel"].isNull())
     {
         const char *panelStr = doc["panel"].as<const char *>();
@@ -123,8 +131,8 @@ bool PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.theme = Theme::Dark,
-              .panel = DEMO_PANEL};
+    config = {.theme = Theme::Night,
+              .panel = PANEL_DEMO};
 
     PreferenceManager::save_config();
     return PreferenceManager::load_config();

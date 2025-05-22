@@ -2,7 +2,7 @@
 
 #include "interfaces/i_component.h"
 #include "utilities/types.h"
-#include "handlers/style_manager.h"
+#include "managers/style_manager.h"
 #include "icons/oil_can_icon_data.h"
 
 #include <lvgl.h>

@@ -7,7 +7,7 @@
 class SplashPanel : public IPanel
 {
 public:
-    SplashPanel(IDevice *device);
+    SplashPanel();
     ~SplashPanel();
 
     std::string get_name() const { return _name; };
@@ -26,7 +26,6 @@ private:
     static constexpr const int _display_time = 850;
 
     // Components
-    IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     lv_obj_t *_blank_screen;
