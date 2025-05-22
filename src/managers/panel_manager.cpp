@@ -21,20 +21,20 @@ void PanelManager::init(const char *panel_name)
     log_v("...");
 
     // Register all available panel types with the factory
-    register_panel<SplashPanel>(PANEL_SPLASH);
-    register_panel<DemoPanel>(PANEL_DEMO);
-    register_panel<OilPanel>(PANEL_OIL);
+    register_panel<SplashPanel>(PanelNames::Splash);
+    register_panel<DemoPanel>(PanelNames::Demo);
+    register_panel<OilPanel>(PanelNames::Oil);
 
-    // Handle the splash panel, and than load the supplied panel
-    load_panel(PANEL_SPLASH, [this](const char *panel_name, std::function<void()> panel_completion_callback) {
-        PanelManager::load_panel(panel_name, panel_completion_callback);
-    });
+    // Handle the splash panel, and then load the supplied panel
+    PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
+                             { PanelManager::load_panel(panel_name, [this]()
+                                                        { this->PanelManager::panel_completion_callback(); }); });
 }
 
 /// @brief Create a panel based on the given type name
 /// @param panel_name the type name of the panel to be created
 /// @return Interface type representing the panel
-std::shared_ptr<IPanel> PanelManager::create_panel(const std::string &panel_name)
+std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
 {
     auto iterator = _registered_panels.find(panel_name);
     if (iterator != _registered_panels.end())

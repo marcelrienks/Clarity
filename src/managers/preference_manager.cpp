@@ -37,15 +37,15 @@ void PreferenceManager::init()
 /// @brief Converts a Theme enum value to a string representation
 /// @param theme The theme enum value to convert
 /// @return A string representation of the theme
-const char *PreferenceManager::theme_to_string(Theme theme)
+const char *PreferenceManager::theme_to_string(Themes theme)
 {
     switch (theme)
     {
-    case Theme::Night:
-        return "Light";
+    case Themes::Day:
+        return "Day";
 
-    case Theme::Night:
-        return "Dark";
+    case Themes::Night:
+        return "Night";
 
     default:
         return "Unknown";
@@ -55,15 +55,15 @@ const char *PreferenceManager::theme_to_string(Theme theme)
 /// @brief Converts a string representation of a theme to a Theme enum value
 /// @param str The string to convert
 /// @return The corresponding Theme enum value
-Theme PreferenceManager::string_to_theme(const char *str)
+Themes PreferenceManager::string_to_theme(const char *str)
 {
     if (strcmp(str, "Light") == 0)
-        return Theme::Night;
+        return Themes::Night;
 
     if (strcmp(str, "Dark") == 0)
-        return Theme::Night;
+        return Themes::Night;
 
-    return Theme::Night; // Default value
+    return Themes::Night; // Default value
 }
 
 bool PreferenceManager::save_config()
@@ -76,7 +76,7 @@ bool PreferenceManager::save_config()
 
     // Add config data to the JSON document - convert theme enum to string
     doc["theme"] = theme_to_string(config.theme);
-    doc["panel"] = config.panel;
+    doc["panel_name"] = config.panel_name;
 
     // Serialize to JSON string
     String jsonString;
@@ -108,18 +108,18 @@ bool PreferenceManager::load_config()
     // Clear configs
     config = {};
 
-    config.theme = Theme::Night; // Default theme
+    config.theme = Themes::Night; // Default theme
     if (!doc["theme"].isNull())
     {
         const char *themeStr = doc["theme"].as<const char *>();
         config.theme = string_to_theme(themeStr);
     }
 
-    config.panel = PANEL_DEMO; // Default
-    if (!doc["panel"].isNull())
+    config.panel_name = PanelNames::Demo; // Default
+    if (!doc["panel_name"].isNull())
     {
-        const char *panelStr = doc["panel"].as<const char *>();
-        config.panel = panelStr;
+        const char *panelStr = doc["panel_name"].as<const char *>();
+        config.panel_name = panelStr;
     }
 
     return true;
@@ -131,8 +131,8 @@ bool PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.theme = Theme::Night,
-              .panel = PANEL_DEMO};
+    config = {.theme = Themes::Night,
+              .panel_name = PanelNames::Demo};
 
     PreferenceManager::save_config();
     return PreferenceManager::load_config();

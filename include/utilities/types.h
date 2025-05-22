@@ -7,7 +7,7 @@
 // Define the possible return types for the sensor readings
 using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>;
 
-enum class LogLevel
+enum class LogLevels
 {
     Verbose,
     Debug,
@@ -16,21 +16,20 @@ enum class LogLevel
     Error
 };
 
-enum class PanelType
-{
-    Splash,
-    Sensor,
-    Configuration
-};
-
-enum class Theme
+enum class Themes
 {
     Night,
     Day
 };
 
-struct Config
+struct PanelNames {
+    static constexpr const char *Splash = "SplashPanel";
+    static constexpr const char *Demo = "DemoPanel";
+    static constexpr const char *Oil = "OilPanel";
+};
+
+struct Configs
 {
-    Theme theme = Theme::Night;
-    std::string panel = std::string();
+    Themes theme = Themes::Night;
+    const char *panel_name = PanelNames::Demo;
 };

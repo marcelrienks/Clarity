@@ -32,15 +32,15 @@ public:
 
     static StyleManager &get_instance();
 
-    void init(Theme &theme);
-    void apply_theme(Theme &theme);
+    void init(Themes &theme);
+    void apply_theme(Themes &theme);
     void apply_theme_to_screen(lv_obj_t *screen);
     
-    const Theme &get_theme() const { return _theme; }
-    const ThemeColors &get_colours(const Theme &theme) const;
+    const Themes &get_theme() const { return _theme; }
+    const ThemeColors &get_colours(const Themes &theme) const;
 
 private:
-    Theme _theme = Theme::Night;
+    Themes _theme = Themes::Night;
     ThemeColors _day_theme_colours = {
         .background = lv_color_hex(0x121212),
         .text = lv_color_hex(0xEEEEEE),

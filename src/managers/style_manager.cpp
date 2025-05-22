@@ -16,7 +16,7 @@ StyleManager &StyleManager::get_instance()
 
 /// @brief Initialises the styles for the application
 /// @param theme the theme to be applied
-void StyleManager::init(Theme &theme)
+void StyleManager::init(Themes &theme)
 {
     log_d("...");
 
@@ -34,7 +34,7 @@ void StyleManager::init(Theme &theme)
 
 /// @brief Apply a specified theme to the styles
 /// @param theme the theme to be applied
-void StyleManager::apply_theme(Theme &theme)
+void StyleManager::apply_theme(Themes &theme)
 {
     log_d("...");
 
@@ -85,7 +85,7 @@ void StyleManager::reset_styles()
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
-const ThemeColors &StyleManager::get_colours(const Theme &theme) const
+const ThemeColors &StyleManager::get_colours(const Themes &theme) const
 {
-    return theme == Theme::Night ? _night_theme_colours : _day_theme_colours;
+    return theme == Themes::Night ? _night_theme_colours : _day_theme_colours;
 }

@@ -10,18 +10,13 @@ public:
     DemoPanel();
     ~DemoPanel();
 
-    std::string get_name() const { return _name; };
-    PanelType get_type() const { return _type; };
+    std::string get_name() const { return PanelNames::Demo; };
 
     void init() override;
     void show(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;
 
 private:
-    // Panel specific constants
-    static constexpr const char *_name = "Demo";
-    static constexpr const PanelType _type = PanelType::Sensor;
-
     // Components
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;

@@ -6,9 +6,12 @@ void setup() {
 
     // Initialise
     Device::get_instance().prepare();
-    PreferenceManager::get_instance().init();
-    StyleManager::get_instance().init(PreferenceManager::get_instance().config.theme);
-    PanelManager::get_instance().init(&PreferenceManager::get_instance().config.panel);
+
+    PreferenceManager preference_manager = PreferenceManager::get_instance();
+    preference_manager.init();
+
+    StyleManager::get_instance().init(preference_manager.config.theme);
+    PanelManager::get_instance().init(preference_manager.config.panel_name);
   }
   catch (const std::exception &e) {
     log_e("%s", e.what());
@@ -30,8 +33,7 @@ void loop()
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    //TODO: show splash, than configured screen should that be handled by this, or Panel_manager, either way new func in panel manager needed
-    _panel_manager.update_current_panel();
+    PanelManager::get_instance().update_current_panel();
 
     // Process LVGL tasks again to render the changes immediately
     Ticker::handle_lv_tasks();

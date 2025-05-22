@@ -13,7 +13,6 @@ class IPanel
 {
 public:
     virtual std::string get_name() const = 0;
-    virtual PanelType get_type() const = 0;
 
     virtual void init() = 0;
     virtual void show(std::function<void()> callback_function) = 0;

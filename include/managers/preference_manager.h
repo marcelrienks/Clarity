@@ -10,7 +10,7 @@
 class PreferenceManager
 {
 public:
-    inline static Config config;
+    inline static Configs config;
 
     static PreferenceManager &get_instance();
 
@@ -25,6 +25,6 @@ private:
     inline static const size_t JSON_CAPACITY_PER_PANEL = 256;
 
     Preferences _preferences;
-    const char *theme_to_string(Theme theme);
-    Theme string_to_theme(const char *str);
+    const char *theme_to_string(Themes theme);
+    Themes string_to_theme(const char *str);
 };

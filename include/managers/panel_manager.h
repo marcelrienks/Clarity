@@ -13,11 +13,6 @@
 #include <vector>
 #include <map>
 
-#define PANEL_DISPLAY_TIME 3000
-#define PANEL_SPLASH "SplashPanel"
-#define PANEL_DEMO "DemoPanel"
-#define PANEL_OIL "OilPanel"
-
 // NOTE: Define more panel types here as they are added
 
 class PanelManager
@@ -25,13 +20,13 @@ class PanelManager
 public:
     static PanelManager &get_instance();
 
-    void init(std::string *configured_panel);
+    void init(const char *panel_name);
     void load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr);
     void update_current_panel();
 
     // Register a panel type with the factory
     template<typename T> // Note the implementation of a template type must exist in header
-    void register_panel(const std::string &panel_name) {
+    void register_panel(const char *panel_name) {
         _registered_panels[panel_name] = []() -> std::shared_ptr<IPanel> { 
             return std::make_shared<T>(); 
         };
@@ -44,6 +39,6 @@ private:
     ~PanelManager();
     void splash_completion_callback(const char *panel_name);
     void panel_completion_callback();
-    std::shared_ptr<IPanel> create_panel(const const char *panel_name);
+    std::shared_ptr<IPanel> create_panel(const char *panel_name);
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
 };
