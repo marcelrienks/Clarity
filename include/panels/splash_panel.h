@@ -13,7 +13,7 @@ public:
     std::string get_name() const { return PanelNames::Splash; };
 
     void init() override;
-    void show(std::function<void()> show_panel_completion_callback) override;
+    void load(std::function<void()> show_panel_completion_callback) override;
     void update(std::function<void()> update_panel_completion_callback = nullptr) override;
 
 private:

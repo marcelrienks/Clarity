@@ -30,10 +30,10 @@ void DemoPanel::init()
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> show_panel_completion_callback)
+void DemoPanel::load(std::function<void()> completion_callback)
 {
     log_i("...");
-    _callback_function = show_panel_completion_callback;
+    _callback_function = completion_callback;
 
     _component->render_show(_screen);
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
@@ -43,10 +43,10 @@ void DemoPanel::show(std::function<void()> show_panel_completion_callback)
 }
 
 /// @brief Update the reading on the screen
-void DemoPanel::update(std::function<void()> update_panel_completion_callback)
+void DemoPanel::update(std::function<void()> completion_callback)
 {
     log_i("...");
-    _callback_function = update_panel_completion_callback;
+    _callback_function = completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
     static lv_anim_t update_animation;

@@ -10,7 +10,7 @@ PreferenceManager &PreferenceManager::get_instance()
 
 void PreferenceManager::init()
 {
-    log_v("...");
+    log_d("...");
 
     // Initialize preferences
     if (!_preferences.begin("clarity", false))
@@ -97,11 +97,11 @@ bool PreferenceManager::load_config()
     // Deserialize JSON using the new JsonDocument
     const size_t jsonCapacity = jsonString.length() * 2; // 2x for safety
     JsonDocument doc;
-    DeserializationError error = deserializeJson(doc, jsonString);
+    DeserializationError result = deserializeJson(doc, jsonString);
 
-    if (!error)
+    if (result != DeserializationError::Ok)
     {
-        log_w("Error reading config");
+        log_e("Error reading config:  %s", result.c_str());
         return PreferenceManager::create_default_config();
     };
 

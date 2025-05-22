@@ -27,7 +27,7 @@ void SplashPanel::init()
 
 /// @brief Show the screen
 /// @param show_panel_completion_callback the function to call when the splash screen is complete
-void SplashPanel::show(std::function<void()> show_panel_completion_callback)
+void SplashPanel::load(std::function<void()> show_panel_completion_callback)
 {
     log_i("...");
     _callback_function = show_panel_completion_callback;
@@ -47,7 +47,7 @@ void SplashPanel::update(std::function<void()> update_panel_completion_callback)
 /// @param fade_in_timer the fade_in_timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
 {
-    log_v("...");
+    log_d("...");
 
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_in_timer));
@@ -72,7 +72,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
 /// @param fade_out_timer the animation_timer that has completed
 void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
 {
-    log_v("...");
+    log_d("...");
 
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_out_timer));

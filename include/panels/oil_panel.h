@@ -15,7 +15,7 @@ public:
     std::string get_name() const { return PanelNames::Oil; };
 
     void init() override;
-    void show(std::function<void()> callback_function) override;
+    void load(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;
 
 private:

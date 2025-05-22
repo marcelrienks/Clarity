@@ -22,7 +22,7 @@ public:
 
     void init(const char *panel_name);
     void load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr);
-    void update_current_panel();
+    void refresh_panel();
 
     // Register a panel type with the factory
     template<typename T> // Note the implementation of a template type must exist in header
@@ -37,8 +37,7 @@ private:
     bool _is_panel_locked = false; // this allows the panel to be locked during loading from show_panel() or change from update_current_panel()
 
     ~PanelManager();
-    void splash_completion_callback(const char *panel_name);
-    void panel_completion_callback();
+    void completion_callback();
     std::shared_ptr<IPanel> create_panel(const char *panel_name);
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
 };

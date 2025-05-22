@@ -18,17 +18,20 @@ PanelManager &PanelManager::get_instance()
 /// @param previous_panel the name of the panel to be shown
 void PanelManager::init(const char *panel_name)
 {
-    log_v("...");
+    log_d("...");
 
     // Register all available panel types with the factory
     register_panel<SplashPanel>(PanelNames::Splash);
     register_panel<DemoPanel>(PanelNames::Demo);
     register_panel<OilPanel>(PanelNames::Oil);
 
+    log_d("panels registered, loading splash");
+    PanelManager::load_panel(PanelNames::Splash);
+
     // Handle the splash panel, and then load the supplied panel
-    PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
-                             { PanelManager::load_panel(panel_name, [this]()
-                                                        { this->PanelManager::panel_completion_callback(); }); });
+    // PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
+    //                          { PanelManager::load_panel(panel_name, [this]()
+    //                                                     { this->PanelManager::panel_completion_callback(); }); });
 }
 
 /// @brief Create a panel based on the given type name
@@ -46,7 +49,7 @@ std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
 /// @brief Show the given panel
 /// @param panel the panel to be shown
 /// @param show_panel_completion_callback the function to be called when the panel show is complete
-void PanelManager::load_panel(const char *panel_name, std::function<void()> show_panel_completion_callback)
+void PanelManager::load_panel(const char *panel_name, std::function<void()> completion_callback)
 {
     // Create and register each panel from the configuration
     log_v("Loading panel %s");
@@ -71,11 +74,11 @@ void PanelManager::load_panel(const char *panel_name, std::function<void()> show
     _is_panel_locked = true;
     log_d("_is_panel_locked is now %i", _is_panel_locked);
 
-    _panel->show(show_panel_completion_callback);
+    _panel->load(completion_callback);
 }
 
 /// @brief Update the reading on the currently loaded panel
-void PanelManager::update_current_panel()
+void PanelManager::refresh_panel()
 {
     log_v("_is_panel_locked is %i", _is_panel_locked);
 
@@ -86,11 +89,11 @@ void PanelManager::update_current_panel()
     log_v("_is_panel_locked is %i", _is_panel_locked);
 
     _panel->update([this]()
-                   { this->panel_completion_callback(); });
+                   { this->PanelManager::completion_callback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
-void PanelManager::panel_completion_callback()
+void PanelManager::completion_callback()
 {
     _is_panel_locked = false;
     log_d("_is_panel_locked is %i", _is_panel_locked);

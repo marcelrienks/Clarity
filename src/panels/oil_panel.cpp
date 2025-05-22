@@ -27,7 +27,7 @@ void OilPanel::init()
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void OilPanel::show(std::function<void()> show_panel_completion_callback)
+void OilPanel::load(std::function<void()> show_panel_completion_callback)
 {
     log_i("...");
     _callback_function = show_panel_completion_callback;
