@@ -31,12 +31,12 @@ void loop()
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks
-    Ticker::handle_lv_tasks();
+    //Ticker::handle_lv_tasks();
 
     PanelManager::get_instance().refresh_panel();
 
     // Process LVGL tasks again to render the changes immediately
-    Ticker::handle_lv_tasks();
+    //Ticker::handle_lv_tasks();
 
     // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(start_time);

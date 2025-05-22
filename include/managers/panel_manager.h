@@ -5,6 +5,7 @@
 #include "panels/splash_panel.h"
 #include "panels/demo_panel.h"
 #include "panels/oil_panel.h"
+#include "utilities/ticker.h"
 
 #include <string>
 #include <functional>

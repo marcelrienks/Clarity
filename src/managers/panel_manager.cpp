@@ -19,6 +19,7 @@ PanelManager &PanelManager::get_instance()
 void PanelManager::init(const char *panel_name)
 {
     log_d("...");
+    Ticker::handle_lv_tasks();
 
     // Register all available panel types with the factory
     register_panel<SplashPanel>(PanelNames::Splash);
@@ -26,12 +27,16 @@ void PanelManager::init(const char *panel_name)
     register_panel<OilPanel>(PanelNames::Oil);
 
     log_d("panels registered, loading splash");
-    PanelManager::load_panel(PanelNames::Splash);
 
     // Handle the splash panel, and then load the supplied panel
     // PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
     //                          { PanelManager::load_panel(panel_name, [this]()
     //                                                     { this->PanelManager::panel_completion_callback(); }); });
+
+    // PanelManager::load_panel(PanelNames::Splash, [this]()
+    //                { this->PanelManager::completion_callback(); });
+
+    PanelManager::load_panel(PanelNames::Splash);
 }
 
 /// @brief Create a panel based on the given type name
@@ -75,6 +80,8 @@ void PanelManager::load_panel(const char *panel_name, std::function<void()> comp
     log_d("_is_panel_locked is now %i", _is_panel_locked);
 
     _panel->load(completion_callback);
+
+    Ticker::handle_lv_tasks();
 }
 
 /// @brief Update the reading on the currently loaded panel
@@ -90,6 +97,8 @@ void PanelManager::refresh_panel()
 
     _panel->update([this]()
                    { this->PanelManager::completion_callback(); });
+
+    Ticker::handle_lv_tasks();
 }
 
 /// @brief callback function to be executed on panel show completion
