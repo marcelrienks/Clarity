@@ -26,17 +26,10 @@ void PanelManager::init(const char *panel_name)
     register_panel<DemoPanel>(PanelNames::Demo);
     register_panel<OilPanel>(PanelNames::Oil);
 
-    log_d("panels registered, loading splash");
-
     // Handle the splash panel, and then load the supplied panel
-    // PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
-    //                          { PanelManager::load_panel(panel_name, [this]()
-    //                                                     { this->PanelManager::panel_completion_callback(); }); });
-
-    // PanelManager::load_panel(PanelNames::Splash, [this]()
-    //                { this->PanelManager::completion_callback(); });
-
-    PanelManager::load_panel(PanelNames::Splash);
+    PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
+                             { PanelManager::load_panel(panel_name, [this]()
+                                                        { this->PanelManager::completion_callback(); }); });
 }
 
 /// @brief Create a panel based on the given type name
@@ -44,11 +37,16 @@ void PanelManager::init(const char *panel_name)
 /// @return Interface type representing the panel
 std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
 {
-    auto iterator = _registered_panels.find(panel_name);
-    if (iterator != _registered_panels.end())
-        return iterator->second(); // Return the function stored in the map
+    log_d("...");
 
-    return nullptr;
+    auto iterator = _registered_panels.find(panel_name);
+    if (iterator == _registered_panels.end())
+    {
+        log_e("Failed to find panel %s in map", panel_name);
+        return nullptr;
+    }
+
+    return iterator->second(); // Return the function stored in the map
 }
 
 /// @brief Show the given panel
@@ -57,7 +55,7 @@ std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
 void PanelManager::load_panel(const char *panel_name, std::function<void()> completion_callback)
 {
     // Create and register each panel from the configuration
-    log_v("Loading panel %s");
+    log_v("Loading %s", panel_name); // Also fixed format string
 
     // Panel locked for loading or updating
     if (_is_panel_locked)
@@ -66,14 +64,26 @@ void PanelManager::load_panel(const char *panel_name, std::function<void()> comp
         return;
     }
 
-    // Panel already shown logic
-    if (panel_name == _panel->get_name())
+    // Panel already shown logic - check if _panel is not null first
+    if (_panel != nullptr && panel_name == _panel->get_name())
     {
-        log_d("panel %s is already shown", _panel->get_name());
+        log_d("panel %s is already shown", _panel->get_name().c_str());
         return;
     }
 
     _panel = PanelManager::create_panel(panel_name).get();
+
+    // Add null check here too for safety
+    if (_panel == nullptr)
+    {
+        log_e("Failed to create panel: %s", panel_name);
+        return;
+    }
+
+    log_d("...This is the last log line I see");
+
+    // Initialize the panel
+    _panel->init();
 
     // Lock the panel to prevent updating during loading
     _is_panel_locked = true;
