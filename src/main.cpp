@@ -4,21 +4,36 @@ void setup() {
   try {
     log_d("...");
 
-    // Initialise
+    // Initialise Device and LVGL first
+    log_d("Initializing device...");
     Device::get_instance().prepare();
+    
+    // Give LVGL a chance to initialize properly
+    log_d("Processing initial LVGL tasks...");
+    Ticker::handle_lv_tasks();
 
+    log_d("Initializing preferences...");
     PreferenceManager preference_manager = PreferenceManager::get_instance();
     preference_manager.init();
 
+    log_d("Initializing style manager...");
     StyleManager::get_instance().init(preference_manager.config.theme);
+    
+    // Process LVGL tasks after style initialization
+    log_d("Processing LVGL tasks after style init...");
+    Ticker::handle_lv_tasks();
+    
+    log_d("Initializing panel manager...");
     PanelManager::get_instance().init(preference_manager.config.panel_name);
+    
+    log_d("Setup completed successfully");
   }
   catch (const std::exception &e) {
-    log_e("%s", e.what());
+    log_e("Exception in setup: %s", e.what());
     throw;
   }
   catch (...) {
-    log_e("Unknown exception occurred");
+    log_e("Unknown exception occurred in setup");
     throw;
   }
 }
@@ -31,24 +46,24 @@ void loop()
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks
-    //Ticker::handle_lv_tasks();
+    Ticker::handle_lv_tasks();
 
     PanelManager::get_instance().refresh_panel();
 
     // Process LVGL tasks again to render the changes immediately
-    //Ticker::handle_lv_tasks();
+    Ticker::handle_lv_tasks();
 
     // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(start_time);
   }
   catch (const std::exception &e)
   {
-    log_e("%s", e.what());
+    log_e("Exception in loop: %s", e.what());
     throw;
   }
   catch (...)
   {
-    log_e("Unknown exception occurred");
+    log_e("Unknown exception occurred in loop");
     throw;
   }
 }

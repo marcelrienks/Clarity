@@ -2,6 +2,7 @@
 
 #include "managers/style_manager.h"
 
+#include <Arduino.h>
 #include <lvgl.h>
 
 class LvTools

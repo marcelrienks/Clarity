@@ -1,5 +1,4 @@
-// include/main.h
-#pragma once
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #define UI_VERSION "4.1.0"
 
