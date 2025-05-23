@@ -42,7 +42,7 @@ void loop()
 {
   try
   {
-    // log_d("...");
+    log_d("...");
     uint32_t start_time = millis();
 
     // Process any pending LVGL tasks

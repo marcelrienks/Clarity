@@ -34,7 +34,7 @@ public:
     }
 
 private:
-    IPanel *_panel = nullptr;
+    std::shared_ptr<IPanel> _panel = nullptr;
     bool _is_panel_locked = false; // this allows the panel to be locked during loading from show_panel() or change from update_current_panel()
 
     ~PanelManager();

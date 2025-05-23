@@ -8,8 +8,6 @@ void LvTools::reset_screen(lv_obj_t *screen)
     
     // Apply the current theme's background style from the StyleManager
     StyleManager::get_instance().apply_theme_to_screen(screen);
-    
-    log_d("Exiting reset_screen");
 }
 
 /// @brief Create a blank screen with the current theme's background style
@@ -19,12 +17,7 @@ lv_obj_t* LvTools::create_blank_screen()
     log_d("...");
     
     lv_obj_t *screen = lv_obj_create(NULL);
-    
-    log_d("Created screen object, calling reset_screen");
-    
     LvTools::reset_screen(screen);
-    
-    log_d("Exiting create_blank_screen");
 
     return screen;
 }

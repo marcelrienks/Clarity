@@ -2,7 +2,7 @@
 
 PanelManager::~PanelManager()
 {
-    _panel = nullptr;
+    _panel.reset();
 }
 
 /// @brief Get the singleton instance of PanelManager
@@ -71,7 +71,7 @@ void PanelManager::load_panel(const char *panel_name, std::function<void()> comp
         return;
     }
 
-    _panel = PanelManager::create_panel(panel_name).get();
+    _panel = PanelManager::create_panel(panel_name);
 
     // Add null check here too for safety
     if (_panel == nullptr)
@@ -79,8 +79,6 @@ void PanelManager::load_panel(const char *panel_name, std::function<void()> comp
         log_e("Failed to create panel: %s", panel_name);
         return;
     }
-
-    log_d("...This is the last log line I see");
 
     // Initialize the panel
     _panel->init();
