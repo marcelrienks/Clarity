@@ -28,7 +28,8 @@ void PanelManager::init(const char *panel_name)
 
     // Handle the splash panel, and then load the supplied panel
     PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
-                             { PanelManager::load_panel(panel_name, [this]()
+                             { PanelManager::completion_callback();
+                               PanelManager::load_panel(panel_name, [this]()
                                                         { this->PanelManager::completion_callback(); }); });
 }
 
@@ -67,7 +68,7 @@ void PanelManager::load_panel(const char *panel_name, std::function<void()> comp
     // Panel already shown logic - check if _panel is not null first
     if (_panel != nullptr && panel_name == _panel->get_name())
     {
-        log_d("panel %s is already shown", _panel->get_name().c_str());
+        log_d("panel %s is already shown", _panel->get_name());
         return;
     }
 

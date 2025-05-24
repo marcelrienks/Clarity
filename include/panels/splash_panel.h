@@ -10,7 +10,7 @@ public:
     SplashPanel();
     ~SplashPanel();
 
-    std::string get_name() const { return PanelNames::Splash; };
+    const char *get_name() const { return PanelNames::Splash; };
 
     void init() override;
     void load(std::function<void()> show_panel_completion_callback) override;

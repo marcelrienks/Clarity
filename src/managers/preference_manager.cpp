@@ -48,39 +48,44 @@ const char *PreferenceManager::theme_to_string(Themes theme)
         return "Night";
 
     default:
-        return "Unknown";
+        return "Day";
     }
 }
 
 /// @brief Converts a string representation of a theme to a Theme enum value
 /// @param str The string to convert
 /// @return The corresponding Theme enum value
-Themes PreferenceManager::string_to_theme(const char *str)
+Themes PreferenceManager::string_to_theme(const char *string)
 {
-    if (strcmp(str, "Light") == 0)
+    if (strcmp(string, "Day") == 0)
+        return Themes::Day;
+
+    if (strcmp(string, "Night") == 0)
         return Themes::Night;
 
-    if (strcmp(str, "Dark") == 0)
-        return Themes::Night;
-
-    return Themes::Night; // Default value
+    return Themes::Day;
 }
 
 bool PreferenceManager::save_config()
 {
     log_d("...");
+
     _preferences.remove(CONFIG_KEY);
 
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
 
     // Add config data to the JSON document - convert theme enum to string
-    doc["theme"] = theme_to_string(config.theme);
-    doc["panel_name"] = config.panel_name;
+    doc[JsonDocNames::theme] = theme_to_string(config.theme);
+    doc[JsonDocNames::panel_name] = config.panel_name;
+
+log_d("doc[JsonDocNames::panel_name]: %s", doc[JsonDocNames::panel_name]);
 
     // Serialize to JSON string
     String jsonString;
     serializeJson(doc, jsonString);
+
+log_d("jsonString: %s", jsonString);
 
     // Save the JSON string to preferences
     return _preferences.putString(CONFIG_KEY, jsonString);
@@ -89,6 +94,7 @@ bool PreferenceManager::save_config()
 bool PreferenceManager::load_config()
 {
     log_d("...");
+
     String jsonString = _preferences.getString(CONFIG_KEY, "");
 
     if (jsonString.length() == 0)
@@ -97,7 +103,10 @@ bool PreferenceManager::load_config()
     // Deserialize JSON using the new JsonDocument
     const size_t jsonCapacity = jsonString.length() * 2; // 2x for safety
     JsonDocument doc;
+
+log_d("jsonString: %s", jsonString);
     DeserializationError result = deserializeJson(doc, jsonString);
+log_d("doc[JsonDocNames::panel_name]: %s", doc[JsonDocNames::panel_name]);
 
     if (result != DeserializationError::Ok)
     {
@@ -108,17 +117,17 @@ bool PreferenceManager::load_config()
     // Clear configs
     config = {};
 
-    config.theme = Themes::Night; // Default theme
-    if (!doc["theme"].isNull())
+    config.theme = Themes::Day; // Default theme
+    if (!doc[JsonDocNames::theme].isNull())
     {
-        const char *themeStr = doc["theme"].as<const char *>();
+        const char *themeStr = doc[JsonDocNames::theme].as<const char *>();
         config.theme = string_to_theme(themeStr);
     }
 
     config.panel_name = PanelNames::Demo; // Default
-    if (!doc["panel_name"].isNull())
+    if (!doc[JsonDocNames::panel_name].isNull())
     {
-        const char *panelStr = doc["panel_name"].as<const char *>();
+        const char *panelStr = doc[JsonDocNames::panel_name].as<const char *>();
         config.panel_name = panelStr;
     }
 
@@ -131,7 +140,7 @@ bool PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.theme = Themes::Night,
+    config = {.theme = Themes::Day,
               .panel_name = PanelNames::Demo};
 
     PreferenceManager::save_config();

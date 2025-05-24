@@ -28,6 +28,11 @@ struct PanelNames {
     static constexpr const char *Oil = "OilPanel";
 };
 
+struct JsonDocNames {
+    static constexpr const char *theme = "theme";
+    static constexpr const char *panel_name = "panel_name";
+};
+
 struct Configs
 {
     Themes theme = Themes::Night;

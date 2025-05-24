@@ -10,7 +10,7 @@ public:
     DemoPanel();
     ~DemoPanel();
 
-    std::string get_name() const { return PanelNames::Demo; };
+    const char *get_name() const { return PanelNames::Demo; };
 
     void init() override;
     void load(std::function<void()> callback_function) override;

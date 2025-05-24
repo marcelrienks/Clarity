@@ -12,7 +12,7 @@ public:
     OilPanel();
     ~OilPanel();
 
-    std::string get_name() const { return PanelNames::Oil; };
+    const char *get_name() const { return PanelNames::Oil; };
 
     void init() override;
     void load(std::function<void()> callback_function) override;
