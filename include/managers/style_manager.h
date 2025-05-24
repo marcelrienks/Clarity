@@ -32,8 +32,8 @@ public:
 
     static StyleManager &get_instance();
 
-    void init(Themes &theme);
-    void apply_theme(Themes &theme);
+    void init(Themes theme);
+    void apply_theme(Themes theme);
     void apply_theme_to_screen(lv_obj_t *screen);
     
     const Themes &get_theme() const { return _theme; }

@@ -16,7 +16,7 @@ StyleManager &StyleManager::get_instance()
 
 /// @brief Initialises the styles for the application
 /// @param theme the theme to be applied
-void StyleManager::init(Themes &theme)
+void StyleManager::init(Themes theme)
 {
     log_d("...");
 
@@ -36,7 +36,7 @@ void StyleManager::init(Themes &theme)
 
 /// @brief Apply a specified theme to the styles
 /// @param theme the theme to be applied
-void StyleManager::apply_theme(Themes &theme)
+void StyleManager::apply_theme(Themes theme)
 {
     log_d("...");
 

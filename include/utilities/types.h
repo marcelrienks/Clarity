@@ -29,12 +29,10 @@ struct PanelNames {
 };
 
 struct JsonDocNames {
-    static constexpr const char *theme = "theme";
     static constexpr const char *panel_name = "panel_name";
 };
 
 struct Configs
 {
-    Themes theme = Themes::Night;
-    const char *panel_name = PanelNames::Demo;
+    std::string panel_name = PanelNames::Demo;
 };

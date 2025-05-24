@@ -13,12 +13,12 @@ void setup() {
     PreferenceManager preference_manager = PreferenceManager::get_instance();
     preference_manager.init();
 
-    StyleManager::get_instance().init(preference_manager.config.theme);
+    StyleManager::get_instance().init(Themes::Day);
     
     // Process LVGL tasks after style initialization
     Ticker::handle_lv_tasks();
 
-    PanelManager::get_instance().init(preference_manager.config.panel_name);
+    PanelManager::get_instance().init(preference_manager.config.panel_name.c_str());
   }
   catch (const std::exception &e) {
     log_e("Exception in setup: %s", e.what());

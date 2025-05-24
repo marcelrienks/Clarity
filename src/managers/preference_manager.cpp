@@ -74,21 +74,15 @@ bool PreferenceManager::save_config()
 
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
-
-    // Add config data to the JSON document - convert theme enum to string
-    doc[JsonDocNames::theme] = theme_to_string(config.theme);
-    doc[JsonDocNames::panel_name] = config.panel_name;
-
-log_d("doc[JsonDocNames::panel_name]: %s", doc[JsonDocNames::panel_name]);
+    doc[JsonDocNames::panel_name] = config.panel_name.c_str();
 
     // Serialize to JSON string
     String jsonString;
     serializeJson(doc, jsonString);
 
-log_d("jsonString: %s", jsonString);
-
     // Save the JSON string to preferences
-    return _preferences.putString(CONFIG_KEY, jsonString);
+    size_t written = _preferences.putString(CONFIG_KEY, jsonString);
+    return written > 0;
 }
 
 bool PreferenceManager::load_config()
@@ -96,39 +90,28 @@ bool PreferenceManager::load_config()
     log_d("...");
 
     String jsonString = _preferences.getString(CONFIG_KEY, "");
-
     if (jsonString.length() == 0)
-        return PreferenceManager::create_default_config();
-
-    // Deserialize JSON using the new JsonDocument
-    const size_t jsonCapacity = jsonString.length() * 2; // 2x for safety
-    JsonDocument doc;
-
-log_d("jsonString: %s", jsonString);
-    DeserializationError result = deserializeJson(doc, jsonString);
-log_d("doc[JsonDocNames::panel_name]: %s", doc[JsonDocNames::panel_name]);
-
-    if (result != DeserializationError::Ok)
     {
-        log_e("Error reading config:  %s", result.c_str());
+        log_d("No config found, creating default");
         return PreferenceManager::create_default_config();
-    };
-
-    // Clear configs
-    config = {};
-
-    config.theme = Themes::Day; // Default theme
-    if (!doc[JsonDocNames::theme].isNull())
-    {
-        const char *themeStr = doc[JsonDocNames::theme].as<const char *>();
-        config.theme = string_to_theme(themeStr);
     }
 
+    // Deserialize JSON using the new JsonDocument
+    JsonDocument doc;
+    DeserializationError result = deserializeJson(doc, jsonString);
+    if (result != DeserializationError::Ok)
+    {
+        log_e("Error deserializing config: %s", result.c_str());
+        return PreferenceManager::create_default_config();
+    }
+
+    // Clear configs and set defaults
+    config = {};
     config.panel_name = PanelNames::Demo; // Default
     if (!doc[JsonDocNames::panel_name].isNull())
     {
-        const char *panelStr = doc[JsonDocNames::panel_name].as<const char *>();
-        config.panel_name = panelStr;
+        // Convert to std::string - this copies the data
+        config.panel_name = std::string(doc[JsonDocNames::panel_name].as<const char *>());
     }
 
     return true;
@@ -140,8 +123,7 @@ bool PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.theme = Themes::Day,
-              .panel_name = PanelNames::Demo};
+    config = {.panel_name = std::string(PanelNames::Demo)};
 
     PreferenceManager::save_config();
     return PreferenceManager::load_config();
