@@ -27,10 +27,12 @@ void PanelManager::init(const char *panel_name)
     register_panel<OilPanel>(PanelNames::Oil);
 
     // Handle the splash panel, and then load the supplied panel
-    PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
-                             { PanelManager::completion_callback();
-                               PanelManager::load_panel(panel_name, [this]()
-                                                        { this->PanelManager::completion_callback(); }); });
+    // PanelManager::load_panel(PanelNames::Splash, [this, panel_name]()
+    //                          { PanelManager::completion_callback();
+    //                            PanelManager::load_panel(panel_name, [this]()
+    //                                                     { this->PanelManager::completion_callback(); }); });
+
+    PanelManager::load_panel(panel_name, [this](){ this->PanelManager::completion_callback(); });
 }
 
 /// @brief Create a panel based on the given type name
