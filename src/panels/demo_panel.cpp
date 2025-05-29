@@ -2,6 +2,7 @@
 #include "components/demo_component.h"
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
+#include <utilities/ticker.h>
 
 DemoPanel::DemoPanel()
     : _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()) {}
@@ -39,7 +40,7 @@ void DemoPanel::load(std::function<void()> completion_callback)
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_d("load...");
-    lv_scr_load(_screen);
+    lv_screen_load(_screen);
 }
 
 /// @brief Update the reading on the screen

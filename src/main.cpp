@@ -4,21 +4,19 @@ void setup() {
   try {
     log_d("...");
 
-    // Initialise Device and LVGL first
-    Device::get_instance().prepare();
-    
-    // Give LVGL a chance to initialize properly
-    Ticker::handle_lv_tasks();
-
     PreferenceManager preference_manager = PreferenceManager::get_instance();
     preference_manager.init();
-
-    StyleManager::get_instance().init(Themes::Day);
     
-    // Process LVGL tasks after style initialization
+    Device::get_instance().prepare();
     Ticker::handle_lv_tasks();
 
-    PanelManager::get_instance().init(preference_manager.config.panel_name.c_str());
+    StyleManager::get_instance().init(Themes::Day);
+    Ticker::handle_lv_tasks();
+
+    PanelManager panel_manager = PanelManager::get_instance();
+    panel_manager.init(preference_manager.config.panel_name.c_str());
+    panel_manager.load_panels();
+    Ticker::handle_lv_tasks();
   }
   catch (const std::exception &e) {
     log_e("Exception in setup: %s", e.what());
