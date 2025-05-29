@@ -47,25 +47,44 @@ void SplashPanel::update(std::function<void()> update_panel_completion_callback)
 /// @param fade_in_timer the fade_in_timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
 {
-    log_d("...");
+    log_d("fade_in_timer_callback start");
 
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_in_timer));
+    if (!panel) {
+        log_e("Panel is null!");
+        return;
+    }
+    log_d("Panel retrieved successfully");
 
-    // Transition to the next screen with a fade-in animation
-    lv_scr_load_anim(panel->_screen,
-                     LV_SCR_LOAD_ANIM_FADE_IN,
-                     _animation_time,
-                     _delay_time,
-                     false);
+    if (!panel->_screen) {
+        log_e("Panel screen is null!");
+        return;
+    }
+    log_d("Panel screen is valid");
+
+    // Try without animation first to isolate the issue
+    log_d("About to call lv_scr_load_anim");
+    
+    // Replace lv_scr_load_anim with regular lv_scr_load to test
+    lv_scr_load(panel->_screen);
+    log_d("Screen loaded successfully");
 
     // Schedule the fade-out animation
+    log_d("Creating fade_out_timer");
     auto *fade_out_timer = lv_timer_create(SplashPanel::fade_out_timer_callback,
                                            _animation_time + _display_time,
                                            panel);
+    if (!fade_out_timer) {
+        log_e("Failed to create fade_out_timer!");
+        return;
+    }
+    log_d("fade_out_timer created successfully");
 
-    // Remove the fade_in_timer after transition, this replaces having to set a repeat on the fade_in_timer
+    // Remove the fade_in_timer after transition
+    log_d("Deleting fade_in_timer");
     lv_timer_del(fade_in_timer);
+    log_d("fade_in_timer deleted, callback complete");
 }
 
 /// @brief Callback function for the fade out animation_timer completion
