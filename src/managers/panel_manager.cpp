@@ -39,6 +39,9 @@ void PanelManager::load_panels()
         return;
     }
 
+    // load_panel(_panel, [this]()
+    //            { this->PanelManager::completion_callback(); });
+
     std::shared_ptr<IPanel> splash_panel = PanelManager::create_panel(PanelNames::Splash);
     load_panel(splash_panel, [this]()
                { this->PanelManager::splash_completion_callback(); });

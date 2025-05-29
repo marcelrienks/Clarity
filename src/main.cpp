@@ -6,15 +6,16 @@ void setup() {
 
     PreferenceManager preference_manager = PreferenceManager::get_instance();
     preference_manager.init();
-    
+
     Device::get_instance().prepare();
     Ticker::handle_lv_tasks();
 
     StyleManager::get_instance().init(Themes::Day);
     Ticker::handle_lv_tasks();
 
-    PanelManager panel_manager = PanelManager::get_instance();
-    panel_manager.init(preference_manager.config.panel_name.c_str());
+    PanelManager &panel_manager = PanelManager::get_instance();
+    panel_manager.init(PanelNames::Splash);
+    //panel_manager.init(preference_manager.config.panel_name.c_str());
     panel_manager.load_panels();
     Ticker::handle_lv_tasks();
   }
