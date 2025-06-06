@@ -19,7 +19,7 @@ public:
 private:
     // Panel specific constants
     static constexpr const int _animation_time = 2000;
-    static constexpr const int _delay_time = 0;
+    static constexpr const int _delay_time = 200;
     static constexpr const int _display_time = 850;
 
     // Components

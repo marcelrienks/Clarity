@@ -36,8 +36,7 @@ void loop()
   try
   {
     log_d("...");
-    uint32_t start_time = millis();
-
+    
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
@@ -47,7 +46,7 @@ void loop()
     Ticker::handle_lv_tasks();
 
     // Adaptive Timing to generate a ~60fps refresh rate
-    Ticker::handle_dynamic_delay(start_time);
+    Ticker::handle_dynamic_delay(millis());
   }
   catch (const std::exception &e)
   {

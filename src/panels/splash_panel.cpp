@@ -85,7 +85,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
 
     // Create a animation_timer for the completion callback
     auto *completion_timer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
-                                             _animation_time + 50, // Small extra delay to ensure animation is complete
+                                             _animation_time + _delay_time, // Small extra delay to ensure animation is complete
                                              panel);
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer

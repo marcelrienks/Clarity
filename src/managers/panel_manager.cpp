@@ -102,6 +102,9 @@ void PanelManager::splash_completion_callback(const char *panel_name)
 {
     log_d("...");
 
+    _panel.reset();
+    Ticker::handle_lv_tasks();
+
     _panel = PanelManager::create_panel(panel_name);
     load_panel(_panel, [this]()
                { this->PanelManager::completion_callback(); });
