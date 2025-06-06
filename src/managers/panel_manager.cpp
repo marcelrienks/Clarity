@@ -27,6 +27,9 @@ void PanelManager::init()
     register_panel<OilPanel>(PanelNames::Oil);
 }
 
+/// @brief Loads a panel based on the given type name
+/// This function will create the panel and then call the load function on it.
+/// @param panel_name the type name of the panel to be loaded
 void PanelManager::load_panel(const char *panel_name)
 {
     log_d("...");
@@ -35,6 +38,9 @@ void PanelManager::load_panel(const char *panel_name)
                { this->PanelManager::completion_callback(); });
 }
 
+/// @brief Loads a panel based on the given type name after first loading a splash screen
+/// This function will create the panel and then call the load function on it.
+/// @param panel_name the type name of the panel to be loaded
 void PanelManager::load_panel_with_Splash(const char *panel_name)
 {
     log_d("...");

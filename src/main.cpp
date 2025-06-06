@@ -15,9 +15,6 @@ void setup() {
 
     PanelManager &panel_manager = PanelManager::get_instance();
     panel_manager.init();
-    //panel_manager.load_panel(PanelNames::Splash);
-    //panel_manager.load_panel(PanelNames::Demo);
-    //panel_manager.load_panel(PanelNames::Oil);
     panel_manager.load_panel_with_Splash(PanelNames::Demo);
     Ticker::handle_lv_tasks();
   }
