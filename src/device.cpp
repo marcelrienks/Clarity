@@ -1,4 +1,4 @@
-#include <device.h>
+#include "device.h"
 
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
 Device::Device()
@@ -64,6 +64,15 @@ Device::Device()
     setPanel(&_panel_instance);
 }
 
+/// @brief Get the singleton instance of Device
+/// @return instance of Device
+Device &Device::get_instance()
+{
+    static Device instance; // this ensures that the instance is created only once
+    return instance;
+}
+
+/// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
 void Device::prepare()
 {
     log_i("init...");
@@ -84,12 +93,6 @@ void Device::prepare()
     lv_display_set_user_data(display, this);
     lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-    // Initialize the style manager with the current theme from preferences
-    StyleManager::get_instance().init(PreferenceManager::config.theme);
-    
-    // Apply the theme to the active screen
-    StyleManager::get_instance().apply_theme_to_screen(lv_scr_act());
 }
 
 /// @brief Static Display Flush Wrapper function

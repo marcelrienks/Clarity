@@ -3,8 +3,8 @@
 #define LGFX_USE_V1
 
 #include "interfaces/i_device.h"
-#include "handlers/style_manager.h"
-#include "handlers/preference_manager.h"
+#include "managers/style_manager.h"
+#include "managers/preference_manager.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
@@ -35,7 +35,7 @@ class Device : public IDevice
 public:
     lv_obj_t *Screen;
 
-    Device();
+    static Device &get_instance();
     void prepare() override;
 
 private:
@@ -45,6 +45,8 @@ private:
 
     const static unsigned int _lv_buffer_size = (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
     uint8_t _lv_buffer[2][_lv_buffer_size];
+
+    Device();
 
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 };

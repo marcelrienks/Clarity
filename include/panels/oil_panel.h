@@ -9,23 +9,17 @@
 class OilPanel : public IPanel
 {
 public:
-    OilPanel(IDevice *device);
+    OilPanel();
     ~OilPanel();
 
-    std::string get_name() const { return _name; };
-    PanelType get_type() const { return _type; };
+    const char *get_name() const { return PanelNames::Oil; };
 
     void init() override;
-    void show(std::function<void()> callback_function) override;
+    void load(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;
 
 private:
-    // Panel specific constants
-    static constexpr const char *_name = "Oil";
-    static constexpr const PanelType _type = PanelType::Sensor;
-
     // Components
-    IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     std::shared_ptr<ISensor> _sensor;

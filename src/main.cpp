@@ -4,21 +4,29 @@ void setup() {
   try {
     log_d("...");
 
-    // Initialize preferences first to load theme settings
-    _preference_manager.init();
-    
-    // Initialize the device which will use the theme from preferences
-    _device.prepare();
-    
-    // Initialize panel manager
-    _panel_manager.init(&_device, &_preference_manager.config.panel);
+    //PreferenceManager preference_manager = PreferenceManager::get_instance();
+    //preference_manager.init();
+
+    Device::get_instance().prepare();
+    Ticker::handle_lv_tasks();
+
+    StyleManager::get_instance().init(Themes::Day);
+    Ticker::handle_lv_tasks();
+
+    PanelManager &panel_manager = PanelManager::get_instance();
+    panel_manager.init();
+    //panel_manager.load_panel(PanelNames::Splash);
+    //panel_manager.load_panel(PanelNames::Demo);
+    //panel_manager.load_panel(PanelNames::Oil);
+    panel_manager.load_panel_with_Splash(PanelNames::Demo);
+    Ticker::handle_lv_tasks();
   }
   catch (const std::exception &e) {
-    log_e("%s", e.what());
+    log_e("Exception in setup: %s", e.what());
     throw;
   }
   catch (...) {
-    log_e("Unknown exception occurred");
+    log_e("Unknown exception occurred in setup");
     throw;
   }
 }
@@ -27,29 +35,27 @@ void loop()
 {
   try
   {
-    // log_d("...");
-    uint32_t start_time = millis();
-
+    log_d("...");
+    
     // Process any pending LVGL tasks
     Ticker::handle_lv_tasks();
 
-    //TODO: show splash, than configured screen should that be handled by this, or Panel_manager, either way new func in panel manager needed
-    _panel_manager.update_current_panel();
+    PanelManager::get_instance().refresh_panel();
 
     // Process LVGL tasks again to render the changes immediately
     Ticker::handle_lv_tasks();
 
     // Adaptive Timing to generate a ~60fps refresh rate
-    Ticker::handle_dynamic_delay(start_time);
+    Ticker::handle_dynamic_delay(millis());
   }
   catch (const std::exception &e)
   {
-    log_e("%s", e.what());
+    log_e("Exception in loop: %s", e.what());
     throw;
   }
   catch (...)
   {
-    log_e("Unknown exception occurred");
+    log_e("Unknown exception occurred in loop");
     throw;
   }
 }

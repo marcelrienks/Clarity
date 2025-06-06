@@ -12,11 +12,10 @@
 class IPanel
 {
 public:
-    virtual std::string get_name() const = 0;
-    virtual PanelType get_type() const = 0;
+    virtual const char * get_name() const = 0;
 
     virtual void init() = 0;
-    virtual void show(std::function<void()> callback_function) = 0;
+    virtual void load(std::function<void()> callback_function) = 0;
     virtual void update(std::function<void()> callback_function) = 0;
 
     std::function<void()> _callback_function;

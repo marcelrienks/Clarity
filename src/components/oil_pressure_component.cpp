@@ -3,14 +3,13 @@
 
 OilPressureComponent::OilPressureComponent()
 {
+    StyleManager &_styleManager = StyleManager::get_instance();
+
     // Initialize styles - DO NOT assign styles directly
     lv_style_init(&_indicator_part_style);
     lv_style_init(&_items_part_style);
     lv_style_init(&_main_part_style);
     lv_style_init(&_danger_section_items_part_style);
-
-    // Now copy properties from StyleManager if needed
-    // Note: This is done in render_show() to ensure styles are properly initialized first
 }
 
 OilPressureComponent::~OilPressureComponent()
@@ -41,14 +40,13 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     // Scale
     _scale = lv_scale_create(screen);
 
-    // Apply theme styles
     const StyleManager &styleManager = StyleManager::get_instance();
 
     // Apply theme color to our styles
-    const ThemeColors &colors = styleManager.get_current_colors();
-    lv_style_set_line_color(&_indicator_part_style, colors.gauge_normal);
-    lv_style_set_line_color(&_items_part_style, colors.gauge_normal);
-    lv_style_set_line_color(&_danger_section_items_part_style, colors.gauge_danger);
+    const ThemeColors &colours = styleManager.get_colours(styleManager.get_theme());
+    lv_style_set_line_color(&_indicator_part_style, colours.gauge_normal);
+    lv_style_set_line_color(&_items_part_style, colours.gauge_normal);
+    lv_style_set_line_color(&_danger_section_items_part_style, colours.gauge_danger);
 
     // Now use our initialized styles
     lv_obj_add_style(_scale, &styleManager.background_style, MAIN_DEFAULT);
@@ -90,7 +88,7 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
 
     // Add needle line
     _needle_line = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_line, colors.gauge_normal, 0U);
+    lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, 0U);
     lv_obj_set_style_line_width(_needle_line, 5U, MAIN_DEFAULT);
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, 2U);
@@ -101,7 +99,7 @@ void OilPressureComponent::render_show(lv_obj_t *screen)
     lv_obj_center(_oil_can_icon);
     lv_obj_set_pos(_oil_can_icon, 0, -55); // Adjust position relative to center
     lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor(_oil_can_icon, colors.gauge_normal, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
 }
 
 /// @brief Update the component by rendering the new reading
@@ -112,17 +110,17 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 {
     log_d("...");
 
-    const ThemeColors &colors = StyleManager::get_instance().get_current_colors();
-    lv_color_t color = colors.gauge_normal;
+    const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
+    lv_color_t colour = colours.gauge_normal;
 
     // Change color based on value
     if (end <= _danger_zone)
-        color = colors.gauge_danger;
+        colour = colours.gauge_danger;
 
-    lv_obj_set_style_line_color(_needle_line, color, MAIN_DEFAULT);
+    lv_obj_set_style_line_color(_needle_line, colour, MAIN_DEFAULT);
 
     // Also update the oil can icon color to match the needle
-    lv_obj_set_style_image_recolor(_oil_can_icon, color, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor(_oil_can_icon, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
     lv_anim_init(animation);

@@ -2,9 +2,10 @@
 #include "components/demo_component.h"
 #include "sensors/demo_sensor.h"
 #include "utilities/lv_tools.h"
+#include <utilities/ticker.h>
 
-DemoPanel::DemoPanel(IDevice *device)
-    : _device(device), _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()) {}
+DemoPanel::DemoPanel()
+    : _component(std::make_shared<DemoComponent>()), _sensor(std::make_shared<DemoSensor>()) {}
 
 DemoPanel::~DemoPanel()
 {
@@ -30,23 +31,23 @@ void DemoPanel::init()
 
 /// @brief Show the panel
 /// @param callback_function to be called when the panel show is completed
-void DemoPanel::show(std::function<void()> show_panel_completion_callback)
+void DemoPanel::load(std::function<void()> completion_callback)
 {
     log_i("...");
-    _callback_function = show_panel_completion_callback;
+    _callback_function = completion_callback;
 
     _component->render_show(_screen);
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_d("load...");
-    lv_scr_load(_screen);
+    lv_screen_load(_screen);
 }
 
 /// @brief Update the reading on the screen
-void DemoPanel::update(std::function<void()> update_panel_completion_callback)
+void DemoPanel::update(std::function<void()> completion_callback)
 {
     log_i("...");
-    _callback_function = update_panel_completion_callback;
+    _callback_function = completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
     static lv_anim_t update_animation;
