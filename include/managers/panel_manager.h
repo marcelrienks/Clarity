@@ -21,8 +21,9 @@ class PanelManager
 public:
     static PanelManager &get_instance();
 
-    void init(const char *panel_name);
-    void load_panels();
+    void init();
+    void load_panel(const char *panel_name);
+    void load_panel_with_Splash(const char *panel_name);
     void refresh_panel();
 
     // Register a panel type with the factory
@@ -39,7 +40,7 @@ private:
 
     ~PanelManager();
     void load_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback = nullptr);
-    void splash_completion_callback();
+    void splash_completion_callback(const char *panel_name);
     void completion_callback();
     std::shared_ptr<IPanel> create_panel(const char *panel_name);
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names

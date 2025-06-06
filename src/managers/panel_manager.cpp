@@ -16,7 +16,7 @@ PanelManager &PanelManager::get_instance()
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 /// @param device the device to be used for panel rendering
 /// @param previous_panel the name of the panel to be shown
-void PanelManager::init(const char *panel_name)
+void PanelManager::init()
 {
     log_d("...");
     Ticker::handle_lv_tasks();
@@ -25,26 +25,23 @@ void PanelManager::init(const char *panel_name)
     register_panel<SplashPanel>(PanelNames::Splash);
     register_panel<DemoPanel>(PanelNames::Demo);
     register_panel<OilPanel>(PanelNames::Oil);
-
-    _panel = PanelManager::create_panel(panel_name);
 }
 
-void PanelManager::load_panels()
+void PanelManager::load_panel(const char *panel_name)
+{
+    log_d("...");
+    _panel = PanelManager::create_panel(panel_name);
+    load_panel(_panel, [this]()
+               { this->PanelManager::completion_callback(); });
+}
+
+void PanelManager::load_panel_with_Splash(const char *panel_name)
 {
     log_d("...");
 
-    if (!_panel)
-    {
-        log_e("No panel is currently loaded");
-        return;
-    }
-
-    // load_panel(_panel, [this]()
-    //            { this->PanelManager::completion_callback(); });
-
-    std::shared_ptr<IPanel> splash_panel = PanelManager::create_panel(PanelNames::Splash);
-    load_panel(splash_panel, [this]()
-               { this->PanelManager::splash_completion_callback(); });
+    _panel = PanelManager::create_panel(PanelNames::Splash);
+    load_panel(_panel, [this, panel_name]()
+               { this->PanelManager::splash_completion_callback(panel_name); });
 }
 
 /// @brief Create a panel based on the given type name
@@ -78,6 +75,7 @@ void PanelManager::load_panel(std::shared_ptr<IPanel> panel, std::function<void(
 
     // Initialize the panel
     panel->init();
+    Ticker::handle_lv_tasks();
     panel->load(completion_callback);
     Ticker::handle_lv_tasks();
 }
@@ -85,13 +83,13 @@ void PanelManager::load_panel(std::shared_ptr<IPanel> panel, std::function<void(
 /// @brief Update the reading on the currently loaded panel
 void PanelManager::refresh_panel()
 {
-    log_v("_is_loading is %i", _is_loading);
+    log_d("...");
 
     if (!_panel || _is_loading)
         return;
 
     _is_loading = true;
-    log_v("_is_loading is %i", _is_loading);
+    log_v("_is_loading is now %i", _is_loading);
 
     _panel->update([this]()
                    { this->PanelManager::completion_callback(); });
@@ -100,9 +98,11 @@ void PanelManager::refresh_panel()
 }
 
 /// @brief callback function to be executed on splash panel show completion
-void PanelManager::splash_completion_callback()
+void PanelManager::splash_completion_callback(const char *panel_name)
 {
     log_d("...");
+
+    _panel = PanelManager::create_panel(panel_name);
     load_panel(_panel, [this]()
                { this->PanelManager::completion_callback(); });
 }

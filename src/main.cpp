@@ -4,8 +4,8 @@ void setup() {
   try {
     log_d("...");
 
-    PreferenceManager preference_manager = PreferenceManager::get_instance();
-    preference_manager.init();
+    //PreferenceManager preference_manager = PreferenceManager::get_instance();
+    //preference_manager.init();
 
     Device::get_instance().prepare();
     Ticker::handle_lv_tasks();
@@ -14,9 +14,11 @@ void setup() {
     Ticker::handle_lv_tasks();
 
     PanelManager &panel_manager = PanelManager::get_instance();
-    //panel_manager.init(PanelNames::Splash);
-    panel_manager.init(preference_manager.config.panel_name.c_str());
-    panel_manager.load_panels();
+    panel_manager.init();
+    //panel_manager.load_panel(PanelNames::Splash);
+    //panel_manager.load_panel(PanelNames::Demo);
+    //panel_manager.load_panel(PanelNames::Oil);
+    panel_manager.load_panel_with_Splash(PanelNames::Demo);
     Ticker::handle_lv_tasks();
   }
   catch (const std::exception &e) {
