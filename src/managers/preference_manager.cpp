@@ -123,7 +123,7 @@ bool PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.panel_name = std::string(PanelNames::Demo)};
+    config = {.panel_name = std::string(PanelNames::Oil)};
 
     PreferenceManager::save_config();
     return PreferenceManager::load_config();
