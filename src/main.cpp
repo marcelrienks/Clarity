@@ -4,8 +4,8 @@ void setup() {
   try {
     log_d("...");
 
-    //PreferenceManager preference_manager = PreferenceManager::get_instance();
-    //preference_manager.init();
+    PreferenceManager &preference_manager = PreferenceManager::get_instance();
+    preference_manager.init();
 
     Device::get_instance().prepare();
     Ticker::handle_lv_tasks();
@@ -15,7 +15,7 @@ void setup() {
 
     PanelManager &panel_manager = PanelManager::get_instance();
     panel_manager.init();
-    panel_manager.load_panel_with_Splash(PanelNames::Demo);
+    panel_manager.load_panel_with_Splash(preference_manager.config.panel_name.c_str());
     Ticker::handle_lv_tasks();
   }
   catch (const std::exception &e) {
@@ -33,16 +33,10 @@ void loop()
   try
   {
     log_d("...");
-    
-    // Process any pending LVGL tasks
-    Ticker::handle_lv_tasks();
 
     PanelManager::get_instance().refresh_panel();
-
-    // Process LVGL tasks again to render the changes immediately
     Ticker::handle_lv_tasks();
 
-    // Adaptive Timing to generate a ~60fps refresh rate
     Ticker::handle_dynamic_delay(millis());
   }
   catch (const std::exception &e)
