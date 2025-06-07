@@ -7,27 +7,17 @@
 class DemoPanel : public IPanel
 {
 public:
-    DemoPanel(IDevice *device, PanelIteration panel_iteration);
+    DemoPanel();
     ~DemoPanel();
 
-    std::string get_name() const { return _name; };
-    PanelType get_type() const { return _type; };
-    PanelIteration get_iteration() const { return _iteration; };
-    void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
+    const char *get_name() const { return PanelNames::Demo; };
 
     void init() override;
-    void show(std::function<void()> callback_function) override;
+    void load(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;
 
 private:
-    // Panel specific constants
-    static constexpr const char *_name = "Demo";
-    static constexpr const PanelType _type = PanelType::Sensor;
-
-    PanelIteration _iteration = PanelIteration::Infinite; // this must be modifiable to allow for personalization
-
     // Components
-    IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     std::shared_ptr<ISensor> _sensor;

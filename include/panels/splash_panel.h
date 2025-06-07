@@ -7,29 +7,22 @@
 class SplashPanel : public IPanel
 {
 public:
-    SplashPanel(IDevice *device, PanelIteration panel_iteration);
+    SplashPanel();
     ~SplashPanel();
 
-    std::string get_name() const { return _name; };
-    PanelType get_type() const { return _type; };
-    PanelIteration get_iteration() const { return _iteration; };
-    void set_iteration(PanelIteration panel_iteration) { _iteration = panel_iteration; };
+    const char *get_name() const { return PanelNames::Splash; };
 
     void init() override;
-    void show(std::function<void()> show_panel_completion_callback) override;
+    void load(std::function<void()> show_panel_completion_callback) override;
     void update(std::function<void()> update_panel_completion_callback = nullptr) override;
 
 private:
     // Panel specific constants
-    static constexpr const char *_name = "Splash";
-    static constexpr const PanelType _type = PanelType::Splash;
     static constexpr const int _animation_time = 2000;
-    static constexpr const int _delay_time = 0;
+    static constexpr const int _delay_time = 200;
     static constexpr const int _display_time = 850;
-    PanelIteration _iteration = PanelIteration::Once; // this must be modifiable to allow for personalization
 
     // Components
-    IDevice *_device;
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _component;
     lv_obj_t *_blank_screen;

@@ -4,17 +4,26 @@ void setup() {
   try {
     log_d("...");
 
-    // Initialize 
-    _preferences.init();
-    _device.prepare();
-    _panel_manager.init(&_device);
+    PreferenceManager &preference_manager = PreferenceManager::get_instance();
+    preference_manager.init();
+
+    Device::get_instance().prepare();
+    Ticker::handle_lv_tasks();
+
+    StyleManager::get_instance().init(Themes::Day);
+    Ticker::handle_lv_tasks();
+
+    PanelManager &panel_manager = PanelManager::get_instance();
+    panel_manager.init();
+    panel_manager.load_panel_with_Splash(preference_manager.config.panel_name.c_str());
+    Ticker::handle_lv_tasks();
   }
   catch (const std::exception &e) {
-    log_e("%s", e.what());
+    log_e("Exception in setup: %s", e.what());
     throw;
   }
   catch (...) {
-    log_e("Unknown exception occurred");
+    log_e("Unknown exception occurred in setup");
     throw;
   }
 }
@@ -23,29 +32,21 @@ void loop()
 {
   try
   {
-    // log_d("...");
-    uint32_t start_time = millis();
+    log_d("...");
 
-    // Process any pending LVGL tasks
+    PanelManager::get_instance().refresh_panel();
     Ticker::handle_lv_tasks();
 
-    _panel_manager.show_all_panels();
-    _panel_manager.update_current_panel();
-
-    // Process LVGL tasks again to render the changes immediately
-    Ticker::handle_lv_tasks();
-
-    // Adaptive Timing to generate a ~60fps refresh rate
-    Ticker::handle_dynamic_delay(start_time);
+    Ticker::handle_dynamic_delay(millis());
   }
   catch (const std::exception &e)
   {
-    log_e("%s", e.what());
+    log_e("Exception in loop: %s", e.what());
     throw;
   }
   catch (...)
   {
-    log_e("Unknown exception occurred");
+    log_e("Unknown exception occurred in loop");
     throw;
   }
 }
