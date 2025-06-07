@@ -92,28 +92,26 @@ bool PreferenceManager::load_config()
     String jsonString = _preferences.getString(CONFIG_KEY, "");
     if (jsonString.length() == 0)
     {
-        log_d("No config found, creating default");
+        log_w("No config found, creating default");
         return PreferenceManager::create_default_config();
     }
 
-    // Deserialize JSON using the new JsonDocument
     JsonDocument doc;
     DeserializationError result = deserializeJson(doc, jsonString);
     if (result != DeserializationError::Ok)
     {
-        log_e("Error deserializing config: %s", result.c_str());
+        log_w("Error deserializing config: %s", result.c_str());
         return PreferenceManager::create_default_config();
     }
 
-    // Clear configs and set defaults
-    config = {};
-    config.panel_name = PanelNames::Demo; // Default
-    if (!doc[JsonDocNames::panel_name].isNull())
+    if (doc[JsonDocNames::panel_name].isNull())
     {
-        // Convert to std::string - this copies the data
-        config.panel_name = std::string(doc[JsonDocNames::panel_name].as<const char *>());
+        log_w("Error reading config");
+        return PreferenceManager::create_default_config();
     }
 
+    config.panel_name = std::string(doc[JsonDocNames::panel_name].as<const char *>());
+    log_i("Preferences loaded successfully: %s", config.panel_name.c_str());
     return true;
 }
 
