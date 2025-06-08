@@ -29,20 +29,21 @@ void OilPanel::init()
 /// @param callback_function to be called when the panel show is completed
 void OilPanel::load(std::function<void()> show_panel_completion_callback)
 {
-    log_i("...");
+    log_d("...");
     _callback_function = show_panel_completion_callback;
 
-    _component->render_show(_screen);
+    _component->render_load(_screen);
     lv_obj_add_event_cb(_screen, OilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
-    log_d("load...");
+    log_v("loading...");
     lv_scr_load(_screen);
 }
 
 /// @brief Update the reading on the screen
 void OilPanel::update(std::function<void()> update_panel_completion_callback)
 {
-    log_i("...");
+    log_d("...");
+
     _callback_function = update_panel_completion_callback;
 
     auto value = std::get<int32_t>(_sensor->get_reading());
@@ -53,7 +54,7 @@ void OilPanel::update(std::function<void()> update_panel_completion_callback)
     lv_anim_set_exec_cb(&update_animation, OilPanel::execute_animation_callback);
     lv_anim_set_completed_cb(&update_animation, OilPanel::update_panel_completion_callback);
 
-    log_d("animate...");
+    log_v("animate update...");
     lv_anim_start(&update_animation);
 }
 
@@ -62,6 +63,7 @@ void OilPanel::update(std::function<void()> update_panel_completion_callback)
 void OilPanel::show_panel_completion_callback(lv_event_t *event)
 {
     log_d("...");
+
     auto this_instance = static_cast<OilPanel *>(lv_event_get_user_data(event));
     this_instance->_callback_function();
 }
@@ -71,6 +73,7 @@ void OilPanel::show_panel_completion_callback(lv_event_t *event)
 void OilPanel::update_panel_completion_callback(lv_anim_t *animation)
 {
     log_d("...");
+
     auto this_instance = static_cast<OilPanel *>(animation->var);
     this_instance->_current_value = animation->current_value;
     this_instance->_callback_function();
@@ -82,6 +85,7 @@ void OilPanel::update_panel_completion_callback(lv_anim_t *animation)
 void OilPanel::execute_animation_callback(void *target, int32_t value)
 {
     log_d("...");
+
     lv_anim_t *animation = lv_anim_get(target, execute_animation_callback); // get the animation
     auto this_instance = static_cast<OilPanel *>(animation->var);          // use the animation to get the var which is this instance
     this_instance->_component.get()->set_value(value);

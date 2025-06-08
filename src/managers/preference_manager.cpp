@@ -8,6 +8,7 @@ PreferenceManager &PreferenceManager::get_instance()
     return instance;
 }
 
+/// @brief Initialises the preference manager to handle application preferences
 void PreferenceManager::init()
 {
     log_d("...");
@@ -66,7 +67,9 @@ Themes PreferenceManager::string_to_theme(const char *string)
     return Themes::Day;
 }
 
-bool PreferenceManager::save_config()
+/// @brief Save the current configuration to preferences
+/// @return true if the save was successful, false otherwise
+void PreferenceManager::save_config()
 {
     log_d("...");
 
@@ -82,10 +85,11 @@ bool PreferenceManager::save_config()
 
     // Save the JSON string to preferences
     size_t written = _preferences.putString(CONFIG_KEY, jsonString);
-    return written > 0;
 }
 
-bool PreferenceManager::load_config()
+/// @brief Load the configuration from preferences
+/// @return true if the load was successful, false otherwise
+void PreferenceManager::load_config()
 {
     log_d("...");
 
@@ -112,17 +116,16 @@ bool PreferenceManager::load_config()
 
     config.panel_name = std::string(doc[JsonDocNames::panel_name].as<const char *>());
     log_i("Preferences loaded successfully: %s", config.panel_name.c_str());
-    return true;
 }
 
 /// @brief Create and save a list of default panels
 /// @return true if the save was successful
-bool PreferenceManager::create_default_config()
+void PreferenceManager::create_default_config()
 {
     log_d("...");
 
     config = {.panel_name = std::string(PanelNames::Oil)};
 
     PreferenceManager::save_config();
-    return PreferenceManager::load_config();
+    PreferenceManager::load_config();
 }

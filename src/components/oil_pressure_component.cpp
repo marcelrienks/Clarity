@@ -33,11 +33,10 @@ OilPressureComponent::~OilPressureComponent()
 
 /// @brief Initialise an oil pressure component to show the engine oil pressure
 /// @param screen the screen on which to render the component
-void OilPressureComponent::render_show(lv_obj_t *screen)
+void OilPressureComponent::render_load(lv_obj_t *screen)
 {
     log_d("...");
 
-    // Scale
     _scale = lv_scale_create(screen);
 
     const StyleManager &styleManager = StyleManager::get_instance();
