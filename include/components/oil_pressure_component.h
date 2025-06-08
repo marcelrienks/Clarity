@@ -13,7 +13,7 @@ class OilPressureComponent : public IComponent
     OilPressureComponent();
     ~OilPressureComponent();
 
-    void render_show(lv_obj_t *screen) override;
+    void render_load(lv_obj_t *screen) override;
     void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
     void set_value(int32_t value) override;
 
@@ -29,7 +29,6 @@ private:
     lv_style_t _danger_section_items_part_style;
 
     // Component specific constants
-    lv_style_selector_t _default_selector = MAIN_DEFAULT; // selects the main part with a default stare
     static constexpr int32_t _animation_duration = 1000U;
     static constexpr int32_t _needle_length = 100U;
     static constexpr int32_t _danger_zone = 5U;

@@ -20,7 +20,6 @@ SplashPanel::~SplashPanel()
 void SplashPanel::init()
 {
     log_d("...");
-
     _blank_screen = LvTools::create_blank_screen();
     _screen = LvTools::create_blank_screen();
 }
@@ -30,9 +29,10 @@ void SplashPanel::init()
 void SplashPanel::load(std::function<void()> show_panel_completion_callback)
 {
     log_i("...");
+
     _callback_function = show_panel_completion_callback;
 
-    _component->render_show(_screen);
+    _component->render_load(_screen);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
@@ -51,6 +51,8 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
 
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_in_timer));
+
+    log_v("Fading in...");
     lv_scr_load_anim(panel->_screen,
                      LV_SCR_LOAD_ANIM_FADE_IN,
                      _animation_time,
@@ -58,7 +60,6 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
                      false);
 
     // Schedule the fade-out animation
-    log_d("Creating fade_out_timer");
     auto *fade_out_timer = lv_timer_create(SplashPanel::fade_out_timer_callback,
                                            _animation_time + _display_time,
                                            panel);
@@ -76,7 +77,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_out_timer));
 
-    // Fade out back to blank screen
+    log_v("Fading out...");
     lv_scr_load_anim(panel->_blank_screen,
                      LV_SCR_LOAD_ANIM_FADE_OUT,
                      _animation_time,
@@ -96,10 +97,11 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
 /// @param animation_timer the animation_timer that has completed
 void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
 {
+    log_d("...");
+
     // Get the splash panel instance
     auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
 
-    log_v("Executing splash callback");
     this_instance->_callback_function();
 
     // Delete the animation_timer

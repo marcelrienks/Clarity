@@ -2,7 +2,7 @@
 
 /// @brief Initialises the Clarity Component by rendering a splash screen
 /// @param screen the screen on which to render the component
-void ClarityComponent::render_show(lv_obj_t *screen) {
+void ClarityComponent::render_load(lv_obj_t *screen) {
     log_d("...");
      
     // Using a label (recommended for text display)

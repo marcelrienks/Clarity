@@ -10,7 +10,7 @@ class DemoComponent : public IComponent
 public:
     ~DemoComponent();
 
-    void render_show(lv_obj_t *screen) override;
+    void render_load(lv_obj_t *screen) override;
     void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
     void set_value(int32_t value) override;
 

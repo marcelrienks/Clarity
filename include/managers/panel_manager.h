@@ -14,8 +14,6 @@
 #include <vector>
 #include <map>
 
-// NOTE: Define more panel types here as they are added
-
 class PanelManager
 {
 public:
@@ -36,12 +34,13 @@ public:
 
 private:
     std::shared_ptr<IPanel> _panel = nullptr;
+    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
     bool _is_loading = false; // this allows the panel to be locked during loading from show_panel() or change from update_current_panel()
 
     ~PanelManager();
+
+    std::shared_ptr<IPanel> create_panel(const char *panel_name);
     void load_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback = nullptr);
     void splash_completion_callback(const char *panel_name);
-    void completion_callback();
-    std::shared_ptr<IPanel> create_panel(const char *panel_name);
-    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
+    void panel_completion_callback();
 };

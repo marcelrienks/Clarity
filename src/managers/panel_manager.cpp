@@ -33,9 +33,10 @@ void PanelManager::init()
 void PanelManager::load_panel(const char *panel_name)
 {
     log_d("...");
+
     _panel = PanelManager::create_panel(panel_name);
     load_panel(_panel, [this]()
-               { this->PanelManager::completion_callback(); });
+               { this->PanelManager::panel_completion_callback(); });
 }
 
 /// @brief Loads a panel based on the given type name after first loading a splash screen
@@ -72,16 +73,16 @@ std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
 /// @param show_panel_completion_callback the function to be called when the panel show is complete
 void PanelManager::load_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback)
 {
-    // Create and register each panel from the configuration
-    log_v("Loading %s", panel->get_name());
+    log_i("Loading %s", panel->get_name());
 
     // Lock the panel to prevent updating during loading
     _is_loading = true;
-    log_d("_is_loading is now %i", _is_loading);
+    log_v("_is_loading is now %i", _is_loading);
 
     // Initialize the panel
     panel->init();
     Ticker::handle_lv_tasks();
+
     panel->load(completion_callback);
     Ticker::handle_lv_tasks();
 }
@@ -98,7 +99,7 @@ void PanelManager::refresh_panel()
     log_v("_is_loading is now %i", _is_loading);
 
     _panel->update([this]()
-                   { this->PanelManager::completion_callback(); });
+                   { this->PanelManager::panel_completion_callback(); });
 
     Ticker::handle_lv_tasks();
 }
@@ -113,11 +114,11 @@ void PanelManager::splash_completion_callback(const char *panel_name)
 
     _panel = PanelManager::create_panel(panel_name);
     load_panel(_panel, [this]()
-               { this->PanelManager::completion_callback(); });
+               { this->PanelManager::panel_completion_callback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
-void PanelManager::completion_callback()
+void PanelManager::panel_completion_callback()
 {
     log_d("...");
 

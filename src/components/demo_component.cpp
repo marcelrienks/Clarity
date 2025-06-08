@@ -22,21 +22,11 @@ DemoComponent::~DemoComponent()
 
 /// @brief Initialize a demo component to illustrate the use of a scale component
 /// @param screen the screen on which to render the component
-void DemoComponent::render_show(lv_obj_t *screen)
+void DemoComponent::render_load(lv_obj_t *screen)
 {
     log_d("...");
-    
-    // Add null check
-    if (screen == nullptr) {
-        log_e("Screen is null, cannot render component");
-        return;
-    }
 
     _scale = lv_scale_create(screen);
-    if (_scale == nullptr) {
-        log_e("Failed to create scale object");
-        return;
-    }
     
     lv_obj_set_size(_scale, 150, 150);
     lv_scale_set_label_show(_scale, true);
@@ -106,8 +96,6 @@ void DemoComponent::render_show(lv_obj_t *screen)
         lv_obj_set_style_line_rounded(_needle_line, true, LV_PART_MAIN);
         lv_scale_set_line_needle_value(_scale, _needle_line, 60, 0);
     }
-    
-    log_d("Component rendering complete");
 }
 
 /// @brief Update the component by rendering the new reading

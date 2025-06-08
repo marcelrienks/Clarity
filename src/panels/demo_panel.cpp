@@ -36,7 +36,7 @@ void DemoPanel::load(std::function<void()> completion_callback)
     log_i("...");
     _callback_function = completion_callback;
 
-    _component->render_show(_screen);
+    _component->render_load(_screen);
     lv_obj_add_event_cb(_screen, DemoPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_d("load...");
