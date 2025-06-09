@@ -1,7 +1,7 @@
-#include "components/oil_pressure_component.h"
+#include "components/oil_temperature_component.h"
 #include "icons/oil_can_icon_data.h"
 
-OilPressureComponent::OilPressureComponent()
+OilTemperatureComponent::OilTemperatureComponent()
 {
     // Initialize styles - DO NOT assign styles directly
     lv_style_init(&_indicator_part_style);
@@ -10,7 +10,7 @@ OilPressureComponent::OilPressureComponent()
     lv_style_init(&_danger_section_items_part_style);
 }
 
-OilPressureComponent::~OilPressureComponent()
+OilTemperatureComponent::~OilTemperatureComponent()
 {
     // Clean up LVGL objects
     if (_needle_line)
@@ -29,9 +29,9 @@ OilPressureComponent::~OilPressureComponent()
     lv_style_reset(&_danger_section_items_part_style);
 }
 
-/// @brief Initialise an oil pressure component to show the engine oil pressure
+/// @brief Initialise an oil temperature component to show the engine oil pressure
 /// @param screen the screen on which to render the component
-void OilPressureComponent::render_load(lv_obj_t *screen)
+void OilTemperatureComponent::render_load(lv_obj_t *screen)
 {
     log_d("...");
 
@@ -49,12 +49,12 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_obj_add_style(_scale, &styleManager.background_style, MAIN_DEFAULT);
 
     lv_obj_set_pos(_scale, 0U, 0U);
-    lv_obj_set_size(_scale, 240U, 240U);
-    lv_obj_set_align(_scale, LV_ALIGN_TOP_MID);
+    lv_obj_set_size(_scale, 240U, 120U);
+    lv_obj_set_align(_scale, LV_ALIGN_BOTTOM_MID);
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 200U);
+    lv_scale_set_rotation(_scale, 160U);
     lv_scale_set_angle_range(_scale, 140U);
-    lv_scale_set_range(_scale, 0U, 60U);
+    lv_scale_set_range(_scale, 0U, 120U);
 
     // Adjust tick counts to match our new scale - still showing major ticks at whole numbers
     lv_scale_set_total_tick_count(_scale, 13U);
@@ -81,7 +81,7 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_style_set_line_width(&_danger_section_items_part_style, 5U);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style); // Apply the same 0 arc width to the section
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_range(section, 0U, _danger_zone);
+    lv_scale_section_set_range(section, 100U, _danger_zone);
 
     // Add needle line
     _needle_line = lv_line_create(_scale);
@@ -91,19 +91,19 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, 2U);
 
     // Create and position the oil can icon
-    _oil_can_icon = lv_image_create(screen);
-    lv_image_set_src(_oil_can_icon, &oil_can_icon_data);
-    lv_obj_center(_oil_can_icon);
-    lv_obj_set_pos(_oil_can_icon, 0, -55); // Adjust position relative to center
-    lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
+    // _oil_can_icon = lv_image_create(screen);
+    // lv_image_set_src(_oil_can_icon, &oil_can_icon_data);
+    // lv_obj_center(_oil_can_icon);
+    // lv_obj_set_pos(_oil_can_icon, 0, -55); // Adjust position relative to center
+    // lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    // lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
 }
 
 /// @brief Update the component by rendering the new reading
 /// @param animation the animation object that will render the updated value
 /// @param start the start value, this represents the initial value of the gauge currently
 /// @param end the final reading that is gauge must display
-void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
+void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
     log_d("...");
 
@@ -129,7 +129,7 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 
 /// @brief Set the value of the line needle
 /// @param value the value to set the line needle to
-void OilPressureComponent::set_value(int32_t value)
+void OilTemperatureComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, value);

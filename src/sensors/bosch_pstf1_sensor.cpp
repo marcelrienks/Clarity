@@ -1,15 +1,15 @@
-#include "sensors/oil_temperature_sensor.h"
+#include "sensors/bosch_pstf1_sensor.h"
 
-OilTemperatureSensor::OilTemperatureSensor()
+BoschPstf1Sensor::BoschPstf1Sensor()
     : _engine(std::mt19937(std::random_device{}())), _distribution(std::uniform_int_distribution<int>(0, 60)) {}
 
-void OilTemperatureSensor::init()
+void BoschPstf1Sensor::init()
 {
     // Not needed but required to satisfy interface
 }
 
 // TODO: TEMP code for testing
-Reading OilTemperatureSensor::get_reading()
+Reading BoschPstf1Sensor::get_reading()
 {
     int millies = millis();
     int elapsed_time = millies - this->last_read_time;

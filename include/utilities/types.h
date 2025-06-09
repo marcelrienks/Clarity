@@ -22,6 +22,12 @@ enum class Themes
     Day
 };
 
+enum class OilSensorTypes
+{
+    Pressure,
+    Temperature
+};
+
 struct PanelNames {
     static constexpr const char *Splash = "SplashPanel";
     static constexpr const char *Demo = "DemoPanel";
