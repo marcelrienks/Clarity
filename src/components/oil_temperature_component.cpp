@@ -49,12 +49,12 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_obj_add_style(_scale, &styleManager.background_style, MAIN_DEFAULT);
 
     lv_obj_set_pos(_scale, 0U, 0U);
-    lv_obj_set_size(_scale, 240U, 120U);
+    lv_obj_set_size(_scale, 240U, 240U);
     lv_obj_set_align(_scale, LV_ALIGN_BOTTOM_MID);
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 160U);
+    lv_scale_set_rotation(_scale, 20U);
     lv_scale_set_angle_range(_scale, 140U);
-    lv_scale_set_range(_scale, 0U, 120U);
+    lv_scale_set_range(_scale, 0U, -120U);
 
     // Adjust tick counts to match our new scale - still showing major ticks at whole numbers
     lv_scale_set_total_tick_count(_scale, 13U);
@@ -81,7 +81,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_style_set_line_width(&_danger_section_items_part_style, 5U);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style); // Apply the same 0 arc width to the section
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_range(section, 100U, _danger_zone);
+    lv_scale_section_set_range(section, -100U, _danger_zone);
 
     // Add needle line
     _needle_line = lv_line_create(_scale);
