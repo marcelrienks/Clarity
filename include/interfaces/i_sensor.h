@@ -3,10 +3,10 @@
 #include <esp32-hal-log.h>
 #include <utilities/types.h>
 
-/// @brief Data sources
+template<typename T>
 class ISensor
 {
 public:    
     virtual void init() = 0;
-    virtual Reading get_reading() = 0;
+    virtual Reading get_reading(std::optional<T> type = std::nullopt) = 0;
 };

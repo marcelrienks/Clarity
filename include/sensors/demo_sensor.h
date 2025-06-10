@@ -7,7 +7,7 @@
 #include <LovyanGFX.hpp>
 #include <random>
 
-class DemoSensor : public ISensor
+class DemoSensor : public ISensor<>
 {
 public:
     DemoSensor();
