@@ -2,7 +2,7 @@
 
 OilTemperatureSensor::OilTemperatureSensor()
     : _engine(std::mt19937(std::random_device{}())),
-      _distribution(std::uniform_int_distribution<int>(0, 60)) {}
+      _distribution(std::uniform_int_distribution<int>(0, 120)) {}
 
 void OilTemperatureSensor::init()
 {

@@ -51,16 +51,18 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_obj_set_pos(_scale, 0U, 0U);
     lv_obj_set_size(_scale, 240U, 240U);
     lv_obj_set_align(_scale, LV_ALIGN_TOP_MID);
-    lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 200U);
-    lv_scale_set_angle_range(_scale, 140U);
-    lv_scale_set_range(_scale, 0U, 60U);
+    lv_obj_set_style_align(_scale, LV_ALIGN_CENTER, MAIN_DEFAULT);
 
-    // Adjust tick counts to match our new scale - still showing major ticks at whole numbers
+    // Set scale properties
+    lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
+    lv_scale_set_rotation(_scale, 200U); // starting angle (0 = 3 o'clock)
+    lv_scale_set_angle_range(_scale, 140U); // range in degrees for the span of the scale
+    lv_scale_set_range(_scale, 0U, 60U); // the range of the scale
+
+    // Adjust tick counts
     lv_scale_set_total_tick_count(_scale, 13U);
     lv_scale_set_major_tick_every(_scale, 2U);
     lv_scale_set_label_show(_scale, false);
-    lv_obj_set_style_align(_scale, LV_ALIGN_CENTER, MAIN_DEFAULT);
 
     // Main style
     lv_style_set_arc_width(&_main_part_style, 0U);
@@ -79,7 +81,7 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     // Configure section styles
     lv_scale_section_t *section = lv_scale_add_section(_scale);
     lv_style_set_line_width(&_danger_section_items_part_style, 5U);
-    lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style); // Apply the same 0 arc width to the section
+    lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_range(section, 0U, _danger_zone);
 

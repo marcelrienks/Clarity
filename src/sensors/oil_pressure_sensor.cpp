@@ -2,7 +2,7 @@
 
 OilPressureSensor::OilPressureSensor()
     : _engine(std::mt19937(std::random_device{}())),
-      _distribution(std::uniform_int_distribution<int>(0, 120)) {}
+      _distribution(std::uniform_int_distribution<int>(0, 60)) {}
 
 void OilPressureSensor::init()
 {
