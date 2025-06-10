@@ -48,16 +48,16 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     // Now use our initialized styles
     lv_obj_add_style(_scale, &styleManager.background_style, MAIN_DEFAULT);
 
-    lv_obj_set_pos(_scale, 0U, 0U);
-    lv_obj_set_size(_scale, 240U, 240U);
-    lv_obj_set_align(_scale, LV_ALIGN_BOTTOM_MID);
-    lv_obj_set_style_align(_scale, LV_ALIGN_CENTER, MAIN_DEFAULT);
+    // IMPROVED: Proper size and positioning for bottom half
+    lv_obj_set_size(_scale, 220U, 110U); // Use most of the available space
+    lv_obj_set_pos(_scale, 10U, 125U);   // Position in bottom half (y = 125 for second half)
+    lv_obj_set_align(_scale, LV_ALIGN_TOP_LEFT);
 
     // Set scale properties
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 20U); // starting angle (0 = 3 o'clock)
+    lv_scale_set_rotation(_scale, 20U);     // starting angle (0 = 3 o'clock)
     lv_scale_set_angle_range(_scale, 140U); // range in degrees for the span of the scale
-    lv_scale_set_range(_scale, 0U, 120U); // the range of the scale
+    lv_scale_set_range(_scale, 0U, 120U);   // the range of the scale
 
     // Adjust tick counts
     lv_scale_set_total_tick_count(_scale, 13U);
@@ -69,18 +69,18 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_obj_add_style(_scale, &_main_part_style, MAIN_DEFAULT);
 
     // Indicator (Major ticks)
-    lv_style_set_length(&_indicator_part_style, 25U);
-    lv_style_set_line_width(&_indicator_part_style, 7U);
+    lv_style_set_length(&_indicator_part_style, 20U); // Slightly smaller for the space
+    lv_style_set_line_width(&_indicator_part_style, 5U);
     lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
 
     // Items (Minor ticks)
-    lv_style_set_length(&_items_part_style, 18U);
+    lv_style_set_length(&_items_part_style, 15U); // Slightly smaller
     lv_style_set_line_width(&_items_part_style, 2U);
     lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
 
     // Danger Zone
     lv_scale_section_t *section = lv_scale_add_section(_scale);
-    lv_style_set_line_width(&_danger_section_items_part_style, 5U);
+    lv_style_set_line_width(&_danger_section_items_part_style, 4U);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
     lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
@@ -89,9 +89,9 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     // Add needle line
     _needle_line = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, 0U);
-    lv_obj_set_style_line_width(_needle_line, 5U, MAIN_DEFAULT);
+    lv_obj_set_style_line_width(_needle_line, 4U, MAIN_DEFAULT);
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
-    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, 2U);
+    lv_scale_set_line_needle_value(_scale, _needle_line, 50U, 2U); // Adjusted needle length
 
     // Create and position the oil can icon
     // _oil_can_icon = lv_image_create(screen);

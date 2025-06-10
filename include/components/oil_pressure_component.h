@@ -30,6 +30,6 @@ private:
 
     // Component specific constants
     static constexpr int32_t _animation_duration = 1000U;
-    static constexpr int32_t _needle_length = 100U;
+    static constexpr int32_t _needle_length = 50U;
     static constexpr int32_t _danger_zone = 5U;
 };
