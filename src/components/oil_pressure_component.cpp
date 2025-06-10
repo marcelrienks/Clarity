@@ -78,10 +78,11 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_style_set_line_width(&_items_part_style, 2U);
     lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
 
-    // Configure section styles
+    // Danger zone
     lv_scale_section_t *section = lv_scale_add_section(_scale);
     lv_style_set_line_width(&_danger_section_items_part_style, 5U);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
+    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_range(section, 0U, _danger_zone);
 
