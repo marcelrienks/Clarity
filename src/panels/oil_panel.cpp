@@ -47,7 +47,7 @@ void OilPanel::load(std::function<void()> show_panel_completion_callback)
     _callback_function = show_panel_completion_callback;
 
     _oil_pressure_component->render_load(_screen);
-    //_oil_temperature_component->render_load(_screen);
+    _oil_temperature_component->render_load(_screen);
     lv_obj_add_event_cb(_screen, OilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -63,7 +63,7 @@ void OilPanel::update(std::function<void()> update_panel_completion_callback)
 
     log_v("updating...");
     OilPanel::update_oil_pressure();
-    //OilPanel::update_oil_temperature();
+    OilPanel::update_oil_temperature();
 }
 
 /// @brief Update the oil pressure reading on the screen
