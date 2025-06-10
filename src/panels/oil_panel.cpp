@@ -46,8 +46,8 @@ void OilPanel::load(std::function<void()> show_panel_completion_callback)
     log_d("...");
     _callback_function = show_panel_completion_callback;
 
-    _oil_pressure_component->render_load(_screen);
-    //_oil_temperature_component->render_load(_screen);
+    //_oil_pressure_component->render_load(_screen);
+    _oil_temperature_component->render_load(_screen);
     lv_obj_add_event_cb(_screen, OilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -62,13 +62,15 @@ void OilPanel::update(std::function<void()> update_panel_completion_callback)
     _callback_function = update_panel_completion_callback;
 
     log_v("updating...");
-    OilPanel::update_oil_pressure();
-    // OilPanel::update_oil_temperature();
+    //OilPanel::update_oil_pressure();
+    OilPanel::update_oil_temperature();
 }
 
 /// @brief Update the oil pressure reading on the screen
 void OilPanel::update_oil_pressure()
 {
+    log_d("...");
+
     auto value = std::get<int32_t>(_oil_pressure_sensor->get_reading());
     static lv_anim_t update_pressure_animation;
     _oil_pressure_component->render_update(&update_pressure_animation, _current_oil_pressure_value, value);
@@ -79,15 +81,18 @@ void OilPanel::update_oil_pressure()
     lv_anim_set_completed_cb(&update_pressure_animation, OilPanel::update_panel_completion_callback);
 
     _is_pressure_animation_running = true;
+    log_d("animating...");
     lv_anim_start(&update_pressure_animation);
 }
 
 /// @brief Update the oil temperature reading on the screen
 void OilPanel::update_oil_temperature()
 {
+    log_d("...");
+
     auto value = std::get<int32_t>(_oil_temperature_sensor->get_reading());
     static lv_anim_t update_temperature_animation;
-    _oil_pressure_component->render_update(&update_temperature_animation, _current_oil_pressure_value, value);
+    _oil_temperature_component->render_update(&update_temperature_animation, _current_oil_temperature_value, value);
 
     lv_anim_set_var(&update_temperature_animation, this);
     lv_anim_set_user_data(&update_temperature_animation, (void *)static_cast<uintptr_t>(OilSensorTypes::Temperature));
@@ -95,6 +100,7 @@ void OilPanel::update_oil_temperature()
     lv_anim_set_completed_cb(&update_temperature_animation, OilPanel::update_panel_completion_callback);
 
     _is_temperature_animation_running = true;
+    log_d("animating...");
     lv_anim_start(&update_temperature_animation);
 }
 

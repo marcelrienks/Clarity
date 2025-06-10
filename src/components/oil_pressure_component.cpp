@@ -97,6 +97,8 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_obj_set_pos(_oil_can_icon, 0, -55); // Adjust position relative to center
     lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
+
+    log_d("rendered load");
 }
 
 /// @brief Update the component by rendering the new reading
@@ -125,6 +127,8 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
     lv_anim_set_repeat_count(animation, 0U);
     lv_anim_set_playback_duration(animation, 0U);
     lv_anim_set_values(animation, start, end);
+
+    log_d("rendered update");
 }
 
 /// @brief Set the value of the line needle

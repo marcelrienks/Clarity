@@ -54,7 +54,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
     lv_scale_set_rotation(_scale, 20U);
     lv_scale_set_angle_range(_scale, 140U);
-    lv_scale_set_range(_scale, 0U, -120U);
+    lv_scale_set_range(_scale, 0U, 120U);
 
     // Adjust tick counts to match our new scale - still showing major ticks at whole numbers
     lv_scale_set_total_tick_count(_scale, 13U);
@@ -81,7 +81,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_style_set_line_width(&_danger_section_items_part_style, 5U);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style); // Apply the same 0 arc width to the section
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_range(section, -100U, _danger_zone);
+    lv_scale_section_set_range(section, 100U, _danger_zone);
 
     // Add needle line
     _needle_line = lv_line_create(_scale);
@@ -97,6 +97,8 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     // lv_obj_set_pos(_oil_can_icon, 0, -55); // Adjust position relative to center
     // lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     // lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
+
+    log_d("rendered load");
 }
 
 /// @brief Update the component by rendering the new reading
@@ -117,14 +119,16 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
     lv_obj_set_style_line_color(_needle_line, colour, MAIN_DEFAULT);
 
     // Also update the oil can icon color to match the needle
-    lv_obj_set_style_image_recolor(_oil_can_icon, colour, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    // lv_obj_set_style_image_recolor(_oil_can_icon, colour, MAIN_DEFAULT);
+    // lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
     lv_anim_set_repeat_count(animation, 0U);
     lv_anim_set_playback_duration(animation, 0U);
     lv_anim_set_values(animation, start, end);
+
+    log_d("rendered update");
 }
 
 /// @brief Set the value of the line needle
