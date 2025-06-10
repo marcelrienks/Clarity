@@ -7,14 +7,15 @@
 #include <LovyanGFX.hpp>
 #include <random>
 
-class DemoSensor : public ISensor
+class OilPressureSensor : public ISensor
 {
 public:
-    DemoSensor();
+    OilPressureSensor();
 
     void init() override;
     Reading get_reading() override;
 
+    // TODO: TEMP for testing
 private:
     std::mt19937 _engine;                          // Mersenne Twister engine
     std::uniform_int_distribution<> _distribution; // Uniform distribution

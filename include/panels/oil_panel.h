@@ -3,7 +3,8 @@
 #include "interfaces/i_panel.h"
 #include "components/oil_pressure_component.h"
 #include "components/oil_temperature_component.h"
-#include "sensors/bosch_pstf1_sensor.h"
+#include "sensors/oil_pressure_sensor.h"
+#include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
 
 #include <utilities/lv_tools.h>
@@ -25,7 +26,8 @@ private:
     lv_obj_t *_screen;
     std::shared_ptr<IComponent> _oil_pressure_component;
     std::shared_ptr<IComponent> _oil_temperature_component;
-    std::shared_ptr<ISensor> _sensor;
+    std::shared_ptr<ISensor> _oil_pressure_sensor;
+    std::shared_ptr<ISensor> _oil_temperature_sensor;
     int32_t _current_oil_pressure_value;
     int32_t _current_oil_temperature_value;
     bool _is_pressure_animation_running = false;

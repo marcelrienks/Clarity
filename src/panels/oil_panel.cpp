@@ -3,7 +3,8 @@
 OilPanel::OilPanel()
     : _oil_pressure_component(std::make_shared<OilPressureComponent>()),
       _oil_temperature_component(std::make_shared<OilTemperatureComponent>()),
-      _sensor(std::make_shared<BoschPstf1Sensor>()) {}
+      _oil_pressure_sensor(std::make_shared<OilPressureSensor>()),
+      _oil_temperature_sensor(std::make_shared<OilTemperatureSensor>()) {}
 
 OilPanel::~OilPanel()
 {
@@ -16,8 +17,11 @@ OilPanel::~OilPanel()
     if (_oil_temperature_component)
         _oil_temperature_component.reset();
 
-    if (_sensor)
-        _sensor.reset();
+    if (_oil_pressure_sensor)
+        _oil_pressure_sensor.reset();
+
+    if (_oil_temperature_sensor)
+        _oil_temperature_sensor.reset();
 }
 
 /// @brief Initialize the panel for showing Oil related information
@@ -27,8 +31,11 @@ void OilPanel::init()
     log_d("...");
 
     _screen = LvTools::create_blank_screen();
-    _sensor->init();
+
+    _oil_pressure_sensor->init();
     _current_oil_pressure_value = 0;
+
+    _oil_temperature_sensor->init();
     _current_oil_temperature_value = 0;
 }
 
@@ -56,18 +63,18 @@ void OilPanel::update(std::function<void()> update_panel_completion_callback)
 
     log_v("updating...");
     OilPanel::update_oil_pressure();
-    //OilPanel::update_oil_temperature();
+    // OilPanel::update_oil_temperature();
 }
 
 /// @brief Update the oil pressure reading on the screen
 void OilPanel::update_oil_pressure()
 {
-    auto value = std::get<int32_t>(_sensor->get_reading(OilSensorTypes::Pressure));
+    auto value = std::get<int32_t>(_oil_pressure_sensor->get_reading());
     static lv_anim_t update_pressure_animation;
     _oil_pressure_component->render_update(&update_pressure_animation, _current_oil_pressure_value, value);
 
     lv_anim_set_var(&update_pressure_animation, this);
-    lv_anim_set_user_data(&update_pressure_animation, (void*)static_cast<uintptr_t>(OilSensorTypes::Pressure));
+    lv_anim_set_user_data(&update_pressure_animation, (void *)static_cast<uintptr_t>(OilSensorTypes::Pressure));
     lv_anim_set_exec_cb(&update_pressure_animation, OilPanel::execute_pressure_animation_callback);
     lv_anim_set_completed_cb(&update_pressure_animation, OilPanel::update_panel_completion_callback);
 
@@ -78,12 +85,12 @@ void OilPanel::update_oil_pressure()
 /// @brief Update the oil temperature reading on the screen
 void OilPanel::update_oil_temperature()
 {
-    auto value = std::get<int32_t>(_sensor->get_reading(OilSensorTypes::Temperature));
+    auto value = std::get<int32_t>(_oil_temperature_sensor->get_reading());
     static lv_anim_t update_temperature_animation;
     _oil_pressure_component->render_update(&update_temperature_animation, _current_oil_pressure_value, value);
 
     lv_anim_set_var(&update_temperature_animation, this);
-    lv_anim_set_user_data(&update_temperature_animation, (void*)static_cast<uintptr_t>(OilSensorTypes::Temperature));
+    lv_anim_set_user_data(&update_temperature_animation, (void *)static_cast<uintptr_t>(OilSensorTypes::Temperature));
     lv_anim_set_exec_cb(&update_temperature_animation, OilPanel::execute_temperature_animation_callback);
     lv_anim_set_completed_cb(&update_temperature_animation, OilPanel::update_panel_completion_callback);
 
@@ -121,7 +128,7 @@ void OilPanel::update_panel_completion_callback(lv_anim_t *animation)
         this_instance->_current_oil_temperature_value = animation->current_value;
         this_instance->_is_temperature_animation_running = false;
     }
-    
+
     // Only call the callback function if both animations are not running
     if (!this_instance->_is_pressure_animation_running && !this_instance->_is_temperature_animation_running)
         this_instance->_callback_function();
