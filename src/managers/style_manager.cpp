@@ -43,10 +43,6 @@ void StyleManager::apply_theme(Themes theme)
     // Select the current theme colors
     ThemeColors colours = StyleManager::get_colours(theme);
 
-    // Background style
-    lv_style_set_bg_color(&background_style, colours.background);
-    lv_style_set_bg_opa(&background_style, LV_OPA_COVER);
-
     // Text style
     lv_style_set_text_color(&text_style, colours.text);
     lv_style_set_text_opa(&text_style, LV_OPA_COVER);
