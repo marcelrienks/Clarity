@@ -94,9 +94,11 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     // Create and position the oil can icon - center it properly in top area
     _oil_can_icon = lv_image_create(_scale);
     lv_image_set_src(_oil_can_icon, &oil_can_icon_data);
-    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, -40);
+    lv_image_set_scale(_oil_can_icon, 200);  // 200/256 ≈ 78% of original
+    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, -50);
     lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
     log_d("rendered load");
 }
