@@ -28,20 +28,24 @@ void StyleManager::init(Themes theme)
     lv_style_init(&gauge_warning_style);
     lv_style_init(&gauge_danger_style);
 
-    apply_theme(_theme);
-    
+    set_theme(_theme);
+
     // Don't apply to lv_scr_act() here - it might not be ready
     // apply_theme_to_screen(lv_scr_act()); // Remove this line
 }
 
 /// @brief Apply a specified theme to the styles
 /// @param theme the theme to be applied
-void StyleManager::apply_theme(Themes theme)
+void StyleManager::set_theme(Themes theme)
 {
     log_d("...");
 
     // Select the current theme colors
     ThemeColors colours = StyleManager::get_colours(theme);
+
+    // Background style
+    lv_style_set_bg_color(&background_style, colours.background);
+    lv_style_set_bg_opa(&background_style, LV_OPA_COVER);
 
     // Text style
     lv_style_set_text_color(&text_style, colours.text);
@@ -61,8 +65,9 @@ void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
 
     // Only apply the background style to screens
     // Other styles should be applied to specific components that need them
+
     lv_obj_add_style(screen, &background_style, MAIN_DEFAULT);
-    
+
     // Don't apply all styles to the same screen - this can cause conflicts
     // Components should apply their own specific styles as needed
 }
