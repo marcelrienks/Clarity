@@ -146,6 +146,12 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
     // We need to map the value from [120,0] to [0,120] for proper needle positioning.
     int32_t mapped_start = map_reverse_value(start);
     int32_t mapped_end = map_reverse_value(end);
+
+    log_d("original start is %i", start);
+    log_d("original end is %i", end);
+    log_d("mapped start is %i", mapped_start);
+    log_d("mapped end is %i", mapped_end);
+    
     lv_anim_set_values(animation, mapped_start, mapped_end);
 
     log_d("rendered update");
@@ -155,17 +161,30 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
 /// @param value the value to set the line needle to
 void OilTemperatureComponent::set_value(int32_t value)
 {
-    log_i("value is %i", value);
+    log_d("...");
 
     // Due to a bug in LVGL 9.3, the scale needle does not support reversed values directly.
     // We need to map the value from [120,0] to [0,120] for proper needle positioning.
     int32_t mapped_value = map_reverse_value(value);
+
+    log_d("original value is %i", value);
+    log_d("mapped value is %i", mapped_value);
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);
 }
 
 int32_t OilTemperatureComponent::map_reverse_value(int32_t value) const
 {
+    log_d("...");
+
     // Due to a bug in LVGL 9.3, the scale needle does not support reversed values directly.
     // We need to map the value from [120,0] to [0,120] for proper needle positioning.
+
+    // Clamp input value to valid range
+    if (value > _scale_min) value = _scale_min;
+    if (value < _scale_max) value = _scale_max;
+    
+    // Map from [120,0] to [0,120] proportionally
+    log_d("original value is %i", value);
+    log_d("mapped value is %i", _scale_min - value);
     return _scale_min - value;
 }

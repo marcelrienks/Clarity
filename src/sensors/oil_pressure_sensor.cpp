@@ -12,10 +12,6 @@ void OilPressureSensor::init()
 // TODO: TEMP code for testing
 Reading OilPressureSensor::get_reading()
 {
-    int millies = millis();
-    int elapsed_time = millies - this->last_read_time;
-
-    this->last_read_time = millies;
     this->current_reading = _distribution(_engine);
 
     log_i("current_reading is %s", std::to_string(this->current_reading).c_str());

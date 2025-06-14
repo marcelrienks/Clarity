@@ -12,13 +12,11 @@ void OilTemperatureSensor::init()
 // TODO: TEMP code for testing
 Reading OilTemperatureSensor::get_reading()
 {
-    int millies = millis();
-    int elapsed_time = millies - this->last_read_time;
+    // this->current_reading = _distribution(_engine);
 
-    this->last_read_time = millies;
-    this->current_reading = _distribution(_engine);
+    // log_i("current_reading is %s", std::to_string(this->current_reading).c_str());
 
-    log_i("current_reading is %s", std::to_string(this->current_reading).c_str());
+    // return this->current_reading;
 
-    return this->current_reading;
+    return 55;
 }
