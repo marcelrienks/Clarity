@@ -8,7 +8,7 @@
 
 class OilTemperatureComponent : public IComponent
 {
-    public:
+public:
     OilTemperatureComponent();
     ~OilTemperatureComponent();
 
@@ -20,7 +20,7 @@ private:
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
     lv_obj_t *_oil_can_icon;
-    
+
     // Style variables as member variables
     lv_style_t _indicator_part_style;
     lv_style_t _items_part_style;
@@ -31,4 +31,8 @@ private:
     static constexpr int32_t _animation_duration = 1000U;
     static constexpr int32_t _needle_length = 90U;
     static constexpr int32_t _danger_zone = 100U;
+    static constexpr int32_t _scale_min = 120; // inverted to allow for reversed scale on bottom of screen
+    static constexpr int32_t _scale_max = 0; // inverted to allow for reversed scale on bottom of screen
+
+    int32_t map_reverse_value(int32_t value) const;
 };

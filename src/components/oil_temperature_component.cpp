@@ -53,7 +53,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
     lv_scale_set_rotation(_scale, 30);     // starting angle (0 = 3 o'clock)
     lv_scale_set_angle_range(_scale, 120); // range in degrees for the span of the scale
-    lv_scale_set_range(_scale, 120, 0);   // the range of the scale, setting minimum to higher number draws the scale in reverse
+    lv_scale_set_range(_scale, 120, 0);    // the range of the scale, setting minimum to higher number draws the scale in reverse
 
     // Adjust tick counts
     lv_scale_set_total_tick_count(_scale, 13);
@@ -107,7 +107,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     // Create and position the oil can icon
     _oil_can_icon = lv_image_create(_scale);
     lv_image_set_src(_oil_can_icon, &oil_temp_regular);
-    lv_image_set_scale(_oil_can_icon, 50);  // 50/256 ≈ 19% of original
+    lv_image_set_scale(_oil_can_icon, 50); // 50/256 ≈ 19% of original
     lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, 50);
     lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
@@ -141,7 +141,12 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
     lv_anim_set_duration(animation, _animation_duration);
     lv_anim_set_repeat_count(animation, 0);
     lv_anim_set_playback_duration(animation, 0);
-    lv_anim_set_values(animation, start, end);
+
+    // Due to a bug in LVGL 9.3, the scale needle does not support reversed values directly.
+    // We need to map the value from [120,0] to [0,120] for proper needle positioning.
+    int32_t mapped_start = map_reverse_value(start);
+    int32_t mapped_end = map_reverse_value(end);
+    lv_anim_set_values(animation, mapped_start, mapped_end);
 
     log_d("rendered update");
 }
@@ -151,5 +156,16 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
 void OilTemperatureComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
-    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, value);
+
+    // Due to a bug in LVGL 9.3, the scale needle does not support reversed values directly.
+    // We need to map the value from [120,0] to [0,120] for proper needle positioning.
+    int32_t mapped_value = map_reverse_value(value);
+    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);
+}
+
+int32_t OilTemperatureComponent::map_reverse_value(int32_t value) const
+{
+    // Due to a bug in LVGL 9.3, the scale needle does not support reversed values directly.
+    // We need to map the value from [120,0] to [0,120] for proper needle positioning.
+    return _scale_min - value;
 }
