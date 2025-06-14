@@ -1,5 +1,5 @@
 #include "components/oil_pressure_component.h"
-#include "icons/oil_can_icon_data.h"
+#include "icons/oil_can_regular.h"
 
 OilPressureComponent::OilPressureComponent()
 {
@@ -91,18 +91,22 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     // lv_obj_set_style_shadow_opa(_needle_line, LV_OPA_60, MAIN_DEFAULT);
 
     // Circle at pivot point
-    auto _pivot_circle = lv_obj_create(_scale);
-    lv_obj_set_size(_pivot_circle, 35, 35);
-    lv_obj_center(_pivot_circle);
-    lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    lv_obj_set_style_bg_color(_pivot_circle, lv_color_darken(colours.background, 20U), MAIN_DEFAULT);
-    lv_obj_set_style_border_width(_pivot_circle, 2U, MAIN_DEFAULT);
-    lv_obj_set_style_border_color(_pivot_circle, lv_color_lighten(colours.background, 20U), MAIN_DEFAULT);
+    // auto _pivot_circle = lv_obj_create(_scale);
+    // lv_obj_set_size(_pivot_circle, 35U, 35U);
+    // lv_obj_center(_pivot_circle);
+    // lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
+    // lv_obj_set_style_bg_color(_pivot_circle, lv_color_darken(colours.background, 25U), MAIN_DEFAULT);
+    // lv_obj_set_style_border_width(_pivot_circle, 2U, MAIN_DEFAULT);
+    // lv_obj_set_style_border_color(_pivot_circle, lv_color_lighten(colours.background, 15U), MAIN_DEFAULT);
+    // lv_obj_set_style_shadow_color(_pivot_circle, lv_color_darken(colours.gauge_normal, 3U), MAIN_DEFAULT);
+    // lv_obj_set_style_shadow_width(_pivot_circle, 1U, MAIN_DEFAULT);
+    // lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_10, MAIN_DEFAULT);
+    // lv_obj_set_style_shadow_spread(_pivot_circle, 3U, MAIN_DEFAULT);
 
     // Create and position the oil can icon - center it properly in top area
     _oil_can_icon = lv_image_create(_scale);
-    lv_image_set_src(_oil_can_icon, &oil_can_icon_data);
-    lv_image_set_scale(_oil_can_icon, 200); // 200/256 ≈ 78% of original
+    lv_image_set_src(_oil_can_icon, &oil_can_regular);
+    lv_image_set_scale(_oil_can_icon, 50);  // 50/256 ≈ 19% of original
     lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, -50);
     lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);

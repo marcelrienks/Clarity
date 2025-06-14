@@ -1,5 +1,6 @@
 #include "components/oil_temperature_component.h"
-#include "icons/oil_can_icon_data.h"
+#include "icons/oil_can_regular.h"
+#include "icons/oil_temp_regular.h"
 
 OilTemperatureComponent::OilTemperatureComponent()
 {
@@ -45,46 +46,46 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_style_set_line_color(&_items_part_style, colours.gauge_normal);
     lv_style_set_line_color(&_danger_section_items_part_style, colours.gauge_danger);
 
-    lv_obj_set_size(_scale, 240U, 240U);
+    lv_obj_set_size(_scale, 240, 240);
     lv_obj_align(_scale, LV_ALIGN_BOTTOM_MID, 0, 0);
 
     // Set scale properties
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 30U);     // starting angle (0 = 3 o'clock)
-    lv_scale_set_angle_range(_scale, 120U); // range in degrees for the span of the scale
-    lv_scale_set_range(_scale, 0U, 120U);   // the range of the scale
+    lv_scale_set_rotation(_scale, 30);     // starting angle (0 = 3 o'clock)
+    lv_scale_set_angle_range(_scale, 120); // range in degrees for the span of the scale
+    lv_scale_set_range(_scale, 120, 0);   // the range of the scale, setting minimum to higher number draws the scale in reverse
 
     // Adjust tick counts
-    lv_scale_set_total_tick_count(_scale, 13U);
-    lv_scale_set_major_tick_every(_scale, 2U);
-    lv_scale_set_label_show(_scale, false);
+    lv_scale_set_total_tick_count(_scale, 13);
+    lv_scale_set_major_tick_every(_scale, 2);
+    lv_scale_set_label_show(_scale, true);
 
     // Main style
-    lv_style_set_arc_width(&_main_part_style, 0U);
+    lv_style_set_arc_width(&_main_part_style, 0);
     lv_obj_add_style(_scale, &_main_part_style, MAIN_DEFAULT);
 
     // Indicator (Major ticks)
-    lv_style_set_length(&_indicator_part_style, 25U);
-    lv_style_set_line_width(&_indicator_part_style, 7U);
+    lv_style_set_length(&_indicator_part_style, 25);
+    lv_style_set_line_width(&_indicator_part_style, 7);
     lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
 
     // Items (Minor ticks)
-    lv_style_set_length(&_items_part_style, 18U);
-    lv_style_set_line_width(&_items_part_style, 2U);
+    lv_style_set_length(&_items_part_style, 18);
+    lv_style_set_line_width(&_items_part_style, 2);
     lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
 
     // Danger Zone
     lv_scale_section_t *section = lv_scale_add_section(_scale);
-    lv_style_set_line_width(&_danger_section_items_part_style, 5U);
+    lv_style_set_line_width(&_danger_section_items_part_style, 5);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
     lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_range(section, _danger_zone, 120U);
+    lv_scale_section_set_range(section, _danger_zone, 120);
 
     // Add needle line - restore original needle length
     _needle_line = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_line_width(_needle_line, 5U, MAIN_DEFAULT);
+    lv_obj_set_style_line_width(_needle_line, 5, MAIN_DEFAULT);
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
     // lv_obj_set_style_shadow_width(_needle_line, 2, MAIN_DEFAULT);
@@ -95,14 +96,18 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_obj_set_size(_pivot_circle, 35, 35);
     lv_obj_center(_pivot_circle);
     lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    lv_obj_set_style_bg_color(_pivot_circle, lv_color_darken(colours.background, 20U), MAIN_DEFAULT);
-    lv_obj_set_style_border_width(_pivot_circle, 2U, MAIN_DEFAULT);
-    lv_obj_set_style_border_color(_pivot_circle, lv_color_lighten(colours.background, 20U), MAIN_DEFAULT);
+    lv_obj_set_style_bg_color(_pivot_circle, lv_color_darken(colours.background, 25), MAIN_DEFAULT);
+    lv_obj_set_style_border_width(_pivot_circle, 2, MAIN_DEFAULT);
+    lv_obj_set_style_border_color(_pivot_circle, lv_color_lighten(colours.background, 15), MAIN_DEFAULT);
+    lv_obj_set_style_shadow_color(_pivot_circle, lv_color_darken(colours.gauge_normal, 3), MAIN_DEFAULT);
+    lv_obj_set_style_shadow_width(_pivot_circle, 1, MAIN_DEFAULT);
+    lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_10, MAIN_DEFAULT);
+    lv_obj_set_style_shadow_spread(_pivot_circle, 3, MAIN_DEFAULT);
 
     // Create and position the oil can icon
     _oil_can_icon = lv_image_create(_scale);
-    lv_image_set_src(_oil_can_icon, &oil_can_icon_data);
-    lv_image_set_scale(_oil_can_icon, 200);  // 200/256 ≈ 78% of original
+    lv_image_set_src(_oil_can_icon, &oil_temp_regular);
+    lv_image_set_scale(_oil_can_icon, 50);  // 50/256 ≈ 19% of original
     lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, 50);
     lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
@@ -134,8 +139,8 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
-    lv_anim_set_repeat_count(animation, 0U);
-    lv_anim_set_playback_duration(animation, 0U);
+    lv_anim_set_repeat_count(animation, 0);
+    lv_anim_set_playback_duration(animation, 0);
     lv_anim_set_values(animation, start, end);
 
     log_d("rendered update");
