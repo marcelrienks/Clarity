@@ -1,8 +1,9 @@
-#pragma once // preventing duplicate definitions, alternative to the traditional include guards
+#pragma once
 
 #include "interfaces/i_component.h"
 #include "utilities/types.h"
 #include "managers/style_manager.h"
+#include "icons/oil_temp_regular.h"
 
 #include <lvgl.h>
 
@@ -31,8 +32,10 @@ private:
     static constexpr int32_t _animation_duration = 1000U;
     static constexpr int32_t _needle_length = 90U;
     static constexpr int32_t _danger_zone = 100U;
-    static constexpr int32_t _scale_min = 120; // inverted to allow for reversed scale on bottom of screen
-    static constexpr int32_t _scale_max = 0; // inverted to allow for reversed scale on bottom of screen
+    
+    // Use normal scale internally, but map values for display
+    static constexpr int32_t _scale_min_original = 0;   // Original scale minimum
+    static constexpr int32_t _scale_max_original = 120; // Original scale maximum
 
     int32_t map_reverse_value(int32_t value) const;
 };

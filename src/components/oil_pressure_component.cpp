@@ -1,5 +1,4 @@
 #include "components/oil_pressure_component.h"
-#include "icons/oil_can_regular.h"
 
 OilPressureComponent::OilPressureComponent()
 {
