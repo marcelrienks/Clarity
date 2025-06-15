@@ -29,13 +29,14 @@ private:
     lv_style_t _danger_section_items_part_style;
 
     // Component specific constants
-    static constexpr int32_t _animation_duration = 1000U;
-    static constexpr int32_t _needle_length = 90U;
-    static constexpr int32_t _danger_zone = 100U;
+    static constexpr int32_t _animation_duration = 1000;
+    static constexpr int32_t _needle_length = 90;
+    
     
     // Use normal scale internally, but map values for display
-    static constexpr int32_t _scale_min_original = 0;   // Original scale minimum
-    static constexpr int32_t _scale_max_original = 120; // Original scale maximum
+    static constexpr int32_t _scale_min = 0;
+    static constexpr int32_t _scale_max = 120;
+    static constexpr int32_t _danger_zone = 100;
 
     int32_t map_reverse_value(int32_t value) const;
 };

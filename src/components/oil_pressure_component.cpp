@@ -44,46 +44,46 @@ void OilPressureComponent::render_load(lv_obj_t *screen)
     lv_style_set_line_color(&_items_part_style, colours.gauge_normal);
     lv_style_set_line_color(&_danger_section_items_part_style, colours.gauge_danger);
 
-    lv_obj_set_size(_scale, 240U, 240U);
+    lv_obj_set_size(_scale, 240, 240);
     lv_obj_align(_scale, LV_ALIGN_TOP_MID, 0, 0);
 
     // Set scale properties
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 210U);    // starting angle (0 = 3 o'clock)
-    lv_scale_set_angle_range(_scale, 120U); // range in degrees for the span of the scale
-    lv_scale_set_range(_scale, 0U, 60U);    // the range of the scale
+    lv_scale_set_rotation(_scale, 210);    // starting angle (0 = 3 o'clock)
+    lv_scale_set_angle_range(_scale, 120); // range in degrees for the span of the scale
+    lv_scale_set_range(_scale, _scale_min, _scale_max);    // the range of the scale
 
     // Adjust tick counts
-    lv_scale_set_total_tick_count(_scale, 13U);
-    lv_scale_set_major_tick_every(_scale, 2U);
+    lv_scale_set_total_tick_count(_scale, 13);
+    lv_scale_set_major_tick_every(_scale, 2);
     lv_scale_set_label_show(_scale, false);
 
     // Main style
-    lv_style_set_arc_width(&_main_part_style, 0U);
+    lv_style_set_arc_width(&_main_part_style, 0);
     lv_obj_add_style(_scale, &_main_part_style, MAIN_DEFAULT);
 
     // Indicator (Major ticks)
-    lv_style_set_length(&_indicator_part_style, 25U);
-    lv_style_set_line_width(&_indicator_part_style, 7U);
+    lv_style_set_length(&_indicator_part_style, 25);
+    lv_style_set_line_width(&_indicator_part_style, 7);
     lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
 
     // Items (Minor ticks)
-    lv_style_set_length(&_items_part_style, 18U);
-    lv_style_set_line_width(&_items_part_style, 2U);
+    lv_style_set_length(&_items_part_style, 18);
+    lv_style_set_line_width(&_items_part_style, 2);
     lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
 
     // Danger zone
     lv_scale_section_t *section = lv_scale_add_section(_scale);
-    lv_style_set_line_width(&_danger_section_items_part_style, 5U);
+    lv_style_set_line_width(&_danger_section_items_part_style, 5);
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
     lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_range(section, 0U, _danger_zone);
+    lv_scale_section_set_range(section, _scale_min, _danger_zone);
 
     // Add needle line - restore original needle length
     _needle_line = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_line_width(_needle_line, 5U, MAIN_DEFAULT);
+    lv_obj_set_style_line_width(_needle_line, 5, MAIN_DEFAULT);
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
     // lv_obj_set_style_shadow_width(_needle_line, 2, MAIN_DEFAULT);
@@ -125,7 +125,6 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
     lv_color_t colour = colours.gauge_normal;
 
-    // Change color based on value
     if (end <= _danger_zone)
         colour = colours.gauge_danger;
 
@@ -137,8 +136,8 @@ void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, in
 
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
-    lv_anim_set_repeat_count(animation, 0U);
-    lv_anim_set_playback_duration(animation, 0U);
+    lv_anim_set_repeat_count(animation, 0);
+    lv_anim_set_playback_duration(animation, 0);
     lv_anim_set_values(animation, start, end);
 
     log_d("rendered update");

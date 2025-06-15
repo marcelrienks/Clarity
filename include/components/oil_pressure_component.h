@@ -29,7 +29,11 @@ private:
     lv_style_t _danger_section_items_part_style;
 
     // Component specific constants
-    static constexpr int32_t _animation_duration = 1000U;
-    static constexpr int32_t _needle_length = 90U;
-    static constexpr int32_t _danger_zone = 5U;
+    static constexpr int32_t _animation_duration = 1000;
+    static constexpr int32_t _needle_length = 90;
+    
+    // Use normal scale internally, but map values for display
+    static constexpr int32_t _scale_min = 0;
+    static constexpr int32_t _scale_max = 60;
+    static constexpr int32_t _danger_zone = 5;
 };

@@ -23,7 +23,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
     lv_scale_set_rotation(_scale, 30);     // starting angle (0 = 3 o'clock)
     lv_scale_set_angle_range(_scale, 120); // range in degrees for the span of the scale
-    lv_scale_set_range(_scale, 0, 120);
+    lv_scale_set_range(_scale, _scale_min, _scale_max);
 
     // Adjust tick counts
     lv_scale_set_total_tick_count(_scale, 13);
@@ -65,7 +65,7 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_scale_section_set_style(section, LV_PART_ITEMS, &_danger_section_items_part_style);
 
     // Danger zone: map correct danger zone to reversed danger zone (hack to solve reversed scale in LVGL 9.3)
-    lv_scale_section_set_range(section, map_reverse_value(120), map_reverse_value(100));
+    lv_scale_section_set_range(section, map_reverse_value(_scale_max), map_reverse_value(_danger_zone));
 
     // Add needle line
     _needle_line = lv_line_create(_scale);
@@ -102,7 +102,6 @@ void OilTemperatureComponent::render_update(lv_anim_t *animation, int32_t start,
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
     lv_color_t colour = colours.gauge_normal;
 
-    // Change color based on ORIGINAL value (not mapped)
     if (end >= _danger_zone)
         colour = colours.gauge_danger;
 
@@ -138,6 +137,6 @@ void OilTemperatureComponent::set_value(int32_t value)
 int32_t OilTemperatureComponent::map_reverse_value(int32_t value) const
 {
     // Map from [0,120] to [120,0] reverse the scale
-    int32_t mapped_value = _scale_max_original - value;
+    int32_t mapped_value = _scale_max - value;
     return mapped_value;
 }
