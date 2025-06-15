@@ -30,6 +30,12 @@ void OilTemperatureComponent::render_load(lv_obj_t *screen)
     lv_scale_set_major_tick_every(_scale, 2);
     lv_scale_set_label_show(_scale, false);
 
+    // Set custom labels to show reversed temperature values
+    // With 13 total ticks and major ticks every 2, we get labels at: 0, 20, 40, 60, 80, 100, 120
+    // But we want to display them reversed: 120, 100, 80, 60, 40, 20, 0
+    // static const char *custom_labels[] = {"120", "100", "80", "60", "40", "20", "0", NULL};
+    // lv_scale_set_text_src(_scale, custom_labels);
+
     // Main style
     lv_style_init(&_main_part_style);
     lv_style_set_arc_width(&_main_part_style, 0);
