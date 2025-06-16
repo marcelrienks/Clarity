@@ -1,152 +1,62 @@
 #include "components/oil_pressure_component.h"
 
 OilPressureComponent::OilPressureComponent()
+    : OilComponent()
 {
-    // Initialize styles - DO NOT assign styles directly
-    lv_style_init(&_indicator_part_style);
-    lv_style_init(&_items_part_style);
-    lv_style_init(&_main_part_style);
-    lv_style_init(&_danger_section_items_part_style);
+    // Constructor delegates to base class
 }
 
-OilPressureComponent::~OilPressureComponent()
+const lv_image_dsc_t* OilPressureComponent::get_icon() const
 {
-    // Clean up LVGL objects
-    if (_needle_line)
-        lv_obj_del(_needle_line);
-
-    if (_scale)
-        lv_obj_del(_scale);
-
-    if (_oil_can_icon)
-        lv_obj_del(_oil_can_icon);
-
-    // Clean up styles
-    lv_style_reset(&_indicator_part_style);
-    lv_style_reset(&_items_part_style);
-    lv_style_reset(&_main_part_style);
-    lv_style_reset(&_danger_section_items_part_style);
+    return &oil_can_regular;
 }
 
-/// @brief Initialise an oil pressure component to show the engine oil pressure
-/// @param screen the screen on which to render the component
-void OilPressureComponent::render_load(lv_obj_t *screen)
+int32_t OilPressureComponent::get_scale_min() const
 {
-    log_d("...");
+    return _scale_min;
+}
 
-    _scale = lv_scale_create(screen);
+int32_t OilPressureComponent::get_scale_max() const
+{
+    return _scale_max;
+}
 
-    const StyleManager &styleManager = StyleManager::get_instance();
+int32_t OilPressureComponent::get_danger_zone() const
+{
+    return _danger_zone;
+}
 
-    // Apply theme color to our styles
-    const ThemeColors &colours = styleManager.get_colours(styleManager.get_theme());
-    lv_style_set_line_color(&_indicator_part_style, colours.gauge_normal);
-    lv_style_set_line_color(&_items_part_style, colours.gauge_normal);
-    lv_style_set_line_color(&_danger_section_items_part_style, colours.gauge_danger);
+lv_align_t OilPressureComponent::get_alignment() const
+{
+    return LV_ALIGN_TOP_MID;
+}
 
-    lv_obj_set_size(_scale, 240, 240);
-    lv_obj_align(_scale, LV_ALIGN_TOP_MID, 0, 0);
+lv_scale_mode_t OilPressureComponent::get_scale_mode() const
+{
+    return LV_SCALE_MODE_ROUND_INNER;
+}
 
-    // Set scale properties
-    lv_scale_set_mode(_scale, LV_SCALE_MODE_ROUND_INNER);
-    lv_scale_set_rotation(_scale, 210);    // starting angle (0 = 3 o'clock)
-    lv_scale_set_angle_range(_scale, 120); // range in degrees for the span of the scale
-    lv_scale_set_range(_scale, _scale_min, _scale_max);    // the range of the scale
+int32_t OilPressureComponent::get_rotation() const
+{
+    return 210; // starting angle (0 = 3 o'clock)
+}
 
-    // Adjust tick counts
-    lv_scale_set_total_tick_count(_scale, 13);
-    lv_scale_set_major_tick_every(_scale, 2);
-    lv_scale_set_label_show(_scale, false);
+int32_t OilPressureComponent::get_angle_range() const
+{
+    return 120; // range in degrees for the span of the scale
+}
 
-    // Main style
-    lv_style_set_arc_width(&_main_part_style, 0);
-    lv_obj_add_style(_scale, &_main_part_style, MAIN_DEFAULT);
+bool OilPressureComponent::is_danger_condition(int32_t value) const
+{
+    return value <= _danger_zone; // Low pressure is dangerous
+}
 
-    // Indicator (Major ticks)
-    lv_style_set_length(&_indicator_part_style, 25);
-    lv_style_set_line_width(&_indicator_part_style, 7);
-    lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
-
-    // Items (Minor ticks)
-    lv_style_set_length(&_items_part_style, 18);
-    lv_style_set_line_width(&_items_part_style, 2);
-    lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
-
-    // Danger zone
-    lv_scale_section_t *section = lv_scale_add_section(_scale);
-    lv_style_set_line_width(&_danger_section_items_part_style, 5);
-    lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
-    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
+void OilPressureComponent::setup_danger_zone(lv_scale_section_t *section) const
+{
     lv_scale_section_set_range(section, _scale_min, _danger_zone);
-
-    // Add needle line - restore original needle length
-    _needle_line = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_line_width(_needle_line, 5, MAIN_DEFAULT);
-    lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
-    lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
-    // lv_obj_set_style_shadow_width(_needle_line, 2, MAIN_DEFAULT);
-    // lv_obj_set_style_shadow_opa(_needle_line, LV_OPA_60, MAIN_DEFAULT);
-
-    // Circle at pivot point
-    // auto _pivot_circle = lv_obj_create(_scale);
-    // lv_obj_set_size(_pivot_circle, 35U, 35U);
-    // lv_obj_center(_pivot_circle);
-    // lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    // lv_obj_set_style_bg_color(_pivot_circle, lv_color_darken(colours.background, 25U), MAIN_DEFAULT);
-    // lv_obj_set_style_border_width(_pivot_circle, 2U, MAIN_DEFAULT);
-    // lv_obj_set_style_border_color(_pivot_circle, lv_color_lighten(colours.background, 15U), MAIN_DEFAULT);
-    // lv_obj_set_style_shadow_color(_pivot_circle, lv_color_darken(colours.gauge_normal, 3U), MAIN_DEFAULT);
-    // lv_obj_set_style_shadow_width(_pivot_circle, 1U, MAIN_DEFAULT);
-    // lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_10, MAIN_DEFAULT);
-    // lv_obj_set_style_shadow_spread(_pivot_circle, 3U, MAIN_DEFAULT);
-
-    // Create and position the oil can icon - center it properly in top area
-    _oil_can_icon = lv_image_create(_scale);
-    lv_image_set_src(_oil_can_icon, &oil_can_regular);
-    lv_image_set_scale(_oil_can_icon, 50);  // 50/256 ≈ 19% of original
-    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, -50);
-    lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-
-    log_d("rendered load");
 }
 
-/// @brief Update the component by rendering the new reading
-/// @param animation the animation object that will render the updated value
-/// @param start the start value, this represents the initial value of the gauge currently
-/// @param end the final reading that is gauge must display
-void OilPressureComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
+int32_t OilPressureComponent::get_icon_y_offset() const
 {
-    log_d("...");
-
-    const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
-    lv_color_t colour = colours.gauge_normal;
-
-    if (end <= _danger_zone)
-        colour = colours.gauge_danger;
-
-    lv_obj_set_style_line_color(_needle_line, colour, MAIN_DEFAULT);
-
-    // Also update the oil can icon color to match the needle
-    lv_obj_set_style_image_recolor(_oil_can_icon, colour, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-
-    lv_anim_init(animation);
-    lv_anim_set_duration(animation, _animation_duration);
-    lv_anim_set_repeat_count(animation, 0);
-    lv_anim_set_playback_duration(animation, 0);
-    lv_anim_set_values(animation, start, end);
-
-    log_d("rendered update");
-}
-
-/// @brief Set the value of the line needle
-/// @param value the value to set the line needle to
-void OilPressureComponent::set_value(int32_t value)
-{
-    log_i("value is %i", value);
-    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, value);
+    return -50; // Above center
 }
