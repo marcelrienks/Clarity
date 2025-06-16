@@ -22,10 +22,4 @@ protected:
     bool is_danger_condition(int32_t value) const override;
     void setup_danger_zone(lv_scale_section_t *section) const override;
     int32_t get_icon_y_offset() const override;
-
-private:
-    // Component specific constants
-    static constexpr int32_t _scale_min = 0;
-    static constexpr int32_t _scale_max = 60;
-    static constexpr int32_t _danger_zone = 5;
 };

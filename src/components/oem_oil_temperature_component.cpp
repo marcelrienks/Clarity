@@ -13,17 +13,17 @@ const lv_image_dsc_t* OemOilTemperatureComponent::get_icon() const
 
 int32_t OemOilTemperatureComponent::get_scale_min() const
 {
-    return _scale_min;
+    return 0;
 }
 
 int32_t OemOilTemperatureComponent::get_scale_max() const
 {
-    return _scale_max;
+    return 120;
 }
 
 int32_t OemOilTemperatureComponent::get_danger_zone() const
 {
-    return _danger_zone;
+    return 100;
 }
 
 lv_align_t OemOilTemperatureComponent::get_alignment() const
@@ -38,17 +38,17 @@ lv_scale_mode_t OemOilTemperatureComponent::get_scale_mode() const
 
 int32_t OemOilTemperatureComponent::get_rotation() const
 {
-    return 30; // starting angle (0 = 3 o'clock)
+    return 30;
 }
 
 int32_t OemOilTemperatureComponent::get_angle_range() const
 {
-    return 120; // range in degrees for the span of the scale
+    return 120;
 }
 
 bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 {
-    return value >= _danger_zone; // High temperature is dangerous
+    return value >= OemOilTemperatureComponent::get_danger_zone();
 }
 
 int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
@@ -60,7 +60,7 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
     log_d("original value is %i", value);
     
     // Map from [0,120] to [120,0] reverse the scale
-    int32_t mapped_value = _scale_max - value;
+    int32_t mapped_value = OemOilTemperatureComponent::get_scale_max() - value;
     
     log_d("mapped value is %i", mapped_value);
     
@@ -70,10 +70,10 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) const
 {
     // Danger zone: map correct danger zone to reversed danger zone (hack to solve reversed scale in LVGL 9.3)
-    lv_scale_section_set_range(section, map_value_for_display(_scale_max), map_value_for_display(_danger_zone));
+    lv_scale_section_set_range(section, map_value_for_display(OemOilTemperatureComponent::get_scale_max()), map_value_for_display(OemOilTemperatureComponent::get_danger_zone()));
 }
 
 int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 {
-    return 50; // Below center
+    return 50;
 }
