@@ -1,8 +1,8 @@
 #include "panels/oil_panel.h"
 
 OilPanel::OilPanel()
-    : _oil_pressure_component(std::make_shared<OilPressureComponent>()),
-      _oil_temperature_component(std::make_shared<OilTemperatureComponent>()),
+    : _oem_oil_pressure_component(std::make_shared<OemOilPressureComponent>()),
+      _oil_temperature_component(std::make_shared<OemOilTemperatureComponent>()),
       _oil_pressure_sensor(std::make_shared<OilPressureSensor>()),
       _oil_temperature_sensor(std::make_shared<OilTemperatureSensor>()) {}
 
@@ -11,8 +11,8 @@ OilPanel::~OilPanel()
     if (_screen)
         lv_obj_delete(_screen);
 
-    if (_oil_pressure_component)
-        _oil_pressure_component.reset();
+    if (_oem_oil_pressure_component)
+        _oem_oil_pressure_component.reset();
 
     if (_oil_temperature_component)
         _oil_temperature_component.reset();
@@ -46,7 +46,7 @@ void OilPanel::load(std::function<void()> show_panel_completion_callback)
     log_d("...");
     _callback_function = show_panel_completion_callback;
 
-    _oil_pressure_component->render_load(_screen);
+    _oem_oil_pressure_component->render_load(_screen);
     _oil_temperature_component->render_load(_screen);
     lv_obj_add_event_cb(_screen, OilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -73,7 +73,7 @@ void OilPanel::update_oil_pressure()
 
     auto value = std::get<int32_t>(_oil_pressure_sensor->get_reading());
     static lv_anim_t update_pressure_animation;
-    _oil_pressure_component->render_update(&update_pressure_animation, _current_oil_pressure_value, value);
+    _oem_oil_pressure_component->render_update(&update_pressure_animation, _current_oil_pressure_value, value);
 
     lv_anim_set_var(&update_pressure_animation, this);
     lv_anim_set_user_data(&update_pressure_animation, (void *)static_cast<uintptr_t>(OilSensorTypes::Pressure));
@@ -149,7 +149,7 @@ void OilPanel::execute_pressure_animation_callback(void *target, int32_t value)
 
     lv_anim_t *animation = lv_anim_get(target, execute_pressure_animation_callback); // get the animation
     auto this_instance = static_cast<OilPanel *>(animation->var);                    // use the animation to get the var which is this instance
-    this_instance->_oil_pressure_component.get()->set_value(value);
+    this_instance->_oem_oil_pressure_component.get()->set_value(value);
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached

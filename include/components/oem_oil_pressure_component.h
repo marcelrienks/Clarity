@@ -1,13 +1,13 @@
 #pragma once
 
-#include "components/oil_component.h"
-#include "icons/oil_temp_regular.h"
+#include "components/oem_oil_component.h"
+#include "icons/oil_can_regular.h"
 
-class OilTemperatureComponent : public OilComponent
+class OemOilPressureComponent : public OemOilComponent
 {
 public:
-    OilTemperatureComponent();
-    ~OilTemperatureComponent() = default;
+    OemOilPressureComponent();
+    ~OemOilPressureComponent() = default;
 
 protected:
     // Override virtual methods from base class
@@ -20,13 +20,12 @@ protected:
     int32_t get_rotation() const override;
     int32_t get_angle_range() const override;
     bool is_danger_condition(int32_t value) const override;
-    int32_t map_value_for_display(int32_t value) const override;
     void setup_danger_zone(lv_scale_section_t *section) const override;
     int32_t get_icon_y_offset() const override;
 
 private:
     // Component specific constants
     static constexpr int32_t _scale_min = 0;
-    static constexpr int32_t _scale_max = 120;
-    static constexpr int32_t _danger_zone = 100;
+    static constexpr int32_t _scale_max = 60;
+    static constexpr int32_t _danger_zone = 5;
 };

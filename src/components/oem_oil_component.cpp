@@ -1,13 +1,13 @@
-#include "components/oil_component.h"
+#include "components/oem_oil_component.h"
 
-OilComponent::OilComponent()
+OemOilComponent::OemOilComponent()
     : _scale(nullptr), _needle_line(nullptr), _oil_can_icon(nullptr)
 {
     // Initialize styles - DO NOT assign styles directly
     initialize_styles();
 }
 
-OilComponent::~OilComponent()
+OemOilComponent::~OemOilComponent()
 {
     // Clean up LVGL objects
     if (_needle_line)
@@ -23,7 +23,7 @@ OilComponent::~OilComponent()
     cleanup_styles();
 }
 
-void OilComponent::render_load(lv_obj_t *screen)
+void OemOilComponent::render_load(lv_obj_t *screen)
 {
     log_d("...");
 
@@ -42,7 +42,7 @@ void OilComponent::render_load(lv_obj_t *screen)
     log_d("rendered load");
 }
 
-void OilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
+void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
     log_d("...");
 
@@ -68,7 +68,7 @@ void OilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t en
     log_d("rendered update");
 }
 
-void OilComponent::set_value(int32_t value)
+void OemOilComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
     
@@ -77,14 +77,14 @@ void OilComponent::set_value(int32_t value)
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);
 }
 
-int32_t OilComponent::map_value_for_display(int32_t value) const
+int32_t OemOilComponent::map_value_for_display(int32_t value) const
 {
     // Default implementation - no mapping
     // Derived classes can override for special mapping (e.g., temperature component)
     return value;
 }
 
-void OilComponent::initialize_styles()
+void OemOilComponent::initialize_styles()
 {
     lv_style_init(&_indicator_part_style);
     lv_style_init(&_items_part_style);
@@ -92,7 +92,7 @@ void OilComponent::initialize_styles()
     lv_style_init(&_danger_section_items_part_style);
 }
 
-void OilComponent::cleanup_styles()
+void OemOilComponent::cleanup_styles()
 {
     lv_style_reset(&_indicator_part_style);
     lv_style_reset(&_items_part_style);
@@ -100,7 +100,7 @@ void OilComponent::cleanup_styles()
     lv_style_reset(&_danger_section_items_part_style);
 }
 
-void OilComponent::setup_scale_properties()
+void OemOilComponent::setup_scale_properties()
 {
     const StyleManager &styleManager = StyleManager::get_instance();
     const ThemeColors &colours = styleManager.get_colours(styleManager.get_theme());
@@ -146,7 +146,7 @@ void OilComponent::setup_scale_properties()
     setup_danger_zone(section);
 }
 
-void OilComponent::create_needle()
+void OemOilComponent::create_needle()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
     
@@ -158,7 +158,7 @@ void OilComponent::create_needle()
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
 }
 
-void OilComponent::create_icon()
+void OemOilComponent::create_icon()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
     

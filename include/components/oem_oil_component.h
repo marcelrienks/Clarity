@@ -6,11 +6,11 @@
 
 #include <lvgl.h>
 
-class OilComponent : public IComponent
+class OemOilComponent : public IComponent
 {
 public:
-    OilComponent();
-    virtual ~OilComponent();
+    OemOilComponent();
+    virtual ~OemOilComponent();
 
     void render_load(lv_obj_t *screen) override;
     void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;

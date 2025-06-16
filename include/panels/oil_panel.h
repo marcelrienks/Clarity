@@ -1,8 +1,8 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "components/oil_pressure_component.h"
-#include "components/oil_temperature_component.h"
+#include "components/oem_oil_pressure_component.h"
+#include "components/oem_oil_temperature_component.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
@@ -24,7 +24,7 @@ public:
 private:
     // Components
     lv_obj_t *_screen;
-    std::shared_ptr<IComponent> _oil_pressure_component;
+    std::shared_ptr<IComponent> _oem_oil_pressure_component;
     std::shared_ptr<IComponent> _oil_temperature_component;
     std::shared_ptr<ISensor> _oil_pressure_sensor;
     std::shared_ptr<ISensor> _oil_temperature_sensor;
