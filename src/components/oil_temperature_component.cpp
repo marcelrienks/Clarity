@@ -8,6 +8,8 @@ OilTemperatureComponent::~OilTemperatureComponent()
         lv_obj_delete(_scale);
 }
 
+/// Initialise an oil temperature component to show the engine oil temperature
+/// @param screen the screen on which to render the component
 void OilTemperatureComponent::render_load(lv_obj_t *screen)
 {
     log_d("...");
