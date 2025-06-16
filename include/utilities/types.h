@@ -31,7 +31,7 @@ enum class OilSensorTypes
 struct PanelNames {
     static constexpr const char *Splash = "SplashPanel";
     static constexpr const char *Demo = "DemoPanel";
-    static constexpr const char *Oil = "OilPanel";
+    static constexpr const char *Oil = "OemOilPanel";
 };
 
 struct JsonDocNames {

@@ -4,7 +4,7 @@
 #include "interfaces/i_device.h"
 #include "panels/splash_panel.h"
 #include "panels/demo_panel.h"
-#include "panels/oil_panel.h"
+#include "panels/oem_oil_panel.h"
 #include "utilities/ticker.h"
 
 #include <string>
