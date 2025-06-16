@@ -20,7 +20,7 @@ protected:
     // LVGL objects
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
-    lv_obj_t *_oil_can_icon;
+    lv_obj_t *_oil_icon;
     
     // Style variables as member variables
     lv_style_t _indicator_part_style;

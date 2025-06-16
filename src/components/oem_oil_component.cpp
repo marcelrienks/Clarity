@@ -1,7 +1,7 @@
 #include "components/oem_oil_component.h"
 
 OemOilComponent::OemOilComponent()
-    : _scale(nullptr), _needle_line(nullptr), _oil_can_icon(nullptr)
+    : _scale(nullptr), _needle_line(nullptr), _oil_icon(nullptr)
 {
     // Initialize styles - DO NOT assign styles directly
     initialize_styles();
@@ -16,8 +16,8 @@ OemOilComponent::~OemOilComponent()
     if (_scale)
         lv_obj_del(_scale);
 
-    if (_oil_can_icon)
-        lv_obj_del(_oil_can_icon);
+    if (_oil_icon)
+        lv_obj_del(_oil_icon);
 
     // Clean up styles
     cleanup_styles();
@@ -55,8 +55,8 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
 
     // Update needle and icon colors
     lv_obj_set_style_line_color(_needle_line, colour, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor(_oil_can_icon, colour, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor(_oil_icon, colour, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
     // Setup animation
     lv_anim_init(animation);
@@ -162,11 +162,11 @@ void OemOilComponent::create_icon()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
     
-    _oil_can_icon = lv_image_create(_scale);
-    lv_image_set_src(_oil_can_icon, get_icon());
-    lv_image_set_scale(_oil_can_icon, 50);
-    lv_obj_align(_oil_can_icon, LV_ALIGN_CENTER, 0, get_icon_y_offset());
-    lv_obj_set_style_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor(_oil_can_icon, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_oil_can_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    _oil_icon = lv_image_create(_scale);
+    lv_image_set_src(_oil_icon, get_icon());
+    lv_image_set_scale(_oil_icon, 50);
+    lv_obj_align(_oil_icon, LV_ALIGN_CENTER, 0, get_icon_y_offset());
+    lv_obj_set_style_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor(_oil_icon, colours.gauge_normal, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
 }
