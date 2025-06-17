@@ -3,6 +3,7 @@
 DemoSensor::DemoSensor()
     : _engine(std::mt19937(std::random_device{}())), _distribution(std::uniform_int_distribution<int>(0, 100)) {}
 
+/// @brief Initializes the sensor. This method is required by the Sensor interface but not used in this demo.
 void DemoSensor::init()
 {
     // Not needed but required to satisfy interface

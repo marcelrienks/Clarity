@@ -1,4 +1,4 @@
-#include "components/oem_oil_component.h"
+#include "components/oem/oem_oil_component.h"
 
 OemOilComponent::OemOilComponent()
     : _scale(nullptr), _needle_line(nullptr), _oil_icon(nullptr)
@@ -23,6 +23,8 @@ OemOilComponent::~OemOilComponent()
     cleanup_styles();
 }
 
+/// @brief This method initializes the scale, needle, and icon for the oil component.
+/// @param screen The screen object to render the component on.
 void OemOilComponent::render_load(lv_obj_t *screen)
 {
     log_d("...");
@@ -42,6 +44,10 @@ void OemOilComponent::render_load(lv_obj_t *screen)
     log_d("rendered load");
 }
 
+/// @brief Updates the rendered oil component.
+/// @param animation The animation object for the update.
+/// @param start The starting value for the animation.
+/// @param end The ending value for the animation.
 void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
 {
     log_d("...");
@@ -68,6 +74,9 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
     log_d("rendered update");
 }
 
+/// @brief Sets the value of the oil component.
+/// This method updates the needle position based on the provided value.
+/// @param value 
 void OemOilComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
@@ -77,6 +86,9 @@ void OemOilComponent::set_value(int32_t value)
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);
 }
 
+/// @brief Maps the value for display on the oil component.
+/// @param value The original value to map.
+/// @return The mapped value for display.
 int32_t OemOilComponent::map_value_for_display(int32_t value) const
 {
     // Default implementation - no mapping
@@ -84,6 +96,7 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
     return value;
 }
 
+/// @brief Sets up the danger zone section on the scale.
 void OemOilComponent::initialize_styles()
 {
     lv_style_init(&_indicator_part_style);
@@ -92,6 +105,7 @@ void OemOilComponent::initialize_styles()
     lv_style_init(&_danger_section_items_part_style);
 }
 
+/// @brief Cleans up the styles used by the oil component.
 void OemOilComponent::cleanup_styles()
 {
     lv_style_reset(&_indicator_part_style);
@@ -100,6 +114,7 @@ void OemOilComponent::cleanup_styles()
     lv_style_reset(&_danger_section_items_part_style);
 }
 
+/// @brief Sets up the scale properties for the oil component.
 void OemOilComponent::setup_scale_properties()
 {
     const StyleManager &styleManager = StyleManager::get_instance();
@@ -146,6 +161,7 @@ void OemOilComponent::setup_scale_properties()
     setup_danger_zone(section);
 }
 
+/// @brief Creates the needle line for the oil component.
 void OemOilComponent::create_needle()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
@@ -158,6 +174,7 @@ void OemOilComponent::create_needle()
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
 }
 
+/// @brief Creates the oil icon for the oil component.
 void OemOilComponent::create_icon()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());

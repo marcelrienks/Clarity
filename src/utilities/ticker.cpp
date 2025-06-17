@@ -1,6 +1,5 @@
 #include "utilities/ticker.h"
 
-
 /// @brief get the elapsed time since the last call to this function
 /// @return elapsed time since last get
 uint32_t Ticker::get_elapsed_millis() {
