@@ -49,7 +49,7 @@ protected:
 private:
     void initialize_styles();
     void cleanup_styles();
-    void setup_scale_properties();
+    void create_scale();
     void create_needle();
     void create_icon();
 };

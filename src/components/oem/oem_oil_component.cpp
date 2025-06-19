@@ -35,7 +35,7 @@ void OemOilComponent::render_load(lv_obj_t *screen)
     lv_obj_align(_scale, get_alignment(), 0, 0);
 
     // Setup scale properties based on derived class configuration
-    setup_scale_properties();
+    create_scale();
 
     // Create needle and icon
     create_needle();
@@ -115,7 +115,7 @@ void OemOilComponent::cleanup_styles()
 }
 
 /// @brief Sets up the scale properties for the oil component.
-void OemOilComponent::setup_scale_properties()
+void OemOilComponent::create_scale()
 {
     const StyleManager &styleManager = StyleManager::get_instance();
     const ThemeColors &colours = styleManager.get_colours(styleManager.get_theme());
@@ -172,6 +172,19 @@ void OemOilComponent::create_needle()
     lv_obj_set_style_line_width(_needle_line, 5, MAIN_DEFAULT);
     lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
+
+    // Circle at pivot point
+    auto _pivot_circle = lv_obj_create(_scale);
+    lv_obj_set_size(_pivot_circle, 35U, 35U);
+    lv_obj_center(_pivot_circle);
+    lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
+    lv_obj_set_style_bg_color(_pivot_circle, lv_color_darken(colours.background, 25), MAIN_DEFAULT);
+    lv_obj_set_style_border_width(_pivot_circle, 2, MAIN_DEFAULT);
+    lv_obj_set_style_border_color(_pivot_circle, lv_color_lighten(colours.background, 15), MAIN_DEFAULT);
+    lv_obj_set_style_shadow_color(_pivot_circle, lv_color_darken(colours.gauge_normal, 3), MAIN_DEFAULT);
+    lv_obj_set_style_shadow_width(_pivot_circle, 1U, MAIN_DEFAULT);
+    lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_10, MAIN_DEFAULT);
+    lv_obj_set_style_shadow_spread(_pivot_circle, 3, MAIN_DEFAULT);
 }
 
 /// @brief Creates the oil icon for the oil component.

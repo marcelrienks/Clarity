@@ -101,5 +101,5 @@ void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) 
 /// @return The Y offset value.
 int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 {
-    return 50;
+    return 55;
 }
