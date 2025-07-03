@@ -12,7 +12,7 @@ public:
     KeyComponent();
     virtual ~KeyComponent();
 
-    void render_load(lv_obj_t *screen) override;
+    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
 
 protected:
     // LVGL objects

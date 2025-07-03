@@ -12,7 +12,7 @@ public:
     OemOilComponent();
     virtual ~OemOilComponent();
 
-    void render_load(lv_obj_t *screen) override;
+    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
     void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
     void set_value(int32_t value) override;
 

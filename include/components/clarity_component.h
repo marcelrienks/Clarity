@@ -6,5 +6,5 @@
 class ClarityComponent : public IComponent
 {
 public:
-    void render_load(lv_obj_t *screen) override;
+    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
 };

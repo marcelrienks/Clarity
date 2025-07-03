@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(claude doctor)",
+      "Bash(npm install:*)",
+      "Bash(sudo npm install -g @anthropic-ai/claude-code)",
+      "Bash(clear)",
+      "Bash(pio run:*)",
+      "Bash(grep:*)"
+    ],
+    "deny": []
+  }
+}

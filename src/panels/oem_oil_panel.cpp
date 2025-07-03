@@ -46,8 +46,12 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     log_d("...");
     _callback_function = show_panel_completion_callback;
 
-    _oem_oil_pressure_component->render_load(_screen);
-    _oem_oil_temperature_component->render_load(_screen);
+    // Create location parameters for components
+    ComponentLocation pressure_location(LV_ALIGN_TOP_LEFT, 0, 0);
+    ComponentLocation temperature_location(LV_ALIGN_TOP_RIGHT, 0, 0);
+    
+    _oem_oil_pressure_component->render_load(_screen, pressure_location);
+    _oem_oil_temperature_component->render_load(_screen, temperature_location);
     lv_obj_add_event_cb(_screen, OemOilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");

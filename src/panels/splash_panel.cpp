@@ -32,7 +32,10 @@ void SplashPanel::load(std::function<void()> show_panel_completion_callback)
 
     _callback_function = show_panel_completion_callback;
 
-    _component->render_load(_screen);
+    // Create location parameters for the splash component
+    ComponentLocation splash_location(LV_ALIGN_CENTER, 0, 0);
+    
+    _component->render_load(_screen, splash_location);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 

@@ -23,16 +23,32 @@ OemOilComponent::~OemOilComponent()
     cleanup_styles();
 }
 
-/// @brief This method initializes the scale, needle, and icon for the oil component.
+/// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
 /// @param screen The screen object to render the component on.
-void OemOilComponent::render_load(lv_obj_t *screen)
+/// @param location The location parameters for positioning the component.
+void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &location)
 {
     log_d("...");
 
     // Create the scale
     _scale = lv_scale_create(screen);
-    lv_obj_set_size(_scale, 240, 240);
-    lv_obj_align(_scale, get_alignment(), 0, 0);
+
+    // Apply location settings
+    if (location.width != LV_SIZE_CONTENT || location.height != LV_SIZE_CONTENT)
+        lv_obj_set_size(_scale, location.width, location.height);
+
+    else
+        lv_obj_set_size(_scale, 240, 240);
+
+    // Apply location settings
+    if (location.align != LV_ALIGN_CENTER || location.x_offset != 0 || location.y_offset != 0)
+        lv_obj_align(_scale, location.align, location.x_offset, location.y_offset);
+
+    else if (location.x != 0 || location.y != 0)
+        lv_obj_set_pos(_scale, location.x, location.y);
+
+    else
+        lv_obj_align(_scale, LV_ALIGN_CENTER, 0, 0);
 
     // Setup scale properties based on derived class configuration
     create_scale();
@@ -41,7 +57,7 @@ void OemOilComponent::render_load(lv_obj_t *screen)
     create_needle();
     create_icon();
 
-    log_d("rendered load");
+    log_d("rendered load with location");
 }
 
 /// @brief Updates the rendered oil component.
@@ -76,11 +92,11 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
 
 /// @brief Sets the value of the oil component.
 /// This method updates the needle position based on the provided value.
-/// @param value 
+/// @param value
 void OemOilComponent::set_value(int32_t value)
 {
     log_i("value is %i", value);
-    
+
     // Allow derived classes to map values if needed (e.g., for reversed scales)
     int32_t mapped_value = map_value_for_display(value);
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);
@@ -156,7 +172,7 @@ void OemOilComponent::create_scale()
     lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
     lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
-    
+
     // Set danger zone range - derived classes will handle specific ranges
     setup_danger_zone(section);
 }
@@ -165,7 +181,7 @@ void OemOilComponent::create_scale()
 void OemOilComponent::create_needle()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
-    
+
     // Create needle line
     _needle_line = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, MAIN_DEFAULT);
@@ -191,7 +207,7 @@ void OemOilComponent::create_needle()
 void OemOilComponent::create_icon()
 {
     const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
-    
+
     _oil_icon = lv_image_create(_scale);
     lv_image_set_src(_oil_icon, get_icon());
     lv_image_set_scale(_oil_icon, 50);
