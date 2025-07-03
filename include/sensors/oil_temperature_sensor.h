@@ -5,7 +5,7 @@
 
 #include <lvgl.h>
 #include <LovyanGFX.hpp>
-#include <random>
+#include <esp_random.h>
 
 class OilTemperatureSensor : public ISensor
 {
@@ -14,11 +14,15 @@ public:
 
     void init() override;
     Reading get_reading() override;
+    
+    // Delta-based update support
+    bool has_value_changed() override;
+    Reading get_cached_reading() override;
 
     // TODO: TEMP for testing
 private:
-    std::mt19937 _engine;                          // Mersenne Twister engine
-    std::uniform_int_distribution<> _distribution; // Uniform distribution
-
-    int32_t current_reading;
+    int32_t _current_reading = 0;
+    int32_t _previous_reading = -1;
+    unsigned long _last_update_time = 0;
+    static constexpr unsigned long UPDATE_INTERVAL_MS = 1500; // Update every 1500ms (0.67Hz)
 };

@@ -32,6 +32,10 @@ private:
     int32_t _current_oil_temperature_value;
     bool _is_pressure_animation_running = false;
     bool _is_temperature_animation_running = false;
+    
+    // Instance-level animation objects (prevents memory leaks)
+    lv_anim_t _pressure_animation;
+    lv_anim_t _temperature_animation;
 
     void update_oil_pressure();
     void update_oil_temperature();

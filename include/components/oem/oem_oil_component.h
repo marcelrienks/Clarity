@@ -22,11 +22,8 @@ protected:
     lv_obj_t *_needle_line;
     lv_obj_t *_oil_icon;
     
-    // Style variables as member variables
-    lv_style_t _indicator_part_style;
-    lv_style_t _items_part_style;
-    lv_style_t _main_part_style;
-    lv_style_t _danger_section_items_part_style;
+    // Cached StyleManager reference (optimization)
+    StyleManager* _style_manager;
 
     // Common constants
     static constexpr int32_t _animation_duration = 1000;
@@ -47,8 +44,6 @@ protected:
     virtual int32_t get_icon_y_offset() const = 0;
 
 private:
-    void initialize_styles();
-    void cleanup_styles();
     void create_scale();
     void create_needle();
     void create_icon();

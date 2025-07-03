@@ -27,6 +27,12 @@ void StyleManager::init(Themes theme)
     lv_style_init(&gauge_normal_style);
     lv_style_init(&gauge_warning_style);
     lv_style_init(&gauge_danger_style);
+    
+    // Initialize shared gauge component styles
+    lv_style_init(&gauge_indicator_style);
+    lv_style_init(&gauge_items_style);
+    lv_style_init(&gauge_main_style);
+    lv_style_init(&gauge_danger_section_style);
 
     set_theme(_theme);
 
@@ -55,6 +61,24 @@ void StyleManager::set_theme(Themes theme)
     lv_style_set_line_color(&gauge_normal_style, colours.gauge_normal);
     lv_style_set_line_color(&gauge_warning_style, colours.gauge_warning);
     lv_style_set_line_color(&gauge_danger_style, colours.gauge_danger);
+    
+    // Configure shared gauge component styles
+    // Indicator style (Major ticks)
+    lv_style_set_length(&gauge_indicator_style, 25);
+    lv_style_set_line_width(&gauge_indicator_style, 7);
+    lv_style_set_line_color(&gauge_indicator_style, colours.gauge_normal);
+    
+    // Items style (Minor ticks)
+    lv_style_set_length(&gauge_items_style, 18);
+    lv_style_set_line_width(&gauge_items_style, 2);
+    lv_style_set_line_color(&gauge_items_style, colours.gauge_normal);
+    
+    // Main style (Arc)
+    lv_style_set_arc_width(&gauge_main_style, 0);
+    
+    // Danger section style
+    lv_style_set_line_width(&gauge_danger_section_style, 5);
+    lv_style_set_line_color(&gauge_danger_section_style, colours.gauge_danger);
 }
 
 /// @brief Apply the current theme to a specific screen
@@ -83,6 +107,12 @@ void StyleManager::reset_styles()
     lv_style_reset(&gauge_normal_style);
     lv_style_reset(&gauge_warning_style);
     lv_style_reset(&gauge_danger_style);
+    
+    // Reset shared gauge component styles
+    lv_style_reset(&gauge_indicator_style);
+    lv_style_reset(&gauge_items_style);
+    lv_style_reset(&gauge_main_style);
+    lv_style_reset(&gauge_danger_section_style);
 }
 
 /// @brief Get the colours scheme for the supplied theme

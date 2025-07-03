@@ -7,7 +7,8 @@
       "Bash(sudo npm install -g @anthropic-ai/claude-code)",
       "Bash(clear)",
       "Bash(pio run:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(pio.exe run:*)"
     ],
     "deny": []
   }

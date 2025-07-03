@@ -1,10 +1,9 @@
 #include "components/oem/oem_oil_component.h"
 
 OemOilComponent::OemOilComponent()
-    : _scale(nullptr), _needle_line(nullptr), _oil_icon(nullptr)
+    : _scale(nullptr), _needle_line(nullptr), _oil_icon(nullptr), _style_manager(&StyleManager::get_instance())
 {
-    // Initialize styles - DO NOT assign styles directly
-    initialize_styles();
+    // Cache StyleManager reference for performance
 }
 
 OemOilComponent::~OemOilComponent()
@@ -19,8 +18,7 @@ OemOilComponent::~OemOilComponent()
     if (_oil_icon)
         lv_obj_del(_oil_icon);
 
-    // Clean up styles
-    cleanup_styles();
+    // No style cleanup needed - styles are managed by StyleManager
 }
 
 /// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
@@ -68,7 +66,7 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
 {
     log_d("...");
 
-    const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
     lv_color_t colour = colours.gauge_normal;
 
     // Check danger condition based on derived class logic
@@ -112,35 +110,10 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
     return value;
 }
 
-/// @brief Sets up the danger zone section on the scale.
-void OemOilComponent::initialize_styles()
-{
-    lv_style_init(&_indicator_part_style);
-    lv_style_init(&_items_part_style);
-    lv_style_init(&_main_part_style);
-    lv_style_init(&_danger_section_items_part_style);
-}
-
-/// @brief Cleans up the styles used by the oil component.
-void OemOilComponent::cleanup_styles()
-{
-    lv_style_reset(&_indicator_part_style);
-    lv_style_reset(&_items_part_style);
-    lv_style_reset(&_main_part_style);
-    lv_style_reset(&_danger_section_items_part_style);
-}
 
 /// @brief Sets up the scale properties for the oil component.
 void OemOilComponent::create_scale()
 {
-    const StyleManager &styleManager = StyleManager::get_instance();
-    const ThemeColors &colours = styleManager.get_colours(styleManager.get_theme());
-
-    // Apply theme colors to styles
-    lv_style_set_line_color(&_indicator_part_style, colours.gauge_normal);
-    lv_style_set_line_color(&_items_part_style, colours.gauge_normal);
-    lv_style_set_line_color(&_danger_section_items_part_style, colours.gauge_danger);
-
     // Set scale properties from derived class
     lv_scale_set_mode(_scale, get_scale_mode());
     lv_scale_set_rotation(_scale, get_rotation());
@@ -152,26 +125,16 @@ void OemOilComponent::create_scale()
     lv_scale_set_major_tick_every(_scale, 2);
     lv_scale_set_label_show(_scale, false);
 
-    // Apply styles to scale parts
-    lv_style_set_arc_width(&_main_part_style, 0);
-    lv_obj_add_style(_scale, &_main_part_style, MAIN_DEFAULT);
-
-    // Indicator (Major ticks)
-    lv_style_set_length(&_indicator_part_style, 25);
-    lv_style_set_line_width(&_indicator_part_style, 7);
-    lv_obj_add_style(_scale, &_indicator_part_style, INDICATOR_DEFAULT);
-
-    // Items (Minor ticks)
-    lv_style_set_length(&_items_part_style, 18);
-    lv_style_set_line_width(&_items_part_style, 2);
-    lv_obj_add_style(_scale, &_items_part_style, ITEMS_DEFAULT);
+    // Apply shared styles to scale parts
+    lv_obj_add_style(_scale, _style_manager->get_gauge_main_style(), MAIN_DEFAULT);
+    lv_obj_add_style(_scale, _style_manager->get_gauge_indicator_style(), INDICATOR_DEFAULT);
+    lv_obj_add_style(_scale, _style_manager->get_gauge_items_style(), ITEMS_DEFAULT);
 
     // Create danger zone section
     lv_scale_section_t *section = lv_scale_add_section(_scale);
-    lv_style_set_line_width(&_danger_section_items_part_style, 5);
-    lv_scale_section_set_style(section, MAIN_DEFAULT, &_main_part_style);
-    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_danger_section_items_part_style);
-    lv_scale_section_set_style(section, ITEMS_DEFAULT, &_danger_section_items_part_style);
+    lv_scale_section_set_style(section, MAIN_DEFAULT, _style_manager->get_gauge_main_style());
+    lv_scale_section_set_style(section, INDICATOR_DEFAULT, _style_manager->get_gauge_danger_section_style());
+    lv_scale_section_set_style(section, ITEMS_DEFAULT, _style_manager->get_gauge_danger_section_style());
 
     // Set danger zone range - derived classes will handle specific ranges
     setup_danger_zone(section);
@@ -180,7 +143,7 @@ void OemOilComponent::create_scale()
 /// @brief Creates the needle line for the oil component.
 void OemOilComponent::create_needle()
 {
-    const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
     // Create needle line
     _needle_line = lv_line_create(_scale);
@@ -206,7 +169,7 @@ void OemOilComponent::create_needle()
 /// @brief Creates the oil icon for the oil component.
 void OemOilComponent::create_icon()
 {
-    const ThemeColors &colours = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
     _oil_icon = lv_image_create(_scale);
     lv_image_set_src(_oil_icon, get_icon());
