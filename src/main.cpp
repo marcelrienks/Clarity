@@ -15,8 +15,8 @@ void setup() {
 
     PanelManager &panel_manager = PanelManager::get_instance();
     panel_manager.init();
-    panel_manager.load_panel_with_Splash(preference_manager.config.panel_name.c_str());
-    //panel_manager.load_panel(preference_manager.config.panel_name.c_str());
+    //panel_manager.load_panel_with_Splash(preference_manager.config.panel_name.c_str());
+    panel_manager.load_panel(preference_manager.config.panel_name.c_str());
     Ticker::handle_lv_tasks();
   }
   catch (const std::exception &e) {

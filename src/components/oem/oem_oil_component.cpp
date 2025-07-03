@@ -39,14 +39,19 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
         lv_obj_set_size(_scale, 240, 240);
 
     // Apply location settings
-    if (location.align != LV_ALIGN_CENTER || location.x_offset != 0 || location.y_offset != 0)
+    log_i("Positioning scale with align=%d, x_offset=%d, y_offset=%d", location.align, location.x_offset, location.y_offset);
+    if (location.align != LV_ALIGN_CENTER || location.x_offset != 0 || location.y_offset != 0) {
         lv_obj_align(_scale, location.align, location.x_offset, location.y_offset);
-
-    else if (location.x != 0 || location.y != 0)
+        log_i("Used align positioning: align=%d", location.align);
+    }
+    else if (location.x != 0 || location.y != 0) {
         lv_obj_set_pos(_scale, location.x, location.y);
-
-    else
+        log_i("Used absolute positioning: x=%d, y=%d", location.x, location.y);
+    }
+    else {
         lv_obj_align(_scale, LV_ALIGN_CENTER, 0, 0);
+        log_i("Used default center positioning");
+    }
 
     // Setup scale properties based on derived class configuration
     create_scale();
