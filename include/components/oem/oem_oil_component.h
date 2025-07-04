@@ -55,8 +55,9 @@ public:
 protected:
     // LVGL objects
     lv_obj_t *_scale;
-    lv_obj_t *_needle_line;
-    lv_obj_t *_needle_base;  // Thicker base section for tapered appearance
+    lv_obj_t *_needle_line;      // Tip section - thinnest
+    lv_obj_t *_needle_middle;    // Middle section - medium thickness
+    lv_obj_t *_needle_base;      // Base section - thickest for smooth tapered appearance
     lv_obj_t *_oil_icon;
     
     // Cached StyleManager reference (optimization)
