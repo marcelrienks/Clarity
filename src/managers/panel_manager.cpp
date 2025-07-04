@@ -14,8 +14,7 @@ PanelManager &PanelManager::get_instance()
 }
 
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
-/// @param device the device to be used for panel rendering
-/// @param previous_panel the name of the panel to be shown
+/// Registers all available panel types with the factory for dynamic creation
 void PanelManager::init()
 {
     log_d("...");
@@ -67,9 +66,9 @@ std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
     return iterator->second(); // Return the function stored in the map
 }
 
-/// @brief Show the given panel
-/// @param panel the panel to be shown
-/// @param show_panel_completion_callback the function to be called when the panel show is complete
+/// @brief Load the given panel with initialization and callback handling
+/// @param panel the panel to be loaded
+/// @param completion_callback the function to be called when the panel load is complete
 void PanelManager::load_panel(std::shared_ptr<IPanel> panel, std::function<void()> completion_callback)
 {
     log_i("Loading %s", panel->get_name());

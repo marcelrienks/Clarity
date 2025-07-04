@@ -16,7 +16,7 @@ SplashPanel::~SplashPanel()
 }
 
 /// @brief Initialize the screen with component
-/// @param device the device housing the screens
+/// Creates blank screens for animation transitions
 void SplashPanel::init()
 {
     log_d("...");

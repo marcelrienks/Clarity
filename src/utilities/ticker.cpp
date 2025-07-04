@@ -1,7 +1,7 @@
 #include "utilities/ticker.h"
 
-/// @brief get the elapsed time since the last call to this function
-/// @return elapsed time since last get
+/// @brief Get the elapsed time since the last call to this function and update internal timestamp
+/// @return elapsed time since last call in milliseconds
 uint32_t Ticker::get_elapsed_millis() {
     static uint32_t last_time_stamp = millis();
 

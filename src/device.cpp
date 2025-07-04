@@ -95,10 +95,10 @@ void Device::prepare()
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 }
 
-/// @brief Static Display Flush Wrapper function
-/// @param display
-/// @param area
-/// @param data
+/// @brief Static Display Flush Wrapper function for LVGL display driver
+/// @param display LVGL display object
+/// @param area Screen area to flush
+/// @param data Pixel data buffer to display
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
     Device *device_instance = (Device *)lv_display_get_user_data(display);

@@ -1,7 +1,7 @@
 #include "managers/preference_manager.h"
 
-/// @brief Get the singleton instance of PanelManager
-/// @return instance of PanelManager
+/// @brief Get the singleton instance of PreferenceManager
+/// @return instance of PreferenceManager
 PreferenceManager &PreferenceManager::get_instance()
 {
     static PreferenceManager instance; // this ensures that the instance is created only once

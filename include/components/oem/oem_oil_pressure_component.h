@@ -13,10 +13,10 @@
  * it should take up the whole of the half of the screen to match the existing oem styled gauges.
  * 
  * @specialization Oil Pressure Monitoring
- * @measurement_unit Bar (100 kPa)
- * @range 0-10 BAR
- * @scale 0-100 to allow for decimal precision given that lvgl scale does not allow for decimals
- * @danger_zone Below 0-2 Bar (low pressure warning)
+ * @measurement_unit Bar (100 Kpa)
+ * @range 0-6 Bar
+ * @scale 0-60 mapping values for decimal precision
+ * @danger_zone Below 2 Bar (low pressure warning)
  * @icon Oil can icon (oil_can_regular.h)
  * 
 * @position Intention: Only one half of the screen
@@ -24,7 +24,7 @@
  * @data_source OilPressureSensor with delta-based updates
  * 
  * @gauge_configuration:
- * - Scale: 0-100 mapped to a range of 0-10 Bar linear scale to allow for decimal precision
+ * - Scale: 0-60 mapping values for decimal precision
  * - Rotation: Standard circular gauge
  * - Angle range: Full circle coverage
  * - Danger zone: 0-2 Bar highlighted in red

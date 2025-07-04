@@ -25,7 +25,7 @@ OemOilPanel::~OemOilPanel()
 }
 
 /// @brief Initialize the panel for showing Oil related information
-/// @param device
+/// Creates screen and initializes sensors with sentinel values
 void OemOilPanel::init()
 {
     log_d("...");
@@ -39,8 +39,8 @@ void OemOilPanel::init()
     _current_oil_temperature_value = -1; // Sentinel value to ensure first update
 }
 
-/// @brief Show the panel
-/// @param callback_function to be called when the panel show is completed
+/// @brief Load the panel with component rendering and screen display
+/// @param show_panel_completion_callback to be called when the panel load is completed
 void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
 {
     log_d("...");

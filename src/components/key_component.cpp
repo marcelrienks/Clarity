@@ -1,5 +1,5 @@
 #include "components/key_component.h"
-#include <icons/key-solid.h>
+#include <icons/lock-alt-solid.h>
 
 KeyComponent::KeyComponent() : _key_icon(nullptr)
 {

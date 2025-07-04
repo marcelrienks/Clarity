@@ -20,7 +20,7 @@
  * 
  * @data_source Designed to work with KeySensor for status updates
  * @visual_states Normal, active, warning states with color changes
- * @icon_resource Uses key-solid icon from icon resources
+ * @icon_resource Uses lock-alt-solid icon from icon resources
  * 
  * @context This component shows key/ignition status. It's part of
  * the broader vehicle monitoring system and could be used in various

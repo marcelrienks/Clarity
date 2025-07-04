@@ -17,8 +17,8 @@
  * unnecessary UI updates.
  * 
  * @model_role Provides oil pressure data to OemOilPressureComponent
- * @data_type int32_t (Bar - Barometric Pressure)
- * @range 0-10 Bar typical automotive range
+ * @data_type int32_t (PSI - Pounds per Square Inch)
+ * @range 0-60 PSI typical automotive range
  * @update_frequency 1 Hz (every 1000ms)
  * 
  * @performance_features:
@@ -32,8 +32,8 @@
  * @calibration Future: ADC calibration for actual pressure sensors
  * 
  * @critical_thresholds:
- * - Normal: 0-10 Bar
- * - Warning: 0-2 Bar
+ * - Normal: 5-60 PSI
+ * - Warning: 0-5 PSI
  * 
  * @context This sensor feeds the left-side oil pressure gauge.
  * It provides smart caching and delta updates for smooth performance.
