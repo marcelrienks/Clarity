@@ -107,8 +107,9 @@ void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area
     uint32_t height = lv_area_get_height(area);
     lv_draw_sw_rgb565_swap(data, width * height);
 
-    if (device_instance->getStartCount() == 0)
+    if (device_instance->getStartCount() == 0) {
         device_instance->endWrite();
+    }
 
     device_instance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
     lv_disp_flush_ready(display);

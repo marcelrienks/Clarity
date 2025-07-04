@@ -8,20 +8,25 @@ OemOilPanel::OemOilPanel()
 
 OemOilPanel::~OemOilPanel()
 {
-    if (_screen)
+    if (_screen) {
         lv_obj_delete(_screen);
+    }
 
-    if (_oem_oil_pressure_component)
+    if (_oem_oil_pressure_component) {
         _oem_oil_pressure_component.reset();
+    }
 
-    if (_oem_oil_temperature_component)
+    if (_oem_oil_temperature_component) {
         _oem_oil_temperature_component.reset();
+    }
 
-    if (_oem_oil_pressure_sensor)
+    if (_oem_oil_pressure_sensor) {
         _oem_oil_pressure_sensor.reset();
+    }
 
-    if (_oem_oil_temperature_sensor)
+    if (_oem_oil_temperature_sensor) {
         _oem_oil_temperature_sensor.reset();
+    }
 }
 
 /// @brief Initialize the panel for showing Oil related information
@@ -144,20 +149,18 @@ void OemOilPanel::update_panel_completion_callback(lv_anim_t *animation)
     auto sensor_type = static_cast<OilSensorTypes>(reinterpret_cast<uintptr_t>(animation->user_data));
 
     // Determine which animation has completed and update the corresponding value
-    if (sensor_type == OilSensorTypes::Pressure)
-    {
+    if (sensor_type == OilSensorTypes::Pressure) {
         this_instance->_current_oil_pressure_value = animation->current_value;
         this_instance->_is_pressure_animation_running = false;
-    }
-    else if (sensor_type == OilSensorTypes::Temperature)
-    {
+    } else if (sensor_type == OilSensorTypes::Temperature) {
         this_instance->_current_oil_temperature_value = animation->current_value;
         this_instance->_is_temperature_animation_running = false;
     }
 
     // Only call the callback function if both animations are not running
-    if (!this_instance->_is_pressure_animation_running && !this_instance->_is_temperature_animation_running)
+    if (!this_instance->_is_pressure_animation_running && !this_instance->_is_temperature_animation_running) {
         this_instance->_callback_function();
+    }
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached

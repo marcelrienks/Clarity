@@ -5,14 +5,17 @@ SplashPanel::SplashPanel()
 
 SplashPanel::~SplashPanel()
 {
-    if (_screen)
+    if (_screen) {
         lv_obj_del(_screen);
+    }
 
-    if (_blank_screen)
+    if (_blank_screen) {
         lv_obj_del(_blank_screen);
+    }
 
-    if (_component)
+    if (_component) {
         _component.reset();
+    }
 }
 
 /// @brief Initialize the screen with component

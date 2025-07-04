@@ -9,14 +9,17 @@ OemOilComponent::OemOilComponent()
 OemOilComponent::~OemOilComponent()
 {
     // Clean up LVGL objects
-    if (_needle_line)
+    if (_needle_line) {
         lv_obj_del(_needle_line);
+    }
 
-    if (_scale)
+    if (_scale) {
         lv_obj_del(_scale);
+    }
 
-    if (_oil_icon)
+    if (_oil_icon) {
         lv_obj_del(_oil_icon);
+    }
 
     // No style cleanup needed - styles are managed by StyleManager
 }
@@ -32,23 +35,21 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
     _scale = lv_scale_create(screen);
 
     // Apply location settings
-    if (location.width != LV_SIZE_CONTENT || location.height != LV_SIZE_CONTENT)
+    if (location.width != LV_SIZE_CONTENT || location.height != LV_SIZE_CONTENT) {
         lv_obj_set_size(_scale, location.width, location.height);
-
-    else
+    } else {
         lv_obj_set_size(_scale, 240, 240);
+    }
 
     // Apply location settings
     log_i("Positioning scale with align=%d, x_offset=%d, y_offset=%d", location.align, location.x_offset, location.y_offset);
     if (location.align != LV_ALIGN_CENTER || location.x_offset != 0 || location.y_offset != 0) {
         lv_obj_align(_scale, location.align, location.x_offset, location.y_offset);
         log_i("Used align positioning: align=%d", location.align);
-    }
-    else if (location.x != 0 || location.y != 0) {
+    } else if (location.x != 0 || location.y != 0) {
         lv_obj_set_pos(_scale, location.x, location.y);
         log_i("Used absolute positioning: x=%d, y=%d", location.x, location.y);
-    }
-    else {
+    } else {
         lv_obj_align(_scale, LV_ALIGN_CENTER, 0, 0);
         log_i("Used default center positioning");
     }
