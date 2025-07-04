@@ -48,13 +48,6 @@ lv_scale_mode_t OemOilPressureComponent::get_scale_mode() const
     return LV_SCALE_MODE_ROUND_INNER;
 }
 
-/// @brief Gets the rotation angle for the oil pressure component.
-/// @return The rotation angle.
-int32_t OemOilPressureComponent::get_rotation() const
-{
-    return 210;
-}
-
 /// @brief Gets the angle range for the oil pressure component.
 /// @return The angle range.
 int32_t OemOilPressureComponent::get_angle_range() const

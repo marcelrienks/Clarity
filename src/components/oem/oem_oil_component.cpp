@@ -36,11 +36,10 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
     lv_obj_set_size(_scale, 240, 240);
 
     // Apply location settings
-    log_d("Positioning scale with align=%d, x_offset=%d, y_offset=%d", location.align, location.x_offset, location.y_offset);
     lv_obj_align(_scale, location.align, location.x_offset, location.y_offset);
 
     // Setup scale properties based on derived class configuration
-    create_scale();
+    create_scale(location.rotation);
     create_needle();
     create_icon();
 
@@ -101,11 +100,11 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
 
 
 /// @brief Sets up the scale properties for the oil component.
-void OemOilComponent::create_scale()
+void OemOilComponent::create_scale(int32_t rotation)
 {
     // Set scale properties from derived class
     lv_scale_set_mode(_scale, get_scale_mode());
-    lv_scale_set_rotation(_scale, get_rotation());
+    lv_scale_set_rotation(_scale, rotation);
     lv_scale_set_angle_range(_scale, get_angle_range());
     lv_scale_set_range(_scale, get_scale_min(), get_scale_max());
 

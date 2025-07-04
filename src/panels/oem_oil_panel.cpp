@@ -51,9 +51,9 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     log_d("...");
     _callback_function = show_panel_completion_callback;
 
-    // Create location parameters for components
-    ComponentLocation pressure_location(LV_ALIGN_CENTER, 0, 0);
-    ComponentLocation temperature_location(LV_ALIGN_CENTER, 0, 0);
+    // Create location parameters with rotational start points for scales
+    ComponentLocation pressure_location(210);
+    ComponentLocation temperature_location(30);
     
     _oem_oil_pressure_component->render_load(_screen, pressure_location);
     _oem_oil_temperature_component->render_load(_screen, temperature_location);

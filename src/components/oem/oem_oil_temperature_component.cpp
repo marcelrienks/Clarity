@@ -48,13 +48,6 @@ lv_scale_mode_t OemOilTemperatureComponent::get_scale_mode() const
     return LV_SCALE_MODE_ROUND_INNER;
 }
 
-/// @brief Gets the rotation angle for the oil temperature component.
-/// @return The rotation angle.
-int32_t OemOilTemperatureComponent::get_rotation() const
-{
-    return 30;
-}
-
 /// @brief Gets the angle range for the oil temperature component.
 /// @return The angle range.
 int32_t OemOilTemperatureComponent::get_angle_range() const

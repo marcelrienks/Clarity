@@ -72,7 +72,6 @@ protected:
     virtual int32_t get_danger_zone() const = 0;
     virtual lv_align_t get_alignment() const = 0;
     virtual lv_scale_mode_t get_scale_mode() const = 0;
-    virtual int32_t get_rotation() const = 0;
     virtual int32_t get_angle_range() const = 0;
     virtual bool is_danger_condition(int32_t value) const = 0;
     virtual int32_t map_value_for_display(int32_t value) const;
@@ -80,7 +79,7 @@ protected:
     virtual int32_t get_icon_y_offset() const = 0;
 
 private:
-    void create_scale();
+    void create_scale(int32_t rotation);
     void create_needle();
     void create_icon();
 };
