@@ -33,35 +33,18 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
 
     // Create the scale
     _scale = lv_scale_create(screen);
+    lv_obj_set_size(_scale, 240, 240);
 
     // Apply location settings
-    if (location.width != LV_SIZE_CONTENT || location.height != LV_SIZE_CONTENT) {
-        lv_obj_set_size(_scale, location.width, location.height);
-    } else {
-        lv_obj_set_size(_scale, 240, 240);
-    }
-
-    // Apply location settings
-    log_i("Positioning scale with align=%d, x_offset=%d, y_offset=%d", location.align, location.x_offset, location.y_offset);
-    if (location.align != LV_ALIGN_CENTER || location.x_offset != 0 || location.y_offset != 0) {
-        lv_obj_align(_scale, location.align, location.x_offset, location.y_offset);
-        log_i("Used align positioning: align=%d", location.align);
-    } else if (location.x != 0 || location.y != 0) {
-        lv_obj_set_pos(_scale, location.x, location.y);
-        log_i("Used absolute positioning: x=%d, y=%d", location.x, location.y);
-    } else {
-        lv_obj_align(_scale, LV_ALIGN_CENTER, 0, 0);
-        log_i("Used default center positioning");
-    }
+    log_d("Positioning scale with align=%d, x_offset=%d, y_offset=%d", location.align, location.x_offset, location.y_offset);
+    lv_obj_align(_scale, location.align, location.x_offset, location.y_offset);
 
     // Setup scale properties based on derived class configuration
     create_scale();
-
-    // Create needle and icon
     create_needle();
     create_icon();
 
-    log_d("rendered load with location");
+    log_d("rendered load");
 }
 
 /// @brief Updates the rendered oil component.

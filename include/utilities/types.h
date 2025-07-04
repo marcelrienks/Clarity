@@ -118,8 +118,6 @@ struct ComponentLocation
     lv_align_t align = LV_ALIGN_CENTER;      ///< LVGL alignment mode
     lv_coord_t x_offset = 0;                 ///< X offset from alignment point
     lv_coord_t y_offset = 0;                 ///< Y offset from alignment point
-    lv_coord_t width = LV_SIZE_CONTENT;      ///< Component width (or auto)
-    lv_coord_t height = LV_SIZE_CONTENT;     ///< Component height (or auto)
     
     ComponentLocation() = default;
     
