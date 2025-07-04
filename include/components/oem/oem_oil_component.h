@@ -56,6 +56,7 @@ protected:
     // LVGL objects
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;
+    lv_obj_t *_needle_base;  // Thicker base section for tapered appearance
     lv_obj_t *_oil_icon;
     
     // Cached StyleManager reference (optimization)

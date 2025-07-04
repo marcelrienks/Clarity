@@ -1,7 +1,7 @@
 #include "components/oem/oem_oil_component.h"
 
 OemOilComponent::OemOilComponent()
-    : _scale(nullptr), _needle_line(nullptr), _oil_icon(nullptr), _style_manager(&StyleManager::get_instance())
+    : _scale(nullptr), _needle_line(nullptr), _needle_base(nullptr), _oil_icon(nullptr), _style_manager(&StyleManager::get_instance())
 {
     // Cache StyleManager reference for performance
 }
@@ -11,6 +11,10 @@ OemOilComponent::~OemOilComponent()
     // Clean up LVGL objects
     if (_needle_line) {
         lv_obj_del(_needle_line);
+    }
+    
+    if (_needle_base) {
+        lv_obj_del(_needle_base);
     }
 
     if (_scale) {
@@ -61,8 +65,9 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
     if (is_danger_condition(end))
         colour = colours.gauge_danger;
 
-    // Update needle and icon colors
+    // Update needle and icon colors (both needle parts)
     lv_obj_set_style_line_color(_needle_line, colour, MAIN_DEFAULT);
+    lv_obj_set_style_line_color(_needle_base, colour, MAIN_DEFAULT);  // Fix: Update base section too
     lv_obj_set_style_image_recolor(_oil_icon, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
@@ -85,7 +90,10 @@ void OemOilComponent::set_value(int32_t value)
 
     // Allow derived classes to map values if needed (e.g., for reversed scales)
     int32_t mapped_value = map_value_for_display(value);
+    
+    // Update both needle parts for tapered appearance
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);
+    lv_scale_set_line_needle_value(_scale, _needle_base, _needle_length / 2, mapped_value);  // Base is 1/2 length for better taper
 }
 
 /// @brief Maps the value for display on the oil component.
@@ -133,16 +141,25 @@ void OemOilComponent::create_needle()
 {
     const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
-    // Create needle line
+    // Create realistic white/silver needle with tapered appearance (based on actual car dashboard reference)
     _needle_line = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_line, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_line_width(_needle_line, 5, MAIN_DEFAULT);
-    lv_obj_set_style_line_rounded(_needle_line, false, MAIN_DEFAULT);
+    
+    // Clean white/silver appearance (no shadows to prevent tearing)
+    lv_obj_set_style_line_color(_needle_line, lv_color_hex(0xF0F0F0), MAIN_DEFAULT);  // Light silver
+    lv_obj_set_style_line_width(_needle_line, 4, MAIN_DEFAULT);  // Good visibility
+    lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);  // Rounded ends for elegance
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
+    
+    // Create a thicker base section near pivot to simulate tapered appearance
+    _needle_base = lv_line_create(_scale);
+    lv_obj_set_style_line_color(_needle_base, lv_color_hex(0xF0F0F0), MAIN_DEFAULT);  // Same color
+    lv_obj_set_style_line_width(_needle_base, 6, MAIN_DEFAULT);  // Thicker base
+    lv_obj_set_style_line_rounded(_needle_base, true, MAIN_DEFAULT);
+    lv_obj_set_style_line_opa(_needle_base, LV_OPA_COVER, MAIN_DEFAULT);
 
     // Realistic dark plastic pivot point (based on actual car dashboard reference)
     auto _pivot_circle = lv_obj_create(_scale);
-    lv_obj_set_size(_pivot_circle, 28U, 28U);  // Realistic proportion
+    lv_obj_set_size(_pivot_circle, 32U, 32U);  // Slightly larger for better visibility
     lv_obj_center(_pivot_circle);
     lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
     
@@ -166,7 +183,7 @@ void OemOilComponent::create_needle()
     
     // Center light pickup highlight (where light hits the plastic)
     auto _pivot_highlight = lv_obj_create(_pivot_circle);
-    lv_obj_set_size(_pivot_highlight, 10U, 10U);  // Small center highlight
+    lv_obj_set_size(_pivot_highlight, 12U, 12U);  // Proportional to larger pivot
     lv_obj_center(_pivot_highlight);
     lv_obj_set_style_radius(_pivot_highlight, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
     lv_obj_set_style_bg_color(_pivot_highlight, lv_color_hex(0x707070), MAIN_DEFAULT);  // Light gray highlight
