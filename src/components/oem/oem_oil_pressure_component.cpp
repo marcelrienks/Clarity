@@ -34,12 +34,6 @@ int32_t OemOilPressureComponent::get_danger_zone() const
     return 5;
 }
 
-/// @brief Gets the alignment for the oil pressure component.
-/// @return The alignment value.
-lv_align_t OemOilPressureComponent::get_alignment() const
-{
-    return LV_ALIGN_TOP_MID;
-}
 
 /// @brief Gets the scale mode for the oil pressure component.
 /// @return The scale mode.

@@ -26,13 +26,7 @@ void KeyComponent::render_load(lv_obj_t *screen, const ComponentLocation& locati
     lv_img_set_src(_key_icon, &lock_alt_solid);
     
     // Apply location settings
-    if (location.align != LV_ALIGN_CENTER || location.x_offset != 0 || location.y_offset != 0) {
-        lv_obj_align(_key_icon, location.align, location.x_offset, location.y_offset);
-    } else if (location.x != 0 || location.y != 0) {
-        lv_obj_set_pos(_key_icon, location.x, location.y);
-    } else {
-        lv_obj_align(_key_icon, LV_ALIGN_CENTER, 0, 0);
-    }
+    lv_obj_align(_key_icon, location.align, location.x_offset, location.y_offset);
     
     lv_obj_set_style_img_recolor(_key_icon, lv_color_hex(0xFFFFFF), 0);
 

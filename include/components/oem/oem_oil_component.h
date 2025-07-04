@@ -70,7 +70,6 @@ protected:
     virtual int32_t get_scale_min() const = 0;
     virtual int32_t get_scale_max() const = 0;
     virtual int32_t get_danger_zone() const = 0;
-    virtual lv_align_t get_alignment() const = 0;
     virtual lv_scale_mode_t get_scale_mode() const = 0;
     virtual int32_t get_angle_range() const = 0;
     virtual bool is_danger_condition(int32_t value) const = 0;

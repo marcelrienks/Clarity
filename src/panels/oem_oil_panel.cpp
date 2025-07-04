@@ -73,12 +73,24 @@ void OemOilPanel::update(std::function<void()> update_panel_completion_callback)
     log_v("updating...");
     OemOilPanel::update_oil_pressure();
     OemOilPanel::update_oil_temperature();
+    
+    // If no animations were started, call completion callback immediately
+    if (!_is_pressure_animation_running && !_is_temperature_animation_running) {
+        log_d("No animations running, calling completion callback immediately");
+        _callback_function();
+    }
 }
 
 /// @brief Update the oil pressure reading on the screen
 void OemOilPanel::update_oil_pressure()
 {
     log_d("...");
+
+    // Skip update if pressure animation is already running
+    if (_is_pressure_animation_running) {
+        log_d("Pressure animation running, skipping update");
+        return;
+    }
 
     // Use delta-based updates for better performance
     auto value = std::get<int32_t>(_oem_oil_pressure_sensor->get_reading());
@@ -106,6 +118,12 @@ void OemOilPanel::update_oil_pressure()
 void OemOilPanel::update_oil_temperature()
 {
     log_d("...");
+
+    // Skip update if temperature animation is already running
+    if (_is_temperature_animation_running) {
+        log_d("Temperature animation running, skipping update");
+        return;
+    }
 
     // Use delta-based updates for better performance
     auto value = std::get<int32_t>(_oem_oil_temperature_sensor->get_reading());

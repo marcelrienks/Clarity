@@ -34,12 +34,6 @@ int32_t OemOilTemperatureComponent::get_danger_zone() const
     return 100;
 }
 
-/// @brief Gets the alignment for the oil temperature component.
-/// @return The alignment value.
-lv_align_t OemOilTemperatureComponent::get_alignment() const
-{
-    return LV_ALIGN_BOTTOM_MID;
-}
 
 /// @brief Gets the scale mode for the oil temperature component.
 /// @return The scale mode.
