@@ -75,3 +75,7 @@ Target hardware: 240x240 round GC9A01 display
 - SPI interface on SPI2_HOST
 - Hardware pins defined in `device.h`
 - LVGL buffer sized for 60-line dual buffering
+
+## Development Notes
+
+- Local testing is done via a tool called wokwi to emulate a display, but it can only offer a square display rather than the round display that this application is intended for. And a limitation of that display is it renders the image inverted horizontally

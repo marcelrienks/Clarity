@@ -7,6 +7,38 @@
 #include <LovyanGFX.hpp>
 #include <esp_random.h>
 
+/**
+ * @class OilPressureSensor
+ * @brief Oil pressure monitoring sensor with delta-based updates
+ * 
+ * @details This sensor monitors engine oil pressure levels and provides
+ * intelligent caching and delta-based updates for performance optimization.
+ * It implements time-based sampling and change detection to minimize
+ * unnecessary UI updates.
+ * 
+ * @model_role Provides oil pressure data to OemOilPressureComponent
+ * @data_type int32_t (Bar - Barometric Pressure)
+ * @range 0-10 Bar typical automotive range
+ * @update_frequency 1 Hz (every 1000ms)
+ * 
+ * @performance_features:
+ * - Delta-based updates: Only reports when value changes
+ * - Cached readings: Avoids redundant sensor polling
+ * - Time-based sampling: Controlled update intervals
+ * - Previous value tracking: Enables change detection
+ * 
+ * @simulation_mode Currently uses ESP32 random number generator for testing
+ * @hardware_interface Designed for analog pressure sensor input
+ * @calibration Future: ADC calibration for actual pressure sensors
+ * 
+ * @critical_thresholds:
+ * - Normal: 0-10 Bar
+ * - Warning: 0-2 Bar
+ * 
+ * @context This sensor feeds the left-side oil pressure gauge.
+ * It provides smart caching and delta updates for smooth performance.
+ * Currently simulated but designed for real pressure sensor integration.
+ */
 class OilPressureSensor : public ISensor
 {
 public:

@@ -13,6 +13,46 @@
 #include <vector>
 #include <map>
 
+/**
+ * @class PanelManager
+ * @brief Singleton factory for panel lifecycle management and transitions
+ * 
+ * @details This manager handles the complete lifecycle of panels including
+ * creation, loading, updating, and transitions. It implements both Factory
+ * and Singleton patterns to provide centralized panel management with
+ * dynamic panel registration and creation.
+ * 
+ * @design_patterns:
+ * - Singleton: Single instance manages all panels
+ * - Factory: Dynamic panel creation via registration
+ * - Template: Type-safe panel registration
+ * 
+ * @panel_lifecycle:
+ * 1. Register panel types with register_panel<T>()
+ * 2. Create panels dynamically via create_panel()
+ * 3. Load panels with init() → load() → show callbacks
+ * 4. Update panels with periodic refresh_panel()
+ * 5. Transition between panels with load_panel()
+ * 
+ * @registered_panels:
+ * - SplashPanel: Startup/branding screen
+ * - OemOilPanel: Main oil monitoring dashboard
+ * - Future panels: Easy extensibility via registration
+ * 
+ * @state_management:
+ * - _is_loading: Prevents concurrent panel operations
+ * - _panel: Current active panel instance
+ * - Callback-based completion handling
+ * 
+ * @special_features:
+ * - load_panel_with_Splash(): Smooth transitions with splash screen
+ * - refresh_panel(): Periodic updates without full reload
+ * - Thread-safe loading state management
+ * 
+ * @context This is the main coordinator for all panel operations.
+ * It manages the current panel (likely OemOilPanel) and handles transitions.
+ * The factory pattern allows easy addition of new panel types.
+ */
 class PanelManager
 {
 public:

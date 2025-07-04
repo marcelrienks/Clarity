@@ -9,6 +9,36 @@
 
 #include <utilities/lv_tools.h>
 
+/**
+ * @class OemOilPanel
+ * @brief Main oil monitoring dashboard panel
+ * 
+ * @details This panel serves as the primary monitoring interface for engine oil
+ * systems. It coordinates two specialized gauge components for pressure and
+ * temperature monitoring, positioned side-by-side for optimal visibility.
+ * 
+ * @presenter_role Coordinates OemOilPressureComponent and OemOilTemperatureComponent
+ * @data_sources OilPressureSensor and OilTemperatureSensor with delta-based updates
+ * @update_strategy Smart caching with animation-based smooth transitions
+ * 
+ * @ui_layout:
+ * - Oil Pressure Gauge: Left side (LV_ALIGN_LEFT_MID) - 120x120px
+ * - Oil Temperature Gauge: Right side (LV_ALIGN_RIGHT_MID) - 120x120px
+ * - Both gauges feature danger zone indicators and smooth needle animations
+ * 
+ * @animation_system:
+ * - Dual independent animations for pressure and temperature
+ * - Prevents conflicts with separate animation objects
+ * - Completion callbacks ensure proper synchronization
+ * 
+ * @performance_optimizations:
+ * - Delta-based updates (skips unchanged values)
+ * - Cached previous values for comparison
+ * - Efficient animation state tracking
+ * 
+ * @context The components are currently set to 240x240 size in order to ensure
+ * that they maintain a consistent appearance with OEM styling by being shown on either side of the screen.
+ */
 class OemOilPanel : public IPanel
 {
 public:
