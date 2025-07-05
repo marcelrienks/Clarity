@@ -58,6 +58,9 @@ protected:
     lv_obj_t *_needle_line;      // Tip section - thinnest
     lv_obj_t *_needle_middle;    // Middle section - medium thickness
     lv_obj_t *_needle_base;      // Base section - thickest for smooth tapered appearance
+    lv_obj_t *_needle_highlight_line;    // Highlight line for 3D effect - tip
+    lv_obj_t *_needle_highlight_middle;  // Highlight line for 3D effect - middle
+    lv_obj_t *_needle_highlight_base;    // Highlight line for 3D effect - base
     lv_obj_t *_oil_icon;
     lv_obj_t *_low_label;        // "L" label for low end
     lv_obj_t *_high_label;       // "H" label for high end

@@ -2,7 +2,7 @@
 #include <math.h>
 
 OemOilComponent::OemOilComponent()
-    : _scale(nullptr), _needle_line(nullptr), _needle_middle(nullptr), _needle_base(nullptr), _oil_icon(nullptr), _low_label(nullptr), _high_label(nullptr), _scale_rotation(0), _style_manager(&StyleManager::get_instance())
+    : _scale(nullptr), _needle_line(nullptr), _needle_middle(nullptr), _needle_base(nullptr), _needle_highlight_line(nullptr), _needle_highlight_middle(nullptr), _needle_highlight_base(nullptr), _oil_icon(nullptr), _low_label(nullptr), _high_label(nullptr), _scale_rotation(0), _style_manager(&StyleManager::get_instance())
 {
     // Cache StyleManager reference for performance
 }
@@ -20,6 +20,18 @@ OemOilComponent::~OemOilComponent()
     
     if (_needle_base) {
         lv_obj_del(_needle_base);
+    }
+
+    if (_needle_highlight_line) {
+        lv_obj_del(_needle_highlight_line);
+    }
+    
+    if (_needle_highlight_middle) {
+        lv_obj_del(_needle_highlight_middle);
+    }
+    
+    if (_needle_highlight_base) {
+        lv_obj_del(_needle_highlight_base);
     }
 
     if (_scale) {
@@ -85,11 +97,21 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
         lv_obj_set_style_line_color(_needle_line, lv_color_lighten(colour, 20), MAIN_DEFAULT);    // Lighter red tip
         lv_obj_set_style_line_color(_needle_middle, colour, MAIN_DEFAULT);                        // Medium red middle
         lv_obj_set_style_line_color(_needle_base, lv_color_darken(colour, 15), MAIN_DEFAULT);     // Darker red base
+        
+        // Highlight lines in danger mode - subtle red highlights
+        lv_obj_set_style_line_color(_needle_highlight_line, lv_color_lighten(colour, 40), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_lighten(colour, 30), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_base, lv_color_lighten(colour, 20), MAIN_DEFAULT);
     } else {
         // Normal mode - metallic silver gradient for 3D effect
         lv_obj_set_style_line_color(_needle_line, lv_color_hex(0xF8F8F8), MAIN_DEFAULT);    // Bright silver tip
         lv_obj_set_style_line_color(_needle_middle, lv_color_hex(0xF0F0F0), MAIN_DEFAULT);  // Medium silver middle
         lv_obj_set_style_line_color(_needle_base, lv_color_hex(0xE8E8E8), MAIN_DEFAULT);    // Darker silver base
+        
+        // Highlight lines in normal mode - bright white highlights
+        lv_obj_set_style_line_color(_needle_highlight_line, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_base, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);
     }
     lv_obj_set_style_image_recolor(_oil_icon, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
@@ -118,6 +140,11 @@ void OemOilComponent::set_value(int32_t value)
     lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);              // Full length (tip)
     lv_scale_set_line_needle_value(_scale, _needle_middle, (_needle_length * 2) / 3, mapped_value);  // 2/3 length (middle)
     lv_scale_set_line_needle_value(_scale, _needle_base, _needle_length / 3, mapped_value);          // 1/3 length (base)
+    
+    // Update highlight lines for 3D effect
+    lv_scale_set_line_needle_value(_scale, _needle_highlight_line, _needle_length - 2, mapped_value);              // Slightly shorter for highlight effect
+    lv_scale_set_line_needle_value(_scale, _needle_highlight_middle, ((_needle_length * 2) / 3) - 2, mapped_value);  // 2/3 length highlight
+    lv_scale_set_line_needle_value(_scale, _needle_highlight_base, (_needle_length / 3) - 2, mapped_value);          // 1/3 length highlight
 }
 
 /// @brief Maps the value for display on the oil component.
@@ -169,26 +196,52 @@ void OemOilComponent::create_needle()
 
     // Create realistic 3-section tapered needle (based on actual car dashboard reference)
     
-    // Section 1: Tip section with subtle 3D effect - thinnest (outer third)
+    // Section 1: Tip section with enhanced 3D effect - thinnest (outer third)
     _needle_line = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_line, lv_color_hex(0xF8F8F8), MAIN_DEFAULT);  // Bright metallic silver
     lv_obj_set_style_line_width(_needle_line, 4, MAIN_DEFAULT);  // Slightly thicker tip
     lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);  // Rounded ends
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
     
-    // Section 2: Middle section with subtle 3D effect - medium thickness (middle third)
+    
+    // Section 2: Middle section with enhanced 3D effect - medium thickness (middle third)
     _needle_middle = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_middle, lv_color_hex(0xF0F0F0), MAIN_DEFAULT);  // Medium metallic silver
     lv_obj_set_style_line_width(_needle_middle, 5, MAIN_DEFAULT);  // Thicker medium section
     lv_obj_set_style_line_rounded(_needle_middle, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_middle, LV_OPA_COVER, MAIN_DEFAULT);
     
-    // Section 3: Base section with subtle 3D effect - thickest (inner third near pivot)
+    
+    // Section 3: Base section with enhanced 3D effect - thickest (inner third near pivot)
     _needle_base = lv_line_create(_scale);
     lv_obj_set_style_line_color(_needle_base, lv_color_hex(0xE8E8E8), MAIN_DEFAULT);  // Darker metallic silver
     lv_obj_set_style_line_width(_needle_base, 7, MAIN_DEFAULT);  // Thickest base section
     lv_obj_set_style_line_rounded(_needle_base, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_base, LV_OPA_COVER, MAIN_DEFAULT);
+    
+    
+    // Add subtle highlight lines for enhanced 3D effect (very subtle to avoid artifacts)
+    
+    // Highlight for tip section - very subtle white highlight
+    _needle_highlight_line = lv_line_create(_scale);
+    lv_obj_set_style_line_color(_needle_highlight_line, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);  // Pure white highlight
+    lv_obj_set_style_line_width(_needle_highlight_line, 1, MAIN_DEFAULT);  // Thin highlight line
+    lv_obj_set_style_line_rounded(_needle_highlight_line, true, MAIN_DEFAULT);
+    lv_obj_set_style_line_opa(_needle_highlight_line, LV_OPA_20, MAIN_DEFAULT);  // Very subtle
+    
+    // Highlight for middle section
+    _needle_highlight_middle = lv_line_create(_scale);
+    lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);  // Pure white highlight
+    lv_obj_set_style_line_width(_needle_highlight_middle, 1, MAIN_DEFAULT);  // Thin highlight line
+    lv_obj_set_style_line_rounded(_needle_highlight_middle, true, MAIN_DEFAULT);
+    lv_obj_set_style_line_opa(_needle_highlight_middle, LV_OPA_20, MAIN_DEFAULT);  // Very subtle
+    
+    // Highlight for base section
+    _needle_highlight_base = lv_line_create(_scale);
+    lv_obj_set_style_line_color(_needle_highlight_base, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);  // Pure white highlight
+    lv_obj_set_style_line_width(_needle_highlight_base, 1, MAIN_DEFAULT);  // Thin highlight line
+    lv_obj_set_style_line_rounded(_needle_highlight_base, true, MAIN_DEFAULT);
+    lv_obj_set_style_line_opa(_needle_highlight_base, LV_OPA_20, MAIN_DEFAULT);  // Very subtle
 
     // Realistic dark plastic pivot point (based on actual car dashboard reference)
     auto _pivot_circle = lv_obj_create(_scale);
