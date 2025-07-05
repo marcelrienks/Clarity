@@ -66,12 +66,12 @@ void StyleManager::set_theme(Themes theme)
     // Indicator style (Major ticks)
     lv_style_set_length(&gauge_indicator_style, 25);
     lv_style_set_line_width(&gauge_indicator_style, 7);
-    lv_style_set_line_color(&gauge_indicator_style, colours.gauge_normal);
+    lv_style_set_line_color(&gauge_indicator_style, colours.gauge_ticks);
     
     // Items style (Minor ticks)
     lv_style_set_length(&gauge_items_style, 18);
     lv_style_set_line_width(&gauge_items_style, 2);
-    lv_style_set_line_color(&gauge_items_style, colours.gauge_normal);
+    lv_style_set_line_color(&gauge_items_style, colours.gauge_ticks);
     
     // Main style (Arc)
     lv_style_set_arc_width(&gauge_main_style, 0);

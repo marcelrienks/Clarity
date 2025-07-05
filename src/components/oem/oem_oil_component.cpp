@@ -93,25 +93,25 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
 
     // Update needle and icon colors (all three needle sections with 3D gradient)
     if (is_danger_condition(end)) {
-        // Danger mode - all sections red with subtle gradient
-        lv_obj_set_style_line_color(_needle_line, lv_color_lighten(colour, 20), MAIN_DEFAULT);    // Lighter red tip
-        lv_obj_set_style_line_color(_needle_middle, colour, MAIN_DEFAULT);                        // Medium red middle
-        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colour, 15), MAIN_DEFAULT);     // Darker red base
+        // Danger mode - bright danger color with gradient
+        lv_obj_set_style_line_color(_needle_line, colours.needle_danger, MAIN_DEFAULT);                     // Bright danger tip
+        lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_danger, 10), MAIN_DEFAULT);  // Medium danger middle
+        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_danger, 20), MAIN_DEFAULT);     // Darker danger base
         
-        // Highlight lines in danger mode - subtle red highlights
-        lv_obj_set_style_line_color(_needle_highlight_line, lv_color_lighten(colour, 40), MAIN_DEFAULT);
-        lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_lighten(colour, 30), MAIN_DEFAULT);
-        lv_obj_set_style_line_color(_needle_highlight_base, lv_color_lighten(colour, 20), MAIN_DEFAULT);
+        // Highlight lines in danger mode - bright danger highlights
+        lv_obj_set_style_line_color(_needle_highlight_line, lv_color_lighten(colours.needle_danger, 30), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_lighten(colours.needle_danger, 20), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_base, lv_color_lighten(colours.needle_danger, 10), MAIN_DEFAULT);
     } else {
-        // Normal mode - metallic silver gradient for 3D effect
-        lv_obj_set_style_line_color(_needle_line, lv_color_hex(0xF8F8F8), MAIN_DEFAULT);    // Bright silver tip
-        lv_obj_set_style_line_color(_needle_middle, lv_color_hex(0xF0F0F0), MAIN_DEFAULT);  // Medium silver middle
-        lv_obj_set_style_line_color(_needle_base, lv_color_hex(0xE8E8E8), MAIN_DEFAULT);    // Darker silver base
+        // Normal mode - bright white gradient for 3D effect
+        lv_obj_set_style_line_color(_needle_line, colours.needle_normal, MAIN_DEFAULT);                     // Bright white tip
+        lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_normal, 10), MAIN_DEFAULT);  // Medium white middle
+        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_normal, 20), MAIN_DEFAULT);     // Darker white base
         
         // Highlight lines in normal mode - bright white highlights
-        lv_obj_set_style_line_color(_needle_highlight_line, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);
-        lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);
-        lv_obj_set_style_line_color(_needle_highlight_base, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_line, colours.needle_normal, MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_middle, colours.needle_normal, MAIN_DEFAULT);
+        lv_obj_set_style_line_color(_needle_highlight_base, colours.needle_normal, MAIN_DEFAULT);
     }
     lv_obj_set_style_image_recolor(_oil_icon, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
@@ -198,7 +198,7 @@ void OemOilComponent::create_needle()
     
     // Section 1: Tip section with enhanced 3D effect - thinnest (outer third)
     _needle_line = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_line, lv_color_hex(0xF8F8F8), MAIN_DEFAULT);  // Bright metallic silver
+    lv_obj_set_style_line_color(_needle_line, colours.needle_normal, MAIN_DEFAULT);  // Bright white from theme
     lv_obj_set_style_line_width(_needle_line, 4, MAIN_DEFAULT);  // Slightly thicker tip
     lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);  // Rounded ends
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
@@ -206,7 +206,7 @@ void OemOilComponent::create_needle()
     
     // Section 2: Middle section with enhanced 3D effect - medium thickness (middle third)
     _needle_middle = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_middle, lv_color_hex(0xF0F0F0), MAIN_DEFAULT);  // Medium metallic silver
+    lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_normal, 10), MAIN_DEFAULT);  // Slightly darker for gradient
     lv_obj_set_style_line_width(_needle_middle, 5, MAIN_DEFAULT);  // Thicker medium section
     lv_obj_set_style_line_rounded(_needle_middle, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_middle, LV_OPA_COVER, MAIN_DEFAULT);
@@ -214,7 +214,7 @@ void OemOilComponent::create_needle()
     
     // Section 3: Base section with enhanced 3D effect - thickest (inner third near pivot)
     _needle_base = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_base, lv_color_hex(0xE8E8E8), MAIN_DEFAULT);  // Darker metallic silver
+    lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_normal, 20), MAIN_DEFAULT);  // Darkest for gradient
     lv_obj_set_style_line_width(_needle_base, 7, MAIN_DEFAULT);  // Thickest base section
     lv_obj_set_style_line_rounded(_needle_base, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_base, LV_OPA_COVER, MAIN_DEFAULT);

@@ -12,12 +12,15 @@
 // Theme color definitions
 struct ThemeColors
 {
-    lv_color_t background;    // Background color
-    lv_color_t text;          // Text color
-    lv_color_t primary;       // Primary accent color
-    lv_color_t gauge_normal;  // Normal gauge color
-    lv_color_t gauge_warning; // Warning gauge color
-    lv_color_t gauge_danger;  // Danger gauge color
+    lv_color_t background;     // Background color
+    lv_color_t text;           // Text color
+    lv_color_t primary;        // Primary accent color
+    lv_color_t gauge_normal;   // Normal gauge color
+    lv_color_t gauge_warning;  // Warning gauge color
+    lv_color_t gauge_danger;   // Danger gauge color
+    lv_color_t gauge_ticks;    // Gauge tick marks (soft off-white)
+    lv_color_t needle_normal;  // Normal needle color (bright white)
+    lv_color_t needle_danger;  // Danger needle color (bright red/orange)
 };
 
 /**
@@ -106,14 +109,22 @@ private:
         .primary = lv_color_hex(0xEEEEEE),
         .gauge_normal = lv_color_hex(0xEEEEEE),
         .gauge_warning = lv_color_hex(0xFB8C00),
-        .gauge_danger = lv_color_hex(0xB00020)};
+        .gauge_danger = lv_color_hex(0xB00020),
+        .gauge_ticks = lv_color_hex(0xF0F0E8),     // Soft off-white for ticks
+        .needle_normal = lv_color_hex(0xFFFFFF),   // Pure white for needles
+        .needle_danger = lv_color_hex(0xFF0000)    // Bright red for danger
+    };
     ThemeColors _night_theme_colours = {
         .background = lv_color_hex(0x121212),
         .text = lv_color_hex(0xB00020),
         .primary = lv_color_hex(0xB00020),
         .gauge_normal = lv_color_hex(0xB00020),
         .gauge_warning = lv_color_hex(0xFB8C00),
-        .gauge_danger = lv_color_hex(0xB00020)};
+        .gauge_danger = lv_color_hex(0xB00020),
+        .gauge_ticks = lv_color_hex(0xF0F0E8),     // Soft off-white for ticks
+        .needle_normal = lv_color_hex(0xFFFFFF),   // Pure white for needles
+        .needle_danger = lv_color_hex(0xFF0000)    // Bright red for danger
+    };
 
     ~StyleManager();
     void init_styles();
