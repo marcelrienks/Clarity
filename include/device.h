@@ -30,6 +30,26 @@
 #define BL 3
 #define BUZZER -1
 
+/**
+ * @class Device
+ * @brief Hardware abstraction layer for ESP32 with GC9A01 display
+ * 
+ * @details This singleton class provides the concrete implementation of the IDevice interface,
+ * managing the physical display hardware and LVGL integration. It handles the SPI communication
+ * with the GC9A01 display controller and provides display buffer management.
+ * 
+ * @hardware_target ESP32-WROOM-32 with NodeMCU-32S development board
+ * @display_target 1.28" round GC9A01 240x240 display (Waveshare compatible)
+ * @interface SPI2_HOST with hardware-defined pins
+ * @buffer_strategy Dual 60-line buffers for smooth rendering
+ * 
+ * @design_pattern Singleton - ensures single display instance
+ * @thread_safety LVGL display callbacks are thread-safe
+ * @memory_usage ~57KB for dual display buffers (240*60*2*2 bytes)
+ * 
+ * @context This is the main hardware interface that all panels and components
+ * render to. The display is 240x240 pixels with a round form factor.
+ */
 class Device : public IDevice
 {
 public:

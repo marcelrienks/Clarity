@@ -82,6 +82,15 @@ void Device::prepare()
     initDMA();
     startWrite();
     setRotation(0);
+    
+#ifdef WOKWI_EMULATOR
+    // Enable horizontal mirroring to work around wokwi emulator limitation
+    // The emulator uses a square ILI9341 display instead of the round GC9A01 target display
+    // and renders the image horizontally inverted, also need to correct RGB/BGR order
+    writeCommand(0x36); // Memory Access Control
+    writeData(0x48);    // Set MX bit (0x40) + BGR bit (0x08) for horizontal mirror with correct colors
+#endif
+    
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
     lv_init();
@@ -95,10 +104,10 @@ void Device::prepare()
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 }
 
-/// @brief Static Display Flush Wrapper function
-/// @param display
-/// @param area
-/// @param data
+/// @brief Static Display Flush Wrapper function for LVGL display driver
+/// @param display LVGL display object
+/// @param area Screen area to flush
+/// @param data Pixel data buffer to display
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
     Device *device_instance = (Device *)lv_display_get_user_data(display);
@@ -107,8 +116,9 @@ void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area
     uint32_t height = lv_area_get_height(area);
     lv_draw_sw_rgb565_swap(data, width * height);
 
-    if (device_instance->getStartCount() == 0)
+    if (device_instance->getStartCount() == 0) {
         device_instance->endWrite();
+    }
 
     device_instance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
     lv_disp_flush_ready(display);
