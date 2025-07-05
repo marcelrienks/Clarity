@@ -34,7 +34,6 @@ int32_t OemOilTemperatureComponent::get_danger_zone() const
     return 100;
 }
 
-
 /// @brief Gets the scale mode for the oil temperature component.
 /// @return The scale mode.
 lv_scale_mode_t OemOilTemperatureComponent::get_scale_mode() const
@@ -89,4 +88,17 @@ void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) 
 int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 {
     return 55;
+}
+
+/// @brief Gets the label angles for L and H labels with swapped positioning.
+/// @param l_angle Reference to store the L label angle.
+/// @param h_angle Reference to store the H label angle.
+void OemOilTemperatureComponent::get_label_angles(int32_t& l_angle, int32_t& h_angle) const
+{
+    // Swap L and H positioning due to reversed scale mapping
+    // H label: At _scale_rotation angle (where L would normally be)
+    h_angle = _scale_rotation;
+    
+    // L label: At _scale_rotation + angle_range (where H would normally be)
+    l_angle = _scale_rotation + get_angle_range();
 }

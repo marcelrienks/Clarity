@@ -248,25 +248,21 @@ void OemOilComponent::create_labels()
     _low_label = lv_label_create(_scale);
     lv_label_set_text(_low_label, "L");
     lv_obj_set_style_text_color(_low_label, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_text_font(_low_label, &lv_font_montserrat_22, MAIN_DEFAULT);
+    lv_obj_set_style_text_font(_low_label, &lv_font_montserrat_18, MAIN_DEFAULT);
     
     // Create "H" label for high end  
     _high_label = lv_label_create(_scale);
     lv_label_set_text(_high_label, "H");
     lv_obj_set_style_text_color(_high_label, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_text_font(_high_label, &lv_font_montserrat_22, MAIN_DEFAULT);
+    lv_obj_set_style_text_font(_high_label, &lv_font_montserrat_18, MAIN_DEFAULT);
     
     // Calculate label positions based on scale rotation and angle range
-    int32_t angle_range = get_angle_range();  // e.g., 120°
-    
-    // L label: Always at _scale_rotation angle
-    int32_t l_angle = _scale_rotation;
-    
-    // H label: Always at _scale_rotation + angle_range
-    int32_t h_angle = _scale_rotation + angle_range;
+    // Allow derived classes to customize label positioning (e.g., for reversed scales)
+    int32_t l_angle, h_angle;
+    get_label_angles(l_angle, h_angle);
     
     // Use same radius for both labels - they should be equidistant from pivot
-    int32_t radius = 76;
+    int32_t radius = 78;
     
     // L label position - use center alignment without fixed offsets
     double l_angle_rad = (l_angle * M_PI) / 180.0;

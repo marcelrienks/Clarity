@@ -83,6 +83,7 @@ protected:
     virtual int32_t map_value_for_display(int32_t value) const;
     virtual void setup_danger_zone(lv_scale_section_t *section) const = 0;
     virtual int32_t get_icon_y_offset() const = 0;
+    virtual void get_label_angles(int32_t& l_angle, int32_t& h_angle) const = 0;
 
 private:
     void create_scale(int32_t rotation);

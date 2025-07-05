@@ -34,7 +34,6 @@ int32_t OemOilPressureComponent::get_danger_zone() const
     return 5;
 }
 
-
 /// @brief Gets the scale mode for the oil pressure component.
 /// @return The scale mode.
 lv_scale_mode_t OemOilPressureComponent::get_scale_mode() const
@@ -69,4 +68,17 @@ void OemOilPressureComponent::setup_danger_zone(lv_scale_section_t *section) con
 int32_t OemOilPressureComponent::get_icon_y_offset() const
 {
     return -55;
+}
+
+/// @brief Gets the label angles for L and H labels.
+/// @param l_angle Reference to store the L label angle.
+/// @param h_angle Reference to store the H label angle.
+void OemOilPressureComponent::get_label_angles(int32_t& l_angle, int32_t& h_angle) const
+{
+    // Standard positioning for pressure component
+    // L label: At _scale_rotation angle (low pressure start)
+    l_angle = _scale_rotation;
+    
+    // H label: At _scale_rotation + angle_range (high pressure end)
+    h_angle = _scale_rotation + get_angle_range();
 }

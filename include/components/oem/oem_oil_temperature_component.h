@@ -60,4 +60,5 @@ protected:
     int32_t map_value_for_display(int32_t value) const override;
     void setup_danger_zone(lv_scale_section_t *section) const override;
     int32_t get_icon_y_offset() const override;
+    void get_label_angles(int32_t& l_angle, int32_t& h_angle) const override;
 };
