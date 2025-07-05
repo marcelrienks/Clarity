@@ -82,6 +82,15 @@ void Device::prepare()
     initDMA();
     startWrite();
     setRotation(0);
+    
+#ifdef WOKWI_EMULATOR
+    // Enable horizontal mirroring to work around wokwi emulator limitation
+    // The emulator uses a square ILI9341 display instead of the round GC9A01 target display
+    // and renders the image horizontally inverted, also need to correct RGB/BGR order
+    writeCommand(0x36); // Memory Access Control
+    writeData(0x48);    // Set MX bit (0x40) + BGR bit (0x08) for horizontal mirror with correct colors
+#endif
+    
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
     lv_init();
