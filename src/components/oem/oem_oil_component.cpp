@@ -1,7 +1,8 @@
 #include "components/oem/oem_oil_component.h"
+#include <math.h>
 
 OemOilComponent::OemOilComponent()
-    : _scale(nullptr), _needle_line(nullptr), _needle_middle(nullptr), _needle_base(nullptr), _oil_icon(nullptr), _style_manager(&StyleManager::get_instance())
+    : _scale(nullptr), _needle_line(nullptr), _needle_middle(nullptr), _needle_base(nullptr), _oil_icon(nullptr), _low_label(nullptr), _high_label(nullptr), _scale_rotation(0), _style_manager(&StyleManager::get_instance())
 {
     // Cache StyleManager reference for performance
 }
@@ -29,6 +30,14 @@ OemOilComponent::~OemOilComponent()
         lv_obj_del(_oil_icon);
     }
 
+    if (_low_label) {
+        lv_obj_del(_low_label);
+    }
+
+    if (_high_label) {
+        lv_obj_del(_high_label);
+    }
+
     // No style cleanup needed - styles are managed by StyleManager
 }
 
@@ -50,6 +59,7 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
     create_scale(location.rotation);
     create_needle();
     create_icon();
+    create_labels();
 
     log_d("rendered load");
 }
@@ -120,10 +130,12 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
     return value;
 }
 
-
 /// @brief Sets up the scale properties for the oil component.
 void OemOilComponent::create_scale(int32_t rotation)
 {
+    // Store rotation for label positioning
+    _scale_rotation = rotation;
+    
     // Set scale properties from derived class
     lv_scale_set_mode(_scale, get_scale_mode());
     lv_scale_set_rotation(_scale, rotation);
@@ -133,7 +145,7 @@ void OemOilComponent::create_scale(int32_t rotation)
     // Set tick properties to match fuel gauge pattern
     lv_scale_set_total_tick_count(_scale, 13);
     lv_scale_set_major_tick_every(_scale, 3);
-    lv_scale_set_label_show(_scale, false);
+    lv_scale_set_label_show(_scale, false);  // Disable built-in labels, use custom L/H positioning
 
     // Apply shared styles to scale parts
     lv_obj_add_style(_scale, _style_manager->get_gauge_main_style(), MAIN_DEFAULT);
@@ -224,4 +236,47 @@ void OemOilComponent::create_icon()
     lv_obj_set_style_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor(_oil_icon, colours.gauge_normal, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
+}
+
+/// @brief Creates L and H labels positioned relative to the scale rotation and angle range.
+/// Labels automatically follow when scale rotation changes.
+void OemOilComponent::create_labels()
+{
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
+
+    // Create "L" label for low end
+    _low_label = lv_label_create(_scale);
+    lv_label_set_text(_low_label, "L");
+    lv_obj_set_style_text_color(_low_label, colours.gauge_normal, MAIN_DEFAULT);
+    lv_obj_set_style_text_font(_low_label, &lv_font_montserrat_20, MAIN_DEFAULT);
+    
+    // Create "H" label for high end  
+    _high_label = lv_label_create(_scale);
+    lv_label_set_text(_high_label, "H");
+    lv_obj_set_style_text_color(_high_label, colours.gauge_normal, MAIN_DEFAULT);
+    lv_obj_set_style_text_font(_high_label, &lv_font_montserrat_20, MAIN_DEFAULT);
+    
+    // Calculate label positions based on scale rotation and angle range
+    int32_t angle_range = get_angle_range();  // e.g., 120°
+    
+    // L label: Always at _scale_rotation angle
+    int32_t l_angle = _scale_rotation;
+    
+    // H label: Always at _scale_rotation + angle_range
+    int32_t h_angle = _scale_rotation + angle_range;
+    
+    // Use same radius for both labels - they should be equidistant from pivot
+    int32_t radius = 76;
+    
+    // L label position - use center alignment without fixed offsets
+    double l_angle_rad = (l_angle * M_PI) / 180.0;
+    int32_t l_x = (int32_t)(radius * cos(l_angle_rad));
+    int32_t l_y = (int32_t)(radius * sin(l_angle_rad));
+    lv_obj_align(_low_label, LV_ALIGN_CENTER, l_x, l_y);
+    
+    // H label position - use center alignment without fixed offsets
+    double h_angle_rad = (h_angle * M_PI) / 180.0;
+    int32_t h_x = (int32_t)(radius * cos(h_angle_rad));
+    int32_t h_y = (int32_t)(radius * sin(h_angle_rad));
+    lv_obj_align(_high_label, LV_ALIGN_CENTER, h_x, h_y);
 }

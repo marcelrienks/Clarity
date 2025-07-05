@@ -59,6 +59,8 @@ protected:
     lv_obj_t *_needle_middle;    // Middle section - medium thickness
     lv_obj_t *_needle_base;      // Base section - thickest for smooth tapered appearance
     lv_obj_t *_oil_icon;
+    lv_obj_t *_low_label;        // "L" label for low end
+    lv_obj_t *_high_label;       // "H" label for high end
     
     // Cached StyleManager reference (optimization)
     StyleManager* _style_manager;
@@ -66,6 +68,9 @@ protected:
     // Common constants
     static constexpr int32_t _animation_duration = 1000;
     static constexpr int32_t _needle_length = 90;
+    
+    // Scale rotation tracking for label positioning
+    int32_t _scale_rotation;
 
     // Virtual methods for derived classes to override
     virtual const lv_image_dsc_t* get_icon() const = 0;
@@ -83,4 +88,5 @@ private:
     void create_scale(int32_t rotation);
     void create_needle();
     void create_icon();
+    void create_labels();
 };
