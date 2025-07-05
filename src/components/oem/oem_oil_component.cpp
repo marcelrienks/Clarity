@@ -130,9 +130,9 @@ void OemOilComponent::create_scale(int32_t rotation)
     lv_scale_set_angle_range(_scale, get_angle_range());
     lv_scale_set_range(_scale, get_scale_min(), get_scale_max());
 
-    // Set tick properties
+    // Set tick properties to match fuel gauge pattern
     lv_scale_set_total_tick_count(_scale, 13);
-    lv_scale_set_major_tick_every(_scale, 2);
+    lv_scale_set_major_tick_every(_scale, 3);
     lv_scale_set_label_show(_scale, false);
 
     // Apply shared styles to scale parts
