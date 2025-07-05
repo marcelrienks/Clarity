@@ -248,13 +248,13 @@ void OemOilComponent::create_labels()
     _low_label = lv_label_create(_scale);
     lv_label_set_text(_low_label, "L");
     lv_obj_set_style_text_color(_low_label, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_text_font(_low_label, &lv_font_montserrat_20, MAIN_DEFAULT);
+    lv_obj_set_style_text_font(_low_label, &lv_font_montserrat_22, MAIN_DEFAULT);
     
     // Create "H" label for high end  
     _high_label = lv_label_create(_scale);
     lv_label_set_text(_high_label, "H");
     lv_obj_set_style_text_color(_high_label, colours.gauge_normal, MAIN_DEFAULT);
-    lv_obj_set_style_text_font(_high_label, &lv_font_montserrat_20, MAIN_DEFAULT);
+    lv_obj_set_style_text_font(_high_label, &lv_font_montserrat_22, MAIN_DEFAULT);
     
     // Calculate label positions based on scale rotation and angle range
     int32_t angle_range = get_angle_range();  // e.g., 120°
