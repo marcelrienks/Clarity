@@ -85,6 +85,7 @@ struct PanelNames
 {
     static constexpr const char *Splash = "SplashPanel"; ///< Startup splash screen
     static constexpr const char *Oil = "OemOilPanel";    ///< Oil monitoring dashboard
+    static constexpr const char *Key = "KeyPanel";       ///< Key status panel
 };
 
 /// @struct JsonDocNames

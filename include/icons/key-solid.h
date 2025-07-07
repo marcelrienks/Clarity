@@ -307,7 +307,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST uint8_t key_solid_map[] = 
   
 };
 
-const lv_image_dsc_t lock_alt_solid = {
+const lv_image_dsc_t key_solid = {
   .header = {
       .magic = LV_IMAGE_HEADER_MAGIC,
       .cf = LV_COLOR_FORMAT_RGB565A8,

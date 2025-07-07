@@ -33,6 +33,7 @@ public:
     virtual ~KeyComponent();
 
     void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
+    void render_update(bool is_key_present) override;
 
 protected:
     // LVGL objects

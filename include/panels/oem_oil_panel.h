@@ -53,7 +53,7 @@ public:
 
 private:
     // Components
-    lv_obj_t *_screen;
+    lv_obj_t *_screen; // All panels should always have their own screens
     std::shared_ptr<IComponent> _oem_oil_pressure_component;
     std::shared_ptr<IComponent> _oem_oil_temperature_component;
     std::shared_ptr<ISensor> _oem_oil_pressure_sensor;

@@ -47,7 +47,7 @@ private:
     static constexpr const int _display_time = 850;
 
     // Components
-    lv_obj_t *_screen;
+    lv_obj_t *_screen; // All panels should always have their own screens
     std::shared_ptr<IComponent> _component;
     lv_obj_t *_blank_screen;
 

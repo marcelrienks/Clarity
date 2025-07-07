@@ -16,7 +16,7 @@ public:
 
     virtual void init() = 0;
     virtual void load(std::function<void()> callback_function) = 0;
-    virtual void update(std::function<void()> callback_function) = 0;
+    virtual void update(std::function<void()> callback_function) = 0;//TODO: rename this to refresh
 
     std::function<void()> _callback_function;
 };

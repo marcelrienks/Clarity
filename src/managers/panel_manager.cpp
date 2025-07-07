@@ -23,6 +23,7 @@ void PanelManager::init()
     // Register all available panel types with the factory
     register_panel<SplashPanel>(PanelNames::Splash);
     register_panel<OemOilPanel>(PanelNames::Oil);
+    register_panel<KeyPanel>(PanelNames::Key);
 }
 
 /// @brief Loads a panel based on the given type name

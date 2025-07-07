@@ -2,7 +2,18 @@
 #include <math.h>
 
 OemOilComponent::OemOilComponent()
-    : _scale(nullptr), _needle_line(nullptr), _needle_middle(nullptr), _needle_base(nullptr), _needle_highlight_line(nullptr), _needle_highlight_middle(nullptr), _needle_highlight_base(nullptr), _oil_icon(nullptr), _low_label(nullptr), _high_label(nullptr), _scale_rotation(0), _style_manager(&StyleManager::get_instance())
+    : _scale(nullptr),
+      _needle_line(nullptr),
+      _needle_middle(nullptr),
+      _needle_base(nullptr),
+      _needle_highlight_line(nullptr),
+      _needle_highlight_middle(nullptr),
+      _needle_highlight_base(nullptr),
+      _oil_icon(nullptr),
+      _low_label(nullptr),
+      _high_label(nullptr),
+      _scale_rotation(0),
+      _style_manager(&StyleManager::get_instance())
 {
     // Cache StyleManager reference for performance
 }
@@ -10,43 +21,53 @@ OemOilComponent::OemOilComponent()
 OemOilComponent::~OemOilComponent()
 {
     // Clean up LVGL objects
-    if (_needle_line) {
+    if (_needle_line)
+    {
         lv_obj_del(_needle_line);
     }
-    
-    if (_needle_middle) {
+
+    if (_needle_middle)
+    {
         lv_obj_del(_needle_middle);
     }
-    
-    if (_needle_base) {
+
+    if (_needle_base)
+    {
         lv_obj_del(_needle_base);
     }
 
-    if (_needle_highlight_line) {
+    if (_needle_highlight_line)
+    {
         lv_obj_del(_needle_highlight_line);
     }
-    
-    if (_needle_highlight_middle) {
+
+    if (_needle_highlight_middle)
+    {
         lv_obj_del(_needle_highlight_middle);
     }
-    
-    if (_needle_highlight_base) {
+
+    if (_needle_highlight_base)
+    {
         lv_obj_del(_needle_highlight_base);
     }
 
-    if (_scale) {
+    if (_scale)
+    {
         lv_obj_del(_scale);
     }
 
-    if (_oil_icon) {
+    if (_oil_icon)
+    {
         lv_obj_del(_oil_icon);
     }
 
-    if (_low_label) {
+    if (_low_label)
+    {
         lv_obj_del(_low_label);
     }
 
-    if (_high_label) {
+    if (_high_label)
+    {
         lv_obj_del(_high_label);
     }
 
@@ -92,22 +113,25 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
         colour = colours.gauge_danger;
 
     // Update needle and icon colors (all three needle sections with 3D gradient)
-    if (is_danger_condition(end)) {
+    if (is_danger_condition(end))
+    {
         // Danger mode - bright danger color with gradient
-        lv_obj_set_style_line_color(_needle_line, colours.needle_danger, MAIN_DEFAULT);                     // Bright danger tip
-        lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_danger, 10), MAIN_DEFAULT);  // Medium danger middle
-        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_danger, 20), MAIN_DEFAULT);     // Darker danger base
-        
+        lv_obj_set_style_line_color(_needle_line, colours.needle_danger, MAIN_DEFAULT);                        // Bright danger tip
+        lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_danger, 10), MAIN_DEFAULT); // Medium danger middle
+        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_danger, 20), MAIN_DEFAULT);   // Darker danger base
+
         // Highlight lines in danger mode - bright danger highlights
         lv_obj_set_style_line_color(_needle_highlight_line, lv_color_lighten(colours.needle_danger, 30), MAIN_DEFAULT);
         lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_lighten(colours.needle_danger, 20), MAIN_DEFAULT);
         lv_obj_set_style_line_color(_needle_highlight_base, lv_color_lighten(colours.needle_danger, 10), MAIN_DEFAULT);
-    } else {
+    }
+    else
+    {
         // Normal mode - bright white gradient for 3D effect
-        lv_obj_set_style_line_color(_needle_line, colours.needle_normal, MAIN_DEFAULT);                     // Bright white tip
-        lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_normal, 10), MAIN_DEFAULT);  // Medium white middle
-        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_normal, 20), MAIN_DEFAULT);     // Darker white base
-        
+        lv_obj_set_style_line_color(_needle_line, colours.needle_normal, MAIN_DEFAULT);                        // Bright white tip
+        lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_normal, 10), MAIN_DEFAULT); // Medium white middle
+        lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_normal, 20), MAIN_DEFAULT);   // Darker white base
+
         // Highlight lines in normal mode - bright white highlights
         lv_obj_set_style_line_color(_needle_highlight_line, colours.needle_normal, MAIN_DEFAULT);
         lv_obj_set_style_line_color(_needle_highlight_middle, colours.needle_normal, MAIN_DEFAULT);
@@ -116,7 +140,8 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
     lv_obj_set_style_image_recolor(_oil_icon, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
 
-    // Setup animation
+    // TODO: decide if this should rather be part of the panel update logic, thereby not needing to pass an animation as input, and making the update function generic between different panel/components, as not all components need animation
+    //  Setup animation
     lv_anim_init(animation);
     lv_anim_set_duration(animation, _animation_duration);
     lv_anim_set_repeat_count(animation, 0);
@@ -135,16 +160,16 @@ void OemOilComponent::set_value(int32_t value)
 
     // Allow derived classes to map values if needed (e.g., for reversed scales)
     int32_t mapped_value = map_value_for_display(value);
-    
+
     // Update all three needle sections for smooth tapered appearance
-    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);              // Full length (tip)
-    lv_scale_set_line_needle_value(_scale, _needle_middle, (_needle_length * 2) / 3, mapped_value);  // 2/3 length (middle)
-    lv_scale_set_line_needle_value(_scale, _needle_base, _needle_length / 3, mapped_value);          // 1/3 length (base)
-    
+    lv_scale_set_line_needle_value(_scale, _needle_line, _needle_length, mapped_value);             // Full length (tip)
+    lv_scale_set_line_needle_value(_scale, _needle_middle, (_needle_length * 2) / 3, mapped_value); // 2/3 length (middle)
+    lv_scale_set_line_needle_value(_scale, _needle_base, _needle_length / 3, mapped_value);         // 1/3 length (base)
+
     // Update highlight lines for 3D effect
-    lv_scale_set_line_needle_value(_scale, _needle_highlight_line, _needle_length - 2, mapped_value);              // Slightly shorter for highlight effect
-    lv_scale_set_line_needle_value(_scale, _needle_highlight_middle, ((_needle_length * 2) / 3) - 2, mapped_value);  // 2/3 length highlight
-    lv_scale_set_line_needle_value(_scale, _needle_highlight_base, (_needle_length / 3) - 2, mapped_value);          // 1/3 length highlight
+    lv_scale_set_line_needle_value(_scale, _needle_highlight_line, _needle_length - 2, mapped_value);               // Slightly shorter for highlight effect
+    lv_scale_set_line_needle_value(_scale, _needle_highlight_middle, ((_needle_length * 2) / 3) - 2, mapped_value); // 2/3 length highlight
+    lv_scale_set_line_needle_value(_scale, _needle_highlight_base, (_needle_length / 3) - 2, mapped_value);         // 1/3 length highlight
 }
 
 /// @brief Maps the value for display on the oil component.
@@ -162,7 +187,7 @@ void OemOilComponent::create_scale(int32_t rotation)
 {
     // Store rotation for label positioning
     _scale_rotation = rotation;
-    
+
     // Set scale properties from derived class
     lv_scale_set_mode(_scale, get_scale_mode());
     lv_scale_set_rotation(_scale, rotation);
@@ -172,7 +197,7 @@ void OemOilComponent::create_scale(int32_t rotation)
     // Set tick properties to match fuel gauge pattern
     lv_scale_set_total_tick_count(_scale, 13);
     lv_scale_set_major_tick_every(_scale, 3);
-    lv_scale_set_label_show(_scale, false);  // Disable built-in labels, use custom L/H positioning
+    lv_scale_set_label_show(_scale, false); // Disable built-in labels, use custom L/H positioning
 
     // Apply shared styles to scale parts
     lv_obj_add_style(_scale, _style_manager->get_gauge_main_style(), MAIN_DEFAULT);
@@ -195,85 +220,82 @@ void OemOilComponent::create_needle()
     const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
     // Create realistic 3-section tapered needle (based on actual car dashboard reference)
-    
+
     // Section 1: Tip section with enhanced 3D effect - thinnest (outer third)
     _needle_line = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_line, colours.needle_normal, MAIN_DEFAULT);  // Bright white from theme
-    lv_obj_set_style_line_width(_needle_line, 4, MAIN_DEFAULT);  // Slightly thicker tip
-    lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);  // Rounded ends
+    lv_obj_set_style_line_color(_needle_line, colours.needle_normal, MAIN_DEFAULT); // Bright white from theme
+    lv_obj_set_style_line_width(_needle_line, 4, MAIN_DEFAULT);                     // Slightly thicker tip
+    lv_obj_set_style_line_rounded(_needle_line, true, MAIN_DEFAULT);                // Rounded ends
     lv_obj_set_style_line_opa(_needle_line, LV_OPA_COVER, MAIN_DEFAULT);
-    
-    
+
     // Section 2: Middle section with enhanced 3D effect - medium thickness (middle third)
     _needle_middle = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_normal, 10), MAIN_DEFAULT);  // Slightly darker for gradient
-    lv_obj_set_style_line_width(_needle_middle, 5, MAIN_DEFAULT);  // Thicker medium section
+    lv_obj_set_style_line_color(_needle_middle, lv_color_darken(colours.needle_normal, 10), MAIN_DEFAULT); // Slightly darker for gradient
+    lv_obj_set_style_line_width(_needle_middle, 5, MAIN_DEFAULT);                                          // Thicker medium section
     lv_obj_set_style_line_rounded(_needle_middle, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_middle, LV_OPA_COVER, MAIN_DEFAULT);
-    
-    
+
     // Section 3: Base section with enhanced 3D effect - thickest (inner third near pivot)
     _needle_base = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_normal, 20), MAIN_DEFAULT);  // Darkest for gradient
-    lv_obj_set_style_line_width(_needle_base, 7, MAIN_DEFAULT);  // Thickest base section
+    lv_obj_set_style_line_color(_needle_base, lv_color_darken(colours.needle_normal, 20), MAIN_DEFAULT); // Darkest for gradient
+    lv_obj_set_style_line_width(_needle_base, 7, MAIN_DEFAULT);                                          // Thickest base section
     lv_obj_set_style_line_rounded(_needle_base, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(_needle_base, LV_OPA_COVER, MAIN_DEFAULT);
-    
-    
+
     // Add subtle highlight lines for enhanced 3D effect (very subtle to avoid artifacts)
-    
+
     // Highlight for tip section - very subtle white highlight
     _needle_highlight_line = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_highlight_line, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);  // Pure white highlight
-    lv_obj_set_style_line_width(_needle_highlight_line, 1, MAIN_DEFAULT);  // Thin highlight line
+    lv_obj_set_style_line_color(_needle_highlight_line, lv_color_hex(0xFFFFFF), MAIN_DEFAULT); // Pure white highlight
+    lv_obj_set_style_line_width(_needle_highlight_line, 1, MAIN_DEFAULT);                      // Thin highlight line
     lv_obj_set_style_line_rounded(_needle_highlight_line, true, MAIN_DEFAULT);
-    lv_obj_set_style_line_opa(_needle_highlight_line, LV_OPA_20, MAIN_DEFAULT);  // Very subtle
-    
+    lv_obj_set_style_line_opa(_needle_highlight_line, LV_OPA_20, MAIN_DEFAULT); // Very subtle
+
     // Highlight for middle section
     _needle_highlight_middle = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);  // Pure white highlight
-    lv_obj_set_style_line_width(_needle_highlight_middle, 1, MAIN_DEFAULT);  // Thin highlight line
+    lv_obj_set_style_line_color(_needle_highlight_middle, lv_color_hex(0xFFFFFF), MAIN_DEFAULT); // Pure white highlight
+    lv_obj_set_style_line_width(_needle_highlight_middle, 1, MAIN_DEFAULT);                      // Thin highlight line
     lv_obj_set_style_line_rounded(_needle_highlight_middle, true, MAIN_DEFAULT);
-    lv_obj_set_style_line_opa(_needle_highlight_middle, LV_OPA_20, MAIN_DEFAULT);  // Very subtle
-    
+    lv_obj_set_style_line_opa(_needle_highlight_middle, LV_OPA_20, MAIN_DEFAULT); // Very subtle
+
     // Highlight for base section
     _needle_highlight_base = lv_line_create(_scale);
-    lv_obj_set_style_line_color(_needle_highlight_base, lv_color_hex(0xFFFFFF), MAIN_DEFAULT);  // Pure white highlight
-    lv_obj_set_style_line_width(_needle_highlight_base, 1, MAIN_DEFAULT);  // Thin highlight line
+    lv_obj_set_style_line_color(_needle_highlight_base, lv_color_hex(0xFFFFFF), MAIN_DEFAULT); // Pure white highlight
+    lv_obj_set_style_line_width(_needle_highlight_base, 1, MAIN_DEFAULT);                      // Thin highlight line
     lv_obj_set_style_line_rounded(_needle_highlight_base, true, MAIN_DEFAULT);
-    lv_obj_set_style_line_opa(_needle_highlight_base, LV_OPA_20, MAIN_DEFAULT);  // Very subtle
+    lv_obj_set_style_line_opa(_needle_highlight_base, LV_OPA_20, MAIN_DEFAULT); // Very subtle
 
     // Realistic dark plastic pivot point (based on actual car dashboard reference)
     auto _pivot_circle = lv_obj_create(_scale);
-    lv_obj_set_size(_pivot_circle, 40U, 40U);  // Even larger for better visibility and proportion
+    lv_obj_set_size(_pivot_circle, 40U, 40U); // Even larger for better visibility and proportion
     lv_obj_center(_pivot_circle);
     lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    
+
     // Dark plastic appearance with radial gradient (light center to dark edge)
-    lv_obj_set_style_bg_color(_pivot_circle, lv_color_hex(0x505050), MAIN_DEFAULT);  // Medium gray center
-    lv_obj_set_style_bg_grad_color(_pivot_circle, lv_color_hex(0x2A2A2A), MAIN_DEFAULT);  // Dark gray edge
-    lv_obj_set_style_bg_grad_dir(_pivot_circle, LV_GRAD_DIR_HOR, MAIN_DEFAULT);  // Horizontal for radial-like effect
-    lv_obj_set_style_bg_grad_stop(_pivot_circle, 180, MAIN_DEFAULT);  // Gradient more toward edge
-    
+    lv_obj_set_style_bg_color(_pivot_circle, lv_color_hex(0x505050), MAIN_DEFAULT);      // Medium gray center
+    lv_obj_set_style_bg_grad_color(_pivot_circle, lv_color_hex(0x2A2A2A), MAIN_DEFAULT); // Dark gray edge
+    lv_obj_set_style_bg_grad_dir(_pivot_circle, LV_GRAD_DIR_HOR, MAIN_DEFAULT);          // Horizontal for radial-like effect
+    lv_obj_set_style_bg_grad_stop(_pivot_circle, 180, MAIN_DEFAULT);                     // Gradient more toward edge
+
     // Dark beveled border (darker than main body)
     lv_obj_set_style_border_width(_pivot_circle, 2, MAIN_DEFAULT);
-    lv_obj_set_style_border_color(_pivot_circle, lv_color_hex(0x1A1A1A), MAIN_DEFAULT);  // Very dark border
-    
+    lv_obj_set_style_border_color(_pivot_circle, lv_color_hex(0x1A1A1A), MAIN_DEFAULT); // Very dark border
+
     // Subtle shadow for depth (less pronounced than metallic)
     lv_obj_set_style_shadow_color(_pivot_circle, lv_color_hex(0x000000), MAIN_DEFAULT);
-    lv_obj_set_style_shadow_width(_pivot_circle, 3U, MAIN_DEFAULT);  // Moderate shadow
-    lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_20, MAIN_DEFAULT);  // Subtle
+    lv_obj_set_style_shadow_width(_pivot_circle, 3U, MAIN_DEFAULT);      // Moderate shadow
+    lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_20, MAIN_DEFAULT); // Subtle
     lv_obj_set_style_shadow_spread(_pivot_circle, 1, MAIN_DEFAULT);
     lv_obj_set_style_shadow_offset_x(_pivot_circle, 1, MAIN_DEFAULT);
     lv_obj_set_style_shadow_offset_y(_pivot_circle, 1, MAIN_DEFAULT);
-    
+
     // Center light pickup highlight (where light hits the plastic)
     auto _pivot_highlight = lv_obj_create(_pivot_circle);
-    lv_obj_set_size(_pivot_highlight, 16U, 16U);  // Proportional to larger pivot
+    lv_obj_set_size(_pivot_highlight, 16U, 16U); // Proportional to larger pivot
     lv_obj_center(_pivot_highlight);
     lv_obj_set_style_radius(_pivot_highlight, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    lv_obj_set_style_bg_color(_pivot_highlight, lv_color_hex(0x707070), MAIN_DEFAULT);  // Light gray highlight
-    lv_obj_set_style_bg_opa(_pivot_highlight, LV_OPA_80, MAIN_DEFAULT);  // More opaque for plastic look
+    lv_obj_set_style_bg_color(_pivot_highlight, lv_color_hex(0x707070), MAIN_DEFAULT); // Light gray highlight
+    lv_obj_set_style_bg_opa(_pivot_highlight, LV_OPA_80, MAIN_DEFAULT);                // More opaque for plastic look
     lv_obj_set_style_border_width(_pivot_highlight, 0, MAIN_DEFAULT);
 }
 
@@ -302,27 +324,27 @@ void OemOilComponent::create_labels()
     lv_label_set_text(_low_label, "L");
     lv_obj_set_style_text_color(_low_label, colours.gauge_normal, MAIN_DEFAULT);
     lv_obj_set_style_text_font(_low_label, &lv_font_montserrat_18, MAIN_DEFAULT);
-    
-    // Create "H" label for high end  
+
+    // Create "H" label for high end
     _high_label = lv_label_create(_scale);
     lv_label_set_text(_high_label, "H");
     lv_obj_set_style_text_color(_high_label, colours.gauge_normal, MAIN_DEFAULT);
     lv_obj_set_style_text_font(_high_label, &lv_font_montserrat_18, MAIN_DEFAULT);
-    
+
     // Calculate label positions based on scale rotation and angle range
     // Allow derived classes to customize label positioning (e.g., for reversed scales)
     int32_t l_angle, h_angle;
     get_label_angles(l_angle, h_angle);
-    
+
     // Use same radius for both labels - they should be equidistant from pivot
     int32_t radius = 78;
-    
+
     // L label position - use center alignment without fixed offsets
     double l_angle_rad = (l_angle * M_PI) / 180.0;
     int32_t l_x = (int32_t)(radius * cos(l_angle_rad));
     int32_t l_y = (int32_t)(radius * sin(l_angle_rad));
     lv_obj_align(_low_label, LV_ALIGN_CENTER, l_x, l_y);
-    
+
     // H label position - use center alignment without fixed offsets
     double h_angle_rad = (h_angle * M_PI) / 180.0;
     int32_t h_x = (int32_t)(radius * cos(h_angle_rad));

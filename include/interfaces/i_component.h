@@ -7,11 +7,12 @@
 #include <functional>
 
 /// @brief UI elements
-class IComponent
+class IComponent //TODO: rename all components to widgets
 {
 public:
     // Overridable methods
     virtual void render_load(lv_obj_t *screen, const ComponentLocation& location) = 0;
-    virtual void render_update(lv_anim_t *animation, int32_t start, int32_t end) {};
+    virtual void render_update(lv_anim_t *animation, int32_t start, int32_t end) {};//TODO: rename all update methods to refresh instead
+    virtual void render_update(bool is_key_present) {};
     virtual void set_value(int32_t value) {};
 };

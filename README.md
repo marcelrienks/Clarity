@@ -52,6 +52,22 @@ This is specific to an NodeMCU-32S dev board, using a ESP32-WROOM-32 (ESP32-D0WD
 > - **coredump:** Minimal core dump partition (64 KB).
 > - **fat:** FAT filesystem partition using the remaining space (1.875 MB).
 
+## LVGL guidelines
+### Screens & Widgets:
+Screen Loading is for:
+- Panel switching (Oil Panel → Key Panel)
+- Major layout changes
+
+Widget Updates are for:
+- Data changes within the same panel
+- Status updates (key present/absent)
+
+### LVGL Screen Memory Model:
+1. Multiple screens can exist in memory simultaneously - Creating screen B doesn't delete screen A
+2. Only one screen is active/displayed at a time - When you call lv_screen_load(screen_B), screen A is no longer visible
+3. Inactive screens are NOT rendered - LVGL only renders the currently active screen, so screen A stops being drawn/updated
+4. Memory remains allocated - Screen A and all its widgets stay in memory until explicitly deleted with lv_obj_del(screen_A)
+
 ## Credits:
 This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
 
