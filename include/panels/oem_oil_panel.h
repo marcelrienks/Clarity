@@ -66,6 +66,9 @@ private:
     // Instance-level animation objects (prevents memory leaks)
     lv_anim_t _pressure_animation;
     lv_anim_t _temperature_animation;
+    
+    // Animation constants
+    static constexpr int32_t _animation_duration = 1000;
 
     void update_oil_pressure();
     void update_oil_temperature();

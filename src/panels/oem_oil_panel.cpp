@@ -102,8 +102,14 @@ void OemOilPanel::update_oil_pressure()
     }
     
     log_i("Updating pressure from %d to %d", _current_oil_pressure_value, value);
-    _oem_oil_pressure_component->render_update(&_pressure_animation, _current_oil_pressure_value, value);
+    _oem_oil_pressure_component->render_update(value);
 
+    // Setup animation
+    lv_anim_init(&_pressure_animation);
+    lv_anim_set_duration(&_pressure_animation, _animation_duration);
+    lv_anim_set_repeat_count(&_pressure_animation, 0);
+    lv_anim_set_playback_duration(&_pressure_animation, 0);
+    lv_anim_set_values(&_pressure_animation, _current_oil_pressure_value, value);
     lv_anim_set_var(&_pressure_animation, this);
     lv_anim_set_user_data(&_pressure_animation, (void *)static_cast<uintptr_t>(OilSensorTypes::Pressure));
     lv_anim_set_exec_cb(&_pressure_animation, OemOilPanel::execute_pressure_animation_callback);
@@ -135,8 +141,14 @@ void OemOilPanel::update_oil_temperature()
     }
     
     log_i("Updating temperature from %d to %d", _current_oil_temperature_value, value);
-    _oem_oil_temperature_component->render_update(&_temperature_animation, _current_oil_temperature_value, value);
+    _oem_oil_temperature_component->render_update(value);
 
+    // Setup animation
+    lv_anim_init(&_temperature_animation);
+    lv_anim_set_duration(&_temperature_animation, _animation_duration);
+    lv_anim_set_repeat_count(&_temperature_animation, 0);
+    lv_anim_set_playback_duration(&_temperature_animation, 0);
+    lv_anim_set_values(&_temperature_animation, _current_oil_temperature_value, value);
     lv_anim_set_var(&_temperature_animation, this);
     lv_anim_set_user_data(&_temperature_animation, (void *)static_cast<uintptr_t>(OilSensorTypes::Temperature));
     lv_anim_set_exec_cb(&_temperature_animation, OemOilPanel::execute_temperature_animation_callback);

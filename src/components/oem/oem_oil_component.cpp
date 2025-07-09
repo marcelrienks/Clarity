@@ -98,10 +98,8 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
 }
 
 /// @brief Updates the rendered oil component.
-/// @param animation The animation object for the update.
-/// @param start The starting value for the animation.
-/// @param end The ending value for the animation.
-void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t end)
+/// @param value The value to update the component with.
+void OemOilComponent::render_update(int32_t value)
 {
     log_d("...");
 
@@ -109,11 +107,11 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
     lv_color_t colour = colours.gauge_normal;
 
     // Check danger condition based on derived class logic
-    if (is_danger_condition(end))
+    if (is_danger_condition(value))
         colour = colours.gauge_danger;
 
     // Update needle and icon colors (all three needle sections with 3D gradient)
-    if (is_danger_condition(end))
+    if (is_danger_condition(value))
     {
         // Danger mode - bright danger color with gradient
         lv_obj_set_style_line_color(_needle_line, colours.needle_danger, MAIN_DEFAULT);                        // Bright danger tip
@@ -139,14 +137,6 @@ void OemOilComponent::render_update(lv_anim_t *animation, int32_t start, int32_t
     }
     lv_obj_set_style_image_recolor(_oil_icon, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(_oil_icon, LV_OPA_COVER, MAIN_DEFAULT);
-
-    // TODO: decide if this should rather be part of the panel update logic, thereby not needing to pass an animation as input, and making the update function generic between different panel/components, as not all components need animation
-    //  Setup animation
-    lv_anim_init(animation);
-    lv_anim_set_duration(animation, _animation_duration);
-    lv_anim_set_repeat_count(animation, 0);
-    lv_anim_set_playback_duration(animation, 0);
-    lv_anim_set_values(animation, start, end);
 
     log_d("rendered update");
 }

@@ -23,7 +23,6 @@
  * @gauge_specifications:
  * - Size: 240x240 pixels (configurable via ComponentLocation)
  * - Needle length: 90 pixels
- * - Animation duration: 1000ms
  * - Scale ticks: 13 total, major every 2
  * - Danger zone: Red highlighting for critical values
  * 
@@ -49,7 +48,7 @@ public:
     virtual ~OemOilComponent();
 
     void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
-    void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
+    void render_update(int32_t value) override;
     void set_value(int32_t value) override;
 
 protected:
@@ -69,7 +68,6 @@ protected:
     StyleManager* _style_manager;
 
     // Common constants
-    static constexpr int32_t _animation_duration = 1000;
     static constexpr int32_t _needle_length = 90;
     
     // Scale rotation tracking for label positioning

@@ -14,5 +14,6 @@ public:
     virtual void render_load(lv_obj_t *screen, const ComponentLocation& location) = 0;
     virtual void render_update(lv_anim_t *animation, int32_t start, int32_t end) {};//TODO: rename all update methods to refresh instead
     virtual void render_update(bool is_key_present) {};
+    virtual void render_update(int32_t value) {};
     virtual void set_value(int32_t value) {};
 };
