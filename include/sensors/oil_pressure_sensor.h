@@ -49,7 +49,6 @@ public:
     
     // Delta-based update support
     bool has_value_changed() override;
-    Reading get_cached_reading() override;
 
     // TODO: TEMP for testing
 private:

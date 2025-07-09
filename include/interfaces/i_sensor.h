@@ -11,5 +11,4 @@ public:
     
     // Delta-based update support
     virtual bool has_value_changed() { return true; } // Default: always update
-    virtual Reading get_cached_reading() { return get_reading(); } // Default: no caching //TODO: is this method used?
 };

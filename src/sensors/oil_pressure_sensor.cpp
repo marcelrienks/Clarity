@@ -41,8 +41,3 @@ bool OilPressureSensor::has_value_changed()
 {
     return _current_reading != _previous_reading;
 }
-
-Reading OilPressureSensor::get_cached_reading()
-{
-    return _current_reading;
-}

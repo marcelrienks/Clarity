@@ -41,8 +41,3 @@ bool OilTemperatureSensor::has_value_changed()
 {
     return _current_reading != _previous_reading;
 }
-
-Reading OilTemperatureSensor::get_cached_reading()
-{
-    return _current_reading;
-}
