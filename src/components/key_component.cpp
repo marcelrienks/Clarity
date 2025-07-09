@@ -22,8 +22,8 @@ void KeyComponent::render_load(lv_obj_t *screen, const ComponentLocation &locati
     log_d("...");
 
     // Create the key icon
-    _key_icon = lv_img_create(screen);
-    lv_img_set_src(_key_icon, &key_solid);
+    _key_icon = lv_image_create(screen);
+    lv_image_set_src(_key_icon, &key_solid);
 
     // Apply location settings
     lv_obj_align(_key_icon, location.align, location.x_offset, location.y_offset);
@@ -40,5 +40,5 @@ void KeyComponent::render_update(bool is_key_present)
     }
 
     lv_obj_set_style_image_recolor(_key_icon, colour, MAIN_DEFAULT);
-    log_d("rendered update with colour");
+    log_d("rendered update with colour: R=%d G=%d B=%d", colour.red, colour.green, colour.blue);
 }
