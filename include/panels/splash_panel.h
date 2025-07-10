@@ -1,5 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
+// Project Includes
 #include "interfaces/i_panel.h"
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
@@ -31,16 +32,18 @@
 class SplashPanel : public IPanel
 {
 public:
+    // Constructors and Destructors
     SplashPanel();
     ~SplashPanel();
 
+    // Core Functionality Methods
     const char *get_name() const { return PanelNames::Splash; };
-
     void init() override;
     void load(std::function<void()> show_panel_completion_callback) override;
     void update(std::function<void()> update_panel_completion_callback = nullptr) override;
 
 private:
+    // Private Data Members
     // Panel specific constants
     static constexpr const int _animation_time = 2000;
     static constexpr const int _delay_time = 200;
@@ -51,7 +54,8 @@ private:
     std::shared_ptr<IComponent> _component;
     lv_obj_t *_blank_screen;
 
+    // Static Callback Methods
+    static void animation_complete_timer_callback(lv_timer_t *timer);
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
-    static void animation_complete_timer_callback(lv_timer_t *timer);
 };

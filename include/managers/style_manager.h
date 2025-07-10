@@ -75,7 +75,23 @@ struct ThemeColors
 class StyleManager
 {
 public:
-    // Main styles that components can use
+    // Static Methods
+    static StyleManager &get_instance();
+
+    // Core Functionality Methods
+    void init(Themes theme);
+    void set_theme(Themes theme);
+    void apply_theme_to_screen(lv_obj_t *screen);
+
+    // Accessor Methods
+    lv_style_t *get_gauge_indicator_style() { return &gauge_indicator_style; }
+    lv_style_t *get_gauge_items_style() { return &gauge_items_style; }
+    lv_style_t *get_gauge_main_style() { return &gauge_main_style; }
+    lv_style_t *get_gauge_danger_section_style() { return &gauge_danger_section_style; }
+    const Themes &get_theme() const { return _theme; }
+    const ThemeColors &get_colours(const Themes &theme) const;
+
+    // Public Data Members
     lv_style_t background_style;    // Style for backgrounds
     lv_style_t text_style;          // Style for general text
     lv_style_t gauge_normal_style;  // Style for gauges in normal range
@@ -88,22 +104,15 @@ public:
     lv_style_t gauge_main_style;           // Style for gauge main part
     lv_style_t gauge_danger_section_style; // Style for danger zone sections
 
-    static StyleManager &get_instance();
-
-    void init(Themes theme);
-    void set_theme(Themes theme);
-    void apply_theme_to_screen(lv_obj_t *screen);
-
-    // Shared style accessors for components
-    lv_style_t *get_gauge_indicator_style() { return &gauge_indicator_style; }
-    lv_style_t *get_gauge_items_style() { return &gauge_items_style; }
-    lv_style_t *get_gauge_main_style() { return &gauge_main_style; }
-    lv_style_t *get_gauge_danger_section_style() { return &gauge_danger_section_style; }
-
-    const Themes &get_theme() const { return _theme; }
-    const ThemeColors &get_colours(const Themes &theme) const;
-
 private:
+    // Constructors and Destructors
+    ~StyleManager();
+
+    // Core Functionality Methods
+    void init_styles();
+    void reset_styles();
+
+    // Instance Data Members
     Themes _theme = Themes::Night;
     ThemeColors _day_theme_colours = {
         .background = lv_color_hex(0x121212),
@@ -131,8 +140,4 @@ private:
         .key_present = lv_color_hex(0x006400),    // Deep green for key present
         .key_not_present = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
-
-    ~StyleManager();
-    void init_styles();
-    void reset_styles();
 };

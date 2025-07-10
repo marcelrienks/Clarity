@@ -35,8 +35,10 @@
 class KeySensor : public ISensor
 {
 public:
+    // Constructors and Destructors
     KeySensor();
 
+    // Core Functionality Methods
     void init() override;
     Reading get_reading() override;
 };

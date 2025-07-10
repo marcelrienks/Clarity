@@ -47,20 +47,26 @@
 class PreferenceManager
 {
 public:
-    inline static Configs config;
-
+    // Static Methods
     static PreferenceManager &get_instance();
 
+    // Core Functionality Methods
     void init();
     void save_config();
     void load_config();
     void create_default_config();
 
+    // Public Data Members
+    inline static Configs config;
+
 private:
-    inline static const char *CONFIG_KEY = "config";
-
-    Preferences _preferences;
-
+    // Core Functionality Methods
     const char *theme_to_string(Themes theme);
     Themes string_to_theme(const char *str);
+
+    // Static Data Members
+    inline static const char *CONFIG_KEY = "config";
+
+    // Instance Data Members
+    Preferences _preferences;
 };

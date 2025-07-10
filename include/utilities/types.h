@@ -18,11 +18,13 @@
  * - Error messages: std::string
  */
 
+// System/Library Includes
+#include <lvgl.h>
+#include <string>
 #include <variant>
 #include <vector>
-#include <string>
-#include <lvgl.h>
 
+// Types/Structs/Enums
 /// @typedef Reading
 /// @brief Variant type for sensor readings supporting multiple data types
 ///

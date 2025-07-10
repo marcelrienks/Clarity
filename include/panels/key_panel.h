@@ -33,22 +33,24 @@
 class KeyPanel : public IPanel
 {
 public:
+    // Constructors and Destructors
     KeyPanel();
     ~KeyPanel();
 
+    // Core Functionality Methods
     const char *get_name() const { return PanelNames::Key; };
-
     void init() override;
     void load(std::function<void()> callback_function = nullptr) override;
     void update(std::function<void()> callback_function = nullptr) override;
 
 private:
-    // Components
+    // Static Methods
+    static void show_panel_completion_callback(lv_event_t *event);
+
+    // Instance Data Members
     lv_obj_t *_screen; // All panels should always have their own screens
     std::shared_ptr<KeyComponent> _key_component;
     std::shared_ptr<KeySensor> _key_sensor;
     ComponentLocation _center_location;
     bool _is_key_present = false;
-
-    static void show_panel_completion_callback(lv_event_t *event);
 };

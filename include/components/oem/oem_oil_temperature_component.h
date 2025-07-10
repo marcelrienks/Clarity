@@ -1,5 +1,6 @@
 #pragma once
 
+// Project Includes
 #include "components/oem/oem_oil_component.h"
 #include "icons/oil_temp_regular.h"
 
@@ -45,11 +46,12 @@
 class OemOilTemperatureComponent : public OemOilComponent
 {
 public:
+    // Constructors and Destructors
     OemOilTemperatureComponent();
     ~OemOilTemperatureComponent() = default;
 
 protected:
-    // Override virtual methods from base class
+    // Protected Methods
     const lv_image_dsc_t* get_icon() const override;
     int32_t get_scale_min() const override;
     int32_t get_scale_max() const override;

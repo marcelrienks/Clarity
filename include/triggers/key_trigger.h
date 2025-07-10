@@ -1,9 +1,12 @@
 #pragma once
 
+// System/Library Includes
+#include <memory>
+
+// Project Includes
 #include "interfaces/i_trigger.h"
 #include "sensors/key_sensor.h"
 #include "utilities/types.h"
-#include <memory>
 
 /**
  * @class KeyTrigger
@@ -35,10 +38,12 @@
 class KeyTrigger : public ITrigger
 {
 public:
+    // Constructors and Destructors
     /// @brief Constructor with optional restoration mode
     /// @param enable_restoration Whether to restore previous panel when key is removed
     KeyTrigger(bool enable_restoration = false);
 
+    // Core Functionality Methods
     void init() override;
     bool evaluate() override;
     const char* get_target_panel() const override;
@@ -46,6 +51,7 @@ public:
     bool should_restore() const override;
 
 private:
+    // Private Data Members
     std::shared_ptr<KeySensor> _key_sensor; ///< Key sensor for monitoring key status
     bool _enable_restoration;                ///< Whether to restore previous panel when condition clears
     bool _previous_state = false;            ///< Previous key state for edge detection

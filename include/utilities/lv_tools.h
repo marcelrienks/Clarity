@@ -1,9 +1,11 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include "managers/style_manager.h"
-
+// System/Library Includes
 #include <Arduino.h>
 #include <lvgl.h>
+
+// Project Includes
+#include "managers/style_manager.h"
 
 /**
  * @class LvTools
@@ -39,6 +41,7 @@
 class LvTools
 {
 public:
-    static void reset_screen(lv_obj_t *screen);
+    // Static Methods
     static lv_obj_t* create_blank_screen();
+    static void reset_screen(lv_obj_t *screen);
 };

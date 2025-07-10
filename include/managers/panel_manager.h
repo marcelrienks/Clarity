@@ -59,12 +59,12 @@
 class PanelManager
 {
 public:
-    // Static Methods
-    static PanelManager &get_instance();
-
     // Constructors and Destructors
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
+
+    // Static Methods
+    static PanelManager &get_instance();
 
     // Core Functionality Methods
     /// @brief Initialize the panel manager, register panels/triggers, and setup interrupt handling

@@ -1,21 +1,23 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include "interfaces/i_device.h"
-#include "interfaces/i_component.h"
-#include "interfaces/i_sensor.h"
-
+// System/Library Includes
 #include <esp32-hal-log.h>
-#include <lvgl.h>
 #include <functional>
+#include <lvgl.h>
 #include <memory>
+
+// Project Includes
+#include "interfaces/i_component.h"
+#include "interfaces/i_device.h"
+#include "interfaces/i_sensor.h"
 
 class IPanel
 {
 public:
-    // Destructor
+    // Destructors
     virtual ~IPanel() = default;
 
-    // Pure Virtual Methods
+    // Core Interface Methods
     /// @brief Get the panel's name identifier
     /// @return String name of the panel
     virtual const char *get_name() const = 0;
@@ -32,6 +34,6 @@ public:
     virtual void update(std::function<void()> callback_function) = 0; //TODO: rename this to refresh
 
 protected:
-    // Instance Data Members
+    // Protected Data Members
     std::function<void()> _callback_function;
 };

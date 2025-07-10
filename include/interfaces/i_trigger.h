@@ -29,8 +29,10 @@
 class ITrigger
 {
 public:
+    // Destructors
     virtual ~ITrigger() = default;
     
+    // Core Functionality Methods
     /// @brief Initialize the trigger and any required resources
     virtual void init() = 0;
     

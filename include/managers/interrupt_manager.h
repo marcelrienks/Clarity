@@ -44,6 +44,10 @@
 class InterruptManager
 {
 public:
+    // Constructors and Destructors
+    InterruptManager(const InterruptManager &) = delete;
+    InterruptManager &operator=(const InterruptManager &) = delete;
+
     // Static Methods
     static InterruptManager &get_instance();
 
@@ -73,6 +77,15 @@ public:
     /// @brief Remove all panel-specific triggers (called when panel changes)
     void clear_panel_triggers();
 
+    /// @brief Set the current panel name (for tracking)
+    /// @param panel_name Current panel name
+    void set_current_panel(const std::string &panel_name);
+
+    // Accessor Methods
+    /// @brief Get the previous panel name (for restoration)
+    /// @return Previous panel name or empty string if none
+    const std::string &get_previous_panel() const { return _previous_panel; }
+
     // Template Methods
     /// @brief Factory method for trigger registration
     /// @tparam T Trigger type that implements ITrigger interface
@@ -83,21 +96,10 @@ public:
         return std::make_shared<T>();
     }
 
-    // Property Access Methods
-    /// @brief Get the previous panel name (for restoration)
-    /// @return Previous panel name or empty string if none
-    const std::string &get_previous_panel() const { return _previous_panel; }
-
-    /// @brief Set the current panel name (for tracking)
-    /// @param panel_name Current panel name
-    void set_current_panel(const std::string &panel_name);
-
 private:
     // Constructors and Destructors
     InterruptManager() = default;
     ~InterruptManager() = default;
-    InterruptManager(const InterruptManager &) = delete;
-    InterruptManager &operator=(const InterruptManager &) = delete;
 
     // Core Functionality Methods
     /// @brief Evaluate a single trigger and handle activation

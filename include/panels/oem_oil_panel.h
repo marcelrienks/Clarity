@@ -42,28 +42,18 @@
 class OemOilPanel : public IPanel
 {
 public:
-    // Static Constants
-    static constexpr int32_t _animation_duration = 1000;
-
     // Constructors and Destructors
     OemOilPanel();
     ~OemOilPanel();
 
-    // Interface Implementation
-    /// @brief Get the panel's name identifier
-    /// @return String name of the panel
+    // Core Functionality Methods
     const char *get_name() const override { return PanelNames::Oil; }
-
-    /// @brief Initialize the panel and its components
     void init() override;
-
-    /// @brief Load the panel with asynchronous completion callback
-    /// @param callback_function Function to call when loading is complete
     void load(std::function<void()> callback_function) override;
-
-    /// @brief Update the panel data with asynchronous completion callback
-    /// @param callback_function Function to call when update is complete
     void update(std::function<void()> callback_function = nullptr) override;
+
+    // Static Data Members
+    static constexpr int32_t _animation_duration = 1000;
 
 private:
     // Core Functionality Methods
