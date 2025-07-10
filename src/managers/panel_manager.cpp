@@ -2,6 +2,7 @@
 #include "managers/interrupt_manager.h"
 #include "triggers/key_trigger.h"
 
+// Static Methods
 /// @brief Get the singleton instance of PanelManager
 /// @return instance of PanelManager
 PanelManager &PanelManager::get_instance()
@@ -10,6 +11,7 @@ PanelManager &PanelManager::get_instance()
     return instance;
 }
 
+// Core Functionality Methods
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 /// Registers all available panel types with the factory for dynamic creation
 /// Also initializes interrupt manager with panel switching callback and registers global triggers
@@ -86,11 +88,13 @@ void PanelManager::update_panel()
     Ticker::handle_lv_tasks();
 }
 
+// Constructors and Destructors
 PanelManager::~PanelManager()
 {
     _panel.reset();
 }
 
+// Core Functionality Methods
 /// @brief Create a panel based on the given type name
 /// @param panel_name the type name of the panel to be created
 /// @return Interface type representing the panel
@@ -108,6 +112,27 @@ std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
     return iterator->second(); // Return the function stored in the map
 }
 
+/// @brief Register all available panel types with the factory
+void PanelManager::register_panels()
+{
+    log_d("...");
+
+    // Register all available panel types with the factory
+    register_panel<SplashPanel>(PanelNames::Splash);
+    register_panel<OemOilPanel>(PanelNames::Oil);
+    register_panel<KeyPanel>(PanelNames::Key);
+}
+
+/// @brief Register all global triggers with the interrupt manager
+void PanelManager::register_triggers()
+{
+    log_d("...");
+
+    // Key trigger: Switch to key panel when key is detected (with restoration)
+    register_global_trigger<KeyTrigger>(TriggerNames::Key, true);
+}
+
+// Callback Methods
 /// @brief callback function to be executed on splash panel show completion
 void PanelManager::splash_completion_callback(const char *panel_name)
 {
@@ -135,24 +160,4 @@ void PanelManager::interrupt_panel_completion_callback()
 
     _is_loading = false;
     log_d("Interrupt panel load completed, _is_loading is now %i", _is_loading);
-}
-
-/// @brief Register all available panel types with the factory
-void PanelManager::register_panels()
-{
-    log_d("...");
-
-    // Register all available panel types with the factory
-    register_panel<SplashPanel>(PanelNames::Splash);
-    register_panel<OemOilPanel>(PanelNames::Oil);
-    register_panel<KeyPanel>(PanelNames::Key);
-}
-
-/// @brief Register all global triggers with the interrupt manager
-void PanelManager::register_triggers()
-{
-    log_d("...");
-
-    // Key trigger: Switch to key panel when key is detected (with restoration)
-    register_global_trigger<KeyTrigger>(TriggerNames::Key, true);
 }

@@ -59,8 +59,14 @@
 class PanelManager
 {
 public:
+    // Static Methods
     static PanelManager &get_instance();
 
+    // Constructors and Destructors
+    PanelManager(const PanelManager &) = delete;
+    PanelManager &operator=(const PanelManager &) = delete;
+
+    // Core Functionality Methods
     /// @brief Initialize the panel manager, register panels/triggers, and setup interrupt handling
     void init();
     
@@ -76,6 +82,7 @@ public:
     /// @brief Update the currently active panel (called from main loop)
     void update_panel();
 
+    // Template Methods
     /// @brief Register a panel type with the factory for dynamic creation
     /// @tparam T Panel type that implements IPanel interface
     /// @param panel_name String identifier for the panel type
@@ -96,17 +103,23 @@ public:
     }
 
 private:
-    std::shared_ptr<IPanel> _panel = nullptr;
-    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
-    bool _is_loading = false; // this allows the panel to be locked during loading from updates
-
+    // Constructors and Destructors
+    PanelManager() = default;
     ~PanelManager();
 
+    // Core Functionality Methods
     /// @brief Create a panel instance by name using the registered factory
     /// @param panel_name Name of the panel type to create
     /// @return Shared pointer to the created panel instance
     std::shared_ptr<IPanel> create_panel(const char *panel_name);
     
+    /// @brief Register all available panel types with the factory
+    void register_panels();
+    
+    /// @brief Register all global triggers with the interrupt manager
+    void register_triggers();
+
+    // Callback Methods
     /// @brief Callback executed when splash screen loading is complete
     /// @param panel_name Name of the target panel to load after splash
     void splash_completion_callback(const char *panel_name);
@@ -116,10 +129,9 @@ private:
     
     /// @brief Callback executed when interrupt-triggered panel loading is complete
     void interrupt_panel_completion_callback();
-    
-    /// @brief Register all available panel types with the factory
-    void register_panels();
-    
-    /// @brief Register all global triggers with the interrupt manager
-    void register_triggers();
+
+    // Instance Data Members
+    std::shared_ptr<IPanel> _panel = nullptr;
+    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
+    bool _is_loading = false; // this allows the panel to be locked during loading from updates
 };

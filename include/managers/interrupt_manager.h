@@ -44,8 +44,10 @@
 class InterruptManager
 {
 public:
+    // Static Methods
     static InterruptManager &get_instance();
 
+    // Core Functionality Methods
     /// @brief Initialize the interrupt manager
     /// @param panel_switch_callback Function to call when panel should be switched
     void init(std::function<void(const char *)> panel_switch_callback = nullptr);
@@ -71,6 +73,17 @@ public:
     /// @brief Remove all panel-specific triggers (called when panel changes)
     void clear_panel_triggers();
 
+    // Template Methods
+    /// @brief Factory method for trigger registration
+    /// @tparam T Trigger type that implements ITrigger interface
+    /// @return Shared pointer to the created trigger instance
+    template <typename T>
+    std::shared_ptr<ITrigger> create_trigger()
+    {
+        return std::make_shared<T>();
+    }
+
+    // Property Access Methods
     /// @brief Get the previous panel name (for restoration)
     /// @return Previous panel name or empty string if none
     const std::string &get_previous_panel() const { return _previous_panel; }
@@ -79,26 +92,14 @@ public:
     /// @param panel_name Current panel name
     void set_current_panel(const std::string &panel_name);
 
-    // Factory method for trigger registration
-    template <typename T>
-    std::shared_ptr<ITrigger> create_trigger()
-    {
-        return std::make_shared<T>();
-    }
-
 private:
-    std::map<std::string, std::shared_ptr<ITrigger>> _global_triggers;  ///< Global triggers (persist throughout app)
-    std::map<std::string, std::shared_ptr<ITrigger>> _panel_triggers;   ///< Panel-specific triggers (cleared on panel change)
-    std::string _previous_panel = "";                                   ///< Previous panel for restoration
-    std::string _current_panel = "";                                    ///< Current active panel
-    std::shared_ptr<ITrigger> _active_trigger = nullptr;                ///< Currently active trigger (if any)
-    std::function<void(const char *)> _panel_switch_callback = nullptr; ///< Callback for panel switching
-
+    // Constructors and Destructors
     InterruptManager() = default;
     ~InterruptManager() = default;
     InterruptManager(const InterruptManager &) = delete;
     InterruptManager &operator=(const InterruptManager &) = delete;
 
+    // Core Functionality Methods
     /// @brief Evaluate a single trigger and handle activation
     /// @param trigger_id The trigger identifier
     /// @param trigger The trigger to evaluate
@@ -112,4 +113,12 @@ private:
 
     /// @brief Check if trigger condition has cleared and handle restoration
     void check_trigger_restoration();
+
+    // Instance Data Members
+    std::map<std::string, std::shared_ptr<ITrigger>> _global_triggers;  ///< Global triggers (persist throughout app)
+    std::map<std::string, std::shared_ptr<ITrigger>> _panel_triggers;   ///< Panel-specific triggers (cleared on panel change)
+    std::string _previous_panel = "";                                   ///< Previous panel for restoration
+    std::string _current_panel = "";                                    ///< Current active panel
+    std::shared_ptr<ITrigger> _active_trigger = nullptr;                ///< Currently active trigger (if any)
+    std::function<void(const char *)> _panel_switch_callback = nullptr; ///< Callback for panel switching
 };

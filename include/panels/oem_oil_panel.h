@@ -42,38 +42,56 @@
 class OemOilPanel : public IPanel
 {
 public:
+    // Static Constants
+    static constexpr int32_t _animation_duration = 1000;
+
+    // Constructors and Destructors
     OemOilPanel();
     ~OemOilPanel();
 
-    const char *get_name() const { return PanelNames::Oil; };
+    // Interface Implementation
+    /// @brief Get the panel's name identifier
+    /// @return String name of the panel
+    const char *get_name() const override { return PanelNames::Oil; }
 
+    /// @brief Initialize the panel and its components
     void init() override;
+
+    /// @brief Load the panel with asynchronous completion callback
+    /// @param callback_function Function to call when loading is complete
     void load(std::function<void()> callback_function) override;
+
+    /// @brief Update the panel data with asynchronous completion callback
+    /// @param callback_function Function to call when update is complete
     void update(std::function<void()> callback_function = nullptr) override;
 
 private:
-    // Components
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<IComponent> _oem_oil_pressure_component;
-    std::shared_ptr<IComponent> _oem_oil_temperature_component;
-    std::shared_ptr<ISensor> _oem_oil_pressure_sensor;
-    std::shared_ptr<ISensor> _oem_oil_temperature_sensor;
-    int32_t _current_oil_pressure_value;
-    int32_t _current_oil_temperature_value;
-    bool _is_pressure_animation_running = false;
-    bool _is_temperature_animation_running = false;
-    
-    // Instance-level animation objects (prevents memory leaks)
-    lv_anim_t _pressure_animation;
-    lv_anim_t _temperature_animation;
-    
-    // Animation constants
-    static constexpr int32_t _animation_duration = 1000;
-
+    // Core Functionality Methods
     void update_oil_pressure();
     void update_oil_temperature();
+
+    // Static Callback Methods
     static void show_panel_completion_callback(lv_event_t *event);
     static void update_panel_completion_callback(lv_anim_t *animation);
     static void execute_pressure_animation_callback(void *target, int32_t value);
     static void execute_temperature_animation_callback(void *target, int32_t value);
+
+    // Instance Data Members - UI Objects
+    lv_obj_t *_screen; // All panels should always have their own screens
+
+    // Instance Data Members - Components and Sensors
+    std::shared_ptr<IComponent> _oem_oil_pressure_component;
+    std::shared_ptr<IComponent> _oem_oil_temperature_component;
+    std::shared_ptr<ISensor> _oem_oil_pressure_sensor;
+    std::shared_ptr<ISensor> _oem_oil_temperature_sensor;
+
+    // Instance Data Members - State Variables
+    int32_t _current_oil_pressure_value;
+    int32_t _current_oil_temperature_value;
+    bool _is_pressure_animation_running = false;
+    bool _is_temperature_animation_running = false;
+
+    // Instance Data Members - Animation Objects
+    lv_anim_t _pressure_animation;   // Instance-level animation objects (prevents memory leaks)
+    lv_anim_t _temperature_animation;
 };
