@@ -91,9 +91,6 @@ void PanelManager::update_panel()
 {
     log_d("...");
 
-    // Check for interrupt conditions before normal panel update
-    check_interrupts();
-
     if (!_panel || _is_loading)
         return;
 

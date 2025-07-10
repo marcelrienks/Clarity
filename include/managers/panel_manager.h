@@ -2,7 +2,6 @@
 
 #include "interfaces/i_panel.h"
 #include "interfaces/i_device.h"
-#include "interfaces/i_sensor.h"
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/key_panel.h"
@@ -54,22 +53,7 @@
  * @context This is the main coordinator for all panel operations.
  * It manages the current panel (likely OemOilPanel) and handles transitions.
  * The factory pattern allows easy addition of new panel types.
- * 
- * @interrupt_system:
- * - register_interrupt(): Register sensor/condition/panel combinations
- * - check_interrupts(): Check for interrupt conditions before normal updates
- * - Priority panel switching overrides normal loading states
- * - Optional restoration to previous panel when condition clears
  */
-/// @brief Interrupt trigger configuration
-struct InterruptTrigger
-{
-    std::shared_ptr<ISensor> sensor;           // Sensor to monitor
-    std::function<bool(const Reading&)> condition; // Condition function to evaluate reading
-    std::string target_panel;                  // Panel to switch to when triggered
-    bool restore_previous = false;             // Whether to restore previous panel when condition clears
-    bool active = true;                        // Whether this interrupt is currently active
-};
 
 class PanelManager
 {
@@ -79,17 +63,7 @@ public:
     void init();
     void load_panel(const char *panel_name);
     void load_panel_with_Splash(const char *panel_name);
-    void update_panel();
-    
-    // Interrupt system methods
-    void register_interrupt(const std::string& id, 
-                           std::shared_ptr<ISensor> sensor,
-                           std::function<bool(const Reading&)> condition,
-                           const std::string& target_panel,
-                           bool restore_previous = false);
-    void enable_interrupt(const std::string& id);
-    void disable_interrupt(const std::string& id);
-    void check_interrupts();
+    void refresh_panel();
 
     // Register a panel type with the factory
     template<typename T> // Note the implementation of a template type must exist in header
@@ -103,11 +77,6 @@ private:
     std::shared_ptr<IPanel> _panel = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
     bool _is_loading = false; // this allows the panel to be locked during loading from show_panel() or change from update_current_panel()
-    
-    // Interrupt system state
-    std::map<std::string, InterruptTrigger> _interrupt_triggers; // Registered interrupt conditions
-    std::string _previous_panel = "";                           // Panel to restore to after interrupt clears
-    std::string _current_interrupt_panel = "";                  // Currently active interrupt panel
 
     ~PanelManager();
 
