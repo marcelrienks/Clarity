@@ -10,7 +10,8 @@
       "Bash(grep:*)",
       "Bash(pio.exe run:*)",
       "Bash(find:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(rg:*)"
     ],
     "deny": []
   }

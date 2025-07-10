@@ -1,5 +1,7 @@
 #include "sensors/oil_pressure_sensor.h"
 
+// Constructors and Destructors
+
 OilPressureSensor::OilPressureSensor()
 {
     // Generate initial value so needles render on first load
@@ -7,10 +9,7 @@ OilPressureSensor::OilPressureSensor()
     _previous_reading = -1; // Ensure first update is detected as changed
 }
 
-void OilPressureSensor::init()
-{
-    // Not needed but required to satisfy interface
-}
+// Core Functionality Methods
 
 // TODO: TEMP code for testing  
 Reading OilPressureSensor::get_reading()
@@ -42,7 +41,7 @@ bool OilPressureSensor::has_value_changed()
     return _current_reading != _previous_reading;
 }
 
-Reading OilPressureSensor::get_cached_reading()
+void OilPressureSensor::init()
 {
-    return _current_reading;
+    // Not needed but required to satisfy interface
 }

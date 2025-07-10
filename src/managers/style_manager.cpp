@@ -1,17 +1,35 @@
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
 
+// Constructors and Destructors
 StyleManager::~StyleManager()
 {
     reset_styles();
 }
 
+// Static Methods
 /// @brief Get the singleton instance of StyleManager
 /// @return instance of StyleManager
 StyleManager &StyleManager::get_instance()
 {
     static StyleManager instance; // this ensures that the instance is created only once
     return instance;
+}
+
+// Core Functionality Methods
+/// @brief Apply the current theme to a specific screen
+/// @param screen the screen to which the theme will be applied
+void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
+{
+    log_d("...");
+
+    // Only apply the background style to screens
+    // Other styles should be applied to specific components that need them
+
+    lv_obj_add_style(screen, &background_style, MAIN_DEFAULT);
+
+    // Don't apply all styles to the same screen - this can cause conflicts
+    // Components should apply their own specific styles as needed
 }
 
 /// @brief Initialises the styles for the application
@@ -38,6 +56,25 @@ void StyleManager::init(Themes theme)
 
     // Don't apply to lv_scr_act() here - it might not be ready
     // apply_theme_to_screen(lv_scr_act()); // Remove this line
+}
+
+/// @brief Reset all styles to their default state
+void StyleManager::reset_styles()
+{
+    log_d("...");
+
+    // Reset all style objects
+    lv_style_reset(&background_style);
+    lv_style_reset(&text_style);
+    lv_style_reset(&gauge_normal_style);
+    lv_style_reset(&gauge_warning_style);
+    lv_style_reset(&gauge_danger_style);
+    
+    // Reset shared gauge component styles
+    lv_style_reset(&gauge_indicator_style);
+    lv_style_reset(&gauge_items_style);
+    lv_style_reset(&gauge_main_style);
+    lv_style_reset(&gauge_danger_section_style);
 }
 
 /// @brief Apply a specified theme to the styles
@@ -81,40 +118,7 @@ void StyleManager::set_theme(Themes theme)
     lv_style_set_line_color(&gauge_danger_section_style, colours.gauge_danger);
 }
 
-/// @brief Apply the current theme to a specific screen
-/// @param screen the screen to which the theme will be applied
-void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
-{
-    log_d("...");
-
-    // Only apply the background style to screens
-    // Other styles should be applied to specific components that need them
-
-    lv_obj_add_style(screen, &background_style, MAIN_DEFAULT);
-
-    // Don't apply all styles to the same screen - this can cause conflicts
-    // Components should apply their own specific styles as needed
-}
-
-/// @brief Reset all styles to their default state
-void StyleManager::reset_styles()
-{
-    log_d("...");
-
-    // Reset all style objects
-    lv_style_reset(&background_style);
-    lv_style_reset(&text_style);
-    lv_style_reset(&gauge_normal_style);
-    lv_style_reset(&gauge_warning_style);
-    lv_style_reset(&gauge_danger_style);
-    
-    // Reset shared gauge component styles
-    lv_style_reset(&gauge_indicator_style);
-    lv_style_reset(&gauge_items_style);
-    lv_style_reset(&gauge_main_style);
-    lv_style_reset(&gauge_danger_section_style);
-}
-
+// Accessor Methods
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme

@@ -1,10 +1,12 @@
 #pragma once
 
-#include "interfaces/i_component.h"
-#include "utilities/types.h"
-#include "managers/style_manager.h"
-
+// System/Library Includes
 #include <lvgl.h>
+
+// Project Includes
+#include "interfaces/i_component.h"
+#include "managers/style_manager.h"
+#include "utilities/types.h"
 
 /**
  * @class OemOilComponent
@@ -23,7 +25,6 @@
  * @gauge_specifications:
  * - Size: 240x240 pixels (configurable via ComponentLocation)
  * - Needle length: 90 pixels
- * - Animation duration: 1000ms
  * - Scale ticks: 13 total, major every 2
  * - Danger zone: Red highlighting for critical values
  * 
@@ -45,14 +46,30 @@
 class OemOilComponent : public IComponent
 {
 public:
+    // Constructors and Destructors
     OemOilComponent();
     virtual ~OemOilComponent();
 
-    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
-    void render_update(lv_anim_t *animation, int32_t start, int32_t end) override;
+    // Core Functionality Methods
+    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void refresh(const Reading& reading) override;
     void set_value(int32_t value) override;
 
 protected:
+    // Protected Methods
+    virtual const lv_image_dsc_t* get_icon() const = 0;
+    virtual int32_t get_scale_min() const = 0;
+    virtual int32_t get_scale_max() const = 0;
+    virtual int32_t get_danger_zone() const = 0;
+    virtual lv_scale_mode_t get_scale_mode() const = 0;
+    virtual int32_t get_angle_range() const = 0;
+    virtual bool is_danger_condition(int32_t value) const = 0;
+    virtual int32_t map_value_for_display(int32_t value) const;
+    virtual void setup_danger_zone(lv_scale_section_t *section) const = 0;
+    virtual int32_t get_icon_y_offset() const = 0;
+    virtual void get_label_angles(int32_t& l_angle, int32_t& h_angle) const = 0;
+
+    // Protected Data Members
     // LVGL objects
     lv_obj_t *_scale;
     lv_obj_t *_needle_line;      // Tip section - thinnest
@@ -69,28 +86,15 @@ protected:
     StyleManager* _style_manager;
 
     // Common constants
-    static constexpr int32_t _animation_duration = 1000;
     static constexpr int32_t _needle_length = 90;
     
     // Scale rotation tracking for label positioning
     int32_t _scale_rotation;
 
-    // Virtual methods for derived classes to override
-    virtual const lv_image_dsc_t* get_icon() const = 0;
-    virtual int32_t get_scale_min() const = 0;
-    virtual int32_t get_scale_max() const = 0;
-    virtual int32_t get_danger_zone() const = 0;
-    virtual lv_scale_mode_t get_scale_mode() const = 0;
-    virtual int32_t get_angle_range() const = 0;
-    virtual bool is_danger_condition(int32_t value) const = 0;
-    virtual int32_t map_value_for_display(int32_t value) const;
-    virtual void setup_danger_zone(lv_scale_section_t *section) const = 0;
-    virtual int32_t get_icon_y_offset() const = 0;
-    virtual void get_label_angles(int32_t& l_angle, int32_t& h_angle) const = 0;
-
 private:
-    void create_scale(int32_t rotation);
-    void create_needle();
+    // Private Methods
     void create_icon();
     void create_labels();
+    void create_needle();
+    void create_scale(int32_t rotation);
 };

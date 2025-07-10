@@ -1,10 +1,14 @@
 #include "components/oem/oem_oil_pressure_component.h"
 
+// Constructors and Destructors
+
 OemOilPressureComponent::OemOilPressureComponent()
     : OemOilComponent()
 {
     // Constructor delegates to base class
 }
+
+// Protected Methods
 
 /// @brief Gets the icon for the oil pressure component.
 /// @return Pointer to the icon image descriptor.

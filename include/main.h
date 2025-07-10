@@ -21,13 +21,16 @@
  * coordinating system services.
  */
 
+// Macros/Defines
 #define UI_VERSION "4.1.0"
 
-#include "utilities/ticker.h"
+// System/Library Includes
+#include <LovyanGFX.hpp>
+#include <lvgl.h>
+#include <memory>
+
+// Project Includes
+#include "device.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
-#include "device.h"
-
-#include <lvgl.h>
-#include <LovyanGFX.hpp>
-#include <memory>
+#include "utilities/ticker.h"

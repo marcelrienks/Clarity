@@ -1,5 +1,7 @@
 #include "sensors/oil_temperature_sensor.h"
 
+// Constructors and Destructors
+
 OilTemperatureSensor::OilTemperatureSensor()
 {
     // Generate initial value so needles render on first load
@@ -7,10 +9,7 @@ OilTemperatureSensor::OilTemperatureSensor()
     _previous_reading = -1; // Ensure first update is detected as changed
 }
 
-void OilTemperatureSensor::init()
-{
-    // Not needed but required to satisfy interface
-}
+// Core Functionality Methods
 
 // TODO: TEMP code for testing
 Reading OilTemperatureSensor::get_reading()
@@ -42,7 +41,7 @@ bool OilTemperatureSensor::has_value_changed()
     return _current_reading != _previous_reading;
 }
 
-Reading OilTemperatureSensor::get_cached_reading()
+void OilTemperatureSensor::init()
 {
-    return _current_reading;
+    // Not needed but required to satisfy interface
 }

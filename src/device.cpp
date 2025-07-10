@@ -1,5 +1,6 @@
 #include "device.h"
 
+// Constructors and Destructors
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
 Device::Device()
 {
@@ -64,6 +65,7 @@ Device::Device()
     setPanel(&_panel_instance);
 }
 
+// Static Methods
 /// @brief Get the singleton instance of Device
 /// @return instance of Device
 Device &Device::get_instance()
@@ -72,6 +74,7 @@ Device &Device::get_instance()
     return instance;
 }
 
+// Core Functionality Methods
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
 void Device::prepare()
 {
@@ -104,6 +107,7 @@ void Device::prepare()
     lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
 }
 
+// Static Methods
 /// @brief Static Display Flush Wrapper function for LVGL display driver
 /// @param display LVGL display object
 /// @param area Screen area to flush

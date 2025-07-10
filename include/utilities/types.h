@@ -18,11 +18,13 @@
  * - Error messages: std::string
  */
 
+// System/Library Includes
+#include <lvgl.h>
+#include <string>
 #include <variant>
 #include <vector>
-#include <string>
-#include <lvgl.h>
 
+// Types/Structs/Enums
 /// @typedef Reading
 /// @brief Variant type for sensor readings supporting multiple data types
 ///
@@ -85,6 +87,17 @@ struct PanelNames
 {
     static constexpr const char *Splash = "SplashPanel"; ///< Startup splash screen
     static constexpr const char *Oil = "OemOilPanel";    ///< Oil monitoring dashboard
+    static constexpr const char *Key = "KeyPanel";       ///< Key status panel
+};
+
+/// @struct TriggerNames
+/// @brief String constants for trigger identification
+///
+/// @details Provides consistent string identifiers for trigger types
+/// used in the InterruptManager registration system.
+struct TriggerNames
+{
+    static constexpr const char *Key = "key_trigger"; ///< Key detection trigger
 };
 
 /// @struct JsonDocNames

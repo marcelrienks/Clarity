@@ -29,15 +29,19 @@
 class KeyComponent : public IComponent
 {
 public:
+    // Constructors and Destructors
     KeyComponent();
     virtual ~KeyComponent();
 
-    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
+    // Core Functionality Methods
+    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void refresh(const Reading& reading) override;
 
 protected:
-    // LVGL objects
+    // Protected Data Members
     lv_obj_t *_key_icon;
 
 private:
+    // Core Functionality Methods
     void create_icon();
 };

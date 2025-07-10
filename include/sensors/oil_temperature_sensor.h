@@ -1,11 +1,13 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
+// System/Library Includes
+#include <esp_random.h>
+#include <LovyanGFX.hpp>
+#include <lvgl.h>
+
+// Project Includes
 #include "interfaces/i_sensor.h"
 #include "utilities/types.h"
-
-#include <lvgl.h>
-#include <LovyanGFX.hpp>
-#include <esp_random.h>
 
 /**
  * @class OilTemperatureSensor
@@ -48,17 +50,19 @@
 class OilTemperatureSensor : public ISensor
 {
 public:
+    // Constructors and Destructors
     OilTemperatureSensor();
 
+    // Core Functionality Methods
     void init() override;
     Reading get_reading() override;
     
     // Delta-based update support
     bool has_value_changed() override;
-    Reading get_cached_reading() override;
 
-    // TODO: TEMP for testing
 private:
+    // Private Data Members
+    // TODO: TEMP for testing
     int32_t _current_reading = 0;
     int32_t _previous_reading = -1;
     unsigned long _last_update_time = 0;
