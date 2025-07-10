@@ -47,8 +47,8 @@ public:
     OemOilComponent();
     virtual ~OemOilComponent();
 
-    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
-    void render_update(int32_t value) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void refresh(const Reading& reading) override;
     void set_value(int32_t value) override;
 
 protected:

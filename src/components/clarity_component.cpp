@@ -3,7 +3,7 @@
 /// @brief Initialises the Clarity Component by rendering a splash screen with location parameters
 /// @param screen the screen on which to render the component
 /// @param location the location parameters for positioning the component
-void ClarityComponent::render_load(lv_obj_t *screen, const ComponentLocation& location) {
+void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& location) {
     log_d("...");
      
     // Using a label (recommended for text display)

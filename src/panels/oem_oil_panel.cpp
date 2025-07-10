@@ -55,12 +55,12 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     ComponentLocation pressure_location(210); // rotation starting at 210 degrees
     ComponentLocation temperature_location(30); // rotation starting at 30 degrees
     
-    _oem_oil_pressure_component->render_load(_screen, pressure_location);
-    _oem_oil_temperature_component->render_load(_screen, temperature_location);
+    _oem_oil_pressure_component->render(_screen, pressure_location);
+    _oem_oil_temperature_component->render(_screen, temperature_location);
     lv_obj_add_event_cb(_screen, OemOilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
-    lv_scr_load(_screen);//TODO: find all abbreviations and replace with full words
+    lv_screen_load(_screen);//TODO: find all abbreviations and replace with full words
 }
 
 /// @brief Update the reading on the screen
@@ -102,7 +102,7 @@ void OemOilPanel::update_oil_pressure()
     }
     
     log_i("Updating pressure from %d to %d", _current_oil_pressure_value, value);
-    _oem_oil_pressure_component->render_update(value);
+    _oem_oil_pressure_component->refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&_pressure_animation);
@@ -141,7 +141,7 @@ void OemOilPanel::update_oil_temperature()
     }
     
     log_i("Updating temperature from %d to %d", _current_oil_temperature_value, value);
-    _oem_oil_temperature_component->render_update(value);
+    _oem_oil_temperature_component->refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&_temperature_animation);

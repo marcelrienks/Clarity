@@ -114,9 +114,9 @@ private:
         .gauge_danger = lv_color_hex(0xB00020),
         .gauge_ticks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
         .needle_normal = lv_color_hex(0xFFFFFF),  // Pure white for needles
-        .needle_danger = lv_color_hex(0xFF0000),  // Bright red for danger
-        .key_present = lv_color_hex(0xFFFFFF),    // Pure white for needles
-        .key_not_present = lv_color_hex(0xFF0000) // Bright red for danger
+        .needle_danger = lv_color_hex(0xDC143C),  // Crimson red for danger
+        .key_present = lv_color_hex(0x006400),    // Deep green for key present
+        .key_not_present = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
     ThemeColors _night_theme_colours = {
         .background = lv_color_hex(0x121212),
@@ -127,9 +127,9 @@ private:
         .gauge_danger = lv_color_hex(0xB00020),
         .gauge_ticks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
         .needle_normal = lv_color_hex(0xFFFFFF),  // Pure white for needles
-        .needle_danger = lv_color_hex(0xFF0000),  // Bright red for danger
-        .key_present = lv_color_hex(0xFFFFFF),    // Pure white for needles
-        .key_not_present = lv_color_hex(0xFF0000) // Bright red for danger
+        .needle_danger = lv_color_hex(0xDC143C),  // Crimson red for danger
+        .key_present = lv_color_hex(0x006400),    // Deep green for key present
+        .key_not_present = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
 
     ~StyleManager();

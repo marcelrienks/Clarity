@@ -40,8 +40,9 @@ void KeyPanel::load(std::function<void()> callback_function)
     log_d("...");
     _callback_function = callback_function;
 
-    // Create the key component cantered on screen
-    _key_component->render_load(_screen, _center_location);
+    // Create the key component cantered on screen, anf immediately refresh it with the current key status
+    _key_component->render(_screen, _center_location);
+    _key_component->refresh(Reading{_is_key_present});
     lv_obj_add_event_cb(_screen, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -60,7 +61,7 @@ void KeyPanel::update(std::function<void()> callback_function)
     if (is_key_present != _is_key_present)
     {
         _is_key_present = is_key_present;
-        _key_component->render_update(_is_key_present);
+        _key_component->refresh(Reading{_is_key_present});
     }
 
     callback_function();
@@ -73,5 +74,5 @@ void KeyPanel::show_panel_completion_callback(lv_event_t *event)
     log_d("...");
 
     auto this_instance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
-    this_instance->update(this_instance->_callback_function); // Initial update to set key status
+    this_instance->_callback_function();
 }

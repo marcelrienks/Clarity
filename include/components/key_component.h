@@ -32,8 +32,8 @@ public:
     KeyComponent();
     virtual ~KeyComponent();
 
-    void render_load(lv_obj_t *screen, const ComponentLocation& location) override;
-    void render_update(bool is_key_present) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void refresh(const Reading& reading) override;
 
 protected:
     // LVGL objects

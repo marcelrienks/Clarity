@@ -77,7 +77,7 @@ OemOilComponent::~OemOilComponent()
 /// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &location)
+void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 {
     log_d("...");
 
@@ -98,11 +98,12 @@ void OemOilComponent::render_load(lv_obj_t *screen, const ComponentLocation &loc
 }
 
 /// @brief Updates the rendered oil component.
-/// @param value The value to update the component with.
-void OemOilComponent::render_update(int32_t value)
+/// @param reading The Reading value to update the component with.
+void OemOilComponent::refresh(const Reading& reading)
 {
     log_d("...");
 
+    int32_t value = std::get<int32_t>(reading);
     const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
     lv_color_t colour = colours.gauge_normal;
 

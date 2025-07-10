@@ -11,8 +11,7 @@ class IComponent //TODO: rename all components to widgets
 {
 public:
     // Overridable methods
-    virtual void render_load(lv_obj_t *screen, const ComponentLocation& location) = 0;
-    virtual void render_update(bool is_key_present) {};
-    virtual void render_update(int32_t value) {};
+    virtual void render(lv_obj_t *screen, const ComponentLocation& location) = 0;
+    virtual void refresh(const Reading& reading) {};
     virtual void set_value(int32_t value) {};
 };

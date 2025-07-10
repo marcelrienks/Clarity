@@ -38,7 +38,7 @@ void SplashPanel::load(std::function<void()> show_panel_completion_callback)
     // Create location parameters for the splash component
     ComponentLocation splash_location(LV_ALIGN_CENTER, 0, 0);
     
-    _component->render_load(_screen, splash_location);
+    _component->render(_screen, splash_location);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
@@ -59,7 +59,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_in_timer));
 
     log_v("Fading in...");
-    lv_scr_load_anim(panel->_screen,
+    lv_screen_load_anim(panel->_screen,
                      LV_SCR_LOAD_ANIM_FADE_IN,
                      _animation_time,
                      _delay_time,

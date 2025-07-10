@@ -17,7 +17,7 @@ KeyComponent::~KeyComponent()
 /// @brief This method initializes the key present icon with location parameters
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void KeyComponent::render_load(lv_obj_t *screen, const ComponentLocation &location)
+void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 {
     log_d("...");
 
@@ -30,9 +30,11 @@ void KeyComponent::render_load(lv_obj_t *screen, const ComponentLocation &locati
     log_d("rendered load with location");
 }
 
-void KeyComponent::render_update(bool is_key_present)
+void KeyComponent::refresh(const Reading& reading)
 {
     log_d("...");
+    
+    bool is_key_present = std::get<bool>(reading);
     lv_color_t colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
     if (!is_key_present)
     {
@@ -40,5 +42,6 @@ void KeyComponent::render_update(bool is_key_present)
     }
 
     lv_obj_set_style_image_recolor(_key_icon, colour, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_key_icon, LV_OPA_COVER, MAIN_DEFAULT);
     log_d("rendered update with colour: R=%d G=%d B=%d", colour.red, colour.green, colour.blue);
 }

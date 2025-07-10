@@ -19,6 +19,6 @@ Reading KeySensor::get_reading()
     
     // Return true only if last digit equals 1, 2, or 3
     bool key_present = (last_digit == 1) || (last_digit == 2) || (last_digit == 3);
-    
+    log_d("key_present is: %d", key_present);
     return key_present;
 }
