@@ -63,7 +63,7 @@ public:
     void init();
     void load_panel(const char *panel_name);
     void load_panel_with_Splash(const char *panel_name);
-    void refresh_panel();
+    void update_panel();
 
     // Register a panel type with the factory
     template<typename T> // Note the implementation of a template type must exist in header
