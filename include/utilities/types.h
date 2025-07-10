@@ -88,6 +88,7 @@ struct PanelNames
     static constexpr const char *Splash = "SplashPanel"; ///< Startup splash screen
     static constexpr const char *Oil = "OemOilPanel";    ///< Oil monitoring dashboard
     static constexpr const char *Key = "KeyPanel";       ///< Key status panel
+    static constexpr const char *Lock = "LockPanel";     ///< Lock status panel
 };
 
 /// @struct TriggerNames
@@ -97,7 +98,8 @@ struct PanelNames
 /// used in the InterruptManager registration system.
 struct TriggerNames
 {
-    static constexpr const char *Key = "key_trigger"; ///< Key detection trigger
+    static constexpr const char *Key = "key_trigger";   ///< Key detection trigger
+    static constexpr const char *Lock = "lock_trigger"; ///< Lock detection trigger
 };
 
 /// @struct JsonDocNames

@@ -1,6 +1,7 @@
 #include "managers/panel_manager.h"
 #include "managers/interrupt_manager.h"
 #include "triggers/key_trigger.h"
+#include "triggers/lock_trigger.h"
 
 // Static Methods
 
@@ -125,6 +126,7 @@ void PanelManager::register_panels()
     register_panel<SplashPanel>(PanelNames::Splash);
     register_panel<OemOilPanel>(PanelNames::Oil);
     register_panel<KeyPanel>(PanelNames::Key);
+    register_panel<LockPanel>(PanelNames::Lock);
 }
 
 /// @brief Register all global triggers with the interrupt manager
@@ -134,6 +136,8 @@ void PanelManager::register_triggers()
 
     // Key trigger: Switch to key panel when key is detected (with restoration)
     register_global_trigger<KeyTrigger>(TriggerNames::Key, true);
+    // Lock trigger: Switch to lock panel when lock is detected (with restoration)
+    register_global_trigger<LockTrigger>(TriggerNames::Lock, true);
 }
 
 // Callback Methods
