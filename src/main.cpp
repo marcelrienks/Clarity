@@ -36,7 +36,7 @@ void loop()
   {
     log_d("...");
 
-    PanelManager::get_instance().refresh_panel();
+    PanelManager::get_instance().update_panel();
     Ticker::handle_lv_tasks();
 
     Ticker::handle_dynamic_delay(millis());

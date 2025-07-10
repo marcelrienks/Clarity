@@ -87,9 +87,12 @@ void PanelManager::load_panel(std::shared_ptr<IPanel> panel, std::function<void(
 }
 
 /// @brief Update the reading on the currently loaded panel
-void PanelManager::refresh_panel()
+void PanelManager::update_panel()
 {
     log_d("...");
+
+    // Check for interrupt conditions before normal panel update
+    check_interrupts();
 
     if (!_panel || _is_loading)
         return;
