@@ -88,6 +88,16 @@ struct PanelNames
     static constexpr const char *Key = "KeyPanel";       ///< Key status panel
 };
 
+/// @struct TriggerNames
+/// @brief String constants for trigger identification
+///
+/// @details Provides consistent string identifiers for trigger types
+/// used in the InterruptManager registration system.
+struct TriggerNames
+{
+    static constexpr const char *Key = "key_trigger"; ///< Key detection trigger
+};
+
 /// @struct JsonDocNames
 /// @brief JSON field names for configuration serialization
 ///
