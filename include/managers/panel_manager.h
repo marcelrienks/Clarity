@@ -128,7 +128,7 @@ private:
     void panel_completion_callback();
     
     /// @brief Callback executed when interrupt-triggered panel loading is complete
-    void interrupt_panel_completion_callback();
+    void interrupt_panel_switch_callback();
 
     // Instance Data Members
     std::shared_ptr<IPanel> _panel = nullptr;

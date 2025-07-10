@@ -3,6 +3,7 @@
 #include "triggers/key_trigger.h"
 
 // Static Methods
+
 /// @brief Get the singleton instance of PanelManager
 /// @return instance of PanelManager
 PanelManager &PanelManager::get_instance()
@@ -12,6 +13,7 @@ PanelManager &PanelManager::get_instance()
 }
 
 // Core Functionality Methods
+
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 /// Registers all available panel types with the factory for dynamic creation
 /// Also initializes interrupt manager with panel switching callback and registers global triggers
@@ -26,7 +28,7 @@ void PanelManager::init()
     // Initialize InterruptManager with panel switch callback
     InterruptManager &interrupt_manager = InterruptManager::get_instance();
     interrupt_manager.init([this](const char *panel_name) {
-        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_completion_callback(); });
+        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); });
     });
 }
 
@@ -135,6 +137,7 @@ void PanelManager::register_triggers()
 }
 
 // Callback Methods
+
 /// @brief callback function to be executed on splash panel show completion
 void PanelManager::splash_completion_callback(const char *panel_name)
 {
@@ -156,7 +159,7 @@ void PanelManager::panel_completion_callback()
 }
 
 /// @brief callback function to be executed when interrupt-triggered panel loading is complete
-void PanelManager::interrupt_panel_completion_callback()
+void PanelManager::interrupt_panel_switch_callback()
 {
     log_d("...");
 
