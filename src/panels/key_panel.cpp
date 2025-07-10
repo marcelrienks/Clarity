@@ -1,6 +1,7 @@
 #include "panels/key_panel.h"
 #include <variant>
 
+// Constructors and Destructors
 KeyPanel::KeyPanel()
     : _key_component(std::make_shared<KeyComponent>()),
       _key_sensor(std::make_shared<KeySensor>()) {}
@@ -22,6 +23,7 @@ KeyPanel::~KeyPanel()
     }
 }
 
+// Core Functionality Methods
 /// @brief Initialize the key panel and its components
 void KeyPanel::init()
 {
@@ -67,6 +69,7 @@ void KeyPanel::update(std::function<void()> callback_function)
     callback_function();
 }
 
+// Static Methods
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this
 void KeyPanel::show_panel_completion_callback(lv_event_t *event)

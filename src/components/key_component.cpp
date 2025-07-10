@@ -1,6 +1,7 @@
 #include "components/key_component.h"
 #include <icons/key-solid.h>
 
+// Constructors and Destructors
 KeyComponent::KeyComponent() : _key_icon(nullptr)
 {
 }
@@ -12,6 +13,23 @@ KeyComponent::~KeyComponent()
     {
         lv_obj_del(_key_icon);
     }
+}
+
+// Core Functionality Methods
+void KeyComponent::refresh(const Reading& reading)
+{
+    log_d("...");
+    
+    bool is_key_present = std::get<bool>(reading);
+    lv_color_t colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
+    if (!is_key_present)
+    {
+        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
+    }
+
+    lv_obj_set_style_image_recolor(_key_icon, colour, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(_key_icon, LV_OPA_COVER, MAIN_DEFAULT);
+    log_d("rendered update with colour: R=%d G=%d B=%d", colour.red, colour.green, colour.blue);
 }
 
 /// @brief This method initializes the key present icon with location parameters
@@ -28,20 +46,4 @@ void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location)
     // Apply location settings
     lv_obj_align(_key_icon, location.align, location.x_offset, location.y_offset);
     log_d("rendered load with location");
-}
-
-void KeyComponent::refresh(const Reading& reading)
-{
-    log_d("...");
-    
-    bool is_key_present = std::get<bool>(reading);
-    lv_color_t colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
-    if (!is_key_present)
-    {
-        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
-    }
-
-    lv_obj_set_style_image_recolor(_key_icon, colour, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(_key_icon, LV_OPA_COVER, MAIN_DEFAULT);
-    log_d("rendered update with colour: R=%d G=%d B=%d", colour.red, colour.green, colour.blue);
 }

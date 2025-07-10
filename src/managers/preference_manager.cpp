@@ -1,5 +1,7 @@
 #include "managers/preference_manager.h"
 
+// Static Methods
+
 /// @brief Get the singleton instance of PreferenceManager
 /// @return instance of PreferenceManager
 PreferenceManager &PreferenceManager::get_instance()
@@ -7,6 +9,8 @@ PreferenceManager &PreferenceManager::get_instance()
     static PreferenceManager instance; // this ensures that the instance is created only once
     return instance;
 }
+
+// Core Functionality Methods
 
 /// @brief Initialises the preference manager to handle application preferences
 void PreferenceManager::init()
@@ -35,56 +39,16 @@ void PreferenceManager::init()
     load_config();
 }
 
-/// @brief Converts a Theme enum value to a string representation
-/// @param theme The theme enum value to convert
-/// @return A string representation of the theme
-const char *PreferenceManager::theme_to_string(Themes theme)
-{
-    switch (theme)
-    {
-    case Themes::Day:
-        return "Day";
-
-    case Themes::Night:
-        return "Night";
-
-    default:
-        return "Day";
-    }
-}
-
-/// @brief Converts a string representation of a theme to a Theme enum value
-/// @param str The string to convert
-/// @return The corresponding Theme enum value
-Themes PreferenceManager::string_to_theme(const char *string)
-{
-    if (strcmp(string, "Day") == 0)
-        return Themes::Day;
-
-    if (strcmp(string, "Night") == 0)
-        return Themes::Night;
-
-    return Themes::Day;
-}
-
-/// @brief Save the current configuration to preferences
-/// @return true if the save was successful, false otherwise
-void PreferenceManager::save_config()
+/// @brief Create and save a list of default panels
+/// @return true if the save was successful
+void PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    _preferences.remove(CONFIG_KEY);
+    config = {.panel_name = std::string(PanelNames::Oil)};
 
-    // Use the new JsonDocument instead of the deprecated classes
-    JsonDocument doc;
-    doc[JsonDocNames::panel_name] = config.panel_name.c_str();
-
-    // Serialize to JSON string
-    String jsonString;
-    serializeJson(doc, jsonString);
-
-    // Save the JSON string to preferences
-    size_t written = _preferences.putString(CONFIG_KEY, jsonString);
+    PreferenceManager::save_config();
+    PreferenceManager::load_config();
 }
 
 /// @brief Load the configuration from preferences
@@ -118,14 +82,56 @@ void PreferenceManager::load_config()
     log_i("Preferences loaded successfully: %s", config.panel_name.c_str());
 }
 
-/// @brief Create and save a list of default panels
-/// @return true if the save was successful
-void PreferenceManager::create_default_config()
+/// @brief Save the current configuration to preferences
+/// @return true if the save was successful, false otherwise
+void PreferenceManager::save_config()
 {
     log_d("...");
 
-    config = {.panel_name = std::string(PanelNames::Oil)};
+    _preferences.remove(CONFIG_KEY);
 
-    PreferenceManager::save_config();
-    PreferenceManager::load_config();
+    // Use the new JsonDocument instead of the deprecated classes
+    JsonDocument doc;
+    doc[JsonDocNames::panel_name] = config.panel_name.c_str();
+
+    // Serialize to JSON string
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+    // Save the JSON string to preferences
+    size_t written = _preferences.putString(CONFIG_KEY, jsonString);
+}
+
+// Private Methods
+
+/// @brief Converts a string representation of a theme to a Theme enum value
+/// @param str The string to convert
+/// @return The corresponding Theme enum value
+Themes PreferenceManager::string_to_theme(const char *string)
+{
+    if (strcmp(string, "Day") == 0)
+        return Themes::Day;
+
+    if (strcmp(string, "Night") == 0)
+        return Themes::Night;
+
+    return Themes::Day;
+}
+
+/// @brief Converts a Theme enum value to a string representation
+/// @param theme The theme enum value to convert
+/// @return A string representation of the theme
+const char *PreferenceManager::theme_to_string(Themes theme)
+{
+    switch (theme)
+    {
+    case Themes::Day:
+        return "Day";
+
+    case Themes::Night:
+        return "Night";
+
+    default:
+        return "Day";
+    }
 }

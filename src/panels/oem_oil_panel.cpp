@@ -1,5 +1,7 @@
 #include "panels/oem_oil_panel.h"
 
+// Constructors and Destructors
+
 OemOilPanel::OemOilPanel()
     : _oem_oil_pressure_component(std::make_shared<OemOilPressureComponent>()),
       _oem_oil_temperature_component(std::make_shared<OemOilTemperatureComponent>()),
@@ -28,6 +30,8 @@ OemOilPanel::~OemOilPanel()
         _oem_oil_temperature_sensor.reset();
     }
 }
+
+// Core Functionality Methods
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
@@ -80,6 +84,8 @@ void OemOilPanel::update(std::function<void()> update_panel_completion_callback)
         _callback_function();
     }
 }
+
+// Private Methods
 
 /// @brief Update the oil pressure reading on the screen
 void OemOilPanel::update_oil_pressure()
@@ -158,6 +164,8 @@ void OemOilPanel::update_oil_temperature()
     log_d("animating...");
     lv_anim_start(&_temperature_animation);
 }
+
+// Static Callback Methods
 
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this

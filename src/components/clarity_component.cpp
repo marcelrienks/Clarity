@@ -1,5 +1,7 @@
 #include "components/clarity_component.h"
 
+// Core Functionality Methods
+
 /// @brief Initialises the Clarity Component by rendering a splash screen with location parameters
 /// @param screen the screen on which to render the component
 /// @param location the location parameters for positioning the component

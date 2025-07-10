@@ -1,5 +1,7 @@
 #include "panels/splash_panel.h"
 
+// Constructors and Destructors
+
 SplashPanel::SplashPanel()
     : _component(std::make_shared<ClarityComponent>()) {}
 
@@ -17,6 +19,8 @@ SplashPanel::~SplashPanel()
         _component.reset();
     }
 }
+
+// Core Functionality Methods
 
 /// @brief Initialize the screen with component
 /// Creates blank screens for animation transitions
@@ -47,6 +51,23 @@ void SplashPanel::update(std::function<void()> update_panel_completion_callback)
 {
     // Immediately call the completion callback so that lock/unlock logic is processed
     update_panel_completion_callback();
+}
+
+// Static Callback Methods
+
+/// @brief Callback for when the animation is complete
+/// @param animation_timer the animation_timer that has completed
+void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
+{
+    log_d("...");
+
+    // Get the splash panel instance
+    auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
+
+    this_instance->_callback_function();
+
+    // Delete the animation_timer
+    lv_timer_del(animation_timer);
 }
 
 /// @brief Callback function for the fade in fade_in_timer completion
@@ -97,19 +118,4 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fade_out_timer);
-}
-
-/// @brief Callback for when the animation is complete
-/// @param animation_timer the animation_timer that has completed
-void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
-{
-    log_d("...");
-
-    // Get the splash panel instance
-    auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
-
-    this_instance->_callback_function();
-
-    // Delete the animation_timer
-    lv_timer_del(animation_timer);
 }

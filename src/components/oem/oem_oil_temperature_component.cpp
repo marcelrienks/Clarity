@@ -1,10 +1,14 @@
 #include "components/oem/oem_oil_temperature_component.h"
 
+// Constructors and Destructors
+
 OemOilTemperatureComponent::OemOilTemperatureComponent()
     : OemOilComponent()
 {
     // Constructor delegates to base class
 }
+
+// Protected Methods
 
 /// @brief Gets the icon for the oil temperature component.
 /// @return Pointer to the icon image descriptor.

@@ -89,12 +89,14 @@ void PanelManager::update_panel()
 }
 
 // Constructors and Destructors
+
 PanelManager::~PanelManager()
 {
     _panel.reset();
 }
 
-// Core Functionality Methods
+// Private Methods
+
 /// @brief Create a panel based on the given type name
 /// @param panel_name the type name of the panel to be created
 /// @return Interface type representing the panel

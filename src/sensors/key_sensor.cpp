@@ -1,14 +1,13 @@
 #include "sensors/key_sensor.h"
 
+// Constructors and Destructors
+
 KeySensor::KeySensor()
 {
 
 }
 
-void KeySensor::init()
-{
-
-}
+// Core Functionality Methods
 
 /// @brief Get the current key reading
 /// @return The current key reading (true if key is present, false otherwise)
@@ -21,4 +20,9 @@ Reading KeySensor::get_reading()
     bool key_present = (last_digit == 1) || (last_digit == 2) || (last_digit == 3);
     log_d("key_present is: %d", key_present);
     return key_present;
+}
+
+void KeySensor::init()
+{
+
 }

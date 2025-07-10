@@ -1,6 +1,8 @@
 #include "managers/interrupt_manager.h"
 #include <esp32-hal-log.h>
 
+// Static Methods
+
 /// @brief Get the singleton instance of InterruptManager
 /// @return Reference to the InterruptManager instance
 InterruptManager &InterruptManager::get_instance()
@@ -8,6 +10,8 @@ InterruptManager &InterruptManager::get_instance()
     static InterruptManager instance;
     return instance;
 }
+
+// Core Functionality Methods
 
 /// @brief Initialize the interrupt manager
 /// @param panel_switch_callback Function to call when panel should be switched
@@ -159,25 +163,7 @@ void InterruptManager::set_current_panel(const std::string &panel_name)
     _current_panel = panel_name;
 }
 
-/// @brief Evaluate a single trigger and handle activation
-/// @param trigger_id The trigger identifier
-/// @param trigger The trigger to evaluate
-/// @return true if trigger was activated
-bool InterruptManager::evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
-{
-    log_d("...");
-
-    if (trigger->evaluate())
-    {
-        // Store the active trigger for restoration tracking
-        _active_trigger = trigger;
-
-        _panel_switch_callback(trigger->get_target_panel());
-        return true;
-    }
-
-    return false;
-}
+// Private Methods
 
 /// @brief Check if trigger condition has cleared and handle restoration
 void InterruptManager::check_trigger_restoration()
@@ -198,4 +184,24 @@ void InterruptManager::check_trigger_restoration()
         }
         _active_trigger = nullptr;
     }
+}
+
+/// @brief Evaluate a single trigger and handle activation
+/// @param trigger_id The trigger identifier
+/// @param trigger The trigger to evaluate
+/// @return true if trigger was activated
+bool InterruptManager::evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
+{
+    log_d("...");
+
+    if (trigger->evaluate())
+    {
+        // Store the active trigger for restoration tracking
+        _active_trigger = trigger;
+
+        _panel_switch_callback(trigger->get_target_panel());
+        return true;
+    }
+
+    return false;
 }
