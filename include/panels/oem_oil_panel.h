@@ -59,6 +59,17 @@ private:
     // Core Functionality Methods
     void update_oil_pressure();
     void update_oil_temperature();
+    
+    // Value mapping methods
+    /// @brief Map oil pressure sensor value to display scale
+    /// @param sensor_value Raw sensor value (1-10 Bar)
+    /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
+    int32_t map_pressure_value(int32_t sensor_value);
+    
+    /// @brief Map oil temperature sensor value to display scale
+    /// @param sensor_value Raw sensor value (0-120°C)
+    /// @return Mapped value for display
+    int32_t map_temperature_value(int32_t sensor_value);
 
     // Static Callback Methods
     static void show_panel_completion_callback(lv_event_t *event);

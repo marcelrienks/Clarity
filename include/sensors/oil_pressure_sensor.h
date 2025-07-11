@@ -49,6 +49,9 @@ public:
     // Core Functionality Methods
     void init() override;
     Reading get_reading() override;
+    
+    // Delta-based update support
+    bool has_value_changed();
 
 private:
     // Private Data Members

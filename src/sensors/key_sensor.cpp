@@ -2,6 +2,7 @@
 
 // Constructors and Destructors
 
+/// @brief Constructor for KeySensor
 KeySensor::KeySensor()
 {
 
@@ -9,6 +10,7 @@ KeySensor::KeySensor()
 
 // Core Functionality Methods
 
+/// @brief Initialize the key sensor hardware
 void KeySensor::init()
 {
     // Configure GPIO pins for digital input

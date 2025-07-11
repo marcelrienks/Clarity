@@ -99,7 +99,8 @@ void OemOilPanel::update_oil_pressure()
     }
 
     // Use delta-based updates for better performance
-    auto value = std::get<int32_t>(_oem_oil_pressure_sensor->get_reading());
+    auto sensor_value = std::get<int32_t>(_oem_oil_pressure_sensor->get_reading());
+    auto value = map_pressure_value(sensor_value);
     
     // Skip update only if value is exactly the same as last update
     if (value == _current_oil_pressure_value) {
@@ -138,7 +139,8 @@ void OemOilPanel::update_oil_temperature()
     }
 
     // Use delta-based updates for better performance
-    auto value = std::get<int32_t>(_oem_oil_temperature_sensor->get_reading());
+    auto sensor_value = std::get<int32_t>(_oem_oil_temperature_sensor->get_reading());
+    auto value = map_temperature_value(sensor_value);
     
     // Skip update only if value is exactly the same as last update
     if (value == _current_oil_temperature_value) {
@@ -223,4 +225,35 @@ void OemOilPanel::execute_temperature_animation_callback(void *target, int32_t v
     lv_anim_t *animation = lv_anim_get(target, execute_temperature_animation_callback); // get the animation
     auto this_instance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
     this_instance->_oem_oil_temperature_component.get()->set_value(value);
+}
+
+// Value mapping methods
+
+/// @brief Map oil pressure sensor value to display scale
+/// @param sensor_value Raw sensor value (1-10 Bar)
+/// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
+int32_t OemOilPanel::map_pressure_value(int32_t sensor_value)
+{
+    // Clamp sensor value to valid range (1-10 Bar)
+    if (sensor_value < 1) sensor_value = 1;
+    if (sensor_value > 10) sensor_value = 10;
+    
+    // Map 1-10 Bar to 0-60 display units
+    // Formula: (sensor_value - 1) * 60 / 9
+    // This maps: 1 Bar -> 0, 10 Bar -> 60
+    // Display represents 0.0-6.0 Bar with 0.1 precision (x10 multiplier)
+    return ((sensor_value - 1) * 60) / 9;
+}
+
+/// @brief Map oil temperature sensor value to display scale
+/// @param sensor_value Raw sensor value (0-120°C)
+/// @return Mapped value for display
+int32_t OemOilPanel::map_temperature_value(int32_t sensor_value)
+{
+    // Temperature mapping is direct 1:1 as the display range matches sensor range
+    // Clamp to valid range (0-120°C)
+    if (sensor_value < 0) sensor_value = 0;
+    if (sensor_value > 120) sensor_value = 120;
+    
+    return sensor_value;
 }

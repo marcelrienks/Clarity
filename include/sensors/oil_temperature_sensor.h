@@ -55,13 +55,16 @@ public:
     // Core Functionality Methods
     void init() override;
     Reading get_reading() override;
+    
+    // Delta-based update support
+    bool has_value_changed();
 
 private:
     // Private Data Members
     int32_t _current_reading = 0;
     int32_t _previous_reading = -1;
     unsigned long _last_update_time = 0;
-    static constexpr unsigned long UPDATE_INTERVAL_MS = 1500; // Update every 1500ms (0.67Hz)
+    static constexpr unsigned long UPDATE_INTERVAL_MS = 1000; // Update every 1000ms (1Hz)
     
     // ADC and sensor calibration constants
     static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC

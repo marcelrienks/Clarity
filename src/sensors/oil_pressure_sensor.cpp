@@ -2,6 +2,7 @@
 
 // Constructors and Destructors
 
+/// @brief Constructor for OilPressureSensor
 OilPressureSensor::OilPressureSensor()
 {
     // Initialize with zero reading
@@ -11,6 +12,7 @@ OilPressureSensor::OilPressureSensor()
 
 // Core Functionality Methods
 
+/// @brief Initialize the oil pressure sensor hardware
 void OilPressureSensor::init()
 {
     // Configure GPIO pin for analog input
@@ -27,6 +29,8 @@ void OilPressureSensor::init()
     log_i("Initial pressure reading: %d Bar (ADC: %d)", _current_reading, adc_value);
 }
 
+/// @brief Get the current oil pressure reading with time-based sampling
+/// @return Current pressure reading in Bar
 Reading OilPressureSensor::get_reading()
 {
     unsigned long current_time = millis();
@@ -55,4 +59,11 @@ Reading OilPressureSensor::get_reading()
     }
     
     return _current_reading;
+}
+
+/// @brief Check if the pressure value has changed since last reading
+/// @return true if value changed, false otherwise
+bool OilPressureSensor::has_value_changed()
+{
+    return _current_reading != _previous_reading;
 }

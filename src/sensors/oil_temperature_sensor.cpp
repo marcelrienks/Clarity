@@ -2,6 +2,7 @@
 
 // Constructors and Destructors
 
+/// @brief Constructor for OilTemperatureSensor
 OilTemperatureSensor::OilTemperatureSensor()
 {
     // Initialize with zero reading
@@ -11,6 +12,7 @@ OilTemperatureSensor::OilTemperatureSensor()
 
 // Core Functionality Methods
 
+/// @brief Initialize the oil temperature sensor hardware
 void OilTemperatureSensor::init()
 {
     // Configure GPIO pin for analog input
@@ -26,6 +28,8 @@ void OilTemperatureSensor::init()
     log_i("Initial temperature reading: %d°C (ADC: %d)", _current_reading, adc_value);
 }
 
+/// @brief Get the current oil temperature reading with time-based sampling
+/// @return Current temperature reading in Celsius
 Reading OilTemperatureSensor::get_reading()
 {
     unsigned long current_time = millis();
@@ -55,4 +59,11 @@ Reading OilTemperatureSensor::get_reading()
     }
     
     return _current_reading;
+}
+
+/// @brief Check if the temperature value has changed since last reading
+/// @return true if value changed, false otherwise
+bool OilTemperatureSensor::has_value_changed()
+{
+    return _current_reading != _previous_reading;
 }

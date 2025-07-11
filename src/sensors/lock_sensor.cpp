@@ -1,18 +1,23 @@
 #include "sensors/lock_sensor.h"
 
 // Constructors and Destructors
+
+/// @brief Constructor for LockSensor
 LockSensor::LockSensor()
 {
 }
 
 // Core Functionality Methods
 
+/// @brief Initialize the lock sensor hardware
 void LockSensor::init()
 {
     log_d("Initializing lock sensor on GPIO %d", GpioPins::LOCK);
     pinMode(GpioPins::LOCK, INPUT_PULLUP);
 }
 
+/// @brief Get the current lock status reading
+/// @return Current lock status (true if engaged, false if disengaged)
 Reading LockSensor::get_reading()
 {
     log_d("...");
