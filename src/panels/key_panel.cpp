@@ -33,7 +33,7 @@ void KeyPanel::init()
     _center_location = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     _key_sensor->init();
-    _is_key_present = false;
+    _current_key_state = KeyState::Inactive;
 }
 
 /// @brief Load the key panel UI components
@@ -42,9 +42,9 @@ void KeyPanel::load(std::function<void()> callback_function)
     log_d("...");
     _callback_function = callback_function;
 
-    // Create the key component cantered on screen, anf immediately refresh it with the current key status
+    // Create the key component centered on screen, and immediately refresh it with the current key status
     _key_component->render(_screen, _center_location);
-    _key_component->refresh(Reading{_is_key_present});
+    _key_component->refresh(Reading{static_cast<int32_t>(_current_key_state)});
     lv_obj_add_event_cb(_screen, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -56,14 +56,15 @@ void KeyPanel::update(std::function<void()> callback_function)
 {
     log_d("...");
 
-    // Get current key status from sensor
-    bool is_key_present = std::get<bool>(_key_sensor->get_reading());
+    // Get current key state from sensor
+    auto reading = _key_sensor->get_reading();
+    KeyState key_state = static_cast<KeyState>(std::get<int32_t>(reading));
 
-    // Skip update only if value is exactly the same as last update
-    if (is_key_present != _is_key_present)
+    // Skip update only if state is exactly the same as last update
+    if (key_state != _current_key_state)
     {
-        _is_key_present = is_key_present;
-        _key_component->refresh(Reading{_is_key_present});
+        _current_key_state = key_state;
+        _key_component->refresh(Reading{static_cast<int32_t>(_current_key_state)});
     }
 
     callback_function();

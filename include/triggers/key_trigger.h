@@ -5,43 +5,50 @@
 
 // Project Includes
 #include "interfaces/i_trigger.h"
-#include "sensors/key_sensor.h"
 #include "utilities/types.h"
+#include "hardware/gpio_pins.h"
+#include "sensors/key_sensor.h"
 
 /**
  * @class KeyTrigger
- * @brief Interrupt trigger that monitors key sensor and switches to key panel
+ * @brief Unified interrupt trigger that monitors key states and switches panels accordingly
  * 
- * @details This trigger monitors the KeySensor for key presence/insertion events
- * and triggers an immediate switch to the KeyPanel when a key is detected.
- * It demonstrates the interrupt system concept where a specific condition
- * (key insertion) causes an immediate panel switch regardless of current state.
+ * @details This trigger monitors both key present and not present states using a single
+ * KeySensor, and triggers appropriate panel switches based on the key state:
+ * - KeyState::Present: Switch to KeyPanel (green key)
+ * - KeyState::NotPresent: Switch to KeyPanel (red key)
+ * - KeyState::Inactive: Restore previous panel
  * 
- * @trigger_condition: Key sensor returns true (key present/inserted)
- * @target_panel: KeyPanel (PanelNames::Key)
- * @restoration: Optional restoration to previous panel when key is removed
+ * @trigger_conditions:
+ * - Key present pin HIGH (key detected/inserted) -> KeyPanel with green key
+ * - Key not present pin HIGH (key removed/not detected) -> KeyPanel with red key
+ * - Both pins LOW (inactive state) -> Restore previous panel
+ * 
+ * @target_panels:
+ * - KeyPanel for both present and not present states
+ * - Previous panel restoration when inactive
  * 
  * @use_cases:
- * - Security monitoring: Immediately show key status when key is detected
- * - User interface: Switch to key-specific controls when key is inserted
- * - System state: Change application behavior based on key presence
+ * - Automotive ignition monitoring: Show appropriate key status when requested
+ * - Security monitoring: Immediate visual feedback on key state changes
+ * - User interface: Unified key state handling with proper restoration
  * 
  * @implementation_details:
- * - Uses KeySensor for hardware abstraction
- * - Evaluates sensor reading each check cycle
- * - Supports both one-shot and restoration modes
- * - Thread-safe evaluation through sensor interface
+ * - Uses KeySensor for unified state reading
+ * - Tracks previous key state to detect changes
+ * - Supports restoration to previous panel when key becomes inactive
+ * - Single point of truth for all key-related triggers
  * 
- * @context: This is an example implementation showing how sensors can be
- * used with the interrupt system to create responsive UI behavior.
+ * @context: This replaces the separate KeyPresentTrigger and KeyNotPresentTrigger
+ * to provide a more cohesive and maintainable key monitoring system.
  */
 class KeyTrigger : public ITrigger
 {
 public:
     // Constructors and Destructors
     /// @brief Constructor with optional restoration mode
-    /// @param enable_restoration Whether to restore previous panel when key is removed
-    KeyTrigger(bool enable_restoration = false);
+    /// @param enable_restoration Whether to restore previous panel when key becomes inactive
+    KeyTrigger(bool enable_restoration = true);
 
     // Core Functionality Methods
     void init() override;
@@ -52,8 +59,8 @@ public:
 
 private:
     // Private Data Members
-    std::shared_ptr<KeySensor> _key_sensor; ///< Key sensor for monitoring key status
-    bool _enable_restoration;                ///< Whether to restore previous panel when condition clears
-    bool _previous_state = false;            ///< Previous key state for edge detection
+    bool _enable_restoration;                ///< Whether to restore previous panel when key becomes inactive
+    std::shared_ptr<KeySensor> _key_sensor;  ///< Sensor for reading unified key state
+    KeyState _last_key_state;                ///< Previous key state for change detection
     static constexpr const char* TRIGGER_ID = "key_trigger"; ///< Unique trigger identifier
 };

@@ -1,5 +1,10 @@
 #include "main.h"
 
+//TODO: Generate unit/integration tests
+//TODO: update all recent header files to follow the same ordering
+//TODO: update all implementations to follow the same ordering
+//TODO: add to readme how the current arch looks, the MVC pattern with sensors, components and panels, and how triggers tie into this, where they use the same sensors components and panels
+
 void setup()
 {
   log_d("...");

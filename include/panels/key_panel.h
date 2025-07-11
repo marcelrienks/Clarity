@@ -52,5 +52,5 @@ private:
     std::shared_ptr<KeyComponent> _key_component;
     std::shared_ptr<KeySensor> _key_sensor;
     ComponentLocation _center_location;
-    bool _is_key_present = false;
+    KeyState _current_key_state = KeyState::Inactive;
 };

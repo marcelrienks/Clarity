@@ -19,14 +19,15 @@ void InterruptManager::init(std::function<void(const char *)> panel_switch_callb
 {
     log_d("...");
 
-    _global_triggers.clear();
+    // Don't clear global triggers - they're registered before init is called
+    // _global_triggers.clear();
     _panel_triggers.clear();
     _previous_panel = "";
     _current_panel = "";
     _active_trigger = nullptr;
     _panel_switch_callback = panel_switch_callback;
 
-    log_d("InterruptManager initialized");
+    log_d("InterruptManager initialized with %d global triggers", _global_triggers.size());
 }
 
 /// @brief Check all registered triggers and handle any activations
@@ -38,12 +39,17 @@ bool InterruptManager::check_triggers()
     // First check if we need to restore from an active trigger
     if (_active_trigger != nullptr)
     {
+        log_d("Active trigger detected, checking restoration...");
         check_trigger_restoration();
+        return false; // Don't check other triggers while in restoration mode
     }
+
+    log_d("No active trigger, checking %d global triggers", _global_triggers.size());
 
     // Check global triggers first (higher priority)
     for (auto &[trigger_id, trigger] : _global_triggers)
     {
+        log_d("Evaluating trigger: %s", trigger_id.c_str());
         if (evaluate_trigger(trigger_id, trigger))
         {
             return true;
@@ -72,7 +78,7 @@ void InterruptManager::register_global_trigger(const std::string &trigger_id, st
     trigger->init();
     _global_triggers[trigger_id] = trigger;
 
-    log_d("Global trigger registered: %s", trigger_id.c_str());
+    log_d("Global trigger registered: %s (total: %d)", trigger_id.c_str(), _global_triggers.size());
 }
 
 /// @brief Register a panel-specific trigger (removed when panel changes)
@@ -188,6 +194,12 @@ bool InterruptManager::evaluate_trigger(const std::string &trigger_id, std::shar
 
     if (trigger->evaluate())
     {
+        // Don't trigger if the target panel is already active
+        if (_current_panel == trigger->get_target_panel()) {
+            log_d("Target panel %s is already active, skipping trigger", trigger->get_target_panel());
+            return false;
+        }
+
         // Store the active trigger for restoration tracking
         _active_trigger = trigger;
 

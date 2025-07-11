@@ -5,7 +5,6 @@
 /// @brief Constructor for KeySensor
 KeySensor::KeySensor()
 {
-
 }
 
 // Core Functionality Methods
@@ -13,22 +12,34 @@ KeySensor::KeySensor()
 /// @brief Initialize the key sensor hardware
 void KeySensor::init()
 {
-    // Configure GPIO pins for digital input
-    log_d("Initializing key sensor on GPIO %d (present) and GPIO %d (state)", GpioPins::KEY_PRESENT, GpioPins::IGNITION);
-    
-    pinMode(GpioPins::KEY_PRESENT, INPUT_PULLUP);
-    pinMode(GpioPins::IGNITION, INPUT_PULLUP);
+    // Configure both GPIO pins for digital input (safe to call multiple times)
+    log_d("Initializing key sensor on GPIO %d (key present) and GPIO %d (key not present)",
+          GpioPins::KEY_PRESENT, GpioPins::KEY_NOT_PRESENT);
+
+    pinMode(GpioPins::KEY_PRESENT, INPUT);
+    pinMode(GpioPins::KEY_NOT_PRESENT, INPUT);
 }
 
 /// @brief Get the current key reading
-/// @return The current key reading (true if key is present, false otherwise)
+/// @return KeyState indicating present, not present, or inactive
 Reading KeySensor::get_reading()
-{    
-    // Get the last digit (0-9) to create a 10-second cycle
-    uint32_t last_digit = (millis() / 1000) % 10;
-    
-    // Return true only if last digit equals 1, 2, or 3
-    bool key_present = (last_digit == 1) || (last_digit == 2) || (last_digit == 3);
-    log_d("key_present is: %d", key_present);
-    return key_present;
+{
+    KeyState state;
+    if (digitalRead(GpioPins::KEY_PRESENT))
+    {
+        state = KeyState::Present;
+        log_d("Key state: Present (pin %d HIGH)", GpioPins::KEY_PRESENT);
+    }
+    else if (digitalRead(GpioPins::KEY_NOT_PRESENT))
+    {
+        state = KeyState::NotPresent;
+        log_d("Key state: NotPresent (pin %d HIGH)", GpioPins::KEY_NOT_PRESENT);
+    }
+    else
+    {
+        state = KeyState::Inactive;
+        log_d("Key state: Inactive (both pins LOW)");
+    }
+
+    return static_cast<int32_t>(state);
 }

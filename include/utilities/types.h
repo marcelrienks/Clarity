@@ -78,6 +78,20 @@ enum class OilSensorTypes
     Temperature ///< Oil temperature sensor (degrees)
 };
 
+/// @enum KeyState
+/// @brief Key presence states for automotive ignition monitoring
+///
+/// @details Represents the three possible states of the ignition key system:
+/// - Present: Key inserted and detected (green key display)
+/// - NotPresent: Key explicitly not detected (red key display)  
+/// - Inactive: Neither pin active (no key panel, restore previous)
+enum class KeyState
+{
+    Present,    ///< Key is present (GPIO 25 HIGH) - show green key
+    NotPresent, ///< Key is not present (GPIO 26 HIGH) - show red key
+    Inactive    ///< Neither pin active - restore previous panel
+};
+
 /// @struct PanelNames
 /// @brief String constants for panel identification
 ///
@@ -98,8 +112,9 @@ struct PanelNames
 /// used in the InterruptManager registration system.
 struct TriggerNames
 {
-    static constexpr const char *Key = "key_trigger";   ///< Key detection trigger
-    static constexpr const char *Lock = "lock_trigger"; ///< Lock detection trigger
+    static constexpr const char *KeyPresent = "key_present_trigger";        ///< Key present detection trigger
+    static constexpr const char *KeyNotPresent = "key_not_present_trigger"; ///< Key not present detection trigger
+    static constexpr const char *Lock = "lock_trigger";                     ///< Lock detection trigger
 };
 
 /// @struct JsonDocNames

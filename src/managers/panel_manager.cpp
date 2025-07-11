@@ -134,10 +134,10 @@ void PanelManager::register_triggers()
 {
     log_d("...");
 
-    // Key trigger: Switch to key panel when key is detected (with restoration)
-    register_global_trigger<KeyTrigger>(TriggerNames::Key, true);
+    // Unified key trigger: Switch to key panel for both present/not present states (with restoration)
+    register_global_trigger<KeyTrigger>("key_trigger", true);
     // Lock trigger: Switch to lock panel when lock is detected (with restoration)
-    register_global_trigger<LockTrigger>(TriggerNames::Lock, true);
+    // register_global_trigger<LockTrigger>(TriggerNames::Lock, true); // Temporarily disabled
 }
 
 // Callback Methods

@@ -31,8 +31,8 @@ namespace GpioPins
     /// @brief Key presence detection digital input pin
     constexpr int KEY_PRESENT = 25;
     
-    /// @brief Ignition digital input pin
-    constexpr int IGNITION = 26;
+    /// @brief Key not present detection digital input pin
+    constexpr int KEY_NOT_PRESENT = 26;
     
     /// @brief Lock state digital input pin
     constexpr int LOCK = 27;
