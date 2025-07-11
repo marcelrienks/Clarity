@@ -39,8 +39,8 @@ public:
     // Core Functionality Methods
     const char *get_name() const { return PanelNames::Splash; };
     void init() override;
-    void load(std::function<void()> show_panel_completion_callback) override;
-    void update(std::function<void()> update_panel_completion_callback = nullptr) override;
+    void load(std::function<void()> callback_function) override;
+    void update(std::function<void()> callback_function = nullptr) override;
 
 private:
     // Private Data Members

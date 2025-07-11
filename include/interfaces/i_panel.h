@@ -31,7 +31,7 @@ public:
 
     /// @brief Update the panel data with asynchronous completion callback
     /// @param callback_function Function to call when update is complete
-    virtual void update(std::function<void()> callback_function) = 0; //TODO: rename this to refresh
+    virtual void update(std::function<void()> callback_function) = 0;
 
 protected:
     // Protected Data Members

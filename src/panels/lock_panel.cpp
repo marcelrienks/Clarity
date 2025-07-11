@@ -8,7 +8,8 @@ LockPanel::LockPanel()
 
 LockPanel::~LockPanel()
 {
-    if (_screen) {
+    if (_screen)
+    {
         lv_obj_delete(_screen);
     }
 
@@ -24,6 +25,7 @@ LockPanel::~LockPanel()
 }
 
 // Core Functionality Methods
+
 /// @brief Initialize the lock panel and its components
 void LockPanel::init()
 {
@@ -54,22 +56,12 @@ void LockPanel::load(std::function<void()> callback_function)
 /// @brief Update the lock panel with current sensor data
 void LockPanel::update(std::function<void()> callback_function)
 {
-    log_d("...");
-
-    // Get current lock status from sensor
-    bool is_lock_engaged = std::get<bool>(_lock_sensor->get_reading());
-
-    // Skip update only if value is exactly the same as last update
-    if (is_lock_engaged != _is_lock_engaged)
-    {
-        _is_lock_engaged = is_lock_engaged;
-        _lock_component->refresh(Reading{_is_lock_engaged});
-    }
-
+    // Immediately call the completion callback so that lock/unlock logic is processed
     callback_function();
 }
 
 // Static Methods
+
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this
 void LockPanel::show_panel_completion_callback(lv_event_t *event)

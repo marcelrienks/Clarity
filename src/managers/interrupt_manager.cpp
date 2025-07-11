@@ -168,20 +168,12 @@ void InterruptManager::set_current_panel(const std::string &panel_name)
 /// @brief Check if trigger condition has cleared and handle restoration
 void InterruptManager::check_trigger_restoration()
 {
-    if (!_active_trigger)
-    {
-        return;
-    }
-
     // Check if trigger condition has cleared
-    if (!_active_trigger->evaluate() && _active_trigger->should_restore() && !_previous_panel.empty())
+    if (!_active_trigger->evaluate() && _active_trigger->should_restore())
     {
         log_i("Trigger condition cleared, restoring previous panel: %s", _previous_panel.c_str());
 
-        if (_panel_switch_callback)
-        {
-            _panel_switch_callback(_previous_panel.c_str());
-        }
+        _panel_switch_callback(_previous_panel.c_str());
         _active_trigger = nullptr;
     }
 }
