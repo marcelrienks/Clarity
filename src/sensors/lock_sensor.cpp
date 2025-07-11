@@ -6,9 +6,11 @@ LockSensor::LockSensor()
 }
 
 // Core Functionality Methods
+
 void LockSensor::init()
 {
-    log_d("...");
+    log_d("Initializing lock sensor on GPIO %d", GpioPins::LOCK);
+    pinMode(GpioPins::LOCK, INPUT_PULLUP);
 }
 
 Reading LockSensor::get_reading()

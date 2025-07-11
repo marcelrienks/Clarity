@@ -9,6 +9,15 @@ KeySensor::KeySensor()
 
 // Core Functionality Methods
 
+void KeySensor::init()
+{
+    // Configure GPIO pins for digital input
+    log_d("Initializing key sensor on GPIO %d (present) and GPIO %d (state)", GpioPins::KEY_PRESENT, GpioPins::IGNITION);
+    
+    pinMode(GpioPins::KEY_PRESENT, INPUT_PULLUP);
+    pinMode(GpioPins::IGNITION, INPUT_PULLUP);
+}
+
 /// @brief Get the current key reading
 /// @return The current key reading (true if key is present, false otherwise)
 Reading KeySensor::get_reading()
@@ -20,9 +29,4 @@ Reading KeySensor::get_reading()
     bool key_present = (last_digit == 1) || (last_digit == 2) || (last_digit == 3);
     log_d("key_present is: %d", key_present);
     return key_present;
-}
-
-void KeySensor::init()
-{
-
 }

@@ -11,6 +11,14 @@ OilPressureSensor::OilPressureSensor()
 
 // Core Functionality Methods
 
+void OilPressureSensor::init()
+{
+    // Configure GPIO pin for analog input
+    log_d("Initializing oil pressure sensor on GPIO %d", GpioPins::OIL_PRESSURE);
+    
+    // Note: ADC configuration is handled automatically by analogRead()
+}
+
 // TODO: TEMP code for testing  
 Reading OilPressureSensor::get_reading()
 {
@@ -34,14 +42,4 @@ Reading OilPressureSensor::get_reading()
     }
     
     return _current_reading;
-}
-
-bool OilPressureSensor::has_value_changed()
-{
-    return _current_reading != _previous_reading;
-}
-
-void OilPressureSensor::init()
-{
-    // Not needed but required to satisfy interface
 }

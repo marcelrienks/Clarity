@@ -11,6 +11,14 @@ OilTemperatureSensor::OilTemperatureSensor()
 
 // Core Functionality Methods
 
+void OilTemperatureSensor::init()
+{
+    // Configure GPIO pin for analog input
+    log_d("Initializing oil temperature sensor on GPIO %d", GpioPins::OIL_TEMPERATURE);
+    
+    // Note: ADC configuration is handled automatically by analogRead()
+}
+
 // TODO: TEMP code for testing
 Reading OilTemperatureSensor::get_reading()
 {
@@ -34,14 +42,4 @@ Reading OilTemperatureSensor::get_reading()
     }
     
     return _current_reading;
-}
-
-bool OilTemperatureSensor::has_value_changed()
-{
-    return _current_reading != _previous_reading;
-}
-
-void OilTemperatureSensor::init()
-{
-    // Not needed but required to satisfy interface
 }

@@ -8,6 +8,7 @@
 // Project Includes
 #include "interfaces/i_sensor.h"
 #include "utilities/types.h"
+#include "hardware/gpio_pins.h"
 
 /**
  * @class OilPressureSensor
