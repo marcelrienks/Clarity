@@ -12,7 +12,4 @@ public:
     // Core Interface Methods
     virtual void init() = 0;
     virtual Reading get_reading() = 0;
-    
-    // Delta-based update support
-    virtual bool has_value_changed() { return true; } // Default: always update
 };

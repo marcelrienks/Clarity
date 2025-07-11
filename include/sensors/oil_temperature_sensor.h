@@ -1,7 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 // System/Library Includes
-#include <esp_random.h>
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
 
@@ -20,8 +19,8 @@
  * unnecessary UI updates. Updates at a slower rate than pressure for stability.
  * 
  * @model_role Provides oil temperature data to OemOilTemperatureComponent
- * @data_type int32_t (Degrees Fahrenheit or Celsius)
- * @range 80-200°F typical automotive range
+ * @data_type int32_t (Degrees Celsius)
+ * @range 0-120°C typical automotive range
  * @update_frequency 0.67 Hz (every 1500ms) - slower than pressure
  * 
  * @performance_features:
@@ -31,9 +30,8 @@
  * - Previous value tracking: Enables change detection
  * - Slower sampling: Temperature changes more gradually than pressure
  * 
- * @simulation_mode Currently uses ESP32 random number generator for testing
- * @hardware_interface Designed for thermistor or thermocouple input
- * @calibration Future: Temperature curve calibration for actual sensors
+ * @hardware_interface 3.3V analog temperature sensor input via GPIO pin
+ * @calibration Linear mapping: 0V = 0°C, 3.3V = 120°C
  * 
  * @critical_thresholds:
  * - Normal: 0-120°C
@@ -46,7 +44,7 @@
  * 
  * @context This sensor feeds the right-side oil temperature gauge.
  * It provides smart caching and delta updates with slower sampling rate.
- * Currently simulated but designed for real temperature sensor integration.
+ * Reads 3.3V analog input directly with linear voltage-to-temperature mapping.
  */
 class OilTemperatureSensor : public ISensor
 {
@@ -57,15 +55,15 @@ public:
     // Core Functionality Methods
     void init() override;
     Reading get_reading() override;
-    
-    // Delta-based update support
-    bool has_value_changed() override;
 
 private:
     // Private Data Members
-    // TODO: TEMP for testing
     int32_t _current_reading = 0;
     int32_t _previous_reading = -1;
     unsigned long _last_update_time = 0;
     static constexpr unsigned long UPDATE_INTERVAL_MS = 1500; // Update every 1500ms (0.67Hz)
+    
+    // ADC and sensor calibration constants
+    static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC
+    static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // Maximum temperature reading in Celsius
 };
