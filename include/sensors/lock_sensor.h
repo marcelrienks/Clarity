@@ -16,7 +16,7 @@
  * providing boolean readings for lock-related states. It simulates lock
  * detection for testing purposes.
  * 
- * @model_role Provides lock status data to LockComponent and related systems
+ * @model_role Provides lock status data to LockWidget and related systems
  * @data_type Boolean (true=lock engaged/on, false=lock disengaged/off)
  * @update_strategy Event-driven or polled based on implementation
  * 
@@ -30,7 +30,7 @@
  * - User interface status indication
  * 
  * @context This sensor provides lock status information. It's part of
- * the vehicle monitoring system and feeds data to LockComponent for display.
+ * the vehicle monitoring system and feeds data to LockWidget for display.
  * Currently implemented with simulated data for testing.
  */
 class LockSensor : public ISensor

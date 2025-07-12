@@ -1,14 +1,14 @@
 #pragma once
 
 // Project Includes
-#include "components/oem/oem_oil_component.h"
+#include "widgets/oem/oem_oil_widget.h"
 #include "icons/oil_temp_regular.h"
 
 /**
- * @class OemOilTemperatureComponent
+ * @class OemOilTemperatureWidget
  * @brief Oem styled Oil temperature gauge component with overheating protection
  * 
- * @details This component specializes the OemOilComponent for oil temperature
+ * @details This component specializes the OemOilWidget for oil temperature
  * monitoring. It displays a half circular gauge with temperature readings and
  * highlights dangerous overheating conditions. Due to it being Oem styled
  * it should take up the whole of the half of the screen to match the existing oem styled gauges.
@@ -43,12 +43,12 @@
  * @context While the scale only occupies one half of the screen, it's size is equal to that of the screen to ensure
  * it fills the whole half of the rounded screen to maintain a consistent appearance with other OEM components.
  */
-class OemOilTemperatureComponent : public OemOilComponent
+class OemOilTemperatureWidget : public OemOilWidget
 {
 public:
     // Constructors and Destructors
-    OemOilTemperatureComponent();
-    ~OemOilTemperatureComponent() = default;
+    OemOilTemperatureWidget();
+    ~OemOilTemperatureWidget() = default;
 
 protected:
     // Protected Methods

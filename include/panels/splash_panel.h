@@ -2,7 +2,7 @@
 
 // Project Includes
 #include "interfaces/i_panel.h"
-#include "components/clarity_component.h"
+#include "widgets/clarity_widget.h"
 #include "utilities/lv_tools.h"
 
 /**
@@ -13,7 +13,7 @@
  * during system startup. It provides a professional bootup experience while
  * the system initializes in the background.
  * 
- * @presenter_role Coordinates the ClarityComponent for branding display
+ * @presenter_role Coordinates the ClarityWidget for branding display
  * @animation_sequence Fade-in (2000ms) → Display (850ms) → Fade-out → Next panel
  * @timing_total ~3050ms total display time
  * 
@@ -21,7 +21,7 @@
  * @memory_usage Minimal - single component with timer-based animations
  * 
  * @ui_layout:
- * - ClarityComponent centered on screen
+ * - ClarityWidget centered on screen
  * - Black background with animated opacity
  * - Smooth fade transitions using LVGL timers
  * 
@@ -51,7 +51,7 @@ private:
 
     // Components
     lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<IComponent> _component;
+    std::shared_ptr<IWidget> _widget;
     lv_obj_t *_blank_screen;
 
     // Static Callback Methods

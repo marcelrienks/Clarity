@@ -9,11 +9,11 @@
 #include "utilities/types.h"
 
 /// @brief UI elements
-class IComponent //TODO: rename all components to widgets
+class IWidget
 {
 public:
     // Core Interface Methods
-    virtual void render(lv_obj_t *screen, const ComponentLocation& location) = 0;
+    virtual void render(lv_obj_t *screen, const WidgetLocation& location) = 0;
     virtual void refresh(const Reading& reading) {};
     virtual void set_value(int32_t value) {};
 };

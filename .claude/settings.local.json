@@ -14,7 +14,8 @@
       "Bash(rg:*)",
       "Bash(cp:*)",
       "Bash(rm:*)",
-      "Bash(pio.exe check:*)"
+      "Bash(pio.exe check:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

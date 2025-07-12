@@ -16,7 +16,7 @@
  * providing boolean readings for key-related states. It simulates key
  * detection for testing purposes.
  * 
- * @model_role Provides key status data to KeyComponent and related systems
+ * @model_role Provides key status data to KeyWidget and related systems
  * @data_type Boolean (true=key present/on, false=key absent/off)
  * @update_strategy Event-driven or polled based on implementation
  * 
@@ -30,7 +30,7 @@
  * - User interface status indication
  * 
  * @context This sensor provides key status information. It's part of
- * the vehicle monitoring system and feeds data to KeyComponent for display.
+ * the vehicle monitoring system and feeds data to KeyWidget for display.
  * Currently implemented with simulated data for testing.
  */
 class KeySensor : public ISensor

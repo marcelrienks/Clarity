@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
-#include "components/lock_component.h"
+#include "widgets/lock_widget.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
 
@@ -14,7 +14,7 @@
  * @details This panel displays the lock status using a centered lock icon.
  * It provides a simple, clean interface for monitoring lock state.
  *
- * @presenter_role Coordinates LockComponent with LockSensor data
+ * @presenter_role Coordinates LockWidget with LockSensor data
  * @data_source LockSensor providing boolean lock status
  * @update_strategy Simple boolean state updates without animation
  *
@@ -49,8 +49,8 @@ private:
 
     // Instance Data Members
     lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<LockComponent> _lock_component;
+    std::shared_ptr<LockWidget> _lock_widget;
     std::shared_ptr<LockSensor> _lock_sensor;
-    ComponentLocation _center_location;
+    WidgetLocation _center_location;
     bool _is_lock_engaged = false;
 };

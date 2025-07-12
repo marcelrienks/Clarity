@@ -3,8 +3,8 @@
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel()
-    : _oem_oil_pressure_component(std::make_shared<OemOilPressureComponent>()),
-      _oem_oil_temperature_component(std::make_shared<OemOilTemperatureComponent>()),
+    : _oem_oil_pressure_widget(std::make_shared<OemOilPressureWidget>()),
+      _oem_oil_temperature_widget(std::make_shared<OemOilTemperatureWidget>()),
       _oem_oil_pressure_sensor(std::make_shared<OilPressureSensor>()),
       _oem_oil_temperature_sensor(std::make_shared<OilTemperatureSensor>()) {}
 
@@ -25,12 +25,12 @@ OemOilPanel::~OemOilPanel()
         lv_obj_delete(_screen);
     }
 
-    if (_oem_oil_pressure_component) {
-        _oem_oil_pressure_component.reset();
+    if (_oem_oil_pressure_widget) {
+        _oem_oil_pressure_widget.reset();
     }
 
-    if (_oem_oil_temperature_component) {
-        _oem_oil_temperature_component.reset();
+    if (_oem_oil_temperature_widget) {
+        _oem_oil_temperature_widget.reset();
     }
 
     if (_oem_oil_pressure_sensor) {
@@ -67,11 +67,11 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     _callback_function = show_panel_completion_callback;
 
     // Create location parameters with rotational start points for scales
-    ComponentLocation pressure_location(210); // rotation starting at 210 degrees
-    ComponentLocation temperature_location(30); // rotation starting at 30 degrees
+    WidgetLocation pressure_location(210); // rotation starting at 210 degrees
+    WidgetLocation temperature_location(30); // rotation starting at 30 degrees
     
-    _oem_oil_pressure_component->render(_screen, pressure_location);
-    _oem_oil_temperature_component->render(_screen, temperature_location);
+    _oem_oil_pressure_widget->render(_screen, pressure_location);
+    _oem_oil_temperature_widget->render(_screen, temperature_location);
     lv_obj_add_event_cb(_screen, OemOilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -120,7 +120,7 @@ void OemOilPanel::update_oil_pressure()
     }
     
     log_i("Updating pressure from %d to %d", _current_oil_pressure_value, value);
-    _oem_oil_pressure_component->refresh(Reading{value});
+    _oem_oil_pressure_widget->refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&_pressure_animation);
@@ -160,7 +160,7 @@ void OemOilPanel::update_oil_temperature()
     }
     
     log_i("Updating temperature from %d to %d", _current_oil_temperature_value, value);
-    _oem_oil_temperature_component->refresh(Reading{value});
+    _oem_oil_temperature_widget->refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&_temperature_animation);
@@ -223,7 +223,7 @@ void OemOilPanel::execute_pressure_animation_callback(void *target, int32_t valu
 
     lv_anim_t *animation = lv_anim_get(target, execute_pressure_animation_callback); // get the animation
     auto this_instance = static_cast<OemOilPanel *>(animation->var);                    // use the animation to get the var which is this instance
-    this_instance->_oem_oil_pressure_component.get()->set_value(value);
+    this_instance->_oem_oil_pressure_widget.get()->set_value(value);
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
@@ -235,7 +235,7 @@ void OemOilPanel::execute_temperature_animation_callback(void *target, int32_t v
 
     lv_anim_t *animation = lv_anim_get(target, execute_temperature_animation_callback); // get the animation
     auto this_instance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
-    this_instance->_oem_oil_temperature_component.get()->set_value(value);
+    this_instance->_oem_oil_temperature_widget.get()->set_value(value);
 }
 
 // Value mapping methods

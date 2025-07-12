@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
-#include "components/key_component.h"
+#include "widgets/key_widget.h"
 #include "triggers/key_trigger.h"
 #include "utilities/types.h"
 
@@ -14,7 +14,7 @@
  * @details This panel displays the key/ignition status using a centered key icon.
  * It provides a simple, clean interface for monitoring key presence or ignition state.
  *
- * @presenter_role Coordinates KeyComponent with KeySensor data
+ * @presenter_role Coordinates KeyWidget with KeySensor data
  * @data_source KeySensor providing boolean key status
  * @update_strategy Simple boolean state updates without animation
  *
@@ -49,7 +49,7 @@ private:
 
     // Instance Data Members
     lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<KeyComponent> _key_component;
-    ComponentLocation _center_location;
+    std::shared_ptr<KeyWidget> _key_widget;
+    WidgetLocation _center_location;
     KeyState _current_key_state = KeyState::Inactive;
 };

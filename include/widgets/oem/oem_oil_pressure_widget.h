@@ -1,13 +1,13 @@
 #pragma once
 
-#include "components/oem/oem_oil_component.h"
+#include "widgets/oem/oem_oil_widget.h"
 #include "icons/oil_can_regular.h"
 
 /**
- * @class OemOilPressureComponent
+ * @class OemOilPressureWidget
  * @brief Oem styled Oil pressure gauge component with danger zone monitoring
  * 
- * @details This component specializes the OemOilComponent for oil pressure
+ * @details This component specializes the OemOilWidget for oil pressure
  * monitoring. It displays a half circular gauge with pressure readings and
  * highlights dangerous low-pressure conditions. Due to it being Oem styled
  * it should take up the whole of the half of the screen to match the existing oem styled gauges.
@@ -37,12 +37,12 @@
 * @context While the scale only occupies one half of the screen, it's size is equal to that of the screen to ensure
  * it fills the whole half of the rounded screen to maintain a consistent appearance with other OEM components.
  */
-class OemOilPressureComponent : public OemOilComponent
+class OemOilPressureWidget : public OemOilWidget
 {
 public:
     // Constructors and Destructors
-    OemOilPressureComponent();
-    ~OemOilPressureComponent() = default;
+    OemOilPressureWidget();
+    ~OemOilPressureWidget() = default;
 
 protected:
     // Override virtual methods from base class
