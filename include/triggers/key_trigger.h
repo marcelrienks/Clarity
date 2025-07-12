@@ -5,6 +5,7 @@
 
 // Project Includes
 #include "interfaces/i_trigger.h"
+#include "sensors/key_sensor.h"
 #include "utilities/types.h"
 
 /**
@@ -60,13 +61,9 @@ public:
     Reading get_reading();
 
 private:
-    // Core Functionality Methods
-    /// @brief Read key state directly from GPIO pins
-    /// @return Current key state
-    KeyState read_key_state();
-
     // Private Data Members
     bool _enable_restoration;                ///< Whether to restore previous panel when key becomes inactive
     KeyState _last_key_state;                ///< Previous key state for change detection
+    KeySensor _key_sensor;                   ///< Key sensor for state reading
     static constexpr const char* TRIGGER_ID = "key_trigger"; ///< Unique trigger identifier
 };

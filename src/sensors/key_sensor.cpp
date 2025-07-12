@@ -16,8 +16,8 @@ void KeySensor::init()
     log_d("Initializing key sensor on GPIO %d (key present) and GPIO %d (key not present)",
           GpioPins::KEY_PRESENT, GpioPins::KEY_NOT_PRESENT);
 
-    pinMode(GpioPins::KEY_PRESENT, INPUT);
-    pinMode(GpioPins::KEY_NOT_PRESENT, INPUT);
+    pinMode(GpioPins::KEY_PRESENT, INPUT_PULLDOWN);
+    pinMode(GpioPins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
 }
 
 /// @brief Get the current key reading
