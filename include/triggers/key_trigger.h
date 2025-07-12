@@ -6,8 +6,6 @@
 // Project Includes
 #include "interfaces/i_trigger.h"
 #include "utilities/types.h"
-#include "hardware/gpio_pins.h"
-#include "sensors/key_sensor.h"
 
 /**
  * @class KeyTrigger
@@ -56,11 +54,19 @@ public:
     const char* get_target_panel() const override;
     const char* get_id() const override;
     bool should_restore() const override;
+    
+    /// @brief Get current key state (public interface for components)
+    /// @return Current key state as Reading variant
+    Reading get_reading();
 
 private:
+    // Core Functionality Methods
+    /// @brief Read key state directly from GPIO pins
+    /// @return Current key state
+    KeyState read_key_state();
+
     // Private Data Members
     bool _enable_restoration;                ///< Whether to restore previous panel when key becomes inactive
-    std::shared_ptr<KeySensor> _key_sensor;  ///< Sensor for reading unified key state
     KeyState _last_key_state;                ///< Previous key state for change detection
     static constexpr const char* TRIGGER_ID = "key_trigger"; ///< Unique trigger identifier
 };

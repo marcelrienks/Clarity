@@ -13,7 +13,7 @@ LockSensor::LockSensor()
 void LockSensor::init()
 {
     log_d("Initializing lock sensor on GPIO %d", GpioPins::LOCK);
-    pinMode(GpioPins::LOCK, INPUT_PULLUP);
+    pinMode(GpioPins::LOCK, INPUT_PULLDOWN);
 }
 
 /// @brief Get the current lock status reading

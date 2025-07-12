@@ -20,9 +20,18 @@ void KeyComponent::refresh(const Reading& reading)
 {
     log_d("...");
     
-    bool is_key_present = std::get<bool>(reading);
-    lv_color_t colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
-    if (!is_key_present)
+    KeyState key_state = static_cast<KeyState>(std::get<int32_t>(reading));
+    lv_color_t colour;
+    
+    if (key_state == KeyState::Present)
+    {
+        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
+    }
+    else if (key_state == KeyState::NotPresent)
+    {
+        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
+    }
+    else // KeyState::Inactive
     {
         colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
     }

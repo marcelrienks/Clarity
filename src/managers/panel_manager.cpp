@@ -40,8 +40,24 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
 {
     log_d("...");
 
+    // Track this as the last non-trigger panel BEFORE checking triggers
+    _last_non_trigger_panel = std::string(panel_name);
+    log_d("Setting restoration panel to: %s", _last_non_trigger_panel.c_str());
+
+    // Check for trigger activations before creating panel (e.g., key already present at startup)
+    if (InterruptManager::get_instance().check_triggers()) {
+        return; // Trigger fired and switched to different panel
+    }
+
     InterruptManager::get_instance().clear_panel_triggers();
     InterruptManager::get_instance().set_current_panel(panel_name);
+    
+    // Clean up existing panel before creating new one
+    if (_panel) {
+        log_d("Cleaning up existing panel before creating new one");
+        _panel.reset();
+    }
+    
     _panel = PanelManager::create_panel(panel_name);
     
     log_i("Loading %s", _panel->get_name());
@@ -52,7 +68,8 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
 
     // Initialize the panel
     _panel->init();
-    Ticker::handle_lv_tasks();
+    // Skip LVGL task handling after init during panel switching to prevent hang
+    // Ticker::handle_lv_tasks();
 
     // Use provided callback or default to panel_completion_callback
     auto callback = completion_callback ? completion_callback : [this]() { this->PanelManager::panel_completion_callback(); };
@@ -82,6 +99,9 @@ void PanelManager::update_panel()
     if (_is_loading)
         return;
 
+    if (!_panel)
+        return;
+
     _is_loading = true;
     log_v("_is_loading is now %i", _is_loading);
 
@@ -90,6 +110,7 @@ void PanelManager::update_panel()
 
     Ticker::handle_lv_tasks();
 }
+
 
 // Constructors and Destructors
 
@@ -169,4 +190,14 @@ void PanelManager::interrupt_panel_switch_callback()
 
     _is_loading = false;
     log_d("Interrupt panel load completed, _is_loading is now %i", _is_loading);
+}
+
+/// @brief Get the panel name to restore when all triggers are inactive
+/// @return Panel name for restoration, or nullptr if none set
+const char* PanelManager::get_restoration_panel() const
+{
+    if (_last_non_trigger_panel.empty()) {
+        return nullptr;
+    }
+    return _last_non_trigger_panel.c_str();
 }

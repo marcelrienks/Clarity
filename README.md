@@ -76,3 +76,30 @@ The code is also based on other projects from:
 * [fbiego](https://github.com/fbiego)
 
 As well as contributions from [Eugene Petersen](https://github.com/gino247)
+
+## Known Issues
+
+### Architecture: Trigger System Design Conflicts
+
+The current trigger system creates architectural challenges that break the MVC pattern:
+
+**Current problematic flow:**
+```
+main > panelmanager >> trigger >> panel > component
+```
+
+**Issues:**
+1. **MVC Pattern Violation**: Triggers bypass the presenter layer (panels) and directly control panel switching
+2. **Circular Dependencies**: Triggers that use sensors create circular references when sensors get reinitialized from panels
+3. **Instantiation Requirements**: To maintain MVC pattern, all panels would need to be instantiated to gain access to their triggers:
+   ```
+   main > panelmanager >> panel >> component / sensor
+   main > panelmanager >> panel >> component / trigger
+   ```
+
+**Potential Solutions:**
+- **Option A**: Redesign panels as widgets where oil/clarity become components, and triggers load separate display contexts
+- **Option B**: Move trigger logic into a separate service layer that communicates with panels through events
+- **Option C**: Implement a mediator pattern where triggers publish events and panels subscribe to relevant state changes
+
+This architectural decision impacts scalability and maintainability as the system grows.

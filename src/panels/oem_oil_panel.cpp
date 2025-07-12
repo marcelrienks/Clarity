@@ -10,6 +10,17 @@ OemOilPanel::OemOilPanel()
 
 OemOilPanel::~OemOilPanel()
 {
+    // Stop any running animations before destroying the panel
+    if (_is_pressure_animation_running) {
+        lv_anim_delete(&_pressure_animation, nullptr);
+        _is_pressure_animation_running = false;
+    }
+    
+    if (_is_temperature_animation_running) {
+        lv_anim_delete(&_temperature_animation, nullptr);
+        _is_temperature_animation_running = false;
+    }
+
     if (_screen) {
         lv_obj_delete(_screen);
     }

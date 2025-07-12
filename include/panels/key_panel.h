@@ -2,7 +2,7 @@
 
 #include "interfaces/i_panel.h"
 #include "components/key_component.h"
-#include "sensors/key_sensor.h"
+#include "triggers/key_trigger.h"
 #include "utilities/types.h"
 
 #include <utilities/lv_tools.h>
@@ -50,7 +50,6 @@ private:
     // Instance Data Members
     lv_obj_t *_screen; // All panels should always have their own screens
     std::shared_ptr<KeyComponent> _key_component;
-    std::shared_ptr<KeySensor> _key_sensor;
     ComponentLocation _center_location;
     KeyState _current_key_state = KeyState::Inactive;
 };

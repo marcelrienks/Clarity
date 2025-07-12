@@ -82,14 +82,14 @@ enum class OilSensorTypes
 /// @brief Key presence states for automotive ignition monitoring
 ///
 /// @details Represents the three possible states of the ignition key system:
+/// - Inactive: Neither pin active (no key panel, restore previous)
 /// - Present: Key inserted and detected (green key display)
 /// - NotPresent: Key explicitly not detected (red key display)  
-/// - Inactive: Neither pin active (no key panel, restore previous)
 enum class KeyState
 {
+    Inactive,   ///< Neither pin active - restore previous panel
     Present,    ///< Key is present (GPIO 25 HIGH) - show green key
-    NotPresent, ///< Key is not present (GPIO 26 HIGH) - show red key
-    Inactive    ///< Neither pin active - restore previous panel
+    NotPresent  ///< Key is not present (GPIO 26 HIGH) - show red key
 };
 
 /// @struct PanelNames

@@ -82,6 +82,10 @@ public:
     
     /// @brief Update the currently active panel (called from main loop)
     void update_panel();
+    
+    /// @brief Get the panel name to restore when all triggers are inactive
+    /// @return Panel name for restoration, or nullptr if none set
+    const char* get_restoration_panel() const;
 
     // Template Methods
     /// @brief Register a panel type with the factory for dynamic creation
@@ -135,4 +139,5 @@ private:
     std::shared_ptr<IPanel> _panel = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
     bool _is_loading = false; // this allows the panel to be locked during loading from updates
+    std::string _last_non_trigger_panel; // Track last panel loaded by user/config (not by trigger) for restoration
 };

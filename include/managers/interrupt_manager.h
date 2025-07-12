@@ -105,8 +105,9 @@ private:
     /// @brief Evaluate a single trigger and handle activation
     /// @param trigger_id The trigger identifier
     /// @param trigger The trigger to evaluate
+    /// @param priority The trigger's priority level
     /// @return true if trigger was activated
-    bool evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger);
+    bool evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger, int priority);
 
     /// @brief Handle trigger activation
     /// @param trigger_id The activated trigger ID
@@ -117,10 +118,19 @@ private:
     void check_trigger_restoration();
 
     // Instance Data Members
-    std::map<std::string, std::shared_ptr<ITrigger>> _global_triggers;  ///< Global triggers (persist throughout app)
-    std::map<std::string, std::shared_ptr<ITrigger>> _panel_triggers;   ///< Panel-specific triggers (cleared on panel change)
+    /// @brief Trigger entry with ID and instance, ordered by registration priority
+    struct TriggerEntry {
+        std::string id;
+        std::shared_ptr<ITrigger> trigger;
+        int priority; ///< Lower number = higher priority (0 = highest)
+    };
+    
+    std::vector<TriggerEntry> _global_triggers;                         ///< Global triggers ordered by priority
+    std::vector<TriggerEntry> _panel_triggers;                          ///< Panel-specific triggers ordered by priority
     std::string _previous_panel = "";                                   ///< Previous panel for restoration
     std::string _current_panel = "";                                    ///< Current active panel
     std::shared_ptr<ITrigger> _active_trigger = nullptr;                ///< Currently active trigger (if any)
+    int _active_trigger_priority = -1;                                  ///< Priority of currently active trigger (-1 = none)
+    bool _trigger_has_fired = false;                                    ///< Flag indicating if any trigger has ever fired (enables restoration)
     std::function<void(const char *)> _panel_switch_callback = nullptr; ///< Callback for panel switching
 };

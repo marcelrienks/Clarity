@@ -2,9 +2,8 @@
 #include <variant>
 
 // Constructors and Destructors
-KeyPanel::KeyPanel()
-    : _key_component(std::make_shared<KeyComponent>()),
-      _key_sensor(std::make_shared<KeySensor>()) {}
+KeyPanel::KeyPanel() 
+    : _key_component(std::make_shared<KeyComponent>()) {}
 
 KeyPanel::~KeyPanel()
 {
@@ -15,11 +14,6 @@ KeyPanel::~KeyPanel()
     if (_key_component)
     {
         _key_component.reset();
-    }
-
-    if (_key_sensor)
-    {
-        _key_sensor.reset();
     }
 }
 
@@ -32,8 +26,8 @@ void KeyPanel::init()
     _screen = LvTools::create_blank_screen();
     _center_location = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    _key_sensor->init();
-    _current_key_state = KeyState::Inactive;
+    // Initialize with current key state
+    _current_key_state = KeyState::Present;
 }
 
 /// @brief Load the key panel UI components
@@ -42,9 +36,9 @@ void KeyPanel::load(std::function<void()> callback_function)
     log_d("...");
     _callback_function = callback_function;
 
-    // Create the key component centered on screen, and immediately refresh it with the current key status
     _key_component->render(_screen, _center_location);
     _key_component->refresh(Reading{static_cast<int32_t>(_current_key_state)});
+    
     lv_obj_add_event_cb(_screen, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -56,17 +50,10 @@ void KeyPanel::update(std::function<void()> callback_function)
 {
     log_d("...");
 
-    // Get current key state from sensor
-    auto reading = _key_sensor->get_reading();
-    KeyState key_state = static_cast<KeyState>(std::get<int32_t>(reading));
-
-    // Skip update only if state is exactly the same as last update
-    if (key_state != _current_key_state)
-    {
-        _current_key_state = key_state;
-        _key_component->refresh(Reading{static_cast<int32_t>(_current_key_state)});
-    }
-
+    // Note: KeyPanel doesn't need to update key state since the trigger system
+    // handles state changes and will restore/switch panels automatically
+    // The panel just displays the key state it was initialized with
+    
     callback_function();
 }
 
