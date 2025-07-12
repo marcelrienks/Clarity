@@ -1,5 +1,7 @@
 #include "panels/key_panel.h"
+#include "hardware/gpio_pins.h"
 #include <variant>
+#include <Arduino.h>
 
 // Constructors and Destructors
 KeyPanel::KeyPanel() 
@@ -26,8 +28,26 @@ void KeyPanel::init()
     _screen = LvTools::create_blank_screen();
     _center_location = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    // Initialize with current key state
-    _current_key_state = KeyState::Present;
+    // Get current key state by reading GPIO pins directly
+    bool pin25_high = digitalRead(GpioPins::KEY_PRESENT);
+    bool pin26_high = digitalRead(GpioPins::KEY_NOT_PRESENT);
+    
+    if (pin25_high && pin26_high)
+    {
+        _current_key_state = KeyState::Inactive; // Both pins HIGH - invalid state
+    }
+    else if (pin25_high)
+    {
+        _current_key_state = KeyState::Present;
+    }
+    else if (pin26_high)
+    {
+        _current_key_state = KeyState::NotPresent;
+    }
+    else
+    {
+        _current_key_state = KeyState::Inactive; // Both pins LOW
+    }
 }
 
 /// @brief Load the key panel UI components

@@ -27,11 +27,7 @@ void KeyComponent::refresh(const Reading& reading)
     {
         colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
     }
-    else if (key_state == KeyState::NotPresent)
-    {
-        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
-    }
-    else // KeyState::Inactive
+    else // KeyState::NotPresent or KeyState::Inactive
     {
         colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
     }

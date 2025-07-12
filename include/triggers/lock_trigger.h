@@ -53,5 +53,4 @@ private:
     // Instance Data Members
     std::shared_ptr<LockSensor> _lock_sensor;
     bool _enable_restoration;
-    bool _previous_state = false;
 };

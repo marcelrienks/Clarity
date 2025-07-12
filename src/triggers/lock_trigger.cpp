@@ -12,9 +12,17 @@ bool LockTrigger::evaluate()
 {
     log_d("...");
     
-    // For now, return true to always trigger (simplified implementation)
-    // In a real implementation, this would check for lock state changes
-    return true;
+    // Get current lock state from GPIO pin
+    bool current_state = std::get<bool>(_lock_sensor->get_reading());
+    
+    // Simple logic: trigger when lock pin is HIGH (engaged)
+    bool should_trigger = current_state;
+    
+    log_d("Lock state: %s, should_trigger: %d", 
+          current_state ? "engaged" : "disengaged", 
+          should_trigger);
+    
+    return should_trigger;
 }
 
 const char* LockTrigger::get_id() const
@@ -33,9 +41,9 @@ void LockTrigger::init()
     
     _lock_sensor->init();
     
-    // Get initial lock state
-    _previous_state = std::get<bool>(_lock_sensor->get_reading());
-    log_v("Lock trigger initialized with state: %s", _previous_state ? "engaged" : "disengaged");
+    // Get initial lock state for logging
+    bool initial_state = std::get<bool>(_lock_sensor->get_reading());
+    log_d("Lock trigger initialized with state: %s", initial_state ? "engaged" : "disengaged");
 }
 
 bool LockTrigger::should_restore() const
