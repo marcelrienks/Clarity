@@ -1,10 +1,12 @@
 #pragma once
 
+// System/Library Includes
+#include <memory>
+
+// Project Includes
 #include "interfaces/i_trigger.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
-
-#include <memory>
 
 /**
  * @class LockTrigger
@@ -40,10 +42,10 @@ public:
     LockTrigger(bool enable_restoration = false);
 
     // Core Functionality Methods
-    bool evaluate() override;
-    const char* get_id() const override;
-    const char* get_target_panel() const override;
     void init() override;
+    bool evaluate() override;
+    const char* get_target_panel() const override;
+    const char* get_id() const override;
     bool should_restore() const override;
 
 private:

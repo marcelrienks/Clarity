@@ -44,10 +44,12 @@ bool InterruptManager::check_triggers()
     {
         log_d("Active trigger detected, checking restoration...");
         check_trigger_restoration();
-        return false; // Don't check other triggers while in restoration mode
+        // Don't return early - continue to check for higher priority triggers
     }
 
-    log_d("No active trigger, checking %d global triggers and %d panel triggers", _global_triggers.size(), _panel_triggers.size());
+    log_d("Checking %d global triggers and %d panel triggers (active trigger priority: %d)", 
+          _global_triggers.size(), _panel_triggers.size(), 
+          _active_trigger != nullptr ? _active_trigger_priority : -1);
 
     // Check global triggers first (higher priority)
     for (const auto &entry : _global_triggers)
