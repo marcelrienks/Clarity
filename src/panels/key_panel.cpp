@@ -1,10 +1,11 @@
 #include "panels/key_panel.h"
+#include "hardware/gpio_pins.h"
 #include <variant>
+#include <Arduino.h>
 
 // Constructors and Destructors
-KeyPanel::KeyPanel()
-    : _key_component(std::make_shared<KeyComponent>()),
-      _key_sensor(std::make_shared<KeySensor>()) {}
+KeyPanel::KeyPanel() 
+    : _key_widget(std::make_shared<KeyWidget>()) {}
 
 KeyPanel::~KeyPanel()
 {
@@ -12,14 +13,9 @@ KeyPanel::~KeyPanel()
         lv_obj_delete(_screen);
     }
 
-    if (_key_component)
+    if (_key_widget)
     {
-        _key_component.reset();
-    }
-
-    if (_key_sensor)
-    {
-        _key_sensor.reset();
+        _key_widget.reset();
     }
 }
 
@@ -30,10 +26,28 @@ void KeyPanel::init()
     log_d("...");
 
     _screen = LvTools::create_blank_screen();
-    _center_location = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
+    _center_location = WidgetLocation(LV_ALIGN_CENTER, 0, 0);
 
-    _key_sensor->init();
-    _is_key_present = false;
+    // Get current key state by reading GPIO pins directly
+    bool pin25_high = digitalRead(GpioPins::KEY_PRESENT);
+    bool pin26_high = digitalRead(GpioPins::KEY_NOT_PRESENT);
+    
+    if (pin25_high && pin26_high)
+    {
+        _current_key_state = KeyState::Inactive; // Both pins HIGH - invalid state
+    }
+    else if (pin25_high)
+    {
+        _current_key_state = KeyState::Present;
+    }
+    else if (pin26_high)
+    {
+        _current_key_state = KeyState::NotPresent;
+    }
+    else
+    {
+        _current_key_state = KeyState::Inactive; // Both pins LOW
+    }
 }
 
 /// @brief Load the key panel UI components
@@ -42,9 +56,9 @@ void KeyPanel::load(std::function<void()> callback_function)
     log_d("...");
     _callback_function = callback_function;
 
-    // Create the key component cantered on screen, anf immediately refresh it with the current key status
-    _key_component->render(_screen, _center_location);
-    _key_component->refresh(Reading{_is_key_present});
+    _key_widget->render(_screen, _center_location);
+    _key_widget->refresh(Reading{static_cast<int32_t>(_current_key_state)});
+    
     lv_obj_add_event_cb(_screen, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -56,16 +70,10 @@ void KeyPanel::update(std::function<void()> callback_function)
 {
     log_d("...");
 
-    // Get current key status from sensor
-    bool is_key_present = std::get<bool>(_key_sensor->get_reading());
-
-    // Skip update only if value is exactly the same as last update
-    if (is_key_present != _is_key_present)
-    {
-        _is_key_present = is_key_present;
-        _key_component->refresh(Reading{_is_key_present});
-    }
-
+    // Note: KeyPanel doesn't need to update key state since the trigger system
+    // handles state changes and will restore/switch panels automatically
+    // The panel just displays the key state it was initialized with
+    
     callback_function();
 }
 

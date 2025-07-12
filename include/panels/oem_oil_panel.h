@@ -1,8 +1,8 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "components/oem/oem_oil_pressure_component.h"
-#include "components/oem/oem_oil_temperature_component.h"
+#include "widgets/oem/oem_oil_pressure_widget.h"
+#include "widgets/oem/oem_oil_temperature_widget.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
@@ -17,7 +17,7 @@
  * systems. It coordinates two specialized gauge components for pressure and
  * temperature monitoring, positioned side-by-side for optimal visibility.
  * 
- * @presenter_role Coordinates OemOilPressureComponent and OemOilTemperatureComponent
+ * @presenter_role Coordinates OemOilPressureWidget and OemOilTemperatureWidget
  * @data_sources OilPressureSensor and OilTemperatureSensor with delta-based updates
  * @update_strategy Smart caching with animation-based smooth transitions
  * 
@@ -59,6 +59,17 @@ private:
     // Core Functionality Methods
     void update_oil_pressure();
     void update_oil_temperature();
+    
+    // Value mapping methods
+    /// @brief Map oil pressure sensor value to display scale
+    /// @param sensor_value Raw sensor value (1-10 Bar)
+    /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
+    int32_t map_pressure_value(int32_t sensor_value);
+    
+    /// @brief Map oil temperature sensor value to display scale
+    /// @param sensor_value Raw sensor value (0-120°C)
+    /// @return Mapped value for display
+    int32_t map_temperature_value(int32_t sensor_value);
 
     // Static Callback Methods
     static void show_panel_completion_callback(lv_event_t *event);
@@ -70,8 +81,8 @@ private:
     lv_obj_t *_screen; // All panels should always have their own screens
 
     // Instance Data Members - Components and Sensors
-    std::shared_ptr<IComponent> _oem_oil_pressure_component;
-    std::shared_ptr<IComponent> _oem_oil_temperature_component;
+    std::shared_ptr<IWidget> _oem_oil_pressure_widget;
+    std::shared_ptr<IWidget> _oem_oil_temperature_widget;
     std::shared_ptr<ISensor> _oem_oil_pressure_sensor;
     std::shared_ptr<ISensor> _oem_oil_temperature_sensor;
 

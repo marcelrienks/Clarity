@@ -5,6 +5,7 @@
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/key_panel.h"
+#include "panels/lock_panel.h"
 #include "utilities/ticker.h"
 #include "managers/interrupt_manager.h"
 
@@ -73,7 +74,7 @@ public:
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
     /// @param completion_callback Optional callback function to execute when loading is complete
-    void create_and_load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr);
+    void create_and_load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panel_name Name of the target panel to load after splash
@@ -81,6 +82,10 @@ public:
     
     /// @brief Update the currently active panel (called from main loop)
     void update_panel();
+    
+    /// @brief Get the panel name to restore when all triggers are inactive
+    /// @return Panel name for restoration, or nullptr if none set
+    const char* get_restoration_panel() const;
 
     // Template Methods
     /// @brief Register a panel type with the factory for dynamic creation
@@ -134,4 +139,5 @@ private:
     std::shared_ptr<IPanel> _panel = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
     bool _is_loading = false; // this allows the panel to be locked during loading from updates
+    std::string _last_non_trigger_panel; // Track last panel loaded by user/config (not by trigger) for restoration
 };

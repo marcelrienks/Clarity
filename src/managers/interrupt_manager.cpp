@@ -1,5 +1,7 @@
 #include "managers/interrupt_manager.h"
+#include "managers/panel_manager.h"
 #include <esp32-hal-log.h>
+#include <algorithm>
 
 // Static Methods
 
@@ -19,14 +21,15 @@ void InterruptManager::init(std::function<void(const char *)> panel_switch_callb
 {
     log_d("...");
 
-    _global_triggers.clear();
+    // Don't clear global triggers - they're registered before init is called
+    // _global_triggers.clear();
     _panel_triggers.clear();
-    _previous_panel = "";
     _current_panel = "";
     _active_trigger = nullptr;
+    _active_trigger_priority = -1;
     _panel_switch_callback = panel_switch_callback;
 
-    log_d("InterruptManager initialized");
+    log_d("InterruptManager initialized with %d global triggers", _global_triggers.size());
 }
 
 /// @brief Check all registered triggers and handle any activations
@@ -38,26 +41,63 @@ bool InterruptManager::check_triggers()
     // First check if we need to restore from an active trigger
     if (_active_trigger != nullptr)
     {
+        log_d("Active trigger detected, checking restoration...");
         check_trigger_restoration();
+        // Don't return early - continue to check for higher priority triggers
     }
 
+    log_d("Checking %d global triggers and %d panel triggers (active trigger priority: %d)", 
+          _global_triggers.size(), _panel_triggers.size(), 
+          _active_trigger != nullptr ? _active_trigger_priority : -1);
+
     // Check global triggers first (higher priority)
-    for (auto &[trigger_id, trigger] : _global_triggers)
+    for (const auto &entry : _global_triggers)
     {
-        if (evaluate_trigger(trigger_id, trigger))
+        log_d("Evaluating trigger: %s (priority: %d)", entry.id.c_str(), entry.priority);
+        
+        // Only evaluate triggers with higher priority than current active trigger
+        if (_active_trigger != nullptr && entry.priority >= _active_trigger_priority)
+        {
+            log_d("Skipping lower/equal priority trigger: %s (priority %d >= active %d)", 
+                  entry.id.c_str(), entry.priority, _active_trigger_priority);
+            continue;
+        }
+        
+        if (evaluate_trigger(entry.id, entry.trigger, entry.priority))
         {
             return true;
         }
     }
 
     // Then check panel-specific triggers
-    for (auto &[trigger_id, trigger] : _panel_triggers)
+    for (const auto &entry : _panel_triggers)
     {
-        if (evaluate_trigger(trigger_id, trigger))
+        log_d("Evaluating panel trigger: %s (priority: %d)", entry.id.c_str(), entry.priority);
+        
+        // Only evaluate triggers with higher priority than current active trigger
+        if (_active_trigger != nullptr && entry.priority >= _active_trigger_priority)
+        {
+            log_d("Skipping lower/equal priority panel trigger: %s (priority %d >= active %d)", 
+                  entry.id.c_str(), entry.priority, _active_trigger_priority);
+            continue;
+        }
+        
+        if (evaluate_trigger(entry.id, entry.trigger, entry.priority))
         {
             return true;
         }
     }
+
+    // Restoration is now handled in check_trigger_restoration() when triggers clear
+    // This prevents double restoration logic that causes infinite loops
+    // if (_active_trigger == nullptr && _trigger_has_fired) {
+    //     const char* restoration_panel = PanelManager::get_instance().get_restoration_panel();
+    //     if (restoration_panel != nullptr && _current_panel != restoration_panel) {
+    //         log_i("No triggers active, restoring panel: %s", restoration_panel);
+    //         _panel_switch_callback(restoration_panel);
+    //         return true;
+    //     }
+    // }
 
     return false;
 }
@@ -70,9 +110,12 @@ void InterruptManager::register_global_trigger(const std::string &trigger_id, st
     log_d("...");
 
     trigger->init();
-    _global_triggers[trigger_id] = trigger;
+    
+    // Priority is based on registration order (0 = highest priority)
+    int priority = _global_triggers.size();
+    _global_triggers.push_back({trigger_id, trigger, priority});
 
-    log_d("Global trigger registered: %s", trigger_id.c_str());
+    log_d("Global trigger registered: %s (priority: %d, total: %d)", trigger_id.c_str(), priority, _global_triggers.size());
 }
 
 /// @brief Register a panel-specific trigger (removed when panel changes)
@@ -83,9 +126,12 @@ void InterruptManager::add_panel_trigger(const std::string &trigger_id, std::sha
     log_d("...");
 
     trigger->init();
-    _panel_triggers[trigger_id] = trigger;
+    
+    // Panel trigger priority starts after global triggers
+    int priority = _global_triggers.size() + _panel_triggers.size();
+    _panel_triggers.push_back({trigger_id, trigger, priority});
 
-    log_d("Panel trigger registered: %s", trigger_id.c_str());
+    log_d("Panel trigger registered: %s (priority: %d)", trigger_id.c_str(), priority);
 }
 
 /// @brief Remove a specific trigger by ID
@@ -95,13 +141,16 @@ void InterruptManager::remove_trigger(const std::string &trigger_id)
     log_d("...");
 
     // Check global triggers first
-    auto global_it = _global_triggers.find(trigger_id);
+    auto global_it = std::find_if(_global_triggers.begin(), _global_triggers.end(),
+        [&trigger_id](const TriggerEntry& entry) { return entry.id == trigger_id; });
+    
     if (global_it != _global_triggers.end())
     {
         // Clear active trigger if it's the one being removed
-        if (_active_trigger == global_it->second)
+        if (_active_trigger == global_it->trigger)
         {
             _active_trigger = nullptr;
+            _active_trigger_priority = -1;
         }
         _global_triggers.erase(global_it);
         log_d("Removed global trigger: %s", trigger_id.c_str());
@@ -109,13 +158,16 @@ void InterruptManager::remove_trigger(const std::string &trigger_id)
     }
 
     // Check panel triggers
-    auto panel_it = _panel_triggers.find(trigger_id);
+    auto panel_it = std::find_if(_panel_triggers.begin(), _panel_triggers.end(),
+        [&trigger_id](const TriggerEntry& entry) { return entry.id == trigger_id; });
+    
     if (panel_it != _panel_triggers.end())
     {
         // Clear active trigger if it's the one being removed
-        if (_active_trigger == panel_it->second)
+        if (_active_trigger == panel_it->trigger)
         {
             _active_trigger = nullptr;
+            _active_trigger_priority = -1;
         }
         _panel_triggers.erase(panel_it);
         log_d("Removed panel trigger: %s", trigger_id.c_str());
@@ -131,11 +183,12 @@ void InterruptManager::clear_panel_triggers()
     // Check if active trigger is in panel triggers being cleared
     if (_active_trigger != nullptr)
     {
-        for (const auto &[trigger_id, trigger] : _panel_triggers)
+        for (const auto &entry : _panel_triggers)
         {
-            if (_active_trigger == trigger)
+            if (_active_trigger == entry.trigger)
             {
                 _active_trigger = nullptr;
+                _active_trigger_priority = -1;
                 break;
             }
         }
@@ -152,14 +205,6 @@ void InterruptManager::clear_panel_triggers()
 void InterruptManager::set_current_panel(const std::string &panel_name)
 {
     log_d("...");
-
-    // Only update previous panel if we're switching to a different panel
-    if (_current_panel != panel_name && !_current_panel.empty())
-    {
-        _previous_panel = _current_panel;
-        log_d("Previous panel set to: %s", _previous_panel.c_str());
-    }
-
     _current_panel = panel_name;
 }
 
@@ -168,21 +213,26 @@ void InterruptManager::set_current_panel(const std::string &panel_name)
 /// @brief Check if trigger condition has cleared and handle restoration
 void InterruptManager::check_trigger_restoration()
 {
-    if (!_active_trigger)
-    {
-        return;
-    }
-
     // Check if trigger condition has cleared
-    if (!_active_trigger->evaluate() && _active_trigger->should_restore() && !_previous_panel.empty())
+    if (!_active_trigger->evaluate() && _active_trigger->should_restore())
     {
-        log_i("Trigger condition cleared, restoring previous panel: %s", _previous_panel.c_str());
-
-        if (_panel_switch_callback)
-        {
-            _panel_switch_callback(_previous_panel.c_str());
-        }
+        // Get restoration panel from PanelManager instead of using _previous_panel
+        const char* restoration_panel = PanelManager::get_instance().get_restoration_panel();
+        
+        // Clear triggered state BEFORE calling panel switch to prevent infinite loop
         _active_trigger = nullptr;
+        _active_trigger_priority = -1;
+        
+        // Only restore if we have a valid restoration panel
+        if (restoration_panel != nullptr)
+        {
+            log_i("Trigger condition cleared, restoring to: %s", restoration_panel);
+            _panel_switch_callback(restoration_panel);
+        }
+        else
+        {
+            log_i("Trigger condition cleared, but no restoration panel available");
+        }
     }
 }
 
@@ -190,17 +240,27 @@ void InterruptManager::check_trigger_restoration()
 /// @param trigger_id The trigger identifier
 /// @param trigger The trigger to evaluate
 /// @return true if trigger was activated
-bool InterruptManager::evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
+bool InterruptManager::evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger, int priority)
 {
     log_d("...");
 
     if (trigger->evaluate())
     {
-        // Store the active trigger for restoration tracking
+        // Store the active trigger for tracking
         _active_trigger = trigger;
+        _active_trigger_priority = priority;
+        _trigger_has_fired = true; // Mark that a trigger has fired (enables restoration)
 
+        log_d("Trigger %s activated with priority %d", trigger_id.c_str(), priority);
         _panel_switch_callback(trigger->get_target_panel());
         return true;
+    }
+    else if (_active_trigger == trigger)
+    {
+        // This trigger was active but is no longer firing - clear it
+        log_d("Trigger %s is no longer active, clearing", trigger_id.c_str());
+        _active_trigger = nullptr;
+        _active_trigger_priority = -1;
     }
 
     return false;

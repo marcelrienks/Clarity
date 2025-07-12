@@ -11,7 +11,11 @@
       "Bash(pio.exe run:*)",
       "Bash(find:*)",
       "Bash(ls:*)",
-      "Bash(rg:*)"
+      "Bash(rg:*)",
+      "Bash(cp:*)",
+      "Bash(rm:*)",
+      "Bash(pio.exe check:*)",
+      "Bash(mkdir:*)"
     ],
     "deny": []
   }

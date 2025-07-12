@@ -1,6 +1,7 @@
 #include "managers/panel_manager.h"
 #include "managers/interrupt_manager.h"
 #include "triggers/key_trigger.h"
+#include "triggers/lock_trigger.h"
 
 // Static Methods
 
@@ -28,19 +29,40 @@ void PanelManager::init()
     // Initialize InterruptManager with panel switch callback
     InterruptManager &interrupt_manager = InterruptManager::get_instance();
     interrupt_manager.init([this](const char *panel_name) {
-        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); });
+        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); }, true);
     });
 }
 
 /// @brief Creates and then loads a panel based on the given type name
 /// @param panel_name the type name of the panel to be loaded
 /// @param completion_callback the function to be called when the panel load is complete
-void PanelManager::create_and_load_panel(const char *panel_name, std::function<void()> completion_callback)
+/// @param is_trigger_driven whether this panel change is triggered by an interrupt trigger
+void PanelManager::create_and_load_panel(const char *panel_name, std::function<void()> completion_callback, bool is_trigger_driven)
 {
     log_d("...");
 
+    // Track this as the last non-trigger panel only for user-driven changes
+    if (!is_trigger_driven) {
+        _last_non_trigger_panel = std::string(panel_name);
+        log_d("Setting restoration panel to: %s", _last_non_trigger_panel.c_str());
+    } else {
+        log_d("Trigger-driven panel change, preserving restoration panel: %s", _last_non_trigger_panel.c_str());
+    }
+
+    // Check for trigger activations before creating panel (e.g., key already present at startup)
+    if (InterruptManager::get_instance().check_triggers()) {
+        return; // Trigger fired and switched to different panel
+    }
+
     InterruptManager::get_instance().clear_panel_triggers();
     InterruptManager::get_instance().set_current_panel(panel_name);
+    
+    // Clean up existing panel before creating new one
+    if (_panel) {
+        log_d("Cleaning up existing panel before creating new one");
+        _panel.reset();
+    }
+    
     _panel = PanelManager::create_panel(panel_name);
     
     log_i("Loading %s", _panel->get_name());
@@ -51,7 +73,8 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
 
     // Initialize the panel
     _panel->init();
-    Ticker::handle_lv_tasks();
+    // Skip LVGL task handling after init during panel switching to prevent hang
+    // Ticker::handle_lv_tasks();
 
     // Use provided callback or default to panel_completion_callback
     auto callback = completion_callback ? completion_callback : [this]() { this->PanelManager::panel_completion_callback(); };
@@ -81,6 +104,9 @@ void PanelManager::update_panel()
     if (_is_loading)
         return;
 
+    if (!_panel)
+        return;
+
     _is_loading = true;
     log_v("_is_loading is now %i", _is_loading);
 
@@ -89,6 +115,7 @@ void PanelManager::update_panel()
 
     Ticker::handle_lv_tasks();
 }
+
 
 // Constructors and Destructors
 
@@ -125,6 +152,7 @@ void PanelManager::register_panels()
     register_panel<SplashPanel>(PanelNames::Splash);
     register_panel<OemOilPanel>(PanelNames::Oil);
     register_panel<KeyPanel>(PanelNames::Key);
+    register_panel<LockPanel>(PanelNames::Lock);
 }
 
 /// @brief Register all global triggers with the interrupt manager
@@ -132,8 +160,10 @@ void PanelManager::register_triggers()
 {
     log_d("...");
 
-    // Key trigger: Switch to key panel when key is detected (with restoration)
-    register_global_trigger<KeyTrigger>(TriggerNames::Key, true);
+    // Unified key trigger: Switch to key panel for both present/not present states (with restoration)
+    register_global_trigger<KeyTrigger>("key_trigger", true);
+    // Lock trigger: Switch to lock panel when lock is detected (with restoration)
+    register_global_trigger<LockTrigger>(TriggerNames::Lock, true);
 }
 
 // Callback Methods
@@ -165,4 +195,14 @@ void PanelManager::interrupt_panel_switch_callback()
 
     _is_loading = false;
     log_d("Interrupt panel load completed, _is_loading is now %i", _is_loading);
+}
+
+/// @brief Get the panel name to restore when all triggers are inactive
+/// @return Panel name for restoration, or nullptr if none set
+const char* PanelManager::get_restoration_panel() const
+{
+    if (_last_non_trigger_panel.empty()) {
+        return nullptr;
+    }
+    return _last_non_trigger_panel.c_str();
 }

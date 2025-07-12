@@ -78,6 +78,20 @@ enum class OilSensorTypes
     Temperature ///< Oil temperature sensor (degrees)
 };
 
+/// @enum KeyState
+/// @brief Key presence states for automotive ignition monitoring
+///
+/// @details Represents the three possible states of the ignition key system:
+/// - Inactive: Neither pin active (no key panel, restore previous)
+/// - Present: Key inserted and detected (green key display)
+/// - NotPresent: Key explicitly not detected (red key display)  
+enum class KeyState
+{
+    Inactive,   ///< Neither pin active - restore previous panel
+    Present,    ///< Key is present (GPIO 25 HIGH) - show green key
+    NotPresent  ///< Key is not present (GPIO 26 HIGH) - show red key
+};
+
 /// @struct PanelNames
 /// @brief String constants for panel identification
 ///
@@ -88,6 +102,7 @@ struct PanelNames
     static constexpr const char *Splash = "SplashPanel"; ///< Startup splash screen
     static constexpr const char *Oil = "OemOilPanel";    ///< Oil monitoring dashboard
     static constexpr const char *Key = "KeyPanel";       ///< Key status panel
+    static constexpr const char *Lock = "LockPanel";     ///< Lock status panel
 };
 
 /// @struct TriggerNames
@@ -97,7 +112,9 @@ struct PanelNames
 /// used in the InterruptManager registration system.
 struct TriggerNames
 {
-    static constexpr const char *Key = "key_trigger"; ///< Key detection trigger
+    static constexpr const char *KeyPresent = "key_present_trigger";        ///< Key present detection trigger
+    static constexpr const char *KeyNotPresent = "key_not_present_trigger"; ///< Key not present detection trigger
+    static constexpr const char *Lock = "lock_trigger";                     ///< Lock detection trigger
 };
 
 /// @struct JsonDocNames
@@ -110,10 +127,10 @@ struct JsonDocNames
     static constexpr const char *panel_name = "panel_name"; ///< Default panel setting
 };
 
-/// @struct ComponentLocation
-/// @brief UI component positioning and sizing parameters
+/// @struct WidgetLocation
+/// @brief UI widget positioning and sizing parameters
 ///
-/// @details Comprehensive structure for defining component placement
+/// @details Comprehensive structure for defining widget placement
 /// within LVGL screens. Supports both absolute positioning (x,y) and
 /// relative alignment with offsets.
 ///
@@ -123,10 +140,10 @@ struct JsonDocNames
 /// - Sizing: width,height or LV_SIZE_CONTENT for auto-sizing
 ///
 /// @usage_examples:
-/// - ComponentLocation(100, 50): Absolute position at (100,50)
-/// - ComponentLocation(LV_ALIGN_CENTER): Centered with auto-size
-/// - ComponentLocation(LV_ALIGN_LEFT_MID, 10, 0): Left-aligned with 10px offset
-struct ComponentLocation
+/// - WidgetLocation(100, 50): Absolute position at (100,50)
+/// - WidgetLocation(LV_ALIGN_CENTER): Centered with auto-size
+/// - WidgetLocation(LV_ALIGN_LEFT_MID, 10, 0): Left-aligned with 10px offset
+struct WidgetLocation
 {
     lv_coord_t x = 0;                   ///< Absolute X coordinate
     lv_coord_t y = 0;                   ///< Absolute Y coordinate
@@ -135,17 +152,17 @@ struct ComponentLocation
     lv_coord_t y_offset = 0;            ///< Y offset from alignment point
     int32_t rotation = 0;               ///< Rotation angle in degrees (optional)
 
-    ComponentLocation() = default;
+    WidgetLocation() = default;
 
     /// Constructor for absolute positioning
-    ComponentLocation(lv_coord_t x, lv_coord_t y) : x(x), y(y) {}
+    WidgetLocation(lv_coord_t x, lv_coord_t y) : x(x), y(y) {}
 
     /// Constructor for relative alignment with optional offsets
-    ComponentLocation(lv_align_t align, lv_coord_t x_offset = 0, lv_coord_t y_offset = 0)
+    WidgetLocation(lv_align_t align, lv_coord_t x_offset = 0, lv_coord_t y_offset = 0)
         : align(align), x_offset(x_offset), y_offset(y_offset) {}
 
     /// Constructor for rotation start point of scales
-    ComponentLocation(int32_t rotation)
+    WidgetLocation(int32_t rotation)
         : rotation(rotation) {}
 };
 

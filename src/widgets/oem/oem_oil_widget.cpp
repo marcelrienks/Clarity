@@ -1,9 +1,9 @@
-#include "components/oem/oem_oil_component.h"
+#include "widgets/oem/oem_oil_widget.h"
 #include <math.h>
 
 // Constructors and Destructors
 
-OemOilComponent::OemOilComponent()
+OemOilWidget::OemOilWidget()
     : _scale(nullptr),
       _needle_line(nullptr),
       _needle_middle(nullptr),
@@ -20,7 +20,7 @@ OemOilComponent::OemOilComponent()
     // Cache StyleManager reference for performance
 }
 
-OemOilComponent::~OemOilComponent()
+OemOilWidget::~OemOilWidget()
 {
     // Clean up LVGL objects
     if (_needle_line)
@@ -81,7 +81,7 @@ OemOilComponent::~OemOilComponent()
 /// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location)
+void OemOilWidget::render(lv_obj_t *screen, const WidgetLocation &location)
 {
     log_d("...");
 
@@ -103,7 +103,7 @@ void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location
 
 /// @brief Updates the rendered oil component.
 /// @param reading The Reading value to update the component with.
-void OemOilComponent::refresh(const Reading& reading)
+void OemOilWidget::refresh(const Reading& reading)
 {
     log_d("...");
 
@@ -149,7 +149,7 @@ void OemOilComponent::refresh(const Reading& reading)
 /// @brief Sets the value of the oil component.
 /// This method updates the needle position based on the provided value.
 /// @param value
-void OemOilComponent::set_value(int32_t value)
+void OemOilWidget::set_value(int32_t value)
 {
     log_i("value is %i", value);
 
@@ -170,7 +170,7 @@ void OemOilComponent::set_value(int32_t value)
 /// @brief Maps the value for display on the oil component.
 /// @param value The original value to map.
 /// @return The mapped value for display.
-int32_t OemOilComponent::map_value_for_display(int32_t value) const
+int32_t OemOilWidget::map_value_for_display(int32_t value) const
 {
     // Default implementation - no mapping
     // Derived classes can override for special mapping (e.g., temperature component)
@@ -180,7 +180,7 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
 // Private Methods
 
 /// @brief Creates the oil icon for the oil component.
-void OemOilComponent::create_icon()
+void OemOilWidget::create_icon()
 {
     const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
@@ -195,7 +195,7 @@ void OemOilComponent::create_icon()
 
 /// @brief Creates L and H labels positioned relative to the scale rotation and angle range.
 /// Labels automatically follow when scale rotation changes.
-void OemOilComponent::create_labels()
+void OemOilWidget::create_labels()
 {
     const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
@@ -233,7 +233,7 @@ void OemOilComponent::create_labels()
 }
 
 /// @brief Creates the needle line for the oil component.
-void OemOilComponent::create_needle()
+void OemOilWidget::create_needle()
 {
     const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
 
@@ -318,7 +318,7 @@ void OemOilComponent::create_needle()
 }
 
 /// @brief Sets up the scale properties for the oil component.
-void OemOilComponent::create_scale(int32_t rotation)
+void OemOilWidget::create_scale(int32_t rotation)
 {
     // Store rotation for label positioning
     _scale_rotation = rotation;

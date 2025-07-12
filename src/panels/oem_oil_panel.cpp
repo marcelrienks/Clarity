@@ -3,23 +3,34 @@
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel()
-    : _oem_oil_pressure_component(std::make_shared<OemOilPressureComponent>()),
-      _oem_oil_temperature_component(std::make_shared<OemOilTemperatureComponent>()),
+    : _oem_oil_pressure_widget(std::make_shared<OemOilPressureWidget>()),
+      _oem_oil_temperature_widget(std::make_shared<OemOilTemperatureWidget>()),
       _oem_oil_pressure_sensor(std::make_shared<OilPressureSensor>()),
       _oem_oil_temperature_sensor(std::make_shared<OilTemperatureSensor>()) {}
 
 OemOilPanel::~OemOilPanel()
 {
+    // Stop any running animations before destroying the panel
+    if (_is_pressure_animation_running) {
+        lv_anim_delete(&_pressure_animation, nullptr);
+        _is_pressure_animation_running = false;
+    }
+    
+    if (_is_temperature_animation_running) {
+        lv_anim_delete(&_temperature_animation, nullptr);
+        _is_temperature_animation_running = false;
+    }
+
     if (_screen) {
         lv_obj_delete(_screen);
     }
 
-    if (_oem_oil_pressure_component) {
-        _oem_oil_pressure_component.reset();
+    if (_oem_oil_pressure_widget) {
+        _oem_oil_pressure_widget.reset();
     }
 
-    if (_oem_oil_temperature_component) {
-        _oem_oil_temperature_component.reset();
+    if (_oem_oil_temperature_widget) {
+        _oem_oil_temperature_widget.reset();
     }
 
     if (_oem_oil_pressure_sensor) {
@@ -56,15 +67,15 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     _callback_function = show_panel_completion_callback;
 
     // Create location parameters with rotational start points for scales
-    ComponentLocation pressure_location(210); // rotation starting at 210 degrees
-    ComponentLocation temperature_location(30); // rotation starting at 30 degrees
+    WidgetLocation pressure_location(210); // rotation starting at 210 degrees
+    WidgetLocation temperature_location(30); // rotation starting at 30 degrees
     
-    _oem_oil_pressure_component->render(_screen, pressure_location);
-    _oem_oil_temperature_component->render(_screen, temperature_location);
+    _oem_oil_pressure_widget->render(_screen, pressure_location);
+    _oem_oil_temperature_widget->render(_screen, temperature_location);
     lv_obj_add_event_cb(_screen, OemOilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
-    lv_screen_load(_screen);//TODO: find all abbreviations and replace with full words
+    lv_screen_load(_screen);
 }
 
 /// @brief Update the reading on the screen
@@ -99,7 +110,8 @@ void OemOilPanel::update_oil_pressure()
     }
 
     // Use delta-based updates for better performance
-    auto value = std::get<int32_t>(_oem_oil_pressure_sensor->get_reading());
+    auto sensor_value = std::get<int32_t>(_oem_oil_pressure_sensor->get_reading());
+    auto value = map_pressure_value(sensor_value);
     
     // Skip update only if value is exactly the same as last update
     if (value == _current_oil_pressure_value) {
@@ -108,7 +120,7 @@ void OemOilPanel::update_oil_pressure()
     }
     
     log_i("Updating pressure from %d to %d", _current_oil_pressure_value, value);
-    _oem_oil_pressure_component->refresh(Reading{value});
+    _oem_oil_pressure_widget->refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&_pressure_animation);
@@ -138,7 +150,8 @@ void OemOilPanel::update_oil_temperature()
     }
 
     // Use delta-based updates for better performance
-    auto value = std::get<int32_t>(_oem_oil_temperature_sensor->get_reading());
+    auto sensor_value = std::get<int32_t>(_oem_oil_temperature_sensor->get_reading());
+    auto value = map_temperature_value(sensor_value);
     
     // Skip update only if value is exactly the same as last update
     if (value == _current_oil_temperature_value) {
@@ -147,7 +160,7 @@ void OemOilPanel::update_oil_temperature()
     }
     
     log_i("Updating temperature from %d to %d", _current_oil_temperature_value, value);
-    _oem_oil_temperature_component->refresh(Reading{value});
+    _oem_oil_temperature_widget->refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&_temperature_animation);
@@ -210,7 +223,7 @@ void OemOilPanel::execute_pressure_animation_callback(void *target, int32_t valu
 
     lv_anim_t *animation = lv_anim_get(target, execute_pressure_animation_callback); // get the animation
     auto this_instance = static_cast<OemOilPanel *>(animation->var);                    // use the animation to get the var which is this instance
-    this_instance->_oem_oil_pressure_component.get()->set_value(value);
+    this_instance->_oem_oil_pressure_widget.get()->set_value(value);
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
@@ -222,5 +235,36 @@ void OemOilPanel::execute_temperature_animation_callback(void *target, int32_t v
 
     lv_anim_t *animation = lv_anim_get(target, execute_temperature_animation_callback); // get the animation
     auto this_instance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
-    this_instance->_oem_oil_temperature_component.get()->set_value(value);
+    this_instance->_oem_oil_temperature_widget.get()->set_value(value);
+}
+
+// Value mapping methods
+
+/// @brief Map oil pressure sensor value to display scale
+/// @param sensor_value Raw sensor value (1-10 Bar)
+/// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
+int32_t OemOilPanel::map_pressure_value(int32_t sensor_value)
+{
+    // Clamp sensor value to valid range (1-10 Bar)
+    if (sensor_value < 1) sensor_value = 1;
+    if (sensor_value > 10) sensor_value = 10;
+    
+    // Map 1-10 Bar to 0-60 display units
+    // Formula: (sensor_value - 1) * 60 / 9
+    // This maps: 1 Bar -> 0, 10 Bar -> 60
+    // Display represents 0.0-6.0 Bar with 0.1 precision (x10 multiplier)
+    return ((sensor_value - 1) * 60) / 9;
+}
+
+/// @brief Map oil temperature sensor value to display scale
+/// @param sensor_value Raw sensor value (0-120°C)
+/// @return Mapped value for display
+int32_t OemOilPanel::map_temperature_value(int32_t sensor_value)
+{
+    // Temperature mapping is direct 1:1 as the display range matches sensor range
+    // Clamp to valid range (0-120°C)
+    if (sensor_value < 0) sensor_value = 0;
+    if (sensor_value > 120) sensor_value = 120;
+    
+    return sensor_value;
 }

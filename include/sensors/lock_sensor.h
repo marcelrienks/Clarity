@@ -9,15 +9,15 @@
 #include <random>
 
 /**
- * @class KeySensor
- * @brief Key/ignition status sensor for vehicle monitoring
+ * @class LockSensor
+ * @brief Lock status sensor for vehicle monitoring
  * 
- * @details This sensor monitors the key or ignition status of the vehicle,
- * providing boolean readings for key-related states. It simulates key
+ * @details This sensor monitors the lock status of the vehicle,
+ * providing boolean readings for lock-related states. It simulates lock
  * detection for testing purposes.
  * 
- * @model_role Provides key status data to KeyWidget and related systems
- * @data_type Boolean (true=key present/on, false=key absent/off)
+ * @model_role Provides lock status data to LockWidget and related systems
+ * @data_type Boolean (true=lock engaged/on, false=lock disengaged/off)
  * @update_strategy Event-driven or polled based on implementation
  * 
  * @simulation_mode Currently uses simulated data for testing
@@ -26,18 +26,18 @@
  * 
  * @usage_context:
  * - Vehicle security monitoring
- * - Power state management
+ * - Lock state management
  * - User interface status indication
  * 
- * @context This sensor provides key status information. It's part of
- * the vehicle monitoring system and feeds data to KeyWidget for display.
+ * @context This sensor provides lock status information. It's part of
+ * the vehicle monitoring system and feeds data to LockWidget for display.
  * Currently implemented with simulated data for testing.
  */
-class KeySensor : public ISensor
+class LockSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    KeySensor();
+    LockSensor();
 
     // Core Functionality Methods
     void init() override;
