@@ -24,7 +24,6 @@ void InterruptManager::init(std::function<void(const char *)> panel_switch_callb
     // Don't clear global triggers - they're registered before init is called
     // _global_triggers.clear();
     _panel_triggers.clear();
-    _previous_panel = "";
     _current_panel = "";
     _active_trigger = nullptr;
     _active_trigger_priority = -1;
@@ -203,19 +202,9 @@ void InterruptManager::clear_panel_triggers()
 
 /// @brief Set the current panel name (for tracking)
 /// @param panel_name Current panel name
-/// @param is_trigger_driven Whether this change is caused by trigger activation
-void InterruptManager::set_current_panel(const std::string &panel_name, bool is_trigger_driven)
+void InterruptManager::set_current_panel(const std::string &panel_name)
 {
     log_d("...");
-
-    // Only update previous panel if we're switching to a different panel
-    // AND this is not a trigger-driven change (preserve original panel for restoration)
-    if (_current_panel != panel_name && !_current_panel.empty() && !is_trigger_driven)
-    {
-        _previous_panel = _current_panel;
-        log_d("Previous panel set to: %s", _previous_panel.c_str());
-    }
-
     _current_panel = panel_name;
 }
 

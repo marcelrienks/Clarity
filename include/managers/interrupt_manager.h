@@ -35,8 +35,8 @@
  * @state_management:
  * - _global_triggers: Triggers that persist throughout application lifetime
  * - _panel_triggers: Triggers specific to current panel, cleaned up on panel change
- * - _previous_panel: Track previous panel for restoration after trigger clears
  * - _active_trigger: Currently active trigger (if any)
+ * - Restoration: Handled by PanelManager's _last_non_trigger_panel tracking
  *
  * @integration: Works with PanelManager to force immediate panel switches
  * when trigger conditions are met, regardless of current panel state.
@@ -79,13 +79,7 @@ public:
 
     /// @brief Set the current panel name (for tracking)
     /// @param panel_name Current panel name
-    /// @param is_trigger_driven Whether this change is caused by trigger activation (default: false)
-    void set_current_panel(const std::string &panel_name, bool is_trigger_driven = false);
-
-    // Accessor Methods
-    /// @brief Get the previous panel name (for restoration)
-    /// @return Previous panel name or empty string if none
-    const std::string &get_previous_panel() const { return _previous_panel; }
+    void set_current_panel(const std::string &panel_name);
 
     // Template Methods
     /// @brief Factory method for trigger registration
@@ -128,7 +122,6 @@ private:
     
     std::vector<TriggerEntry> _global_triggers;                         ///< Global triggers ordered by priority
     std::vector<TriggerEntry> _panel_triggers;                          ///< Panel-specific triggers ordered by priority
-    std::string _previous_panel = "";                                   ///< Previous panel for restoration
     std::string _current_panel = "";                                    ///< Current active panel
     std::shared_ptr<ITrigger> _active_trigger = nullptr;                ///< Currently active trigger (if any)
     int _active_trigger_priority = -1;                                  ///< Priority of currently active trigger (-1 = none)

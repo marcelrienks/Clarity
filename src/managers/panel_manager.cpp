@@ -55,7 +55,7 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     }
 
     InterruptManager::get_instance().clear_panel_triggers();
-    InterruptManager::get_instance().set_current_panel(panel_name, is_trigger_driven);
+    InterruptManager::get_instance().set_current_panel(panel_name);
     
     // Clean up existing panel before creating new one
     if (_panel) {
