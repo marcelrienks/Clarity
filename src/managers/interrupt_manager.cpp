@@ -203,12 +203,14 @@ void InterruptManager::clear_panel_triggers()
 
 /// @brief Set the current panel name (for tracking)
 /// @param panel_name Current panel name
-void InterruptManager::set_current_panel(const std::string &panel_name)
+/// @param is_trigger_driven Whether this change is caused by trigger activation
+void InterruptManager::set_current_panel(const std::string &panel_name, bool is_trigger_driven)
 {
     log_d("...");
 
     // Only update previous panel if we're switching to a different panel
-    if (_current_panel != panel_name && !_current_panel.empty())
+    // AND this is not a trigger-driven change (preserve original panel for restoration)
+    if (_current_panel != panel_name && !_current_panel.empty() && !is_trigger_driven)
     {
         _previous_panel = _current_panel;
         log_d("Previous panel set to: %s", _previous_panel.c_str());
@@ -225,22 +227,22 @@ void InterruptManager::check_trigger_restoration()
     // Check if trigger condition has cleared
     if (!_active_trigger->evaluate() && _active_trigger->should_restore())
     {
-        // Store previous panel before clearing trigger state
-        std::string panel_to_restore = _previous_panel;
+        // Get restoration panel from PanelManager instead of using _previous_panel
+        const char* restoration_panel = PanelManager::get_instance().get_restoration_panel();
         
         // Clear triggered state BEFORE calling panel switch to prevent infinite loop
         _active_trigger = nullptr;
         _active_trigger_priority = -1;
         
-        // Only restore if we have a valid previous panel
-        if (!panel_to_restore.empty())
+        // Only restore if we have a valid restoration panel
+        if (restoration_panel != nullptr)
         {
-            log_i("Trigger condition cleared, restoring previous panel: %s", panel_to_restore.c_str());
-            _panel_switch_callback(panel_to_restore.c_str());
+            log_i("Trigger condition cleared, restoring to: %s", restoration_panel);
+            _panel_switch_callback(restoration_panel);
         }
         else
         {
-            log_i("Trigger condition cleared, but no previous panel to restore");
+            log_i("Trigger condition cleared, but no restoration panel available");
         }
     }
 }

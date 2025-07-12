@@ -29,20 +29,25 @@ void PanelManager::init()
     // Initialize InterruptManager with panel switch callback
     InterruptManager &interrupt_manager = InterruptManager::get_instance();
     interrupt_manager.init([this](const char *panel_name) {
-        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); });
+        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); }, true);
     });
 }
 
 /// @brief Creates and then loads a panel based on the given type name
 /// @param panel_name the type name of the panel to be loaded
 /// @param completion_callback the function to be called when the panel load is complete
-void PanelManager::create_and_load_panel(const char *panel_name, std::function<void()> completion_callback)
+/// @param is_trigger_driven whether this panel change is triggered by an interrupt trigger
+void PanelManager::create_and_load_panel(const char *panel_name, std::function<void()> completion_callback, bool is_trigger_driven)
 {
     log_d("...");
 
-    // Track this as the last non-trigger panel BEFORE checking triggers
-    _last_non_trigger_panel = std::string(panel_name);
-    log_d("Setting restoration panel to: %s", _last_non_trigger_panel.c_str());
+    // Track this as the last non-trigger panel only for user-driven changes
+    if (!is_trigger_driven) {
+        _last_non_trigger_panel = std::string(panel_name);
+        log_d("Setting restoration panel to: %s", _last_non_trigger_panel.c_str());
+    } else {
+        log_d("Trigger-driven panel change, preserving restoration panel: %s", _last_non_trigger_panel.c_str());
+    }
 
     // Check for trigger activations before creating panel (e.g., key already present at startup)
     if (InterruptManager::get_instance().check_triggers()) {
@@ -50,7 +55,7 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     }
 
     InterruptManager::get_instance().clear_panel_triggers();
-    InterruptManager::get_instance().set_current_panel(panel_name);
+    InterruptManager::get_instance().set_current_panel(panel_name, is_trigger_driven);
     
     // Clean up existing panel before creating new one
     if (_panel) {

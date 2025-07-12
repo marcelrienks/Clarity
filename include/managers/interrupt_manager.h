@@ -79,7 +79,8 @@ public:
 
     /// @brief Set the current panel name (for tracking)
     /// @param panel_name Current panel name
-    void set_current_panel(const std::string &panel_name);
+    /// @param is_trigger_driven Whether this change is caused by trigger activation (default: false)
+    void set_current_panel(const std::string &panel_name, bool is_trigger_driven = false);
 
     // Accessor Methods
     /// @brief Get the previous panel name (for restoration)

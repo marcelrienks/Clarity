@@ -74,7 +74,7 @@ public:
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
     /// @param completion_callback Optional callback function to execute when loading is complete
-    void create_and_load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr);
+    void create_and_load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panel_name Name of the target panel to load after splash
