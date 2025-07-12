@@ -75,7 +75,7 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     lv_obj_add_event_cb(_screen, OemOilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
-    lv_screen_load(_screen);//TODO: find all abbreviations and replace with full words
+    lv_screen_load(_screen);
 }
 
 /// @brief Update the reading on the screen

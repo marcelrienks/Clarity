@@ -11,12 +11,12 @@ _**Note:** this project is over complicated for general use cases of just creati
 * [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
 
 ## Architecture:
-Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can show one of many `panel` configurations, each of which having one or many `component(s)` shown together. _Note: components can be part of many panel configurations (many to many relationship)_
-> Device > Display > Panels > Components
+Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can show one of many `panel` configurations, each of which having one or many `widget(s)` shown together. _Note: widgets can be part of many panel configurations (many to many relationship)_
+> Device > Display > Panels > Widgets
 
 This is designed around an MVP pattern.  
-A sensor will represent the model, and be responsible for handling data reading. A component will represent the view, and be responsible for building the view for the sensor data. And the panel will represent the presenter, and will be responsible for building and displaying one or more components at once.
-> Sensor(model) <> Panel(presenter) <> Component(view)  
+A sensor will represent the model, and be responsible for handling data reading. A widget will represent the view, and be responsible for building the view for the sensor data. And the panel will represent the presenter, and will be responsible for building and displaying one or more widgets at once.
+> Sensor(model) <> Panel(presenter) <> Widget(view)  
 
 Based on an input (either from sensor signal or from a button press) the device/display will load different screens. For example an emergency panel can be shown when a sensor signal moves beyond a threshold, replacing the panel that was configured to display using a button input which normally cycles through multiple screen configurations.
 
@@ -26,7 +26,7 @@ _This would also allow for future extension with more panels configurations and 
 
 ### **OemOilPanel** 
 **Primary dashboard displaying engine oil monitoring**
-- **Components**: OemOilComponent (pressure gauge), OemOilTemperatureComponent (temperature gauge)
+- **Widgets**: OemOilWidget (pressure gauge), OemOilTemperatureWidget (temperature gauge)
 - **Sensors**: OilPressureSensor, OilTemperatureSensor  
 - **Display**: Dual circular gauges with animated value updates
 - **Role**: Default panel, restoration target for trigger system
@@ -34,7 +34,7 @@ _This would also allow for future extension with more panels configurations and 
 
 ### **KeyPanel**
 **Key/ignition status indicator**
-- **Component**: KeyComponent (key status icon)
+- **Widget**: KeyWidget (key status icon)
 - **Sensor**: KeySensor (via KeyTrigger)
 - **Display**: Key icon with state-based coloring
 - **Trigger**: KeyTrigger (GPIO pins 25 & 26)
@@ -46,7 +46,7 @@ _This would also allow for future extension with more panels configurations and 
 
 ### **LockPanel**
 **Vehicle lock/immobilizer status**
-- **Component**: LockComponent (lock status display)
+- **Widget**: LockWidget (lock status display)
 - **Sensor**: LockSensor (via LockTrigger)  
 - **Trigger**: LockTrigger (GPIO pin 27)
 - **Display**: Lock status indication
@@ -58,41 +58,41 @@ _This would also allow for future extension with more panels configurations and 
 - **Usage**: Smooth visual transitions between panels
 - **Features**: Branding display, initialization feedback
 
-## Components
+## Widgets
 
-### **OemOilComponent**
+### **OemOilWidget**
 **Primary oil pressure gauge display**
 - **Type**: Circular gauge with needle indicator
 - **Range**: Configurable pressure range with color zones
 - **Features**: Smooth animations, threshold-based styling
 - **Integration**: Direct sensor binding for real-time updates
 
-### **OemOilTemperatureComponent** 
+### **OemOilTemperatureWidget** 
 **Oil temperature gauge display**
 - **Type**: Circular gauge with temperature mapping
 - **Features**: Value mapping, color-coded zones, animated updates
 - **Integration**: Temperature sensor data processing
 
-### **KeyComponent**
+### **KeyWidget**
 **Key status icon display**
 - **Type**: SVG-based key icon with state colors
 - **States**: Present (green), Not Present (red), Inactive (hidden)
 - **Features**: State-based color changes, clean icon rendering
 - **Integration**: KeySensor data via panel coordination
 
-### **LockComponent**
+### **LockWidget**
 **Lock/immobilizer status display**  
 - **Type**: Lock status indicator
 - **Features**: Binary state display, clear visual feedback
 - **Integration**: LockSensor data via trigger system
 
-### **ClarityComponent**
-**Base component providing common functionality**
-- **Type**: Abstract base class for component inheritance
+### **ClarityWidget**
+**Base widget providing common functionality**
+- **Type**: Abstract base class for widget inheritance
 - **Features**: Common rendering pipeline, shared utilities
-- **Usage**: Foundation for all display components
+- **Usage**: Foundation for all display widgets
 
-## Component Parts:
+## Hardware Parts:
 These are the components used for this specific project, but the code can be adjusted to suit any combination of microcontroller and lcd display.
 * NodeMCU-32
 * 1.28" round display (GC9A01 driver)
@@ -121,15 +121,6 @@ Widget Updates are for:
 3. Inactive screens are NOT rendered - LVGL only renders the currently active screen, so screen A stops being drawn/updated
 4. Memory remains allocated - Screen A and all its widgets stay in memory until explicitly deleted with lv_obj_del(screen_A)
 
-## Credits:
-This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
-
-The code is also based on other projects from:
-* [Garage Tinkering](https://github.com/valentineautos)
-* [fbiego](https://github.com/fbiego)
-
-As well as contributions from [Eugene Petersen](https://github.com/gino247)
-
 ## Panel-Trigger Architectural Patterns
 
 The system implements several well-established design patterns to coordinate between panels and triggers:
@@ -138,7 +129,7 @@ The system implements several well-established design patterns to coordinate bet
 
 #### **MVP (Model-View-Presenter) Pattern**
 - **Model**: Sensors (KeySensor, LockSensor, OilPressureSensor, etc.)
-- **View**: Components (KeyComponent, LockComponent, OemOilComponent, etc.) 
+- **View**: Widgets (KeyWidget, LockWidget, OemOilWidget, etc.) 
 - **Presenter**: Panels (KeyPanel, LockPanel, OemOilPanel, etc.)
 
 #### **Observer Pattern (Trigger System)**
@@ -208,7 +199,7 @@ InterruptManager.register_trigger<KeyTrigger>("key_trigger");
 
 #### **Continuous Monitoring Flow (Oil Panel)**
 ```
-Sensors → continuous readings → Panel → Components → UI Update
+Sensors → continuous readings → Panel → Widgets → UI Update
 ```
 
 #### **Event-Driven Flow (Key/Lock)**
@@ -246,13 +237,13 @@ Trigger Clears → InterruptManager → PanelManager.get_restoration_panel() →
 
 #### **KeyPanel ↔ KeyTrigger**
 - **Trigger owns**: KeySensor instance
-- **Panel owns**: KeyComponent (for display)
-- **Data flow**: KeySensor → KeyTrigger (logic) + KeyPanel → KeyComponent (display)
+- **Panel owns**: KeyWidget (for display)
+- **Data flow**: KeySensor → KeyTrigger (logic) + KeyPanel → KeyWidget (display)
 - **Triggering**: Any key state change (Present/NotPresent) → load KeyPanel
 
 #### **LockPanel ↔ LockTrigger**
 - **Trigger owns**: LockSensor instance  
-- **Panel owns**: LockComponent (for display)
+- **Panel owns**: LockWidget (for display)
 - **Triggering**: Lock engaged (HIGH) → load LockPanel
 
 #### **OemOilPanel (No Direct Trigger)**
@@ -281,3 +272,13 @@ Trigger Clears → InterruptManager → PanelManager.get_restoration_panel() →
 ```
 
 This architecture provides clean separation of concerns, with sensors handling hardware, triggers handling business logic for panel switching, and panels handling presentation logic.
+
+## Credits
+
+This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
+
+The code is also based on other projects from:
+* [Garage Tinkering](https://github.com/valentineautos)
+* [fbiego](https://github.com/fbiego)
+
+As well as contributions from [Eugene Petersen](https://github.com/gino247)
