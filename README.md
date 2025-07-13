@@ -338,33 +338,56 @@ pio.exe run -e debug-upload   # Debug build with inverted colors for waveshare d
 pio.exe run -e release        # Optimized release build with inverted colors
 ```
 
-### Testing Commands
+### Testing Setup and Commands
 
-**Run All Tests (Recommended)**:
-```bash
-# Linux/macOS
-./run_all_tests.sh
+#### Windows PowerShell Setup
+1. **Prerequisites**: Install PlatformIO
+   ```powershell
+   pip install platformio
+   ```
 
-# Windows
-run_tests_local.bat
-```
+2. **Download Wokwi CLI** (for integration tests):
+   - Download `wokwi-cli.exe` from [GitHub releases](https://github.com/wokwi/wokwi-cli/releases/latest)
+   - Place in project root directory
 
-**Individual Test Suites**:
-```bash
-# Unit tests only
-pio.exe test -e test --verbose
+3. **Set Wokwi Token** (get from wokwi.com):
+   ```powershell
+   $env:WOKWI_CLI_TOKEN="<your_wokwi_token>"
+   ```
 
-# Integration tests only (requires WOKWI_CLI_TOKEN)
-./wokwi-cli test --scenario test_scenarios.yaml --timeout 120000
+4. **Run All Tests**:
+   ```powershell
+   .\run_tests_local.bat
+   ```
 
-# Build verification only
-pio.exe run -e debug-local && pio.exe run -e debug-upload && pio.exe run -e release
-```
+5. **Individual Test Commands**:
+   ```powershell
+   # Unit tests only
+   pio.exe test -e test --verbose
+   
+   # Integration tests only
+   .\wokwi-cli.exe test --scenario test_scenarios.yaml --timeout 120000
+   
+   # Build verification only
+   pio.exe run -e debug-local; pio.exe run -e debug-upload; pio.exe run -e release
+   ```
 
-**Test Prerequisites**:
+#### VS Code Integration
+1. **Install PlatformIO Extension** for VS Code
+2. **Reload VS Code** after adding `.vscode/tasks.json`
+3. **Run via Command Palette**:
+   - `Ctrl+Shift+P` → "Tasks: Run Task" → "Run All Tests (Complete Suite)"
+4. **Or use Terminal**: 
+   - Windows: `.\run_tests_local.bat`
+
+#### Test Prerequisites Summary
 - **Unit Tests**: PlatformIO with Unity framework
-- **Integration Tests**: Wokwi CLI + valid `WOKWI_CLI_TOKEN` environment variable (get token from wokwi.com)
+- **Integration Tests**: Wokwi CLI + `WOKWI_CLI_TOKEN` environment variable
 - **Build Tests**: PlatformIO with all dependencies installed
+- **GitHub Actions**: `WOKWI_CLI_TOKEN` repository secret required for CI integration tests
+
+#### Note on CI/CD
+GitHub Actions runs successfully on Ubuntu runners because it explicitly installs PlatformIO and uses direct `pio` commands rather than the bash scripts. The CI workflow installs all dependencies automatically, ensuring consistent testing across all environments.
 
 ## Credits
 

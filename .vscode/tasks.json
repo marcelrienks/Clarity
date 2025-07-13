@@ -4,7 +4,13 @@
         {
             "label": "Run All Tests (Complete Suite)",
             "type": "shell",
-            "command": "${workspaceFolder}/run_all_tests.sh",
+            "command": "${workspaceFolder}/run_tests_local.bat",
+            "options": {
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/c"]
+                }
+            },
             "group": {
                 "kind": "test",
                 "isDefault": true

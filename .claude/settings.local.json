@@ -24,7 +24,12 @@
       "Bash(chmod:*)",
       "Bash(./wokwi-cli:*)",
       "Bash(export:*)",
-      "WebFetch(domain:docs.wokwi.com)"
+      "WebFetch(domain:docs.wokwi.com)",
+      "Bash(echo $WOKWI_CLI_TOKEN)",
+      "Bash(bash:*)",
+      "Bash(dos2unix:*)",
+      "Bash(sed:*)",
+      "Bash(./run_all_tests.sh)"
     ],
     "deny": []
   }
