@@ -10,7 +10,6 @@ jobs:
   wokwi-integration-tests:
     runs-on: ubuntu-latest
     name: Integration Tests with Wokwi
-    if: ${{ secrets.WOKWI_CLI_TOKEN != '' }}
     
     steps:
       - name: Checkout code
