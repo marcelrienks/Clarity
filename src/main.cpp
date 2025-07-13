@@ -1,7 +1,5 @@
 #include "main.h"
 
-//TODO: Generate unit/integration tests
-
 void setup()
 {
   log_d("...");
@@ -18,10 +16,7 @@ void setup()
   PanelManager &panel_manager = PanelManager::get_instance();
   panel_manager.init();
 
-  //panel_manager.create_and_load_panel_with_splash(preference_manager.config.panel_name.c_str());
-  panel_manager.create_and_load_panel(preference_manager.config.panel_name.c_str());
-  //panel_manager.create_and_load_panel(PanelNames::Key);
-  //panel_manager.create_and_load_panel(PanelNames::Lock);
+  panel_manager.create_and_load_panel_with_splash(preference_manager.config.panel_name.c_str());
   
   Ticker::handle_lv_tasks();
 }

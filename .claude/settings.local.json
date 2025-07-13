@@ -15,7 +15,16 @@
       "Bash(cp:*)",
       "Bash(rm:*)",
       "Bash(pio.exe check:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(pio test:*)",
+      "Bash(pio.exe test:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(curl:*)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(./wokwi-cli:*)",
+      "Bash(export:*)",
+      "WebFetch(domain:docs.wokwi.com)"
     ],
     "deny": []
   }
