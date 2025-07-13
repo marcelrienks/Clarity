@@ -20,7 +20,7 @@
  * 
  * @model_role Provides oil pressure data to OemOilPressureComponent
  * @data_type int32_t (Bar - metric pressure unit)
- * @range 1-10 Bar typical automotive range
+ * @range 0-10 Bar typical automotive range
  * @update_frequency 1 Hz (every 1000ms)
  * 
  * @performance_features:
@@ -30,11 +30,11 @@
  * - Previous value tracking: Enables change detection
  * 
  * @hardware_interface 3.3V analog pressure sensor input via GPIO pin
- * @calibration Linear mapping: 0V = 1 Bar, 3.3V = 10 Bar
+ * @calibration 22k potentiometer: 0V = 0 Bar, 3.3V = 10 Bar
  * 
  * @critical_thresholds:
  * - Normal: 2-10 Bar
- * - Warning: 1-2 Bar
+ * - Warning: 0-2 Bar
  * 
  * @context This sensor feeds the left-side oil pressure gauge.
  * It provides smart caching and delta updates for smooth performance.
@@ -60,7 +60,9 @@ private:
     unsigned long _last_update_time = 0;
     static constexpr unsigned long UPDATE_INTERVAL_MS = 1000; // Update every 1000ms (1Hz)
     
-    // ADC and sensor calibration constants
+    // ADC and potentiometer calibration constants
     static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC
     static constexpr int32_t PRESSURE_MAX_BAR = 10; // Maximum pressure reading in Bar
+    static constexpr int32_t POTENTIOMETER_RESISTANCE = 22000; // 22k ohm potentiometer
+    static constexpr float SUPPLY_VOLTAGE = 3.3; // ESP32 3.3V supply
 };
