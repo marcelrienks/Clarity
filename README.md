@@ -357,7 +357,7 @@ pio.exe run -e release        # Optimized release build with inverted colors
 
 4. **Run All Tests**:
    ```powershell
-   .\run_tests_local.bat
+   .\run_all_tests.bat
    ```
 
 5. **Individual Test Commands**:
@@ -378,7 +378,7 @@ pio.exe run -e release        # Optimized release build with inverted colors
 3. **Run via Command Palette**:
    - `Ctrl+Shift+P` → "Tasks: Run Task" → "Run All Tests (Complete Suite)"
 4. **Or use Terminal**: 
-   - Windows: `.\run_tests_local.bat`
+   - Windows: `.\run_all_tests.bat`
 
 #### Test Prerequisites Summary
 - **Unit Tests**: PlatformIO with Unity framework

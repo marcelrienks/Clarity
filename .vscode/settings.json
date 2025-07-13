@@ -61,6 +61,20 @@
         "variant": "cpp"
     },
     "cSpell.words": [
-        "anim"
+        "anim",
+        "arduino",
+        "bblanchon",
+        "espressif",
+        "FATFS",
+        "fdata",
+        "ffast",
+        "ffunction",
+        "lovyan",
+        "lvgl",
+        "nodemcu",
+        "throwtheswitch",
+        "unflags",
+        "waveshare",
+        "wokwi"
     ]
 }
