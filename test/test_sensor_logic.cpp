@@ -1,7 +1,11 @@
 #ifdef UNIT_TESTING
 
 #include <unity.h>
-#include "utilities/types.h"
+#include <string>
+#include <variant>
+
+// Mock types for testing
+using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>;
 
 // Mock sensor class for testing business logic
 class MockSensor {
@@ -64,13 +68,6 @@ public:
     bool should_restore() { return should_restore_panel; }
 };
 
-void setUp(void) {
-    // Setup before each test
-}
-
-void tearDown(void) {
-    // Cleanup after each test
-}
 
 void test_sensor_normal_reading(void) {
     MockSensor sensor(10.0, 90.0);
@@ -206,9 +203,7 @@ void test_oil_temperature_ranges(void) {
     TEST_ASSERT_EQUAL_STRING("HIGH", std::get<std::string>(result).c_str());
 }
 
-int main(void) {
-    UNITY_BEGIN();
-    
+void test_sensor_logic_main() {
     RUN_TEST(test_sensor_normal_reading);
     RUN_TEST(test_sensor_low_threshold);
     RUN_TEST(test_sensor_high_threshold);
@@ -222,8 +217,6 @@ int main(void) {
     RUN_TEST(test_trigger_priority_comparison);
     RUN_TEST(test_oil_pressure_ranges);
     RUN_TEST(test_oil_temperature_ranges);
-    
-    return UNITY_END();
 }
 
 #endif

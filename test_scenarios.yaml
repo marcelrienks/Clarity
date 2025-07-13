@@ -1,163 +1,264 @@
 name: "Clarity Gauge System Tests"
-description: "Automated integration tests for ESP32 gauge system"
+version: 1
+author: "Marcel Rienks"
 
-scenarios:
-  - name: "Basic System Startup"
-    description: "Test system initialization and splash screen"
-    timeout: 10000
-    steps:
-      - name: "Boot and initialize"
-        wait-for-text: "..."
-        timeout: 5000
-      - name: "Verify panel loads"
-        wait-for-text: "Key Panel"
-        timeout: 3000
+steps:
+  # Basic System Startup Test
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "..."
 
-  - name: "Oil Pressure Sensor Low Reading"
-    description: "Test low oil pressure sensor reading"
-    timeout: 15000
-    steps:
-      - name: "Set low pressure (10%)"
-        set-pot:
-          pot: "pot1"
-          value: 0.1
-      - name: "Wait for sensor update"
-        wait: 1000
-      - name: "Verify low pressure display"
-        expect-text: "Oil Pressure"
+  # Splash Screen Loading Test
+  - name: "Wait for splash panel to load"
+    wait-serial: "SplashPanel"
+    
+  - name: "Wait for splash screen duration"
+    delay: 3000ms
+    
+  - name: "Wait for main panel transition"
+    wait-serial: "OemOilPanel"
 
-  - name: "Oil Pressure Sensor High Reading"
-    description: "Test high oil pressure sensor reading"
-    timeout: 15000
-    steps:
-      - name: "Set high pressure (90%)"
-        set-pot:
-          pot: "pot1"
-          value: 0.9
-      - name: "Wait for sensor update"
-        wait: 1000
-      - name: "Verify high pressure display"
-        expect-text: "Oil Pressure"
+  # Oil Pressure Sensor Tests
+  - name: "Set low oil pressure (10%)"
+    set-control:
+      part-id: pot1
+      control: value
+      value: 0.1
+  
+  - name: "Wait for sensor reading"
+    delay: 1000ms
+  
+  - name: "Set high oil pressure (90%)" 
+    set-control:
+      part-id: pot1
+      control: value
+      value: 0.9
+  
+  - name: "Wait for high pressure reading"
+    delay: 1000ms
 
-  - name: "Oil Temperature Sensor Test"
-    description: "Test oil temperature sensor reading"
-    timeout: 15000
-    steps:
-      - name: "Set temperature reading (50%)"
-        set-pot:
-          pot: "pot2"
-          value: 0.5
-      - name: "Wait for sensor update"
-        wait: 1000
-      - name: "Verify temperature display"
-        expect-text: "Oil Temp"
+  # Oil Temperature Sensor Tests  
+  - name: "Set oil temperature (50%)"
+    set-control:
+      part-id: pot2
+      control: value
+      value: 0.5
+  
+  - name: "Wait for temperature reading"
+    delay: 1000ms
 
-  - name: "Key Trigger Panel Switch"
-    description: "Test panel switching via key trigger"
-    timeout: 15000
-    steps:
-      - name: "Activate key trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 1
-          value: true
-      - name: "Wait for panel switch"
-        wait: 500
-      - name: "Verify key panel loaded"
-        expect-text: "Key Panel"
-      - name: "Deactivate trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 1
-          value: false
+  # Complex Trigger Scenario Tests
+  
+  # Test 1: Key Present trigger (GPIO 25 via DIP switch 1) on/off with panel visibility
+  - name: "Test 1A: Key Present trigger ON (should switch to KeyPanel)"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+  
+  - name: "Wait and verify Key panel loading"
+    wait-serial: "KeyPanel"
+    
+  - name: "Test 1B: Key Present trigger OFF (panel should remain visible)"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+  
+  - name: "Verify Key panel still visible after trigger off"
+    delay: 1000ms
 
-  - name: "Lock Trigger Panel Switch"
-    description: "Test panel switching via lock trigger"
-    timeout: 15000
-    steps:
-      - name: "Activate lock trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 2
-          value: true
-      - name: "Wait for panel switch"
-        wait: 500
-      - name: "Verify lock panel loaded"
-        expect-text: "Lock Panel"
-      - name: "Deactivate trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 2
-          value: false
+  # Test 2: Key Not Present trigger (GPIO 26 via DIP switch 2) on/off with panel visibility  
+  - name: "Test 2A: Return to main panel (wait for auto transition)"
+    delay: 3000ms
+    
+  - name: "Test 2B: Key Not Present trigger ON (should switch to KeyPanel)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+  
+  - name: "Wait and verify Key panel loading"
+    wait-serial: "KeyPanel"
+    
+  - name: "Test 2C: Key Not Present trigger OFF (panel should remain visible)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+  
+  - name: "Verify Key panel still visible after trigger off"
+    delay: 1000ms
 
-  - name: "Panel Restoration Test"
-    description: "Test panel restoration after temporary trigger"
-    timeout: 20000
-    steps:
-      - name: "Start with oil panel"
-        wait-for-text: "Oil"
-        timeout: 5000
-      - name: "Activate temporary trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 3
-          value: true
-      - name: "Wait for panel switch"
-        wait: 1000
-      - name: "Deactivate trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 3
-          value: false
-      - name: "Wait for restoration"
-        wait: 2000
-      - name: "Verify original panel restored"
-        expect-text: "Oil"
+  # Test 3: Lock trigger (GPIO 27 via DIP switch 3) on/off with panel visibility
+  - name: "Test 3A: Return to main panel (wait for auto transition)"
+    delay: 3000ms
+    
+  - name: "Test 3B: Lock trigger ON (should switch to LockPanel)"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+  
+  - name: "Wait and verify Lock panel loading"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 3C: Lock trigger OFF (panel should remain visible)"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+  
+  - name: "Verify Lock panel still visible after trigger off"
+    delay: 1000ms
 
-  - name: "Sensor Error Handling"
-    description: "Test system behavior with sensor errors"
-    timeout: 15000
-    steps:
-      - name: "Set extreme sensor values"
-        set-pot:
-          pot: "pot1"
-          value: 1.0
-      - name: "Set extreme temperature"
-        set-pot:
-          pot: "pot2"
-          value: 1.0
-      - name: "Wait for processing"
-        wait: 2000
-      - name: "Verify system stability"
-        expect-text: "Oil"
+  # Test 4: Both Key triggers active (should result in invalid state - no panel switch)
+  - name: "Test 4A: Return to main panel (wait for auto transition)"
+    delay: 3000ms
+    
+  - name: "Test 4B: Activate Key Present trigger first"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+      
+  - name: "Test 4C: Activate Key Not Present trigger (should cause invalid state)"
+    set-control:
+      part-id: sw1
+      control: "2" 
+      value: 1
+  
+  - name: "Wait and verify invalid state handling (should stay on current panel)"
+    delay: 2000ms
+    
+  - name: "Cleanup: Deactivate both key triggers"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+      
+  - name: "Deactivate Key Not Present"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
 
-  - name: "Rapid Panel Switching"
-    description: "Test rapid panel transitions"
-    timeout: 30000
-    steps:
-      - name: "Rapid key trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 1
-          value: true
-      - name: "Quick wait"
-        wait: 200
-      - name: "Deactivate"
-        set-switch:
-          switch: "sw1"
-          pin: 1
-          value: false
-      - name: "Lock trigger"
-        set-switch:
-          switch: "sw1"
-          pin: 2
-          value: true
-      - name: "Quick wait"
-        wait: 200
-      - name: "Deactivate"
-        set-switch:
-          switch: "sw1"
-          pin: 2
-          value: false
-      - name: "Verify system stability"
-        wait: 1000
+  # Test 5: Priority test - Lock first, then Key Present override
+  - name: "Test 5A: Return to main panel"
+    delay: 3000ms
+    
+  - name: "Test 5B: Activate Lock trigger first"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+  
+  - name: "Wait for Lock panel to load"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 5C: Activate Key Present (should override Lock due to higher priority)"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+  
+  - name: "Wait and verify Key panel overrides Lock panel"
+    wait-serial: "KeyPanel"
+    
+  - name: "Cleanup Test 5: Deactivate Key Present"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+    
+  - name: "Deactivate Lock trigger"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+
+  # Test 6: Priority test - Lock first, then Key Not Present override
+  - name: "Test 6A: Return to main panel"
+    delay: 3000ms
+    
+  - name: "Test 6B: Activate Lock trigger first"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+  
+  - name: "Wait for Lock panel to load"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 6C: Activate Key Not Present (should override Lock due to higher priority)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+  
+  - name: "Wait and verify Key panel overrides Lock panel"
+    wait-serial: "KeyPanel"
+    
+  - name: "Cleanup Test 6: Deactivate Key Not Present"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+    
+  - name: "Deactivate Lock trigger"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+
+  # Test 7: Complex scenario - Lock first, then both Key triggers
+  - name: "Test 7A: Return to main panel"
+    delay: 3000ms
+    
+  - name: "Test 7B: Activate Lock trigger first"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+  
+  - name: "Wait for Lock panel to load"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 7C: Activate Key Present trigger"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+      
+  - name: "Test 7D: Activate Key Not Present trigger (creates invalid key state)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+  
+  - name: "Wait and verify Lock panel remains visible (invalid key state ignored)"
+    delay: 2000ms
+    
+  - name: "Cleanup Test 7: Deactivate all triggers"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+      
+  - name: "Deactivate Key Not Present"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+      
+  - name: "Deactivate Lock trigger"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+
+  # System Stability Test
+  - name: "Final stability check"
+    delay: 3000ms

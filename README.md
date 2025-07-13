@@ -92,10 +92,59 @@ _This would also allow for future extension with more panels configurations and 
 - **Features**: Common rendering pipeline, shared utilities
 - **Usage**: Foundation for all display widgets
 
-## Hardware Parts:
-These are the components used for this specific project, but the code can be adjusted to suit any combination of microcontroller and lcd display.
-* NodeMCU-32
-* 1.28" round display (GC9A01 driver)
+## Hardware Configuration
+
+### Components
+* **NodeMCU-32S** development board (ESP32-WROOM-32)
+* **1.28" round display** (GC9A01 driver, 240x240 resolution)
+* **Oil pressure sensor** (analog input)
+* **Oil temperature sensor** (analog input)
+* **Digital input switches** for key and lock detection
+
+### GPIO Pin Mappings
+
+#### Display/LCD Interface (SPI)
+| Function | GPIO Pin | Description |
+|----------|----------|-------------|
+| **SCLK** | **18** | SPI Clock (Serial Clock) |
+| **MOSI** | **23** | SPI Master Out Slave In (Data) |
+| **DC** | **16** | Data/Command control pin |
+| **CS** | **22** | Chip Select (SPI Slave Select) |
+| **RST** | **4** | Display Reset pin |
+| **BL** | **3** | Backlight control (PWM, 44.1 kHz) |
+
+**SPI Configuration**: SPI2_HOST, 80MHz write / 20MHz read, Mode 0
+
+#### Sensor Inputs (Analog)
+| Function | GPIO Pin | Type | Range | Description |
+|----------|----------|------|-------|-------------|
+| **Oil Pressure** | **36** | ADC | 0-4095 | Engine oil pressure sensor |
+| **Oil Temperature** | **39** | ADC | 0-4095 | Engine oil temperature sensor |
+
+**ADC Configuration**: 12-bit resolution, input-only pins (no pull-up/down)
+
+#### Trigger Inputs (Digital)  
+| Function | GPIO Pin | Type | Description |
+|----------|----------|------|-------------|
+| **Key Present** | **25** | INPUT_PULLDOWN | Key presence detection |
+| **Key Not Present** | **26** | INPUT_PULLDOWN | Key absence detection |
+| **Lock State** | **27** | INPUT_PULLDOWN | Vehicle lock/immobilizer status |
+
+**Digital Configuration**: All trigger inputs use internal pull-down resistors
+
+#### Hardware Testing (Wokwi)
+| Function | Control | DIP Switch | Description |
+|----------|---------|------------|-------------|
+| **Key Present** | sw1:1 | Position 1 | Simulates GPIO 25 trigger |
+| **Key Not Present** | sw1:2 | Position 2 | Simulates GPIO 26 trigger |
+| **Lock State** | sw1:3 | Position 3 | Simulates GPIO 27 trigger |
+
+### Pin Usage Summary
+- **Display**: 6 pins (SPI + control)
+- **Sensors**: 2 pins (analog inputs)
+- **Triggers**: 3 pins (digital inputs)
+- **Total Used**: 11 GPIO pins
+- **Available**: 17+ additional GPIO pins for expansion
 
 ## Partitions:
 This is specific to an NodeMCU-32S dev board, using a ESP32-WROOM-32 (ESP32-D0WD-V3 chip) with 32Mb(4MB) flash

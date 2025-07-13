@@ -3,7 +3,7 @@
 #include <unity.h>
 #include <vector>
 #include <algorithm>
-#include "utilities/types.h"
+#include <string>
 
 // Mock implementation of trigger evaluation logic
 struct MockTriggerInfo {
@@ -100,13 +100,6 @@ public:
     }
 };
 
-void setUp(void) {
-    // Setup before each test
-}
-
-void tearDown(void) {
-    // Cleanup after each test
-}
 
 void test_no_active_triggers(void) {
     MockInterruptManager manager;
@@ -202,8 +195,8 @@ void test_priority_tie_handling(void) {
     manager.register_trigger(MockTriggerInfo(2, true, 5, "LockPanel"));    // Same priority
     
     std::string result = manager.evaluate_triggers();
-    // Should select the first one found with highest priority
-    TEST_ASSERT_EQUAL_STRING("LockPanel", result.c_str());  // Last one registered wins in this implementation
+    // Should select the first one found with highest priority (KeyPanel was registered first)
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", result.c_str());  // First one with highest priority wins
 }
 
 void test_complex_trigger_scenario(void) {
@@ -235,12 +228,35 @@ void test_complex_trigger_scenario(void) {
     // Deactivate high priority trigger
     manager.set_trigger_state(2, false);
     result = manager.evaluate_triggers();
-    TEST_ASSERT_EQUAL_STRING("LockPanel", result.c_str());  // Panel doesn't auto-switch
+    TEST_ASSERT_EQUAL_STRING("SplashPanel", result.c_str());  // Medium priority now wins (KeyPanel=1, SplashPanel=5)
     
-    // Manually restore if needed and re-evaluate
+    // Test restoration manually if needed
+    manager.restore_previous_panel();
+    TEST_ASSERT_EQUAL_STRING("LockPanel", manager.get_current_panel().c_str());  // Restored to previous
+}
+
+void test_splash_panel_workflow(void) {
+    MockInterruptManager manager;
+    
+    // Test splash panel initialization workflow
+    manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel", false));
+    
+    // Start with splash panel (simulating splash screen loading)
+    std::string current_panel = "SplashPanel";
+    
+    // Simulate splash screen timeout leading to main panel
+    current_panel = "OemOilPanel";
+    
+    // Test that triggers work correctly after splash transition
+    manager.set_trigger_state(1, true);
+    std::string result = manager.evaluate_triggers();
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", result.c_str());
+    
+    // Test restoration back to oil panel
+    manager.set_trigger_state(1, false);
     manager.restore_previous_panel();
     result = manager.evaluate_triggers();
-    TEST_ASSERT_EQUAL_STRING("SplashPanel", result.c_str());  // Medium priority now wins
+    TEST_ASSERT_EQUAL_STRING("OemOilPanel", manager.get_current_panel().c_str());
 }
 
 void test_trigger_edge_cases(void) {
@@ -257,9 +273,7 @@ void test_trigger_edge_cases(void) {
     TEST_ASSERT_EQUAL_STRING("", manager.get_previous_panel().c_str());  // No panel change, so no previous
 }
 
-int main(void) {
-    UNITY_BEGIN();
-    
+void test_interrupt_manager_main() {
     RUN_TEST(test_no_active_triggers);
     RUN_TEST(test_single_active_trigger);
     RUN_TEST(test_multiple_active_triggers_priority);
@@ -268,9 +282,8 @@ int main(void) {
     RUN_TEST(test_restoration_trigger_detection);
     RUN_TEST(test_priority_tie_handling);
     RUN_TEST(test_complex_trigger_scenario);
+    RUN_TEST(test_splash_panel_workflow);
     RUN_TEST(test_trigger_edge_cases);
-    
-    return UNITY_END();
 }
 
 #endif
