@@ -1,9 +1,9 @@
 [![Build ESP32 Project with PlatformIO](https://github.com/marcelrienks/Clarity/actions/workflows/c-cpp.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/c-cpp.yml)
 
 # Clarity
-An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of components and sensors.
+An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of widgets and sensors.
 
-_**Note:** this project is over complicated for general use cases of just creating a screen to do one task. This is intended to follow proper patterns and allow for easy implementation of multiple screens, and extension of more screens, which can be configured to show in a loop._
+_**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple widgets, and warning interrupts. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
 
 ## Main Libraries:
 * Arduino
