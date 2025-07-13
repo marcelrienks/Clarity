@@ -278,7 +278,7 @@ This architecture provides clean separation of concerns, with sensors handling h
 This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
 
 The code is also based on other projects from:
-* [Garage Tinkering](https://github.com/valentineautos)
+* [Garage Tinkering](https://github.com/garagetinkering)
 * [fbiego](https://github.com/fbiego)
 
 As well as contributions from [Eugene Petersen](https://github.com/gino247)
