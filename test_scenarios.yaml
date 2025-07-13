@@ -1,0 +1,163 @@
+name: "Clarity Gauge System Tests"
+description: "Automated integration tests for ESP32 gauge system"
+
+scenarios:
+  - name: "Basic System Startup"
+    description: "Test system initialization and splash screen"
+    timeout: 10000
+    steps:
+      - name: "Boot and initialize"
+        wait-for-text: "..."
+        timeout: 5000
+      - name: "Verify panel loads"
+        wait-for-text: "Key Panel"
+        timeout: 3000
+
+  - name: "Oil Pressure Sensor Low Reading"
+    description: "Test low oil pressure sensor reading"
+    timeout: 15000
+    steps:
+      - name: "Set low pressure (10%)"
+        set-pot:
+          pot: "pot1"
+          value: 0.1
+      - name: "Wait for sensor update"
+        wait: 1000
+      - name: "Verify low pressure display"
+        expect-text: "Oil Pressure"
+
+  - name: "Oil Pressure Sensor High Reading"
+    description: "Test high oil pressure sensor reading"
+    timeout: 15000
+    steps:
+      - name: "Set high pressure (90%)"
+        set-pot:
+          pot: "pot1"
+          value: 0.9
+      - name: "Wait for sensor update"
+        wait: 1000
+      - name: "Verify high pressure display"
+        expect-text: "Oil Pressure"
+
+  - name: "Oil Temperature Sensor Test"
+    description: "Test oil temperature sensor reading"
+    timeout: 15000
+    steps:
+      - name: "Set temperature reading (50%)"
+        set-pot:
+          pot: "pot2"
+          value: 0.5
+      - name: "Wait for sensor update"
+        wait: 1000
+      - name: "Verify temperature display"
+        expect-text: "Oil Temp"
+
+  - name: "Key Trigger Panel Switch"
+    description: "Test panel switching via key trigger"
+    timeout: 15000
+    steps:
+      - name: "Activate key trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 1
+          value: true
+      - name: "Wait for panel switch"
+        wait: 500
+      - name: "Verify key panel loaded"
+        expect-text: "Key Panel"
+      - name: "Deactivate trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 1
+          value: false
+
+  - name: "Lock Trigger Panel Switch"
+    description: "Test panel switching via lock trigger"
+    timeout: 15000
+    steps:
+      - name: "Activate lock trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 2
+          value: true
+      - name: "Wait for panel switch"
+        wait: 500
+      - name: "Verify lock panel loaded"
+        expect-text: "Lock Panel"
+      - name: "Deactivate trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 2
+          value: false
+
+  - name: "Panel Restoration Test"
+    description: "Test panel restoration after temporary trigger"
+    timeout: 20000
+    steps:
+      - name: "Start with oil panel"
+        wait-for-text: "Oil"
+        timeout: 5000
+      - name: "Activate temporary trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 3
+          value: true
+      - name: "Wait for panel switch"
+        wait: 1000
+      - name: "Deactivate trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 3
+          value: false
+      - name: "Wait for restoration"
+        wait: 2000
+      - name: "Verify original panel restored"
+        expect-text: "Oil"
+
+  - name: "Sensor Error Handling"
+    description: "Test system behavior with sensor errors"
+    timeout: 15000
+    steps:
+      - name: "Set extreme sensor values"
+        set-pot:
+          pot: "pot1"
+          value: 1.0
+      - name: "Set extreme temperature"
+        set-pot:
+          pot: "pot2"
+          value: 1.0
+      - name: "Wait for processing"
+        wait: 2000
+      - name: "Verify system stability"
+        expect-text: "Oil"
+
+  - name: "Rapid Panel Switching"
+    description: "Test rapid panel transitions"
+    timeout: 30000
+    steps:
+      - name: "Rapid key trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 1
+          value: true
+      - name: "Quick wait"
+        wait: 200
+      - name: "Deactivate"
+        set-switch:
+          switch: "sw1"
+          pin: 1
+          value: false
+      - name: "Lock trigger"
+        set-switch:
+          switch: "sw1"
+          pin: 2
+          value: true
+      - name: "Quick wait"
+        wait: 200
+      - name: "Deactivate"
+        set-switch:
+          switch: "sw1"
+          pin: 2
+          value: false
+      - name: "Verify system stability"
+        wait: 1000

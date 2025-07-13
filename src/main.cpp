@@ -1,7 +1,5 @@
 #include "main.h"
 
-//TODO: Generate unit/integration tests
-
 void setup()
 {
   log_d("...");
