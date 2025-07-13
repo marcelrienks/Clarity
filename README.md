@@ -322,6 +322,50 @@ Trigger Clears → InterruptManager → PanelManager.get_restoration_panel() →
 
 This architecture provides clean separation of concerns, with sensors handling hardware, triggers handling business logic for panel switching, and panels handling presentation logic.
 
+## Development Commands
+
+### Quick Development
+```bash
+pio.exe run -e debug-local    # Fastest build for testing changes
+pio.exe run --target size     # Check program size
+pio.exe run --target upload   # Build and upload to device
+```
+
+### Build Environments
+```bash
+pio.exe run -e debug-local    # Debug build for local testing (fastest)
+pio.exe run -e debug-upload   # Debug build with inverted colors for waveshare display
+pio.exe run -e release        # Optimized release build with inverted colors
+```
+
+### Testing Commands
+
+**Run All Tests (Recommended)**:
+```bash
+# Linux/macOS
+./run_all_tests.sh
+
+# Windows
+run_tests_local.bat
+```
+
+**Individual Test Suites**:
+```bash
+# Unit tests only
+pio.exe test -e test --verbose
+
+# Integration tests only (requires WOKWI_CLI_TOKEN)
+./wokwi-cli test --scenario test_scenarios.yaml --timeout 120000
+
+# Build verification only
+pio.exe run -e debug-local && pio.exe run -e debug-upload && pio.exe run -e release
+```
+
+**Test Prerequisites**:
+- **Unit Tests**: PlatformIO with Unity framework
+- **Integration Tests**: Wokwi CLI + valid `WOKWI_CLI_TOKEN` environment variable
+- **Build Tests**: PlatformIO with all dependencies installed
+
 ## Credits
 
 This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
