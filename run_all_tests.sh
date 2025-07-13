@@ -51,6 +51,7 @@ fi
 if [ -z "$WOKWI_CLI_TOKEN" ] && [ "$SKIP_WOKWI" = false ]; then
     print_warning "WOKWI_CLI_TOKEN environment variable not set"
     print_warning "Integration tests will be skipped"
+    print_warning "Set token with: export WOKWI_CLI_TOKEN=<your_wokwi_token>"
     SKIP_WOKWI=true
 fi
 

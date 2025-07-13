@@ -363,7 +363,7 @@ pio.exe run -e debug-local && pio.exe run -e debug-upload && pio.exe run -e rele
 
 **Test Prerequisites**:
 - **Unit Tests**: PlatformIO with Unity framework
-- **Integration Tests**: Wokwi CLI + valid `WOKWI_CLI_TOKEN` environment variable
+- **Integration Tests**: Wokwi CLI + valid `WOKWI_CLI_TOKEN` environment variable (get token from wokwi.com)
 - **Build Tests**: PlatformIO with all dependencies installed
 
 ## Credits

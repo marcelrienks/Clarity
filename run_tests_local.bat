@@ -38,6 +38,7 @@ if "%WOKWI_CLI_TOKEN%"=="" (
     if "%SKIP_WOKWI%"=="false" (
         echo ⚠ WOKWI_CLI_TOKEN environment variable not set
         echo ⚠ Integration tests will be skipped
+        echo ⚠ Set token with: set WOKWI_CLI_TOKEN=^<your_wokwi_token^>
         set SKIP_WOKWI=true
     )
 )
