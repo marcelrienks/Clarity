@@ -31,7 +31,7 @@
  * - Slower sampling: Temperature changes more gradually than pressure
  * 
  * @hardware_interface 3.3V analog temperature sensor input via GPIO pin
- * @calibration Linear mapping: 0V = 0°C, 3.3V = 120°C
+ * @calibration 22k potentiometer: 0V = 0°C, 3.3V = 120°C
  * 
  * @critical_thresholds:
  * - Normal: 0-120°C
@@ -66,7 +66,9 @@ private:
     unsigned long _last_update_time = 0;
     static constexpr unsigned long UPDATE_INTERVAL_MS = 1000; // Update every 1000ms (1Hz)
     
-    // ADC and sensor calibration constants
+    // ADC and potentiometer calibration constants
     static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC
     static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // Maximum temperature reading in Celsius
+    static constexpr int32_t POTENTIOMETER_RESISTANCE = 22000; // 22k ohm potentiometer
+    static constexpr float SUPPLY_VOLTAGE = 3.3; // ESP32 3.3V supply
 };

@@ -42,8 +42,9 @@ Reading OilTemperatureSensor::get_reading()
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
         int32_t adc_value = analogRead(GpioPins::OIL_TEMPERATURE);
         
-        // Convert ADC value to temperature (0-120°C range)
-        // Linear mapping: 0V (ADC 0) = 0°C, 3.3V (ADC 4095) = 120°C
+        // Convert ADC value to temperature using voltage divider calculation
+        // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V
+        // Temperature mapping: 0V = 0°C, 3.3V = 120°C
         int32_t new_value = (adc_value * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
         
         log_v("ADC: %d, Temperature: %d°C", adc_value, new_value);

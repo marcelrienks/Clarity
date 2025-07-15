@@ -43,8 +43,10 @@ Reading OilPressureSensor::get_reading()
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
         int32_t adc_value = analogRead(GpioPins::OIL_PRESSURE);
         
-        // Convert ADC value to pressure (1-10 Bar range)
-        int32_t new_value = 1 + (adc_value * (PRESSURE_MAX_BAR - 1)) / ADC_MAX_VALUE;
+        // Convert ADC value to pressure using voltage divider calculation
+        // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V
+        // Pressure mapping: 0V = 0 Bar, 3.3V = 10 Bar
+        int32_t new_value = (adc_value * PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
         
         log_v("ADC: %d, Pressure: %d Bar", adc_value, new_value);
         
