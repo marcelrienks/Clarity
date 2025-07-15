@@ -98,11 +98,11 @@ void PanelManager::update_panel()
 {
     log_d("...");
 
-    // Check for interrupt conditions before normal panel update
-    InterruptManager::get_instance().check_triggers();
-
-    if (_is_loading)
-        return;
+    // Throttle trigger evaluation to 300ms intervals for optimal performance
+    // Note: triggering more often causes interference with screen loading
+    if (Ticker::should_execute_throttled(300)) {
+        InterruptManager::get_instance().check_triggers();
+    }
 
     if (!_panel)
         return;
