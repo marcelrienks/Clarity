@@ -100,9 +100,9 @@ void PanelManager::update_panel()
 
     // Throttle trigger evaluation to 300ms intervals for optimal performance
     // Note: triggering more often causes interference with screen loading
-    if (Ticker::should_execute_throttled(300)) {
+    Ticker::execute_throttled(300, []() {
         InterruptManager::get_instance().check_triggers();
-    }
+    });
 
     if (!_panel)
         return;

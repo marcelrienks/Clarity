@@ -1,4 +1,5 @@
 #include "utilities/ticker.h"
+#include <functional>
 
 // Static Methods
 
@@ -49,18 +50,16 @@ void Ticker::handle_lv_tasks() {
     last_task_run = current_time;
 }
 
-/// @brief Throttle function execution to specified intervals for optimal performance
+/// @brief Execute function if throttling interval has elapsed
 /// @param interval_ms Minimum interval in milliseconds between executions
-/// @return true if function should execute, false if still within throttle period
-bool Ticker::should_execute_throttled(uint32_t interval_ms) {
+/// @param func Function to execute if interval has elapsed
+void Ticker::execute_throttled(uint32_t interval_ms, std::function<void()> func) {
     static uint32_t last_execution_time = 0;
     uint32_t current_time = millis();
     
-    // Always execute on first call or if interval has elapsed
+    // Execute on first call or if interval has elapsed
     if (last_execution_time == 0 || current_time - last_execution_time >= interval_ms) {
         last_execution_time = current_time;
-        return true;
+        func();
     }
-    
-    return false;
 }
