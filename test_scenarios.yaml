@@ -259,6 +259,127 @@ steps:
       control: "3"
       value: 0
 
+  # Test 8: Complete Sequential Trigger Flow with Oil Panel Restoration
+  - name: "Test 8A: Return to main panel and verify oil panel loads"
+    delay: 3000ms
+    
+  - name: "Verify oil panel is active"
+    wait-serial: "OemOilPanel"
+    
+  - name: "Test 8B: Key Present trigger fires"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+      
+  - name: "Wait and verify Key panel loads"
+    wait-serial: "KeyPanel"
+    
+  - name: "Test 8C: Key Present trigger turns off"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+      
+  - name: "Wait for oil panel restoration"
+    delay: 3000ms
+    
+  - name: "Verify oil panel restored"
+    wait-serial: "OemOilPanel"
+    
+  - name: "Test 8D: Key Not Present trigger fires"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+      
+  - name: "Wait and verify Key panel loads"
+    wait-serial: "KeyPanel"
+    
+  - name: "Test 8E: Key Not Present trigger turns off"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+      
+  - name: "Wait for oil panel restoration"
+    delay: 3000ms
+    
+  - name: "Verify oil panel restored again"
+    wait-serial: "OemOilPanel"
+    
+  - name: "Test 8F: Lock trigger fires"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+      
+  - name: "Wait and verify Lock panel loads"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 8G: Lock trigger turns off"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+      
+  - name: "Wait for oil panel restoration"
+    delay: 3000ms
+    
+  - name: "Verify oil panel restored after lock"
+    wait-serial: "OemOilPanel"
+    
+  - name: "Test 8H: Lock trigger fires again"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+      
+  - name: "Wait and verify Lock panel loads again"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 8I: Key Not Present trigger fires and overrides Lock"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+      
+  - name: "Wait and verify Key panel overrides Lock"
+    wait-serial: "KeyPanel"
+    
+  - name: "Test 8J: Key Present trigger fires (both key triggers now active)"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+      
+  - name: "Wait and verify fallback to Lock panel (invalid key state)"
+    wait-serial: "LockPanel"
+    
+  - name: "Test 8K: Cleanup all triggers"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+      
+  - name: "Deactivate Key Not Present"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+      
+  - name: "Deactivate Lock trigger"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+      
+  - name: "Final oil panel restoration verification"
+    delay: 3000ms
+    
+  - name: "Verify final oil panel restoration"
+    wait-serial: "OemOilPanel"
+
   # System Stability Test
   - name: "Final stability check"
     delay: 3000ms

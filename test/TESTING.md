@@ -45,7 +45,7 @@ pio run -e release
 
 ### Test Scenarios Coverage
 
-The `test_scenarios.yaml` file defines comprehensive integration tests:
+The `test_scenarios.yaml` file defines comprehensive integration tests (85+ test steps):
 
 #### **System Startup Tests**
 - Boot sequence validation
@@ -63,6 +63,9 @@ The `test_scenarios.yaml` file defines comprehensive integration tests:
 - Lock trigger activation (switch 1, pin 2) 
 - Panel restoration logic (switch 1, pin 3)
 - Rapid switching scenarios
+- Sequential trigger flow testing
+- Complex trigger priority scenarios
+- Oil panel restoration validation
 
 #### **Hardware Simulation Mapping**
 ```
