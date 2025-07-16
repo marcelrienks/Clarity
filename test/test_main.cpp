@@ -6,7 +6,7 @@
 extern void test_preference_manager_main();
 extern void test_sensor_logic_main();
 extern void test_interrupt_manager_main();
-extern void test_panel_manager_main();
+extern void test_simple_panel_manager_main();
 extern void test_style_manager_main();
 extern void test_ticker_main();
 extern void test_sensors_main();
@@ -26,7 +26,7 @@ int main(int argc, char **argv) {
     test_preference_manager_main();
     test_sensor_logic_main();
     test_interrupt_manager_main();
-    test_panel_manager_main();
+    test_simple_panel_manager_main();
     test_style_manager_main();
     test_ticker_main();
     test_sensors_main();
