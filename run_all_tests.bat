@@ -50,7 +50,7 @@ echo.
 REM 1. Run Unity Unit Tests
 echo Running Unity Unit Tests...
 echo ------------------------------
-pio.exe test -e test --verbose
+pio.exe test -e unit-test --verbose
 if %errorlevel% neq 0 (
     echo [ERROR] Unit tests failed
     pause
@@ -92,6 +92,16 @@ if %errorlevel% neq 0 (
 )
 pio.exe run -e release --target size
 echo [OK] Build verification for release completed
+
+echo Building environment: integration-test
+pio.exe run -e integration-test
+if %errorlevel% neq 0 (
+    echo [ERROR] Build failed for integration-test
+    pause
+    exit /b 1
+)
+pio.exe run -e integration-test --target size
+echo [OK] Build verification for integration-test completed
 echo.
 
 REM 3. Run Wokwi Integration Tests (if available)
@@ -99,20 +109,11 @@ if "%SKIP_WOKWI%"=="false" (
     echo Running Wokwi Integration Tests...
     echo ------------------------------------
     
-    echo Building firmware for integration testing...
-    pio.exe run -e debug-local
-    if %errorlevel% neq 0 (
-        echo [ERROR] Firmware build failed
-        pause
-        exit /b 1
-    )
-    echo [OK] Firmware built for integration testing
-    
-    echo Starting Wokwi simulation...
+    echo Starting Wokwi simulation (firmware already built in build verification step)...
     if exist "wokwi-cli.exe" (
-        wokwi-cli.exe test --scenario test_scenarios.yaml --timeout 120000
+        wokwi-cli.exe . --scenario test_scenarios.yaml --timeout 120000
     ) else (
-        wokwi-cli test --scenario test_scenarios.yaml --timeout 120000
+        wokwi-cli . --scenario test_scenarios.yaml --timeout 120000
     )
     if %errorlevel% neq 0 (
         echo [ERROR] Integration tests failed

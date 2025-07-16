@@ -34,7 +34,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build firmware for testing
-        run: pio run -e debug-local
+        run: pio run -e integration-test
 
       - name: Test with Wokwi
         uses: wokwi/wokwi-ci-action@v1
@@ -72,7 +72,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Run unit tests
-        run: pio test -e test --verbose
+        run: pio test -e unit-test --verbose
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

@@ -60,7 +60,7 @@ echo ""
 # 1. Run Unity Unit Tests
 echo "🔬 Running Unity Unit Tests..."
 echo "------------------------------"
-pio test -e test --verbose
+pio test -e unit-test --verbose
 print_status "Unit tests completed"
 echo ""
 
@@ -68,7 +68,7 @@ echo ""
 echo "🔨 Running Build Verification..."
 echo "--------------------------------"
 
-environments=("debug-local" "debug-upload" "release")
+environments=("debug-local" "debug-upload" "release" "integration-test")
 for env in "${environments[@]}"; do
     echo "Building environment: $env"
     pio run -e $env
@@ -82,14 +82,9 @@ if [ "$SKIP_WOKWI" = false ]; then
     echo "🌐 Running Wokwi Integration Tests..."
     echo "------------------------------------"
     
-    # Build firmware for testing
-    echo "Building firmware for integration testing..."
-    pio run -e debug-local
-    print_status "Firmware built for integration testing"
-    
-    # Run Wokwi simulation
+    # Run Wokwi simulation (firmware already built in build verification step)
     echo "Starting Wokwi simulation..."
-    ./wokwi-cli test --scenario test_scenarios.yaml --timeout 120000
+    ./wokwi-cli . --scenario test_scenarios.yaml --timeout 120000
     print_status "Integration tests completed"
 else
     print_warning "Skipping Wokwi Integration Tests (CLI not available or token not set)"

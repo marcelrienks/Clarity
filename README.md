@@ -333,9 +333,10 @@ pio.exe run --target upload   # Build and upload to device
 
 ### Build Environments
 ```bash
-pio.exe run -e debug-local    # Debug build for local testing (fastest)
-pio.exe run -e debug-upload   # Debug build with inverted colors for waveshare display
-pio.exe run -e release        # Optimized release build with inverted colors
+pio.exe run -e debug-local      # Debug build for local testing (fastest)
+pio.exe run -e debug-upload     # Debug build with inverted colors for waveshare display
+pio.exe run -e release          # Optimized release build with inverted colors
+pio.exe run -e integration-test # Integration test build with minimal logging
 ```
 
 ### Testing Setup and Commands
@@ -363,10 +364,11 @@ pio.exe run -e release        # Optimized release build with inverted colors
 5. **Individual Test Commands**:
    ```powershell
    # Unit tests only
-   pio.exe test -e test --verbose
+   pio.exe test -e unit-test --verbose
    
    # Integration tests only
-   .\wokwi-cli.exe test --scenario test_scenarios.yaml --timeout 120000
+   pio.exe run -e integration-test
+   .\wokwi-cli.exe . --scenario test_scenarios.yaml --timeout 120000
    
    # Build verification only
    pio.exe run -e debug-local; pio.exe run -e debug-upload; pio.exe run -e release
@@ -381,8 +383,8 @@ pio.exe run -e release        # Optimized release build with inverted colors
    - Windows: `.\run_all_tests.bat`
 
 #### Test Prerequisites Summary
-- **Unit Tests**: PlatformIO with Unity framework
-- **Integration Tests**: Wokwi CLI + `WOKWI_CLI_TOKEN` environment variable
+- **Unit Tests**: PlatformIO with Unity framework (`unit-test` environment)
+- **Integration Tests**: Wokwi CLI + `WOKWI_CLI_TOKEN` environment variable (`integration-test` environment)
 - **Build Tests**: PlatformIO with all dependencies installed
 - **GitHub Actions**: `WOKWI_CLI_TOKEN` repository secret required for CI integration tests
 
