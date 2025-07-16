@@ -36,14 +36,59 @@ jobs:
       - name: Build firmware for testing
         run: pio run -e integration-test
 
-      - name: Test with Wokwi
+      - name: Test with Wokwi - Basic Startup
         uses: wokwi/wokwi-ci-action@v1
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
           path: /
-          scenario: test_scenarios.yaml
+          scenario: test_basic_startup.yaml
           expect_text: 'SplashPanel'
-          timeout: 120000
+          timeout: 60000
+
+      - name: Test with Wokwi - Oil Sensors
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          scenario: test_oil_sensors.yaml
+          expect_text: 'OemOilPanel'
+          timeout: 60000
+
+      - name: Test with Wokwi - Key Trigger
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          scenario: test_key_trigger.yaml
+          expect_text: 'KeyPanel'
+          timeout: 60000
+
+      - name: Test with Wokwi - Lock Trigger
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          scenario: test_lock_trigger.yaml
+          expect_text: 'LockPanel'
+          timeout: 60000
+
+      - name: Test with Wokwi - Trigger Priority
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          scenario: test_trigger_priority.yaml
+          expect_text: 'KeyPanel'
+          timeout: 60000
+
+      - name: Test with Wokwi - Invalid States
+        uses: wokwi/wokwi-ci-action@v1
+        with:
+          token: ${{ secrets.WOKWI_CLI_TOKEN }}
+          path: /
+          scenario: test_invalid_states.yaml
+          expect_text: 'KeyPanel'
+          timeout: 60000
 
   unit-tests:
     runs-on: ubuntu-latest

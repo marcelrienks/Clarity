@@ -1,0 +1,56 @@
+name: "Invalid State Tests"
+version: 1
+author: "Marcel Rienks"
+
+steps:
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "system_ready"
+
+  - name: "Wait for main panel"
+    wait-serial: "OemOilPanel"
+
+  # Test both Key triggers active (invalid state)
+  - name: "Activate Key Present trigger"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+      
+  - name: "Wait for Key panel"
+    wait-serial: "KeyPanel"
+      
+  - name: "Activate Key Not Present trigger (creates invalid state)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+  
+  - name: "Wait and verify system handles invalid state"
+    delay: 3000ms
+    
+  - name: "Deactivate Key Present"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+      
+  - name: "Should show Key panel (Key Not Present active)"
+    wait-serial: "KeyPanel"
+      
+  - name: "Deactivate Key Not Present"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+
+  - name: "Wait for oil panel restoration"
+    delay: 5000ms
+    
+  - name: "Verify oil panel restored"
+    wait-serial: "OemOilPanel"
+
+  - name: "Final stability check"
+    delay: 2000ms

@@ -1,8 +1,11 @@
 #include "main.h"
+#include "test_logging.h"
 
 void setup()
 {
+  Serial.begin(115200);
   log_d("...");
+  log_t("system_ready");
 
   PreferenceManager &preference_manager = PreferenceManager::get_instance();
   preference_manager.init();

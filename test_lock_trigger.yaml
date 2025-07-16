@@ -1,0 +1,38 @@
+name: "Lock Trigger Tests"
+version: 1
+author: "Marcel Rienks"
+
+steps:
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "system_ready"
+
+  - name: "Wait for main panel"
+    wait-serial: "OemOilPanel"
+
+  # Test Lock trigger
+  - name: "Lock trigger ON"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 1
+  
+  - name: "Wait and verify Lock panel loading"
+    wait-serial: "LockPanel"
+    
+  - name: "Lock trigger OFF"
+    set-control:
+      part-id: sw1
+      control: "3"
+      value: 0
+  
+  - name: "Wait for restoration"
+    delay: 5000ms
+    
+  - name: "Verify oil panel restored"
+    wait-serial: "OemOilPanel"
+
+  - name: "Final stability check"
+    delay: 2000ms

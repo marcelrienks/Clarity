@@ -1,4 +1,5 @@
 #include "panels/splash_panel.h"
+#include "test_logging.h"
 
 // Constructors and Destructors
 
@@ -39,6 +40,7 @@ void SplashPanel::init()
 void SplashPanel::load(std::function<void()> callback_function)
 {
     log_i("...");
+    log_t("SplashPanel");
 
     _callback_function = callback_function;
 

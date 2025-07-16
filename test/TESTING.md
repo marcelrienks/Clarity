@@ -45,27 +45,40 @@ pio run -e release
 
 ### Test Scenarios Coverage
 
-The `test_scenarios.yaml` file defines comprehensive integration tests (85+ test steps):
+The integration tests are split into 6 focused scenarios for better reliability and debugging:
 
-#### **System Startup Tests**
+#### **1. Basic System Startup** (`test_basic_startup.yaml`)
 - Boot sequence validation
-- Panel initialization
+- Panel initialization (Splash → OemOilPanel)
 - Display rendering verification
 
-#### **Sensor Integration Tests**
+#### **2. Oil Sensor Integration** (`test_oil_sensors.yaml`)
 - Oil pressure sensor readings (pot1: 0-100%)
 - Oil temperature sensor readings (pot2: 0-100%)
-- Sensor error handling and edge cases
-- Threshold validation (low/normal/high ranges)
+- Sensor value changes and stabilization
+- Normal operating range validation
 
-#### **Panel Switching Tests**
-- Key trigger activation (switch 1, pin 1)
-- Lock trigger activation (switch 1, pin 2) 
-- Panel restoration logic (switch 1, pin 3)
-- Rapid switching scenarios
-- Sequential trigger flow testing
-- Complex trigger priority scenarios
-- Oil panel restoration validation
+#### **3. Key Trigger Testing** (`test_key_trigger.yaml`)
+- Key Present trigger (switch 1, pin 1)
+- Key Not Present trigger (switch 1, pin 2)
+- Panel switching (OemOilPanel → KeyPanel)
+- Panel restoration after trigger clear
+
+#### **4. Lock Trigger Testing** (`test_lock_trigger.yaml`)
+- Lock trigger activation (switch 1, pin 3)
+- Panel switching (OemOilPanel → LockPanel)
+- Panel restoration after trigger clear
+
+#### **5. Trigger Priority Testing** (`test_trigger_priority.yaml`)
+- Priority override scenarios
+- Key trigger overriding Lock trigger
+- Proper restoration sequence
+- Multi-trigger coordination
+
+#### **6. Invalid State Handling** (`test_invalid_states.yaml`)
+- Both key triggers active simultaneously
+- System response to invalid states
+- Graceful recovery and restoration
 
 #### **Hardware Simulation Mapping**
 ```
@@ -79,14 +92,18 @@ sw1 pin 3 (GPIO 27) → Restoration Trigger
 ### Running Integration Tests
 
 ```bash
-# Single test run
-wokwi-cli . --scenario test_scenarios.yaml
+# Run all scenarios
+wokwi-cli . --scenario test_basic_startup.yaml --timeout 60000
+wokwi-cli . --scenario test_oil_sensors.yaml --timeout 60000
+wokwi-cli . --scenario test_key_trigger.yaml --timeout 60000
+wokwi-cli . --scenario test_lock_trigger.yaml --timeout 60000
+wokwi-cli . --scenario test_trigger_priority.yaml --timeout 60000
+wokwi-cli . --scenario test_invalid_states.yaml --timeout 60000
 
-# Specific scenario
-wokwi-cli . --scenario test_scenarios.yaml --test "Oil Pressure Sensor Low Reading"
+# Run specific scenario
+wokwi-cli . --scenario test_basic_startup.yaml --timeout 60000
 
-# With custom timeout
-wokwi-cli . --scenario test_scenarios.yaml --timeout 45000
+# All scenarios are run automatically by run_all_tests.sh/.bat
 ```
 
 ## Unit Tests (Unity Framework)

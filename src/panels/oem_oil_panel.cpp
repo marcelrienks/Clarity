@@ -1,4 +1,5 @@
 #include "panels/oem_oil_panel.h"
+#include "test_logging.h"
 
 // Constructors and Destructors
 
@@ -64,6 +65,7 @@ void OemOilPanel::init()
 void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
 {
     log_d("...");
+    log_t("OemOilPanel");
     _callback_function = show_panel_completion_callback;
 
     // Create location parameters with rotational start points for scales

@@ -1,4 +1,5 @@
 #include "panels/lock_panel.h"
+#include "test_logging.h"
 #include <variant>
 
 // Constructors and Destructors
@@ -42,6 +43,7 @@ void LockPanel::init()
 void LockPanel::load(std::function<void()> callback_function)
 {
     log_d("...");
+    log_t("LockPanel");
     _callback_function = callback_function;
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status

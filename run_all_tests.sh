@@ -84,8 +84,20 @@ if [ "$SKIP_WOKWI" = false ]; then
     
     # Run Wokwi simulation (firmware already built in build verification step)
     echo "Starting Wokwi simulation..."
-    ./wokwi-cli . --scenario test_scenarios.yaml --timeout 120000
-    print_status "Integration tests completed"
+    
+    scenarios=("test_basic_startup.yaml" "test_oil_sensors.yaml" "test_key_trigger.yaml" "test_lock_trigger.yaml" "test_trigger_priority.yaml" "test_invalid_states.yaml")
+    
+    for scenario in "${scenarios[@]}"; do
+        echo "Running scenario: $scenario"
+        ./wokwi-cli . --scenario $scenario --timeout 60000
+        if [ $? -ne 0 ]; then
+            print_error "Integration test failed: $scenario"
+            exit 1
+        fi
+        print_status "Scenario $scenario completed"
+    done
+    
+    print_status "All integration tests completed"
 else
     print_warning "Skipping Wokwi Integration Tests (CLI not available or token not set)"
 fi

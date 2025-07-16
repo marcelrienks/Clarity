@@ -1,5 +1,6 @@
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
+#include "test_logging.h"
 #include <esp32-hal-log.h>
 #include <algorithm>
 

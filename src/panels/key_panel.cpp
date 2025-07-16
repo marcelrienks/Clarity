@@ -1,4 +1,5 @@
 #include "panels/key_panel.h"
+#include "test_logging.h"
 #include "hardware/gpio_pins.h"
 #include <variant>
 #include <Arduino.h>
@@ -54,6 +55,7 @@ void KeyPanel::init()
 void KeyPanel::load(std::function<void()> callback_function)
 {
     log_d("...");
+    log_t("KeyPanel");
     _callback_function = callback_function;
 
     _key_widget->render(_screen, _center_location);

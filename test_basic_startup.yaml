@@ -1,0 +1,22 @@
+name: "Basic System Startup Test"
+version: 1
+author: "Marcel Rienks"
+
+steps:
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "system_ready"
+  
+  - name: "Wait for splash panel to load"
+    wait-serial: "SplashPanel"
+    
+  - name: "Wait for splash screen duration"
+    delay: 3000ms
+    
+  - name: "Wait for main panel transition"
+    wait-serial: "OemOilPanel"
+
+  - name: "Final stability check"
+    delay: 2000ms

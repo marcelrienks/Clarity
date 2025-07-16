@@ -1,5 +1,6 @@
 #include "triggers/key_trigger.h"
 #include "utilities/types.h"
+#include "test_logging.h"
 #include <esp32-hal-log.h>
 
 // Constructors and Destructors
@@ -32,6 +33,7 @@ bool KeyTrigger::evaluate()
     {
         // Pin 25 HIGH (Present) OR Pin 26 HIGH (NotPresent) - always trigger
         should_trigger = true;
+        log_t("KeyTrigger_activated");
         log_d("Key state: %s, triggering",
               current_key_state == KeyState::Present ? "Present" : "NotPresent");
     }
@@ -39,6 +41,7 @@ bool KeyTrigger::evaluate()
     {
         // Both pins LOW (Inactive) - no trigger
         should_trigger = false;
+        log_t("KeyTrigger_inactive");
         log_d("Key state: Inactive, no trigger");
     }
 

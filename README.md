@@ -368,7 +368,12 @@ pio.exe run -e integration-test # Integration test build with minimal logging
    
    # Integration tests only
    pio.exe run -e integration-test
-   .\wokwi-cli.exe . --scenario test_scenarios.yaml --timeout 120000
+   .\wokwi-cli.exe . --scenario test_basic_startup.yaml --timeout 60000
+   .\wokwi-cli.exe . --scenario test_oil_sensors.yaml --timeout 60000
+   .\wokwi-cli.exe . --scenario test_key_trigger.yaml --timeout 60000
+   .\wokwi-cli.exe . --scenario test_lock_trigger.yaml --timeout 60000
+   .\wokwi-cli.exe . --scenario test_trigger_priority.yaml --timeout 60000
+   .\wokwi-cli.exe . --scenario test_invalid_states.yaml --timeout 60000
    
    # Build verification only
    pio.exe run -e debug-local; pio.exe run -e debug-upload; pio.exe run -e release

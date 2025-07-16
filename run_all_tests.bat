@@ -110,17 +110,25 @@ if "%SKIP_WOKWI%"=="false" (
     echo ------------------------------------
     
     echo Starting Wokwi simulation (firmware already built in build verification step)...
-    if exist "wokwi-cli.exe" (
-        wokwi-cli.exe . --scenario test_scenarios.yaml --timeout 120000
-    ) else (
-        wokwi-cli . --scenario test_scenarios.yaml --timeout 120000
+    
+    set scenarios=test_basic_startup.yaml test_oil_sensors.yaml test_key_trigger.yaml test_lock_trigger.yaml test_trigger_priority.yaml test_invalid_states.yaml
+    
+    for %%s in (%scenarios%) do (
+        echo Running scenario: %%s
+        if exist "wokwi-cli.exe" (
+            wokwi-cli.exe . --scenario %%s --timeout 60000
+        ) else (
+            wokwi-cli . --scenario %%s --timeout 60000
+        )
+        if %errorlevel% neq 0 (
+            echo [ERROR] Integration test failed: %%s
+            pause
+            exit /b 1
+        )
+        echo [OK] Scenario %%s completed
     )
-    if %errorlevel% neq 0 (
-        echo [ERROR] Integration tests failed
-        pause
-        exit /b 1
-    )
-    echo [OK] Integration tests completed
+    
+    echo [OK] All integration tests completed
 ) else (
     echo [WARN] Skipping Wokwi Integration Tests (CLI not available or token not set)
 )

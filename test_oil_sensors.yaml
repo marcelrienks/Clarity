@@ -1,0 +1,54 @@
+name: "Oil Sensor Tests"
+version: 1
+author: "Marcel Rienks"
+
+steps:
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "system_ready"
+    
+  - name: "Wait for main panel"
+    wait-serial: "OemOilPanel"
+
+  # Oil Pressure Sensor Tests
+  - name: "Set low oil pressure (10%)"
+    set-control:
+      part-id: pot1
+      control: value
+      value: 0.1
+  
+  - name: "Wait for low pressure reading"
+    delay: 2000ms
+  
+  - name: "Set high oil pressure (90%)" 
+    set-control:
+      part-id: pot1
+      control: value
+      value: 0.9
+  
+  - name: "Wait for high pressure reading"
+    delay: 2000ms
+
+  # Oil Temperature Sensor Tests  
+  - name: "Set oil temperature (50%)"
+    set-control:
+      part-id: pot2
+      control: value
+      value: 0.5
+  
+  - name: "Wait for temperature reading"
+    delay: 2000ms
+
+  - name: "Reset sensors to normal"
+    set-control:
+      part-id: pot1
+      control: value
+      value: 0.5
+      
+  - name: "Wait for stabilization"
+    delay: 2000ms
+
+  - name: "Final stability check"
+    delay: 2000ms
