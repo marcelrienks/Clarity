@@ -55,7 +55,6 @@ void KeyPanel::init()
 void KeyPanel::load(std::function<void()> callback_function)
 {
     log_d("...");
-    log_t("KeyPanel");
     _callback_function = callback_function;
 
     _key_widget->render(_screen, _center_location);
@@ -87,5 +86,6 @@ void KeyPanel::show_panel_completion_callback(lv_event_t *event)
     log_d("...");
 
     auto this_instance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
+    log_t("KeyPanel");
     this_instance->_callback_function();
 }

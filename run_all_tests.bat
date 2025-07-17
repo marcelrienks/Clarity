@@ -111,7 +111,7 @@ if "%SKIP_WOKWI%"=="false" (
     
     echo Starting Wokwi simulation (firmware already built in build verification step)...
     
-    set scenarios=test_basic_startup.yaml test_oil_sensors.yaml test_key_trigger.yaml test_lock_trigger.yaml test_trigger_priority.yaml test_invalid_states.yaml
+    set scenarios=test/test_basic_startup.yaml test/test_oil_sensors.yaml test/test_key_trigger.yaml test/test_lock_trigger.yaml test/test_trigger_priority.yaml test/test_invalid_states.yaml
     
     for %%s in (%scenarios%) do (
         echo Running scenario: %%s

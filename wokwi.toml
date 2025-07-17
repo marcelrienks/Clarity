@@ -3,3 +3,15 @@ version = 1
 gdbServerPort = 3333
 firmware = '.pio/build/integration-test/firmware.bin'
 elf = '.pio/build/integration-test/firmware.elf'
+
+[[wokwi.scenario.controls]]
+part-id = "esp"
+control = "25"
+
+[[wokwi.scenario.controls]]
+part-id = "esp"
+control = "26"
+
+[[wokwi.scenario.controls]]
+part-id = "esp"
+control = "27"

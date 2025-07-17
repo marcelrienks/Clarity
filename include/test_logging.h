@@ -8,8 +8,11 @@
 #ifdef WOKWI_EMULATOR
   // Always log test messages in Wokwi emulator (for integration tests)
   #define log_t(format, ...) do { \
-    Serial.printf("\n[TEST] " format "\n", ##__VA_ARGS__); \
+    Serial.print("\n[TEST] "); \
+    Serial.printf(format, ##__VA_ARGS__); \
+    Serial.print("\n"); \
     Serial.flush(); \
+    delay(1); \
   } while(0)
 #else
   // In normal builds, test logs are disabled

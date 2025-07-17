@@ -85,7 +85,7 @@ if [ "$SKIP_WOKWI" = false ]; then
     # Run Wokwi simulation (firmware already built in build verification step)
     echo "Starting Wokwi simulation..."
     
-    scenarios=("test_basic_startup.yaml" "test_oil_sensors.yaml" "test_key_trigger.yaml" "test_lock_trigger.yaml" "test_trigger_priority.yaml" "test_invalid_states.yaml")
+    scenarios=("test/test_basic_startup.yaml" "test/test_oil_sensors.yaml" "test/test_key_trigger.yaml" "test/test_lock_trigger.yaml" "test/test_trigger_priority.yaml" "test/test_invalid_states.yaml")
     
     for scenario in "${scenarios[@]}"; do
         echo "Running scenario: $scenario"

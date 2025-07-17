@@ -19,6 +19,9 @@ steps:
       control: "3"
       value: 1
   
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+  
   - name: "Wait and verify Lock panel loading"
     wait-serial: "LockPanel"
     

@@ -15,17 +15,20 @@ steps:
   # Test Key Present trigger
   - name: "Key Present trigger ON"
     set-control:
-      part-id: sw1
-      control: "1"
+      part-id: esp
+      control: "25"
       value: 1
+  
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
   
   - name: "Wait and verify Key panel loading"
     wait-serial: "KeyPanel"
     
   - name: "Key Present trigger OFF"
     set-control:
-      part-id: sw1
-      control: "1"
+      part-id: esp
+      control: "25"
       value: 0
   
   - name: "Wait for restoration"
@@ -37,17 +40,20 @@ steps:
   # Test Key Not Present trigger
   - name: "Key Not Present trigger ON"
     set-control:
-      part-id: sw1
-      control: "2"
+      part-id: esp
+      control: "26"
       value: 1
+  
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
   
   - name: "Wait and verify Key panel loading"
     wait-serial: "KeyPanel"
     
   - name: "Key Not Present trigger OFF"
     set-control:
-      part-id: sw1
-      control: "2"
+      part-id: esp
+      control: "26"
       value: 0
   
   - name: "Wait for restoration"

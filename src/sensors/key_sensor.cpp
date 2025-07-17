@@ -27,6 +27,12 @@ Reading KeySensor::get_reading()
     bool pin25_high = digitalRead(GpioPins::KEY_PRESENT);
     bool pin26_high = digitalRead(GpioPins::KEY_NOT_PRESENT);
     
+    // Debug logging for integration tests
+    #ifdef WOKWI_EMULATOR
+    Serial.printf("\n[DEBUG] KeySensor GPIO read: pin25=%d, pin26=%d\n", pin25_high, pin26_high);
+    Serial.flush();
+    #endif
+    
     KeyState state;
     if (pin25_high && pin26_high)
     {

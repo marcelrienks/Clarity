@@ -1,0 +1,71 @@
+name: "Invalid State Tests"
+version: 1
+author: "Marcel Rienks"
+
+steps:
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "system_ready"
+      
+  - name: "Wait for splash panel to load"
+    wait-serial: "SplashPanel"
+
+  - name: "Wait for splash screen duration"
+    delay: 3000ms
+
+  - name: "Wait for main panel"
+    wait-serial: "OemOilPanel"
+
+  # Test both Key triggers active (invalid state)
+  - name: "Activate Key Present trigger (switch 1 on)"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 1
+      
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+      
+  - name: "Wait for Key panel"
+    wait-serial: "KeyPanel"
+      
+  - name: "Activate Key Not Present trigger (switch 2 on - creates invalid state)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 1
+  
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+  
+  - name: "Wait for system to handle invalid state and return to oil panel"
+    wait-serial: "OemOilPanel"
+    
+  - name: "Deactivate Key Present (switch 1 off)"
+    set-control:
+      part-id: sw1
+      control: "1"
+      value: 0
+      
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+      
+  - name: "Wait for Key Not Present panel"
+    wait-serial: "KeyPanel"
+      
+  - name: "Deactivate Key Not Present (switch 2 off)"
+    set-control:
+      part-id: sw1
+      control: "2"
+      value: 0
+
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+
+  - name: "Wait for oil panel restoration"
+    wait-serial: "OemOilPanel"
+
+  - name: "Final stability check"
+    delay: 2000ms

@@ -65,7 +65,6 @@ void OemOilPanel::init()
 void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
 {
     log_d("...");
-    log_t("OemOilPanel");
     _callback_function = show_panel_completion_callback;
 
     // Create location parameters with rotational start points for scales
@@ -189,6 +188,7 @@ void OemOilPanel::show_panel_completion_callback(lv_event_t *event)
     log_d("...");
 
     auto this_instance = static_cast<OemOilPanel *>(lv_event_get_user_data(event));
+    log_t("OemOilPanel");
     this_instance->_callback_function();
 }
 

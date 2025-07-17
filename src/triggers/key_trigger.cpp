@@ -33,7 +33,6 @@ bool KeyTrigger::evaluate()
     {
         // Pin 25 HIGH (Present) OR Pin 26 HIGH (NotPresent) - always trigger
         should_trigger = true;
-        log_t("KeyTrigger_activated");
         log_d("Key state: %s, triggering",
               current_key_state == KeyState::Present ? "Present" : "NotPresent");
     }
@@ -41,7 +40,6 @@ bool KeyTrigger::evaluate()
     {
         // Both pins LOW (Inactive) - no trigger
         should_trigger = false;
-        log_t("KeyTrigger_inactive");
         log_d("Key state: Inactive, no trigger");
     }
 
@@ -49,6 +47,14 @@ bool KeyTrigger::evaluate()
     _last_key_state = current_key_state;
 
     log_d("current_key_state: %d, should_trigger: %d", static_cast<int>(current_key_state), should_trigger);
+    
+    // Debug logging for integration tests
+    #ifdef WOKWI_EMULATOR
+    if (should_trigger) {
+        Serial.printf("\n[DEBUG] KeyTrigger firing! State: %d\n", static_cast<int>(current_key_state));
+        Serial.flush();
+    }
+    #endif
 
     return should_trigger;
 }

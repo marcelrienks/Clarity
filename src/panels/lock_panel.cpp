@@ -43,7 +43,6 @@ void LockPanel::init()
 void LockPanel::load(std::function<void()> callback_function)
 {
     log_d("...");
-    log_t("LockPanel");
     _callback_function = callback_function;
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
@@ -71,5 +70,6 @@ void LockPanel::show_panel_completion_callback(lv_event_t *event)
     log_d("...");
 
     auto this_instance = static_cast<LockPanel *>(lv_event_get_user_data(event));
+    log_t("LockPanel");
     this_instance->_callback_function();
 }

@@ -40,7 +40,6 @@ void SplashPanel::init()
 void SplashPanel::load(std::function<void()> callback_function)
 {
     log_i("...");
-    log_t("SplashPanel");
 
     _callback_function = callback_function;
 
@@ -69,6 +68,7 @@ void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
     // Get the splash panel instance
     auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
 
+    log_t("SplashPanel");
     this_instance->_callback_function();
 
     // Delete the animation_timer

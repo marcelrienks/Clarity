@@ -19,6 +19,9 @@ steps:
       control: "3"
       value: 1
   
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+  
   - name: "Wait for Lock panel to load"
     wait-serial: "LockPanel"
     
@@ -28,6 +31,9 @@ steps:
       control: "1"
       value: 1
   
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+  
   - name: "Wait and verify Key panel overrides Lock panel"
     wait-serial: "KeyPanel"
     
@@ -36,6 +42,9 @@ steps:
       part-id: sw1
       control: "1"
       value: 0
+    
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
     
   - name: "Should return to Lock panel"
     wait-serial: "LockPanel"
