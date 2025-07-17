@@ -109,9 +109,22 @@ if "%SKIP_WOKWI%"=="false" (
     echo Running Wokwi Integration Tests...
     echo ------------------------------------
     
-    echo Starting Wokwi simulation (firmware already built in build verification step)...
+    echo Building integration-test environment for Wokwi...
+    pio.exe run -e integration-test
+    if %errorlevel% neq 0 (
+        echo [ERROR] Integration-test build failed
+        pause
+        exit /b 1
+    )
     
-    set scenarios=test/test_basic_startup.yaml test/test_oil_sensors.yaml test/test_key_trigger.yaml test/test_lock_trigger.yaml test/test_trigger_priority.yaml test/test_invalid_states.yaml
+    REM Temporarily update wokwi.toml to use integration-test build
+    powershell -Command "(Get-Content wokwi.toml) -replace 'debug-local', 'integration-test' | Set-Content wokwi.toml.tmp"
+    move wokwi.toml wokwi.toml.bak
+    move wokwi.toml.tmp wokwi.toml
+    
+    echo Starting Wokwi simulation...
+    
+    set scenarios=test/test_basic_startup.yaml test/test_oil_sensors.yaml test/test_key_trigger.yaml test/test_lock_trigger.yaml test/test_trigger_priority.yaml test/test_invalid_states.yaml test/test_theme_trigger.yaml
     
     for %%s in (%scenarios%) do (
         echo Running scenario: %%s
@@ -127,6 +140,9 @@ if "%SKIP_WOKWI%"=="false" (
         )
         echo [OK] Scenario %%s completed
     )
+    
+    REM Restore original wokwi.toml
+    move wokwi.toml.bak wokwi.toml
     
     echo [OK] All integration tests completed
 ) else (

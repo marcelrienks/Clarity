@@ -36,4 +36,7 @@ namespace GpioPins
     
     /// @brief Lock state digital input pin
     constexpr int LOCK = 27;
+    
+    /// @brief Lights/theme control digital input pin (DIP switch 4)
+    constexpr int LIGHTS = 32;
 }

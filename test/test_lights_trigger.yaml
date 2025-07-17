@@ -1,0 +1,41 @@
+name: "Lights Trigger Tests"
+version: 1
+author: "Marcel Rienks"
+
+steps:
+  - name: "Boot and initialize system"
+    delay: 3000ms
+  
+  - name: "Wait for system ready"
+    wait-serial: "system_ready"
+
+  - name: "Wait for main panel"
+    wait-serial: "OemOilPanel"
+
+  # Test lights switching
+  - name: "Activate lights (GPIO 32 HIGH) - Night theme"
+    set-control:
+      part-id: esp
+      control: "32"
+      value: 1
+  
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+    
+  - name: "Wait for theme change confirmation"
+    delay: 1000ms
+    
+  - name: "Deactivate lights (GPIO 32 LOW) - Day theme"
+    set-control:
+      part-id: esp
+      control: "32"
+      value: 0
+  
+  - name: "Wait for trigger evaluation (300ms throttle)"
+    delay: 500ms
+    
+  - name: "Wait for theme change confirmation"
+    delay: 1000ms
+
+  - name: "Final stability check"
+    delay: 2000ms

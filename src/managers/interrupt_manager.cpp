@@ -89,6 +89,7 @@ bool InterruptManager::check_triggers()
         }
     }
 
+    //TODO: is below required?
     // Restoration is now handled in check_trigger_restoration() when triggers clear
     // This prevents double restoration logic that causes infinite loops
     // if (_active_trigger == nullptr && _trigger_has_fired) {

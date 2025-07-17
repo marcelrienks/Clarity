@@ -2,6 +2,7 @@
 #include "managers/interrupt_manager.h"
 #include "triggers/key_trigger.h"
 #include "triggers/lock_trigger.h"
+#include "triggers/lights_trigger.h"
 
 // Static Methods
 
@@ -28,9 +29,9 @@ void PanelManager::init()
 
     // Initialize InterruptManager with panel switch callback
     InterruptManager &interrupt_manager = InterruptManager::get_instance();
-    interrupt_manager.init([this](const char *panel_name) {
-        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); }, true);
-    });
+    interrupt_manager.init([this](const char *panel_name)
+                           { this->create_and_load_panel(panel_name, [this]()
+                                                         { this->interrupt_panel_switch_callback(); }, true); });
 }
 
 /// @brief Creates and then loads a panel based on the given type name
@@ -42,29 +43,37 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     log_d("...");
 
     // Track this as the last non-trigger panel only for user-driven changes
-    if (!is_trigger_driven) {
+    if (!is_trigger_driven)
+    {
         _last_non_trigger_panel = std::string(panel_name);
         log_d("Setting restoration panel to: %s", _last_non_trigger_panel.c_str());
-    } else {
+    }
+    else
+    {
         log_d("Trigger-driven panel change, preserving restoration panel: %s", _last_non_trigger_panel.c_str());
     }
 
-    // Check for trigger activations before creating panel (e.g., key already present at startup)
-    if (InterruptManager::get_instance().check_triggers()) {
-        return; // Trigger fired and switched to different panel
-    }
+    // Throttle trigger evaluation to 500ms intervals for optimal performance with 3 triggers
+    // Note: triggering more often causes interference with screen loading
+    // Increased from 300ms due to addition of LightsTrigger (3rd trigger)
+    Ticker::execute_throttled(700, []()
+                              {
+        if (InterruptManager::get_instance().check_triggers()) {
+            return; // Trigger fired and switched to different panel
+        } });
 
     InterruptManager::get_instance().clear_panel_triggers();
     InterruptManager::get_instance().set_current_panel(panel_name);
-    
+
     // Clean up existing panel before creating new one
-    if (_panel) {
+    if (_panel)
+    {
         log_d("Cleaning up existing panel before creating new one");
         _panel.reset();
     }
-    
+
     _panel = PanelManager::create_panel(panel_name);
-    
+
     log_i("Loading %s", _panel->get_name());
 
     // Lock the panel to prevent updating during loading
@@ -77,7 +86,8 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     // Ticker::handle_lv_tasks();
 
     // Use provided callback or default to panel_completion_callback
-    auto callback = completion_callback ? completion_callback : [this]() { this->PanelManager::panel_completion_callback(); };
+    auto callback = completion_callback ? completion_callback : [this]()
+    { this->PanelManager::panel_completion_callback(); };
     _panel->load(callback);
     Ticker::handle_lv_tasks();
 }
@@ -90,7 +100,7 @@ void PanelManager::create_and_load_panel_with_splash(const char *panel_name)
     log_d("...");
 
     create_and_load_panel(PanelNames::Splash, [this, panel_name]()
-                         { this->PanelManager::splash_completion_callback(panel_name); });
+                          { this->PanelManager::splash_completion_callback(panel_name); });
 }
 
 /// @brief Update the reading on the currently loaded panel
@@ -98,11 +108,11 @@ void PanelManager::update_panel()
 {
     log_d("...");
 
-    // Throttle trigger evaluation to 300ms intervals for optimal performance
+    // Throttle trigger evaluation to 500ms intervals for optimal performance with 3 triggers
     // Note: triggering more often causes interference with screen loading
-    Ticker::execute_throttled(300, []() {
-        InterruptManager::get_instance().check_triggers();
-    });
+    // Increased from 300ms due to addition of LightsTrigger (3rd trigger)
+    Ticker::execute_throttled(700, []()
+                              { InterruptManager::get_instance().check_triggers(); });
 
     if (!_panel)
         return;
@@ -115,7 +125,6 @@ void PanelManager::update_panel()
 
     Ticker::handle_lv_tasks();
 }
-
 
 // Constructors and Destructors
 
@@ -164,6 +173,8 @@ void PanelManager::register_triggers()
     register_global_trigger<KeyTrigger>("key_trigger", true);
     // Lock trigger: Switch to lock panel when lock is detected (with restoration)
     register_global_trigger<LockTrigger>(TriggerNames::Lock, true);
+    // Theme trigger: Apply theme changes system-wide (no panel switching)
+    register_global_trigger<LightsTrigger>("lights_trigger", false);
 }
 
 // Callback Methods
@@ -199,9 +210,10 @@ void PanelManager::interrupt_panel_switch_callback()
 
 /// @brief Get the panel name to restore when all triggers are inactive
 /// @return Panel name for restoration, or nullptr if none set
-const char* PanelManager::get_restoration_panel() const
+const char *PanelManager::get_restoration_panel() const
 {
-    if (_last_non_trigger_panel.empty()) {
+    if (_last_non_trigger_panel.empty())
+    {
         return nullptr;
     }
     return _last_non_trigger_panel.c_str();

@@ -82,10 +82,17 @@ if [ "$SKIP_WOKWI" = false ]; then
     echo "🌐 Running Wokwi Integration Tests..."
     echo "------------------------------------"
     
-    # Run Wokwi simulation (firmware already built in build verification step)
+    # Build integration-test environment specifically for integration tests
+    echo "Building integration-test environment for Wokwi..."
+    pio run -e integration-test
+    
+    # Temporarily update wokwi.toml to use integration-test build
+    sed -i.bak 's|debug-local|integration-test|g' wokwi.toml
+    
+    # Run Wokwi simulation
     echo "Starting Wokwi simulation..."
     
-    scenarios=("test/test_basic_startup.yaml" "test/test_oil_sensors.yaml" "test/test_key_trigger.yaml" "test/test_lock_trigger.yaml" "test/test_trigger_priority.yaml" "test/test_invalid_states.yaml")
+    scenarios=("test/test_basic_startup.yaml" "test/test_oil_sensors.yaml" "test/test_key_trigger.yaml" "test/test_lock_trigger.yaml" "test/test_trigger_priority.yaml" "test/test_invalid_states.yaml" "test/test_theme_trigger.yaml")
     
     for scenario in "${scenarios[@]}"; do
         echo "Running scenario: $scenario"
@@ -96,6 +103,9 @@ if [ "$SKIP_WOKWI" = false ]; then
         fi
         print_status "Scenario $scenario completed"
     done
+    
+    # Restore original wokwi.toml
+    mv wokwi.toml.bak wokwi.toml
     
     print_status "All integration tests completed"
 else
