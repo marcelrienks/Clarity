@@ -1,45 +1,18 @@
 #pragma once
 
-#include "interfaces/i_trigger.h"
-#include <string>
-#include <memory>
+#include "utilities/trigger_messages.h"
+#include "hardware/gpio_pins.h"
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
+#include <freertos/semphr.h>
+#include <freertos/task.h>
+#include <esp32-hal-log.h>
 #include <map>
-#include <vector>
-#include <functional>
+#include <string>
 
 /**
  * @class TriggerManager
- * @brief Singleton manager for interrupt triggers and panel switching conditions
- *
- * @details This manager handles the registration, evaluation, and lifecycle of
- * interrupt triggers that can cause immediate panel switches. It follows the
- * same singleton and factory patterns as PanelManager to provide centralized
- * trigger management with dynamic registration.
- *
- * @design_patterns:
- * - Singleton: Single instance manages all triggers
- * - Factory: Dynamic trigger creation via registration
- * - Template: Type-safe trigger registration
- *
- * @trigger_lifecycle:
- * 1. Register trigger types with register_trigger<T>()
- * 2. Create and add triggers via add_trigger()
- * 3. Evaluate all triggers with check_triggers()
- * 4. Handle trigger activation with callbacks
- * 5. Clean up panel-specific triggers on panel changes
- *
- * @trigger_types:
- * - Global triggers: Registered in main setup(), persist throughout application
- * - Panel triggers: Registered when panels load, removed when panels unload
- *
- * @state_management:
- * - _global_triggers: Triggers that persist throughout application lifetime
- * - _panel_triggers: Triggers specific to current panel, cleaned up on panel change
- * - _active_trigger: Currently active trigger (if any)
- * - Restoration: Handled by PanelManager's _last_non_trigger_panel tracking
- *
- * @integration: Works with PanelManager to force immediate panel switches
- * when trigger conditions are met, regardless of current panel state.
+ * @brief Core 1 stateful trigger manager with application state awareness
  */
 class TriggerManager
 {
@@ -52,79 +25,63 @@ public:
     static TriggerManager &get_instance();
 
     // Core Functionality Methods
-    /// @brief Initialize the trigger manager
-    /// @param panel_switch_callback Function to call when panel should be switched
-    void init(std::function<void(const char *)> panel_switch_callback = nullptr);
+    void init_dual_core_system();
+    void handle_key_present_interrupt(bool key_present);
+    void handle_lock_state_interrupt(bool lock_engaged);
+    void handle_theme_switch_interrupt(bool night_mode);
+    void update_application_state(const char* panel_name, const char* theme_name);
+    void get_application_state(char* panel_name, char* theme_name);
+    void get_queue_handles(QueueHandle_t* high_queue, QueueHandle_t* medium_queue, QueueHandle_t* low_queue);
 
-    /// @brief Check all registered triggers and handle any activations
-    /// @return true if a trigger was activated and panel switch occurred
-    bool check_triggers();
-
-    /// @brief Register a global trigger that persists throughout application
-    /// @param trigger_id Unique identifier for the trigger
-    /// @param trigger Shared pointer to the trigger instance
-    void register_global_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger);
-
-    /// @brief Register a panel-specific trigger (removed when panel changes)
-    /// @param trigger_id Unique identifier for the trigger
-    /// @param trigger Shared pointer to the trigger instance
-    void add_panel_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger);
-
-    /// @brief Remove a specific trigger by ID
-    /// @param trigger_id The trigger ID to remove
-    void remove_trigger(const std::string &trigger_id);
-
-    /// @brief Remove all panel-specific triggers (called when panel changes)
-    void clear_panel_triggers();
-
-    /// @brief Set the current panel name (for tracking)
-    /// @param panel_name Current panel name
-    void set_current_panel(const std::string &panel_name);
-
-    // Template Methods
-    /// @brief Factory method for trigger registration
-    /// @tparam T Trigger type that implements ITrigger interface
-    /// @return Shared pointer to the created trigger instance
-    template <typename T>
-    std::shared_ptr<ITrigger> create_trigger()
-    {
-        return std::make_shared<T>();
-    }
+    // Core 1 Task Methods
+    static void trigger_monitoring_task(void* pvParameters);
+    
+    // Static interrupt handlers (public for extern C access)
+    static void IRAM_ATTR key_present_isr_handler(void* arg);
+    static void IRAM_ATTR key_not_present_isr_handler(void* arg);
+    static void IRAM_ATTR lock_state_isr_handler(void* arg);
+    static void IRAM_ATTR theme_switch_isr_handler(void* arg);
 
 private:
     // Constructors and Destructors
     TriggerManager() = default;
     ~TriggerManager() = default;
 
-    // Core Functionality Methods
-    /// @brief Evaluate a single trigger and handle activation
-    /// @param trigger_id The trigger identifier
-    /// @param trigger The trigger to evaluate
-    /// @param priority The trigger's priority level
-    /// @return true if trigger was activated
-    bool evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger, int priority);
+    // Message Queue Management
+    void post_message(const char* action, const char* target, const char* trigger_id, TriggerPriority priority);
+    void remove_message_from_queue(const char* trigger_id);
+    void update_message_in_queue(const char* trigger_id, const char* action, const char* target);
+    QueueHandle_t get_target_queue(TriggerPriority priority);
 
-    /// @brief Handle trigger activation
-    /// @param trigger_id The activated trigger ID
-    /// @param trigger The activated trigger
-    void handle_trigger_activation(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger);
-
-    /// @brief Check if trigger condition has cleared and handle restoration
-    void check_trigger_restoration();
+    // GPIO Interrupt Setup
+    void setup_gpio_interrupts();
 
     // Instance Data Members
-    /// @brief Trigger entry with ID and instance, ordered by registration priority
-    struct TriggerEntry {
-        std::string id;
-        std::shared_ptr<ITrigger> trigger;
-        int priority; ///< Lower number = higher priority (0 = highest)
-    };
-    
-    std::vector<TriggerEntry> _global_triggers;                         ///< Global triggers ordered by priority
-    std::vector<TriggerEntry> _panel_triggers;                          ///< Panel-specific triggers ordered by priority
-    std::string _current_panel = "";                                    ///< Current active panel
-    std::shared_ptr<ITrigger> _active_trigger = nullptr;                ///< Currently active trigger (if any)
-    int _active_trigger_priority = -1;                                  ///< Priority of currently active trigger (-1 = none)
-    bool _trigger_has_fired = false;                                    ///< Flag indicating if any trigger has ever fired (enables restoration)
-    std::function<void(const char *)> _panel_switch_callback = nullptr; ///< Callback for panel switching
+    QueueHandle_t _high_priority_queue = nullptr;
+    QueueHandle_t _medium_priority_queue = nullptr;
+    QueueHandle_t _low_priority_queue = nullptr;
+
+    // Shared application state (protected by mutexes)
+    SemaphoreHandle_t _state_mutex = nullptr;
+    char _current_panel[32] = {0};
+    char _current_theme[32] = {0};
+
+    // Pending message tracking
+    std::map<std::string, bool> _pending_messages;
+
+    // Hardware state tracking
+    bool _key_present_state = false;
+    bool _lock_engaged_state = false;
+    bool _night_mode_state = false;
+
+    // Core 1 task handle
+    TaskHandle_t _trigger_task_handle = nullptr;
 };
+
+// GPIO Interrupt Service Routine declarations
+extern "C" {
+    void IRAM_ATTR gpio_key_present_isr(void* arg);
+    void IRAM_ATTR gpio_key_not_present_isr(void* arg);
+    void IRAM_ATTR gpio_lock_state_isr(void* arg);
+    void IRAM_ATTR gpio_theme_switch_isr(void* arg);
+}

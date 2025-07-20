@@ -8,6 +8,7 @@
 #include "panels/lock_panel.h"
 #include "utilities/ticker.h"
 #include "managers/trigger_manager.h"
+#include "utilities/trigger_messages.h"
 
 #include <string>
 #include <functional>
@@ -15,6 +16,8 @@
 #include <list>
 #include <vector>
 #include <map>
+#include <freertos/FreeRTOS.h>
+#include <freertos/queue.h>
 
 /**
  * @class PanelManager
@@ -68,8 +71,18 @@ public:
     static PanelManager &get_instance();
 
     // Core Functionality Methods
-    /// @brief Initialize the panel manager, register panels/triggers, and setup interrupt handling
+    /// @brief Initialize the panel manager, register panels/triggers, and setup dual-core system
     void init();
+    
+    /// @brief Process trigger messages from Core 1 based on UI state
+    void process_trigger_messages();
+    
+    /// @brief Set current UI state for Core 1 synchronization
+    /// @param state Current UI processing state
+    void set_ui_state(UIState state);
+    
+    /// @brief Get available queues from TriggerManager for processing
+    void get_trigger_queues();
     
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
@@ -104,7 +117,7 @@ public:
     /// @param auto_restore Whether the trigger should auto-restore previous panel when cleared
     template<typename T>
     void register_global_trigger(const char *trigger_id, bool auto_restore = false) {
-        TriggerManager::get_instance().register_global_trigger(trigger_id, std::make_shared<T>(auto_restore));
+        // Disabled for dual-core architecture\n        // TriggerManager::get_instance().register_global_trigger(trigger_id, std::make_shared<T>(auto_restore));
     }
 
 private:
@@ -134,10 +147,41 @@ private:
     
     /// @brief Callback executed when trigger-driven panel loading is complete
     void trigger_panel_switch_callback();
+    
+    /// @brief Execute a trigger message action
+    /// @param msg Trigger message to execute
+    void execute_message_action(const TriggerMessage& msg);
+    
+    /// @brief Process all priority queues based on UI state
+    void process_all_priority_queues();
+    
+    /// @brief Process high priority queue only
+    void process_high_priority_queue();
+    
+    /// @brief Process medium priority queue only
+    void process_medium_priority_queue();
+    
+    /// @brief Process low priority queue only
+    void process_low_priority_queue();
+    
+    /// @brief Notify Core 1 of state changes
+    /// @param panel_name Current panel name
+    /// @param theme_name Current theme name
+    void notify_core1_state_change(const char* panel_name, const char* theme_name);
 
     // Instance Data Members
     std::shared_ptr<IPanel> _panel = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
     bool _is_loading = false; // this allows the panel to be locked during loading from updates
     std::string _last_non_trigger_panel; // Track last panel loaded by user/config (not by trigger) for restoration
+    
+    // Core 0 UI state management
+    UIState _ui_state = UIState::IDLE;             ///< Current UI processing state
+    QueueHandle_t _high_priority_queue = nullptr;  ///< High priority message queue from Core 1
+    QueueHandle_t _medium_priority_queue = nullptr; ///< Medium priority message queue from Core 1
+    QueueHandle_t _low_priority_queue = nullptr;   ///< Low priority message queue from Core 1
+    
+    // Current application state
+    std::string _current_panel_name = "OemOilPanel"; ///< Current panel name for Core 1 sync
+    std::string _current_theme_name = "Day";        ///< Current theme name for Core 1 sync
 };
