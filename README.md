@@ -3,13 +3,13 @@
 # Clarity
 An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of components and sensors.
 
-_**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple components, and warning interrupts. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
+_**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple components, and warning triggers. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
 
 ## TODO:
 * Throttling:  
 In order to solve an issue where the oil panel would hang during load, throttling had to be added to the trigger system, as this was causing interference. While this currently works, adding any more triggers has shown that throttling must be increased again for the system to function, so this does not scale.
    * 1st: State Based:  
-   Firstly change the trigger system to be state based, and only check triggers when in a state to do so, e.g. Idle, or throttled during Update. Do not check interrupts during Loading or LVGL_Busy states. While the initial idea was that triggers should be able to fire and be handled at any time, it proved to interrupt with LVGL inner workings, and would result in an application that hangs. So the only reasonable option is to check for interrupts when the system is in a safe space to actually handle them
+   Firstly change the trigger system to be state based, and only check triggers when in a state to do so, e.g. Idle, or throttled during Update. Do not check triggers during Loading or LVGL_Busy states. While the initial idea was that triggers should be able to fire and be handled at any time, it proved to interrupt with LVGL inner workings, and would result in an application that hangs. So the only reasonable option is to check for triggers when the system is in a safe space to actually handle them
    * 2nd: Hardware interrupt:  
    Supposedly you can set up an interrupt that fires when a pin changes state, the 'change' is what is valuable because that would prevent having to constantly poll for statuses. Imagine a flow where a hardware trigger fires, posts on a message queue (ideally the queue should prevent duplicates, and order by priority if possible), trigger manager would read the queue, and if any message found know that state had changed and to take action. One of which could be to load the key panel for example, or change the theme.
    * Else:  
@@ -196,7 +196,7 @@ The system implements several well-established design patterns to coordinate bet
 - **Presenter**: Panels (KeyPanel, LockPanel, OemOilPanel, etc.)
 
 #### **Observer Pattern (Trigger System)**
-- **Subject**: InterruptManager continuously evaluates triggers
+- **Subject**: TriggerManager continuously evaluates triggers
 - **Observers**: Triggers (KeyTrigger, LockTrigger) monitor sensor states
 - **Notification**: Panel switches when trigger conditions are met
 
@@ -214,12 +214,12 @@ OemOilPanel → directly reads from → OilPressureSensor, OilTemperatureSensor
 #### **Pattern 2: Trigger-Driven Panel Switching**
 **Example**: KeyTrigger → KeyPanel, LockTrigger → LockPanel
 ```
-Sensor → Trigger → InterruptManager → PanelManager → Panel
+Sensor → Trigger → TriggerManager → PanelManager → Panel
 ```
 - Sensors provide data
 - Triggers evaluate conditions and decide when to switch
 - Triggers specify target panels
-- Global interrupt system manages the switching
+- Global trigger system manages the switching
 
 #### **Pattern 3: Sensor Abstraction Layer**
 **Consistent Pattern**:
@@ -235,7 +235,7 @@ Trigger → Sensor (abstraction) → Hardware (GPIO pins)
 
 #### **Priority-Based Evaluation**
 ```
-InterruptManager evaluates triggers by priority:
+TriggerManager evaluates triggers by priority:
 0 = KeyTrigger (highest priority)
 1 = LockTrigger (lower priority)
 ```
@@ -253,7 +253,7 @@ Inactive → Active → Restoration
 #### **Factory Pattern**
 ```cpp
 PanelManager.register_panel<KeyPanel>("KeyPanel");
-InterruptManager.register_trigger<KeyTrigger>("key_trigger");
+TriggerManager.register_trigger<KeyTrigger>("key_trigger");
 ```
 - Dynamic registration of panels and triggers
 - Template-based type-safe creation
@@ -267,19 +267,19 @@ Sensors → continuous readings → Panel → Components → UI Update
 
 #### **Event-Driven Flow (Key/Lock)**
 ```
-Hardware Event → Sensor → Trigger → InterruptManager → PanelManager → Panel Switch
+Hardware Event → Sensor → Trigger → TriggerManager → PanelManager → Panel Switch
 ```
 
 #### **Restoration Flow**
 ```
-Trigger Clears → InterruptManager → PanelManager.get_restoration_panel() → Restore Previous Panel
+Trigger Clears → TriggerManager → PanelManager.get_restoration_panel() → Restore Previous Panel
 ```
 
 ### 🔧 Design Patterns Used
 
 #### **Singleton Pattern**
 - `PanelManager::get_instance()`
-- `InterruptManager::get_instance()`
+- `TriggerManager::get_instance()`
 - Central coordination points
 
 #### **Strategy Pattern**
@@ -320,7 +320,7 @@ Trigger Clears → InterruptManager → PanelManager.get_restoration_panel() →
 ```
 1. PanelManager.init()
 2. Register all panels with factory
-3. Register all triggers with InterruptManager  
+3. Register all triggers with TriggerManager  
 4. Load default panel (OemOilPanel)
 5. Start continuous trigger evaluation
 ```

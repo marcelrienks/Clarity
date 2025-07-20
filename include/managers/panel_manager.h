@@ -7,7 +7,7 @@
 #include "panels/key_panel.h"
 #include "panels/lock_panel.h"
 #include "utilities/ticker.h"
-#include "managers/interrupt_manager.h"
+#include "managers/trigger_manager.h"
 
 #include <string>
 #include <functional>
@@ -98,13 +98,13 @@ public:
         };
     }
 
-    /// @brief Register a global trigger type with the interrupt manager
+    /// @brief Register a global trigger type with the trigger manager
     /// @tparam T Trigger type that implements ITrigger interface
     /// @param trigger_id String identifier for the trigger
     /// @param auto_restore Whether the trigger should auto-restore previous panel when cleared
     template<typename T>
     void register_global_trigger(const char *trigger_id, bool auto_restore = false) {
-        InterruptManager::get_instance().register_global_trigger(trigger_id, std::make_shared<T>(auto_restore));
+        TriggerManager::get_instance().register_global_trigger(trigger_id, std::make_shared<T>(auto_restore));
     }
 
 private:
@@ -121,7 +121,7 @@ private:
     /// @brief Register all available panel types with the factory
     void register_panels();
     
-    /// @brief Register all global triggers with the interrupt manager
+    /// @brief Register all global triggers with the trigger manager
     void register_triggers();
 
     // Callback Methods
@@ -132,8 +132,8 @@ private:
     /// @brief Callback executed when normal panel loading is complete
     void panel_completion_callback();
     
-    /// @brief Callback executed when interrupt-triggered panel loading is complete
-    void interrupt_panel_switch_callback();
+    /// @brief Callback executed when trigger-driven panel loading is complete
+    void trigger_panel_switch_callback();
 
     // Instance Data Members
     std::shared_ptr<IPanel> _panel = nullptr;

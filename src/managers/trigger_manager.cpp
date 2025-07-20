@@ -1,23 +1,23 @@
-#include "managers/interrupt_manager.h"
+#include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
 #include <esp32-hal-log.h>
 #include <algorithm>
 
 // Static Methods
 
-/// @brief Get the singleton instance of InterruptManager
-/// @return Reference to the InterruptManager instance
-InterruptManager &InterruptManager::get_instance()
+/// @brief Get the singleton instance of TriggerManager
+/// @return Reference to the TriggerManager instance
+TriggerManager &TriggerManager::get_instance()
 {
-    static InterruptManager instance;
+    static TriggerManager instance;
     return instance;
 }
 
 // Core Functionality Methods
 
-/// @brief Initialize the interrupt manager
+/// @brief Initialize the trigger manager
 /// @param panel_switch_callback Function to call when panel should be switched
-void InterruptManager::init(std::function<void(const char *)> panel_switch_callback)
+void TriggerManager::init(std::function<void(const char *)> panel_switch_callback)
 {
     log_d("...");
 
@@ -29,12 +29,12 @@ void InterruptManager::init(std::function<void(const char *)> panel_switch_callb
     _active_trigger_priority = -1;
     _panel_switch_callback = panel_switch_callback;
 
-    log_d("InterruptManager initialized with %d global triggers", _global_triggers.size());
+    log_d("TriggerManager initialized with %d global triggers", _global_triggers.size());
 }
 
 /// @brief Check all registered triggers and handle any activations
 /// @return true if a trigger was activated and panel switch occurred
-bool InterruptManager::check_triggers()
+bool TriggerManager::check_triggers()
 {
     log_d("...");
 
@@ -105,7 +105,7 @@ bool InterruptManager::check_triggers()
 /// @brief Register a global trigger that persists throughout application
 /// @param trigger_id Unique identifier for the trigger
 /// @param trigger Shared pointer to the trigger instance
-void InterruptManager::register_global_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
+void TriggerManager::register_global_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
 {
     log_d("...");
 
@@ -121,7 +121,7 @@ void InterruptManager::register_global_trigger(const std::string &trigger_id, st
 /// @brief Register a panel-specific trigger (removed when panel changes)
 /// @param trigger_id Unique identifier for the trigger
 /// @param trigger Shared pointer to the trigger instance
-void InterruptManager::add_panel_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
+void TriggerManager::add_panel_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger)
 {
     log_d("...");
 
@@ -136,7 +136,7 @@ void InterruptManager::add_panel_trigger(const std::string &trigger_id, std::sha
 
 /// @brief Remove a specific trigger by ID
 /// @param trigger_id The trigger ID to remove
-void InterruptManager::remove_trigger(const std::string &trigger_id)
+void TriggerManager::remove_trigger(const std::string &trigger_id)
 {
     log_d("...");
 
@@ -176,7 +176,7 @@ void InterruptManager::remove_trigger(const std::string &trigger_id)
 }
 
 /// @brief Remove all panel-specific triggers (called when panel changes)
-void InterruptManager::clear_panel_triggers()
+void TriggerManager::clear_panel_triggers()
 {
     log_d("...");
 
@@ -202,7 +202,7 @@ void InterruptManager::clear_panel_triggers()
 
 /// @brief Set the current panel name (for tracking)
 /// @param panel_name Current panel name
-void InterruptManager::set_current_panel(const std::string &panel_name)
+void TriggerManager::set_current_panel(const std::string &panel_name)
 {
     log_d("...");
     _current_panel = panel_name;
@@ -211,7 +211,7 @@ void InterruptManager::set_current_panel(const std::string &panel_name)
 // Private Methods
 
 /// @brief Check if trigger condition has cleared and handle restoration
-void InterruptManager::check_trigger_restoration()
+void TriggerManager::check_trigger_restoration()
 {
     // Check if trigger condition has cleared
     if (!_active_trigger->evaluate() && _active_trigger->should_restore())
@@ -240,7 +240,7 @@ void InterruptManager::check_trigger_restoration()
 /// @param trigger_id The trigger identifier
 /// @param trigger The trigger to evaluate
 /// @return true if trigger was activated
-bool InterruptManager::evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger, int priority)
+bool TriggerManager::evaluate_trigger(const std::string &trigger_id, std::shared_ptr<ITrigger> trigger, int priority)
 {
     log_d("...");
 

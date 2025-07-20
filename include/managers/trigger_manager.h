@@ -8,7 +8,7 @@
 #include <functional>
 
 /**
- * @class InterruptManager
+ * @class TriggerManager
  * @brief Singleton manager for interrupt triggers and panel switching conditions
  *
  * @details This manager handles the registration, evaluation, and lifecycle of
@@ -41,18 +41,18 @@
  * @integration: Works with PanelManager to force immediate panel switches
  * when trigger conditions are met, regardless of current panel state.
  */
-class InterruptManager
+class TriggerManager
 {
 public:
     // Constructors and Destructors
-    InterruptManager(const InterruptManager &) = delete;
-    InterruptManager &operator=(const InterruptManager &) = delete;
+    TriggerManager(const TriggerManager &) = delete;
+    TriggerManager &operator=(const TriggerManager &) = delete;
 
     // Static Methods
-    static InterruptManager &get_instance();
+    static TriggerManager &get_instance();
 
     // Core Functionality Methods
-    /// @brief Initialize the interrupt manager
+    /// @brief Initialize the trigger manager
     /// @param panel_switch_callback Function to call when panel should be switched
     void init(std::function<void(const char *)> panel_switch_callback = nullptr);
 
@@ -93,8 +93,8 @@ public:
 
 private:
     // Constructors and Destructors
-    InterruptManager() = default;
-    ~InterruptManager() = default;
+    TriggerManager() = default;
+    ~TriggerManager() = default;
 
     // Core Functionality Methods
     /// @brief Evaluate a single trigger and handle activation

@@ -6,7 +6,7 @@
 
 /**
  * @interface ITrigger
- * @brief Interface for interrupt trigger conditions that can cause panel switches
+ * @brief Interface for trigger conditions that can cause panel switches
  * 
  * @details Triggers monitor sensor readings and evaluate conditions to determine
  * when a panel switch should occur. Similar to ISensor pattern, triggers provide
@@ -23,7 +23,7 @@
  * - TemperatureTrigger: Monitor temperature, trigger on over-temperature
  * - PressureTrigger: Monitor pressure, trigger on low pressure warning
  * 
- * @integration: Triggers are registered with InterruptManager and evaluated
+ * @integration: Triggers are registered with TriggerManager and evaluated
  * during the main loop before normal panel updates.
  */
 class ITrigger

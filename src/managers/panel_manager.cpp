@@ -1,5 +1,5 @@
 #include "managers/panel_manager.h"
-#include "managers/interrupt_manager.h"
+#include "managers/trigger_manager.h"
 #include "triggers/key_trigger.h"
 #include "triggers/lock_trigger.h"
 
@@ -17,7 +17,7 @@ PanelManager &PanelManager::get_instance()
 
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 /// Registers all available panel types with the factory for dynamic creation
-/// Also initializes interrupt manager with panel switching callback and registers global triggers
+/// Also initializes trigger manager with panel switching callback and registers global triggers
 void PanelManager::init()
 {
     log_d("...");
@@ -26,10 +26,10 @@ void PanelManager::init()
     PanelManager::register_panels();
     PanelManager::register_triggers();
 
-    // Initialize InterruptManager with panel switch callback
-    InterruptManager &interrupt_manager = InterruptManager::get_instance();
-    interrupt_manager.init([this](const char *panel_name) {
-        this->create_and_load_panel(panel_name, [this]() { this->interrupt_panel_switch_callback(); }, true);
+    // Initialize TriggerManager with panel switch callback
+    TriggerManager &trigger_manager = TriggerManager::get_instance();
+    trigger_manager.init([this](const char *panel_name) {
+        this->create_and_load_panel(panel_name, [this]() { this->trigger_panel_switch_callback(); }, true);
     });
 }
 
@@ -50,12 +50,12 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     }
 
     // Check for trigger activations before creating panel (e.g., key already present at startup)
-    if (InterruptManager::get_instance().check_triggers()) {
+    if (TriggerManager::get_instance().check_triggers()) {
         return; // Trigger fired and switched to different panel
     }
 
-    InterruptManager::get_instance().clear_panel_triggers();
-    InterruptManager::get_instance().set_current_panel(panel_name);
+    TriggerManager::get_instance().clear_panel_triggers();
+    TriggerManager::get_instance().set_current_panel(panel_name);
     
     // Clean up existing panel before creating new one
     if (_panel) {
@@ -101,7 +101,7 @@ void PanelManager::update_panel()
     // Throttle trigger evaluation to 300ms intervals for optimal performance
     // Note: triggering more often causes interference with screen loading
     Ticker::execute_throttled(300, []() {
-        InterruptManager::get_instance().check_triggers();
+        TriggerManager::get_instance().check_triggers();
     });
 
     if (!_panel)
@@ -155,7 +155,7 @@ void PanelManager::register_panels()
     register_panel<LockPanel>(PanelNames::Lock);
 }
 
-/// @brief Register all global triggers with the interrupt manager
+/// @brief Register all global triggers with the trigger manager
 void PanelManager::register_triggers()
 {
     log_d("...");
@@ -188,13 +188,13 @@ void PanelManager::panel_completion_callback()
     log_d("Panel load completed, _is_loading is now %i", _is_loading);
 }
 
-/// @brief callback function to be executed when interrupt-triggered panel loading is complete
-void PanelManager::interrupt_panel_switch_callback()
+/// @brief callback function to be executed when trigger-driven panel loading is complete
+void PanelManager::trigger_panel_switch_callback()
 {
     log_d("...");
 
     _is_loading = false;
-    log_d("Interrupt panel load completed, _is_loading is now %i", _is_loading);
+    log_d("Trigger panel load completed, _is_loading is now %i", _is_loading);
 }
 
 /// @brief Get the panel name to restore when all triggers are inactive

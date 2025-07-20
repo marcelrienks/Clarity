@@ -10,7 +10,7 @@ flowchart TD
     PanelManager -- creates --> Panel
     PanelManager -- loads --> Panel
     PanelManager -- switches between --> Panel
-    TriggerManager@{ label: "Trigger Manager<br><span style=\"padding-left:\">handles the lifecycle of interrupt triggers<br></span>- registration<br>- evaluation" } -- manages --> Trigger["Trigger<br>- Uses Sensor<br>- Takes Action"]
+    TriggerManager@{ label: "Trigger Manager<br><span style=\"padding-left:\">handles the lifecycle of triggers<br></span>- registration<br>- evaluation" } -- manages --> Trigger["Trigger<br>- Uses Sensor<br>- Takes Action"]
     TriggerManager -- creates --> Trigger
     TriggerManager -- registers --> Trigger
     TriggerManager -- evaluates --> Trigger

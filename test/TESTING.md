@@ -96,7 +96,7 @@ wokwi-cli . --scenario test_scenarios.yaml --timeout 45000
 - Oil pressure/temperature specific ranges
 - Mock sensor implementations
 
-#### **test_interrupt_manager.cpp**
+#### **test_trigger_manager.cpp**
 - Trigger priority evaluation algorithms
 - Panel switching logic
 - Restoration mechanism

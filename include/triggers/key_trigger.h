@@ -10,7 +10,7 @@
 
 /**
  * @class KeyTrigger
- * @brief Unified interrupt trigger that monitors key states and switches panels accordingly
+ * @brief Unified trigger that monitors key states and switches panels accordingly
  * 
  * @details This trigger monitors both key present and not present states using a single
  * KeySensor, and triggers appropriate panel switches based on the key state:
