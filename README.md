@@ -5,6 +5,11 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 
 _**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple widgets, and warning interrupts. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
 
+## Idea's:
+* Hardware interrupt: Supposedly you can set up an interrupt that fires when a pin changes state, the 'change' is what is valuable because that would prevent having to constantly poll for statuses. Imagine a flow where a hardware trigger fires, posts on a message queue (ideally the queue should prevent duplicates, and order by priority if possible), trigger manager would read the queue, and if any message found know that state had changed and to take action. One of which could be to load the key panel for example, or change the theme.
+
+else if the above cannot work there is the concept of a latching mechanism, where a trigger uses a sensor to check for a state, if that is triggered, it loads a panel, which in the standard pattern then uses the same sensor to keep itself latched as long as the state is still true through the update mechanism.
+
 ## Main Libraries:
 * Arduino
 * [LVGL](https://docs.lvgl.io/master/)
