@@ -1,12 +1,12 @@
-#include "widgets/key_widget.h"
+#include "components/key_component.h"
 #include <icons/key-solid.h>
 
 // Constructors and Destructors
-KeyWidget::KeyWidget() : _key_icon(nullptr)
+KeyComponent::KeyComponent() : _key_icon(nullptr)
 {
 }
 
-KeyWidget::~KeyWidget()
+KeyComponent::~KeyComponent()
 {
     // Clean up LVGL objects
     if (_key_icon)
@@ -16,7 +16,7 @@ KeyWidget::~KeyWidget()
 }
 
 // Core Functionality Methods
-void KeyWidget::refresh(const Reading& reading)
+void KeyComponent::refresh(const Reading& reading)
 {
     log_d("...");
     
@@ -38,9 +38,9 @@ void KeyWidget::refresh(const Reading& reading)
 }
 
 /// @brief This method initializes the key present icon with location parameters
-/// @param screen The screen object to render the widget on.
-/// @param location The location parameters for positioning the widget.
-void KeyWidget::render(lv_obj_t *screen, const WidgetLocation &location)
+/// @param screen The screen object to render the component on.
+/// @param location The location parameters for positioning the component.
+void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 {
     log_d("...");
 

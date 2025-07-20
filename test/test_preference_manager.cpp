@@ -36,7 +36,7 @@ struct Config {
     int brightness;
 };
 
-struct WidgetLocation {
+struct ComponentLocation {
     int x, y, width, height;
 };
 
@@ -85,8 +85,8 @@ void test_config_deserialization(void) {
     TEST_ASSERT_EQUAL(50, config.brightness);
 }
 
-void test_widget_location_initialization(void) {
-    WidgetLocation location;
+void test_component_location_initialization(void) {
+    ComponentLocation location;
     location.x = 10;
     location.y = 20;
     location.width = 100;
@@ -143,7 +143,7 @@ void test_preference_manager_main() {
     RUN_TEST(test_themes_constants);
     RUN_TEST(test_config_serialization);
     RUN_TEST(test_config_deserialization);
-    RUN_TEST(test_widget_location_initialization);
+    RUN_TEST(test_component_location_initialization);
     RUN_TEST(test_reading_variant_int);
     RUN_TEST(test_reading_variant_double);
     RUN_TEST(test_reading_variant_string);

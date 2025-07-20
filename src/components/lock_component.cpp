@@ -1,12 +1,12 @@
-#include "widgets/lock_widget.h"
+#include "components/lock_component.h"
 #include <icons/lock-alt-solid.h>
 
 // Constructors and Destructors
-LockWidget::LockWidget() : _lock_icon(nullptr)
+LockComponent::LockComponent() : _lock_icon(nullptr)
 {
 }
 
-LockWidget::~LockWidget()
+LockComponent::~LockComponent()
 {
     // Clean up LVGL objects
     if (_lock_icon)
@@ -16,7 +16,7 @@ LockWidget::~LockWidget()
 }
 
 // Core Functionality Methods
-void LockWidget::refresh(const Reading& reading)
+void LockComponent::refresh(const Reading& reading)
 {
     log_d("...");
     
@@ -33,9 +33,9 @@ void LockWidget::refresh(const Reading& reading)
 }
 
 /// @brief This method initializes the lock status icon with location parameters
-/// @param screen The screen object to render the widget on.
-/// @param location The location parameters for positioning the widget.
-void LockWidget::render(lv_obj_t *screen, const WidgetLocation &location)
+/// @param screen The screen object to render the component on.
+/// @param location The location parameters for positioning the component.
+void LockComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 {
     log_d("...");
 

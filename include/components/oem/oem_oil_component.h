@@ -4,54 +4,54 @@
 #include <lvgl.h>
 
 // Project Includes
-#include "interfaces/i_widget.h"
+#include "interfaces/i_component.h"
 #include "managers/style_manager.h"
 #include "utilities/types.h"
 
 /**
- * @class OemOilWidget
- * @brief Abstract base class for oem styled oil monitoring gauge widgets
+ * @class OemOilComponent
+ * @brief Abstract base class for oem styled oil monitoring gauge components
  * 
  * @details This abstract class provides the common functionality for oem styled oil-related
- * gauge widgets (pressure, temperature). It implements the Template Method
+ * gauge components (pressure, temperature). It implements the Template Method
  * design pattern, allowing derived classes to customize specific behaviors
  * while sharing common gauge rendering logic.
  * 
  * @design_pattern Template Method - defines gauge creation algorithm
  * @view_role Renders circular gauges with needles, scales, and danger zones
  * @ui_elements Scale, needle, center icon, danger zone sections
- * @positioning Supports all WidgetLocation alignment options
+ * @positioning Supports all ComponentLocation alignment options
  * 
  * @gauge_specifications:
- * - Size: 240x240 pixels (configurable via WidgetLocation)
+ * - Size: 240x240 pixels (configurable via ComponentLocation)
  * - Needle length: 90 pixels
  * - Scale ticks: 13 total, major every 2
  * - Danger zone: Red highlighting for critical values
  * 
  * @derived_classes:
- * - OemOilPressureWidget: Oil pressure monitoring (0-100 PSI)
- * - OemOilTemperatureWidget: Oil temperature monitoring (mapped range)
+ * - OemOilPressureComponent: Oil pressure monitoring (0-100 PSI)
+ * - OemOilTemperatureComponent: Oil temperature monitoring (mapped range)
  * 
  * @virtual_methods Subclasses must implement:
- * - get_icon(): Widget-specific icon
+ * - get_icon(): Component-specific icon
  * - get_scale_min/max(): Value range
  * - get_danger_zone(): Critical threshold
  * - setup_danger_zone(): Configure danger highlighting
  * - is_danger_condition(): Determine if value is critical
  * 
  * @context This is the base class for oem styled oil gauges. Currently used by
- * pressure and temperature widgets. The widgets are positioned on opposite sides
+ * pressure and temperature components. The components are positioned on opposite sides
  * on the screen to maintain a consistent appearance with OEM styling.
  */
-class OemOilWidget : public IWidget
+class OemOilComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    OemOilWidget();
-    virtual ~OemOilWidget();
+    OemOilComponent();
+    virtual ~OemOilComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const WidgetLocation& location) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location) override;
     void refresh(const Reading& reading) override;
     void set_value(int32_t value) override;
 

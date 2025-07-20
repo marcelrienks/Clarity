@@ -3,7 +3,7 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel()
-    : _widget(std::make_shared<ClarityWidget>()) {}
+    : _widget(std::make_shared<ClarityComponent>()) {}
 
 SplashPanel::~SplashPanel()
 {
@@ -43,7 +43,7 @@ void SplashPanel::load(std::function<void()> callback_function)
     _callback_function = callback_function;
 
     // Create location parameters for the splash widget
-    WidgetLocation splash_location(LV_ALIGN_CENTER, 0, 0);
+    ComponentLocation splash_location(LV_ALIGN_CENTER, 0, 0);
 
     _widget->render(_screen, splash_location);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);

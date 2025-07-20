@@ -127,10 +127,10 @@ struct JsonDocNames
     static constexpr const char *panel_name = "panel_name"; ///< Default panel setting
 };
 
-/// @struct WidgetLocation
-/// @brief UI widget positioning and sizing parameters
+/// @struct ComponentLocation
+/// @brief UI component positioning and sizing parameters
 ///
-/// @details Comprehensive structure for defining widget placement
+/// @details Comprehensive structure for defining component placement
 /// within LVGL screens. Supports both absolute positioning (x,y) and
 /// relative alignment with offsets.
 ///
@@ -140,10 +140,10 @@ struct JsonDocNames
 /// - Sizing: width,height or LV_SIZE_CONTENT for auto-sizing
 ///
 /// @usage_examples:
-/// - WidgetLocation(100, 50): Absolute position at (100,50)
-/// - WidgetLocation(LV_ALIGN_CENTER): Centered with auto-size
-/// - WidgetLocation(LV_ALIGN_LEFT_MID, 10, 0): Left-aligned with 10px offset
-struct WidgetLocation
+/// - ComponentLocation(100, 50): Absolute position at (100,50)
+/// - ComponentLocation(LV_ALIGN_CENTER): Centered with auto-size
+/// - ComponentLocation(LV_ALIGN_LEFT_MID, 10, 0): Left-aligned with 10px offset
+struct ComponentLocation
 {
     lv_coord_t x = 0;                   ///< Absolute X coordinate
     lv_coord_t y = 0;                   ///< Absolute Y coordinate
@@ -152,17 +152,17 @@ struct WidgetLocation
     lv_coord_t y_offset = 0;            ///< Y offset from alignment point
     int32_t rotation = 0;               ///< Rotation angle in degrees (optional)
 
-    WidgetLocation() = default;
+    ComponentLocation() = default;
 
     /// Constructor for absolute positioning
-    WidgetLocation(lv_coord_t x, lv_coord_t y) : x(x), y(y) {}
+    ComponentLocation(lv_coord_t x, lv_coord_t y) : x(x), y(y) {}
 
     /// Constructor for relative alignment with optional offsets
-    WidgetLocation(lv_align_t align, lv_coord_t x_offset = 0, lv_coord_t y_offset = 0)
+    ComponentLocation(lv_align_t align, lv_coord_t x_offset = 0, lv_coord_t y_offset = 0)
         : align(align), x_offset(x_offset), y_offset(y_offset) {}
 
     /// Constructor for rotation start point of scales
-    WidgetLocation(int32_t rotation)
+    ComponentLocation(int32_t rotation)
         : rotation(rotation) {}
 };
 

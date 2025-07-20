@@ -1,13 +1,11 @@
 [![Test Clarity Gauge System](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml)
 
 # Clarity
-An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of widgets and sensors.
+An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of components and sensors.
 
-_**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple widgets, and warning interrupts. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
+_**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple components, and warning interrupts. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
 
 ## TODO:
-* Components:  
-I changed my mind, rename widgets back to components, it just makes more sense
 * Throttling:  
 In order to solve an issue where the oil panel would hang during load, throttling had to be added to the trigger system, as this was causing interference. While this currently works, adding any more triggers has shown that throttling must be increased again for the system to function, so this does not scale.
    * 1st: State Based:  
@@ -27,12 +25,12 @@ Currently all unit tests and environment builds are working, but the integration
 * [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
 
 ## Architecture:
-Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can show one of many `panel` configurations, each of which having one or many `widget(s)` shown together. _Note: widgets can be part of many panel configurations (many to many relationship)_
-> Device > Display > Panels > Widgets
+Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can show one of many `panel` configurations, each of which having one or many `component(s)` shown together. _Note: components can be part of many panel configurations (many to many relationship)_
+> Device > Display > Panels > Components
 
 This is designed around an MVP pattern.  
-A sensor will represent the model, and be responsible for handling data reading. A widget will represent the view, and be responsible for building the view for the sensor data. And the panel will represent the presenter, and will be responsible for building and displaying one or more widgets at once.
-> Sensor(model) <> Panel(presenter) <> Widget(view)  
+A sensor will represent the model, and be responsible for handling data reading. A component will represent the view, and be responsible for building the view for the sensor data. And the panel will represent the presenter, and will be responsible for building and displaying one or more components at once.
+> Sensor(model) <> Panel(presenter) <> Component(view)  
 
 Based on an input (either from sensor signal or from a button press) the device/display will load different screens. For example an emergency panel can be shown when a sensor signal moves beyond a threshold, replacing the panel that was configured to display using a button input which normally cycles through multiple screen configurations.
 
@@ -42,7 +40,7 @@ _This would also allow for future extension with more panels configurations and 
 
 ### **OemOilPanel** 
 **Primary dashboard displaying engine oil monitoring**
-- **Widgets**: OemOilWidget (pressure gauge), OemOilTemperatureWidget (temperature gauge)
+- **Components**: OemOilComponent (pressure gauge), OemOilTemperatureComponent (temperature gauge)
 - **Sensors**: OilPressureSensor, OilTemperatureSensor  
 - **Display**: Dual circular gauges with animated value updates
 - **Role**: Default panel, restoration target for trigger system
@@ -50,7 +48,7 @@ _This would also allow for future extension with more panels configurations and 
 
 ### **KeyPanel**
 **Key/ignition status indicator**
-- **Widget**: KeyWidget (key status icon)
+- **Component**: KeyComponent (key status icon)
 - **Sensor**: KeySensor (via KeyTrigger)
 - **Display**: Key icon with state-based coloring
 - **Trigger**: KeyTrigger (GPIO pins 25 & 26)
@@ -62,7 +60,7 @@ _This would also allow for future extension with more panels configurations and 
 
 ### **LockPanel**
 **Vehicle lock/immobilizer status**
-- **Widget**: LockWidget (lock status display)
+- **Component**: LockComponent (lock status display)
 - **Sensor**: LockSensor (via LockTrigger)  
 - **Trigger**: LockTrigger (GPIO pin 27)
 - **Display**: Lock status indication
@@ -74,39 +72,39 @@ _This would also allow for future extension with more panels configurations and 
 - **Usage**: Smooth visual transitions between panels
 - **Features**: Branding display, initialization feedback
 
-## Widgets
+## Components
 
-### **OemOilWidget**
+### **OemOilComponent**
 **Primary oil pressure gauge display**
 - **Type**: Circular gauge with needle indicator
 - **Range**: Configurable pressure range with color zones
 - **Features**: Smooth animations, threshold-based styling
 - **Integration**: Direct sensor binding for real-time updates
 
-### **OemOilTemperatureWidget** 
+### **OemOilTemperatureComponent** 
 **Oil temperature gauge display**
 - **Type**: Circular gauge with temperature mapping
 - **Features**: Value mapping, color-coded zones, animated updates
 - **Integration**: Temperature sensor data processing
 
-### **KeyWidget**
+### **KeyComponent**
 **Key status icon display**
 - **Type**: SVG-based key icon with state colors
 - **States**: Present (green), Not Present (red), Inactive (hidden)
 - **Features**: State-based color changes, clean icon rendering
 - **Integration**: KeySensor data via panel coordination
 
-### **LockWidget**
+### **LockComponent**
 **Lock/immobilizer status display**  
 - **Type**: Lock status indicator
 - **Features**: Binary state display, clear visual feedback
 - **Integration**: LockSensor data via trigger system
 
-### **ClarityWidget**
-**Base widget providing common functionality**
-- **Type**: Abstract base class for widget inheritance
+### **ClarityComponent**
+**Base component providing common functionality**
+- **Type**: Abstract base class for component inheritance
 - **Features**: Common rendering pipeline, shared utilities
-- **Usage**: Foundation for all display widgets
+- **Usage**: Foundation for all display components
 
 ## Hardware Configuration
 
@@ -171,12 +169,12 @@ This is specific to an NodeMCU-32S dev board, using a ESP32-WROOM-32 (ESP32-D0WD
 > - **fat:** FAT filesystem partition using the remaining space (1.875 MB).
 
 ## LVGL guidelines
-### Screens & Widgets:
+### Screens & Components:
 Screen Loading is for:
 - Panel switching (Oil Panel → Key Panel)
 - Major layout changes
 
-Widget Updates are for:
+Component Updates are for:
 - Data changes within the same panel
 - Status updates (key present/absent)
 
@@ -184,7 +182,7 @@ Widget Updates are for:
 1. Multiple screens can exist in memory simultaneously - Creating screen B doesn't delete screen A
 2. Only one screen is active/displayed at a time - When you call lv_screen_load(screen_B), screen A is no longer visible
 3. Inactive screens are NOT rendered - LVGL only renders the currently active screen, so screen A stops being drawn/updated
-4. Memory remains allocated - Screen A and all its widgets stay in memory until explicitly deleted with lv_obj_del(screen_A)
+4. Memory remains allocated - Screen A and all its components stay in memory until explicitly deleted with lv_obj_del(screen_A)
 
 ## Panel-Trigger Architectural Patterns
 
@@ -194,7 +192,7 @@ The system implements several well-established design patterns to coordinate bet
 
 #### **MVP (Model-View-Presenter) Pattern**
 - **Model**: Sensors (KeySensor, LockSensor, OilPressureSensor, etc.)
-- **View**: Widgets (KeyWidget, LockWidget, OemOilWidget, etc.) 
+- **View**: Components (KeyComponent, LockComponent, OemOilComponent, etc.) 
 - **Presenter**: Panels (KeyPanel, LockPanel, OemOilPanel, etc.)
 
 #### **Observer Pattern (Trigger System)**
@@ -264,7 +262,7 @@ InterruptManager.register_trigger<KeyTrigger>("key_trigger");
 
 #### **Continuous Monitoring Flow (Oil Panel)**
 ```
-Sensors → continuous readings → Panel → Widgets → UI Update
+Sensors → continuous readings → Panel → Components → UI Update
 ```
 
 #### **Event-Driven Flow (Key/Lock)**
@@ -302,13 +300,13 @@ Trigger Clears → InterruptManager → PanelManager.get_restoration_panel() →
 
 #### **KeyPanel ↔ KeyTrigger**
 - **Trigger owns**: KeySensor instance
-- **Panel owns**: KeyWidget (for display)
-- **Data flow**: KeySensor → KeyTrigger (logic) + KeyPanel → KeyWidget (display)
+- **Panel owns**: KeyComponent (for display)
+- **Data flow**: KeySensor → KeyTrigger (logic) + KeyPanel → KeyComponent (display)
 - **Triggering**: Any key state change (Present/NotPresent) → load KeyPanel
 
 #### **LockPanel ↔ LockTrigger**
 - **Trigger owns**: LockSensor instance  
-- **Panel owns**: LockWidget (for display)
+- **Panel owns**: LockComponent (for display)
 - **Triggering**: Lock engaged (HIGH) → load LockPanel
 
 #### **OemOilPanel (No Direct Trigger)**

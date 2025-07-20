@@ -5,7 +5,7 @@
 
 // Constructors and Destructors
 KeyPanel::KeyPanel() 
-    : _key_widget(std::make_shared<KeyWidget>()) {}
+    : _key_component(std::make_shared<KeyComponent>()) {}
 
 KeyPanel::~KeyPanel()
 {
@@ -13,9 +13,9 @@ KeyPanel::~KeyPanel()
         lv_obj_delete(_screen);
     }
 
-    if (_key_widget)
+    if (_key_component)
     {
-        _key_widget.reset();
+        _key_component.reset();
     }
 }
 
@@ -26,7 +26,7 @@ void KeyPanel::init()
     log_d("...");
 
     _screen = LvTools::create_blank_screen();
-    _center_location = WidgetLocation(LV_ALIGN_CENTER, 0, 0);
+    _center_location = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Get current key state by reading GPIO pins directly
     bool pin25_high = digitalRead(GpioPins::KEY_PRESENT);
@@ -56,8 +56,8 @@ void KeyPanel::load(std::function<void()> callback_function)
     log_d("...");
     _callback_function = callback_function;
 
-    _key_widget->render(_screen, _center_location);
-    _key_widget->refresh(Reading{static_cast<int32_t>(_current_key_state)});
+    _key_component->render(_screen, _center_location);
+    _key_component->refresh(Reading{static_cast<int32_t>(_current_key_state)});
     
     lv_obj_add_event_cb(_screen, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
