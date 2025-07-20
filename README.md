@@ -5,10 +5,21 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 
 _**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple widgets, and warning interrupts. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
 
-## Idea's:
-* Hardware interrupt: Supposedly you can set up an interrupt that fires when a pin changes state, the 'change' is what is valuable because that would prevent having to constantly poll for statuses. Imagine a flow where a hardware trigger fires, posts on a message queue (ideally the queue should prevent duplicates, and order by priority if possible), trigger manager would read the queue, and if any message found know that state had changed and to take action. One of which could be to load the key panel for example, or change the theme.
-
-else if the above cannot work there is the concept of a latching mechanism, where a trigger uses a sensor to check for a state, if that is triggered, it loads a panel, which in the standard pattern then uses the same sensor to keep itself latched as long as the state is still true through the update mechanism.
+## TODO:
+* Components:  
+I changed my mind, rename widgets back to components, it just makes more sense
+* Throttling:  
+In order to solve an issue where the oil panel would hang during load, throttling had to be added to the trigger system, as this was causing interference. While this currently works, adding any more triggers has shown that throttling must be increased again for the system to function, so this does not scale.
+   * 1st: State Based:  
+   Firstly change the trigger system to be state based, and only check triggers when in a state to do so, e.g. Idle, or throttled during Update. Do not check interrupts during Loading or LVGL_Busy states. While the initial idea was that triggers should be able to fire and be handled at any time, it proved to interrupt with LVGL inner workings, and would result in an application that hangs. So the only reasonable option is to check for interrupts when the system is in a safe space to actually handle them
+   * 2nd: Hardware interrupt:  
+   Supposedly you can set up an interrupt that fires when a pin changes state, the 'change' is what is valuable because that would prevent having to constantly poll for statuses. Imagine a flow where a hardware trigger fires, posts on a message queue (ideally the queue should prevent duplicates, and order by priority if possible), trigger manager would read the queue, and if any message found know that state had changed and to take action. One of which could be to load the key panel for example, or change the theme.
+   * Else:  
+   if the above cannot work there is the concept of a latching mechanism, where a trigger uses a sensor to check for a state, if that is triggered, it loads a panel, which in the standard pattern then uses the same sensor to keep itself latched as long as the state is still true through the update mechanism.
+* Night:  
+Implement the lights sensor, which will change the theme for the entire application. Note this will then mean that triggers can either load panels, or change system settings
+* Integration tests:  
+Currently all unit tests and environment builds are working, but the integration tests have not been completed due to having reached wokwi monthly usage limit, so this must still be completed
 
 ## Main Libraries:
 * Arduino
