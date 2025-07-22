@@ -4,7 +4,6 @@
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 #include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <esp32-hal-log.h>
@@ -12,8 +11,27 @@
 #include <string>
 
 /**
+ * @brief Structure for shared trigger state
+ * 
+ * @details This structure represents the state of an active trigger,
+ * including its action, target, priority, and timing information.
+ */
+struct TriggerState
+{
+    std::string action;           ///< Action to perform
+    std::string target;           ///< Target of the action
+    TriggerPriority priority;     ///< Priority level
+    uint64_t timestamp;           ///< When trigger was activated
+    bool active;                  ///< Whether trigger is currently active
+    
+    TriggerState() = default;
+    TriggerState(const char* act, const char* tgt, TriggerPriority prio, uint64_t ts)
+        : action(act), target(tgt), priority(prio), timestamp(ts), active(true) {}
+};
+
+/**
  * @class TriggerManager
- * @brief Core 1 stateful trigger manager with application state awareness
+ * @brief Core 1 stateful trigger manager with shared state-based triggers
  */
 class TriggerManager
 {
@@ -34,7 +52,8 @@ public:
     void handle_lock_state_interrupt(bool lock_engaged);
     void handle_theme_switch_interrupt(bool night_mode);
     void update_application_state(const char* panel_name, const char* theme_name);
-    void get_queue_handles(QueueHandle_t* high_queue, QueueHandle_t* medium_queue, QueueHandle_t* low_queue);
+    TriggerState* get_next_trigger_to_process();
+    void clear_trigger_state_public(const char* trigger_id) { clear_trigger_state(trigger_id); }
 
     // Core 1 Task Methods
     static void trigger_monitoring_task(void* pvParameters);
@@ -50,20 +69,19 @@ private:
     TriggerManager() = default;
     ~TriggerManager() = default;
 
-    // Message Queue Management
-    void post_message(const char* action, const char* target, const char* trigger_id, TriggerPriority priority);
-    void remove_message_from_queue(const char* trigger_id);
-    void update_message_in_queue(const char* trigger_id, const char* action, const char* target);
-    QueueHandle_t get_target_queue(TriggerPriority priority);
+    // Shared State Management
+    void set_trigger_state(const char* trigger_id, const char* action, const char* target, TriggerPriority priority);
+    void clear_trigger_state(const char* trigger_id);
+    void update_trigger_state(const char* trigger_id, const char* action, const char* target);
+    TriggerState* get_highest_priority_trigger();
+
+public:
 
     // GPIO Interrupt Setup
     void setup_gpio_interrupts();
     
 
     // Instance Data Members
-    QueueHandle_t _high_priority_queue = nullptr;
-    QueueHandle_t _medium_priority_queue = nullptr;
-    QueueHandle_t _low_priority_queue = nullptr;
     QueueHandle_t _isr_event_queue = nullptr;       ///< Queue for ISR events to Core 1 task
 
     // Shared application state (protected by mutexes)
@@ -71,8 +89,9 @@ private:
     const char* _current_panel = PanelNames::Oil;
     const char* _current_theme = Themes::Day;
 
-    // Pending message tracking
-    std::map<std::string, bool> _pending_messages;
+    // Shared trigger state (protected by trigger_mutex)
+    std::map<std::string, TriggerState> _active_triggers;
+    SemaphoreHandle_t _trigger_mutex = nullptr;
 
     // Hardware state tracking
     bool _key_present_state = false;

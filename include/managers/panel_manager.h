@@ -74,15 +74,13 @@ public:
     /// @brief Initialize the panel manager, register panels/triggers, and setup dual-core system
     void init();
     
-    /// @brief Process trigger messages from Core 1 based on UI state
-    void process_trigger_messages();
+    /// @brief Process trigger states from Core 1 based on UI state
+    void process_trigger_states();
     
     /// @brief Set current UI state for Core 1 synchronization
     /// @param state Current UI processing state
     void set_ui_state(UIState state);
     
-    /// @brief Get available queues from TriggerManager for processing
-    void get_trigger_queues();
     
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
@@ -149,21 +147,21 @@ private:
     /// @brief Callback executed when trigger-driven panel loading is complete
     void trigger_panel_switch_callback();
     
-    /// @brief Execute a trigger message action
-    /// @param msg Trigger message to execute
-    void execute_trigger_message_action(const TriggerMessage& msg);
+    /// @brief Execute a trigger action from shared state
+    /// @param trigger_state Trigger state to execute
+    /// @param trigger_id ID of the trigger for cleanup
+    void execute_trigger_action(const TriggerState& trigger_state, const std::string& trigger_id);
     
-    /// @brief Process all priority queues based on UI state
-    void process_all_priority_queues();
+    /// @brief Process all triggers regardless of priority
+    void process_triggers();
     
-    /// @brief Process high priority queue only
-    void process_high_priority_queue();
+    /// @brief Process only critical and important priority triggers
+    void process_critical_and_important_triggers();
     
-    /// @brief Process medium priority queue only
-    void process_medium_priority_queue();
-    
-    /// @brief Process low priority queue only
-    void process_low_priority_queue();
+    /// @brief Find trigger ID for a given trigger state (helper method)
+    /// @param target_state Trigger state to find ID for
+    /// @return Trigger ID string, or empty if not found
+    std::string find_trigger_id_for_state(const TriggerState& target_state);
     
     /// @brief Notify Core 1 of state changes
     /// @param panel_name Current panel name
@@ -178,9 +176,7 @@ private:
     
     // Core 0 UI state management
     UIState _ui_state = UIState::IDLE;             ///< Current UI processing state
-    QueueHandle_t _high_priority_queue = nullptr;  ///< High priority message queue from Core 1
-    QueueHandle_t _medium_priority_queue = nullptr; ///< Medium priority message queue from Core 1
-    QueueHandle_t _low_priority_queue = nullptr;   ///< Low priority message queue from Core 1
+    // Removed queue handles - now using shared state trigger system
     
     // Current application state
     std::string _current_panel_name = "OemOilPanel"; ///< Current panel name for Core 1 sync

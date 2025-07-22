@@ -28,9 +28,8 @@ void PanelManager::init()
     PanelManager::register_panels();
 
     // Initialize dual-core trigger system
-    TriggerManager &trigger_manager = TriggerManager::get_instance(); // TODO: is there any value in the trigger manager being managed from main loop?
+    TriggerManager &trigger_manager = TriggerManager::get_instance();
     trigger_manager.init();
-    trigger_manager.get_queue_handles(&_high_priority_queue, &_medium_priority_queue, &_low_priority_queue);
 
     log_d("PanelManager initialized for dual-core operation");
 }
@@ -80,8 +79,8 @@ void PanelManager::update_panel()
 {
     log_d("Core 0 panel update cycle...");
 
-    // Process trigger messages from Core 1 based on current UI state
-    process_trigger_messages();
+    // Process trigger states from Core 1 based on current UI state
+    process_trigger_states();
     set_ui_state(UIState::UPDATING);
 
     _panel->update([]()
@@ -174,27 +173,25 @@ const char *PanelManager::get_restoration_panel() const
 
 // Core 0 Dual-Core Methods
 
-/// @brief Process trigger messages from Core 1 based on UI state
-void PanelManager::process_trigger_messages()
+/// @brief Process trigger states from Core 1 based on UI state
+void PanelManager::process_trigger_states()
 {
     switch (_ui_state)
     {
     case UIState::IDLE:
-        // No throttling - process all priority queues
-        process_all_priority_queues();
+        // No throttling - process all triggers
+        process_triggers();
         break;
 
     case UIState::UPDATING:
-        // State-based throttling - only high/medium priority queues
-        process_high_priority_queue();
-        process_medium_priority_queue();
-        // Skip low priority queue during updates
+        // State-based throttling - only high/medium priority triggers
+        process_critical_and_important_triggers();
         break;
 
     case UIState::LOADING:
     case UIState::LVGL_BUSY:
-        // No action - don't process any queues
-        // Messages remain queued for later processing
+        // No action - don't process any triggers
+        // Triggers remain in shared state for later processing
         break;
     }
 }
@@ -206,75 +203,105 @@ void PanelManager::set_ui_state(UIState state)
     log_d("UI State changed to: %d", (int)state);
 }
 
-/// @brief Execute a trigger message action
-void PanelManager::execute_trigger_message_action(const TriggerMessage &trigger_message)
+/// @brief Execute a trigger action from shared state
+void PanelManager::execute_trigger_action(const TriggerState &trigger_state, const std::string &trigger_id)
 {
     log_d("...");
 
-    if (strcmp(trigger_message.action, ACTION_LOAD_PANEL) == 0)
+    if (trigger_state.action == ACTION_LOAD_PANEL)
     {
-        _current_panel_name = std::string(trigger_message.target);
-        create_and_load_panel(trigger_message.target, [this]()
-                              { this->trigger_panel_switch_callback(); }, true);
+        _current_panel_name = trigger_state.target;
+        create_and_load_panel(trigger_state.target.c_str(), [this, trigger_id]()
+                              { 
+                                  this->trigger_panel_switch_callback();
+                                  // Clear trigger after successful execution
+                                  TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str());
+                              }, true);
     }
-    else if (strcmp(trigger_message.action, ACTION_RESTORE_PREVIOUS_PANEL) == 0)
+    else if (trigger_state.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
         const char *restore_panel = get_restoration_panel();
         if (restore_panel)
         {
             _current_panel_name = std::string(restore_panel);
-            create_and_load_panel(restore_panel, [this]()
-                                  { this->trigger_panel_switch_callback(); }, false);
+            create_and_load_panel(restore_panel, [this, trigger_id]()
+                                  { 
+                                      this->trigger_panel_switch_callback();
+                                      // Clear trigger after successful execution
+                                      TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str());
+                                  }, false);
         }
     }
-    else if (strcmp(trigger_message.action, ACTION_CHANGE_THEME) == 0)
+    else if (trigger_state.action == ACTION_CHANGE_THEME)
     {
-        _current_theme_name = std::string(trigger_message.target);
+        _current_theme_name = trigger_state.target;
         // TODO: Implement theme change logic
-        log_i("Theme change to %s (implementation needed)", trigger_message.target);
+        log_i("Theme change to %s (implementation needed)", trigger_state.target.c_str());
         TriggerManager::get_instance().update_application_state(_current_panel_name.c_str(), _current_theme_name.c_str());
+        // Clear trigger after successful execution
+        TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str());
     }
 }
 
-/// @brief Process all priority queues based on UI state
-void PanelManager::process_all_priority_queues()
+/// @brief Process all triggers regardless of priority
+void PanelManager::process_triggers()
 {
-    process_high_priority_queue();
-    process_medium_priority_queue();
-    process_low_priority_queue();
-}
-
-/// @brief Process high priority queue only
-void PanelManager::process_high_priority_queue()
-{
-    TriggerMessage trigger_message;
-
-    // Note: In real implementation, we'd have direct queue access
-    // For now, this is a placeholder showing the intended logic
-    if (_high_priority_queue && xQueueReceive(_high_priority_queue, &trigger_message, 0) == pdTRUE)
+    TriggerManager &trigger_manager = TriggerManager::get_instance();
+    TriggerState* trigger = trigger_manager.get_next_trigger_to_process();
+    
+    if (trigger && trigger->active)
     {
-        execute_trigger_message_action(trigger_message);
+        // Find the trigger ID for this state
+        std::string trigger_id = find_trigger_id_for_state(*trigger);
+        if (!trigger_id.empty())
+        {
+            execute_trigger_action(*trigger, trigger_id);
+        }
     }
 }
 
-/// @brief Process medium priority queue only
-void PanelManager::process_medium_priority_queue()
+/// @brief Process only critical and important priority triggers
+void PanelManager::process_critical_and_important_triggers()
 {
-    TriggerMessage trigger_message;
-
-    if (_medium_priority_queue && xQueueReceive(_medium_priority_queue, &trigger_message, 0) == pdTRUE)
+    TriggerManager &trigger_manager = TriggerManager::get_instance();
+    TriggerState* trigger = trigger_manager.get_next_trigger_to_process();
+    
+    if (trigger && trigger->active && 
+        (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
     {
-        execute_trigger_message_action(trigger_message);
+        // Find the trigger ID for this state
+        std::string trigger_id = find_trigger_id_for_state(*trigger);
+        if (!trigger_id.empty())
+        {
+            execute_trigger_action(*trigger, trigger_id);
+        }
     }
 }
 
-/// @brief Process low priority queue only
-void PanelManager::process_low_priority_queue()
+/// @brief Find trigger ID for a given trigger state (helper method)
+std::string PanelManager::find_trigger_id_for_state(const TriggerState &target_state)
 {
-    TriggerMessage trigger_message;
-
-    if (_low_priority_queue && xQueueReceive(_low_priority_queue, &trigger_message, 0) == pdTRUE)
+    // This is a helper to find the key (trigger_id) for a given trigger state
+    // We need to access the trigger manager's map, but for now we'll use known trigger IDs
+    
+    // Check common trigger IDs
+    if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::Key)
     {
-        execute_trigger_message_action(trigger_message);
+        return std::string(TRIGGER_KEY_PRESENT); // or TRIGGER_KEY_NOT_PRESENT
     }
+    else if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::Lock)
+    {
+        return std::string(TRIGGER_LOCK_STATE);
+    }
+    else if (target_state.action == ACTION_CHANGE_THEME)
+    {
+        return std::string(TRIGGER_THEME_SWITCH);
+    }
+    else if (target_state.action == ACTION_RESTORE_PREVIOUS_PANEL)
+    {
+        // Could be any of the restore triggers
+        return std::string(TRIGGER_KEY_PRESENT); // Default fallback
+    }
+    
+    return ""; // Not found
 }

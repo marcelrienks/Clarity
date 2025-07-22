@@ -19,13 +19,10 @@ void TriggerManager::init()
 {
     log_d("...");
 
-    // Create priority queues
-    _high_priority_queue = xQueueCreate(HIGH_PRIORITY_QUEUE_SIZE, sizeof(TriggerMessage));
-    _medium_priority_queue = xQueueCreate(MEDIUM_PRIORITY_QUEUE_SIZE, sizeof(TriggerMessage));
-    _low_priority_queue = xQueueCreate(LOW_PRIORITY_QUEUE_SIZE, sizeof(TriggerMessage));
-
+    // Create ISR event queue and mutexes
     _isr_event_queue = xQueueCreate(10, sizeof(ISREvent));
     _state_mutex = xSemaphoreCreateMutex();
+    _trigger_mutex = xSemaphoreCreateMutex();
 
     setup_gpio_interrupts();
 
@@ -47,29 +44,25 @@ void TriggerManager::handle_key_present_interrupt(bool key_present_state)
     // Thread-safe state access
     if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) == pdTRUE)
     {
-        if (key_present_state == true)
+        if (key_present_state == true) // Key present bulb is on
         {
-            // Key present bulb is on - show KeyPanel with Present state
-            if (_current_panel != PanelNames::Key)
+            if (strcmp(_current_panel, PanelNames::Key) != 0)
             {
-                post_message(ACTION_LOAD_PANEL, PanelNames::Key, TRIGGER_KEY_PRESENT, TriggerPriority::CRITICAL);
-                _pending_messages[TRIGGER_KEY_PRESENT] = true;
+                // Load KeyPanel if not already showing
+                set_trigger_state(TRIGGER_KEY_PRESENT, ACTION_LOAD_PANEL, PanelNames::Key, TriggerPriority::CRITICAL);
             }
         }
-        else
+        else // Key present bulb is off
         {
-            // Key not present bulb turned off - return to previous state
-            if (_current_panel != PanelNames::Key)
+            if (strcmp(_current_panel, PanelNames::Key) == 0)
             {
-                // KeyPanel is showing - post restore message
-                post_message(ACTION_RESTORE_PREVIOUS_PANEL, "", TRIGGER_KEY_PRESENT, TriggerPriority::NORMAL);
-                _pending_messages[TRIGGER_KEY_PRESENT] = false;
+                // KeyPanel is showing - restore previous panel
+                set_trigger_state(TRIGGER_KEY_PRESENT, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
             }
-            else if (_pending_messages[TRIGGER_KEY_PRESENT])
+            else
             {
-                // KeyPanel not showing but message is pending - remove message
-                remove_message_from_queue(TRIGGER_KEY_PRESENT);
-                _pending_messages[TRIGGER_KEY_PRESENT] = false;
+                // KeyPanel not showing - clear any pending trigger
+                clear_trigger_state(TRIGGER_KEY_PRESENT);
             }
         }
 
@@ -86,29 +79,25 @@ void TriggerManager::handle_key_not_present_interrupt(bool key_not_present_state
     // Thread-safe state access
     if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) == pdTRUE)
     {
-        if (key_not_present_state == true)
+        if (key_not_present_state == true) // Key not present bulb is on
         {
-            // Key not present bulb is on - show KeyPanel with NotPresent state
-            if (_current_panel != PanelNames::Key)
+            if (strcmp(_current_panel, PanelNames::Key) != 0)
             {
-                post_message(ACTION_LOAD_PANEL, PanelNames::Key, TRIGGER_KEY_NOT_PRESENT, TriggerPriority::CRITICAL);
-                _pending_messages[TRIGGER_KEY_NOT_PRESENT] = true;
+                // Load KeyPanel if not already showing
+                set_trigger_state(TRIGGER_KEY_NOT_PRESENT, ACTION_LOAD_PANEL, PanelNames::Key, TriggerPriority::CRITICAL);
             }
         }
-        else
+        else // Key not present bulb is off
         {
-            // Key not present bulb turned off - return to previous state
-            if (_current_panel != PanelNames::Key)
+            if (strcmp(_current_panel, PanelNames::Key) == 0)
             {
-                // KeyPanel is showing - post restore message
-                post_message(ACTION_RESTORE_PREVIOUS_PANEL, "", TRIGGER_KEY_NOT_PRESENT, TriggerPriority::NORMAL);
-                _pending_messages[TRIGGER_KEY_NOT_PRESENT] = false;
+                // KeyPanel is showing - restore previous panel
+                set_trigger_state(TRIGGER_KEY_NOT_PRESENT, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
             }
-            else if (_pending_messages[TRIGGER_KEY_NOT_PRESENT])
+            else
             {
-                // KeyPanel not showing but message is pending - remove message
-                remove_message_from_queue(TRIGGER_KEY_NOT_PRESENT);
-                _pending_messages[TRIGGER_KEY_NOT_PRESENT] = false;
+                // KeyPanel not showing - clear any pending trigger
+                clear_trigger_state(TRIGGER_KEY_NOT_PRESENT);
             }
         }
 
@@ -125,29 +114,25 @@ void TriggerManager::handle_lock_state_interrupt(bool lock_engaged)
     // Thread-safe state access
     if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) == pdTRUE)
     {
-        if (lock_engaged == true)
+        if (lock_engaged == true) // Lock is engaged
         {
-            // Lock engaged - check if LockPanel is already showing
-            if (_current_panel != PanelNames::Lock)
+            if (strcmp(_current_panel, PanelNames::Lock) != 0)
             {
-                post_message(ACTION_LOAD_PANEL, PanelNames::Lock, TRIGGER_LOCK_STATE, TriggerPriority::IMPORTANT);
-                _pending_messages[TRIGGER_LOCK_STATE] = true;
+                // Load LockPanel if not already showing
+                set_trigger_state(TRIGGER_LOCK_STATE, ACTION_LOAD_PANEL, PanelNames::Lock, TriggerPriority::IMPORTANT);
             }
         }
-        else
+        else // Lock is disengaged
         {
-            // Lock disengaged - check current state
-            if (_current_panel == PanelNames::Lock)
+            if (strcmp(_current_panel, PanelNames::Lock) == 0)
             {
-                // LockPanel is showing - post restore message
-                post_message(ACTION_RESTORE_PREVIOUS_PANEL, "", TRIGGER_LOCK_STATE, TriggerPriority::NORMAL);
-                _pending_messages[TRIGGER_LOCK_STATE] = false;
+                // LockPanel is showing - restore previous panel
+                set_trigger_state(TRIGGER_LOCK_STATE, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
             }
-            else if (_pending_messages[TRIGGER_LOCK_STATE])
+            else
             {
-                // LockPanel not showing but message is pending - remove message
-                remove_message_from_queue(TRIGGER_LOCK_STATE);
-                _pending_messages[TRIGGER_LOCK_STATE] = false;
+                // LockPanel not showing - clear any pending trigger
+                clear_trigger_state(TRIGGER_LOCK_STATE);
             }
         }
 
@@ -166,29 +151,15 @@ void TriggerManager::handle_theme_switch_interrupt(bool night_mode)
     {
         const char *target_theme = night_mode ? THEME_NIGHT : THEME_DAY;
 
-        if (strcmp(_current_theme, target_theme) != 0)
+        if (strcmp(_current_theme, target_theme) != 0) // Theme change needed
         {
-            if (_pending_messages[TRIGGER_THEME_SWITCH])
-            {
-                // Update existing message
-                update_message_in_queue(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, target_theme);
-            }
-            else
-            {
-                // Post new message
-                post_message(ACTION_CHANGE_THEME, target_theme, TRIGGER_THEME_SWITCH, TriggerPriority::NORMAL);
-                _pending_messages[TRIGGER_THEME_SWITCH] = true;
-            }
+            // Set trigger state for theme change
+            set_trigger_state(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, target_theme, TriggerPriority::NORMAL);
         }
-        else
+        else // Target theme already active
         {
-            // Target theme already active
-            if (_pending_messages[TRIGGER_THEME_SWITCH])
-            {
-                // Remove pending message - no change needed
-                remove_message_from_queue(TRIGGER_THEME_SWITCH);
-                _pending_messages[TRIGGER_THEME_SWITCH] = false;
-            }
+            // Clear any pending theme change trigger
+            clear_trigger_state(TRIGGER_THEME_SWITCH);
         }
 
         // Update hardware state
@@ -253,64 +224,86 @@ void TriggerManager::trigger_monitoring_task(void *pvParameters)
 
 // Private Methods
 
-void TriggerManager::post_message(const char *action, const char *target, const char *trigger_id, TriggerPriority priority)
+void TriggerManager::set_trigger_state(const char *trigger_id, const char *action, const char *target, TriggerPriority priority)
 {
-    log_d("...");
-
-    TriggerMessage msg;
-    strcpy(msg.trigger_id, trigger_id);
-    strcpy(msg.action, action);
-    strcpy(msg.target, target);
-    msg.priority = priority;
-    msg.timestamp = esp_timer_get_time();
-
-    QueueHandle_t target_queue = get_target_queue(priority);
-    xQueueSend(target_queue, &msg, 0);
-}
-
-void TriggerManager::remove_message_from_queue(const char *trigger_id)
-{
-    // Note: FreeRTOS doesn't have built-in message removal by ID
-    // This is a simplified implementation - a more sophisticated approach
-    // would involve draining the queue, filtering, and re-posting
-    log_d("...");
-
-    // TODO: find a solution to this
-
-    // For now, we rely on the pending_messages tracking to prevent
-    // processing of messages that should be removed
-    // A full implementation would drain and filter the queues
-}
-
-void TriggerManager::update_message_in_queue(const char *trigger_id, const char *action, const char *target)
-{
-    // Note: Similar to remove_message_from_queue, this is simplified
-    // A full implementation would locate and update the specific message
-    log_d("Marked trigger %s for message update - Action: %s, Target: %s", trigger_id, action, target);
-
-    // TODO: find a solution to this
-    //  For now, post a new message (which will be the latest)
-    //  The pending_messages tracking helps prevent duplicate processing
-    if (strcmp(action, ACTION_CHANGE_THEME) == 0)
+    if (xSemaphoreTake(_trigger_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
     {
-        post_message(action, target, trigger_id, TriggerPriority::NORMAL);
+        _active_triggers[trigger_id] = TriggerState(action, target, priority, esp_timer_get_time());
+        log_d("Set trigger %s: %s -> %s (priority %d)", trigger_id, action, target, (int)priority);
+        xSemaphoreGive(_trigger_mutex);
     }
 }
 
-// TODO: I feel like this is overly complicated
-QueueHandle_t TriggerManager::get_target_queue(TriggerPriority priority)
+void TriggerManager::clear_trigger_state(const char *trigger_id)
 {
-    switch (priority)
+    if (xSemaphoreTake(_trigger_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
     {
-    case TriggerPriority::CRITICAL:
-        return _high_priority_queue;
-    case TriggerPriority::IMPORTANT:
-        return _medium_priority_queue;
-    case TriggerPriority::NORMAL:
-        return _low_priority_queue;
-    default:
-        return _low_priority_queue; // Default fallback
+        auto it = _active_triggers.find(trigger_id);
+        if (it != _active_triggers.end())
+        {
+            _active_triggers.erase(it);
+            log_d("Cleared trigger %s", trigger_id);
+        }
+        xSemaphoreGive(_trigger_mutex);
     }
+}
+
+void TriggerManager::update_trigger_state(const char *trigger_id, const char *action, const char *target)
+{
+    if (xSemaphoreTake(_trigger_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
+    {
+        auto it = _active_triggers.find(trigger_id);
+        if (it != _active_triggers.end())
+        {
+            it->second.action = action;
+            it->second.target = target;
+            it->second.timestamp = esp_timer_get_time();
+            log_d("Updated trigger %s: %s -> %s", trigger_id, action, target);
+        }
+        xSemaphoreGive(_trigger_mutex);
+    }
+}
+
+TriggerState* TriggerManager::get_highest_priority_trigger()
+{
+    TriggerState* highest = nullptr;
+    TriggerPriority highest_priority = TriggerPriority::NORMAL;
+    uint64_t oldest_timestamp = UINT64_MAX;
+    
+    if (xSemaphoreTake(_trigger_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
+    {
+        for (auto& pair : _active_triggers)
+        {
+            TriggerState& trigger = pair.second;
+            if (!trigger.active) continue;
+            
+            // Priority comparison: CRITICAL > IMPORTANT > NORMAL
+            bool is_higher_priority = false;
+            if (highest == nullptr)
+            {
+                is_higher_priority = true;
+            }
+            else if (trigger.priority > highest_priority)
+            {
+                is_higher_priority = true;
+            }
+            else if (trigger.priority == highest_priority && trigger.timestamp < oldest_timestamp)
+            {
+                // Same priority, choose oldest
+                is_higher_priority = true;
+            }
+            
+            if (is_higher_priority)
+            {
+                highest = &trigger;
+                highest_priority = trigger.priority;
+                oldest_timestamp = trigger.timestamp;
+            }
+        }
+        xSemaphoreGive(_trigger_mutex);
+    }
+    
+    return highest;
 }
 
 void TriggerManager::setup_gpio_interrupts()
@@ -403,19 +396,7 @@ extern "C"
     }
 }
 
-// TODO: what is this actually doing?
-void TriggerManager::get_queue_handles(QueueHandle_t *high_queue, QueueHandle_t *medium_queue, QueueHandle_t *low_queue)
+TriggerState* TriggerManager::get_next_trigger_to_process()
 {
-    if (high_queue)
-    {
-        *high_queue = _high_priority_queue;
-    }
-    if (medium_queue)
-    {
-        *medium_queue = _medium_priority_queue;
-    }
-    if (low_queue)
-    {
-        *low_queue = _low_priority_queue;
-    }
+    return get_highest_priority_trigger();
 }
