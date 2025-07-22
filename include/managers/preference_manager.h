@@ -60,9 +60,6 @@ public:
     inline static Configs config;
 
 private:
-    // Core Functionality Methods
-    const char *theme_to_string(Themes theme);
-    Themes string_to_theme(const char *str);
 
     // Static Data Members
     inline static const char *CONFIG_KEY = "config";

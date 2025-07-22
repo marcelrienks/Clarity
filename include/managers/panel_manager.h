@@ -87,11 +87,11 @@ public:
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
     /// @param completion_callback Optional callback function to execute when loading is complete
-    void create_and_load_panel(const char *panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
+    void create_and_load_panel(const char* panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panel_name Name of the target panel to load after splash
-    void create_and_load_panel_with_splash(const char *panel_name);
+    void create_and_load_panel_with_splash(const char* panel_name);
     
     /// @brief Update the currently active panel (called from main loop)
     void update_panel();
@@ -134,13 +134,14 @@ private:
     /// @brief Register all available panel types with the factory
     void register_panels();
     
+    
     /// @brief Register all global triggers with the trigger manager
     void register_triggers();
 
     // Callback Methods
     /// @brief Callback executed when splash screen loading is complete
     /// @param panel_name Name of the target panel to load after splash
-    void splash_completion_callback(const char *panel_name);
+    void splash_completion_callback(const char* panel_name);
     
     /// @brief Callback executed when normal panel loading is complete
     void panel_completion_callback();
@@ -150,7 +151,7 @@ private:
     
     /// @brief Execute a trigger message action
     /// @param msg Trigger message to execute
-    void execute_message_action(const TriggerMessage& msg);
+    void execute_trigger_message_action(const TriggerMessage& msg);
     
     /// @brief Process all priority queues based on UI state
     void process_all_priority_queues();

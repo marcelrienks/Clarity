@@ -45,7 +45,7 @@ void PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.panel_name = std::string(PanelNames::Oil)};
+    config = {.panel_name = PanelNames::Oil};
 
     PreferenceManager::save_config();
     PreferenceManager::load_config();
@@ -103,35 +103,3 @@ void PreferenceManager::save_config()
 }
 
 // Private Methods
-
-/// @brief Converts a string representation of a theme to a Theme enum value
-/// @param str The string to convert
-/// @return The corresponding Theme enum value
-Themes PreferenceManager::string_to_theme(const char *string)
-{
-    if (strcmp(string, "Day") == 0)
-        return Themes::Day;
-
-    if (strcmp(string, "Night") == 0)
-        return Themes::Night;
-
-    return Themes::Day;
-}
-
-/// @brief Converts a Theme enum value to a string representation
-/// @param theme The theme enum value to convert
-/// @return A string representation of the theme
-const char *PreferenceManager::theme_to_string(Themes theme)
-{
-    switch (theme)
-    {
-    case Themes::Day:
-        return "Day";
-
-    case Themes::Night:
-        return "Night";
-
-    default:
-        return "Day";
-    }
-}

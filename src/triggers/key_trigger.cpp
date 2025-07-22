@@ -59,7 +59,7 @@ const char *KeyTrigger::get_id() const
 
 /// @brief Get the target panel name to switch to when triggered
 /// @return Panel name based on current key state
-const char *KeyTrigger::get_target_panel() const
+const char* KeyTrigger::get_target_panel() const
 {
     // Always return KeyPanel for active states, restoration handled by InterruptManager
     return PanelNames::Key;

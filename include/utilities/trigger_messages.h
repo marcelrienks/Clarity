@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <esp_timer.h>
 
 /// @brief UI state for Core 0 processing decisions
 enum class UIState {
@@ -32,6 +33,8 @@ struct TriggerMessage {
     }
 };
 
+//TODO: how many of these items should move to types?
+
 /// @brief Configuration constants
 constexpr int HIGH_PRIORITY_QUEUE_SIZE = 15;
 constexpr int MEDIUM_PRIORITY_QUEUE_SIZE = 15;
@@ -45,17 +48,30 @@ constexpr const char* ACTION_LOAD_PANEL = "LoadPanel";
 constexpr const char* ACTION_RESTORE_PREVIOUS_PANEL = "RestorePreviousPanel";
 constexpr const char* ACTION_CHANGE_THEME = "ChangeTheme";
 
-/// @brief Panel name constants
-constexpr const char* PANEL_KEY = "KeyPanel";
-constexpr const char* PANEL_LOCK = "LockPanel";
-constexpr const char* PANEL_OIL = "OemOilPanel";
-constexpr const char* PANEL_SPLASH = "SplashPanel";
-
 /// @brief Theme name constants
 constexpr const char* THEME_DAY = "Day";
 constexpr const char* THEME_NIGHT = "Night";
 
 /// @brief Trigger ID constants
 constexpr const char* TRIGGER_KEY_PRESENT = "key_present";
+constexpr const char* TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char* TRIGGER_LOCK_STATE = "lock_state";
 constexpr const char* TRIGGER_THEME_SWITCH = "theme_switch";
+
+/// @brief ISR Event types for safe interrupt handling
+enum class ISREventType {
+    KEY_PRESENT,
+    KEY_NOT_PRESENT,
+    LOCK_STATE_CHANGE,
+    THEME_SWITCH
+};
+
+/// @brief ISR Event structure for ISR-to-Task communication
+struct ISREvent {
+    ISREventType event_type;
+    bool pin_state;
+    uint32_t timestamp;
+    
+    ISREvent() : event_type(ISREventType::KEY_PRESENT), pin_state(false), timestamp(0) {}
+    ISREvent(ISREventType type, bool state) : event_type(type), pin_state(state), timestamp(esp_timer_get_time()) {}
+};

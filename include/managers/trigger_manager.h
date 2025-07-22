@@ -1,6 +1,7 @@
 #pragma once
 
 #include "utilities/trigger_messages.h"
+#include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
@@ -17,6 +18,8 @@
 class TriggerManager
 {
 public:
+    const char * TriggerMonitorTask = "TriggerMonitorTask";
+
     // Constructors and Destructors
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
@@ -25,12 +28,12 @@ public:
     static TriggerManager &get_instance();
 
     // Core Functionality Methods
-    void init_dual_core_system();
+    void init();
     void handle_key_present_interrupt(bool key_present);
+    void handle_key_not_present_interrupt(bool key_not_present);
     void handle_lock_state_interrupt(bool lock_engaged);
     void handle_theme_switch_interrupt(bool night_mode);
     void update_application_state(const char* panel_name, const char* theme_name);
-    void get_application_state(char* panel_name, char* theme_name);
     void get_queue_handles(QueueHandle_t* high_queue, QueueHandle_t* medium_queue, QueueHandle_t* low_queue);
 
     // Core 1 Task Methods
@@ -55,22 +58,25 @@ private:
 
     // GPIO Interrupt Setup
     void setup_gpio_interrupts();
+    
 
     // Instance Data Members
     QueueHandle_t _high_priority_queue = nullptr;
     QueueHandle_t _medium_priority_queue = nullptr;
     QueueHandle_t _low_priority_queue = nullptr;
+    QueueHandle_t _isr_event_queue = nullptr;       ///< Queue for ISR events to Core 1 task
 
     // Shared application state (protected by mutexes)
     SemaphoreHandle_t _state_mutex = nullptr;
-    char _current_panel[32] = {0};
-    char _current_theme[32] = {0};
+    const char* _current_panel = PanelNames::Oil;
+    const char* _current_theme = Themes::Day;
 
     // Pending message tracking
     std::map<std::string, bool> _pending_messages;
 
     // Hardware state tracking
     bool _key_present_state = false;
+    bool _key_not_present_state = false;
     bool _lock_engaged_state = false;
     bool _night_mode_state = false;
 

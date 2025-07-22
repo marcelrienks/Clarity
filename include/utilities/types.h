@@ -56,15 +56,16 @@ enum class LogLevels
     Error    ///< Error conditions requiring attention
 };
 
-/// @enum Themes
-/// @brief Visual theme options for the application
+/// @struct Themes
+/// @brief Static constants for visual theme options
 ///
-/// @details Defines available visual themes with different color schemes.
-/// Managed by StyleManager for consistent application-wide theming.
-enum class Themes
+/// @details Defines available visual themes with different color schemes
+/// as string constants. Managed by StyleManager for consistent 
+/// application-wide theming.
+struct Themes
 {
-    Night, ///< Dark theme with red accents (default)
-    Day    ///< Light theme with white accents
+    static constexpr const char* Night = "Night"; ///< Dark theme with red accents (default)
+    static constexpr const char* Day = "Day";     ///< Light theme with white accents
 };
 
 /// @enum OilSensorTypes
@@ -93,16 +94,17 @@ enum class KeyState
 };
 
 /// @struct PanelNames
-/// @brief String constants for panel identification
+/// @brief Static constants for panel type identifiers
 ///
-/// @details Provides consistent string identifiers for panel types
-/// used in the PanelManager factory system and configuration.
+/// @details Defines the available panel types used in the PanelManager
+/// factory system and configuration as string constants for direct use
+/// without conversion overhead.
 struct PanelNames
 {
-    static constexpr const char *Splash = "SplashPanel"; ///< Startup splash screen
-    static constexpr const char *Oil = "OemOilPanel";    ///< Oil monitoring dashboard
-    static constexpr const char *Key = "KeyPanel";       ///< Key status panel
-    static constexpr const char *Lock = "LockPanel";     ///< Lock status panel
+    static constexpr const char* Splash = "SplashPanel"; ///< Startup splash screen
+    static constexpr const char* Oil = "OemOilPanel";    ///< Oil monitoring dashboard
+    static constexpr const char* Key = "KeyPanel";       ///< Key status panel
+    static constexpr const char* Lock = "LockPanel";     ///< Lock status panel
 };
 
 /// @struct TriggerNames

@@ -41,7 +41,7 @@ public:
     virtual bool evaluate() = 0;
     
     /// @brief Get the target panel name to switch to when triggered
-    /// @return Panel name string (e.g., PanelNames::Key)
+    /// @return Panel name string constant
     virtual const char* get_target_panel() const = 0;
     
     /// @brief Get the trigger identifier for registration/management

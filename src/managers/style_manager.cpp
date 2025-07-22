@@ -1,5 +1,6 @@
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
+#include <cstring>
 
 // Constructors and Destructors
 StyleManager::~StyleManager()
@@ -34,7 +35,7 @@ void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
 
 /// @brief Initialises the styles for the application
 /// @param theme the theme to be applied
-void StyleManager::init(Themes theme)
+void StyleManager::init(const char* theme)
 {
     log_d("...");
 
@@ -79,12 +80,12 @@ void StyleManager::reset_styles()
 
 /// @brief Apply a specified theme to the styles
 /// @param theme the theme to be applied
-void StyleManager::set_theme(Themes theme)
+void StyleManager::set_theme(const char* theme)
 {
     log_d("...");
 
     // Select the current theme colors
-    ThemeColors colours = StyleManager::get_colours(theme);
+    ThemeColors colours = get_colours(theme);
 
     // Background style
     lv_style_set_bg_color(&background_style, colours.background);
@@ -122,7 +123,7 @@ void StyleManager::set_theme(Themes theme)
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
-const ThemeColors &StyleManager::get_colours(const Themes &theme) const
+const ThemeColors &StyleManager::get_colours(const char* theme) const
 {
-    return theme == Themes::Night ? _night_theme_colours : _day_theme_colours;
+    return (theme && strcmp(theme, Themes::Night) == 0) ? _night_theme_colours : _day_theme_colours;
 }

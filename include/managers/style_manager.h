@@ -79,8 +79,8 @@ public:
     static StyleManager &get_instance();
 
     // Core Functionality Methods
-    void init(Themes theme);
-    void set_theme(Themes theme);
+    void init(const char* theme);
+    void set_theme(const char* theme);
     void apply_theme_to_screen(lv_obj_t *screen);
 
     // Accessor Methods
@@ -88,8 +88,8 @@ public:
     lv_style_t *get_gauge_items_style() { return &gauge_items_style; }
     lv_style_t *get_gauge_main_style() { return &gauge_main_style; }
     lv_style_t *get_gauge_danger_section_style() { return &gauge_danger_section_style; }
-    const Themes &get_theme() const { return _theme; }
-    const ThemeColors &get_colours(const Themes &theme) const;
+    const char* get_theme() const { return _theme; }
+    const ThemeColors &get_colours(const char* theme) const;
 
     // Public Data Members
     lv_style_t background_style;    // Style for backgrounds
@@ -113,7 +113,7 @@ private:
     void reset_styles();
 
     // Instance Data Members
-    Themes _theme = Themes::Night;
+    const char* _theme = Themes::Night;
     ThemeColors _day_theme_colours = {
         .background = lv_color_hex(0x121212),
         .text = lv_color_hex(0xEEEEEE),
