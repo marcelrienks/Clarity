@@ -62,9 +62,3 @@ Reading OilTemperatureSensor::get_reading()
     return _current_reading;
 }
 
-/// @brief Check if the temperature value has changed since last reading
-/// @return true if value changed, false otherwise
-bool OilTemperatureSensor::has_value_changed()
-{
-    return _current_reading != _previous_reading;
-}

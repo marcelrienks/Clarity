@@ -41,131 +41,66 @@ void TriggerManager::handle_key_present_interrupt(bool key_present_state)
 {
     log_d("...");
 
-    // Thread-safe state access
-    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) == pdTRUE)
+    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) != pdTRUE)
     {
-        if (key_present_state == true) // Key present bulb is on
-        {
-            if (strcmp(_current_panel, PanelNames::Key) != 0)
-            {
-                // Load KeyPanel if not already showing
-                set_trigger_state(TRIGGER_KEY_PRESENT, ACTION_LOAD_PANEL, PanelNames::Key, TriggerPriority::CRITICAL);
-            }
-        }
-        else // Key present bulb is off
-        {
-            if (strcmp(_current_panel, PanelNames::Key) == 0)
-            {
-                // KeyPanel is showing - restore previous panel
-                set_trigger_state(TRIGGER_KEY_PRESENT, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
-            }
-            else
-            {
-                // KeyPanel not showing - clear any pending trigger
-                clear_trigger_state(TRIGGER_KEY_PRESENT);
-            }
-        }
-
-        // Update hardware state
-        _key_present_state = key_present_state;
-        xSemaphoreGive(_state_mutex);
+        return;
     }
+
+    handle_panel_state_change(key_present_state, PanelNames::Key, TRIGGER_KEY_PRESENT, TriggerPriority::CRITICAL);
+    _key_present_state = key_present_state;
+    xSemaphoreGive(_state_mutex);
 }
 
 void TriggerManager::handle_key_not_present_interrupt(bool key_not_present_state)
 {
     log_d("...");
 
-    // Thread-safe state access
-    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) == pdTRUE)
+    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) != pdTRUE)
     {
-        if (key_not_present_state == true) // Key not present bulb is on
-        {
-            if (strcmp(_current_panel, PanelNames::Key) != 0)
-            {
-                // Load KeyPanel if not already showing
-                set_trigger_state(TRIGGER_KEY_NOT_PRESENT, ACTION_LOAD_PANEL, PanelNames::Key, TriggerPriority::CRITICAL);
-            }
-        }
-        else // Key not present bulb is off
-        {
-            if (strcmp(_current_panel, PanelNames::Key) == 0)
-            {
-                // KeyPanel is showing - restore previous panel
-                set_trigger_state(TRIGGER_KEY_NOT_PRESENT, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
-            }
-            else
-            {
-                // KeyPanel not showing - clear any pending trigger
-                clear_trigger_state(TRIGGER_KEY_NOT_PRESENT);
-            }
-        }
-
-        // Update hardware state
-        _key_not_present_state = key_not_present_state;
-        xSemaphoreGive(_state_mutex);
+        return;
     }
+
+    handle_panel_state_change(key_not_present_state, PanelNames::Key, TRIGGER_KEY_NOT_PRESENT, TriggerPriority::CRITICAL);
+    _key_not_present_state = key_not_present_state;
+    xSemaphoreGive(_state_mutex);
 }
 
 void TriggerManager::handle_lock_state_interrupt(bool lock_engaged)
 {
     log_d("...");
 
-    // Thread-safe state access
-    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) == pdTRUE)
+    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(PANEL_STATE_MUTEX_TIMEOUT)) != pdTRUE)
     {
-        if (lock_engaged == true) // Lock is engaged
-        {
-            if (strcmp(_current_panel, PanelNames::Lock) != 0)
-            {
-                // Load LockPanel if not already showing
-                set_trigger_state(TRIGGER_LOCK_STATE, ACTION_LOAD_PANEL, PanelNames::Lock, TriggerPriority::IMPORTANT);
-            }
-        }
-        else // Lock is disengaged
-        {
-            if (strcmp(_current_panel, PanelNames::Lock) == 0)
-            {
-                // LockPanel is showing - restore previous panel
-                set_trigger_state(TRIGGER_LOCK_STATE, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
-            }
-            else
-            {
-                // LockPanel not showing - clear any pending trigger
-                clear_trigger_state(TRIGGER_LOCK_STATE);
-            }
-        }
-
-        // Update hardware state
-        _lock_engaged_state = lock_engaged;
-        xSemaphoreGive(_state_mutex);
+        return;
     }
+
+    handle_panel_state_change(lock_engaged, PanelNames::Lock, TRIGGER_LOCK_STATE, TriggerPriority::IMPORTANT);
+    _lock_engaged_state = lock_engaged;
+    xSemaphoreGive(_state_mutex);
 }
 
 void TriggerManager::handle_theme_switch_interrupt(bool night_mode)
 {
     log_d("...");
 
-    // Thread-safe state access
-    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(THEME_STATE_MUTEX_TIMEOUT)) == pdTRUE)
+    if (xSemaphoreTake(_state_mutex, pdMS_TO_TICKS(THEME_STATE_MUTEX_TIMEOUT)) != pdTRUE)
     {
-        const char *target_theme = night_mode ? THEME_NIGHT : THEME_DAY;
-
-        if (strcmp(_current_theme, target_theme) != 0) // Theme change needed
-        {
-            // Set trigger state for theme change
-            set_trigger_state(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, target_theme, TriggerPriority::NORMAL);
-        }
-        else // Target theme already active
-        {
-            // Clear any pending theme change trigger
-            clear_trigger_state(TRIGGER_THEME_SWITCH);
-        }
-
-        // Update hardware state
-        _night_mode_state = night_mode;
-        xSemaphoreGive(_state_mutex);
+        return;
     }
+
+    const char *target_theme = night_mode ? THEME_NIGHT : THEME_DAY;
+    
+    if (strcmp(_current_theme, target_theme) != 0)
+    {
+        set_trigger_state(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, target_theme, TriggerPriority::NORMAL);
+    }
+    else
+    {
+        clear_trigger_state(TRIGGER_THEME_SWITCH);
+    }
+
+    _night_mode_state = night_mode;
+    xSemaphoreGive(_state_mutex);
 }
 
 void TriggerManager::update_application_state(const char* panel_name, const char* theme_name)
@@ -216,9 +151,6 @@ void TriggerManager::trigger_monitoring_task(void *pvParameters)
                 break;
             }
         }
-
-        // Optional: Periodic state validation or cleanup
-        // This could include checking for stale messages or state synchronization
     }
 }
 
@@ -266,43 +198,29 @@ void TriggerManager::update_trigger_state(const char *trigger_id, const char *ac
 
 TriggerState* TriggerManager::get_highest_priority_trigger()
 {
+    if (xSemaphoreTake(_trigger_mutex, pdMS_TO_TICKS(100)) != pdTRUE)
+    {
+        return nullptr;
+    }
+
     TriggerState* highest = nullptr;
     TriggerPriority highest_priority = TriggerPriority::NORMAL;
     uint64_t oldest_timestamp = UINT64_MAX;
     
-    if (xSemaphoreTake(_trigger_mutex, pdMS_TO_TICKS(100)) == pdTRUE)
+    for (auto& pair : _active_triggers)
     {
-        for (auto& pair : _active_triggers)
+        TriggerState& trigger = pair.second;
+        if (!trigger.active) continue;
+        
+        if (should_update_highest_priority(trigger, highest, highest_priority, oldest_timestamp))
         {
-            TriggerState& trigger = pair.second;
-            if (!trigger.active) continue;
-            
-            // Priority comparison: CRITICAL > IMPORTANT > NORMAL
-            bool is_higher_priority = false;
-            if (highest == nullptr)
-            {
-                is_higher_priority = true;
-            }
-            else if (trigger.priority > highest_priority)
-            {
-                is_higher_priority = true;
-            }
-            else if (trigger.priority == highest_priority && trigger.timestamp < oldest_timestamp)
-            {
-                // Same priority, choose oldest
-                is_higher_priority = true;
-            }
-            
-            if (is_higher_priority)
-            {
-                highest = &trigger;
-                highest_priority = trigger.priority;
-                oldest_timestamp = trigger.timestamp;
-            }
+            highest = &trigger;
+            highest_priority = trigger.priority;
+            oldest_timestamp = trigger.timestamp;
         }
-        xSemaphoreGive(_trigger_mutex);
     }
     
+    xSemaphoreGive(_trigger_mutex);
     return highest;
 }
 
@@ -396,7 +314,42 @@ extern "C"
     }
 }
 
-TriggerState* TriggerManager::get_next_trigger_to_process()
+void TriggerManager::handle_panel_state_change(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority)
 {
-    return get_highest_priority_trigger();
+    if (state && strcmp(_current_panel, panel_name) != 0)
+    {
+        set_trigger_state(trigger_id, ACTION_LOAD_PANEL, panel_name, priority);
+    }
+    else
+    {
+        if (strcmp(_current_panel, panel_name) == 0)
+        {
+            set_trigger_state(trigger_id, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
+        }
+        else
+        {
+            clear_trigger_state(trigger_id);
+        }
+    }
 }
+
+bool TriggerManager::should_update_highest_priority(const TriggerState& trigger, TriggerState* current_highest, TriggerPriority current_priority, uint64_t current_timestamp)
+{
+    if (current_highest == nullptr)
+    {
+        return true;
+    }
+    
+    if (trigger.priority > current_priority)
+    {
+        return true;
+    }
+    
+    if (trigger.priority == current_priority && trigger.timestamp < current_timestamp)
+    {
+        return true;
+    }
+    
+    return false;
+}
+

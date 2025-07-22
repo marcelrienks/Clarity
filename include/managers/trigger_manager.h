@@ -52,7 +52,7 @@ public:
     void handle_lock_state_interrupt(bool lock_engaged);
     void handle_theme_switch_interrupt(bool night_mode);
     void update_application_state(const char* panel_name, const char* theme_name);
-    TriggerState* get_next_trigger_to_process();
+    TriggerState* get_highest_priority_trigger();
     void clear_trigger_state_public(const char* trigger_id) { clear_trigger_state(trigger_id); }
 
     // Core 1 Task Methods
@@ -73,7 +73,10 @@ private:
     void set_trigger_state(const char* trigger_id, const char* action, const char* target, TriggerPriority priority);
     void clear_trigger_state(const char* trigger_id);
     void update_trigger_state(const char* trigger_id, const char* action, const char* target);
-    TriggerState* get_highest_priority_trigger();
+    
+    // Helper methods for simplified logic
+    void handle_panel_state_change(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority);
+    bool should_update_highest_priority(const TriggerState& trigger, TriggerState* current_highest, TriggerPriority current_priority, uint64_t current_timestamp);
 
 public:
 

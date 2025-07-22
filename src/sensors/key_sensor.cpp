@@ -27,28 +27,53 @@ Reading KeySensor::get_reading()
     bool pin25_high = digitalRead(GpioPins::KEY_PRESENT);
     bool pin26_high = digitalRead(GpioPins::KEY_NOT_PRESENT);
     
-    KeyState state;
+    KeyState state = determine_key_state(pin25_high, pin26_high);
+    log_key_state(state, pin25_high, pin26_high);
+    
+    return static_cast<int32_t>(state);
+}
+
+KeyState KeySensor::determine_key_state(bool pin25_high, bool pin26_high)
+{
     if (pin25_high && pin26_high)
     {
-        // Both pins HIGH - invalid state, treat as inactive to prevent panel loading
-        state = KeyState::Inactive;
-        log_w("Key state: Invalid (both pins HIGH), treating as Inactive");
+        return KeyState::Inactive;  // Invalid state - both pins HIGH
     }
-    else if (pin25_high)
+    
+    if (pin25_high)
     {
-        state = KeyState::Present;
-        log_d("Key state: Present (pin %d HIGH)", GpioPins::KEY_PRESENT);
+        return KeyState::Present;
     }
-    else if (pin26_high)
+    
+    if (pin26_high)
     {
-        state = KeyState::NotPresent;
-        log_d("Key state: NotPresent (pin %d HIGH)", GpioPins::KEY_NOT_PRESENT);
+        return KeyState::NotPresent;
     }
-    else
-    {
-        state = KeyState::Inactive;
-        log_d("Key state: Inactive (both pins LOW)");
-    }
+    
+    return KeyState::Inactive;  // Both pins LOW
+}
 
-    return static_cast<int32_t>(state);
+void KeySensor::log_key_state(KeyState state, bool pin25_high, bool pin26_high)
+{
+    switch (state)
+    {
+        case KeyState::Inactive:
+            if (pin25_high && pin26_high)
+            {
+                log_w("Key state: Invalid (both pins HIGH), treating as Inactive");
+            }
+            else
+            {
+                log_d("Key state: Inactive (both pins LOW)");
+            }
+            break;
+            
+        case KeyState::Present:
+            log_d("Key state: Present (pin %d HIGH)", GpioPins::KEY_PRESENT);
+            break;
+            
+        case KeyState::NotPresent:
+            log_d("Key state: NotPresent (pin %d HIGH)", GpioPins::KEY_NOT_PRESENT);
+            break;
+    }
 }

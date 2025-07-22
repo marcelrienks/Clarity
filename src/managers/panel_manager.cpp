@@ -247,7 +247,7 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
 void PanelManager::process_triggers()
 {
     TriggerManager &trigger_manager = TriggerManager::get_instance();
-    TriggerState* trigger = trigger_manager.get_next_trigger_to_process();
+    TriggerState* trigger = trigger_manager.get_highest_priority_trigger();
     
     if (trigger && trigger->active)
     {
@@ -264,7 +264,7 @@ void PanelManager::process_triggers()
 void PanelManager::process_critical_and_important_triggers()
 {
     TriggerManager &trigger_manager = TriggerManager::get_instance();
-    TriggerState* trigger = trigger_manager.get_next_trigger_to_process();
+    TriggerState* trigger = trigger_manager.get_highest_priority_trigger();
     
     if (trigger && trigger->active && 
         (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))

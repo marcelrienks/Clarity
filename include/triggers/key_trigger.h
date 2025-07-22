@@ -56,9 +56,6 @@ public:
     const char* get_id() const override;
     bool should_restore() const override;
     
-    /// @brief Get current key state (public interface for components)
-    /// @return Current key state as Reading variant
-    Reading get_reading();
 
 private:
     // Private Data Members

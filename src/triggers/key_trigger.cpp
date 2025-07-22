@@ -87,9 +87,3 @@ bool KeyTrigger::should_restore() const
     return _enable_restoration;
 }
 
-/// @brief Get current key state (public interface for components)
-/// @return Current key state as Reading variant
-Reading KeyTrigger::get_reading()
-{
-    return _key_sensor.get_reading();
-}
