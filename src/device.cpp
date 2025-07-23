@@ -5,7 +5,7 @@
 Device::Device()
 {
     {
-        auto cfg = _bus_instance.config();
+        auto cfg = busInstance_.config();
         cfg.spi_host = SPI;
         cfg.spi_mode = 0;
         cfg.freq_write = 80000000;
@@ -18,12 +18,12 @@ Device::Device()
         cfg.pin_miso = MISO;
         cfg.pin_dc = DC;
 
-        _bus_instance.config(cfg);
-        _panel_instance.setBus(&_bus_instance);
+        busInstance_.config(cfg);
+        panelInstance_.setBus(&busInstance_);
     }
 
     {
-        auto cfg = _panel_instance.config();
+        auto cfg = panelInstance_.config();
 
         cfg.pin_cs = CS;
         cfg.pin_rst = RST;
@@ -47,22 +47,22 @@ Device::Device()
         cfg.invert = true; // Inverts all colours, background and contents, waveshare 1.28" requires true
 #endif
 
-        _panel_instance.config(cfg);
+        panelInstance_.config(cfg);
     }
 
     {
-        auto cfg = _light_instance.config();
+        auto cfg = lightInstance_.config();
 
         cfg.pin_bl = BL;
         cfg.invert = false;
         cfg.freq = 44100;
         cfg.pwm_channel = 1;
 
-        _light_instance.config(cfg);
-        _panel_instance.setLight(&_light_instance);
+        lightInstance_.config(cfg);
+        panelInstance_.setLight(&lightInstance_);
     }
 
-    setPanel(&_panel_instance);
+    setPanel(&panelInstance_);
 }
 
 // Static Methods
@@ -104,7 +104,7 @@ void Device::prepare()
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     lv_display_set_user_data(display, this);
     lv_display_set_flush_cb(display, Device::display_flush_callback);
-    lv_display_set_buffers(display, _lv_buffer[0], _lv_buffer[1], _lv_buffer_size, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    lv_display_set_buffers(display, lvBuffer_[0], lvBuffer_[1], LV_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
 }
 
 // Static Methods
@@ -114,16 +114,16 @@ void Device::prepare()
 /// @param data Pixel data buffer to display
 void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
-    Device *device_instance = (Device *)lv_display_get_user_data(display);
+    Device *deviceInstance = (Device *)lv_display_get_user_data(display);
 
     uint32_t width = lv_area_get_width(area);
     uint32_t height = lv_area_get_height(area);
     lv_draw_sw_rgb565_swap(data, width * height);
 
-    if (device_instance->getStartCount() == 0) {
-        device_instance->endWrite();
+    if (deviceInstance->getStartCount() == 0) {
+        deviceInstance->endWrite();
     }
 
-    device_instance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
+    deviceInstance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
     lv_disp_flush_ready(display);
 }

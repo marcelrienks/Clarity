@@ -37,7 +37,7 @@ public:
     ~SplashPanel();
 
     // Core Functionality Methods
-    static constexpr const char* name = PanelNames::Splash;
+    static constexpr const char* NAME = PanelNames::SPLASH;
     void init() override;
     void load(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;
@@ -45,14 +45,14 @@ public:
 private:
     // Private Data Members
     // Panel specific constants
-    static constexpr const int _animation_time = 2000;
-    static constexpr const int _delay_time = 200;
-    static constexpr const int _display_time = 850;
+    static constexpr const int _ANIMATION_TIME = 2000;
+    static constexpr const int _DELAY_TIME = 200;
+    static constexpr const int _DISPLAY_TIME = 850;
 
     // Components
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<IComponent> _widget;
-    lv_obj_t *_blank_screen;
+    lv_obj_t *screen_; // All panels should always have their own screens
+    std::shared_ptr<IComponent> widget_;
+    lv_obj_t *blankScreen_;
 
     // Static Callback Methods
     static void animation_complete_timer_callback(lv_timer_t *timer);

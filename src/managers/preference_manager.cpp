@@ -12,22 +12,22 @@ PreferenceManager &PreferenceManager::get_instance()
 
 // Core Functionality Methods
 
-/// @brief Initialises the preference manager to handle application preferences
+/// @brief Initialises the preference manager to handle application preferences_
 void PreferenceManager::init()
 {
     log_d("...");
 
-    // Initialize preferences
-    if (!_preferences.begin("clarity", false))
+    // Initialize preferences_
+    if (!preferences_.begin("clarity", false))
     {
-        log_w("Failed to initialize preferences, retrying after format");
+        log_w("Failed to initialize preferences_, retrying after format");
 
         // Format NVS if opening failed
         nvs_flash_erase();
 
         // Try again
-        if (!_preferences.begin("clarity", false))
-            log_w("Failed to initialize preferences after format");
+        if (!preferences_.begin("clarity", false))
+            log_w("Failed to initialize preferences_ after format");
 
         else
             log_w("Preferences initialized successfully after format");
@@ -45,19 +45,19 @@ void PreferenceManager::create_default_config()
 {
     log_d("...");
 
-    config = {.panel_name = PanelNames::Oil};
+    config.panelName = PanelNames::OIL;
 
     PreferenceManager::save_config();
     PreferenceManager::load_config();
 }
 
-/// @brief Load the configuration from preferences
+/// @brief Load the configuration from preferences_
 /// @return true if the load was successful, false otherwise
 void PreferenceManager::load_config()
 {
     log_d("...");
 
-    String jsonString = _preferences.getString(CONFIG_KEY, "");
+    String jsonString = preferences_.getString(CONFIG_KEY, "");
     if (jsonString.length() == 0)
     {
         log_w("No config found, creating default");
@@ -72,34 +72,34 @@ void PreferenceManager::load_config()
         return PreferenceManager::create_default_config();
     }
 
-    if (doc[JsonDocNames::panel_name].isNull())
+    if (doc[JsonDocNames::PANEL_NAME].isNull())
     {
         log_w("Error reading config");
         return PreferenceManager::create_default_config();
     }
 
-    config.panel_name = std::string(doc[JsonDocNames::panel_name].as<const char *>());
-    log_i("Preferences loaded successfully: %s", config.panel_name.c_str());
+    config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
+    log_i("Preferences loaded successfully: %s", config.panelName.c_str());
 }
 
-/// @brief Save the current configuration to preferences
+/// @brief Save the current configuration to preferences_
 /// @return true if the save was successful, false otherwise
 void PreferenceManager::save_config()
 {
     log_d("...");
 
-    _preferences.remove(CONFIG_KEY);
+    preferences_.remove(CONFIG_KEY);
 
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
-    doc[JsonDocNames::panel_name] = config.panel_name.c_str();
+    doc[JsonDocNames::PANEL_NAME] = config.panelName.c_str();
 
     // Serialize to JSON string
     String jsonString;
     serializeJson(doc, jsonString);
 
-    // Save the JSON string to preferences
-    size_t written = _preferences.putString(CONFIG_KEY, jsonString);
+    // Save the JSON string to preferences_
+    size_t written = preferences_.putString(CONFIG_KEY, jsonString);
 }
 
 // Private Methods

@@ -52,8 +52,8 @@ public:
 
 private:
     // Private Data Members
-    int32_t _current_reading = 0;
-    int32_t _previous_reading = -1;
+    int32_t currentReading_ = 0;
+    int32_t previousReading_ = -1;
     unsigned long _last_update_time = 0;
     static constexpr unsigned long UPDATE_INTERVAL_MS = 1000; // Update every 1000ms (1Hz)
     

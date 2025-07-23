@@ -67,29 +67,29 @@ protected:
     virtual int32_t map_value_for_display(int32_t value) const;
     virtual void setup_danger_zone(lv_scale_section_t *section) const = 0;
     virtual int32_t get_icon_y_offset() const = 0;
-    virtual void get_label_angles(int32_t& l_angle, int32_t& h_angle) const = 0;
+    virtual void get_label_angles(int32_t& lAngle, int32_t& hAngle) const = 0;
 
     // Protected Data Members
     // LVGL objects
-    lv_obj_t *_scale;
-    lv_obj_t *_needle_line;      // Tip section - thinnest
-    lv_obj_t *_needle_middle;    // Middle section - medium thickness
-    lv_obj_t *_needle_base;      // Base section - thickest for smooth tapered appearance
-    lv_obj_t *_needle_highlight_line;    // Highlight line for 3D effect - tip
-    lv_obj_t *_needle_highlight_middle;  // Highlight line for 3D effect - middle
-    lv_obj_t *_needle_highlight_base;    // Highlight line for 3D effect - base
-    lv_obj_t *_oil_icon;
-    lv_obj_t *_low_label;        // "L" label for low end
-    lv_obj_t *_high_label;       // "H" label for high end
+    lv_obj_t *scale_;
+    lv_obj_t *needleLine_;      // Tip section - thinnest
+    lv_obj_t *needleMiddle_;    // Middle section - medium thickness
+    lv_obj_t *needleBase_;      // Base section - thickest for smooth tapered appearance
+    lv_obj_t *needleHighlightLine_;    // Highlight line for 3D effect - tip
+    lv_obj_t *needleHighlightMiddle_;  // Highlight line for 3D effect - middle
+    lv_obj_t *needleHighlightBase_;    // Highlight line for 3D effect - base
+    lv_obj_t *oilIcon_;
+    lv_obj_t *lowLabel_;        // "L" label for low end
+    lv_obj_t *highLabel_;       // "H" label for high end
     
     // Cached StyleManager reference (optimization)
-    StyleManager* _style_manager;
+    StyleManager* styleManager_;
 
     // Common constants
-    static constexpr int32_t _needle_length = 90;
+    static constexpr int32_t NEEDLE_LENGTH = 90;
     
     // Scale rotation tracking for label positioning
-    int32_t _scale_rotation;
+    int32_t scaleRotation_;
 
 private:
     // Private Methods

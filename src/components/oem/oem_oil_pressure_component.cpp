@@ -75,14 +75,14 @@ int32_t OemOilPressureComponent::get_icon_y_offset() const
 }
 
 /// @brief Gets the label angles for L and H labels.
-/// @param l_angle Reference to store the L label angle.
-/// @param h_angle Reference to store the H label angle.
-void OemOilPressureComponent::get_label_angles(int32_t& l_angle, int32_t& h_angle) const
+/// @param lAngle Reference to store the L label angle.
+/// @param hAngle Reference to store the H label angle.
+void OemOilPressureComponent::get_label_angles(int32_t& lAngle, int32_t& hAngle) const
 {
     // Standard positioning for pressure component
     // L label: At _scale_rotation angle (low pressure start)
-    l_angle = _scale_rotation;
+    lAngle = scaleRotation_;
     
     // H label: At _scale_rotation + angle_range (high pressure end)
-    h_angle = _scale_rotation + get_angle_range();
+    hAngle = scaleRotation_ + get_angle_range();
 }

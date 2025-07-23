@@ -50,20 +50,20 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     }
 
     // Clean up existing panel before creating new one
-    if (_panel)
+    if (panel_)
     {
         log_d("Cleaning up existing panel before creating new one");
-        _panel.reset();
+        panel_.reset();
     }
 
-    _panel = PanelManager::create_panel(panel_name);
-    _panel->init();
+    panel_ = PanelManager::create_panel(panel_name);
+    panel_->init();
     
     // Update current panel
     current_panel = panel_name;
 
     set_ui_state(UIState::LOADING);
-    _panel->load(completion_callback);
+    panel_->load(completion_callback);
     Ticker::handle_lv_tasks();
 }
 
@@ -74,7 +74,7 @@ void PanelManager::create_and_load_panel_with_splash(const char *panel_name)
 {
     log_d("...");
 
-    create_and_load_panel(PanelNames::Splash, [this, panel_name]()
+    create_and_load_panel(PanelNames::SPLASH, [this, panel_name]()
                           { this->PanelManager::splash_completion_callback(panel_name); });
 }
 
@@ -86,7 +86,7 @@ void PanelManager::update_panel()
     // Process trigger states from Core 1 based on current UI state
     process_trigger_states();
     set_ui_state(UIState::UPDATING);
-    _panel->update([this]()
+    panel_->update([this]()
                    { this->PanelManager::panel_completion_callback(); });
 
     Ticker::handle_lv_tasks();
@@ -98,7 +98,7 @@ void PanelManager::update_panel()
 
 PanelManager::~PanelManager()
 {
-    _panel.reset();
+    panel_.reset();
 }
 
 // Private Methods
@@ -110,8 +110,8 @@ std::shared_ptr<IPanel> PanelManager::create_panel(const char *panel_name)
 {
     log_d("...");
 
-    auto iterator = _registered_panels.find(panel_name);
-    if (iterator == _registered_panels.end())
+    auto iterator = registeredPanels_.find(panel_name);
+    if (iterator == registeredPanels_.end())
     {
         log_e("Failed to find panel %s in map", panel_name);
         return nullptr;
@@ -126,10 +126,10 @@ void PanelManager::register_panels()
     log_d("...");
 
     // Register all available panel types with the factory
-    register_panel<SplashPanel>(PanelNames::Splash);
-    register_panel<OemOilPanel>(PanelNames::Oil);
-    register_panel<KeyPanel>(PanelNames::Key);
-    register_panel<LockPanel>(PanelNames::Lock);
+    register_panel<SplashPanel>(PanelNames::SPLASH);
+    register_panel<OemOilPanel>(PanelNames::OIL);
+    register_panel<KeyPanel>(PanelNames::KEY);
+    register_panel<LockPanel>(PanelNames::LOCK);
 }
 
 // Callback Methods
@@ -139,7 +139,7 @@ void PanelManager::splash_completion_callback(const char *panel_name)
 {
     log_d("...");
 
-    _panel.reset();
+    panel_.reset();
     Ticker::handle_lv_tasks();
 
     create_and_load_panel(panel_name, [this]()
@@ -171,7 +171,7 @@ void PanelManager::trigger_panel_switch_callback()
 /// @brief Process trigger states from Core 1 based on UI state
 void PanelManager::process_trigger_states()
 {
-    switch (_ui_state)
+    switch (uiState_)
     {
     case UIState::IDLE:
         // No throttling - process all triggers
@@ -194,7 +194,7 @@ void PanelManager::process_trigger_states()
 /// @brief Set current UI state for Core 1 synchronization
 void PanelManager::set_ui_state(UIState state)
 {
-    _ui_state = state;
+    uiState_ = state;
     log_d("UI State changed to: %d", (int)state);
 }
 
@@ -275,11 +275,11 @@ std::string PanelManager::find_trigger_id_for_state(const TriggerState &target_s
     // We need to access the trigger manager's map, but for now we'll use known trigger IDs
 
     // Check common trigger IDs
-    if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::Key)
+    if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::KEY)
     {
         return std::string(TRIGGER_KEY_PRESENT); // or TRIGGER_KEY_NOT_PRESENT
     }
-    else if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::Lock)
+    else if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::LOCK)
     {
         return std::string(TRIGGER_LOCK_STATE);
     }

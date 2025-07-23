@@ -59,8 +59,8 @@ public:
 
 private:
     // Private Data Members
-    bool _enable_restoration;                ///< Whether to restore previous panel when key becomes inactive
-    KeyState _last_key_state;                ///< Previous key state for change detection
-    KeySensor _key_sensor;                   ///< Key sensor for state reading
+    bool enableRestoration_;                ///< Whether to restore previous panel when key becomes inactive
+    KeyState lastKeyState_;                ///< Previous key state for change detection
+    KeySensor keySensor_;                   ///< Key sensor for state reading
     static constexpr const char* TRIGGER_ID = "key_trigger"; ///< Unique trigger identifier
 };

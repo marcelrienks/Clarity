@@ -38,7 +38,7 @@ public:
     ~KeyPanel();
 
     // Core Functionality Methods
-    static constexpr const char* name = PanelNames::Key;
+    static constexpr const char* NAME = PanelNames::KEY;
     void init() override;
     void load(std::function<void()> callback_function = nullptr) override;
     void update(std::function<void()> callback_function = nullptr) override;
@@ -48,8 +48,8 @@ private:
     static void show_panel_completion_callback(lv_event_t *event);
 
     // Instance Data Members
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<KeyComponent> _key_component;
-    ComponentLocation _center_location;
-    KeyState _current_key_state = KeyState::Inactive;
+    lv_obj_t *screen_; // All panels should always have their own screens
+    std::shared_ptr<KeyComponent> keyComponent_;
+    ComponentLocation centerLocation_;
+    KeyState currentKeyState_ = KeyState::Inactive;
 };

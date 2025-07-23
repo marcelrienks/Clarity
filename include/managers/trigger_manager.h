@@ -16,7 +16,7 @@
  * @details This structure represents the state of an active trigger,
  * including its action, target, priority, and timing information.
  */
-struct TriggerState
+struct TriggerState//TODO: inconsistency between string and const char* usage
 {
     std::string action;           ///< Action to perform
     std::string target;           ///< Target of the action
@@ -25,7 +25,7 @@ struct TriggerState
     bool active;                  ///< Whether trigger is currently active
     
     TriggerState() = default;
-    TriggerState(const char* act, const char* tgt, TriggerPriority prio, uint64_t ts)
+    TriggerState(const char* act, const char* tgt, TriggerPriority prio, uint64_t ts)//TODO: remove abbreviations
         : action(act), target(tgt), priority(prio), timestamp(ts), active(true) {}
 };
 
@@ -36,7 +36,9 @@ struct TriggerState
 class TriggerManager
 {
 public:
-    const char * TriggerMonitorTask = "TriggerMonitorTask";
+//TODO: remove all leading/trailing underscores from variable names across the project
+//TODO: all constant variables should be uppercase
+    const char * TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
 
     // Constructors and Destructors
     TriggerManager(const TriggerManager &) = delete;
@@ -85,23 +87,23 @@ public:
     
 
     // Instance Data Members
-    QueueHandle_t _isr_event_queue = nullptr;       ///< Queue for ISR events to Core 1 task
+    QueueHandle_t isrEventQueue = nullptr;       ///< Queue for ISR events to Core 1 task
 
     // Shared application state (protected by mutexes)
-    SemaphoreHandle_t _state_mutex = nullptr;
+    SemaphoreHandle_t stateMutex = nullptr;
 
     // Shared trigger state (protected by trigger_mutex)
-    std::map<std::string, TriggerState> _active_triggers;
-    SemaphoreHandle_t _trigger_mutex = nullptr;
+    std::map<std::string, TriggerState> activeTriggers;
+    SemaphoreHandle_t triggerMutex = nullptr;
 
     // Hardware state tracking
-    bool _key_present_state = false;
-    bool _key_not_present_state = false;
-    bool _lock_engaged_state = false;
-    bool _night_mode_state = false;
+    bool keyPresentState = false;
+    bool keyNotPresentState = false;
+    bool lockEngagedState = false;
+    bool nightModeState = false;
 
     // Core 1 task handle
-    TaskHandle_t _trigger_task_handle = nullptr;
+    TaskHandle_t triggerTaskHandle = nullptr;
 };
 
 // GPIO Interrupt Service Routine declarations

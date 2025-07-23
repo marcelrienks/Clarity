@@ -65,5 +65,5 @@ private:
     inline static const char *CONFIG_KEY = "config";
 
     // Instance Data Members
-    Preferences _preferences;
+    Preferences preferences_;
 };

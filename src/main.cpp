@@ -1,5 +1,7 @@
 #include "main.h"
 
+//TODO: rename any and all references of widget to component
+
 void setup()
 {
   log_d("...");
@@ -10,7 +12,7 @@ void setup()
   Device::get_instance().prepare();
   Ticker::handle_lv_tasks();
 
-  StyleManager::get_instance().init(Themes::Day);
+  StyleManager::get_instance().init(Themes::DAY);
   Ticker::handle_lv_tasks();
 
   // Initialize Core 0 PanelManager (handles UI and queue processing)
@@ -18,7 +20,7 @@ void setup()
   panel_manager.init(); // This initializes the dual-core trigger system
 
   // Load initial panel (Core 0 will notify Core 1 of initial state)
-  panel_manager.create_and_load_panel_with_splash(preference_manager.config.panel_name.c_str());
+  panel_manager.create_and_load_panel_with_splash(preference_manager.config.panelName.c_str());
   
   Ticker::handle_lv_tasks();
 }

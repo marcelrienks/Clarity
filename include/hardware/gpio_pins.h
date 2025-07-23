@@ -16,7 +16,7 @@
  * and make hardware changes easier to manage across the entire codebase.
  */
 
-namespace GpioPins
+namespace gpio_pins
 {
     // Analog Input Pins (ADC)
 

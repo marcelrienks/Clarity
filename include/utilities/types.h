@@ -64,8 +64,8 @@ enum class LogLevels
 /// application-wide theming.
 struct Themes
 {
-    static constexpr const char* Night = "Night"; ///< Dark theme with red accents (default)
-    static constexpr const char* Day = "Day";     ///< Light theme with white accents
+    static constexpr const char* NIGHT = "Night"; ///< Dark theme with red accents (default)
+    static constexpr const char* DAY = "Day";     ///< Light theme with white accents
 };
 
 /// @enum OilSensorTypes
@@ -101,10 +101,10 @@ enum class KeyState
 /// without conversion overhead.
 struct PanelNames
 {
-    static constexpr const char* Splash = "SplashPanel"; ///< Startup splash screen
-    static constexpr const char* Oil = "OemOilPanel";    ///< Oil monitoring dashboard
-    static constexpr const char* Key = "KeyPanel";       ///< Key status panel
-    static constexpr const char* Lock = "LockPanel";     ///< Lock status panel
+    static constexpr const char* SPLASH = "SplashPanel"; ///< Startup splash screen
+    static constexpr const char* OIL = "OemOilPanel";    ///< Oil monitoring dashboard
+    static constexpr const char* KEY = "KeyPanel";       ///< Key status panel
+    static constexpr const char* LOCK = "LockPanel";     ///< Lock status panel
 };
 
 /// @struct TriggerNames
@@ -114,9 +114,9 @@ struct PanelNames
 /// used in the InterruptManager registration system.
 struct TriggerNames
 {
-    static constexpr const char *KeyPresent = "key_present_trigger";        ///< Key present detection trigger
-    static constexpr const char *KeyNotPresent = "key_not_present_trigger"; ///< Key not present detection trigger
-    static constexpr const char *Lock = "lock_trigger";                     ///< Lock detection trigger
+    static constexpr const char *KEY_PRESENT = "key_present_trigger";        ///< Key present detection trigger
+    static constexpr const char *KEY_NOT_PRESENT = "key_not_present_trigger"; ///< Key not present detection trigger
+    static constexpr const char *LOCK = "lock_trigger";                     ///< Lock detection trigger
 };
 
 /// @struct JsonDocNames
@@ -126,7 +126,7 @@ struct TriggerNames
 /// documents for PreferenceManager serialization.
 struct JsonDocNames
 {
-    static constexpr const char *panel_name = "panel_name"; ///< Default panel setting
+    static constexpr const char *PANEL_NAME = "panel_name"; ///< Default panel setting
 };
 
 /// @struct ComponentLocation
@@ -177,5 +177,5 @@ struct ComponentLocation
 /// @default_values All fields have sensible defaults for first-run
 struct Configs
 {
-    std::string panel_name = PanelNames::Oil; ///< Default panel on startup
+    std::string panelName = PanelNames::OIL; ///< Default panel on startup
 };

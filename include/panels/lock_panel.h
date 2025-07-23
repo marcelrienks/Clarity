@@ -38,7 +38,7 @@ public:
     ~LockPanel();
 
     // Core Functionality Methods
-    static constexpr const char* name = PanelNames::Lock;
+    static constexpr const char* NAME = PanelNames::LOCK;
     void init() override;
     void load(std::function<void()> callback_function = nullptr) override;
     void update(std::function<void()> callback_function = nullptr) override;
@@ -48,9 +48,9 @@ private:
     static void show_panel_completion_callback(lv_event_t *event);
 
     // Instance Data Members
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<LockComponent> _lock_component;
-    std::shared_ptr<LockSensor> _lock_sensor;
-    ComponentLocation _center_location;
-    bool _is_lock_engaged = false;
+    lv_obj_t *screen_; // All panels should always have their own screens
+    std::shared_ptr<LockComponent> lockComponent_;
+    std::shared_ptr<LockSensor> lockSensor_;
+    ComponentLocation centerLocation_;
+    bool isLockEngaged_ = false;
 };

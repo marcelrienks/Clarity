@@ -30,7 +30,8 @@
       "Bash(dos2unix:*)",
       "Bash(sed:*)",
       "Bash(./run_all_tests.sh)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(-print)"
     ],
     "deny": []
   }

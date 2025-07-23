@@ -102,7 +102,7 @@ public:
     /// @param panel_name String identifier for the panel type
     template<typename T> // Note the implementation of a template type must exist in header
     void register_panel(const char *panel_name) {
-        _registered_panels[panel_name] = []() -> std::shared_ptr<IPanel> { 
+        registeredPanels_[panel_name] = []() -> std::shared_ptr<IPanel> { 
             return std::make_shared<T>(); 
         };
     }
@@ -164,17 +164,17 @@ private:
     /// @brief Notify Core 1 of state changes
     /// @param panel_name Current panel name
     /// @param theme_name Current theme name
-    void notify_core1_state_change(const char* panel_name, const char* theme_name);
+    void notify_core1_state_change(const char* panel_name, const char* theme_name);//TODO: what is the point of arguments being constants
 
 public:
     // Public Data Members
-    const char* current_panel = PanelNames::Oil;     ///< Current panel for Core 1 sync
+    const char* current_panel = PanelNames::OIL;     ///< Current panel for Core 1 sync
     std::string restoration_panel;                   ///< Panel to restore when all triggers are inactive
 
 private:
     // Instance Data Members
-    std::shared_ptr<IPanel> _panel = nullptr;
-    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
-    UIState _ui_state = UIState::IDLE;             ///< Current UI processing state
+    std::shared_ptr<IPanel> panel_ = nullptr;
+    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // Map of panel type names to creator functions for each of those names
+    UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     // Removed queue handles - now using shared state trigger system
 };

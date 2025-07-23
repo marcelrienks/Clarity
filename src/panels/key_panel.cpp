@@ -5,17 +5,17 @@
 
 // Constructors and Destructors
 KeyPanel::KeyPanel() 
-    : _key_component(std::make_shared<KeyComponent>()) {}
+    : keyComponent_(std::make_shared<KeyComponent>()) {}
 
 KeyPanel::~KeyPanel()
 {
-    if (_screen) {
-        lv_obj_delete(_screen);
+    if (screen_) {
+        lv_obj_delete(screen_);
     }
 
-    if (_key_component)
+    if (keyComponent_)
     {
-        _key_component.reset();
+        keyComponent_.reset();
     }
 }
 
@@ -25,28 +25,28 @@ void KeyPanel::init()
 {
     log_d("...");
 
-    _screen = LvTools::create_blank_screen();
-    _center_location = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
+    screen_ = LvTools::create_blank_screen();
+    centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Get current key state by reading GPIO pins directly
-    bool pin25_high = digitalRead(GpioPins::KEY_PRESENT);
-    bool pin26_high = digitalRead(GpioPins::KEY_NOT_PRESENT);
+    bool pin25High = digitalRead(gpio_pins::KEY_PRESENT);
+    bool pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
     
-    if (pin25_high && pin26_high)
+    if (pin25High && pin26High)
     {
-        _current_key_state = KeyState::Inactive; // Both pins HIGH - invalid state
+        currentKeyState_ = KeyState::Inactive; // Both pins HIGH - invalid state
     }
-    else if (pin25_high)
+    else if (pin25High)
     {
-        _current_key_state = KeyState::Present;
+        currentKeyState_ = KeyState::Present;
     }
-    else if (pin26_high)
+    else if (pin26High)
     {
-        _current_key_state = KeyState::NotPresent;
+        currentKeyState_ = KeyState::NotPresent;
     }
     else
     {
-        _current_key_state = KeyState::Inactive; // Both pins LOW
+        currentKeyState_ = KeyState::Inactive; // Both pins LOW
     }
 }
 
@@ -54,15 +54,15 @@ void KeyPanel::init()
 void KeyPanel::load(std::function<void()> callback_function)
 {
     log_d("...");
-    _callback_function = callback_function;
+    callbackFunction_ = callback_function;
 
-    _key_component->render(_screen, _center_location);
-    _key_component->refresh(Reading{static_cast<int32_t>(_current_key_state)});
+    keyComponent_->render(screen_, centerLocation_);
+    keyComponent_->refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     
-    lv_obj_add_event_cb(_screen, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
+    lv_obj_add_event_cb(screen_, KeyPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
-    lv_screen_load(_screen);
+    lv_screen_load(screen_);
 }
 
 /// @brief Update the key panel with current sensor data
@@ -84,6 +84,6 @@ void KeyPanel::show_panel_completion_callback(lv_event_t *event)
 {
     log_d("...");
 
-    auto this_instance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
-    this_instance->_callback_function();
+    auto thisInstance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
+    thisInstance->callbackFunction_();
 }

@@ -30,5 +30,5 @@ public:
 
 protected:
     // Protected Data Members
-    std::function<void()> _callback_function;
+    std::function<void()> callbackFunction_;
 };

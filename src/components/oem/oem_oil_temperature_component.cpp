@@ -72,11 +72,11 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
     log_d("original value is %i", value);
     
     // Map from [0,120] to [120,0] reverse the scale
-    int32_t mapped_value = OemOilTemperatureComponent::get_scale_max() - value;
+    int32_t mappedValue = OemOilTemperatureComponent::get_scale_max() - value;
     
-    log_d("mapped value is %i", mapped_value);
+    log_d("mapped value is %i", mappedValue);
     
-    return mapped_value;
+    return mappedValue;
 }
 
 /// @brief Sets up the danger zone section on the scale.
@@ -95,14 +95,14 @@ int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 }
 
 /// @brief Gets the label angles for L and H labels with swapped positioning.
-/// @param l_angle Reference to store the L label angle.
-/// @param h_angle Reference to store the H label angle.
-void OemOilTemperatureComponent::get_label_angles(int32_t& l_angle, int32_t& h_angle) const
+/// @param lAngle Reference to store the L label angle.
+/// @param hAngle Reference to store the H label angle.
+void OemOilTemperatureComponent::get_label_angles(int32_t& lAngle, int32_t& hAngle) const
 {
     // Swap L and H positioning due to reversed scale mapping
     // H label: At _scale_rotation angle (where L would normally be)
-    h_angle = _scale_rotation;
+    hAngle = scaleRotation_;
     
     // L label: At _scale_rotation + angle_range (where H would normally be)
-    l_angle = _scale_rotation + get_angle_range();
+    lAngle = scaleRotation_ + get_angle_range();
 }

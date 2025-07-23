@@ -15,14 +15,14 @@ struct ThemeColors
     lv_color_t background;      // Background color
     lv_color_t text;            // Text color
     lv_color_t primary;         // Primary accent color
-    lv_color_t gauge_normal;    // Normal gauge color
-    lv_color_t gauge_warning;   // Warning gauge color
-    lv_color_t gauge_danger;    // Danger gauge color
-    lv_color_t gauge_ticks;     // Gauge tick marks (soft off-white)
-    lv_color_t needle_normal;   // Normal needle color (bright white)
-    lv_color_t needle_danger;   // Danger needle color (bright red/orange)
-    lv_color_t key_present;     // Normal key present clor (pure white)
-    lv_color_t key_not_present; // Normal Key not present color (bright red)
+    lv_color_t gaugeNormal;    // Normal gauge color
+    lv_color_t gaugeWarning;   // Warning gauge color
+    lv_color_t gaugeDanger;    // Danger gauge color
+    lv_color_t gaugeTicks;     // Gauge tick marks (soft off-white)
+    lv_color_t needleNormal;   // Normal needle color (bright white)
+    lv_color_t needleDanger;   // Danger needle color (bright red/orange)
+    lv_color_t keyPresent;     // Normal key present clor (pure white)
+    lv_color_t keyNotPresent; // Normal Key not present color (bright red)
 };
 
 /**
@@ -79,28 +79,28 @@ public:
     static StyleManager &get_instance();
 
     // Core Functionality Methods
-    void init(const char* theme);
-    void set_theme(const char* theme);
+    void init(const char *theme);
+    void set_theme(const char *theme);
     void apply_theme_to_screen(lv_obj_t *screen);
 
     // Accessor Methods  
-    const ThemeColors &get_colours(const char* theme) const;
+    const ThemeColors &get_colours(const char *theme) const;
     
     // Public Data Members - Theme State
-    const char* theme = Themes::Night;
+    const char *THEME = Themes::NIGHT;
 
     // Public Data Members
-    lv_style_t background_style;    // Style for backgrounds
-    lv_style_t text_style;          // Style for general text
-    lv_style_t gauge_normal_style;  // Style for gauges in normal range
-    lv_style_t gauge_warning_style; // Style for gauges in warning range
-    lv_style_t gauge_danger_style;  // Style for gauges in danger range
+    lv_style_t backgroundStyle;    // Style for backgrounds
+    lv_style_t textStyle;          // Style for general text
+    lv_style_t gaugeNormalStyle;  // Style for gauges in normal range
+    lv_style_t gaugeWarningStyle; // Style for gauges in warning range
+    lv_style_t gaugeDangerStyle;  // Style for gauges in danger range
 
     // Shared gauge component styles (replaces per-component allocation)
-    lv_style_t gauge_indicator_style;      // Style for gauge major ticks
-    lv_style_t gauge_items_style;          // Style for gauge minor ticks
-    lv_style_t gauge_main_style;           // Style for gauge main part
-    lv_style_t gauge_danger_section_style; // Style for danger zone sections
+    lv_style_t gaugeIndicatorStyle;      // Style for gauge major ticks
+    lv_style_t gaugeItemsStyle;          // Style for gauge minor ticks
+    lv_style_t gaugeMainStyle;           // Style for gauge main part
+    lv_style_t gaugeDangerSectionStyle; // Style for danger zone sections
 
 private:
     // Constructors and Destructors
@@ -111,30 +111,30 @@ private:
     void reset_styles();
 
     // Instance Data Members
-    ThemeColors _day_theme_colours = {
+    ThemeColors dayThemeColours_ = {
         .background = lv_color_hex(0x121212),
         .text = lv_color_hex(0xEEEEEE),
         .primary = lv_color_hex(0xEEEEEE),
-        .gauge_normal = lv_color_hex(0xEEEEEE),
-        .gauge_warning = lv_color_hex(0xFB8C00),
-        .gauge_danger = lv_color_hex(0xB00020),
-        .gauge_ticks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
-        .needle_normal = lv_color_hex(0xFFFFFF),  // Pure white for needles
-        .needle_danger = lv_color_hex(0xDC143C),  // Crimson red for danger
-        .key_present = lv_color_hex(0x006400),    // Deep green for key present
-        .key_not_present = lv_color_hex(0xDC143C) // Crimson red for key not present
+        .gaugeNormal = lv_color_hex(0xEEEEEE),
+        .gaugeWarning = lv_color_hex(0xFB8C00),
+        .gaugeDanger = lv_color_hex(0xB00020),
+        .gaugeTicks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
+        .needleNormal = lv_color_hex(0xFFFFFF),  // Pure white for needles
+        .needleDanger = lv_color_hex(0xDC143C),  // Crimson red for danger
+        .keyPresent = lv_color_hex(0x006400),    // Deep green for key present
+        .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
-    ThemeColors _night_theme_colours = {
+    ThemeColors nightThemeColours_ = {
         .background = lv_color_hex(0x121212),
         .text = lv_color_hex(0xB00020),
         .primary = lv_color_hex(0xB00020),
-        .gauge_normal = lv_color_hex(0xB00020),
-        .gauge_warning = lv_color_hex(0xFB8C00),
-        .gauge_danger = lv_color_hex(0xB00020),
-        .gauge_ticks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
-        .needle_normal = lv_color_hex(0xFFFFFF),  // Pure white for needles
-        .needle_danger = lv_color_hex(0xDC143C),  // Crimson red for danger
-        .key_present = lv_color_hex(0x006400),    // Deep green for key present
-        .key_not_present = lv_color_hex(0xDC143C) // Crimson red for key not present
+        .gaugeNormal = lv_color_hex(0xB00020),
+        .gaugeWarning = lv_color_hex(0xFB8C00),
+        .gaugeDanger = lv_color_hex(0xB00020),
+        .gaugeTicks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
+        .needleNormal = lv_color_hex(0xFFFFFF),  // Pure white for needles
+        .needleDanger = lv_color_hex(0xDC143C),  // Crimson red for danger
+        .keyPresent = lv_color_hex(0x006400),    // Deep green for key present
+        .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
 };

@@ -45,6 +45,6 @@ public:
 
 private:
     // Helper methods for simplified logic
-    KeyState determine_key_state(bool pin25_high, bool pin26_high);
-    void log_key_state(KeyState state, bool pin25_high, bool pin26_high);
+    KeyState determine_key_state(bool pin25High, bool pin26High);
+    void log_key_state(KeyState state, bool pin25High, bool pin26High);
 };
