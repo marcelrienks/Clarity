@@ -76,7 +76,7 @@ class StyleManager
 {
 public:
     // Static Methods
-    static StyleManager &get_instance();
+    static StyleManager &GetInstance();
 
     // Core Functionality Methods
     void init(const char *theme);
@@ -107,8 +107,8 @@ private:
     ~StyleManager();
 
     // Core Functionality Methods
-    void init_styles();
-    void reset_styles();
+    void InitStyles();
+    void ResetStyles();
 
     // Instance Data Members
     ThemeColors dayThemeColours_ = {

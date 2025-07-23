@@ -31,7 +31,8 @@
       "Bash(sed:*)",
       "Bash(./run_all_tests.sh)",
       "Bash(mv:*)",
-      "Bash(-print)"
+      "Bash(-print)",
+      "WebFetch(domain:google.github.io)"
     ],
     "deny": []
   }

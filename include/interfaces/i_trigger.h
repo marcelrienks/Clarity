@@ -42,13 +42,13 @@ public:
     
     /// @brief Get the target panel name to switch to when triggered
     /// @return Panel name string constant
-    virtual const char* get_target_panel() const = 0;
+    virtual const char* GetTargetPanel() const = 0;
     
     /// @brief Get the trigger identifier for registration/management
     /// @return Unique trigger identifier string
-    virtual const char* get_id() const = 0;
+    virtual const char* GetId() const = 0;
     
     /// @brief Whether to restore the previous panel when condition clears
     /// @return true if previous panel should be restored, false to stay on target panel
-    virtual bool should_restore() const { return false; }
+    virtual bool ShouldRestore() const { return false; }
 };

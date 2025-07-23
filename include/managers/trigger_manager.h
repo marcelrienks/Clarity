@@ -45,20 +45,20 @@ public:
     TriggerManager &operator=(const TriggerManager &) = delete;
 
     // Static Methods
-    static TriggerManager &get_instance();
+    static TriggerManager &GetInstance();
 
     // Core Functionality Methods
     void init();
-    void handle_key_present_interrupt(bool key_present);
-    void handle_key_not_present_interrupt(bool key_not_present);
-    void handle_lock_state_interrupt(bool lock_engaged);
-    void handle_theme_switch_interrupt(bool night_mode);
-    void notify_application_state_updated();
-    TriggerState* get_highest_priority_trigger();
-    void clear_trigger_state_public(const char* trigger_id) { clear_trigger_state(trigger_id); }
+    void HandleKeyPresentInterrupt(bool key_present);
+    void HandleKeyNotPresentInterrupt(bool key_not_present);
+    void HandleLockStateInterrupt(bool lock_engaged);
+    void HandleThemeSwitchInterrupt(bool night_mode);
+    void NotifyApplicationStateUpdated();
+    TriggerState* GetHighestPriorityTrigger();
+    void ClearTriggerStatePublic(const char* trigger_id) { ClearTriggerState(trigger_id); }
 
     // Core 1 Task Methods
-    static void trigger_monitoring_task(void* pvParameters);
+    static void TriggerMonitoringTask(void* pvParameters);
     
     // Static interrupt handlers (public for extern C access)
     static void IRAM_ATTR key_present_isr_handler(void* arg);
@@ -72,13 +72,13 @@ private:
     ~TriggerManager() = default;
 
     // Shared State Management
-    void set_trigger_state(const char* trigger_id, const char* action, const char* target, TriggerPriority priority);
-    void clear_trigger_state(const char* trigger_id);
-    void update_trigger_state(const char* trigger_id, const char* action, const char* target);
+    void SetTriggerState(const char* trigger_id, const char* action, const char* target, TriggerPriority priority);
+    void ClearTriggerState(const char* trigger_id);
+    void UpdateTriggerState(const char* trigger_id, const char* action, const char* target);
     
     // Helper methods for simplified logic
-    void handle_panel_state_change(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority);
-    bool should_update_highest_priority(const TriggerState& trigger, TriggerState* current_highest, TriggerPriority current_priority, uint64_t current_timestamp);
+    void HandlePanelStateChange(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority);
+    bool ShouldUpdateHighestPriority(const TriggerState& trigger, TriggerState* current_highest, TriggerPriority current_priority, uint64_t current_timestamp);
 
 public:
 
@@ -93,17 +93,17 @@ public:
     SemaphoreHandle_t stateMutex = nullptr;
 
     // Shared trigger state (protected by trigger_mutex)
-    std::map<std::string, TriggerState> activeTriggers;
-    SemaphoreHandle_t triggerMutex = nullptr;
+    std::map<std::string, TriggerState> activeTriggers_;
+    SemaphoreHandle_t triggerMutex_ = nullptr;
 
     // Hardware state tracking
-    bool keyPresentState = false;
-    bool keyNotPresentState = false;
-    bool lockEngagedState = false;
-    bool nightModeState = false;
+    bool keyPresentState_ = false;
+    bool keyNotPresentState_ = false;
+    bool lockEngagedState_ = false;
+    bool nightModeState_ = false;
 
     // Core 1 task handle
-    TaskHandle_t triggerTaskHandle = nullptr;
+    TaskHandle_t triggerTaskHandle_ = nullptr;
 };
 
 // GPIO Interrupt Service Routine declarations

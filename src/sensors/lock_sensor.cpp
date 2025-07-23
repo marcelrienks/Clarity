@@ -18,7 +18,7 @@ void LockSensor::init()
 
 /// @brief Get the current lock status reading
 /// @return Current lock status (true if engaged, false if disengaged)
-Reading LockSensor::get_reading()
+Reading LockSensor::GetReading()
 {
     bool isLockEngaged = digitalRead(gpio_pins::LOCK);
     log_d("Lock sensor reading: %s (pin %d %s)", 

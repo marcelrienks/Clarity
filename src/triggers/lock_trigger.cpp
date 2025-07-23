@@ -5,7 +5,7 @@
 /// @brief Constructor with optional restoration mode
 /// @param enable_restoration Whether to restore previous panel when lock becomes disengaged
 LockTrigger::LockTrigger(bool enable_restoration)
-    : _lock_sensor(std::make_shared<LockSensor>()), 
+    : lockSensor_(std::make_shared<LockSensor>()), 
       enableRestoration_(enable_restoration)
 {
 }
@@ -17,10 +17,10 @@ void LockTrigger::init()
 {
     log_d("...");
     
-    _lock_sensor->init();
+    lockSensor_->init();
     
     // Get initial lock state for logging
-    bool initialState = std::get<bool>(_lock_sensor->get_reading());
+    bool initialState = std::get<bool>(lockSensor_->GetReading());
     log_d("Lock trigger initialized with state: %s", initialState ? "engaged" : "disengaged");
 }
 
@@ -31,7 +31,7 @@ bool LockTrigger::evaluate()
     log_d("...");
     
     // Get current lock state from GPIO pin
-    bool currentState = std::get<bool>(_lock_sensor->get_reading());
+    bool currentState = std::get<bool>(lockSensor_->GetReading());
     
     // Simple logic: trigger when lock pin is HIGH (engaged)
     bool shouldTrigger = currentState;
@@ -45,21 +45,21 @@ bool LockTrigger::evaluate()
 
 /// @brief Get the target panel name to switch to when triggered
 /// @return Panel name for lock status display
-const char* LockTrigger::get_target_panel() const
+const char* LockTrigger::GetTargetPanel() const
 {
     return PanelNames::LOCK;
 }
 
 /// @brief Get the trigger identifier for registration/management
 /// @return Unique trigger identifier string
-const char* LockTrigger::get_id() const
+const char* LockTrigger::GetId() const
 {
     return TRIGGER_ID;
 }
 
 /// @brief Whether to restore the previous panel when lock becomes disengaged
 /// @return true if previous panel should be restored, false to stay on lock panel
-bool LockTrigger::should_restore() const
+bool LockTrigger::ShouldRestore() const
 {
     return enableRestoration_;
 }

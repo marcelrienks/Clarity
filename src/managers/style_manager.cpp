@@ -5,13 +5,13 @@
 // Constructors and Destructors
 StyleManager::~StyleManager()
 {
-    reset_styles();
+    ResetStyles();
 }
 
 // Static Methods
 /// @brief Get the singleton instance of StyleManager
 /// @return instance of StyleManager
-StyleManager &StyleManager::get_instance()
+StyleManager &StyleManager::GetInstance()
 {
     static StyleManager instance; // this ensures that the instance is created only once
     return instance;
@@ -60,7 +60,7 @@ void StyleManager::init(const char* theme)
 }
 
 /// @brief Reset all styles to their default state
-void StyleManager::reset_styles()
+void StyleManager::ResetStyles()
 {
     log_d("...");
 

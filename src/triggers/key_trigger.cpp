@@ -22,7 +22,7 @@ bool KeyTrigger::evaluate()
     log_d("...");
 
     // Get current key state from sensor
-    Reading sensorReading = keySensor_.get_reading();
+    Reading sensorReading = keySensor_.GetReading();
     KeyState currentKeyState = static_cast<KeyState>(std::get<int32_t>(sensorReading));
 
     // Simple logic: trigger if either pin 25 OR pin 26 is HIGH (but not both)
@@ -52,14 +52,14 @@ bool KeyTrigger::evaluate()
 
 /// @brief Get the trigger identifier
 /// @return Unique trigger identifier string
-const char *KeyTrigger::get_id() const
+const char *KeyTrigger::GetId() const
 {
     return TRIGGER_ID;
 }
 
 /// @brief Get the target panel name to switch to when triggered
 /// @return Panel name based on current key state
-const char* KeyTrigger::get_target_panel() const
+const char* KeyTrigger::GetTargetPanel() const
 {
     // Always return KeyPanel for active states, restoration handled by InterruptManager
     return PanelNames::KEY;
@@ -75,14 +75,14 @@ void KeyTrigger::init()
 
     // Initialize last state to Inactive to ensure trigger fires on first active state
     lastKeyState_ = KeyState::Inactive;
-    Reading currentReading = keySensor_.get_reading();
+    Reading currentReading = keySensor_.GetReading();
     KeyState currentState = static_cast<KeyState>(std::get<int32_t>(currentReading));
     log_d("Initial key state: %d (forcing last state to Inactive to enable triggering)", static_cast<int>(currentState));
 }
 
 /// @brief Whether to restore the previous panel when key becomes inactive
 /// @return true if previous panel should be restored when key becomes inactive
-bool KeyTrigger::should_restore() const
+bool KeyTrigger::ShouldRestore() const
 {
     return enableRestoration_;
 }

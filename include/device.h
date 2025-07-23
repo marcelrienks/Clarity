@@ -58,7 +58,7 @@ public:
     Device &operator=(const Device &) = delete;
 
     // Static Methods
-    static Device &get_instance();
+    static Device &GetInstance();
 
     // Core Functionality Methods
     void prepare() override;

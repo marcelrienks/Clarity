@@ -44,15 +44,15 @@ public:
     // Core Functionality Methods
     void init() override;
     bool evaluate() override;
-    const char* get_target_panel() const override;
-    const char* get_id() const override;
-    bool should_restore() const override;
+    const char* GetTargetPanel() const override;
+    const char* GetId() const override;
+    bool ShouldRestore() const override;
 
 private:
     // Static Data Members
     static constexpr const char* TRIGGER_ID = "lock_trigger";
 
     // Instance Data Members
-    std::shared_ptr<LockSensor> _lock_sensor;
+    std::shared_ptr<LockSensor> lockSensor_;
     bool enableRestoration_;
 };

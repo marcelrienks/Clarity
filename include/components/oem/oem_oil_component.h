@@ -53,7 +53,7 @@ public:
     // Core Functionality Methods
     void render(lv_obj_t *screen, const ComponentLocation& location) override;
     void refresh(const Reading& reading) override;
-    void set_value(int32_t value) override;
+    void SetValue(int32_t value) override;
 
 protected:
     // Protected Methods
@@ -93,8 +93,8 @@ protected:
 
 private:
     // Private Methods
-    void create_icon();
-    void create_labels();
-    void create_needle();
-    void create_scale(int32_t rotation);
+    void CreateIcon();
+    void CreateLabels();
+    void CreateNeedle();
+    void CreateScale(int32_t rotation);
 };

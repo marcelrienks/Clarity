@@ -11,5 +11,5 @@ class ISensor
 public:
     // Core Interface Methods
     virtual void init() = 0;
-    virtual Reading get_reading() = 0;
+    virtual Reading GetReading() = 0;
 };

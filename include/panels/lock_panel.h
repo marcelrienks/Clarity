@@ -45,7 +45,7 @@ public:
 
 private:
     // Static Methods
-    static void show_panel_completion_callback(lv_event_t *event);
+    static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
     lv_obj_t *screen_; // All panels should always have their own screens

@@ -68,7 +68,7 @@ Device::Device()
 // Static Methods
 /// @brief Get the singleton instance of Device
 /// @return instance of Device
-Device &Device::get_instance()
+Device &Device::GetInstance()
 {
     static Device instance; // this ensures that the instance is created only once
     return instance;

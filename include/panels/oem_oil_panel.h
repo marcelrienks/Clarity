@@ -57,25 +57,25 @@ public:
 
 private:
     // Core Functionality Methods
-    void update_oil_pressure();
-    void update_oil_temperature();
+    void UpdateOilPressure();
+    void UpdateOilTemperature();
     
     // Value mapping methods
     /// @brief Map oil pressure sensor value to display scale
     /// @param sensor_value Raw sensor value (1-10 Bar)
     /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
-    int32_t map_pressure_value(int32_t sensor_value);
+    int32_t MapPressureValue(int32_t sensor_value);
     
     /// @brief Map oil temperature sensor value to display scale
     /// @param sensor_value Raw sensor value (0-120°C)
     /// @return Mapped value for display
-    int32_t map_temperature_value(int32_t sensor_value);
+    int32_t MapTemperatureValue(int32_t sensor_value);
 
     // Static Callback Methods
-    static void show_panel_completion_callback(lv_event_t *event);
-    static void update_panel_completion_callback(lv_anim_t *animation);
-    static void execute_pressure_animation_callback(void *target, int32_t value);
-    static void execute_temperature_animation_callback(void *target, int32_t value);
+    static void ShowPanelCompletionCallback(lv_event_t *event);
+    static void UpdatePanelCompletionCallback(lv_anim_t *animation);
+    static void ExecutePressureAnimationCallback(void *target, int32_t value);
+    static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
 
     // Instance Data Members - UI Objects
     lv_obj_t *screen_; // All panels should always have their own screens

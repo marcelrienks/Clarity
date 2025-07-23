@@ -41,5 +41,5 @@ public:
 
     // Core Functionality Methods
     void init() override;
-    Reading get_reading() override;
+    Reading GetReading() override;
 };

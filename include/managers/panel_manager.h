@@ -35,7 +35,7 @@
  * 
  * @panel_lifecycle:
  * 1. Register panel types with register_panel<T>()
- * 2. Create panels dynamically via create_panel()
+ * 2. Create panels dynamically via CreatePanel()
  * 3. Load panels with init() → load() → show callbacks
  * 4. Update panels with periodic refresh_panel()
  * 5. Transition between panels with load_panel()
@@ -68,31 +68,31 @@ public:
     PanelManager &operator=(const PanelManager &) = delete;
 
     // Static Methods
-    static PanelManager &get_instance();
+    static PanelManager &GetInstance();
 
     // Core Functionality Methods
     /// @brief Initialize the panel manager, register panels/triggers, and setup dual-core system
     void init();
     
     /// @brief Process trigger states from Core 1 based on UI state
-    void process_trigger_states();
+    void ProcessTriggerStates();
     
     /// @brief Set current UI state for Core 1 synchronization
     /// @param state Current UI processing state
-    void set_ui_state(UIState state);
+    void SetUiState(UIState state);
     
     
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
     /// @param completion_callback Optional callback function to execute when loading is complete
-    void create_and_load_panel(const char* panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
+    void CreateAndLoadPanel(const char* panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panel_name Name of the target panel to load after splash
-    void create_and_load_panel_with_splash(const char* panel_name);
+    void CreateAndLoadPanelWithSplash(const char* panel_name);
     
     /// @brief Update the currently active panel (called from main loop)
-    void update_panel();
+    void UpdatePanel();
     
     
 
@@ -125,46 +125,46 @@ private:
     /// @brief Create a panel instance by name using the registered factory
     /// @param panel_name Name of the panel type to create
     /// @return Shared pointer to the created panel instance
-    std::shared_ptr<IPanel> create_panel(const char *panel_name);
+    std::shared_ptr<IPanel> CreatePanel(const char *panel_name);
     
     /// @brief Register all available panel types with the factory
-    void register_panels();
+    void RegisterPanels();
     
     
     /// @brief Register all global triggers with the trigger manager
-    void register_triggers();
+    void RegisterTriggers();
 
     // Callback Methods
     /// @brief Callback executed when splash screen loading is complete
     /// @param panel_name Name of the target panel to load after splash
-    void splash_completion_callback(const char* panel_name);
+    void SplashCompletionCallback(const char* panel_name);
     
     /// @brief Callback executed when normal panel loading is complete
-    void panel_completion_callback();
+    void PanelCompletionCallback();
     
     /// @brief Callback executed when trigger-driven panel loading is complete
-    void trigger_panel_switch_callback();
+    void TriggerPanelSwitchCallback();
     
     /// @brief Execute a trigger action from shared state
     /// @param trigger_state Trigger state to execute
     /// @param trigger_id ID of the trigger for cleanup
-    void execute_trigger_action(const TriggerState& trigger_state, const std::string& trigger_id);
+    void ExecuteTriggerAction(const TriggerState& trigger_state, const std::string& trigger_id);
     
     /// @brief Process all triggers regardless of priority
-    void process_triggers();
+    void ProcessTriggers();
     
     /// @brief Process only critical and important priority triggers
-    void process_critical_and_important_triggers();
+    void ProcessCriticalAndImportantTriggers();
     
     /// @brief Find trigger ID for a given trigger state (helper method)
     /// @param target_state Trigger state to find ID for
     /// @return Trigger ID string, or empty if not found
-    std::string find_trigger_id_for_state(const TriggerState& target_state);
+    std::string FindTriggerIdForState(const TriggerState& target_state);
     
     /// @brief Notify Core 1 of state changes
     /// @param panel_name Current panel name
     /// @param theme_name Current theme name
-    void notify_core1_state_change(const char* panel_name, const char* theme_name);//TODO: what is the point of arguments being constants
+    void NotifyCore1StateChange(const char* panel_name, const char* theme_name);//TODO: what is the point of arguments being constants
 
 public:
     // Public Data Members

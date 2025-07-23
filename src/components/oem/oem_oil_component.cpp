@@ -15,7 +15,7 @@ OemOilComponent::OemOilComponent()
       lowLabel_(nullptr),
       highLabel_(nullptr),
       scaleRotation_(0),
-      styleManager_(&StyleManager::get_instance())
+      styleManager_(&StyleManager::GetInstance())
 {
     // Cache StyleManager reference for performance
 }
@@ -93,10 +93,10 @@ void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location
     lv_obj_align(scale_, location.align, location.x_offset, location.y_offset);
 
     // Setup scale properties based on derived class configuration
-    create_scale(location.rotation);
-    create_needle();
-    create_icon();
-    create_labels();
+    CreateScale(location.rotation);
+    CreateNeedle();
+    CreateIcon();
+    CreateLabels();
 
     log_d("rendered load");
 }
@@ -149,7 +149,7 @@ void OemOilComponent::refresh(const Reading& reading)
 /// @brief Sets the value of the oil component.
 /// This method updates the needle position based on the provided value.
 /// @param value
-void OemOilComponent::set_value(int32_t value)
+void OemOilComponent::SetValue(int32_t value)
 {
     log_i("value is %i", value);
 
@@ -180,7 +180,7 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
 // Private Methods
 
 /// @brief Creates the oil icon for the oil component.
-void OemOilComponent::create_icon()
+void OemOilComponent::CreateIcon()
 {
     const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
 
@@ -195,7 +195,7 @@ void OemOilComponent::create_icon()
 
 /// @brief Creates L and H labels positioned relative to the scale rotation and angle range.
 /// Labels automatically follow when scale rotation changes.
-void OemOilComponent::create_labels()
+void OemOilComponent::CreateLabels()
 {
     const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
 
@@ -233,7 +233,7 @@ void OemOilComponent::create_labels()
 }
 
 /// @brief Creates the needle line for the oil component.
-void OemOilComponent::create_needle()
+void OemOilComponent::CreateNeedle()
 {
     const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
 
@@ -318,7 +318,7 @@ void OemOilComponent::create_needle()
 }
 
 /// @brief Sets up the scale properties for the oil component.
-void OemOilComponent::create_scale(int32_t rotation)
+void OemOilComponent::CreateScale(int32_t rotation)
 {
     // Store rotation for label positioning
     scaleRotation_ = rotation;

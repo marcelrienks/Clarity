@@ -39,9 +39,9 @@ public:
 
 protected:
     // Protected Data Members
-    lv_obj_t *_key_icon;
+    lv_obj_t *keyIcon_;
 
 private:
     // Core Functionality Methods
-    void create_icon();
+    void CreateIcon();
 };

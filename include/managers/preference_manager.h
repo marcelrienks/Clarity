@@ -48,7 +48,7 @@ class PreferenceManager
 {
 public:
     // Static Methods
-    static PreferenceManager &get_instance();
+    static PreferenceManager &GetInstance();
 
     // Core Functionality Methods
     void init();

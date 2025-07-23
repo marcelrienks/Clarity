@@ -4,7 +4,7 @@
 
 /// @brief Get the singleton instance of PreferenceManager
 /// @return instance of PreferenceManager
-PreferenceManager &PreferenceManager::get_instance()
+PreferenceManager &PreferenceManager::GetInstance()
 {
     static PreferenceManager instance; // this ensures that the instance is created only once
     return instance;

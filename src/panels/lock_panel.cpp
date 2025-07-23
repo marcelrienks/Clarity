@@ -47,7 +47,7 @@ void LockPanel::load(std::function<void()> callback_function)
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->render(screen_, centerLocation_);
     lockComponent_->refresh(Reading{isLockEngaged_});
-    lv_obj_add_event_cb(screen_, LockPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
+    lv_obj_add_event_cb(screen_, LockPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
     lv_screen_load(screen_);
@@ -64,7 +64,7 @@ void LockPanel::update(std::function<void()> callback_function)
 
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this
-void LockPanel::show_panel_completion_callback(lv_event_t *event)
+void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
     log_d("...");
 

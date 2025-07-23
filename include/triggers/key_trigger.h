@@ -52,9 +52,9 @@ public:
     // Core Functionality Methods
     void init() override;
     bool evaluate() override;
-    const char* get_target_panel() const override;
-    const char* get_id() const override;
-    bool should_restore() const override;
+    const char* GetTargetPanel() const override;
+    const char* GetId() const override;
+    bool ShouldRestore() const override;
     
 
 private:

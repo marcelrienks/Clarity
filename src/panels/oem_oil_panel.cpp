@@ -72,7 +72,7 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
     
     oemOilPressureComponent_->render(screen_, pressure_location);
     oemOilTemperatureComponent_->render(screen_, temperature_location);
-    lv_obj_add_event_cb(screen_, OemOilPanel::show_panel_completion_callback, LV_EVENT_SCREEN_LOADED, this);
+    lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
     lv_screen_load(screen_);
@@ -86,8 +86,8 @@ void OemOilPanel::update(std::function<void()> update_panel_completion_callback)
     callbackFunction_ = update_panel_completion_callback;
 
     log_v("updating...");
-    OemOilPanel::update_oil_pressure();
-    OemOilPanel::update_oil_temperature();
+    OemOilPanel::UpdateOilPressure();
+    OemOilPanel::UpdateOilTemperature();
     
     // If no animations were started, call completion callback immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_) {
@@ -99,7 +99,7 @@ void OemOilPanel::update(std::function<void()> update_panel_completion_callback)
 // Private Methods
 
 /// @brief Update the oil pressure reading on the screen
-void OemOilPanel::update_oil_pressure()
+void OemOilPanel::UpdateOilPressure()
 {
     log_d("...");
 
@@ -110,8 +110,8 @@ void OemOilPanel::update_oil_pressure()
     }
 
     // Use delta-based updates for better performance
-    auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->get_reading());
-    auto value = map_pressure_value(sensorValue);
+    auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
+    auto value = MapPressureValue(sensorValue);
     
     // Skip update only if value is exactly the same as last update
     if (value == currentOilPressureValue_) {
@@ -130,8 +130,8 @@ void OemOilPanel::update_oil_pressure()
     lv_anim_set_values(&pressureAnimation_, currentOilPressureValue_, value);
     lv_anim_set_var(&pressureAnimation_, this);
     lv_anim_set_user_data(&pressureAnimation_, (void *)static_cast<uintptr_t>(OilSensorTypes::Pressure));
-    lv_anim_set_exec_cb(&pressureAnimation_, OemOilPanel::execute_pressure_animation_callback);
-    lv_anim_set_completed_cb(&pressureAnimation_, OemOilPanel::update_panel_completion_callback);
+    lv_anim_set_exec_cb(&pressureAnimation_, OemOilPanel::ExecutePressureAnimationCallback);
+    lv_anim_set_completed_cb(&pressureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
     isPressureAnimationRunning_ = true;
     log_d("animating...");
@@ -139,7 +139,7 @@ void OemOilPanel::update_oil_pressure()
 }
 
 /// @brief Update the oil temperature reading on the screen
-void OemOilPanel::update_oil_temperature()
+void OemOilPanel::UpdateOilTemperature()
 {
     log_d("...");
 
@@ -150,8 +150,8 @@ void OemOilPanel::update_oil_temperature()
     }
 
     // Use delta-based updates for better performance
-    auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->get_reading());
-    auto value = map_temperature_value(sensorValue);
+    auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
+    auto value = MapTemperatureValue(sensorValue);
     
     // Skip update only if value is exactly the same as last update
     if (value == currentOilTemperatureValue_) {
@@ -170,8 +170,8 @@ void OemOilPanel::update_oil_temperature()
     lv_anim_set_values(&temperatureAnimation_, currentOilTemperatureValue_, value);
     lv_anim_set_var(&temperatureAnimation_, this);
     lv_anim_set_user_data(&temperatureAnimation_, (void *)static_cast<uintptr_t>(OilSensorTypes::Temperature));
-    lv_anim_set_exec_cb(&temperatureAnimation_, OemOilPanel::execute_temperature_animation_callback);
-    lv_anim_set_completed_cb(&temperatureAnimation_, OemOilPanel::update_panel_completion_callback);
+    lv_anim_set_exec_cb(&temperatureAnimation_, OemOilPanel::ExecuteTemperatureAnimationCallback);
+    lv_anim_set_completed_cb(&temperatureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
     isTemperatureAnimationRunning_ = true;
     log_d("animating...");
@@ -182,7 +182,7 @@ void OemOilPanel::update_oil_temperature()
 
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this
-void OemOilPanel::show_panel_completion_callback(lv_event_t *event)
+void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
     log_d("...");
 
@@ -192,7 +192,7 @@ void OemOilPanel::show_panel_completion_callback(lv_event_t *event)
 
 /// @brief Callback when animation has completed. aka update complete
 /// @param animation the object that was animated
-void OemOilPanel::update_panel_completion_callback(lv_anim_t *animation)
+void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 {
     log_d("...");
 
@@ -217,25 +217,25 @@ void OemOilPanel::update_panel_completion_callback(lv_anim_t *animation)
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
 /// @param target the object being animated
 /// @param value the next value in a sequence to create a smooth transition
-void OemOilPanel::execute_pressure_animation_callback(void *target, int32_t value)
+void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 {
     log_d("...");
 
-    lv_anim_t *animation = lv_anim_get(target, execute_pressure_animation_callback); // get the animation
+    lv_anim_t *animation = lv_anim_get(target, ExecutePressureAnimationCallback); // get the animation
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                    // use the animation to get the var which is this instance
-    thisInstance->oemOilPressureComponent_.get()->set_value(value);
+    thisInstance->oemOilPressureComponent_.get()->SetValue(value);
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
 /// @param target the object being animated
 /// @param value the next value in a sequence to create a smooth transition
-void OemOilPanel::execute_temperature_animation_callback(void *target, int32_t value)
+void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t value)
 {
     log_d("...");
 
-    lv_anim_t *animation = lv_anim_get(target, execute_temperature_animation_callback); // get the animation
+    lv_anim_t *animation = lv_anim_get(target, ExecuteTemperatureAnimationCallback); // get the animation
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
-    thisInstance->oemOilTemperatureComponent_.get()->set_value(value);
+    thisInstance->oemOilTemperatureComponent_.get()->SetValue(value);
 }
 
 // Value mapping methods
@@ -243,7 +243,7 @@ void OemOilPanel::execute_temperature_animation_callback(void *target, int32_t v
 /// @brief Map oil pressure sensor value to display scale
 /// @param sensor_value Raw sensor value (1-10 Bar)
 /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
-int32_t OemOilPanel::map_pressure_value(int32_t sensor_value)
+int32_t OemOilPanel::MapPressureValue(int32_t sensor_value)
 {
     // Clamp sensor value to valid range (1-10 Bar)
     if (sensor_value < 1) sensor_value = 1;
@@ -259,7 +259,7 @@ int32_t OemOilPanel::map_pressure_value(int32_t sensor_value)
 /// @brief Map oil temperature sensor value to display scale
 /// @param sensor_value Raw sensor value (0-120°C)
 /// @return Mapped value for display
-int32_t OemOilPanel::map_temperature_value(int32_t sensor_value)
+int32_t OemOilPanel::MapTemperatureValue(int32_t sensor_value)
 {
     // Temperature mapping is direct 1:1 as the display range matches sensor range
     // Clamp to valid range (0-120°C)
