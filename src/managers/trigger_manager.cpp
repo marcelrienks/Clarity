@@ -316,20 +316,23 @@ extern "C"
 
 void TriggerManager::handle_panel_state_change(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority)
 {
-    if (state && strcmp(_current_panel, panel_name) != 0)
+    if (state)
     {
-        set_trigger_state(trigger_id, ACTION_LOAD_PANEL, panel_name, priority);
+        // Trigger is active - load panel if not already showing
+        if (strcmp(_current_panel, panel_name) != 0)
+        {
+            set_trigger_state(trigger_id, ACTION_LOAD_PANEL, panel_name, priority);
+        }
     }
     else
     {
+        // Trigger is inactive - only act if we're currently showing this panel
         if (strcmp(_current_panel, panel_name) == 0)
         {
+            // We're showing this panel - restore previous panel
             set_trigger_state(trigger_id, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
         }
-        else
-        {
-            clear_trigger_state(trigger_id);
-        }
+        // Don't clear pending triggers when state goes inactive - let them execute
     }
 }
 

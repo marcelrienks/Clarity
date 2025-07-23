@@ -38,7 +38,7 @@ void PanelManager::init()
 /// @param panel_name the name of the panel to be loaded
 /// @param completion_callback the function to be called when the panel load is complete
 /// @param is_trigger_driven whether this panel change is triggered by an interrupt trigger
-void PanelManager::create_and_load_panel(const char* panel_name, std::function<void()> completion_callback, bool is_trigger_driven)
+void PanelManager::create_and_load_panel(const char *panel_name, std::function<void()> completion_callback, bool is_trigger_driven)
 {
     log_d("...");
 
@@ -66,7 +66,7 @@ void PanelManager::create_and_load_panel(const char* panel_name, std::function<v
 /// @brief Loads a panel based on the given name after first loading a splash screen
 /// This function will create the panel and then call the load function on it.
 /// @param panel_name the name of the panel to be loaded
-void PanelManager::create_and_load_panel_with_splash(const char* panel_name)
+void PanelManager::create_and_load_panel_with_splash(const char *panel_name)
 {
     log_d("...");
 
@@ -77,20 +77,19 @@ void PanelManager::create_and_load_panel_with_splash(const char* panel_name)
 /// @brief Update the reading on the currently loaded panel and process trigger messages
 void PanelManager::update_panel()
 {
-    log_d("Core 0 panel update cycle...");
+    log_d("...");
 
     // Process trigger states from Core 1 based on current UI state
     process_trigger_states();
     set_ui_state(UIState::UPDATING);
-
-    _panel->update([]()
+    _panel->update([this]()
                    {
-                       // Empty callback - no action needed for updates
-                       //TODO: why is this empty?
+                       this->PanelManager::panel_completion_callback();
                    });
 
     Ticker::handle_lv_tasks();
     set_ui_state(UIState::IDLE);
+    process_trigger_states(); // Process any triggers that were set during the UPDATING phase
 }
 
 // Constructors and Destructors
@@ -131,11 +130,10 @@ void PanelManager::register_panels()
     register_panel<LockPanel>(PanelNames::Lock);
 }
 
-
 // Callback Methods
 
 /// @brief callback function to be executed on splash panel show completion
-void PanelManager::splash_completion_callback(const char* panel_name)
+void PanelManager::splash_completion_callback(const char *panel_name)
 {
     log_d("...");
 
@@ -143,16 +141,15 @@ void PanelManager::splash_completion_callback(const char* panel_name)
     Ticker::handle_lv_tasks();
 
     create_and_load_panel(panel_name, [this]()
-    {
-        this->PanelManager::panel_completion_callback();
-    });
+                          { this->PanelManager::panel_completion_callback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
 void PanelManager::panel_completion_callback()
 {
+    log_d("...");
+
     _is_loading = false;
-    log_d("Panel load completed, _is_loading is now %i", _is_loading);
     TriggerManager::get_instance().update_application_state(_current_panel_name.c_str(), _current_theme_name.c_str());
 }
 
@@ -215,8 +212,7 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
                               { 
                                   this->trigger_panel_switch_callback();
                                   // Clear trigger after successful execution
-                                  TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str());
-                              }, true);
+                                  TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str()); }, true);
     }
     else if (trigger_state.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
@@ -228,8 +224,7 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
                                   { 
                                       this->trigger_panel_switch_callback();
                                       // Clear trigger after successful execution
-                                      TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str());
-                                  }, false);
+                                      TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str()); }, false);
         }
     }
     else if (trigger_state.action == ACTION_CHANGE_THEME)
@@ -247,8 +242,8 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
 void PanelManager::process_triggers()
 {
     TriggerManager &trigger_manager = TriggerManager::get_instance();
-    TriggerState* trigger = trigger_manager.get_highest_priority_trigger();
-    
+    TriggerState *trigger = trigger_manager.get_highest_priority_trigger();
+
     if (trigger && trigger->active)
     {
         // Find the trigger ID for this state
@@ -264,9 +259,9 @@ void PanelManager::process_triggers()
 void PanelManager::process_critical_and_important_triggers()
 {
     TriggerManager &trigger_manager = TriggerManager::get_instance();
-    TriggerState* trigger = trigger_manager.get_highest_priority_trigger();
-    
-    if (trigger && trigger->active && 
+    TriggerState *trigger = trigger_manager.get_highest_priority_trigger();
+
+    if (trigger && trigger->active &&
         (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
     {
         // Find the trigger ID for this state
@@ -283,7 +278,7 @@ std::string PanelManager::find_trigger_id_for_state(const TriggerState &target_s
 {
     // This is a helper to find the key (trigger_id) for a given trigger state
     // We need to access the trigger manager's map, but for now we'll use known trigger IDs
-    
+
     // Check common trigger IDs
     if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::Key)
     {
@@ -302,6 +297,6 @@ std::string PanelManager::find_trigger_id_for_state(const TriggerState &target_s
         // Could be any of the restore triggers
         return std::string(TRIGGER_KEY_PRESENT); // Default fallback
     }
-    
+
     return ""; // Not found
 }
