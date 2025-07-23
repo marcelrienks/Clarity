@@ -94,13 +94,6 @@ public:
     /// @brief Update the currently active panel (called from main loop)
     void update_panel();
     
-    /// @brief Get the panel name to restore when all triggers are inactive
-    /// @return Panel name for restoration, or nullptr if none set
-    const char* get_restoration_panel() const;
-    
-    /// @brief Get the current panel
-    /// @return Current panel name
-    const char* get_current_panel() const;
     
 
     // Template Methods
@@ -173,13 +166,15 @@ private:
     /// @param theme_name Current theme name
     void notify_core1_state_change(const char* panel_name, const char* theme_name);
 
+public:
+    // Public Data Members
+    const char* current_panel = PanelNames::Oil;     ///< Current panel for Core 1 sync
+    std::string restoration_panel;                   ///< Panel to restore when all triggers are inactive
+
+private:
     // Instance Data Members
     std::shared_ptr<IPanel> _panel = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
-    std::string _last_non_trigger_panel; // Track last panel loaded by user/config (not by trigger) for restoration
     UIState _ui_state = UIState::IDLE;             ///< Current UI processing state
     // Removed queue handles - now using shared state trigger system
-    
-    // Current application state
-    const char * _current_panel = PanelNames::Oil; ///< Current panel for Core 1 sync
 };

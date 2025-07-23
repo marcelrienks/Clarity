@@ -91,7 +91,7 @@ void TriggerManager::handle_theme_switch_interrupt(bool night_mode)
     }
 
     const char *target_theme = night_mode ? THEME_NIGHT : THEME_DAY;
-    const char *current_theme = StyleManager::get_instance().get_theme();
+    const char *current_theme = StyleManager::get_instance().theme;
     
     if (strcmp(current_theme, target_theme) != 0)
     {
@@ -313,7 +313,7 @@ extern "C"
 
 void TriggerManager::handle_panel_state_change(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority)
 {
-    const char* current_panel = PanelManager::get_instance().get_current_panel();
+    const char* current_panel = PanelManager::get_instance().current_panel;
     
     if (state)
     {

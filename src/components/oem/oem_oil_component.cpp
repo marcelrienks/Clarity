@@ -108,7 +108,7 @@ void OemOilComponent::refresh(const Reading& reading)
     log_d("...");
 
     int32_t value = std::get<int32_t>(reading);
-    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->theme);
     lv_color_t colour = colours.gauge_normal;
 
     // Check danger condition based on derived class logic
@@ -182,7 +182,7 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
 /// @brief Creates the oil icon for the oil component.
 void OemOilComponent::create_icon()
 {
-    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->theme);
 
     _oil_icon = lv_image_create(_scale);
     lv_image_set_src(_oil_icon, get_icon());
@@ -197,7 +197,7 @@ void OemOilComponent::create_icon()
 /// Labels automatically follow when scale rotation changes.
 void OemOilComponent::create_labels()
 {
-    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->theme);
 
     // Create "L" label for low end
     _low_label = lv_label_create(_scale);
@@ -235,7 +235,7 @@ void OemOilComponent::create_labels()
 /// @brief Creates the needle line for the oil component.
 void OemOilComponent::create_needle()
 {
-    const ThemeColors &colours = _style_manager->get_colours(_style_manager->get_theme());
+    const ThemeColors &colours = _style_manager->get_colours(_style_manager->theme);
 
     // Create realistic 3-section tapered needle (based on actual car dashboard reference)
 
@@ -335,15 +335,15 @@ void OemOilComponent::create_scale(int32_t rotation)
     lv_scale_set_label_show(_scale, false); // Disable built-in labels, use custom L/H positioning
 
     // Apply shared styles to scale parts
-    lv_obj_add_style(_scale, _style_manager->get_gauge_main_style(), MAIN_DEFAULT);
-    lv_obj_add_style(_scale, _style_manager->get_gauge_indicator_style(), INDICATOR_DEFAULT);
-    lv_obj_add_style(_scale, _style_manager->get_gauge_items_style(), ITEMS_DEFAULT);
+    lv_obj_add_style(_scale, &_style_manager->gauge_main_style, MAIN_DEFAULT);
+    lv_obj_add_style(_scale, &_style_manager->gauge_indicator_style, INDICATOR_DEFAULT);
+    lv_obj_add_style(_scale, &_style_manager->gauge_items_style, ITEMS_DEFAULT);
 
     // Create danger zone section
     lv_scale_section_t *section = lv_scale_add_section(_scale);
-    lv_scale_section_set_style(section, MAIN_DEFAULT, _style_manager->get_gauge_main_style());
-    lv_scale_section_set_style(section, INDICATOR_DEFAULT, _style_manager->get_gauge_danger_section_style());
-    lv_scale_section_set_style(section, ITEMS_DEFAULT, _style_manager->get_gauge_danger_section_style());
+    lv_scale_section_set_style(section, MAIN_DEFAULT, &_style_manager->gauge_main_style);
+    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &_style_manager->gauge_danger_section_style);
+    lv_scale_section_set_style(section, ITEMS_DEFAULT, &_style_manager->gauge_danger_section_style);
 
     // Set danger zone range - derived classes will handle specific ranges
     setup_danger_zone(section);

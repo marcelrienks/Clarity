@@ -38,7 +38,7 @@ public:
     ~KeyPanel();
 
     // Core Functionality Methods
-    const char *get_name() const { return PanelNames::Key; };
+    static constexpr const char* name = PanelNames::Key;
     void init() override;
     void load(std::function<void()> callback_function = nullptr) override;
     void update(std::function<void()> callback_function = nullptr) override;

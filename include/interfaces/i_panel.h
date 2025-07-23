@@ -17,10 +17,6 @@ public:
     virtual ~IPanel() = default;
 
     // Core Interface Methods
-    /// @brief Get the panel's name identifier
-    /// @return String name of the panel
-    virtual const char *get_name() const = 0;
-
     /// @brief Initialize the panel and its components
     virtual void init() = 0;
 

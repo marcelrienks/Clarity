@@ -47,7 +47,7 @@ public:
     ~OemOilPanel();
 
     // Core Functionality Methods
-    const char *get_name() const override { return PanelNames::Oil; }
+    static constexpr const char* name = PanelNames::Oil;
     void init() override;
     void load(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;

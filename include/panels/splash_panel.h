@@ -37,7 +37,7 @@ public:
     ~SplashPanel();
 
     // Core Functionality Methods
-    const char *get_name() const { return PanelNames::Splash; };
+    static constexpr const char* name = PanelNames::Splash;
     void init() override;
     void load(std::function<void()> callback_function) override;
     void update(std::function<void()> callback_function = nullptr) override;

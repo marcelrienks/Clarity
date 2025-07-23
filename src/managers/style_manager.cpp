@@ -39,7 +39,7 @@ void StyleManager::init(const char* theme)
 {
     log_d("...");
 
-    _theme = theme;
+    this->theme = theme;
 
     lv_style_init(&background_style);
     lv_style_init(&text_style);
@@ -53,7 +53,7 @@ void StyleManager::init(const char* theme)
     lv_style_init(&gauge_main_style);
     lv_style_init(&gauge_danger_section_style);
 
-    set_theme(_theme);
+    set_theme(theme);
 
     // Don't apply to lv_scr_act() here - it might not be ready
     // apply_theme_to_screen(lv_scr_act()); // Remove this line

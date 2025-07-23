@@ -25,11 +25,11 @@ void KeyComponent::refresh(const Reading& reading)
     
     if (key_state == KeyState::Present)
     {
-        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
+        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().theme).key_present;
     }
     else // KeyState::NotPresent or KeyState::Inactive
     {
-        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
+        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().theme).key_not_present;
     }
 
     lv_obj_set_style_image_recolor(_key_icon, colour, MAIN_DEFAULT);

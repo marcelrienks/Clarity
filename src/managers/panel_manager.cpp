@@ -46,7 +46,7 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     // Track this as the last non-trigger panel only for user-driven changes
     if (!is_trigger_driven)
     {
-        _last_non_trigger_panel = std::string(panel_name);
+        restoration_panel = std::string(panel_name);
     }
 
     // Clean up existing panel before creating new one
@@ -60,7 +60,7 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
     _panel->init();
     
     // Update current panel
-    _current_panel = panel_name;
+    current_panel = panel_name;
 
     set_ui_state(UIState::LOADING);
     _panel->load(completion_callback);
@@ -165,15 +165,6 @@ void PanelManager::trigger_panel_switch_callback()
 
 /// @brief Get the panel name to restore when all triggers are inactive
 /// @return Panel name for restoration, or nullptr if none set
-const char *PanelManager::get_restoration_panel() const
-{
-    return _last_non_trigger_panel.c_str();
-}
-
-const char *PanelManager::get_current_panel() const
-{
-    return _current_panel;
-}
 
 // Core 0 Dual-Core Methods
 
@@ -222,7 +213,7 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
     }
     else if (trigger_state.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
-        const char *restore_panel = get_restoration_panel();
+        const char *restore_panel = restoration_panel.c_str();
         if (restore_panel)
         {
             create_and_load_panel(restore_panel, [this, trigger_id]()

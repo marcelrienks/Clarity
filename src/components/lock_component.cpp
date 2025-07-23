@@ -21,10 +21,10 @@ void LockComponent::refresh(const Reading& reading)
     log_d("...");
     
     bool is_lock_engaged = std::get<bool>(reading);
-    lv_color_t colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_present;
+    lv_color_t colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().theme).key_present;
     if (!is_lock_engaged)
     {
-        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().get_theme()).key_not_present;
+        colour = StyleManager::get_instance().get_colours(StyleManager::get_instance().theme).key_not_present;
     }
 
     lv_obj_set_style_image_recolor(_lock_icon, colour, MAIN_DEFAULT);
