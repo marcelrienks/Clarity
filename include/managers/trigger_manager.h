@@ -51,7 +51,7 @@ public:
     void handle_key_not_present_interrupt(bool key_not_present);
     void handle_lock_state_interrupt(bool lock_engaged);
     void handle_theme_switch_interrupt(bool night_mode);
-    void update_application_state(const char* panel_name, const char* theme_name);
+    void notify_application_state_updated();
     TriggerState* get_highest_priority_trigger();
     void clear_trigger_state_public(const char* trigger_id) { clear_trigger_state(trigger_id); }
 
@@ -89,8 +89,6 @@ public:
 
     // Shared application state (protected by mutexes)
     SemaphoreHandle_t _state_mutex = nullptr;
-    const char* _current_panel = PanelNames::Oil;
-    const char* _current_theme = Themes::Day;
 
     // Shared trigger state (protected by trigger_mutex)
     std::map<std::string, TriggerState> _active_triggers;

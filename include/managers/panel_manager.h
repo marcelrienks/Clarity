@@ -46,7 +46,7 @@
  * - Future panels: Easy extensibility via registration
  * 
  * @state_management:
- * - _is_loading: Prevents concurrent panel operations
+ * - _ui_state: Controls UI processing state and prevents concurrent operations
  * - _panel: Current active panel instance
  * - Callback-based completion handling
  * 
@@ -97,6 +97,11 @@ public:
     /// @brief Get the panel name to restore when all triggers are inactive
     /// @return Panel name for restoration, or nullptr if none set
     const char* get_restoration_panel() const;
+    
+    /// @brief Get the current panel
+    /// @return Current panel name
+    const char* get_current_panel() const;
+    
 
     // Template Methods
     /// @brief Register a panel type with the factory for dynamic creation
@@ -171,14 +176,10 @@ private:
     // Instance Data Members
     std::shared_ptr<IPanel> _panel = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> _registered_panels; // Map of panel type names to creator functions for each of those names
-    bool _is_loading = false; // this allows the panel to be locked during loading from updates
     std::string _last_non_trigger_panel; // Track last panel loaded by user/config (not by trigger) for restoration
-    
-    // Core 0 UI state management
     UIState _ui_state = UIState::IDLE;             ///< Current UI processing state
     // Removed queue handles - now using shared state trigger system
     
     // Current application state
-    std::string _current_panel_name = "OemOilPanel"; ///< Current panel name for Core 1 sync
-    std::string _current_theme_name = "Day";        ///< Current theme name for Core 1 sync
+    const char * _current_panel = PanelNames::Oil; ///< Current panel for Core 1 sync
 };

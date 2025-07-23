@@ -1,5 +1,6 @@
 #include "managers/panel_manager.h"
 #include "managers/trigger_manager.h"
+#include "managers/style_manager.h"
 #include "triggers/key_trigger.h"
 #include "triggers/lock_trigger.h"
 #include "utilities/trigger_messages.h"
@@ -57,8 +58,11 @@ void PanelManager::create_and_load_panel(const char *panel_name, std::function<v
 
     _panel = PanelManager::create_panel(panel_name);
     _panel->init();
+    
+    // Update current panel
+    _current_panel = panel_name;
 
-    _is_loading = true;
+    set_ui_state(UIState::LOADING);
     _panel->load(completion_callback);
     Ticker::handle_lv_tasks();
 }
@@ -83,9 +87,7 @@ void PanelManager::update_panel()
     process_trigger_states();
     set_ui_state(UIState::UPDATING);
     _panel->update([this]()
-                   {
-                       this->PanelManager::panel_completion_callback();
-                   });
+                   { this->PanelManager::panel_completion_callback(); });
 
     Ticker::handle_lv_tasks();
     set_ui_state(UIState::IDLE);
@@ -149,16 +151,16 @@ void PanelManager::panel_completion_callback()
 {
     log_d("...");
 
-    _is_loading = false;
-    TriggerManager::get_instance().update_application_state(_current_panel_name.c_str(), _current_theme_name.c_str());
+    set_ui_state(UIState::IDLE);
+    TriggerManager::get_instance().notify_application_state_updated();
 }
 
 /// @brief callback function to be executed when trigger-driven panel loading is complete
 void PanelManager::trigger_panel_switch_callback()
 {
-    _is_loading = false;
-    log_d("Trigger panel load completed, _is_loading is now %i", _is_loading);
-    TriggerManager::get_instance().update_application_state(_current_panel_name.c_str(), _current_theme_name.c_str());
+    set_ui_state(UIState::IDLE);
+    log_d("Trigger panel load completed, UI state set to IDLE");
+    TriggerManager::get_instance().notify_application_state_updated();
 }
 
 /// @brief Get the panel name to restore when all triggers are inactive
@@ -166,6 +168,11 @@ void PanelManager::trigger_panel_switch_callback()
 const char *PanelManager::get_restoration_panel() const
 {
     return _last_non_trigger_panel.c_str();
+}
+
+const char *PanelManager::get_current_panel() const
+{
+    return _current_panel;
 }
 
 // Core 0 Dual-Core Methods
@@ -207,7 +214,6 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
 
     if (trigger_state.action == ACTION_LOAD_PANEL)
     {
-        _current_panel_name = trigger_state.target;
         create_and_load_panel(trigger_state.target.c_str(), [this, trigger_id]()
                               { 
                                   this->trigger_panel_switch_callback();
@@ -219,7 +225,6 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
         const char *restore_panel = get_restoration_panel();
         if (restore_panel)
         {
-            _current_panel_name = std::string(restore_panel);
             create_and_load_panel(restore_panel, [this, trigger_id]()
                                   { 
                                       this->trigger_panel_switch_callback();
@@ -229,10 +234,9 @@ void PanelManager::execute_trigger_action(const TriggerState &trigger_state, con
     }
     else if (trigger_state.action == ACTION_CHANGE_THEME)
     {
-        _current_theme_name = trigger_state.target;
-        // TODO: Implement theme change logic
-        log_i("Theme change to %s (implementation needed)", trigger_state.target.c_str());
-        TriggerManager::get_instance().update_application_state(_current_panel_name.c_str(), _current_theme_name.c_str());
+        StyleManager::get_instance().set_theme(trigger_state.target.c_str());
+        log_i("Theme changed to %s", trigger_state.target.c_str());
+        TriggerManager::get_instance().notify_application_state_updated();
         // Clear trigger after successful execution
         TriggerManager::get_instance().clear_trigger_state_public(trigger_id.c_str());
     }
