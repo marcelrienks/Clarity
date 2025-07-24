@@ -86,7 +86,7 @@ wokwi-cli . --scenario test_scenarios.yaml --timeout 45000
 - Configuration serialization/deserialization
 - JSON handling with ArduinoJson
 - Default values validation
-- Widget location structures
+- Component location structures
 - Reading variant type testing
 
 #### **test_sensor_logic.cpp**  

@@ -51,7 +51,7 @@ private:
 
     // Components
     lv_obj_t *screen_; // All panels should always have their own screens
-    std::shared_ptr<IComponent> widget_;
+    std::shared_ptr<IComponent> component_;
     lv_obj_t *blankScreen_;
 
     // Static Callback Methods

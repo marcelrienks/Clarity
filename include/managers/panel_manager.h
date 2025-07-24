@@ -8,7 +8,6 @@
 #include "panels/lock_panel.h"
 #include "utilities/ticker.h"
 #include "managers/trigger_manager.h"
-#include "utilities/trigger_messages.h"
 
 #include <string>
 #include <functional>

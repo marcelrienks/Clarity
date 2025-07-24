@@ -3,7 +3,6 @@
 #include "managers/style_manager.h"
 #include "triggers/key_trigger.h"
 #include "triggers/lock_trigger.h"
-#include "utilities/trigger_messages.h"
 #include <esp32-hal-log.h>
 
 // Static Methods

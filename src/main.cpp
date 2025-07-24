@@ -1,7 +1,5 @@
 #include "main.h"
 
-//TODO: rename any and all references of widget to component
-
 void setup()
 {
   log_d("...");

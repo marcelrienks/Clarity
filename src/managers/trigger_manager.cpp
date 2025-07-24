@@ -1,7 +1,6 @@
 #include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
-#include "utilities/trigger_messages.h"
 #include <esp32-hal-gpio.h>
 #include <esp32-hal-log.h>
 #include <string.h>
@@ -129,22 +128,22 @@ void TriggerManager::TriggerMonitoringTask(void *pvParameters)
         if (xQueueReceive(manager.isrEventQueue, &event, pdMS_TO_TICKS(100)) == pdTRUE)
         {
             // Process the event in task context (safe for logging, mutex, etc.)
-            switch (event.event_type)
+            switch (event.eventType)
             {
             case ISREventType::KEY_PRESENT:
-                manager.HandleKeyPresentInterrupt(event.pin_state);
+                manager.HandleKeyPresentInterrupt(event.pinState);
                 break;
 
             case ISREventType::KEY_NOT_PRESENT:
-                manager.HandleKeyNotPresentInterrupt(event.pin_state);
+                manager.HandleKeyNotPresentInterrupt(event.pinState);
                 break;
 
             case ISREventType::LOCK_STATE_CHANGE:
-                manager.HandleLockStateInterrupt(event.pin_state);
+                manager.HandleLockStateInterrupt(event.pinState);
                 break;
 
             case ISREventType::THEME_SWITCH:
-                manager.HandleThemeSwitchInterrupt(event.pin_state);
+                manager.HandleThemeSwitchInterrupt(event.pinState);
                 break;
             }
         }
@@ -231,14 +230,14 @@ void TriggerManager::setup_gpio_interrupts()
     pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
 
     // Setup interrupts for key present/not present (both edges)
-    attachInterruptArg(gpio_pins::KEY_PRESENT, key_present_isr_handler, (void *)true, CHANGE);
-    attachInterruptArg(gpio_pins::KEY_NOT_PRESENT, key_not_present_isr_handler, (void *)false, CHANGE);
-    attachInterruptArg(gpio_pins::LOCK, lock_state_isr_handler, nullptr, CHANGE);
+    attachInterruptArg(gpio_pins::KEY_PRESENT, keyPresentIsrHandler, (void *)true, CHANGE);
+    attachInterruptArg(gpio_pins::KEY_NOT_PRESENT, keyNotPresentIsrHandler, (void *)false, CHANGE);
+    attachInterruptArg(gpio_pins::LOCK, lockStateIsrHandler, nullptr, CHANGE);
 }
 
 // Static interrupt handlers
 
-void IRAM_ATTR TriggerManager::key_present_isr_handler(void *arg)
+void IRAM_ATTR TriggerManager::keyPresentIsrHandler(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::KEY_PRESENT);
@@ -250,7 +249,7 @@ void IRAM_ATTR TriggerManager::key_present_isr_handler(void *arg)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void IRAM_ATTR TriggerManager::key_not_present_isr_handler(void *arg)
+void IRAM_ATTR TriggerManager::keyNotPresentIsrHandler(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::KEY_NOT_PRESENT);
@@ -262,7 +261,7 @@ void IRAM_ATTR TriggerManager::key_not_present_isr_handler(void *arg)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void IRAM_ATTR TriggerManager::lock_state_isr_handler(void *arg)
+void IRAM_ATTR TriggerManager::lockStateIsrHandler(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::LOCK);
@@ -273,7 +272,7 @@ void IRAM_ATTR TriggerManager::lock_state_isr_handler(void *arg)
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
-void IRAM_ATTR TriggerManager::theme_switch_isr_handler(void *arg)
+void IRAM_ATTR TriggerManager::themeSwitchIsrHandler(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
@@ -292,22 +291,22 @@ extern "C"
 {
     void IRAM_ATTR gpio_key_present_isr(void *arg)
     {
-        TriggerManager::key_present_isr_handler(arg);
+        TriggerManager::keyPresentIsrHandler(arg);
     }
 
     void IRAM_ATTR gpio_key_not_present_isr(void *arg)
     {
-        TriggerManager::key_not_present_isr_handler(arg);
+        TriggerManager::keyNotPresentIsrHandler(arg);
     }
 
     void IRAM_ATTR gpio_lock_state_isr(void *arg)
     {
-        TriggerManager::lock_state_isr_handler(arg);
+        TriggerManager::lockStateIsrHandler(arg);
     }
 
     void IRAM_ATTR gpio_theme_switch_isr(void *arg)
     {
-        TriggerManager::theme_switch_isr_handler(arg);
+        TriggerManager::themeSwitchIsrHandler(arg);
     }
 }
 

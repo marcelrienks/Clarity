@@ -1,6 +1,5 @@
 #pragma once
 
-#include "utilities/trigger_messages.h"
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 #include <freertos/FreeRTOS.h>
@@ -16,7 +15,7 @@
  * @details This structure represents the state of an active trigger,
  * including its action, target, priority, and timing information.
  */
-struct TriggerState//TODO: inconsistency between string and const char* usage
+struct TriggerState
 {
     std::string action;           ///< Action to perform
     std::string target;           ///< Target of the action
@@ -25,8 +24,8 @@ struct TriggerState//TODO: inconsistency between string and const char* usage
     bool active;                  ///< Whether trigger is currently active
     
     TriggerState() = default;
-    TriggerState(const char* act, const char* tgt, TriggerPriority prio, uint64_t ts)//TODO: remove abbreviations
-        : action(act), target(tgt), priority(prio), timestamp(ts), active(true) {}
+    TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
+        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
 };
 
 /**
@@ -36,8 +35,6 @@ struct TriggerState//TODO: inconsistency between string and const char* usage
 class TriggerManager
 {
 public:
-//TODO: remove all leading/trailing underscores from variable names across the project
-//TODO: all constant variables should be uppercase
     const char * TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
 
     // Constructors and Destructors
@@ -61,10 +58,10 @@ public:
     static void TriggerMonitoringTask(void* pvParameters);
     
     // Static interrupt handlers (public for extern C access)
-    static void IRAM_ATTR key_present_isr_handler(void* arg);
-    static void IRAM_ATTR key_not_present_isr_handler(void* arg);
-    static void IRAM_ATTR lock_state_isr_handler(void* arg);
-    static void IRAM_ATTR theme_switch_isr_handler(void* arg);
+    static void IRAM_ATTR keyPresentIsrHandler(void* arg);
+    static void IRAM_ATTR keyNotPresentIsrHandler(void* arg);
+    static void IRAM_ATTR lockStateIsrHandler(void* arg);
+    static void IRAM_ATTR themeSwitchIsrHandler(void* arg);
 
 private:
     // Constructors and Destructors
