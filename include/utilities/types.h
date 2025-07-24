@@ -212,6 +212,25 @@ struct TriggerMessage {
     }
 };
 
+/**
+ * @brief Structure for shared trigger state
+ * 
+ * @details This structure represents the state of an active trigger,
+ * including its action, target, priority, and timing information.
+ */
+struct TriggerState
+{
+    std::string action;           ///< Action to perform
+    std::string target;           ///< Target of the action
+    TriggerPriority priority;     ///< Priority level
+    uint64_t timestamp;           ///< When trigger was activated
+    bool active;                  ///< Whether trigger is currently active
+    
+    TriggerState() = default;
+    TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
+        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
+};
+
 /// @brief Configuration constants
 constexpr int HIGH_PRIORITY_QUEUE_SIZE = 15;
 constexpr int MEDIUM_PRIORITY_QUEUE_SIZE = 15;
@@ -221,19 +240,20 @@ constexpr int THEME_STATE_MUTEX_TIMEOUT = 100;
 constexpr TriggerPriority UPDATING_STATE_MAX_PRIORITY = TriggerPriority::IMPORTANT;
 
 /// @brief Action constants
-constexpr const char* ACTION_LOAD_PANEL = "LoadPanel";
-constexpr const char* ACTION_RESTORE_PREVIOUS_PANEL = "RestorePreviousPanel";
-constexpr const char* ACTION_CHANGE_THEME = "ChangeTheme";
+constexpr const char *ACTION_LOAD_PANEL = "LoadPanel";
+constexpr const char *ACTION_RESTORE_PREVIOUS_PANEL = "RestorePreviousPanel";
+constexpr const char *ACTION_CHANGE_THEME = "ChangeTheme";
 
 /// @brief Theme name constants
-constexpr const char* THEME_DAY = "Day";
-constexpr const char* THEME_NIGHT = "Night";
+constexpr const char *THEME_DAY = "Day";
+constexpr const char *THEME_NIGHT = "Night";
 
 /// @brief Trigger ID constants
-constexpr const char* TRIGGER_KEY_PRESENT = "key_present";
-constexpr const char* TRIGGER_KEY_NOT_PRESENT = "key_not_present";
-constexpr const char* TRIGGER_LOCK_STATE = "lock_state";
-constexpr const char* TRIGGER_THEME_SWITCH = "theme_switch";
+constexpr const char *TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
+constexpr const char *TRIGGER_KEY_PRESENT = "key_present";
+constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
+constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
+constexpr const char *TRIGGER_THEME_SWITCH = "theme_switch";
 
 /// @brief ISR Event types for safe interrupt handling
 enum class ISREventType {

@@ -1,6 +1,7 @@
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
 #include <cstring>
+//TODO: ensure that all implementations only have reference to their headers, and the headers contain all the include statements
 
 // Constructors and Destructors
 StyleManager::~StyleManager()

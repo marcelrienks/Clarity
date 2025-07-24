@@ -8,6 +8,9 @@
 #include "panels/lock_panel.h"
 #include "utilities/ticker.h"
 #include "managers/trigger_manager.h"
+#include "managers/style_manager.h"
+#include "triggers/key_trigger.h"
+#include "triggers/lock_trigger.h"
 
 #include <string>
 #include <functional>
@@ -17,6 +20,7 @@
 #include <map>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <esp32-hal-log.h>
 
 /**
  * @class PanelManager
@@ -142,7 +146,8 @@ private:
     void PanelCompletionCallback();
     
     /// @brief Callback executed when trigger-driven panel loading is complete
-    void TriggerPanelSwitchCallback();
+    /// @param trigger_id ID of the trigger that initiated the panel switch
+    void TriggerPanelSwitchCallback(const char *triggerId);
     
     /// @brief Execute a trigger action from shared state
     /// @param trigger_state Trigger state to execute

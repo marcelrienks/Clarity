@@ -1,9 +1,4 @@
 #include "managers/panel_manager.h"
-#include "managers/trigger_manager.h"
-#include "managers/style_manager.h"
-#include "triggers/key_trigger.h"
-#include "triggers/lock_trigger.h"
-#include <esp32-hal-log.h>
 
 // Static Methods
 
@@ -30,8 +25,6 @@ void PanelManager::init()
     // Initialize dual-core trigger system
     TriggerManager &triggerManager = TriggerManager::GetInstance();
     triggerManager.init();
-
-    log_d("PanelManager initialized for dual-core operation");
 }
 
 /// @brief Creates and then loads a panel based on the given name
@@ -57,8 +50,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 
     panel_ = PanelManager::CreatePanel(panelName);
     panel_->init();
-    
-    // Update current panel
+
     currentPanel = panelName;
 
     SetUiState(UIState::LOADING);
@@ -74,7 +66,7 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
     log_d("...");
 
     CreateAndLoadPanel(PanelNames::SPLASH, [this, panelName]()
-                          { this->PanelManager::SplashCompletionCallback(panelName); });
+                       { this->PanelManager::SplashCompletionCallback(panelName); });
 }
 
 /// @brief Update the reading on the currently loaded panel and process trigger messages
@@ -82,15 +74,12 @@ void PanelManager::UpdatePanel()
 {
     log_d("...");
 
-    // Process trigger states from Core 1 based on current UI state
     ProcessTriggerStates();
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
                    { this->PanelManager::PanelCompletionCallback(); });
 
     Ticker::handle_lv_tasks();
-    SetUiState(UIState::IDLE);
-    ProcessTriggerStates(); // Process any triggers that were set during the UPDATING phase
 }
 
 // Constructors and Destructors
@@ -110,12 +99,6 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     log_d("...");
 
     auto iterator = registeredPanels_.find(panelName);
-    if (iterator == registeredPanels_.end())
-    {
-        log_e("Failed to find panel %s in map", panelName);
-        return nullptr;
-    }
-
     return iterator->second(); // Return the function stored in the map
 }
 
@@ -141,8 +124,10 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     panel_.reset();
     Ticker::handle_lv_tasks();
 
+    ProcessTriggerStates();
+
     CreateAndLoadPanel(panelName, [this]()
-                          { this->PanelManager::PanelCompletionCallback(); });
+                       { this->PanelManager::PanelCompletionCallback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
@@ -151,40 +136,33 @@ void PanelManager::PanelCompletionCallback()
     log_d("...");
 
     SetUiState(UIState::IDLE);
-    TriggerManager::GetInstance().NotifyApplicationStateUpdated();
+    ProcessTriggerStates();
 }
 
 /// @brief callback function to be executed when trigger-driven panel loading is complete
-void PanelManager::TriggerPanelSwitchCallback()
+void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
+    log_d("...");
+
     SetUiState(UIState::IDLE);
-    log_d("Trigger panel load completed, UI state set to IDLE");
-    TriggerManager::GetInstance().NotifyApplicationStateUpdated();
+    TriggerManager::GetInstance().ClearTriggerState(triggerId);
 }
-
-/// @brief Get the panel name to restore when all triggers are inactive
-/// @return Panel name for restoration, or nullptr if none set
-
-// Core 0 Dual-Core Methods
 
 /// @brief Process trigger states from Core 1 based on UI state
 void PanelManager::ProcessTriggerStates()
 {
     switch (uiState_)
     {
-    case UIState::IDLE:
-        // No throttling - process all triggers
+    case UIState::IDLE: // No throttling - process all triggers
         ProcessTriggers();
         break;
 
-    case UIState::UPDATING:
-        // State-based throttling - only high/medium priority triggers
+    case UIState::UPDATING: // State-based throttling - only high/medium priority triggers
         ProcessCriticalAndImportantTriggers();
         break;
 
     case UIState::LOADING:
-    case UIState::LVGL_BUSY:
-        // No action - don't process any triggers
+    case UIState::LVGL_BUSY: // No action - don't process any triggers
         // Triggers remain in shared state for later processing
         break;
     }
@@ -198,85 +176,78 @@ void PanelManager::SetUiState(UIState state)
 }
 
 /// @brief Execute a trigger action from shared state
-void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const char* triggerId)
+void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const char *triggerId)
 {
     log_d("...");
 
     if (triggerState.action == ACTION_LOAD_PANEL)
     {
         CreateAndLoadPanel(triggerState.target.c_str(), [this, triggerId]()
-                              { 
-                                  this->TriggerPanelSwitchCallback();
-                                  // Clear trigger after successful execution
-                                  TriggerManager::GetInstance().ClearTriggerStatePublic(triggerId); }, true);
+                           { this->TriggerPanelSwitchCallback(triggerId); }, true);
     }
     else if (triggerState.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
-        const char *restorePanel = restorationPanel;
-        if (restorePanel)
-        {
-            CreateAndLoadPanel(restorePanel, [this, triggerId]()
-                                  { 
-                                      this->TriggerPanelSwitchCallback();
-                                      // Clear trigger after successful execution
-                                      TriggerManager::GetInstance().ClearTriggerStatePublic(triggerId); }, false);
-        }
+        CreateAndLoadPanel(restorationPanel, [this, triggerId]()
+                           { this->TriggerPanelSwitchCallback(triggerId); }, false);
     }
     else if (triggerState.action == ACTION_CHANGE_THEME)
     {
         StyleManager::GetInstance().set_theme(triggerState.target.c_str());
         log_i("Theme changed to %s", triggerState.target.c_str());
-        TriggerManager::GetInstance().NotifyApplicationStateUpdated();
-        // Clear trigger after successful execution
-        TriggerManager::GetInstance().ClearTriggerStatePublic(triggerId);
+        TriggerManager::GetInstance().ClearTriggerState(triggerId);
     }
 }
 
 /// @brief Process all triggers regardless of priority
 void PanelManager::ProcessTriggers()
 {
-    TriggerManager &triggerManager = TriggerManager::GetInstance();
-    TriggerState *trigger = triggerManager.GetHighestPriorityTrigger();
+    log_d("...");
 
+    // Only process triggers when not already loading/updating a panel
+    if (uiState_ != UIState::IDLE)
+    {
+        return;
+    }
+
+    TriggerState *trigger = TriggerManager::GetInstance().GetHighestPriorityTrigger();
     if (trigger && trigger->active)
     {
         // Find the trigger ID for this state
-        const char* triggerId = FindTriggerIdForState(*trigger);
-        if (triggerId != nullptr)
-        {
-            ExecuteTriggerAction(*trigger, triggerId);
-        }
+        const char *triggerId = FindTriggerIdForState(*trigger);
+        ExecuteTriggerAction(*trigger, triggerId);
     }
 }
 
 /// @brief Process only critical and important priority triggers
 void PanelManager::ProcessCriticalAndImportantTriggers()
 {
-    TriggerManager &triggerManager = TriggerManager::GetInstance();
-    TriggerState *trigger = triggerManager.GetHighestPriorityTrigger();
+    log_d("...");
 
+    // Only process triggers when not already loading/updating a panel
+    if (uiState_ != UIState::UPDATING)
+    {
+        return;
+    }
+
+    TriggerState *trigger = TriggerManager::GetInstance().GetHighestPriorityTrigger();
     if (trigger && trigger->active &&
         (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
     {
         // Find the trigger ID for this state
-        const char* triggerId = FindTriggerIdForState(*trigger);
-        if (triggerId != nullptr)
-        {
-            ExecuteTriggerAction(*trigger, triggerId);
-        }
+        const char *triggerId = FindTriggerIdForState(*trigger);
+        ExecuteTriggerAction(*trigger, triggerId);
     }
 }
 
 /// @brief Find trigger ID for a given trigger state (helper method)
-const char* PanelManager::FindTriggerIdForState(const TriggerState &targetState)
+const char *PanelManager::FindTriggerIdForState(const TriggerState &targetState)//TODO: there must be a better way to do this
 {
-    // This is a helper to find the key (triggerId) for a given trigger state
-    // We need to access the trigger manager's map, but for now we'll use known trigger IDs
+    log_d("...");
 
     // Check common trigger IDs
     if (targetState.action == ACTION_LOAD_PANEL && targetState.target == PanelNames::KEY)
     {
-        return TRIGGER_KEY_PRESENT; // or TRIGGER_KEY_NOT_PRESENT
+        return TRIGGER_KEY_PRESENT;
     }
     else if (targetState.action == ACTION_LOAD_PANEL && targetState.target == PanelNames::LOCK)
     {
@@ -288,8 +259,7 @@ const char* PanelManager::FindTriggerIdForState(const TriggerState &targetState)
     }
     else if (targetState.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
-        // Could be any of the restore triggers
-        return TRIGGER_KEY_PRESENT; // Default fallback
+        return TRIGGER_KEY_PRESENT;
     }
 
     return nullptr; // Not found

@@ -2,31 +2,16 @@
 
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
+#include "managers/panel_manager.h"
+#include "managers/style_manager.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
 #include <esp32-hal-log.h>
 #include <map>
 #include <string>
-
-/**
- * @brief Structure for shared trigger state
- * 
- * @details This structure represents the state of an active trigger,
- * including its action, target, priority, and timing information.
- */
-struct TriggerState
-{
-    std::string action;           ///< Action to perform
-    std::string target;           ///< Target of the action
-    TriggerPriority priority;     ///< Priority level
-    uint64_t timestamp;           ///< When trigger was activated
-    bool active;                  ///< Whether trigger is currently active
-    
-    TriggerState() = default;
-    TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
-        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
-};
+#include <esp32-hal-gpio.h>
+#include <utilities/types.h>
 
 /**
  * @class TriggerManager
@@ -35,8 +20,6 @@ struct TriggerState
 class TriggerManager
 {
 public:
-    const char * TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
-
     // Constructors and Destructors
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
@@ -50,9 +33,7 @@ public:
     void HandleKeyNotPresentInterrupt(bool keyNotPresent);
     void HandleLockStateInterrupt(bool lockEngaged);
     void HandleThemeSwitchInterrupt(bool nightMode);
-    void NotifyApplicationStateUpdated();
     TriggerState* GetHighestPriorityTrigger();
-    void ClearTriggerStatePublic(const char* triggerId) { ClearTriggerState(triggerId); }
 
     // Core 1 Task Methods
     static void TriggerMonitoringTask(void* pvParameters);
@@ -70,7 +51,6 @@ private:
 
     // Shared State Management
     void SetTriggerState(const char* triggerId, const char* action, const char* target, TriggerPriority priority);
-    void ClearTriggerState(const char* triggerId);
     void UpdateTriggerState(const char* triggerId, const char* action, const char* target);
     
     // Helper methods for simplified logic
@@ -78,9 +58,8 @@ private:
     bool ShouldUpdateHighestPriority(const TriggerState& trigger, TriggerState* currentHighest, TriggerPriority currentPriority, uint64_t currentTimestamp);
 
 public:
-
-    // GPIO Interrupt Setup
     void setup_gpio_interrupts();
+    void ClearTriggerState(const char* triggerId);
     
 
     // Instance Data Members

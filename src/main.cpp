@@ -13,11 +13,9 @@ void setup()
   StyleManager::GetInstance().init(Themes::DAY);
   Ticker::handle_lv_tasks();
 
-  // Initialize Core 0 PanelManager (handles UI and queue processing)
   PanelManager &panel_manager = PanelManager::GetInstance();
-  panel_manager.init(); // This initializes the dual-core trigger system
+  panel_manager.init();
 
-  // Load initial panel (Core 0 will notify Core 1 of initial state)
   panel_manager.CreateAndLoadPanelWithSplash(preference_manager.config.panelName.c_str());
   
   Ticker::handle_lv_tasks();
