@@ -21,12 +21,12 @@ public:
     virtual void init() = 0;
 
     /// @brief Load the panel with asynchronous completion callback
-    /// @param callback_function Function to call when loading is complete
-    virtual void load(std::function<void()> callback_function) = 0;
+    /// @param callbackFunction Function to call when loading is complete
+    virtual void load(std::function<void()> callbackFunction) = 0;
 
     /// @brief Update the panel data with asynchronous completion callback
-    /// @param callback_function Function to call when update is complete
-    virtual void update(std::function<void()> callback_function) = 0;
+    /// @param callbackFunction Function to call when update is complete
+    virtual void update(std::function<void()> callbackFunction) = 0;
 
 protected:
     // Protected Data Members

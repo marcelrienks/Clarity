@@ -47,7 +47,7 @@ public:
     // Constructors and Destructors
     /// @brief Constructor with optional restoration mode
     /// @param enable_restoration Whether to restore previous panel when key becomes inactive
-    KeyTrigger(bool enable_restoration = true);
+    KeyTrigger(bool enableRestoration = true);
 
     // Core Functionality Methods
     void init() override;

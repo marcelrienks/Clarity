@@ -39,10 +39,10 @@ void LockPanel::init()
 }
 
 /// @brief Load the lock panel UI components
-void LockPanel::load(std::function<void()> callback_function)
+void LockPanel::load(std::function<void()> callbackFunction)
 {
     log_d("...");
-    callbackFunction_ = callback_function;
+    callbackFunction_ = callbackFunction;
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->render(screen_, centerLocation_);
@@ -54,10 +54,10 @@ void LockPanel::load(std::function<void()> callback_function)
 }
 
 /// @brief Update the lock panel with current sensor data
-void LockPanel::update(std::function<void()> callback_function)
+void LockPanel::update(std::function<void()> callbackFunction)
 {
     // Immediately call the completion callback so that lock/unlock logic is processed
-    callback_function();
+    callbackFunction();
 }
 
 // Static Methods

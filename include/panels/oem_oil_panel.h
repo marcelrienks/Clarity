@@ -49,8 +49,8 @@ public:
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::OIL;
     void init() override;
-    void load(std::function<void()> callback_function) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 1000;
@@ -64,12 +64,12 @@ private:
     /// @brief Map oil pressure sensor value to display scale
     /// @param sensor_value Raw sensor value (1-10 Bar)
     /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
-    int32_t MapPressureValue(int32_t sensor_value);
+    int32_t MapPressureValue(int32_t sensorValue);
     
     /// @brief Map oil temperature sensor value to display scale
     /// @param sensor_value Raw sensor value (0-120°C)
     /// @return Mapped value for display
-    int32_t MapTemperatureValue(int32_t sensor_value);
+    int32_t MapTemperatureValue(int32_t sensorValue);
 
     // Static Callback Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);

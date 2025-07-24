@@ -40,8 +40,8 @@ public:
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::KEY;
     void init() override;
-    void load(std::function<void()> callback_function = nullptr) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction = nullptr) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
 private:
     // Static Methods

@@ -6,8 +6,8 @@
 
 /// @brief Constructor with optional restoration mode
 /// @param enable_restoration Whether to restore previous panel when key becomes inactive
-KeyTrigger::KeyTrigger(bool enable_restoration)
-    : enableRestoration_(enable_restoration),
+KeyTrigger::KeyTrigger(bool enableRestoration)
+    : enableRestoration_(enableRestoration),
       lastKeyState_(KeyState::Inactive)
 {
 }

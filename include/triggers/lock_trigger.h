@@ -39,7 +39,7 @@ class LockTrigger : public ITrigger
 {
 public:
     // Constructors and Destructors
-    LockTrigger(bool enable_restoration = false);
+    LockTrigger(bool enableRestoration = false);
 
     // Core Functionality Methods
     void init() override;

@@ -17,9 +17,9 @@ uint32_t Ticker::get_elapsed_millis() {
 
 /// @brief Adaptive Timing to generate a ~60fps refresh rate
 /// @param start_time the start time of the loop method
-void Ticker::handle_dynamic_delay(uint32_t start_time) {
+void Ticker::handle_dynamic_delay(uint32_t startTime) {
     // Calculate how long processing took
-    uint32_t elapsedTime = millis() - start_time;
+    uint32_t elapsedTime = millis() - startTime;
 
     // Adjust delay to target ~60fps (16.7ms per frame)
     uint32_t targetFrameTime = 16;

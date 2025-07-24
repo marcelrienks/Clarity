@@ -39,8 +39,8 @@ public:
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::SPLASH;
     void init() override;
-    void load(std::function<void()> callback_function) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
 private:
     // Private Data Members

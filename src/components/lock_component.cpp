@@ -1,5 +1,5 @@
 #include "components/lock_component.h"
-#include <icons/lock-alt-solid.h>
+#include <icons/lock_alt_solid.h>
 
 // Constructors and Destructors
 LockComponent::LockComponent() : lockIcon_(nullptr)

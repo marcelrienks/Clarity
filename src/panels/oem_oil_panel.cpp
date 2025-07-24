@@ -60,18 +60,18 @@ void OemOilPanel::init()
 }
 
 /// @brief Load the panel with component rendering and screen display
-/// @param show_panel_completion_callback to be called when the panel load is completed
-void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
+/// @param callbackFunction to be called when the panel load is completed
+void OemOilPanel::load(std::function<void()> callbackFunction)
 {
     log_d("...");
-    callbackFunction_ = show_panel_completion_callback;
+    callbackFunction_ = callbackFunction;
 
     // Create location parameters with rotational start points for scales
-    ComponentLocation pressure_location(210); // rotation starting at 210 degrees
-    ComponentLocation temperature_location(30); // rotation starting at 30 degrees
+    ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
+    ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    oemOilPressureComponent_->render(screen_, pressure_location);
-    oemOilTemperatureComponent_->render(screen_, temperature_location);
+    oemOilPressureComponent_->render(screen_, pressureLocation);
+    oemOilTemperatureComponent_->render(screen_, temperatureLocation);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -79,11 +79,11 @@ void OemOilPanel::load(std::function<void()> show_panel_completion_callback)
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::update(std::function<void()> update_panel_completion_callback)
+void OemOilPanel::update(std::function<void()> callbackFunction)
 {
     log_d("...");
 
-    callbackFunction_ = update_panel_completion_callback;
+    callbackFunction_ = callbackFunction;
 
     log_v("updating...");
     OemOilPanel::UpdateOilPressure();
@@ -241,30 +241,30 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 // Value mapping methods
 
 /// @brief Map oil pressure sensor value to display scale
-/// @param sensor_value Raw sensor value (1-10 Bar)
+/// @param sensorValue Raw sensor value (1-10 Bar)
 /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
-int32_t OemOilPanel::MapPressureValue(int32_t sensor_value)
+int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
     // Clamp sensor value to valid range (1-10 Bar)
-    if (sensor_value < 1) sensor_value = 1;
-    if (sensor_value > 10) sensor_value = 10;
+    if (sensorValue < 1) sensorValue = 1;
+    if (sensorValue > 10) sensorValue = 10;
     
     // Map 1-10 Bar to 0-60 display units
-    // Formula: (sensor_value - 1) * 60 / 9
+    // Formula: (sensorValue - 1) * 60 / 9
     // This maps: 1 Bar -> 0, 10 Bar -> 60
     // Display represents 0.0-6.0 Bar with 0.1 precision (x10 multiplier)
-    return ((sensor_value - 1) * 60) / 9;
+    return ((sensorValue - 1) * 60) / 9;
 }
 
 /// @brief Map oil temperature sensor value to display scale
-/// @param sensor_value Raw sensor value (0-120°C)
+/// @param sensorValue Raw sensor value (0-120°C)
 /// @return Mapped value for display
-int32_t OemOilPanel::MapTemperatureValue(int32_t sensor_value)
+int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 {
     // Temperature mapping is direct 1:1 as the display range matches sensor range
     // Clamp to valid range (0-120°C)
-    if (sensor_value < 0) sensor_value = 0;
-    if (sensor_value > 120) sensor_value = 120;
+    if (sensorValue < 0) sensorValue = 0;
+    if (sensorValue > 120) sensorValue = 120;
     
-    return sensor_value;
+    return sensorValue;
 }

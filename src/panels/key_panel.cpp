@@ -51,10 +51,10 @@ void KeyPanel::init()
 }
 
 /// @brief Load the key panel UI components
-void KeyPanel::load(std::function<void()> callback_function)
+void KeyPanel::load(std::function<void()> callbackFunction)
 {
     log_d("...");
-    callbackFunction_ = callback_function;
+    callbackFunction_ = callbackFunction;
 
     keyComponent_->render(screen_, centerLocation_);
     keyComponent_->refresh(Reading{static_cast<int32_t>(currentKeyState_)});
@@ -66,7 +66,7 @@ void KeyPanel::load(std::function<void()> callback_function)
 }
 
 /// @brief Update the key panel with current sensor data
-void KeyPanel::update(std::function<void()> callback_function)
+void KeyPanel::update(std::function<void()> callbackFunction)
 {
     log_d("...");
 
@@ -74,7 +74,7 @@ void KeyPanel::update(std::function<void()> callback_function)
     // handles state changes and will restore/switch panels automatically
     // The panel just displays the key state it was initialized with
     
-    callback_function();
+    callbackFunction();
 }
 
 // Static Methods

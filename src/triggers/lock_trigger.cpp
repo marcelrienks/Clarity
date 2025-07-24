@@ -4,9 +4,9 @@
 
 /// @brief Constructor with optional restoration mode
 /// @param enable_restoration Whether to restore previous panel when lock becomes disengaged
-LockTrigger::LockTrigger(bool enable_restoration)
+LockTrigger::LockTrigger(bool enableRestoration)
     : lockSensor_(std::make_shared<LockSensor>()), 
-      enableRestoration_(enable_restoration)
+      enableRestoration_(enableRestoration)
 {
 }
 

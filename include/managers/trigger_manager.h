@@ -49,13 +49,13 @@ public:
 
     // Core Functionality Methods
     void init();
-    void HandleKeyPresentInterrupt(bool key_present);
-    void HandleKeyNotPresentInterrupt(bool key_not_present);
-    void HandleLockStateInterrupt(bool lock_engaged);
-    void HandleThemeSwitchInterrupt(bool night_mode);
+    void HandleKeyPresentInterrupt(bool keyPresent);
+    void HandleKeyNotPresentInterrupt(bool keyNotPresent);
+    void HandleLockStateInterrupt(bool lockEngaged);
+    void HandleThemeSwitchInterrupt(bool nightMode);
     void NotifyApplicationStateUpdated();
     TriggerState* GetHighestPriorityTrigger();
-    void ClearTriggerStatePublic(const char* trigger_id) { ClearTriggerState(trigger_id); }
+    void ClearTriggerStatePublic(const char* triggerId) { ClearTriggerState(triggerId); }
 
     // Core 1 Task Methods
     static void TriggerMonitoringTask(void* pvParameters);
@@ -72,13 +72,13 @@ private:
     ~TriggerManager() = default;
 
     // Shared State Management
-    void SetTriggerState(const char* trigger_id, const char* action, const char* target, TriggerPriority priority);
-    void ClearTriggerState(const char* trigger_id);
-    void UpdateTriggerState(const char* trigger_id, const char* action, const char* target);
+    void SetTriggerState(const char* triggerId, const char* action, const char* target, TriggerPriority priority);
+    void ClearTriggerState(const char* triggerId);
+    void UpdateTriggerState(const char* triggerId, const char* action, const char* target);
     
     // Helper methods for simplified logic
-    void HandlePanelStateChange(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority);
-    bool ShouldUpdateHighestPriority(const TriggerState& trigger, TriggerState* current_highest, TriggerPriority current_priority, uint64_t current_timestamp);
+    void HandlePanelStateChange(bool state, const char* panelName, const char* triggerId, TriggerPriority priority);
+    bool ShouldUpdateHighestPriority(const TriggerState& trigger, TriggerState* currentHighest, TriggerPriority currentPriority, uint64_t currentTimestamp);
 
 public:
 
@@ -93,7 +93,7 @@ public:
     SemaphoreHandle_t stateMutex = nullptr;
 
     // Shared trigger state (protected by trigger_mutex)
-    std::map<std::string, TriggerState> activeTriggers_;
+    std::map<const char*, TriggerState> activeTriggers_;
     SemaphoreHandle_t triggerMutex_ = nullptr;
 
     // Hardware state tracking

@@ -85,11 +85,11 @@ public:
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panel_name Name of the panel to create and load
     /// @param completion_callback Optional callback function to execute when loading is complete
-    void CreateAndLoadPanel(const char* panel_name, std::function<void()> completion_callback = nullptr, bool is_trigger_driven = false);
+    void CreateAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false);
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panel_name Name of the target panel to load after splash
-    void CreateAndLoadPanelWithSplash(const char* panel_name);
+    void CreateAndLoadPanelWithSplash(const char* panelName);
     
     /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel();
@@ -101,8 +101,8 @@ public:
     /// @tparam T Panel type that implements IPanel interface
     /// @param panel_name String identifier for the panel type
     template<typename T> // Note the implementation of a template type must exist in header
-    void register_panel(const char *panel_name) {
-        registeredPanels_[panel_name] = []() -> std::shared_ptr<IPanel> { 
+    void register_panel(const char *panelName) {
+        registeredPanels_[panelName] = []() -> std::shared_ptr<IPanel> { 
             return std::make_shared<T>(); 
         };
     }
@@ -112,8 +112,8 @@ public:
     /// @param trigger_id String identifier for the trigger
     /// @param auto_restore Whether the trigger should auto-restore previous panel when cleared
     template<typename T>
-    void register_global_trigger(const char *trigger_id, bool auto_restore = false) {
-        // Disabled for dual-core architecture\n        // TriggerManager::get_instance().register_global_trigger(trigger_id, std::make_shared<T>(auto_restore));
+    void register_global_trigger(const char *triggerId, bool autoRestore = false) {
+        // Disabled for dual-core architecture\n        // TriggerManager::get_instance().register_global_trigger(triggerId, std::make_shared<T>(autoRestore));
     }
 
 private:
@@ -125,7 +125,7 @@ private:
     /// @brief Create a panel instance by name using the registered factory
     /// @param panel_name Name of the panel type to create
     /// @return Shared pointer to the created panel instance
-    std::shared_ptr<IPanel> CreatePanel(const char *panel_name);
+    std::shared_ptr<IPanel> CreatePanel(const char *panelName);
     
     /// @brief Register all available panel types with the factory
     void RegisterPanels();
@@ -137,7 +137,7 @@ private:
     // Callback Methods
     /// @brief Callback executed when splash screen loading is complete
     /// @param panel_name Name of the target panel to load after splash
-    void SplashCompletionCallback(const char* panel_name);
+    void SplashCompletionCallback(const char* panelName);
     
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
@@ -148,7 +148,7 @@ private:
     /// @brief Execute a trigger action from shared state
     /// @param trigger_state Trigger state to execute
     /// @param trigger_id ID of the trigger for cleanup
-    void ExecuteTriggerAction(const TriggerState& trigger_state, const std::string& trigger_id);
+    void ExecuteTriggerAction(const TriggerState& triggerState, const char* triggerId);
     
     /// @brief Process all triggers regardless of priority
     void ProcessTriggers();
@@ -159,17 +159,17 @@ private:
     /// @brief Find trigger ID for a given trigger state (helper method)
     /// @param target_state Trigger state to find ID for
     /// @return Trigger ID string, or empty if not found
-    std::string FindTriggerIdForState(const TriggerState& target_state);
+    const char* FindTriggerIdForState(const TriggerState& targetState);
     
     /// @brief Notify Core 1 of state changes
     /// @param panel_name Current panel name
     /// @param theme_name Current theme name
-    void NotifyCore1StateChange(const char* panel_name, const char* theme_name);//TODO: what is the point of arguments being constants
+    void NotifyCore1StateChange(const char* panelName, const char* themeName);
 
 public:
     // Public Data Members
-    const char* current_panel = PanelNames::OIL;     ///< Current panel for Core 1 sync
-    std::string restoration_panel;                   ///< Panel to restore when all triggers are inactive
+    const char* currentPanel = PanelNames::OIL;     ///< Current panel for Core 1 sync
+    const char* restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
 
 private:
     // Instance Data Members

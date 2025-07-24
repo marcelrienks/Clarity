@@ -29,24 +29,24 @@ void PanelManager::init()
     PanelManager::RegisterPanels();
 
     // Initialize dual-core trigger system
-    TriggerManager &trigger_manager = TriggerManager::GetInstance();
-    trigger_manager.init();
+    TriggerManager &triggerManager = TriggerManager::GetInstance();
+    triggerManager.init();
 
     log_d("PanelManager initialized for dual-core operation");
 }
 
 /// @brief Creates and then loads a panel based on the given name
-/// @param panel_name the name of the panel to be loaded
-/// @param completion_callback the function to be called when the panel load is complete
-/// @param is_trigger_driven whether this panel change is triggered by an interrupt trigger
-void PanelManager::CreateAndLoadPanel(const char *panel_name, std::function<void()> completion_callback, bool is_trigger_driven)
+/// @param panelName the name of the panel to be loaded
+/// @param completionCallback the function to be called when the panel load is complete
+/// @param isTriggerDriven whether this panel change is triggered by an interrupt trigger
+void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback, bool isTriggerDriven)
 {
     log_d("...");
 
     // Track this as the last non-trigger panel only for user-driven changes
-    if (!is_trigger_driven)
+    if (!isTriggerDriven)
     {
-        restoration_panel = std::string(panel_name);
+        restorationPanel = panelName;
     }
 
     // Clean up existing panel before creating new one
@@ -56,26 +56,26 @@ void PanelManager::CreateAndLoadPanel(const char *panel_name, std::function<void
         panel_.reset();
     }
 
-    panel_ = PanelManager::CreatePanel(panel_name);
+    panel_ = PanelManager::CreatePanel(panelName);
     panel_->init();
     
     // Update current panel
-    current_panel = panel_name;
+    currentPanel = panelName;
 
     SetUiState(UIState::LOADING);
-    panel_->load(completion_callback);
+    panel_->load(completionCallback);
     Ticker::handle_lv_tasks();
 }
 
 /// @brief Loads a panel based on the given name after first loading a splash screen
 /// This function will create the panel and then call the load function on it.
-/// @param panel_name the name of the panel to be loaded
-void PanelManager::CreateAndLoadPanelWithSplash(const char *panel_name)
+/// @param panelName the name of the panel to be loaded
+void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
     log_d("...");
 
-    CreateAndLoadPanel(PanelNames::SPLASH, [this, panel_name]()
-                          { this->PanelManager::SplashCompletionCallback(panel_name); });
+    CreateAndLoadPanel(PanelNames::SPLASH, [this, panelName]()
+                          { this->PanelManager::SplashCompletionCallback(panelName); });
 }
 
 /// @brief Update the reading on the currently loaded panel and process trigger messages
@@ -104,16 +104,16 @@ PanelManager::~PanelManager()
 // Private Methods
 
 /// @brief Create a panel based on the given type name
-/// @param panel_name the type name of the panel to be created
+/// @param panelName the type name of the panel to be created
 /// @return Interface type representing the panel
-std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panel_name)
+std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_d("...");
 
-    auto iterator = registeredPanels_.find(panel_name);
+    auto iterator = registeredPanels_.find(panelName);
     if (iterator == registeredPanels_.end())
     {
-        log_e("Failed to find panel %s in map", panel_name);
+        log_e("Failed to find panel %s in map", panelName);
         return nullptr;
     }
 
@@ -135,14 +135,14 @@ void PanelManager::RegisterPanels()
 // Callback Methods
 
 /// @brief callback function to be executed on splash panel show completion
-void PanelManager::SplashCompletionCallback(const char *panel_name)
+void PanelManager::SplashCompletionCallback(const char *panelName)
 {
     log_d("...");
 
     panel_.reset();
     Ticker::handle_lv_tasks();
 
-    CreateAndLoadPanel(panel_name, [this]()
+    CreateAndLoadPanel(panelName, [this]()
                           { this->PanelManager::PanelCompletionCallback(); });
 }
 
@@ -199,53 +199,53 @@ void PanelManager::SetUiState(UIState state)
 }
 
 /// @brief Execute a trigger action from shared state
-void PanelManager::ExecuteTriggerAction(const TriggerState &trigger_state, const std::string &trigger_id)
+void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const char* triggerId)
 {
     log_d("...");
 
-    if (trigger_state.action == ACTION_LOAD_PANEL)
+    if (triggerState.action == ACTION_LOAD_PANEL)
     {
-        CreateAndLoadPanel(trigger_state.target.c_str(), [this, trigger_id]()
+        CreateAndLoadPanel(triggerState.target.c_str(), [this, triggerId]()
                               { 
                                   this->TriggerPanelSwitchCallback();
                                   // Clear trigger after successful execution
-                                  TriggerManager::GetInstance().ClearTriggerStatePublic(trigger_id.c_str()); }, true);
+                                  TriggerManager::GetInstance().ClearTriggerStatePublic(triggerId); }, true);
     }
-    else if (trigger_state.action == ACTION_RESTORE_PREVIOUS_PANEL)
+    else if (triggerState.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
-        const char *restore_panel = restoration_panel.c_str();
-        if (restore_panel)
+        const char *restorePanel = restorationPanel;
+        if (restorePanel)
         {
-            CreateAndLoadPanel(restore_panel, [this, trigger_id]()
+            CreateAndLoadPanel(restorePanel, [this, triggerId]()
                                   { 
                                       this->TriggerPanelSwitchCallback();
                                       // Clear trigger after successful execution
-                                      TriggerManager::GetInstance().ClearTriggerStatePublic(trigger_id.c_str()); }, false);
+                                      TriggerManager::GetInstance().ClearTriggerStatePublic(triggerId); }, false);
         }
     }
-    else if (trigger_state.action == ACTION_CHANGE_THEME)
+    else if (triggerState.action == ACTION_CHANGE_THEME)
     {
-        StyleManager::GetInstance().set_theme(trigger_state.target.c_str());
-        log_i("Theme changed to %s", trigger_state.target.c_str());
+        StyleManager::GetInstance().set_theme(triggerState.target.c_str());
+        log_i("Theme changed to %s", triggerState.target.c_str());
         TriggerManager::GetInstance().NotifyApplicationStateUpdated();
         // Clear trigger after successful execution
-        TriggerManager::GetInstance().ClearTriggerStatePublic(trigger_id.c_str());
+        TriggerManager::GetInstance().ClearTriggerStatePublic(triggerId);
     }
 }
 
 /// @brief Process all triggers regardless of priority
 void PanelManager::ProcessTriggers()
 {
-    TriggerManager &trigger_manager = TriggerManager::GetInstance();
-    TriggerState *trigger = trigger_manager.GetHighestPriorityTrigger();
+    TriggerManager &triggerManager = TriggerManager::GetInstance();
+    TriggerState *trigger = triggerManager.GetHighestPriorityTrigger();
 
     if (trigger && trigger->active)
     {
         // Find the trigger ID for this state
-        std::string trigger_id = FindTriggerIdForState(*trigger);
-        if (!trigger_id.empty())
+        const char* triggerId = FindTriggerIdForState(*trigger);
+        if (triggerId != nullptr)
         {
-            ExecuteTriggerAction(*trigger, trigger_id);
+            ExecuteTriggerAction(*trigger, triggerId);
         }
     }
 }
@@ -253,45 +253,45 @@ void PanelManager::ProcessTriggers()
 /// @brief Process only critical and important priority triggers
 void PanelManager::ProcessCriticalAndImportantTriggers()
 {
-    TriggerManager &trigger_manager = TriggerManager::GetInstance();
-    TriggerState *trigger = trigger_manager.GetHighestPriorityTrigger();
+    TriggerManager &triggerManager = TriggerManager::GetInstance();
+    TriggerState *trigger = triggerManager.GetHighestPriorityTrigger();
 
     if (trigger && trigger->active &&
         (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
     {
         // Find the trigger ID for this state
-        std::string trigger_id = FindTriggerIdForState(*trigger);
-        if (!trigger_id.empty())
+        const char* triggerId = FindTriggerIdForState(*trigger);
+        if (triggerId != nullptr)
         {
-            ExecuteTriggerAction(*trigger, trigger_id);
+            ExecuteTriggerAction(*trigger, triggerId);
         }
     }
 }
 
 /// @brief Find trigger ID for a given trigger state (helper method)
-std::string PanelManager::FindTriggerIdForState(const TriggerState &target_state)
+const char* PanelManager::FindTriggerIdForState(const TriggerState &targetState)
 {
-    // This is a helper to find the key (trigger_id) for a given trigger state
+    // This is a helper to find the key (triggerId) for a given trigger state
     // We need to access the trigger manager's map, but for now we'll use known trigger IDs
 
     // Check common trigger IDs
-    if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::KEY)
+    if (targetState.action == ACTION_LOAD_PANEL && targetState.target == PanelNames::KEY)
     {
-        return std::string(TRIGGER_KEY_PRESENT); // or TRIGGER_KEY_NOT_PRESENT
+        return TRIGGER_KEY_PRESENT; // or TRIGGER_KEY_NOT_PRESENT
     }
-    else if (target_state.action == ACTION_LOAD_PANEL && target_state.target == PanelNames::LOCK)
+    else if (targetState.action == ACTION_LOAD_PANEL && targetState.target == PanelNames::LOCK)
     {
-        return std::string(TRIGGER_LOCK_STATE);
+        return TRIGGER_LOCK_STATE;
     }
-    else if (target_state.action == ACTION_CHANGE_THEME)
+    else if (targetState.action == ACTION_CHANGE_THEME)
     {
-        return std::string(TRIGGER_THEME_SWITCH);
+        return TRIGGER_THEME_SWITCH;
     }
-    else if (target_state.action == ACTION_RESTORE_PREVIOUS_PANEL)
+    else if (targetState.action == ACTION_RESTORE_PREVIOUS_PANEL)
     {
         // Could be any of the restore triggers
-        return std::string(TRIGGER_KEY_PRESENT); // Default fallback
+        return TRIGGER_KEY_PRESENT; // Default fallback
     }
 
-    return ""; // Not found
+    return nullptr; // Not found
 }

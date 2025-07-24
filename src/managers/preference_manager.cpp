@@ -36,24 +36,24 @@ void PreferenceManager::init()
     else
         log_i("Preferences initialized successfully");
 
-    load_config();
+    loadConfig();
 }
 
 /// @brief Create and save a list of default panels
 /// @return true if the save was successful
-void PreferenceManager::create_default_config()
+void PreferenceManager::createDefaultConfig()
 {
     log_d("...");
 
     config.panelName = PanelNames::OIL;
 
-    PreferenceManager::save_config();
-    PreferenceManager::load_config();
+    PreferenceManager::saveConfig();
+    PreferenceManager::loadConfig();
 }
 
 /// @brief Load the configuration from preferences_
 /// @return true if the load was successful, false otherwise
-void PreferenceManager::load_config()
+void PreferenceManager::loadConfig()
 {
     log_d("...");
 
@@ -61,7 +61,7 @@ void PreferenceManager::load_config()
     if (jsonString.length() == 0)
     {
         log_w("No config found, creating default");
-        return PreferenceManager::create_default_config();
+        return PreferenceManager::createDefaultConfig();
     }
 
     JsonDocument doc;
@@ -69,13 +69,13 @@ void PreferenceManager::load_config()
     if (result != DeserializationError::Ok)
     {
         log_w("Error deserializing config: %s", result.c_str());
-        return PreferenceManager::create_default_config();
+        return PreferenceManager::createDefaultConfig();
     }
 
     if (doc[JsonDocNames::PANEL_NAME].isNull())
     {
         log_w("Error reading config");
-        return PreferenceManager::create_default_config();
+        return PreferenceManager::createDefaultConfig();
     }
 
     config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
@@ -84,7 +84,7 @@ void PreferenceManager::load_config()
 
 /// @brief Save the current configuration to preferences_
 /// @return true if the save was successful, false otherwise
-void PreferenceManager::save_config()
+void PreferenceManager::saveConfig()
 {
     log_d("...");
 

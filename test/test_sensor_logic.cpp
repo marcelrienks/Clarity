@@ -10,132 +10,132 @@ using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>
 // Mock sensor class for testing business logic
 class MockSensor {
 private:
-    double raw_value;
-    double min_threshold;
-    double max_threshold;
-    bool error_state;
+    double rawValue;
+    double minThreshold;
+    double maxThreshold;
+    bool errorState;
 
 public:
     MockSensor(double min = 0.0, double max = 100.0) 
-        : raw_value(0.0), min_threshold(min), max_threshold(max), error_state(false) {}
+        : rawValue(0.0), minThreshold(min), maxThreshold(max), errorState(false) {}
 
-    void set_raw_value(double value) { raw_value = value; }
-    void set_error_state(bool error) { error_state = error; }
+    void setRawValue(double value) { rawValue = value; }
+    void setErrorState(bool error) { errorState = error; }
 
-    Reading get_processed_reading() {
-        if (error_state) {
+    Reading getProcessedReading() {
+        if (errorState) {
             return std::string("ERROR");
         }
         
-        if (raw_value < min_threshold) {
+        if (rawValue < minThreshold) {
             return std::string("LOW");
         }
         
-        if (raw_value > max_threshold) {
+        if (rawValue > maxThreshold) {
             return std::string("HIGH");
         }
         
-        return raw_value;
+        return rawValue;
     }
 
-    bool is_in_warning_range(double low_warn, double high_warn) {
-        return (raw_value >= low_warn && raw_value < min_threshold) ||
-               (raw_value > max_threshold && raw_value <= high_warn);
+    bool isInWarningRange(double lowWarn, double highWarn) {
+        return (rawValue >= lowWarn && rawValue < minThreshold) ||
+               (rawValue > maxThreshold && rawValue <= highWarn);
     }
 
-    bool is_critical(double critical_low, double critical_high) {
-        return raw_value < critical_low || raw_value > critical_high;
+    bool isCritical(double criticalLow, double criticalHigh) {
+        return rawValue < criticalLow || rawValue > criticalHigh;
     }
 };
 
 // Mock trigger class for testing trigger logic
 class MockTrigger {
 private:
-    bool condition_met;
-    std::string target_panel;
+    bool conditionMet;
+    std::string targetPanel;
     int priority;
-    bool should_restore_panel;
+    bool shouldRestorePanel;
 
 public:
     MockTrigger(std::string panel, int prio = 1, bool restore = false) 
-        : condition_met(false), target_panel(panel), priority(prio), should_restore_panel(restore) {}
+        : conditionMet(false), targetPanel(panel), priority(prio), shouldRestorePanel(restore) {}
 
-    void set_condition(bool met) { condition_met = met; }
+    void setCondition(bool met) { conditionMet = met; }
     
-    bool evaluate() { return condition_met; }
-    std::string get_target_panel() { return target_panel; }
-    int get_priority() { return priority; }
-    bool should_restore() { return should_restore_panel; }
+    bool evaluate() { return conditionMet; }
+    std::string getTargetPanel() { return targetPanel; }
+    int getPriority() { return priority; }
+    bool shouldRestore() { return shouldRestorePanel; }
 };
 
 
 void test_sensor_normal_reading(void) {
     MockSensor sensor(10.0, 90.0);
-    sensor.set_raw_value(50.0);
+    sensor.setRawValue(50.0);
     
-    Reading result = sensor.get_processed_reading();
+    Reading result = sensor.getProcessedReading();
     TEST_ASSERT_TRUE(std::holds_alternative<double>(result));
     TEST_ASSERT_DOUBLE_WITHIN(0.1, 50.0, std::get<double>(result));
 }
 
 void test_sensor_low_threshold(void) {
     MockSensor sensor(10.0, 90.0);
-    sensor.set_raw_value(5.0);
+    sensor.setRawValue(5.0);
     
-    Reading result = sensor.get_processed_reading();
+    Reading result = sensor.getProcessedReading();
     TEST_ASSERT_TRUE(std::holds_alternative<std::string>(result));
     TEST_ASSERT_EQUAL_STRING("LOW", std::get<std::string>(result).c_str());
 }
 
 void test_sensor_high_threshold(void) {
     MockSensor sensor(10.0, 90.0);
-    sensor.set_raw_value(95.0);
+    sensor.setRawValue(95.0);
     
-    Reading result = sensor.get_processed_reading();
+    Reading result = sensor.getProcessedReading();
     TEST_ASSERT_TRUE(std::holds_alternative<std::string>(result));
     TEST_ASSERT_EQUAL_STRING("HIGH", std::get<std::string>(result).c_str());
 }
 
 void test_sensor_error_state(void) {
     MockSensor sensor;
-    sensor.set_error_state(true);
-    sensor.set_raw_value(50.0);
+    sensor.setErrorState(true);
+    sensor.setRawValue(50.0);
     
-    Reading result = sensor.get_processed_reading();
+    Reading result = sensor.getProcessedReading();
     TEST_ASSERT_TRUE(std::holds_alternative<std::string>(result));
     TEST_ASSERT_EQUAL_STRING("ERROR", std::get<std::string>(result).c_str());
 }
 
 void test_sensor_warning_range_low(void) {
     MockSensor sensor(20.0, 80.0);
-    sensor.set_raw_value(15.0);  // Between warning (10) and normal (20)
+    sensor.setRawValue(15.0);  // Between warning (10) and normal (20)
     
-    TEST_ASSERT_TRUE(sensor.is_in_warning_range(10.0, 90.0));
-    TEST_ASSERT_FALSE(sensor.is_critical(5.0, 95.0));
+    TEST_ASSERT_TRUE(sensor.isInWarningRange(10.0, 90.0));
+    TEST_ASSERT_FALSE(sensor.isCritical(5.0, 95.0));
 }
 
 void test_sensor_warning_range_high(void) {
     MockSensor sensor(20.0, 80.0);
-    sensor.set_raw_value(85.0);  // Between normal (80) and warning (90)
+    sensor.setRawValue(85.0);  // Between normal (80) and warning (90)
     
-    TEST_ASSERT_TRUE(sensor.is_in_warning_range(10.0, 90.0));
-    TEST_ASSERT_FALSE(sensor.is_critical(5.0, 95.0));
+    TEST_ASSERT_TRUE(sensor.isInWarningRange(10.0, 90.0));
+    TEST_ASSERT_FALSE(sensor.isCritical(5.0, 95.0));
 }
 
 void test_sensor_critical_low(void) {
     MockSensor sensor(20.0, 80.0);
-    sensor.set_raw_value(3.0);  // Below critical threshold
+    sensor.setRawValue(3.0);  // Below critical threshold
     
     TEST_ASSERT_TRUE(sensor.is_critical(5.0, 95.0));
-    TEST_ASSERT_FALSE(sensor.is_in_warning_range(10.0, 90.0));
+    TEST_ASSERT_FALSE(sensor.isInWarningRange(10.0, 90.0));
 }
 
 void test_sensor_critical_high(void) {
     MockSensor sensor(20.0, 80.0);
-    sensor.set_raw_value(98.0);  // Above critical threshold
+    sensor.setRawValue(98.0);  // Above critical threshold
     
     TEST_ASSERT_TRUE(sensor.is_critical(5.0, 95.0));
-    TEST_ASSERT_FALSE(sensor.is_in_warning_range(10.0, 90.0));
+    TEST_ASSERT_FALSE(sensor.isInWarningRange(10.0, 90.0));
 }
 
 void test_trigger_basic_evaluation(void) {
@@ -143,63 +143,63 @@ void test_trigger_basic_evaluation(void) {
     
     TEST_ASSERT_FALSE(trigger.evaluate());
     
-    trigger.set_condition(true);
+    trigger.setCondition(true);
     TEST_ASSERT_TRUE(trigger.evaluate());
 }
 
 void test_trigger_properties(void) {
     MockTrigger trigger("KeyPanel", 5, true);
     
-    TEST_ASSERT_EQUAL_STRING("KeyPanel", trigger.get_target_panel().c_str());
-    TEST_ASSERT_EQUAL(5, trigger.get_priority());
-    TEST_ASSERT_TRUE(trigger.should_restore());
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", trigger.getTargetPanel().c_str());
+    TEST_ASSERT_EQUAL(5, trigger.getPriority());
+    TEST_ASSERT_TRUE(trigger.shouldRestore());
 }
 
 void test_trigger_priority_comparison(void) {
-    MockTrigger low_priority("Panel1", 1, false);
-    MockTrigger high_priority("Panel2", 10, false);
+    MockTrigger lowPriority("Panel1", 1, false);
+    MockTrigger highPriority("Panel2", 10, false);
     
     // Higher number = higher priority
-    TEST_ASSERT_TRUE(high_priority.get_priority() > low_priority.get_priority());
+    TEST_ASSERT_TRUE(highPriority.getPriority() > lowPriority.getPriority());
 }
 
 void test_oil_pressure_ranges(void) {
     // Typical oil pressure sensor ranges (0-100 PSI)
-    MockSensor oil_pressure(10.0, 80.0);  // Normal: 10-80 PSI
+    MockSensor oilPressure(10.0, 80.0);  // Normal: 10-80 PSI
     
     // Test normal pressure
-    oil_pressure.set_raw_value(45.0);
-    Reading result = oil_pressure.get_processed_reading();
+    oilPressure.setRawValue(45.0);
+    Reading result = oilPressure.getProcessedReading();
     TEST_ASSERT_TRUE(std::holds_alternative<double>(result));
     
     // Test low pressure warning
-    oil_pressure.set_raw_value(5.0);
-    result = oil_pressure.get_processed_reading();
+    oilPressure.setRawValue(5.0);
+    result = oilPressure.getProcessedReading();
     TEST_ASSERT_EQUAL_STRING("LOW", std::get<std::string>(result).c_str());
     
     // Test high pressure warning
-    oil_pressure.set_raw_value(85.0);
-    result = oil_pressure.get_processed_reading();
+    oilPressure.setRawValue(85.0);
+    result = oilPressure.getProcessedReading();
     TEST_ASSERT_EQUAL_STRING("HIGH", std::get<std::string>(result).c_str());
 }
 
 void test_oil_temperature_ranges(void) {
     // Typical oil temperature sensor ranges (70-250°F)
-    MockSensor oil_temp(180.0, 230.0);  // Normal: 180-230°F
+    MockSensor oilTemp(180.0, 230.0);  // Normal: 180-230°F
     
     // Test normal temperature
-    oil_temp.set_raw_value(200.0);
-    Reading result = oil_temp.get_processed_reading();
+    oilTemp.setRawValue(200.0);
+    Reading result = oilTemp.getProcessedReading();
     TEST_ASSERT_TRUE(std::holds_alternative<double>(result));
     
     // Test low temperature
-    oil_temp.set_raw_value(150.0);
-    result = oil_temp.get_processed_reading();
+    oilTemp.setRawValue(150.0);
+    result = oilTemp.getProcessedReading();
     TEST_ASSERT_EQUAL_STRING("LOW", std::get<std::string>(result).c_str());
     
     // Test overheating
-    oil_temp.set_raw_value(250.0);
-    result = oil_temp.get_processed_reading();
+    oilTemp.setRawValue(250.0);
+    result = oilTemp.getProcessedReading();
     TEST_ASSERT_EQUAL_STRING("HIGH", std::get<std::string>(result).c_str());
 }
 

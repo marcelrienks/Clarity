@@ -39,7 +39,7 @@ void TriggerManager::init()
     );
 }
 
-void TriggerManager::HandleKeyPresentInterrupt(bool key_present_state)
+void TriggerManager::HandleKeyPresentInterrupt(bool keyPresentState)
 {
     log_d("...");
 
@@ -48,12 +48,12 @@ void TriggerManager::HandleKeyPresentInterrupt(bool key_present_state)
         return;
     }
 
-    HandlePanelStateChange(key_present_state, PanelNames::KEY, TRIGGER_KEY_PRESENT, TriggerPriority::CRITICAL);
-    keyPresentState_ = key_present_state;
+    HandlePanelStateChange(keyPresentState, PanelNames::KEY, TRIGGER_KEY_PRESENT, TriggerPriority::CRITICAL);
+    keyPresentState_ = keyPresentState;
     xSemaphoreGive(stateMutex);
 }
 
-void TriggerManager::HandleKeyNotPresentInterrupt(bool key_not_present_state)
+void TriggerManager::HandleKeyNotPresentInterrupt(bool keyNotPresentState)
 {
     log_d("...");
 
@@ -62,12 +62,12 @@ void TriggerManager::HandleKeyNotPresentInterrupt(bool key_not_present_state)
         return;
     }
 
-    HandlePanelStateChange(key_not_present_state, PanelNames::KEY, TRIGGER_KEY_NOT_PRESENT, TriggerPriority::CRITICAL);
-    keyNotPresentState_ = key_not_present_state;
+    HandlePanelStateChange(keyNotPresentState, PanelNames::KEY, TRIGGER_KEY_NOT_PRESENT, TriggerPriority::CRITICAL);
+    keyNotPresentState_ = keyNotPresentState;
     xSemaphoreGive(stateMutex);
 }
 
-void TriggerManager::HandleLockStateInterrupt(bool lock_engaged)
+void TriggerManager::HandleLockStateInterrupt(bool lockEngaged)
 {
     log_d("...");
 
@@ -76,12 +76,12 @@ void TriggerManager::HandleLockStateInterrupt(bool lock_engaged)
         return;
     }
 
-    HandlePanelStateChange(lock_engaged, PanelNames::LOCK, TRIGGER_LOCK_STATE, TriggerPriority::IMPORTANT);
-    lockEngagedState_ = lock_engaged;
+    HandlePanelStateChange(lockEngaged, PanelNames::LOCK, TRIGGER_LOCK_STATE, TriggerPriority::IMPORTANT);
+    lockEngagedState_ = lockEngaged;
     xSemaphoreGive(stateMutex);
 }
 
-void TriggerManager::HandleThemeSwitchInterrupt(bool night_mode)
+void TriggerManager::HandleThemeSwitchInterrupt(bool nightMode)
 {
     log_d("...");
 
@@ -90,19 +90,19 @@ void TriggerManager::HandleThemeSwitchInterrupt(bool night_mode)
         return;
     }
 
-    const char *target_theme = night_mode ? THEME_NIGHT : THEME_DAY;
-    const char *current_theme = StyleManager::GetInstance().THEME;
+    const char *targetTheme = nightMode ? THEME_NIGHT : THEME_DAY;
+    const char *currentTheme = StyleManager::GetInstance().THEME;
     
-    if (strcmp(current_theme, target_theme) != 0)
+    if (strcmp(currentTheme, targetTheme) != 0)
     {
-        SetTriggerState(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, target_theme, TriggerPriority::NORMAL);
+        SetTriggerState(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, targetTheme, TriggerPriority::NORMAL);
     }
     else
     {
         ClearTriggerState(TRIGGER_THEME_SWITCH);
     }
 
-    nightModeState_ = night_mode;
+    nightModeState_ = nightMode;
     xSemaphoreGive(stateMutex);
 }
 
@@ -153,41 +153,41 @@ void TriggerManager::TriggerMonitoringTask(void *pvParameters)
 
 // Private Methods
 
-void TriggerManager::SetTriggerState(const char *trigger_id, const char *action, const char *target, TriggerPriority priority)
+void TriggerManager::SetTriggerState(const char* triggerId, const char *action, const char *target, TriggerPriority priority)
 {
     if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
     {
-        activeTriggers_[trigger_id] = TriggerState(action, target, priority, esp_timer_get_time());
-        log_d("Set trigger %s: %s -> %s (priority %d)", trigger_id, action, target, (int)priority);
+        activeTriggers_[triggerId] = TriggerState(action, target, priority, esp_timer_get_time());
+        log_d("Set trigger %s: %s -> %s (priority %d)", triggerId, action, target, (int)priority);
         xSemaphoreGive(triggerMutex_);
     }
 }
 
-void TriggerManager::ClearTriggerState(const char *trigger_id)
+void TriggerManager::ClearTriggerState(const char* triggerId)
 {
     if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
     {
-        auto it = activeTriggers_.find(trigger_id);
+        auto it = activeTriggers_.find(triggerId);
         if (it != activeTriggers_.end())
         {
             activeTriggers_.erase(it);
-            log_d("Cleared trigger %s", trigger_id);
+            log_d("Cleared trigger %s", triggerId);
         }
         xSemaphoreGive(triggerMutex_);
     }
 }
 
-void TriggerManager::UpdateTriggerState(const char *trigger_id, const char *action, const char *target)
+void TriggerManager::UpdateTriggerState(const char* triggerId, const char *action, const char *target)
 {
     if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
     {
-        auto it = activeTriggers_.find(trigger_id);
+        auto it = activeTriggers_.find(triggerId);
         if (it != activeTriggers_.end())
         {
             it->second.action = action;
             it->second.target = target;
             it->second.timestamp = esp_timer_get_time();
-            log_d("Updated trigger %s: %s -> %s", trigger_id, action, target);
+            log_d("Updated trigger %s: %s -> %s", triggerId, action, target);
         }
         xSemaphoreGive(triggerMutex_);
     }
@@ -240,51 +240,51 @@ void TriggerManager::setup_gpio_interrupts()
 
 void IRAM_ATTR TriggerManager::key_present_isr_handler(void *arg)
 {
-    BaseType_t x_higher_priority_task_woken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::KEY_PRESENT);
 
     // Post event to task queue for safe processing
     ISREvent event(ISREventType::KEY_PRESENT, pinState);
-    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &x_higher_priority_task_woken);
+    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &xHigherPriorityTaskWoken);
 
-    portYIELD_FROM_ISR(x_higher_priority_task_woken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void IRAM_ATTR TriggerManager::key_not_present_isr_handler(void *arg)
 {
-    BaseType_t x_higher_priority_task_woken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::KEY_NOT_PRESENT);
 
     // Pin HIGH means key not present bulb is ON
     ISREvent event(ISREventType::KEY_NOT_PRESENT, pinState);
-    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &x_higher_priority_task_woken);
+    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &xHigherPriorityTaskWoken);
 
-    portYIELD_FROM_ISR(x_higher_priority_task_woken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void IRAM_ATTR TriggerManager::lock_state_isr_handler(void *arg)
 {
-    BaseType_t x_higher_priority_task_woken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::LOCK);
 
     ISREvent event(ISREventType::LOCK_STATE_CHANGE, pinState);
-    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &x_higher_priority_task_woken);
+    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &xHigherPriorityTaskWoken);
 
-    portYIELD_FROM_ISR(x_higher_priority_task_woken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 void IRAM_ATTR TriggerManager::theme_switch_isr_handler(void *arg)
 {
-    BaseType_t x_higher_priority_task_woken = pdFALSE;
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 
     // For theme switch, we'll assume a different GPIO pin or logic
     // This is a placeholder for the actual implementation
-    bool night_mode = false; // Read from appropriate GPIO
+    bool nightMode = false; // Read from appropriate GPIO
 
-    ISREvent event(ISREventType::THEME_SWITCH, night_mode);
-    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &x_higher_priority_task_woken);
+    ISREvent event(ISREventType::THEME_SWITCH, nightMode);
+    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &xHigherPriorityTaskWoken);
 
-    portYIELD_FROM_ISR(x_higher_priority_task_woken);
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
 // C-style ISR wrappers (required for ESP32)
@@ -311,25 +311,25 @@ extern "C"
     }
 }
 
-void TriggerManager::HandlePanelStateChange(bool state, const char* panel_name, const char* trigger_id, TriggerPriority priority)
+void TriggerManager::HandlePanelStateChange(bool state, const char* panelName, const char* triggerId, TriggerPriority priority)
 {
-    const char* current_panel = PanelManager::GetInstance().current_panel;
+    const char* currentPanel = PanelManager::GetInstance().currentPanel;
     
     if (state)
     {
         // Trigger is active - load panel if not already showing
-        if (strcmp(current_panel, panel_name) != 0)
+        if (strcmp(currentPanel, panelName) != 0)
         {
-            SetTriggerState(trigger_id, ACTION_LOAD_PANEL, panel_name, priority);
+            SetTriggerState(triggerId, ACTION_LOAD_PANEL, panelName, priority);
         }
     }
     else
     {
         // Trigger is inactive - only act if we're currently showing this panel
-        if (strcmp(current_panel, panel_name) == 0)
+        if (strcmp(currentPanel, panelName) == 0)
         {
             // We're showing this panel - restore previous panel
-            SetTriggerState(trigger_id, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
+            SetTriggerState(triggerId, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
         }
         // Don't clear pending triggers when state goes inactive - let them execute
     }

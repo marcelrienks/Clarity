@@ -1,5 +1,5 @@
 #include "components/key_component.h"
-#include <icons/key-solid.h>
+#include <icons/key_solid.h>
 
 // Constructors and Destructors
 KeyComponent::KeyComponent() : keyIcon_(nullptr)
