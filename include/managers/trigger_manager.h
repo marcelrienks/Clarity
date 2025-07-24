@@ -33,7 +33,7 @@ public:
     void HandleKeyNotPresentInterrupt(bool keyNotPresent);
     void HandleLockStateInterrupt(bool lockEngaged);
     void HandleThemeSwitchInterrupt(bool nightMode);
-    TriggerState* GetHighestPriorityTrigger();
+    std::pair<const char*, TriggerState*> GetHighestPriorityTrigger();
 
     // Core 1 Task Methods
     static void TriggerMonitoringTask(void* pvParameters);
@@ -51,7 +51,6 @@ private:
 
     // Shared State Management
     void SetTriggerState(const char* triggerId, const char* action, const char* target, TriggerPriority priority);
-    void UpdateTriggerState(const char* triggerId, const char* action, const char* target);
     
     // Helper methods for simplified logic
     void HandlePanelStateChange(bool state, const char* panelName, const char* triggerId, TriggerPriority priority);

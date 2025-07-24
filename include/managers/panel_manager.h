@@ -110,14 +110,6 @@ public:
         };
     }
 
-    /// @brief Register a global trigger type with the trigger manager
-    /// @tparam T Trigger type that implements ITrigger interface
-    /// @param trigger_id String identifier for the trigger
-    /// @param auto_restore Whether the trigger should auto-restore previous panel when cleared
-    template<typename T>
-    void register_global_trigger(const char *triggerId, bool autoRestore = false) {
-        // Disabled for dual-core architecture\n        // TriggerManager::get_instance().register_global_trigger(triggerId, std::make_shared<T>(autoRestore));
-    }
 
 private:
     // Constructors and Destructors
@@ -159,11 +151,6 @@ private:
     
     /// @brief Process only critical and important priority triggers
     void ProcessCriticalAndImportantTriggers();
-    
-    /// @brief Find trigger ID for a given trigger state (helper method)
-    /// @param target_state Trigger state to find ID for
-    /// @return Trigger ID string, or empty if not found
-    const char* FindTriggerIdForState(const TriggerState& targetState);
     
     /// @brief Notify Core 1 of state changes
     /// @param panel_name Current panel name

@@ -143,7 +143,7 @@ void PanelManager::PanelCompletionCallback()
 void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
     log_d("...");
-
+    
     SetUiState(UIState::IDLE);
     TriggerManager::GetInstance().ClearTriggerState(triggerId);
 }
@@ -198,7 +198,7 @@ void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const 
     }
 }
 
-/// @brief Process all triggers regardless of priority
+/// @brief Process all triggers regardless of priority  
 void PanelManager::ProcessTriggers()
 {
     log_d("...");
@@ -209,11 +209,12 @@ void PanelManager::ProcessTriggers()
         return;
     }
 
-    TriggerState *trigger = TriggerManager::GetInstance().GetHighestPriorityTrigger();
-    if (trigger && trigger->active)
+    auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
+    const char* triggerId = triggerPair.first;
+    TriggerState* trigger = triggerPair.second;
+    
+    if (trigger && trigger->active && triggerId)
     {
-        // Find the trigger ID for this state
-        const char *triggerId = FindTriggerIdForState(*trigger);
         ExecuteTriggerAction(*trigger, triggerId);
     }
 }
@@ -229,38 +230,14 @@ void PanelManager::ProcessCriticalAndImportantTriggers()
         return;
     }
 
-    TriggerState *trigger = TriggerManager::GetInstance().GetHighestPriorityTrigger();
-    if (trigger && trigger->active &&
+    auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
+    const char* triggerId = triggerPair.first;
+    TriggerState* trigger = triggerPair.second;
+    
+    if (trigger && trigger->active && triggerId &&
         (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
     {
-        // Find the trigger ID for this state
-        const char *triggerId = FindTriggerIdForState(*trigger);
         ExecuteTriggerAction(*trigger, triggerId);
     }
 }
 
-/// @brief Find trigger ID for a given trigger state (helper method)
-const char *PanelManager::FindTriggerIdForState(const TriggerState &targetState)//TODO: there must be a better way to do this
-{
-    log_d("...");
-
-    // Check common trigger IDs
-    if (targetState.action == ACTION_LOAD_PANEL && targetState.target == PanelNames::KEY)
-    {
-        return TRIGGER_KEY_PRESENT;
-    }
-    else if (targetState.action == ACTION_LOAD_PANEL && targetState.target == PanelNames::LOCK)
-    {
-        return TRIGGER_LOCK_STATE;
-    }
-    else if (targetState.action == ACTION_CHANGE_THEME)
-    {
-        return TRIGGER_THEME_SWITCH;
-    }
-    else if (targetState.action == ACTION_RESTORE_PREVIOUS_PANEL)
-    {
-        return TRIGGER_KEY_PRESENT;
-    }
-
-    return nullptr; // Not found
-}

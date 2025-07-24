@@ -197,20 +197,6 @@ enum class TriggerPriority {
     NORMAL = 2     ///< Non-critical triggers (theme changes, settings)
 };
 
-/// @brief Message structure for trigger communication between cores
-struct TriggerMessage {
-    char triggerId[32];     ///< Unique trigger identifier
-    char action[32];        ///< Action to perform ("LoadPanel", "RestorePreviousPanel", "ChangeTheme")
-    char target[32];        ///< Target panel/theme name
-    TriggerPriority priority; ///< Message priority level
-    uint32_t timestamp;     ///< Message creation time
-    
-    TriggerMessage() : priority(TriggerPriority::NORMAL), timestamp(0) {
-        triggerId[0] = '\0';
-        action[0] = '\0';
-        target[0] = '\0';
-    }
-};
 
 /**
  * @brief Structure for shared trigger state
@@ -224,20 +210,22 @@ struct TriggerState
     std::string target;           ///< Target of the action
     TriggerPriority priority;     ///< Priority level
     uint64_t timestamp;           ///< When trigger was activated
+    uint64_t lastProcessed;       ///< When trigger was last processed
     bool active;                  ///< Whether trigger is currently active
+    bool processing;              ///< Whether trigger is currently being processed
     
     TriggerState() = default;
     TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
-        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
+        : action(action), target(target), priority(priority), timestamp(timestamp), 
+          lastProcessed(0), active(true), processing(false) {}
 };
 
 /// @brief Configuration constants
-constexpr int HIGH_PRIORITY_QUEUE_SIZE = 15;
-constexpr int MEDIUM_PRIORITY_QUEUE_SIZE = 15;
-constexpr int LOW_PRIORITY_QUEUE_SIZE = 15;
 constexpr int PANEL_STATE_MUTEX_TIMEOUT = 100;
 constexpr int THEME_STATE_MUTEX_TIMEOUT = 100;
-constexpr TriggerPriority UPDATING_STATE_MAX_PRIORITY = TriggerPriority::IMPORTANT;
+
+/// @brief Trigger processing constants
+constexpr uint64_t TRIGGER_DEBOUNCE_TIME_US = 500000; ///< 500ms minimum between processing same trigger
 
 /// @brief Action constants
 constexpr const char *ACTION_LOAD_PANEL = "LoadPanel";

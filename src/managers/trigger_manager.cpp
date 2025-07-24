@@ -99,6 +99,7 @@ void TriggerManager::HandleThemeSwitchInterrupt(bool nightMode)
     xSemaphoreGive(stateMutex);
 }
 
+
 // Task Methods
 
 void TriggerManager::TriggerMonitoringTask(void *pvParameters)
@@ -159,64 +160,69 @@ void TriggerManager::ClearTriggerState(const char *triggerId)
         return;
     }
 
-    log_d("...");
+    log_d("Clearing trigger state for: %s", triggerId);
 
     auto it = activeTriggers_.find(triggerId);
     if (it != activeTriggers_.end())
     {
+        log_d("Trigger %s cleared successfully", triggerId);
         activeTriggers_.erase(it);
     }
-    xSemaphoreGive(triggerMutex_);
-}
-
-void TriggerManager::UpdateTriggerState(const char *triggerId, const char *action, const char *target)
-{
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
+    else
     {
-        return;
-    }
-    
-    log_d("...");
-
-    auto it = activeTriggers_.find(triggerId);
-    if (it != activeTriggers_.end())
-    {
-        it->second.action = action;
-        it->second.target = target;
-        it->second.timestamp = esp_timer_get_time();
+        log_w("Trigger %s not found for clearing", triggerId);
     }
     xSemaphoreGive(triggerMutex_);
 }
 
-TriggerState *TriggerManager::GetHighestPriorityTrigger()
+
+std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTrigger()
 {
     if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
     {
-        return nullptr;
+        return std::make_pair(nullptr, nullptr);
     }
 
     log_d("...");
 
     TriggerState *highest = nullptr;
+    const char* highestId = nullptr;
     TriggerPriority highestPriority = TriggerPriority::NORMAL;
     uint64_t oldestTimestamp = UINT64_MAX;
+    uint64_t currentTime = esp_timer_get_time();
 
     for (auto &pair : activeTriggers_)
     {
+        const char* triggerId = pair.first;
         TriggerState &trigger = pair.second;
-        if (!trigger.active)
+        
+        // Skip inactive, processing, or recently processed triggers
+        if (!trigger.active || trigger.processing)
+            continue;
+            
+        // Skip if trigger was processed too recently (debouncing)
+        if (trigger.lastProcessed > 0 && 
+            (currentTime - trigger.lastProcessed) < TRIGGER_DEBOUNCE_TIME_US)
             continue;
 
         if (ShouldUpdateHighestPriority(trigger, highest, highestPriority, oldestTimestamp))
         {
             highest = &trigger;
+            highestId = triggerId;
             highestPriority = trigger.priority;
             oldestTimestamp = trigger.timestamp;
         }
     }
 
+    // Mark the selected trigger as processing to prevent reprocessing
+    if (highest != nullptr)
+    {
+        highest->processing = true;
+        highest->lastProcessed = currentTime;
+    }
+
     xSemaphoreGive(triggerMutex_);
-    return highest;
+    return std::make_pair(highestId, highest);
 }
 
 void TriggerManager::setup_gpio_interrupts()
