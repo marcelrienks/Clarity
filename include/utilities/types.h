@@ -201,31 +201,26 @@ enum class TriggerPriority {
 /**
  * @brief Structure for shared trigger state
  * 
- * @details This structure represents the state of an active trigger,
- * including its action, target, priority, and timing information.
+ * @details This structure represents the state of a trigger,
+ * including its action, target, priority, and active status.
  */
 struct TriggerState
 {
     std::string action;           ///< Action to perform
     std::string target;           ///< Target of the action
     TriggerPriority priority;     ///< Priority level
-    uint64_t timestamp;           ///< When trigger was activated
-    uint64_t lastProcessed;       ///< When trigger was last processed
-    bool active;                  ///< Whether trigger is currently active
-    bool processing;              ///< Whether trigger is currently being processed
+    uint64_t timestamp;           ///< When trigger was created (for FIFO within same priority)
+    bool active;                  ///< Whether trigger is currently active (GPIO HIGH)
     
     TriggerState() = default;
     TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
-        : action(action), target(target), priority(priority), timestamp(timestamp), 
-          lastProcessed(0), active(true), processing(false) {}
+        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
 };
 
 /// @brief Configuration constants
 constexpr int PANEL_STATE_MUTEX_TIMEOUT = 100;
 constexpr int THEME_STATE_MUTEX_TIMEOUT = 100;
 
-/// @brief Trigger processing constants
-constexpr uint64_t TRIGGER_DEBOUNCE_TIME_US = 500000; ///< 500ms minimum between processing same trigger
 
 /// @brief Action constants
 constexpr const char *ACTION_LOAD_PANEL = "LoadPanel";

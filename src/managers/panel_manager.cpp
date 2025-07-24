@@ -211,7 +211,7 @@ void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const 
     }
 }
 
-/// @brief Comprehensive trigger evaluation - processes all triggers with proper prioritization
+/// @brief Simple trigger evaluation - get highest priority active trigger and act on it
 void PanelManager::ProcessTriggers()
 {
     log_d("...");
@@ -222,17 +222,14 @@ void PanelManager::ProcessTriggers()
         return;
     }
 
-    // Clean up any inactive triggers first
-    TriggerManager::GetInstance().CleanupInactiveTriggers();
-    
     // Get the highest priority active trigger
     auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
     const char* triggerId = triggerPair.first;
     TriggerState* trigger = triggerPair.second;
     
-    if (trigger && trigger->active && triggerId)
+    if (trigger && triggerId)
     {
-        // Check if we need to switch panels based on the highest priority trigger
+        // We have an active trigger - check what to do
         const char* targetPanel = trigger->target.c_str();
         
         if (trigger->action == ACTION_LOAD_PANEL)
@@ -240,41 +237,31 @@ void PanelManager::ProcessTriggers()
             // Only switch panels if we're not already showing the target panel
             if (strcmp(currentPanel, targetPanel) != 0)
             {
-                log_d("Highest priority trigger %s requires panel switch to %s", triggerId, targetPanel);
+                log_d("Active trigger %s requires panel switch to %s", triggerId, targetPanel);
                 ExecuteTriggerAction(*trigger, triggerId);
             }
             else
             {
-                // Already showing the correct panel - reset processing flag and keep showing it
-                log_d("Already showing panel %s for trigger %s - trigger satisfied", targetPanel, triggerId);
-                trigger->processing = false;
+                log_v("Already showing panel %s for trigger %s", targetPanel, triggerId);
             }
         }
         else
         {
-            // Handle other actions (restore, theme change, etc.)
+            // Handle other actions (theme change, etc.)
             ExecuteTriggerAction(*trigger, triggerId);
         }
     }
     else
     {
-        // No active triggers - check if we need to restore to previous panel
-        if (!TriggerManager::GetInstance().HasActiveTriggers())
+        // No active triggers - restore to previous panel if needed
+        if (strcmp(currentPanel, PanelNames::KEY) == 0 || strcmp(currentPanel, PanelNames::LOCK) == 0)
         {
-            // Check if we're currently showing a trigger-driven panel that should be restored
-            if (strcmp(currentPanel, PanelNames::KEY) == 0 || strcmp(currentPanel, PanelNames::LOCK) == 0)
-            {
-                log_d("No active triggers - restoring from %s to %s", currentPanel, restorationPanel);
-                CreateAndLoadPanel(restorationPanel, [this](){ this->PanelCompletionCallback(); }, false);
-            }
-            else
-            {
-                log_v("No active triggers but showing non-trigger panel %s", currentPanel);
-            }
+            log_d("No active triggers - restoring from %s to %s", currentPanel, restorationPanel);
+            CreateAndLoadPanel(restorationPanel, [this](){ this->PanelCompletionCallback(); }, false);
         }
         else
         {
-            log_v("No processable triggers (may be debouncing or processing)");
+            log_v("No active triggers but showing non-trigger panel %s", currentPanel);
         }
     }
 }
@@ -290,14 +277,12 @@ void PanelManager::ProcessCriticalAndImportantTriggers()
         return;
     }
 
-    // Clean up any inactive triggers first
-    TriggerManager::GetInstance().CleanupInactiveTriggers();
-    
     auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
     const char* triggerId = triggerPair.first;
     TriggerState* trigger = triggerPair.second;
     
-    if (trigger && trigger->active && triggerId &&
+    // Only interrupt for critical/important triggers
+    if (trigger && triggerId &&
         (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
     {
         const char* targetPanel = trigger->target.c_str();
@@ -309,12 +294,6 @@ void PanelManager::ProcessCriticalAndImportantTriggers()
             {
                 log_d("Critical/Important trigger %s interrupting update to switch to %s", triggerId, targetPanel);
                 ExecuteTriggerAction(*trigger, triggerId);
-            }
-            else
-            {
-                // Already showing the correct panel
-                TriggerManager::GetInstance().ClearTriggerState(triggerId);
-                ProcessCriticalAndImportantTriggers(); // Re-evaluate
             }
         }
         else

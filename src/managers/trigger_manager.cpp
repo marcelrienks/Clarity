@@ -294,7 +294,6 @@ void TriggerManager::SetTriggerActiveStatus(const char *triggerId, bool active)
     if (it != activeTriggers_.end())
     {
         it->second.active = active;
-        it->second.processing = false; // Reset processing flag when status changes
         log_d("Trigger %s status updated successfully", triggerId);
     }
     else
@@ -306,21 +305,10 @@ void TriggerManager::SetTriggerActiveStatus(const char *triggerId, bool active)
 }
 
 
-/// @brief Get the highest priority trigger ready for processing with concurrent trigger support
-/// @return Pair of (trigger ID, trigger state pointer) or (nullptr, nullptr) if none available
-/// @details Thread-safe method called by Core 0 to retrieve next trigger to process.
-/// Enhanced for concurrent trigger handling with improved priority evaluation.
-/// 
-/// **Enhanced Selection Logic**:
-/// 1. Higher priority triggers are selected first (CRITICAL > IMPORTANT > NORMAL)
-/// 2. Within same priority, older triggers are selected first (FIFO)
-/// 3. Debouncing: Same trigger can't be processed within 500ms
-/// 4. Processing flag prevents double-processing of same trigger
-/// 5. **NEW**: Better handling of concurrent triggers with same target panel
-/// 
-/// **Concurrent Features**: 
-/// - Evaluates all active triggers to find true highest priority
-/// - Handles multiple triggers wanting the same panel gracefully
+/// @brief Get the highest priority active trigger for panel evaluation
+/// @return Pair of (trigger ID, trigger state pointer) or (nullptr, nullptr) if none active
+/// @details Simple method that returns the highest priority active trigger.
+/// No processing flags or debouncing - just pure priority evaluation.
 std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTrigger()
 {
     // Acquire mutex for thread-safe access to triggers map
@@ -329,33 +317,20 @@ std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTrigger(
         return std::make_pair(nullptr, nullptr);
     }
 
-    log_d("...");
-
     TriggerState *highest = nullptr;
     const char* highestId = nullptr;
     TriggerPriority highestPriority = TriggerPriority::NORMAL;
     uint64_t oldestTimestamp = UINT64_MAX;
-    uint64_t currentTime = esp_timer_get_time();
 
-    // Scan all active triggers to find the best candidate
+    // Scan all triggers to find the highest priority active one
     for (auto &pair : activeTriggers_)
     {
         const char* triggerId = pair.first;
         TriggerState &trigger = pair.second;
         
-        // Skip inactive or already processing triggers
-        if (!trigger.active || trigger.processing)
+        // Only consider active triggers
+        if (!trigger.active)
         {
-            log_v("Skipping trigger %s: active=%d, processing=%d", triggerId, trigger.active, trigger.processing);
-            continue;
-        }
-            
-        // Skip if trigger was processed too recently (500ms debouncing)
-        if (trigger.lastProcessed > 0 && 
-            (currentTime - trigger.lastProcessed) < TRIGGER_DEBOUNCE_TIME_US)
-        {
-            log_v("Skipping trigger %s: debouncing (%llu μs ago)", 
-                  triggerId, currentTime - trigger.lastProcessed);
             continue;
         }
 
@@ -366,57 +341,13 @@ std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTrigger(
             highestId = triggerId;
             highestPriority = trigger.priority;
             oldestTimestamp = trigger.timestamp;
-            log_v("New highest priority candidate: %s [priority: %d]", triggerId, (int)highestPriority);
         }
-    }
-
-    // Mark the selected trigger as processing to prevent reprocessing
-    if (highest != nullptr)
-    {
-        highest->processing = true;
-        highest->lastProcessed = currentTime;
-        log_d("Selected trigger %s for processing [priority: %d, action: %s]", 
-              highestId, (int)highest->priority, highest->action.c_str());
-    }
-    else
-    {
-        log_v("No triggers available for processing");
     }
 
     xSemaphoreGive(triggerMutex_);
     return std::make_pair(highestId, highest);
 }
 
-/// @brief Clean up inactive triggers from the map to prevent memory leaks
-/// @details Thread-safe method that removes triggers marked as inactive.
-/// Should be called periodically to clean up the triggers map.
-void TriggerManager::CleanupInactiveTriggers()
-{
-    // Acquire mutex for thread-safe access to triggers map
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
-    {
-        return;
-    }
-
-    log_d("Cleaning up inactive triggers");
-
-    // Remove inactive triggers from the map
-    auto it = activeTriggers_.begin();
-    while (it != activeTriggers_.end())
-    {
-        if (!it->second.active && !it->second.processing)
-        {
-            log_d("Removing inactive trigger: %s", it->first);
-            it = activeTriggers_.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-    
-    xSemaphoreGive(triggerMutex_);
-}
 
 /// @brief Configure GPIO pins and attach interrupt handlers
 /// @details Sets up hardware interrupt system for all monitored GPIO inputs.
@@ -606,84 +537,3 @@ bool TriggerManager::ShouldUpdateHighestPriority(const TriggerState &trigger, Tr
     return false;
 }
 
-/// @brief Check if there are any active triggers (regardless of processing status)
-/// @return true if there are active triggers (GPIO pins HIGH)
-/// @details Thread-safe method to check if any triggers are currently active.
-/// Used for determining if restoration to previous panel is needed.
-bool TriggerManager::HasActiveTriggers()
-{
-    // Acquire mutex for thread-safe access to triggers map
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
-    {
-        return false;
-    }
-
-    bool hasActive = false;
-
-    // Check if any triggers are currently active (GPIO HIGH)
-    for (auto &pair : activeTriggers_)
-    {
-        TriggerState &trigger = pair.second;
-        
-        // Only check if trigger is active (GPIO HIGH)
-        if (trigger.active)
-        {
-            hasActive = true;
-            break;
-        }
-    }
-
-    xSemaphoreGive(triggerMutex_);
-    return hasActive;
-}
-
-/// @brief Get the highest priority trigger for evaluation without marking it as processing
-/// @return Pair of (trigger ID, trigger state pointer) or (nullptr, nullptr) if none available
-/// @details Thread-safe read-only access to highest priority trigger.
-/// Used for evaluation purposes without affecting trigger processing state.
-std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTriggerReadOnly()
-{
-    // Acquire mutex for thread-safe access to triggers map
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
-    {
-        return std::make_pair(nullptr, nullptr);
-    }
-
-    TriggerState *highest = nullptr;
-    const char* highestId = nullptr;
-    TriggerPriority highestPriority = TriggerPriority::NORMAL;
-    uint64_t oldestTimestamp = UINT64_MAX;
-    uint64_t currentTime = esp_timer_get_time();
-
-    // Scan all active triggers to find the best candidate (read-only)
-    for (auto &pair : activeTriggers_)
-    {
-        const char* triggerId = pair.first;
-        TriggerState &trigger = pair.second;
-        
-        // Skip inactive or already processing triggers
-        if (!trigger.active || trigger.processing)
-        {
-            continue;
-        }
-            
-        // Skip if trigger was processed too recently (debouncing)
-        if (trigger.lastProcessed > 0 && 
-            (currentTime - trigger.lastProcessed) < TRIGGER_DEBOUNCE_TIME_US)
-        {
-            continue;
-        }
-
-        // Check if this trigger should be selected over current best candidate
-        if (ShouldUpdateHighestPriority(trigger, highest, highestPriority, oldestTimestamp))
-        {
-            highest = &trigger;
-            highestId = triggerId;
-            highestPriority = trigger.priority;
-            oldestTimestamp = trigger.timestamp;
-        }
-    }
-
-    xSemaphoreGive(triggerMutex_);
-    return std::make_pair(highestId, highest);
-}

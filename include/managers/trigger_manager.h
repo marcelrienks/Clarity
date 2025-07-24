@@ -34,10 +34,6 @@ public:
     void HandleLockStateInterrupt(bool lockEngaged);
     void HandleThemeSwitchInterrupt(bool nightMode);
     std::pair<const char*, TriggerState*> GetHighestPriorityTrigger();
-    
-    // Enhanced concurrent trigger support
-    bool HasActiveTriggers();
-    std::pair<const char*, TriggerState*> GetHighestPriorityTriggerReadOnly();
 
     // Core 1 Task Methods
     static void TriggerMonitoringTask(void* pvParameters);
@@ -64,7 +60,6 @@ public:
     void setup_gpio_interrupts();
     void ClearTriggerState(const char* triggerId);
     void SetTriggerActiveStatus(const char* triggerId, bool active);
-    void CleanupInactiveTriggers();
     
 
     // Instance Data Members
