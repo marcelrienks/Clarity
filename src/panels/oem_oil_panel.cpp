@@ -10,19 +10,28 @@ OemOilPanel::OemOilPanel()
 
 OemOilPanel::~OemOilPanel()
 {
+    log_d("Destroying OemOilPanel...");
+    
     // Stop any running animations before destroying the panel
     if (isPressureAnimationRunning_) {
         lv_anim_delete(&pressureAnimation_, nullptr);
         isPressureAnimationRunning_ = false;
+        log_d("Deleted pressure animation");
     }
     
     if (isTemperatureAnimationRunning_) {
         lv_anim_delete(&temperatureAnimation_, nullptr);
         isTemperatureAnimationRunning_ = false;
+        log_d("Deleted temperature animation");
     }
+
+    // Delete all animations that might reference this instance to prevent callback corruption
+    lv_anim_delete(this, nullptr);
+    log_d("Deleted all animations for this instance");
 
     if (screen_) {
         lv_obj_delete(screen_);
+        screen_ = nullptr;
     }
 
     if (oemOilPressureComponent_) {
@@ -40,6 +49,8 @@ OemOilPanel::~OemOilPanel()
     if (oemOilTemperatureSensor_) {
         oemOilTemperatureSensor_.reset();
     }
+    
+    log_d("OemOilPanel destruction complete");
 }
 
 // Core Functionality Methods
@@ -196,6 +207,11 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 {
     log_d("...");
 
+    if (animation == nullptr || animation->var == nullptr) {
+        log_w("Animation or animation->var is null, skipping completion callback");
+        return;
+    }
+
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);
     auto sensorType = static_cast<OilSensorTypes>(reinterpret_cast<uintptr_t>(animation->user_data));
 
@@ -210,7 +226,9 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 
     // Only call the callback function if both animations are not running
     if (!thisInstance->isPressureAnimationRunning_ && !thisInstance->isTemperatureAnimationRunning_) {
-        thisInstance->callbackFunction_();
+        if (thisInstance->callbackFunction_) {
+            thisInstance->callbackFunction_();
+        }
     }
 }
 
@@ -222,8 +240,15 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
     log_d("...");
 
     lv_anim_t *animation = lv_anim_get(target, ExecutePressureAnimationCallback); // get the animation
+    if (animation == nullptr || animation->var == nullptr) {
+        log_w("Animation or animation->var is null, skipping callback");
+        return;
+    }
+    
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                    // use the animation to get the var which is this instance
-    thisInstance->oemOilPressureComponent_.get()->SetValue(value);
+    if (thisInstance->oemOilPressureComponent_) {
+        thisInstance->oemOilPressureComponent_.get()->SetValue(value);
+    }
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
@@ -234,8 +259,15 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
     log_d("...");
 
     lv_anim_t *animation = lv_anim_get(target, ExecuteTemperatureAnimationCallback); // get the animation
+    if (animation == nullptr || animation->var == nullptr) {
+        log_w("Animation or animation->var is null, skipping callback");
+        return;
+    }
+    
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
-    thisInstance->oemOilTemperatureComponent_.get()->SetValue(value);
+    if (thisInstance->oemOilTemperatureComponent_) {
+        thisInstance->oemOilTemperatureComponent_.get()->SetValue(value);
+    }
 }
 
 // Value mapping methods
