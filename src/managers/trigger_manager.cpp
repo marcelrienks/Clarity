@@ -274,19 +274,53 @@ void TriggerManager::ClearTriggerState(const char *triggerId)
     xSemaphoreGive(triggerMutex_);
 }
 
+/// @brief Set the active status of a trigger based on GPIO pin state
+/// @param triggerId Unique string identifier for the trigger
+/// @param active true if GPIO pin is HIGH (trigger active), false if LOW (trigger inactive)
+/// @details Thread-safe method that directly sets trigger active status.
+/// This is called from GPIO interrupt handlers to reflect hardware state.
+void TriggerManager::SetTriggerActiveStatus(const char *triggerId, bool active)
+{
+    // Acquire mutex for thread-safe access to triggers map
+    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
+    {
+        return;
+    }
 
-/// @brief Get the highest priority trigger ready for processing
+    log_d("Setting trigger %s active status to: %s", triggerId, active ? "ACTIVE" : "INACTIVE");
+
+    // Find and update trigger active status
+    auto it = activeTriggers_.find(triggerId);
+    if (it != activeTriggers_.end())
+    {
+        it->second.active = active;
+        it->second.processing = false; // Reset processing flag when status changes
+        log_d("Trigger %s status updated successfully", triggerId);
+    }
+    else
+    {
+        log_w("Trigger %s not found when setting active status", triggerId);
+    }
+    
+    xSemaphoreGive(triggerMutex_);
+}
+
+
+/// @brief Get the highest priority trigger ready for processing with concurrent trigger support
 /// @return Pair of (trigger ID, trigger state pointer) or (nullptr, nullptr) if none available
 /// @details Thread-safe method called by Core 0 to retrieve next trigger to process.
-/// Implements priority-based selection with debouncing and duplicate prevention.
+/// Enhanced for concurrent trigger handling with improved priority evaluation.
 /// 
-/// **Selection Logic**:
+/// **Enhanced Selection Logic**:
 /// 1. Higher priority triggers are selected first (CRITICAL > IMPORTANT > NORMAL)
 /// 2. Within same priority, older triggers are selected first (FIFO)
 /// 3. Debouncing: Same trigger can't be processed within 500ms
 /// 4. Processing flag prevents double-processing of same trigger
+/// 5. **NEW**: Better handling of concurrent triggers with same target panel
 /// 
-/// **Critical Feature**: Returns trigger ID directly from map key - no guessing needed!
+/// **Concurrent Features**: 
+/// - Evaluates all active triggers to find true highest priority
+/// - Handles multiple triggers wanting the same panel gracefully
 std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTrigger()
 {
     // Acquire mutex for thread-safe access to triggers map
@@ -351,6 +385,37 @@ std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTrigger(
 
     xSemaphoreGive(triggerMutex_);
     return std::make_pair(highestId, highest);
+}
+
+/// @brief Clean up inactive triggers from the map to prevent memory leaks
+/// @details Thread-safe method that removes triggers marked as inactive.
+/// Should be called periodically to clean up the triggers map.
+void TriggerManager::CleanupInactiveTriggers()
+{
+    // Acquire mutex for thread-safe access to triggers map
+    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
+    {
+        return;
+    }
+
+    log_d("Cleaning up inactive triggers");
+
+    // Remove inactive triggers from the map
+    auto it = activeTriggers_.begin();
+    while (it != activeTriggers_.end())
+    {
+        if (!it->second.active && !it->second.processing)
+        {
+            log_d("Removing inactive trigger: %s", it->first);
+            it = activeTriggers_.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    
+    xSemaphoreGive(triggerMutex_);
 }
 
 /// @brief Configure GPIO pins and attach interrupt handlers
@@ -480,59 +545,28 @@ extern "C"
     }
 }
 
-/// @brief Convert GPIO state change to appropriate trigger action
+/// @brief Convert GPIO state change directly to trigger active/inactive status
 /// @param state true if GPIO pin is HIGH, false if LOW
 /// @param panelName Target panel name for this GPIO (e.g., "KeyPanel", "LockPanel")
 /// @param triggerId Unique trigger identifier (e.g., "key_present", "lock_state")
 /// @param priority Priority level for the trigger
-/// @details **Core Logic**: This method implements the contextual trigger behavior:
+/// @details **Simplified Logic**: GPIO pin state directly controls trigger active status.
+/// No complex state management or cross-core clearing needed.
 /// 
-/// **When GPIO goes HIGH (state=true)**:
-/// - If not already showing target panel → Create "LoadPanel" trigger
-/// - If already showing target panel → Do nothing (avoid redundant switches)
+/// **When GPIO goes HIGH**: Create/activate trigger for LoadPanel
+/// **When GPIO goes LOW**: Mark trigger as inactive (but keep in map for evaluation)
 /// 
-/// **When GPIO goes LOW (state=false)**:
-/// - If currently showing target panel → Create "RestorePreviousPanel" trigger  
-/// - If showing different panel → Do nothing (don't interfere)
-/// 
-/// **Example**: Key present pin goes HIGH while showing oil panel → Load key panel
-///             Key present pin goes LOW while showing key panel → Restore oil panel
+/// Panel manager will evaluate all triggers and determine appropriate action.
 void TriggerManager::ProcessGpioStateChange(bool state, const char *panelName, const char *triggerId, TriggerPriority priority)
 {
-    const char *currentPanel = PanelManager::GetInstance().currentPanel;
-    
-    log_d("Processing GPIO state change: %s=%s, currentPanel=%s, targetPanel=%s", 
-          triggerId, state ? "HIGH" : "LOW", currentPanel, panelName);
+    log_d("Processing GPIO state change: %s=%s, targetPanel=%s", 
+          triggerId, state ? "HIGH" : "LOW", panelName);
 
-    if (state)
-    {
-        // GPIO pin is HIGH - trigger is active
-        if (strcmp(currentPanel, panelName) != 0)
-        {
-            // Not showing target panel - create trigger to load it
-            log_d("GPIO HIGH and not showing target panel - creating LoadPanel trigger");
-            SetTriggerState(triggerId, ACTION_LOAD_PANEL, panelName, priority);
-        }
-        else
-        {
-            log_v("GPIO HIGH but already showing target panel - no action needed");
-        }
-    }
-    else
-    {
-        // GPIO pin is LOW - trigger is inactive
-        if (strcmp(currentPanel, panelName) == 0)
-        {
-            // Currently showing this trigger's panel - restore previous panel
-            log_d("GPIO LOW and showing target panel - creating RestorePreviousPanel trigger");
-            SetTriggerState(triggerId, ACTION_RESTORE_PREVIOUS_PANEL, "", TriggerPriority::NORMAL);
-        }
-        else
-        {
-            log_v("GPIO LOW but not showing target panel - no action needed");
-        }
-        // Note: Don't clear pending triggers when state goes inactive - let them execute
-    }
+    // Always ensure trigger exists in map
+    SetTriggerState(triggerId, ACTION_LOAD_PANEL, panelName, priority);
+    
+    // Set active status based on GPIO pin state
+    SetTriggerActiveStatus(triggerId, state);
 }
 
 /// @brief Determine if a trigger should replace the current highest priority candidate
@@ -570,4 +604,86 @@ bool TriggerManager::ShouldUpdateHighestPriority(const TriggerState &trigger, Tr
 
     // Keep current candidate
     return false;
+}
+
+/// @brief Check if there are any active triggers (regardless of processing status)
+/// @return true if there are active triggers (GPIO pins HIGH)
+/// @details Thread-safe method to check if any triggers are currently active.
+/// Used for determining if restoration to previous panel is needed.
+bool TriggerManager::HasActiveTriggers()
+{
+    // Acquire mutex for thread-safe access to triggers map
+    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
+    {
+        return false;
+    }
+
+    bool hasActive = false;
+
+    // Check if any triggers are currently active (GPIO HIGH)
+    for (auto &pair : activeTriggers_)
+    {
+        TriggerState &trigger = pair.second;
+        
+        // Only check if trigger is active (GPIO HIGH)
+        if (trigger.active)
+        {
+            hasActive = true;
+            break;
+        }
+    }
+
+    xSemaphoreGive(triggerMutex_);
+    return hasActive;
+}
+
+/// @brief Get the highest priority trigger for evaluation without marking it as processing
+/// @return Pair of (trigger ID, trigger state pointer) or (nullptr, nullptr) if none available
+/// @details Thread-safe read-only access to highest priority trigger.
+/// Used for evaluation purposes without affecting trigger processing state.
+std::pair<const char*, TriggerState*> TriggerManager::GetHighestPriorityTriggerReadOnly()
+{
+    // Acquire mutex for thread-safe access to triggers map
+    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) != pdTRUE)
+    {
+        return std::make_pair(nullptr, nullptr);
+    }
+
+    TriggerState *highest = nullptr;
+    const char* highestId = nullptr;
+    TriggerPriority highestPriority = TriggerPriority::NORMAL;
+    uint64_t oldestTimestamp = UINT64_MAX;
+    uint64_t currentTime = esp_timer_get_time();
+
+    // Scan all active triggers to find the best candidate (read-only)
+    for (auto &pair : activeTriggers_)
+    {
+        const char* triggerId = pair.first;
+        TriggerState &trigger = pair.second;
+        
+        // Skip inactive or already processing triggers
+        if (!trigger.active || trigger.processing)
+        {
+            continue;
+        }
+            
+        // Skip if trigger was processed too recently (debouncing)
+        if (trigger.lastProcessed > 0 && 
+            (currentTime - trigger.lastProcessed) < TRIGGER_DEBOUNCE_TIME_US)
+        {
+            continue;
+        }
+
+        // Check if this trigger should be selected over current best candidate
+        if (ShouldUpdateHighestPriority(trigger, highest, highestPriority, oldestTimestamp))
+        {
+            highest = &trigger;
+            highestId = triggerId;
+            highestPriority = trigger.priority;
+            oldestTimestamp = trigger.timestamp;
+        }
+    }
+
+    xSemaphoreGive(triggerMutex_);
+    return std::make_pair(highestId, highest);
 }

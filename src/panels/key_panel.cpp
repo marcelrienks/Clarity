@@ -70,9 +70,39 @@ void KeyPanel::update(std::function<void()> callbackFunction)
 {
     log_d("...");
 
-    // Note: KeyPanel doesn't need to update key state since the trigger system
-    // handles state changes and will restore/switch panels automatically
-    // The panel just displays the key state it was initialized with
+    // Re-read GPIO pins to determine current key state
+    bool pin25High = digitalRead(gpio_pins::KEY_PRESENT);
+    bool pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    
+    KeyState newKeyState;
+    if (pin25High && pin26High)
+    {
+        newKeyState = KeyState::Inactive; // Both pins HIGH - invalid state
+    }
+    else if (pin25High)
+    {
+        newKeyState = KeyState::Present;
+    }
+    else if (pin26High)
+    {
+        newKeyState = KeyState::NotPresent;
+    }
+    else
+    {
+        newKeyState = KeyState::Inactive; // Both pins LOW
+    }
+    
+    // Update display if key state has changed
+    if (newKeyState != currentKeyState_)
+    {
+        log_d("Key state changed from %d to %d - updating display", (int)currentKeyState_, (int)newKeyState);
+        currentKeyState_ = newKeyState;
+        keyComponent_->refresh(Reading{static_cast<int32_t>(currentKeyState_)});
+    }
+    else
+    {
+        log_v("Key state unchanged: %d", (int)currentKeyState_);
+    }
     
     callbackFunction();
 }

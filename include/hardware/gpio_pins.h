@@ -38,5 +38,5 @@ namespace gpio_pins
     constexpr int LOCK = 27;
 
     /// @brief Lights detection digital input pin
-    constexpr int LIGHTS = 36;
+    constexpr int LIGHTS = 33;
 }

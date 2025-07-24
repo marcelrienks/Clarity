@@ -113,7 +113,7 @@ public:
 
 private:
     // Constructors and Destructors
-    PanelManager() = default;
+    PanelManager();
     ~PanelManager();
 
     // Core Functionality Methods
@@ -167,5 +167,6 @@ private:
     std::shared_ptr<IPanel> panel_ = nullptr;
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // Map of panel type names to creator functions for each of those names
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
+    char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
     // Removed queue handles - now using shared state trigger system
 };

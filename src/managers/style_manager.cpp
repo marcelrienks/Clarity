@@ -85,6 +85,9 @@ void StyleManager::set_theme(const char* theme)
 {
     log_d("...");
 
+    // Update current theme
+    this->THEME = theme;
+
     // Select the current theme colors
     ThemeColors colours = get_colours(theme);
 
@@ -118,6 +121,14 @@ void StyleManager::set_theme(const char* theme)
     // Danger section style
     lv_style_set_line_width(&gaugeDangerSectionStyle, 5);
     lv_style_set_line_color(&gaugeDangerSectionStyle, colours.gaugeDanger);
+
+    // Apply the updated theme to the current screen
+    lv_obj_t *current_screen = lv_scr_act();
+    if (current_screen != nullptr) {
+        apply_theme_to_screen(current_screen);
+        // Force LVGL to refresh the display
+        lv_obj_invalidate(current_screen);
+    }
 }
 
 // Accessor Methods
