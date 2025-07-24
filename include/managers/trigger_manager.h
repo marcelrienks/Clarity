@@ -53,7 +53,7 @@ private:
     void SetTriggerState(const char* triggerId, const char* action, const char* target, TriggerPriority priority);
     
     // Helper methods for simplified logic
-    void HandlePanelStateChange(bool state, const char* panelName, const char* triggerId, TriggerPriority priority);
+    void ProcessGpioStateChange(bool state, const char* panelName, const char* triggerId, TriggerPriority priority);
     bool ShouldUpdateHighestPriority(const TriggerState& trigger, TriggerState* currentHighest, TriggerPriority currentPriority, uint64_t currentTimestamp);
 
 public:
