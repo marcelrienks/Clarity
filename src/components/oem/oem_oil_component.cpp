@@ -234,10 +234,12 @@ void OemOilComponent::UpdatePivotStyling()
             lv_obj_set_style_bg_grad_color(pivotCircle_, lv_color_hex(0x2A2A2A), MAIN_DEFAULT); // Dark gray edge
             lv_obj_set_style_bg_grad_dir(pivotCircle_, LV_GRAD_DIR_HOR, MAIN_DEFAULT);          // Horizontal for radial-like effect
             lv_obj_set_style_bg_grad_stop(pivotCircle_, 180, MAIN_DEFAULT);                     // Gradient more toward edge
+            lv_obj_set_style_bg_opa(pivotCircle_, LV_OPA_COVER, MAIN_DEFAULT);                  // Full opacity
 
             // Dark beveled border (darker than main body)
             lv_obj_set_style_border_width(pivotCircle_, 2, MAIN_DEFAULT);
             lv_obj_set_style_border_color(pivotCircle_, lv_color_hex(0x1A1A1A), MAIN_DEFAULT); // Very dark border
+            lv_obj_set_style_border_opa(pivotCircle_, LV_OPA_COVER, MAIN_DEFAULT);             // Solid border
 
             // Subtle shadow for depth
             lv_obj_set_style_shadow_color(pivotCircle_, lv_color_hex(0x000000), MAIN_DEFAULT);
@@ -246,6 +248,7 @@ void OemOilComponent::UpdatePivotStyling()
             lv_obj_set_style_shadow_spread(pivotCircle_, 1, MAIN_DEFAULT);
             lv_obj_set_style_shadow_offset_x(pivotCircle_, 1, MAIN_DEFAULT);
             lv_obj_set_style_shadow_offset_y(pivotCircle_, 1, MAIN_DEFAULT);
+            lv_obj_set_style_outline_width(pivotCircle_, 0, MAIN_DEFAULT);      // No outline
             
             // Show highlight in day mode
             if (pivotHighlight_)
@@ -253,6 +256,9 @@ void OemOilComponent::UpdatePivotStyling()
                 lv_obj_clear_flag(pivotHighlight_, LV_OBJ_FLAG_HIDDEN);
             }
         }
+        
+        // Force object invalidation to ensure immediate visual update
+        lv_obj_invalidate(pivotCircle_);
     }
 }
 

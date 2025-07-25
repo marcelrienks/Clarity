@@ -122,9 +122,9 @@ void OemOilPanel::UpdateOilPressure()
 
     // Check if theme has changed - force refresh if so
     const char* currentTheme = StyleManager::GetInstance().THEME;
-    bool themeChanged = (lastThemeForPressure_ == nullptr || strcmp(lastThemeForPressure_, currentTheme) != 0);
+    bool themeChanged = (lastThemeForPressure_.length() == 0 || lastThemeForPressure_ != currentTheme);
     if (themeChanged) {
-        lastThemeForPressure_ = currentTheme;
+        lastThemeForPressure_ = String(currentTheme);
         log_d("Theme changed, forcing component refresh");
     }
 
@@ -136,6 +136,11 @@ void OemOilPanel::UpdateOilPressure()
     if (value == currentOilPressureValue_ && !themeChanged) {
         log_d("Pressure value unchanged (%d), skipping update", value);
         return;
+    }
+    
+    // If theme changed but value didn't change, we still need to refresh for styling updates
+    if (themeChanged && value == currentOilPressureValue_) {
+        log_d("Theme changed with same pressure value, forcing refresh for styling");
     }
     
     log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
@@ -170,9 +175,9 @@ void OemOilPanel::UpdateOilTemperature()
 
     // Check if theme has changed - force refresh if so
     const char* currentTheme = StyleManager::GetInstance().THEME;
-    bool themeChanged = (lastThemeForTemperature_ == nullptr || strcmp(lastThemeForTemperature_, currentTheme) != 0);
+    bool themeChanged = (lastThemeForTemperature_.length() == 0 || lastThemeForTemperature_ != currentTheme);
     if (themeChanged) {
-        lastThemeForTemperature_ = currentTheme;
+        lastThemeForTemperature_ = String(currentTheme);
         log_d("Theme changed, forcing component refresh");
     }
 
@@ -184,6 +189,11 @@ void OemOilPanel::UpdateOilTemperature()
     if (value == currentOilTemperatureValue_ && !themeChanged) {
         log_d("Temperature value unchanged (%d), skipping update", value);
         return;
+    }
+    
+    // If theme changed but value didn't change, we still need to refresh for styling updates
+    if (themeChanged && value == currentOilTemperatureValue_) {
+        log_d("Theme changed with same temperature value, forcing refresh for styling");
     }
     
     log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);

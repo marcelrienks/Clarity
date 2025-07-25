@@ -91,8 +91,8 @@ private:
     int32_t currentOilTemperatureValue_;
     bool isPressureAnimationRunning_ = false;
     bool isTemperatureAnimationRunning_ = false;
-    const char* lastThemeForPressure_ = nullptr;    // Track theme changes for pressure component
-    const char* lastThemeForTemperature_ = nullptr; // Track theme changes for temperature component
+    String lastThemeForPressure_ = "";    // Track theme changes for pressure component
+    String lastThemeForTemperature_ = ""; // Track theme changes for temperature component
 
     // Instance Data Members - Animation Objects
     lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)
