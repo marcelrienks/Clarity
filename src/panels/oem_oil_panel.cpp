@@ -171,8 +171,6 @@ void OemOilPanel::UpdateOilTemperature()
     // Check if theme has changed - force refresh if so
     const char* currentTheme = StyleManager::GetInstance().THEME;
     bool themeChanged = (lastThemeForTemperature_ == nullptr || strcmp(lastThemeForTemperature_, currentTheme) != 0);
-    log_d("Temperature theme check - lastTheme_: '%s', currentTheme: '%s', themeChanged: %s", 
-          lastThemeForTemperature_ ? lastThemeForTemperature_ : "NULL", currentTheme, themeChanged ? "YES" : "NO");
     if (themeChanged) {
         lastThemeForTemperature_ = currentTheme;
         log_d("Theme changed, forcing component refresh");

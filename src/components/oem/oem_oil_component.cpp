@@ -126,24 +126,15 @@ void OemOilComponent::refresh(const Reading& reading)
     // Icon color logic - in night mode, always use gaugeNormal (red)
     // In day mode, use gaugeNormal normally, gaugeDanger when in danger
     lv_color_t iconColour;
-    bool isNightMode = (strcmp(styleManager_->THEME, Themes::NIGHT) == 0);
-    bool isDangerCondition = is_danger_condition(value);
-    
-    log_d("Theme refresh - Current theme: '%s', Night mode: %s, Danger: %s, Value: %d", 
-          styleManager_->THEME, isNightMode ? "YES" : "NO", isDangerCondition ? "YES" : "NO", value);
-    
-    if (isNightMode)
+    if (strcmp(styleManager_->THEME, Themes::NIGHT) == 0)
     {
         // Night mode: icons are always red regardless of danger condition
         iconColour = colours.gaugeNormal;
-        log_d("Night mode - Using gaugeNormal color (red)");
     }
     else
     {
         // Day mode: normal color switching based on danger condition
-        iconColour = isDangerCondition ? colours.gaugeDanger : colours.gaugeNormal;
-        log_d("Day mode - Using %s color", 
-              isDangerCondition ? "gaugeDanger (red)" : "gaugeNormal (white)");
+        iconColour = is_danger_condition(value) ? colours.gaugeDanger : colours.gaugeNormal;
     }
 
     // Update needle and icon colors (all three needle sections with 3D gradient)
