@@ -23,6 +23,8 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <stdint.h>
+#include <esp_timer.h>
 
 // Types/Structs/Enums
 /// @typedef Reading
@@ -56,15 +58,16 @@ enum class LogLevels
     Error    ///< Error conditions requiring attention
 };
 
-/// @enum Themes
-/// @brief Visual theme options for the application
+/// @struct Themes
+/// @brief Static constants for visual theme options
 ///
-/// @details Defines available visual themes with different color schemes.
-/// Managed by StyleManager for consistent application-wide theming.
-enum class Themes
+/// @details Defines available visual themes with different color schemes
+/// as string constants. Managed by StyleManager for consistent 
+/// application-wide theming.
+struct Themes
 {
-    Night, ///< Dark theme with red accents (default)
-    Day    ///< Light theme with white accents
+    static constexpr const char* NIGHT = "Night"; ///< Dark theme with red accents (default)
+    static constexpr const char* DAY = "Day";     ///< Light theme with white accents
 };
 
 /// @enum OilSensorTypes
@@ -93,16 +96,17 @@ enum class KeyState
 };
 
 /// @struct PanelNames
-/// @brief String constants for panel identification
+/// @brief Static constants for panel type identifiers
 ///
-/// @details Provides consistent string identifiers for panel types
-/// used in the PanelManager factory system and configuration.
+/// @details Defines the available panel types used in the PanelManager
+/// factory system and configuration as string constants for direct use
+/// without conversion overhead.
 struct PanelNames
 {
-    static constexpr const char *Splash = "SplashPanel"; ///< Startup splash screen
-    static constexpr const char *Oil = "OemOilPanel";    ///< Oil monitoring dashboard
-    static constexpr const char *Key = "KeyPanel";       ///< Key status panel
-    static constexpr const char *Lock = "LockPanel";     ///< Lock status panel
+    static constexpr const char* SPLASH = "SplashPanel"; ///< Startup splash screen
+    static constexpr const char* OIL = "OemOilPanel";    ///< Oil monitoring dashboard
+    static constexpr const char* KEY = "KeyPanel";       ///< Key status panel
+    static constexpr const char* LOCK = "LockPanel";     ///< Lock status panel
 };
 
 /// @struct TriggerNames
@@ -112,9 +116,9 @@ struct PanelNames
 /// used in the InterruptManager registration system.
 struct TriggerNames
 {
-    static constexpr const char *KeyPresent = "key_present_trigger";        ///< Key present detection trigger
-    static constexpr const char *KeyNotPresent = "key_not_present_trigger"; ///< Key not present detection trigger
-    static constexpr const char *Lock = "lock_trigger";                     ///< Lock detection trigger
+    static constexpr const char *KEY_PRESENT = "key_present_trigger";        ///< Key present detection trigger
+    static constexpr const char *KEY_NOT_PRESENT = "key_not_present_trigger"; ///< Key not present detection trigger
+    static constexpr const char *LOCK = "lock_trigger";                     ///< Lock detection trigger
 };
 
 /// @struct JsonDocNames
@@ -124,13 +128,13 @@ struct TriggerNames
 /// documents for PreferenceManager serialization.
 struct JsonDocNames
 {
-    static constexpr const char *panel_name = "panel_name"; ///< Default panel setting
+    static constexpr const char *PANEL_NAME = "panel_name"; ///< Default panel setting
 };
 
-/// @struct WidgetLocation
-/// @brief UI widget positioning and sizing parameters
+/// @struct ComponentLocation
+/// @brief UI component positioning and sizing parameters
 ///
-/// @details Comprehensive structure for defining widget placement
+/// @details Comprehensive structure for defining component placement
 /// within LVGL screens. Supports both absolute positioning (x,y) and
 /// relative alignment with offsets.
 ///
@@ -140,10 +144,10 @@ struct JsonDocNames
 /// - Sizing: width,height or LV_SIZE_CONTENT for auto-sizing
 ///
 /// @usage_examples:
-/// - WidgetLocation(100, 50): Absolute position at (100,50)
-/// - WidgetLocation(LV_ALIGN_CENTER): Centered with auto-size
-/// - WidgetLocation(LV_ALIGN_LEFT_MID, 10, 0): Left-aligned with 10px offset
-struct WidgetLocation
+/// - ComponentLocation(100, 50): Absolute position at (100,50)
+/// - ComponentLocation(LV_ALIGN_CENTER): Centered with auto-size
+/// - ComponentLocation(LV_ALIGN_LEFT_MID, 10, 0): Left-aligned with 10px offset
+struct ComponentLocation
 {
     lv_coord_t x = 0;                   ///< Absolute X coordinate
     lv_coord_t y = 0;                   ///< Absolute Y coordinate
@@ -152,17 +156,17 @@ struct WidgetLocation
     lv_coord_t y_offset = 0;            ///< Y offset from alignment point
     int32_t rotation = 0;               ///< Rotation angle in degrees (optional)
 
-    WidgetLocation() = default;
+    ComponentLocation() = default;
 
     /// Constructor for absolute positioning
-    WidgetLocation(lv_coord_t x, lv_coord_t y) : x(x), y(y) {}
+    ComponentLocation(lv_coord_t x, lv_coord_t y) : x(x), y(y) {}
 
     /// Constructor for relative alignment with optional offsets
-    WidgetLocation(lv_align_t align, lv_coord_t x_offset = 0, lv_coord_t y_offset = 0)
+    ComponentLocation(lv_align_t align, lv_coord_t x_offset = 0, lv_coord_t y_offset = 0)
         : align(align), x_offset(x_offset), y_offset(y_offset) {}
 
     /// Constructor for rotation start point of scales
-    WidgetLocation(int32_t rotation)
+    ComponentLocation(int32_t rotation)
         : rotation(rotation) {}
 };
 
@@ -175,5 +179,79 @@ struct WidgetLocation
 /// @default_values All fields have sensible defaults for first-run
 struct Configs
 {
-    std::string panel_name = PanelNames::Oil; ///< Default panel on startup
+    std::string panelName = PanelNames::OIL; ///< Default panel on startup
+};
+
+/// @brief UI state for Core 0 processing decisions
+enum class UIState {
+    IDLE,        ///< Safe to process all messages immediately
+    UPDATING,    ///< Throttled processing (high/medium priority only)
+    LOADING,     ///< No message processing
+    LVGL_BUSY    ///< No message processing
+};
+
+/// @brief Priority levels for trigger messages
+enum class TriggerPriority {
+    CRITICAL = 0,  ///< Critical triggers (key presence, safety)
+    IMPORTANT = 1, ///< Important triggers (lock state, system modes)
+    NORMAL = 2     ///< Non-critical triggers (theme changes, settings)
+};
+
+
+/**
+ * @brief Structure for shared trigger state
+ * 
+ * @details This structure represents the state of a trigger,
+ * including its action, target, priority, and active status.
+ */
+struct TriggerState
+{
+    std::string action;           ///< Action to perform
+    std::string target;           ///< Target of the action
+    TriggerPriority priority;     ///< Priority level
+    uint64_t timestamp;           ///< When trigger was created (for FIFO within same priority)
+    bool active;                  ///< Whether trigger is currently active (GPIO HIGH)
+    
+    TriggerState() = default;
+    TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
+        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
+};
+
+/// @brief Configuration constants
+constexpr int PANEL_STATE_MUTEX_TIMEOUT = 100;
+constexpr int THEME_STATE_MUTEX_TIMEOUT = 100;
+
+
+/// @brief Action constants
+constexpr const char *ACTION_LOAD_PANEL = "LoadPanel";
+constexpr const char *ACTION_RESTORE_PREVIOUS_PANEL = "RestorePreviousPanel";
+constexpr const char *ACTION_CHANGE_THEME = "ChangeTheme";
+
+/// @brief Theme name constants
+constexpr const char *THEME_DAY = "Day";
+constexpr const char *THEME_NIGHT = "Night";
+
+/// @brief Trigger ID constants
+constexpr const char *TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
+constexpr const char *TRIGGER_KEY_PRESENT = "key_present";
+constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
+constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
+constexpr const char *TRIGGER_THEME_SWITCH = "theme_switch";
+
+/// @brief ISR Event types for safe interrupt handling
+enum class ISREventType {
+    KEY_PRESENT,
+    KEY_NOT_PRESENT,
+    LOCK_STATE_CHANGE,
+    THEME_SWITCH
+};
+
+/// @brief ISR Event structure for ISR-to-Task communication
+struct ISREvent {
+    ISREventType eventType;
+    bool pinState;
+    uint32_t timestamp;
+    
+    ISREvent() : eventType(ISREventType::KEY_PRESENT), pinState(false), timestamp(0) {}
+    ISREvent(ISREventType type, bool state) : eventType(type), pinState(state), timestamp(esp_timer_get_time()) {}
 };

@@ -28,9 +28,9 @@
  * 
  * @persistence_flow:
  * 1. init(): Initialize NVS and load existing config
- * 2. load_config(): Deserialize JSON from NVS
- * 3. create_default_config(): Create defaults if no config exists
- * 4. save_config(): Serialize and store config to NVS
+ * 2. loadConfig(): Deserialize JSON from NVS
+ * 3. createDefaultConfig(): Create defaults if no config exists
+ * 4. saveConfig(): Serialize and store config to NVS
  * 
  * @error_handling:
  * - Graceful fallback to defaults on corruption
@@ -48,25 +48,22 @@ class PreferenceManager
 {
 public:
     // Static Methods
-    static PreferenceManager &get_instance();
+    static PreferenceManager &GetInstance();
 
     // Core Functionality Methods
     void init();
-    void save_config();
-    void load_config();
-    void create_default_config();
+    void saveConfig();
+    void loadConfig();
+    void createDefaultConfig();
 
     // Public Data Members
     inline static Configs config;
 
 private:
-    // Core Functionality Methods
-    const char *theme_to_string(Themes theme);
-    Themes string_to_theme(const char *str);
 
     // Static Data Members
     inline static const char *CONFIG_KEY = "config";
 
     // Instance Data Members
-    Preferences _preferences;
+    Preferences preferences_;
 };

@@ -10,7 +10,7 @@
 
 /**
  * @class KeyTrigger
- * @brief Unified interrupt trigger that monitors key states and switches panels accordingly
+ * @brief Unified trigger that monitors key states and switches panels accordingly
  * 
  * @details This trigger monitors both key present and not present states using a single
  * KeySensor, and triggers appropriate panel switches based on the key state:
@@ -47,23 +47,20 @@ public:
     // Constructors and Destructors
     /// @brief Constructor with optional restoration mode
     /// @param enable_restoration Whether to restore previous panel when key becomes inactive
-    KeyTrigger(bool enable_restoration = true);
+    KeyTrigger(bool enableRestoration = true);
 
     // Core Functionality Methods
     void init() override;
     bool evaluate() override;
-    const char* get_target_panel() const override;
-    const char* get_id() const override;
-    bool should_restore() const override;
+    const char* GetTargetPanel() const override;
+    const char* GetId() const override;
+    bool ShouldRestore() const override;
     
-    /// @brief Get current key state (public interface for components)
-    /// @return Current key state as Reading variant
-    Reading get_reading();
 
 private:
     // Private Data Members
-    bool _enable_restoration;                ///< Whether to restore previous panel when key becomes inactive
-    KeyState _last_key_state;                ///< Previous key state for change detection
-    KeySensor _key_sensor;                   ///< Key sensor for state reading
+    bool enableRestoration_;                ///< Whether to restore previous panel when key becomes inactive
+    KeyState lastKeyState_;                ///< Previous key state for change detection
+    KeySensor keySensor_;                   ///< Key sensor for state reading
     static constexpr const char* TRIGGER_ID = "key_trigger"; ///< Unique trigger identifier
 };

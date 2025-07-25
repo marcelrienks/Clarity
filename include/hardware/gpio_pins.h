@@ -16,7 +16,7 @@
  * and make hardware changes easier to manage across the entire codebase.
  */
 
-namespace GpioPins
+namespace gpio_pins
 {
     // Analog Input Pins (ADC)
 
@@ -36,4 +36,7 @@ namespace GpioPins
     
     /// @brief Lock state digital input pin
     constexpr int LOCK = 27;
+
+    /// @brief Lights detection digital input pin
+    constexpr int LIGHTS = 33;
 }

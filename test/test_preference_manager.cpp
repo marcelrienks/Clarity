@@ -26,17 +26,17 @@ namespace PanelNames {
 }
 
 namespace Themes {
-    constexpr int Day = 0;
-    constexpr int Night = 1;
+    constexpr int DAY = 0;
+    constexpr int NIGHT = 1;
 }
 
 struct Config {
-    String panel_name;
+    String panelName;
     int theme;
     int brightness;
 };
 
-struct WidgetLocation {
+struct ComponentLocation {
     int x, y, width, height;
 };
 
@@ -50,15 +50,15 @@ void test_panel_names_constants(void) {
 }
 
 void test_themes_constants(void) {
-    TEST_ASSERT_EQUAL(0, Themes::Day);
-    TEST_ASSERT_EQUAL(1, Themes::Night);
+    TEST_ASSERT_EQUAL(0, Themes::DAY);
+    TEST_ASSERT_EQUAL(1, Themes::NIGHT);
 }
 
 void test_config_serialization(void) {
     // Test Config struct manual JSON serialization
     Config config;
     config.panel_name = "TestPanel";
-    config.theme = Themes::Night;
+    config.theme = Themes::NIGHT;
     config.brightness = 75;
 
     // Simple JSON string construction for testing
@@ -85,8 +85,8 @@ void test_config_deserialization(void) {
     TEST_ASSERT_EQUAL(50, config.brightness);
 }
 
-void test_widget_location_initialization(void) {
-    WidgetLocation location;
+void test_component_location_initialization(void) {
+    ComponentLocation location;
     location.x = 10;
     location.y = 20;
     location.width = 100;
@@ -130,11 +130,11 @@ void test_default_config_values(void) {
     // Test default configuration values
     Config config;
     config.panel_name = PanelNames::OemOil;
-    config.theme = Themes::Day;
+    config.theme = Themes::DAY;
     config.brightness = 100;
 
     TEST_ASSERT_EQUAL_STRING(PanelNames::OemOil, config.panel_name.c_str());
-    TEST_ASSERT_EQUAL(Themes::Day, config.theme);
+    TEST_ASSERT_EQUAL(Themes::DAY, config.theme);
     TEST_ASSERT_EQUAL(100, config.brightness);
 }
 
@@ -143,7 +143,7 @@ void test_preference_manager_main() {
     RUN_TEST(test_themes_constants);
     RUN_TEST(test_config_serialization);
     RUN_TEST(test_config_deserialization);
-    RUN_TEST(test_widget_location_initialization);
+    RUN_TEST(test_component_location_initialization);
     RUN_TEST(test_reading_variant_int);
     RUN_TEST(test_reading_variant_double);
     RUN_TEST(test_reading_variant_string);

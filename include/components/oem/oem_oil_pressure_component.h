@@ -1,13 +1,13 @@
 #pragma once
 
-#include "widgets/oem/oem_oil_widget.h"
+#include "components/oem/oem_oil_component.h"
 #include "icons/oil_can_regular.h"
 
 /**
- * @class OemOilPressureWidget
+ * @class OemOilPressureComponent
  * @brief Oem styled Oil pressure gauge component with danger zone monitoring
  * 
- * @details This component specializes the OemOilWidget for oil pressure
+ * @details This component specializes the OemOilComponent for oil pressure
  * monitoring. It displays a half circular gauge with pressure readings and
  * highlights dangerous low-pressure conditions. Due to it being Oem styled
  * it should take up the whole of the half of the screen to match the existing oem styled gauges.
@@ -37,12 +37,12 @@
 * @context While the scale only occupies one half of the screen, it's size is equal to that of the screen to ensure
  * it fills the whole half of the rounded screen to maintain a consistent appearance with other OEM components.
  */
-class OemOilPressureWidget : public OemOilWidget
+class OemOilPressureComponent : public OemOilComponent
 {
 public:
     // Constructors and Destructors
-    OemOilPressureWidget();
-    ~OemOilPressureWidget() = default;
+    OemOilPressureComponent();
+    ~OemOilPressureComponent() = default;
 
 protected:
     // Override virtual methods from base class
@@ -55,5 +55,5 @@ protected:
     bool is_danger_condition(int32_t value) const override;
     void setup_danger_zone(lv_scale_section_t *section) const override;
     int32_t get_icon_y_offset() const override;
-    void get_label_angles(int32_t& l_angle, int32_t& h_angle) const override;
+    void get_label_angles(int32_t& lAngle, int32_t& hAngle) const override;
 };

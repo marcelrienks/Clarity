@@ -1,11 +1,12 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "widgets/oem/oem_oil_pressure_widget.h"
-#include "widgets/oem/oem_oil_temperature_widget.h"
+#include "components/oem/oem_oil_pressure_component.h"
+#include "components/oem/oem_oil_temperature_component.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
+#include "managers/trigger_manager.h"
 
 #include <utilities/lv_tools.h>
 
@@ -17,7 +18,7 @@
  * systems. It coordinates two specialized gauge components for pressure and
  * temperature monitoring, positioned side-by-side for optimal visibility.
  * 
- * @presenter_role Coordinates OemOilPressureWidget and OemOilTemperatureWidget
+ * @presenter_role Coordinates OemOilPressureComponent and OemOilTemperatureComponent
  * @data_sources OilPressureSensor and OilTemperatureSensor with delta-based updates
  * @update_strategy Smart caching with animation-based smooth transitions
  * 
@@ -47,52 +48,53 @@ public:
     ~OemOilPanel();
 
     // Core Functionality Methods
-    const char *get_name() const override { return PanelNames::Oil; }
+    static constexpr const char* NAME = PanelNames::OIL;
     void init() override;
-    void load(std::function<void()> callback_function) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 1000;
 
 private:
     // Core Functionality Methods
-    void update_oil_pressure();
-    void update_oil_temperature();
+    void UpdateOilPressure();
+    void UpdateOilTemperature();
     
     // Value mapping methods
     /// @brief Map oil pressure sensor value to display scale
     /// @param sensor_value Raw sensor value (1-10 Bar)
     /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
-    int32_t map_pressure_value(int32_t sensor_value);
+    int32_t MapPressureValue(int32_t sensorValue);
     
     /// @brief Map oil temperature sensor value to display scale
     /// @param sensor_value Raw sensor value (0-120°C)
     /// @return Mapped value for display
-    int32_t map_temperature_value(int32_t sensor_value);
+    int32_t MapTemperatureValue(int32_t sensorValue);
 
     // Static Callback Methods
-    static void show_panel_completion_callback(lv_event_t *event);
-    static void update_panel_completion_callback(lv_anim_t *animation);
-    static void execute_pressure_animation_callback(void *target, int32_t value);
-    static void execute_temperature_animation_callback(void *target, int32_t value);
+    static void ShowPanelCompletionCallback(lv_event_t *event);
+    static void UpdatePanelCompletionCallback(lv_anim_t *animation);
+    static void ExecutePressureAnimationCallback(void *target, int32_t value);
+    static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
 
     // Instance Data Members - UI Objects
-    lv_obj_t *_screen; // All panels should always have their own screens
+    lv_obj_t *screen_; // All panels should always have their own screens
 
     // Instance Data Members - Components and Sensors
-    std::shared_ptr<IWidget> _oem_oil_pressure_widget;
-    std::shared_ptr<IWidget> _oem_oil_temperature_widget;
-    std::shared_ptr<ISensor> _oem_oil_pressure_sensor;
-    std::shared_ptr<ISensor> _oem_oil_temperature_sensor;
+    std::shared_ptr<IComponent> oemOilPressureComponent_;
+    std::shared_ptr<IComponent> oemOilTemperatureComponent_;
+    std::shared_ptr<ISensor> oemOilPressureSensor_;
+    std::shared_ptr<ISensor> oemOilTemperatureSensor_;
 
     // Instance Data Members - State Variables
-    int32_t _current_oil_pressure_value;
-    int32_t _current_oil_temperature_value;
-    bool _is_pressure_animation_running = false;
-    bool _is_temperature_animation_running = false;
+    int32_t currentOilPressureValue_;
+    int32_t currentOilTemperatureValue_;
+    bool isPressureAnimationRunning_ = false;
+    bool isTemperatureAnimationRunning_ = false;
+    bool forceComponentRefresh_ = false;  // Force component refresh regardless of value changes
 
     // Instance Data Members - Animation Objects
-    lv_anim_t _pressure_animation;   // Instance-level animation objects (prevents memory leaks)
-    lv_anim_t _temperature_animation;
+    lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)
+    lv_anim_t temperatureAnimation_;
 };

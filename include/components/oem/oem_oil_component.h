@@ -4,56 +4,56 @@
 #include <lvgl.h>
 
 // Project Includes
-#include "interfaces/i_widget.h"
+#include "interfaces/i_component.h"
 #include "managers/style_manager.h"
 #include "utilities/types.h"
 
 /**
- * @class OemOilWidget
- * @brief Abstract base class for oem styled oil monitoring gauge widgets
+ * @class OemOilComponent
+ * @brief Abstract base class for oem styled oil monitoring gauge components
  * 
  * @details This abstract class provides the common functionality for oem styled oil-related
- * gauge widgets (pressure, temperature). It implements the Template Method
+ * gauge components (pressure, temperature). It implements the Template Method
  * design pattern, allowing derived classes to customize specific behaviors
  * while sharing common gauge rendering logic.
  * 
  * @design_pattern Template Method - defines gauge creation algorithm
  * @view_role Renders circular gauges with needles, scales, and danger zones
  * @ui_elements Scale, needle, center icon, danger zone sections
- * @positioning Supports all WidgetLocation alignment options
+ * @positioning Supports all ComponentLocation alignment options
  * 
  * @gauge_specifications:
- * - Size: 240x240 pixels (configurable via WidgetLocation)
+ * - Size: 240x240 pixels (configurable via ComponentLocation)
  * - Needle length: 90 pixels
  * - Scale ticks: 13 total, major every 2
  * - Danger zone: Red highlighting for critical values
  * 
  * @derived_classes:
- * - OemOilPressureWidget: Oil pressure monitoring (0-100 PSI)
- * - OemOilTemperatureWidget: Oil temperature monitoring (mapped range)
+ * - OemOilPressureComponent: Oil pressure monitoring (0-100 PSI)
+ * - OemOilTemperatureComponent: Oil temperature monitoring (mapped range)
  * 
  * @virtual_methods Subclasses must implement:
- * - get_icon(): Widget-specific icon
+ * - get_icon(): Component-specific icon
  * - get_scale_min/max(): Value range
  * - get_danger_zone(): Critical threshold
  * - setup_danger_zone(): Configure danger highlighting
  * - is_danger_condition(): Determine if value is critical
  * 
  * @context This is the base class for oem styled oil gauges. Currently used by
- * pressure and temperature widgets. The widgets are positioned on opposite sides
+ * pressure and temperature components. The components are positioned on opposite sides
  * on the screen to maintain a consistent appearance with OEM styling.
  */
-class OemOilWidget : public IWidget
+class OemOilComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    OemOilWidget();
-    virtual ~OemOilWidget();
+    OemOilComponent();
+    virtual ~OemOilComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const WidgetLocation& location) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location) override;
     void refresh(const Reading& reading) override;
-    void set_value(int32_t value) override;
+    void SetValue(int32_t value) override;
 
 protected:
     // Protected Methods
@@ -67,34 +67,37 @@ protected:
     virtual int32_t map_value_for_display(int32_t value) const;
     virtual void setup_danger_zone(lv_scale_section_t *section) const = 0;
     virtual int32_t get_icon_y_offset() const = 0;
-    virtual void get_label_angles(int32_t& l_angle, int32_t& h_angle) const = 0;
+    virtual void get_label_angles(int32_t& lAngle, int32_t& hAngle) const = 0;
 
     // Protected Data Members
     // LVGL objects
-    lv_obj_t *_scale;
-    lv_obj_t *_needle_line;      // Tip section - thinnest
-    lv_obj_t *_needle_middle;    // Middle section - medium thickness
-    lv_obj_t *_needle_base;      // Base section - thickest for smooth tapered appearance
-    lv_obj_t *_needle_highlight_line;    // Highlight line for 3D effect - tip
-    lv_obj_t *_needle_highlight_middle;  // Highlight line for 3D effect - middle
-    lv_obj_t *_needle_highlight_base;    // Highlight line for 3D effect - base
-    lv_obj_t *_oil_icon;
-    lv_obj_t *_low_label;        // "L" label for low end
-    lv_obj_t *_high_label;       // "H" label for high end
+    lv_obj_t *scale_;
+    lv_obj_t *needleLine_;      // Tip section - thinnest
+    lv_obj_t *needleMiddle_;    // Middle section - medium thickness
+    lv_obj_t *needleBase_;      // Base section - thickest for smooth tapered appearance
+    lv_obj_t *needleHighlightLine_;    // Highlight line for 3D effect - tip
+    lv_obj_t *needleHighlightMiddle_;  // Highlight line for 3D effect - middle
+    lv_obj_t *needleHighlightBase_;    // Highlight line for 3D effect - base
+    lv_obj_t *oilIcon_;
+    lv_obj_t *lowLabel_;        // "L" label for low end
+    lv_obj_t *highLabel_;       // "H" label for high end
+    lv_obj_t *pivotCircle_;     // Main pivot circle
+    lv_obj_t *pivotHighlight_;  // Highlight on pivot for 3D effect
     
     // Cached StyleManager reference (optimization)
-    StyleManager* _style_manager;
+    StyleManager* styleManager_;
 
     // Common constants
-    static constexpr int32_t _needle_length = 90;
+    static constexpr int32_t NEEDLE_LENGTH = 90;
     
     // Scale rotation tracking for label positioning
-    int32_t _scale_rotation;
+    int32_t scaleRotation_;
 
 private:
     // Private Methods
-    void create_icon();
-    void create_labels();
-    void create_needle();
-    void create_scale(int32_t rotation);
+    void CreateIcon();
+    void CreateLabels();
+    void CreateNeedle();
+    void CreateScale(int32_t rotation);
+    void UpdatePivotStyling();
 };

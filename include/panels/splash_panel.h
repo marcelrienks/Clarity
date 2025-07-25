@@ -2,7 +2,7 @@
 
 // Project Includes
 #include "interfaces/i_panel.h"
-#include "widgets/clarity_widget.h"
+#include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
 
 /**
@@ -13,7 +13,7 @@
  * during system startup. It provides a professional bootup experience while
  * the system initializes in the background.
  * 
- * @presenter_role Coordinates the ClarityWidget for branding display
+ * @presenter_role Coordinates the ClarityComponent for branding display
  * @animation_sequence Fade-in (2000ms) → Display (850ms) → Fade-out → Next panel
  * @timing_total ~3050ms total display time
  * 
@@ -21,7 +21,7 @@
  * @memory_usage Minimal - single component with timer-based animations
  * 
  * @ui_layout:
- * - ClarityWidget centered on screen
+ * - ClarityComponent centered on screen
  * - Black background with animated opacity
  * - Smooth fade transitions using LVGL timers
  * 
@@ -37,22 +37,22 @@ public:
     ~SplashPanel();
 
     // Core Functionality Methods
-    const char *get_name() const { return PanelNames::Splash; };
+    static constexpr const char* NAME = PanelNames::SPLASH;
     void init() override;
-    void load(std::function<void()> callback_function) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
 private:
     // Private Data Members
     // Panel specific constants
-    static constexpr const int _animation_time = 2000;
-    static constexpr const int _delay_time = 200;
-    static constexpr const int _display_time = 850;
+    static constexpr const int _ANIMATION_TIME = 2000;
+    static constexpr const int _DELAY_TIME = 200;
+    static constexpr const int _DISPLAY_TIME = 850;
 
     // Components
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<IWidget> _widget;
-    lv_obj_t *_blank_screen;
+    lv_obj_t *screen_; // All panels should always have their own screens
+    std::shared_ptr<IComponent> component_;
+    lv_obj_t *blankScreen_;
 
     // Static Callback Methods
     static void animation_complete_timer_callback(lv_timer_t *timer);

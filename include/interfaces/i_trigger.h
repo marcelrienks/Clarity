@@ -6,7 +6,7 @@
 
 /**
  * @interface ITrigger
- * @brief Interface for interrupt trigger conditions that can cause panel switches
+ * @brief Interface for trigger conditions that can cause panel switches
  * 
  * @details Triggers monitor sensor readings and evaluate conditions to determine
  * when a panel switch should occur. Similar to ISensor pattern, triggers provide
@@ -23,7 +23,7 @@
  * - TemperatureTrigger: Monitor temperature, trigger on over-temperature
  * - PressureTrigger: Monitor pressure, trigger on low pressure warning
  * 
- * @integration: Triggers are registered with InterruptManager and evaluated
+ * @integration: Triggers are registered with TriggerManager and evaluated
  * during the main loop before normal panel updates.
  */
 class ITrigger
@@ -41,14 +41,14 @@ public:
     virtual bool evaluate() = 0;
     
     /// @brief Get the target panel name to switch to when triggered
-    /// @return Panel name string (e.g., PanelNames::Key)
-    virtual const char* get_target_panel() const = 0;
+    /// @return Panel name string constant
+    virtual const char* GetTargetPanel() const = 0;
     
     /// @brief Get the trigger identifier for registration/management
     /// @return Unique trigger identifier string
-    virtual const char* get_id() const = 0;
+    virtual const char* GetId() const = 0;
     
     /// @brief Whether to restore the previous panel when condition clears
     /// @return true if previous panel should be restored, false to stay on target panel
-    virtual bool should_restore() const { return false; }
+    virtual bool ShouldRestore() const { return false; }
 };

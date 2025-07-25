@@ -3,23 +3,23 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel()
-    : _widget(std::make_shared<ClarityWidget>()) {}
+    : component_(std::make_shared<ClarityComponent>()) {}
 
 SplashPanel::~SplashPanel()
 {
-    if (_screen)
+    if (screen_)
     {
-        lv_obj_del(_screen);
+        lv_obj_del(screen_);
     }
 
-    if (_blank_screen)
+    if (blankScreen_)
     {
-        lv_obj_del(_blank_screen);
+        lv_obj_del(blankScreen_);
     }
 
-    if (_widget)
+    if (component_)
     {
-        _widget.reset();
+        component_.reset();
     }
 }
 
@@ -30,95 +30,95 @@ SplashPanel::~SplashPanel()
 void SplashPanel::init()
 {
     log_d("...");
-    _blank_screen = LvTools::create_blank_screen();
-    _screen = LvTools::create_blank_screen();
+    blankScreen_ = LvTools::create_blank_screen();
+    screen_ = LvTools::create_blank_screen();
 }
 
 /// @brief Show the screen
-/// @param callback_function the function to call when the splash screen is complete
-void SplashPanel::load(std::function<void()> callback_function)
+/// @param callbackFunction the function to call when the splash screen is complete
+void SplashPanel::load(std::function<void()> callbackFunction)
 {
     log_i("...");
 
-    _callback_function = callback_function;
+    callbackFunction_ = callbackFunction;
 
-    // Create location parameters for the splash widget
-    WidgetLocation splash_location(LV_ALIGN_CENTER, 0, 0);
+    // Create location parameters for the splash component
+    ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
-    _widget->render(_screen, splash_location);
+    component_->render(screen_, splashLocation);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::update(std::function<void()> callback_function)
+void SplashPanel::update(std::function<void()> callbackFunction)
 {
     // Immediately call the completion callback so that lock/unlock logic is processed
-    callback_function();
+    callbackFunction();
 }
 
 // Static Callback Methods
 
 /// @brief Callback for when the animation is complete
 /// @param animation_timer the animation_timer that has completed
-void SplashPanel::animation_complete_timer_callback(lv_timer_t *animation_timer)
+void SplashPanel::animation_complete_timer_callback(lv_timer_t *animationTimer)
 {
     log_d("...");
 
     // Get the splash panel instance
-    auto *this_instance = static_cast<SplashPanel *>(lv_timer_get_user_data(animation_timer));
+    auto *thisInstance = static_cast<SplashPanel *>(lv_timer_get_user_data(animationTimer));
 
-    this_instance->_callback_function();
+    thisInstance->callbackFunction_();
 
     // Delete the animation_timer
-    lv_timer_del(animation_timer);
+    lv_timer_del(animationTimer);
 }
 
 /// @brief Callback function for the fade in fade_in_timer completion
 /// @param fade_in_timer the fade_in_timer that has completed
-void SplashPanel::fade_in_timer_callback(lv_timer_t *fade_in_timer)
+void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
 {
     log_d("...");
 
     // Get the screen pointer that was added to the user data
-    auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_in_timer));
+    auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeInTimer));
 
     log_v("Fading in...");
-    lv_screen_load_anim(panel->_screen,
+    lv_screen_load_anim(panel->screen_,
                         LV_SCR_LOAD_ANIM_FADE_IN,
-                        _animation_time,
-                        _delay_time,
+                        _ANIMATION_TIME,
+                        _DELAY_TIME,
                         false);
 
     // Schedule the fade-out animation
-    auto *fade_out_timer = lv_timer_create(SplashPanel::fade_out_timer_callback,
-                                           _animation_time + _display_time,
+    auto *fadeOutTimer = lv_timer_create(SplashPanel::fade_out_timer_callback,
+                                           _ANIMATION_TIME + _DISPLAY_TIME,
                                            panel);
 
     // Remove the fade_in_timer after transition
-    lv_timer_del(fade_in_timer);
+    lv_timer_del(fadeInTimer);
 }
 
 /// @brief Callback function for the fade out animation_timer completion
 /// @param fade_out_timer the animation_timer that has completed
-void SplashPanel::fade_out_timer_callback(lv_timer_t *fade_out_timer)
+void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 {
     log_d("...");
 
     // Get the splash panel instance
-    auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fade_out_timer));
+    auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
     log_v("Fading out...");
-    lv_scr_load_anim(panel->_blank_screen,
+    lv_scr_load_anim(panel->blankScreen_,
                      LV_SCR_LOAD_ANIM_FADE_OUT,
-                     _animation_time,
+                     _ANIMATION_TIME,
                      0,
                      false);
 
     // Create a animation_timer for the completion callback
-    auto *completion_timer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
-                                             _animation_time + _delay_time, // Small extra delay to ensure animation is complete
+    auto *completionTimer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
+                                             _ANIMATION_TIME + _DELAY_TIME, // Small extra delay to ensure animation is complete
                                              panel);
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
-    lv_timer_del(fade_out_timer);
+    lv_timer_del(fadeOutTimer);
 }

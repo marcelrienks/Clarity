@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
-#include "widgets/lock_widget.h"
+#include "components/lock_component.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
 
@@ -14,7 +14,7 @@
  * @details This panel displays the lock status using a centered lock icon.
  * It provides a simple, clean interface for monitoring lock state.
  *
- * @presenter_role Coordinates LockWidget with LockSensor data
+ * @presenter_role Coordinates LockComponent with LockSensor data
  * @data_source LockSensor providing boolean lock status
  * @update_strategy Simple boolean state updates without animation
  *
@@ -38,19 +38,19 @@ public:
     ~LockPanel();
 
     // Core Functionality Methods
-    const char *get_name() const { return PanelNames::Lock; };
+    static constexpr const char* NAME = PanelNames::LOCK;
     void init() override;
-    void load(std::function<void()> callback_function = nullptr) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction = nullptr) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
 private:
     // Static Methods
-    static void show_panel_completion_callback(lv_event_t *event);
+    static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<LockWidget> _lock_widget;
-    std::shared_ptr<LockSensor> _lock_sensor;
-    WidgetLocation _center_location;
-    bool _is_lock_engaged = false;
+    lv_obj_t *screen_; // All panels should always have their own screens
+    std::shared_ptr<LockComponent> lockComponent_;
+    std::shared_ptr<LockSensor> lockSensor_;
+    ComponentLocation centerLocation_;
+    bool isLockEngaged_ = false;
 };

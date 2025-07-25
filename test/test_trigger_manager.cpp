@@ -17,8 +17,8 @@ struct MockTriggerInfo {
         : id(_id), is_active(_active), priority(_priority), target_panel(_panel), should_restore(_restore) {}
 };
 
-// Mock InterruptManager logic for testing
-class MockInterruptManager {
+// Mock TriggerManager logic for testing
+class MockTriggerManager {
 private:
     std::vector<MockTriggerInfo> triggers;
     std::vector<int> active_triggers;
@@ -26,7 +26,7 @@ private:
     std::string previous_panel;
 
 public:
-    MockInterruptManager() : current_panel("OemOilPanel") {}
+    MockTriggerManager() : current_panel("OemOilPanel") {}
 
     void register_trigger(MockTriggerInfo trigger) {
         triggers.push_back(trigger);
@@ -102,7 +102,7 @@ public:
 
 
 void test_no_active_triggers(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel"));
     manager.register_trigger(MockTriggerInfo(2, false, 2, "LockPanel"));
     
@@ -112,7 +112,7 @@ void test_no_active_triggers(void) {
 }
 
 void test_single_active_trigger(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, true, 1, "KeyPanel"));
     manager.register_trigger(MockTriggerInfo(2, false, 2, "LockPanel"));
     
@@ -122,7 +122,7 @@ void test_single_active_trigger(void) {
 }
 
 void test_multiple_active_triggers_priority(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, true, 1, "KeyPanel"));
     manager.register_trigger(MockTriggerInfo(2, true, 5, "LockPanel"));  // Higher priority
     manager.register_trigger(MockTriggerInfo(3, true, 3, "SplashPanel"));
@@ -133,7 +133,7 @@ void test_multiple_active_triggers_priority(void) {
 }
 
 void test_trigger_state_changes(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel"));
     
     // Initially no active triggers
@@ -152,7 +152,7 @@ void test_trigger_state_changes(void) {
 }
 
 void test_panel_restoration(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel", true));  // Restoration trigger
     
     // Start with oil panel
@@ -171,7 +171,7 @@ void test_panel_restoration(void) {
 }
 
 void test_restoration_trigger_detection(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel", false));     // Normal trigger
     manager.register_trigger(MockTriggerInfo(2, false, 2, "LockPanel", true));     // Restoration trigger
     
@@ -190,7 +190,7 @@ void test_restoration_trigger_detection(void) {
 }
 
 void test_priority_tie_handling(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     manager.register_trigger(MockTriggerInfo(1, true, 5, "KeyPanel"));
     manager.register_trigger(MockTriggerInfo(2, true, 5, "LockPanel"));    // Same priority
     
@@ -200,7 +200,7 @@ void test_priority_tie_handling(void) {
 }
 
 void test_complex_trigger_scenario(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     
     // Register triggers with different priorities and types
     manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel", false));      // Low priority, permanent
@@ -236,7 +236,7 @@ void test_complex_trigger_scenario(void) {
 }
 
 void test_splash_panel_workflow(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     
     // Test splash panel initialization workflow
     manager.register_trigger(MockTriggerInfo(1, false, 1, "KeyPanel", false));
@@ -260,7 +260,7 @@ void test_splash_panel_workflow(void) {
 }
 
 void test_trigger_edge_cases(void) {
-    MockInterruptManager manager;
+    MockTriggerManager manager;
     
     // Test with no triggers registered
     std::string result = manager.evaluate_triggers();
@@ -273,7 +273,7 @@ void test_trigger_edge_cases(void) {
     TEST_ASSERT_EQUAL_STRING("", manager.get_previous_panel().c_str());  // No panel change, so no previous
 }
 
-void test_interrupt_manager_main() {
+void test_trigger_manager_main() {
     RUN_TEST(test_no_active_triggers);
     RUN_TEST(test_single_active_trigger);
     RUN_TEST(test_multiple_active_triggers_priority);

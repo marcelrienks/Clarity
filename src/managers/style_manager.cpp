@@ -1,16 +1,18 @@
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
+#include <cstring>
+//TODO: ensure that all implementations only have reference to their headers, and the headers contain all the include statements
 
 // Constructors and Destructors
 StyleManager::~StyleManager()
 {
-    reset_styles();
+    ResetStyles();
 }
 
 // Static Methods
 /// @brief Get the singleton instance of StyleManager
 /// @return instance of StyleManager
-StyleManager &StyleManager::get_instance()
+StyleManager &StyleManager::GetInstance()
 {
     static StyleManager instance; // this ensures that the instance is created only once
     return instance;
@@ -26,7 +28,7 @@ void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
     // Only apply the background style to screens
     // Other styles should be applied to specific components that need them
 
-    lv_obj_add_style(screen, &background_style, MAIN_DEFAULT);
+    lv_obj_add_style(screen, &backgroundStyle, MAIN_DEFAULT);
 
     // Don't apply all styles to the same screen - this can cause conflicts
     // Components should apply their own specific styles as needed
@@ -34,95 +36,106 @@ void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
 
 /// @brief Initialises the styles for the application
 /// @param theme the theme to be applied
-void StyleManager::init(Themes theme)
+void StyleManager::init(const char* theme)
 {
     log_d("...");
 
-    _theme = theme;
+    this->THEME = theme;
 
-    lv_style_init(&background_style);
-    lv_style_init(&text_style);
-    lv_style_init(&gauge_normal_style);
-    lv_style_init(&gauge_warning_style);
-    lv_style_init(&gauge_danger_style);
+    lv_style_init(&backgroundStyle);
+    lv_style_init(&textStyle);
+    lv_style_init(&gaugeNormalStyle);
+    lv_style_init(&gaugeWarningStyle);
+    lv_style_init(&gaugeDangerStyle);
     
     // Initialize shared gauge component styles
-    lv_style_init(&gauge_indicator_style);
-    lv_style_init(&gauge_items_style);
-    lv_style_init(&gauge_main_style);
-    lv_style_init(&gauge_danger_section_style);
+    lv_style_init(&gaugeIndicatorStyle);
+    lv_style_init(&gaugeItemsStyle);
+    lv_style_init(&gaugeMainStyle);
+    lv_style_init(&gaugeDangerSectionStyle);
 
-    set_theme(_theme);
+    set_theme(theme);
 
     // Don't apply to lv_scr_act() here - it might not be ready
     // apply_theme_to_screen(lv_scr_act()); // Remove this line
 }
 
 /// @brief Reset all styles to their default state
-void StyleManager::reset_styles()
+void StyleManager::ResetStyles()
 {
     log_d("...");
 
     // Reset all style objects
-    lv_style_reset(&background_style);
-    lv_style_reset(&text_style);
-    lv_style_reset(&gauge_normal_style);
-    lv_style_reset(&gauge_warning_style);
-    lv_style_reset(&gauge_danger_style);
+    lv_style_reset(&backgroundStyle);
+    lv_style_reset(&textStyle);
+    lv_style_reset(&gaugeNormalStyle);
+    lv_style_reset(&gaugeWarningStyle);
+    lv_style_reset(&gaugeDangerStyle);
     
     // Reset shared gauge component styles
-    lv_style_reset(&gauge_indicator_style);
-    lv_style_reset(&gauge_items_style);
-    lv_style_reset(&gauge_main_style);
-    lv_style_reset(&gauge_danger_section_style);
+    lv_style_reset(&gaugeIndicatorStyle);
+    lv_style_reset(&gaugeItemsStyle);
+    lv_style_reset(&gaugeMainStyle);
+    lv_style_reset(&gaugeDangerSectionStyle);
 }
 
 /// @brief Apply a specified theme to the styles
 /// @param theme the theme to be applied
-void StyleManager::set_theme(Themes theme)
+void StyleManager::set_theme(const char* theme)
 {
     log_d("...");
 
+    // Update current theme
+    this->THEME = theme;
+
     // Select the current theme colors
-    ThemeColors colours = StyleManager::get_colours(theme);
+    ThemeColors colours = get_colours(theme);
 
     // Background style
-    lv_style_set_bg_color(&background_style, colours.background);
-    lv_style_set_bg_opa(&background_style, LV_OPA_COVER);
+    lv_style_set_bg_color(&backgroundStyle, colours.background);
+    lv_style_set_bg_opa(&backgroundStyle, LV_OPA_COVER);
 
     // Text style
-    lv_style_set_text_color(&text_style, colours.text);
-    lv_style_set_text_opa(&text_style, LV_OPA_COVER);
+    lv_style_set_text_color(&textStyle, colours.text);
+    lv_style_set_text_opa(&textStyle, LV_OPA_COVER);
 
     // Gauge styles
-    lv_style_set_line_color(&gauge_normal_style, colours.gauge_normal);
-    lv_style_set_line_color(&gauge_warning_style, colours.gauge_warning);
-    lv_style_set_line_color(&gauge_danger_style, colours.gauge_danger);
+    lv_style_set_line_color(&gaugeNormalStyle, colours.gaugeNormal);
+    lv_style_set_line_color(&gaugeWarningStyle, colours.gaugeWarning);
+    lv_style_set_line_color(&gaugeDangerStyle, colours.gaugeDanger);
     
     // Configure shared gauge component styles
     // Indicator style (Major ticks)
-    lv_style_set_length(&gauge_indicator_style, 25);
-    lv_style_set_line_width(&gauge_indicator_style, 7);
-    lv_style_set_line_color(&gauge_indicator_style, colours.gauge_ticks);
+    lv_style_set_length(&gaugeIndicatorStyle, 25);
+    lv_style_set_line_width(&gaugeIndicatorStyle, 7);
+    lv_style_set_line_color(&gaugeIndicatorStyle, colours.gaugeTicks);
     
     // Items style (Minor ticks)
-    lv_style_set_length(&gauge_items_style, 18);
-    lv_style_set_line_width(&gauge_items_style, 2);
-    lv_style_set_line_color(&gauge_items_style, colours.gauge_ticks);
+    lv_style_set_length(&gaugeItemsStyle, 18);
+    lv_style_set_line_width(&gaugeItemsStyle, 2);
+    lv_style_set_line_color(&gaugeItemsStyle, colours.gaugeTicks);
     
     // Main style (Arc)
-    lv_style_set_arc_width(&gauge_main_style, 0);
+    lv_style_set_arc_width(&gaugeMainStyle, 0);
     
     // Danger section style
-    lv_style_set_line_width(&gauge_danger_section_style, 5);
-    lv_style_set_line_color(&gauge_danger_section_style, colours.gauge_danger);
+    lv_style_set_line_width(&gaugeDangerSectionStyle, 5);
+    lv_style_set_line_color(&gaugeDangerSectionStyle, colours.gaugeDanger);
+
+    // Apply the updated theme to the current screen
+    lv_obj_t *current_screen = lv_scr_act();
+    if (current_screen != nullptr) {
+        apply_theme_to_screen(current_screen);
+        // Force LVGL to refresh the display
+        lv_obj_invalidate(current_screen);
+    }
 }
 
 // Accessor Methods
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
-const ThemeColors &StyleManager::get_colours(const Themes &theme) const
+const ThemeColors &StyleManager::get_colours(const char* theme) const
 {
-    return theme == Themes::Night ? _night_theme_colours : _day_theme_colours;
+    return (theme && strcmp(theme, Themes::NIGHT) == 0) ? nightThemeColours_ : dayThemeColours_;
 }

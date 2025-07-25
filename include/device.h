@@ -58,13 +58,13 @@ public:
     Device &operator=(const Device &) = delete;
 
     // Static Methods
-    static Device &get_instance();
+    static Device &GetInstance();
 
     // Core Functionality Methods
     void prepare() override;
 
     // Public Data Members
-    lv_obj_t *Screen;
+    lv_obj_t *screen;
 
 private:
     // Constructors and Destructors
@@ -74,10 +74,10 @@ private:
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 
     // Instance Data Members
-    lgfx::Panel_GC9A01 _panel_instance; // Waveshare Round 1.28inch LCD Display Module
-    lgfx::Light_PWM _light_instance;
-    lgfx::Bus_SPI _bus_instance;
+    lgfx::Panel_GC9A01 panelInstance_; // Waveshare Round 1.28inch LCD Display Module
+    lgfx::Light_PWM lightInstance_;
+    lgfx::Bus_SPI busInstance_;
 
-    const static unsigned int _lv_buffer_size = (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
-    uint8_t _lv_buffer[2][_lv_buffer_size];
+    const static unsigned int LV_BUFFER_SIZE = (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
+    uint8_t lvBuffer_[2][LV_BUFFER_SIZE];
 };

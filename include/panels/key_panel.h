@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
-#include "widgets/key_widget.h"
+#include "components/key_component.h"
 #include "triggers/key_trigger.h"
 #include "utilities/types.h"
 
@@ -14,7 +14,7 @@
  * @details This panel displays the key/ignition status using a centered key icon.
  * It provides a simple, clean interface for monitoring key presence or ignition state.
  *
- * @presenter_role Coordinates KeyWidget with KeySensor data
+ * @presenter_role Coordinates KeyComponent with KeySensor data
  * @data_source KeySensor providing boolean key status
  * @update_strategy Simple boolean state updates without animation
  *
@@ -38,18 +38,18 @@ public:
     ~KeyPanel();
 
     // Core Functionality Methods
-    const char *get_name() const { return PanelNames::Key; };
+    static constexpr const char* NAME = PanelNames::KEY;
     void init() override;
-    void load(std::function<void()> callback_function = nullptr) override;
-    void update(std::function<void()> callback_function = nullptr) override;
+    void load(std::function<void()> callbackFunction = nullptr) override;
+    void update(std::function<void()> callbackFunction = nullptr) override;
 
 private:
     // Static Methods
-    static void show_panel_completion_callback(lv_event_t *event);
+    static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
-    lv_obj_t *_screen; // All panels should always have their own screens
-    std::shared_ptr<KeyWidget> _key_widget;
-    WidgetLocation _center_location;
-    KeyState _current_key_state = KeyState::Inactive;
+    lv_obj_t *screen_; // All panels should always have their own screens
+    std::shared_ptr<KeyComponent> keyComponent_;
+    ComponentLocation centerLocation_;
+    KeyState currentKeyState_ = KeyState::Inactive;
 };

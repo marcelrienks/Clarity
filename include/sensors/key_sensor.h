@@ -41,5 +41,10 @@ public:
 
     // Core Functionality Methods
     void init() override;
-    Reading get_reading() override;
+    Reading GetReading() override;
+
+private:
+    // Helper methods for simplified logic
+    KeyState DetermineKeyState(bool pin25High, bool pin26High);
+    void LogKeyState(KeyState state, bool pin25High, bool pin26High);
 };

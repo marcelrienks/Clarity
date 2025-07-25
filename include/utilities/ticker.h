@@ -42,8 +42,6 @@ class Ticker
 public:
     // Static Methods
     static uint32_t get_elapsed_millis();
-    static void handle_dynamic_delay(uint32_t start_time);
+    static void handle_dynamic_delay(uint32_t startTime);
     static void handle_lv_tasks();
-    static bool should_execute_throttled(uint32_t interval_ms);
-    static void execute_throttled(uint32_t interval_ms, std::function<void()> func);
 };

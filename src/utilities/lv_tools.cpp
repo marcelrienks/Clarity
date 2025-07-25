@@ -21,5 +21,5 @@ void LvTools::reset_screen(lv_obj_t *screen)
     log_d("...");
     
     // Apply the current theme's background style from the StyleManager
-    StyleManager::get_instance().apply_theme_to_screen(screen);
+    StyleManager::GetInstance().apply_theme_to_screen(screen);
 }

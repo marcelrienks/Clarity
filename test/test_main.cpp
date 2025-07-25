@@ -5,7 +5,7 @@
 // Function declarations from individual test files
 extern void test_preference_manager_main();
 extern void test_sensor_logic_main();
-extern void test_interrupt_manager_main();
+extern void test_trigger_manager_main();
 
 void setUp(void) {
     // Setup before each test
@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
     // Run all test suites
     test_preference_manager_main();
     test_sensor_logic_main();
-    test_interrupt_manager_main();
+    test_trigger_manager_main();
     
     return UNITY_END();
 }
