@@ -6,6 +6,7 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
+#include "managers/trigger_manager.h"
 
 #include <utilities/lv_tools.h>
 
@@ -91,8 +92,7 @@ private:
     int32_t currentOilTemperatureValue_;
     bool isPressureAnimationRunning_ = false;
     bool isTemperatureAnimationRunning_ = false;
-    String lastThemeForPressure_ = "";    // Track theme changes for pressure component
-    String lastThemeForTemperature_ = ""; // Track theme changes for temperature component
+    bool forceComponentRefresh_ = false;  // Force component refresh regardless of value changes
 
     // Instance Data Members - Animation Objects
     lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)

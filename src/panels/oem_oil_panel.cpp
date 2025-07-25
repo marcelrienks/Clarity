@@ -96,9 +96,22 @@ void OemOilPanel::update(std::function<void()> callbackFunction)
 
     callbackFunction_ = callbackFunction;
 
+    // Check if there's an active theme change trigger - if so, force component refresh
+    auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
+    const char* triggerId = triggerPair.first;
+    TriggerState* trigger = triggerPair.second;
+    
+    forceComponentRefresh_ = (trigger && trigger->action == "ChangeTheme");
+    if (forceComponentRefresh_) {
+        log_d("Theme change trigger active, forcing component refresh");
+    }
+
     log_v("updating...");
     OemOilPanel::UpdateOilPressure();
     OemOilPanel::UpdateOilTemperature();
+    
+    // Reset the force refresh flag after updates
+    forceComponentRefresh_ = false;
     
     // If no animations were started, call completion callback immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_) {
@@ -120,27 +133,14 @@ void OemOilPanel::UpdateOilPressure()
         return;
     }
 
-    // Check if theme has changed - force refresh if so
-    const char* currentTheme = StyleManager::GetInstance().THEME;
-    bool themeChanged = (lastThemeForPressure_.length() == 0 || lastThemeForPressure_ != currentTheme);
-    if (themeChanged) {
-        lastThemeForPressure_ = String(currentTheme);
-        log_d("Theme changed, forcing component refresh");
-    }
-
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
     
-    // Skip update only if value is exactly the same as last update AND theme hasn't changed
-    if (value == currentOilPressureValue_ && !themeChanged) {
+    // Skip update only if value is exactly the same as last update AND this is not a forced update
+    if (value == currentOilPressureValue_ && !forceComponentRefresh_) {
         log_d("Pressure value unchanged (%d), skipping update", value);
         return;
-    }
-    
-    // If theme changed but value didn't change, we still need to refresh for styling updates
-    if (themeChanged && value == currentOilPressureValue_) {
-        log_d("Theme changed with same pressure value, forcing refresh for styling");
     }
     
     log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
@@ -173,27 +173,14 @@ void OemOilPanel::UpdateOilTemperature()
         return;
     }
 
-    // Check if theme has changed - force refresh if so
-    const char* currentTheme = StyleManager::GetInstance().THEME;
-    bool themeChanged = (lastThemeForTemperature_.length() == 0 || lastThemeForTemperature_ != currentTheme);
-    if (themeChanged) {
-        lastThemeForTemperature_ = String(currentTheme);
-        log_d("Theme changed, forcing component refresh");
-    }
-
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
     auto value = MapTemperatureValue(sensorValue);
     
-    // Skip update only if value is exactly the same as last update AND theme hasn't changed
-    if (value == currentOilTemperatureValue_ && !themeChanged) {
+    // Skip update only if value is exactly the same as last update AND this is not a forced update
+    if (value == currentOilTemperatureValue_ && !forceComponentRefresh_) {
         log_d("Temperature value unchanged (%d), skipping update", value);
         return;
-    }
-    
-    // If theme changed but value didn't change, we still need to refresh for styling updates
-    if (themeChanged && value == currentOilTemperatureValue_) {
-        log_d("Theme changed with same temperature value, forcing refresh for styling");
     }
     
     log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);
