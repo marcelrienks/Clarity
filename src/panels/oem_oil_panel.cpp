@@ -120,12 +120,20 @@ void OemOilPanel::UpdateOilPressure()
         return;
     }
 
+    // Check if theme has changed - force refresh if so
+    const char* currentTheme = StyleManager::GetInstance().THEME;
+    bool themeChanged = (lastThemeForPressure_ == nullptr || strcmp(lastThemeForPressure_, currentTheme) != 0);
+    if (themeChanged) {
+        lastThemeForPressure_ = currentTheme;
+        log_d("Theme changed, forcing component refresh");
+    }
+
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
     
-    // Skip update only if value is exactly the same as last update
-    if (value == currentOilPressureValue_) {
+    // Skip update only if value is exactly the same as last update AND theme hasn't changed
+    if (value == currentOilPressureValue_ && !themeChanged) {
         log_d("Pressure value unchanged (%d), skipping update", value);
         return;
     }
@@ -160,12 +168,22 @@ void OemOilPanel::UpdateOilTemperature()
         return;
     }
 
+    // Check if theme has changed - force refresh if so
+    const char* currentTheme = StyleManager::GetInstance().THEME;
+    bool themeChanged = (lastThemeForTemperature_ == nullptr || strcmp(lastThemeForTemperature_, currentTheme) != 0);
+    log_d("Temperature theme check - lastTheme_: '%s', currentTheme: '%s', themeChanged: %s", 
+          lastThemeForTemperature_ ? lastThemeForTemperature_ : "NULL", currentTheme, themeChanged ? "YES" : "NO");
+    if (themeChanged) {
+        lastThemeForTemperature_ = currentTheme;
+        log_d("Theme changed, forcing component refresh");
+    }
+
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
     auto value = MapTemperatureValue(sensorValue);
     
-    // Skip update only if value is exactly the same as last update
-    if (value == currentOilTemperatureValue_) {
+    // Skip update only if value is exactly the same as last update AND theme hasn't changed
+    if (value == currentOilTemperatureValue_ && !themeChanged) {
         log_d("Temperature value unchanged (%d), skipping update", value);
         return;
     }

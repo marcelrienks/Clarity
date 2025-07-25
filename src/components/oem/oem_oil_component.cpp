@@ -1,5 +1,6 @@
 #include "components/oem/oem_oil_component.h"
 #include <math.h>
+#include <cstring>
 
 // Constructors and Destructors
 
@@ -14,6 +15,8 @@ OemOilComponent::OemOilComponent()
       oilIcon_(nullptr),
       lowLabel_(nullptr),
       highLabel_(nullptr),
+      pivotCircle_(nullptr),
+      pivotHighlight_(nullptr),
       scaleRotation_(0),
       styleManager_(&StyleManager::GetInstance())
 {
@@ -73,6 +76,16 @@ OemOilComponent::~OemOilComponent()
         lv_obj_del(highLabel_);
     }
 
+    if (pivotCircle_)
+    {
+        lv_obj_del(pivotCircle_);
+    }
+
+    if (pivotHighlight_)
+    {
+        lv_obj_del(pivotHighlight_);
+    }
+
     // No style cleanup needed - styles are managed by StyleManager
 }
 
@@ -109,11 +122,29 @@ void OemOilComponent::refresh(const Reading& reading)
 
     int32_t value = std::get<int32_t>(reading);
     const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
-    lv_color_t colour = colours.gaugeNormal;
-
-    // Check danger condition based on derived class logic
-    if (is_danger_condition(value))
-        colour = colours.gaugeDanger;
+    
+    // Icon color logic - in night mode, always use gaugeNormal (red)
+    // In day mode, use gaugeNormal normally, gaugeDanger when in danger
+    lv_color_t iconColour;
+    bool isNightMode = (strcmp(styleManager_->THEME, Themes::NIGHT) == 0);
+    bool isDangerCondition = is_danger_condition(value);
+    
+    log_d("Theme refresh - Current theme: '%s', Night mode: %s, Danger: %s, Value: %d", 
+          styleManager_->THEME, isNightMode ? "YES" : "NO", isDangerCondition ? "YES" : "NO", value);
+    
+    if (isNightMode)
+    {
+        // Night mode: icons are always red regardless of danger condition
+        iconColour = colours.gaugeNormal;
+        log_d("Night mode - Using gaugeNormal color (red)");
+    }
+    else
+    {
+        // Day mode: normal color switching based on danger condition
+        iconColour = isDangerCondition ? colours.gaugeDanger : colours.gaugeNormal;
+        log_d("Day mode - Using %s color", 
+              isDangerCondition ? "gaugeDanger (red)" : "gaugeNormal (white)");
+    }
 
     // Update needle and icon colors (all three needle sections with 3D gradient)
     if (is_danger_condition(value))
@@ -140,8 +171,11 @@ void OemOilComponent::refresh(const Reading& reading)
         lv_obj_set_style_line_color(needleHighlightMiddle_, colours.needleNormal, MAIN_DEFAULT);
         lv_obj_set_style_line_color(needleHighlightBase_, colours.needleNormal, MAIN_DEFAULT);
     }
-    lv_obj_set_style_image_recolor(oilIcon_, colour, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor(oilIcon_, iconColour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(oilIcon_, LV_OPA_COVER, MAIN_DEFAULT);
+
+    // Update pivot styling based on current theme
+    UpdatePivotStyling();
 
     log_d("rendered update");
 }
@@ -175,6 +209,60 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
     // Default implementation - no mapping
     // Derived classes can override for special mapping (e.g., temperature component)
     return value;
+}
+
+/// @brief Updates pivot styling based on current theme
+void OemOilComponent::UpdatePivotStyling()
+{
+    if (pivotCircle_)
+    {
+        const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
+        
+        if (strcmp(styleManager_->THEME, Themes::NIGHT) == 0)
+        {
+            // Night mode - make pivot completely invisible by matching background exactly
+            lv_obj_set_style_bg_color(pivotCircle_, colours.background, MAIN_DEFAULT);
+            lv_obj_set_style_bg_grad_color(pivotCircle_, colours.background, MAIN_DEFAULT);
+            lv_obj_set_style_bg_grad_dir(pivotCircle_, LV_GRAD_DIR_NONE, MAIN_DEFAULT); // Disable gradient completely
+            lv_obj_set_style_bg_opa(pivotCircle_, LV_OPA_COVER, MAIN_DEFAULT);          // Full opacity
+            lv_obj_set_style_border_width(pivotCircle_, 0, MAIN_DEFAULT);               // No border
+            lv_obj_set_style_border_opa(pivotCircle_, LV_OPA_TRANSP, MAIN_DEFAULT);     // No border opacity
+            lv_obj_set_style_shadow_opa(pivotCircle_, LV_OPA_TRANSP, MAIN_DEFAULT);     // No shadow
+            lv_obj_set_style_outline_width(pivotCircle_, 0, MAIN_DEFAULT);              // No outline
+            
+            // Hide highlight in night mode
+            if (pivotHighlight_)
+            {
+                lv_obj_add_flag(pivotHighlight_, LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+        else
+        {
+            // Day mode - visible plastic appearance with radial gradient
+            lv_obj_set_style_bg_color(pivotCircle_, lv_color_hex(0x505050), MAIN_DEFAULT);      // Medium gray center
+            lv_obj_set_style_bg_grad_color(pivotCircle_, lv_color_hex(0x2A2A2A), MAIN_DEFAULT); // Dark gray edge
+            lv_obj_set_style_bg_grad_dir(pivotCircle_, LV_GRAD_DIR_HOR, MAIN_DEFAULT);          // Horizontal for radial-like effect
+            lv_obj_set_style_bg_grad_stop(pivotCircle_, 180, MAIN_DEFAULT);                     // Gradient more toward edge
+
+            // Dark beveled border (darker than main body)
+            lv_obj_set_style_border_width(pivotCircle_, 2, MAIN_DEFAULT);
+            lv_obj_set_style_border_color(pivotCircle_, lv_color_hex(0x1A1A1A), MAIN_DEFAULT); // Very dark border
+
+            // Subtle shadow for depth
+            lv_obj_set_style_shadow_color(pivotCircle_, lv_color_hex(0x000000), MAIN_DEFAULT);
+            lv_obj_set_style_shadow_width(pivotCircle_, 3U, MAIN_DEFAULT);      // Moderate shadow
+            lv_obj_set_style_shadow_opa(pivotCircle_, LV_OPA_20, MAIN_DEFAULT); // Subtle
+            lv_obj_set_style_shadow_spread(pivotCircle_, 1, MAIN_DEFAULT);
+            lv_obj_set_style_shadow_offset_x(pivotCircle_, 1, MAIN_DEFAULT);
+            lv_obj_set_style_shadow_offset_y(pivotCircle_, 1, MAIN_DEFAULT);
+            
+            // Show highlight in day mode
+            if (pivotHighlight_)
+            {
+                lv_obj_clear_flag(pivotHighlight_, LV_OBJ_FLAG_HIDDEN);
+            }
+        }
+    }
 }
 
 // Private Methods
@@ -284,37 +372,22 @@ void OemOilComponent::CreateNeedle()
     lv_obj_set_style_line_opa(needleHighlightBase_, LV_OPA_20, MAIN_DEFAULT); // Very subtle
 
     // Realistic dark plastic pivot point (based on actual car dashboard reference)
-    auto _pivot_circle = lv_obj_create(scale_);
-    lv_obj_set_size(_pivot_circle, 40U, 40U); // Even larger for better visibility and proportion
-    lv_obj_center(_pivot_circle);
-    lv_obj_set_style_radius(_pivot_circle, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-
-    // Dark plastic appearance with radial gradient (light center to dark edge)
-    lv_obj_set_style_bg_color(_pivot_circle, lv_color_hex(0x505050), MAIN_DEFAULT);      // Medium gray center
-    lv_obj_set_style_bg_grad_color(_pivot_circle, lv_color_hex(0x2A2A2A), MAIN_DEFAULT); // Dark gray edge
-    lv_obj_set_style_bg_grad_dir(_pivot_circle, LV_GRAD_DIR_HOR, MAIN_DEFAULT);          // Horizontal for radial-like effect
-    lv_obj_set_style_bg_grad_stop(_pivot_circle, 180, MAIN_DEFAULT);                     // Gradient more toward edge
-
-    // Dark beveled border (darker than main body)
-    lv_obj_set_style_border_width(_pivot_circle, 2, MAIN_DEFAULT);
-    lv_obj_set_style_border_color(_pivot_circle, lv_color_hex(0x1A1A1A), MAIN_DEFAULT); // Very dark border
-
-    // Subtle shadow for depth (less pronounced than metallic)
-    lv_obj_set_style_shadow_color(_pivot_circle, lv_color_hex(0x000000), MAIN_DEFAULT);
-    lv_obj_set_style_shadow_width(_pivot_circle, 3U, MAIN_DEFAULT);      // Moderate shadow
-    lv_obj_set_style_shadow_opa(_pivot_circle, LV_OPA_20, MAIN_DEFAULT); // Subtle
-    lv_obj_set_style_shadow_spread(_pivot_circle, 1, MAIN_DEFAULT);
-    lv_obj_set_style_shadow_offset_x(_pivot_circle, 1, MAIN_DEFAULT);
-    lv_obj_set_style_shadow_offset_y(_pivot_circle, 1, MAIN_DEFAULT);
+    pivotCircle_ = lv_obj_create(scale_);
+    lv_obj_set_size(pivotCircle_, 40U, 40U); // Even larger for better visibility and proportion
+    lv_obj_center(pivotCircle_);
+    lv_obj_set_style_radius(pivotCircle_, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
 
     // Center light pickup highlight (where light hits the plastic)
-    auto _pivot_highlight = lv_obj_create(_pivot_circle);
-    lv_obj_set_size(_pivot_highlight, 16U, 16U); // Proportional to larger pivot
-    lv_obj_center(_pivot_highlight);
-    lv_obj_set_style_radius(_pivot_highlight, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    lv_obj_set_style_bg_color(_pivot_highlight, lv_color_hex(0x707070), MAIN_DEFAULT); // Light gray highlight
-    lv_obj_set_style_bg_opa(_pivot_highlight, LV_OPA_80, MAIN_DEFAULT);                // More opaque for plastic look
-    lv_obj_set_style_border_width(_pivot_highlight, 0, MAIN_DEFAULT);
+    pivotHighlight_ = lv_obj_create(pivotCircle_);
+    lv_obj_set_size(pivotHighlight_, 16U, 16U); // Proportional to larger pivot
+    lv_obj_center(pivotHighlight_);
+    lv_obj_set_style_radius(pivotHighlight_, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
+    lv_obj_set_style_bg_color(pivotHighlight_, lv_color_hex(0x707070), MAIN_DEFAULT); // Light gray highlight
+    lv_obj_set_style_bg_opa(pivotHighlight_, LV_OPA_80, MAIN_DEFAULT);                // More opaque for plastic look
+    lv_obj_set_style_border_width(pivotHighlight_, 0, MAIN_DEFAULT);
+
+    // Style pivot based on theme
+    UpdatePivotStyling();
 }
 
 /// @brief Sets up the scale properties for the oil component.

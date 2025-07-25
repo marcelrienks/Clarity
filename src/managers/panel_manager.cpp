@@ -206,8 +206,19 @@ void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const 
     {
         StyleManager::GetInstance().set_theme(triggerState.target.c_str());
         log_i("Theme changed to %s", triggerState.target.c_str());
-        // Theme triggers can be cleared immediately as they don't correspond to GPIO pins
-        TriggerManager::GetInstance().ClearTriggerState(triggerId);
+        
+        // Update current panel to refresh components with new theme colors
+        if (panel_)
+        {
+            log_d("Refreshing panel components with new theme");
+            panel_->update([this, triggerId]()
+                          { TriggerManager::GetInstance().ClearTriggerState(triggerId); });//TODO: why is panel manager calling clear triggers, when all trigger related activities like setting or clearing should be done through GPIO change triggers
+        }
+        else
+        {
+            // No current panel, clear trigger immediately
+            TriggerManager::GetInstance().ClearTriggerState(triggerId);
+        }
     }
 }
 

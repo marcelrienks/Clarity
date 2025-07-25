@@ -81,6 +81,8 @@ protected:
     lv_obj_t *oilIcon_;
     lv_obj_t *lowLabel_;        // "L" label for low end
     lv_obj_t *highLabel_;       // "H" label for high end
+    lv_obj_t *pivotCircle_;     // Main pivot circle
+    lv_obj_t *pivotHighlight_;  // Highlight on pivot for 3D effect
     
     // Cached StyleManager reference (optimization)
     StyleManager* styleManager_;
@@ -97,4 +99,5 @@ private:
     void CreateLabels();
     void CreateNeedle();
     void CreateScale(int32_t rotation);
+    void UpdatePivotStyling();
 };

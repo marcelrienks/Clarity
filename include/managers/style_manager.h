@@ -125,13 +125,13 @@ private:
         .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
     ThemeColors nightThemeColours_ = {
-        .background = lv_color_hex(0x121212),
+        .background = lv_color_hex(0x000000),    // Solid black background
         .text = lv_color_hex(0xB00020),
         .primary = lv_color_hex(0xB00020),
-        .gaugeNormal = lv_color_hex(0xB00020),
+        .gaugeNormal = lv_color_hex(0xB00020),   // Red icons in night mode
         .gaugeWarning = lv_color_hex(0xFB8C00),
         .gaugeDanger = lv_color_hex(0xB00020),
-        .gaugeTicks = lv_color_hex(0xF0F0E8),    // Soft off-white for ticks
+        .gaugeTicks = lv_color_hex(0xB00020),    // Red tick marks for night mode
         .needleNormal = lv_color_hex(0xFFFFFF),  // Pure white for needles
         .needleDanger = lv_color_hex(0xDC143C),  // Crimson red for danger
         .keyPresent = lv_color_hex(0x006400),    // Deep green for key present
