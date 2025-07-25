@@ -107,9 +107,9 @@ void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location
 
     // Setup scale properties based on derived class configuration
     CreateScale(location.rotation);
-    CreateNeedle();
     CreateIcon();
     CreateLabels();
+    CreateNeedle();
 
     log_d("rendered load");
 }
