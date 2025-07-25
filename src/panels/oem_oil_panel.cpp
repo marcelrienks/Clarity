@@ -96,14 +96,15 @@ void OemOilPanel::update(std::function<void()> callbackFunction)
 
     callbackFunction_ = callbackFunction;
 
-    // Check if there's an active theme change trigger - if so, force component refresh
-    auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
-    const char* triggerId = triggerPair.first;
-    TriggerState* trigger = triggerPair.second;
-    
-    forceComponentRefresh_ = (trigger && trigger->action == "ChangeTheme");
-    if (forceComponentRefresh_) {
-        log_d("Theme change trigger active, forcing component refresh");
+    // Always force component refresh when theme has changed (like panel restoration)
+    // This ensures icons and pivot styling update regardless of needle value changes
+    const char* currentTheme = StyleManager::GetInstance().THEME;
+    if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme)) {
+        forceComponentRefresh_ = true;
+        log_d("Theme changed to %s, forcing component refresh", currentTheme);
+        lastTheme_ = String(currentTheme);
+    } else {
+        forceComponentRefresh_ = false;
     }
 
     log_v("updating...");
@@ -136,6 +137,13 @@ void OemOilPanel::UpdateOilPressure()
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
+    
+    // Handle forced refresh (theme changes) even when values unchanged
+    if (value == currentOilPressureValue_ && forceComponentRefresh_) {
+        log_d("Pressure value unchanged (%d) but forced refresh required - updating colors only", value);
+        oemOilPressureComponent_->refresh(Reading{value});
+        return; // No animation needed since value didn't change
+    }
     
     // Skip update only if value is exactly the same as last update AND this is not a forced update
     if (value == currentOilPressureValue_ && !forceComponentRefresh_) {
@@ -176,6 +184,13 @@ void OemOilPanel::UpdateOilTemperature()
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
     auto value = MapTemperatureValue(sensorValue);
+    
+    // Handle forced refresh (theme changes) even when values unchanged
+    if (value == currentOilTemperatureValue_ && forceComponentRefresh_) {
+        log_d("Temperature value unchanged (%d) but forced refresh required - updating colors only", value);
+        oemOilTemperatureComponent_->refresh(Reading{value});
+        return; // No animation needed since value didn't change
+    }
     
     // Skip update only if value is exactly the same as last update AND this is not a forced update
     if (value == currentOilTemperatureValue_ && !forceComponentRefresh_) {

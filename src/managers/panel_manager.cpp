@@ -204,21 +204,28 @@ void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const 
     }
     else if (triggerState.action == ACTION_CHANGE_THEME)
     {
-        StyleManager::GetInstance().set_theme(triggerState.target.c_str());
-        log_i("Theme changed to %s", triggerState.target.c_str());
+        // Only change theme if it's actually different to prevent infinite loops
+        const char* currentTheme = StyleManager::GetInstance().THEME;
+        const char* targetTheme = triggerState.target.c_str();
         
-        // Update current panel to refresh components with new theme colors
-        if (panel_)
+        if (strcmp(currentTheme, targetTheme) != 0)
         {
-            log_d("Refreshing panel components with new theme");
-            panel_->update([this, triggerId]()
-                          { TriggerManager::GetInstance().ClearTriggerState(triggerId); });//TODO: why is panel manager calling clear triggers, when all trigger related activities like setting or clearing should be done through GPIO change triggers
+            StyleManager::GetInstance().set_theme(targetTheme);
+            log_i("Theme changed from %s to %s", currentTheme, targetTheme);
+            
+            // Update current panel to refresh components with new theme colors
+            if (panel_)
+            {
+                log_d("Refreshing panel components with new theme");
+                panel_->update([this]()
+                              { this->PanelCompletionCallback(); });
+            }
         }
         else
         {
-            // No current panel, clear trigger immediately
-            TriggerManager::GetInstance().ClearTriggerState(triggerId);
+            log_d("Theme already set to %s, skipping change", targetTheme);
         }
+        // GPIO system will handle trigger state clearing based on hardware state
     }
 }
 
@@ -264,15 +271,29 @@ void PanelManager::ProcessTriggers()
     }
     else
     {
-        // No active triggers - restore to previous panel if needed
+        // No active triggers - restore to previous panel and theme if needed
         if (strcmp(currentPanel, PanelNames::KEY) == 0 || strcmp(currentPanel, PanelNames::LOCK) == 0)
         {
             log_d("No active triggers - restoring from %s to %s", currentPanel, restorationPanel);
             CreateAndLoadPanel(restorationPanel, [this](){ this->PanelCompletionCallback(); }, false);
         }
+        
+        // Check if theme needs restoration (similar to panel restoration)
+        if (strcmp(StyleManager::GetInstance().THEME, Themes::NIGHT) == 0)
+        {
+            log_d("No active triggers - restoring theme from Night to Day");
+            StyleManager::GetInstance().set_theme(Themes::DAY);
+            
+            // Update current panel to refresh components with restored theme
+            if (panel_)
+            {
+                log_d("Refreshing panel components with restored theme");
+                panel_->update([this](){ this->PanelCompletionCallback(); });
+            }
+        }
         else
         {
-            log_v("No active triggers but showing non-trigger panel %s", currentPanel);
+            log_v("No active triggers but showing non-trigger panel %s with theme %s", currentPanel, StyleManager::GetInstance().THEME);
         }
     }
 }

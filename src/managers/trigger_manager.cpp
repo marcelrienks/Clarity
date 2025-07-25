@@ -139,20 +139,18 @@ void TriggerManager::HandleThemeSwitchInterrupt(bool nightMode)
         return;
     }
 
-    // Determine target theme based on GPIO state
-    const char *targetTheme = nightMode ? THEME_NIGHT : THEME_DAY;
-    const char *currentTheme = StyleManager::GetInstance().THEME;
-
-    // Only create trigger if theme actually needs to change
-    if (strcmp(currentTheme, targetTheme) != 0)
+    log_d("Theme switch GPIO state change: %s mode requested", nightMode ? "Night" : "Day");
+    
+    if (nightMode)
     {
-        log_d("Theme change needed: %s → %s", currentTheme, targetTheme);
-        SetTriggerState(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, targetTheme, TriggerPriority::NORMAL);
+        // Pin HIGH - activate Night theme trigger
+        SetTriggerState(TRIGGER_THEME_SWITCH, ACTION_CHANGE_THEME, THEME_NIGHT, TriggerPriority::NORMAL);
+        SetTriggerActiveStatus(TRIGGER_THEME_SWITCH, true);
     }
     else
     {
-        log_d("Theme already set to %s, clearing any pending theme triggers", targetTheme);
-        ClearTriggerState(TRIGGER_THEME_SWITCH);
+        // Pin LOW - deactivate trigger, let restoration logic handle Day theme
+        SetTriggerActiveStatus(TRIGGER_THEME_SWITCH, false);
     }
 
     // Update internal hardware state tracking
