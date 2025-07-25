@@ -197,6 +197,13 @@ enum class TriggerPriority {
     NORMAL = 2     ///< Non-critical triggers (theme changes, settings)
 };
 
+/// @brief Trigger execution state enumeration
+enum class TriggerExecutionState {
+    INIT = 0,     ///< Initial state - no action required during system startup
+    ACTIVE = 1,   ///< Active state - execute action function
+    INACTIVE = 2  ///< Inactive state - execute restore function
+};
+
 
 /**
  * @brief Structure for shared trigger state
@@ -236,7 +243,7 @@ constexpr const char *TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
 constexpr const char *TRIGGER_KEY_PRESENT = "key_present";
 constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
-constexpr const char *TRIGGER_THEME_SWITCH = "theme_switch";
+constexpr const char *TRIGGER_LIGHTS_STATE = "lights_state";
 
 /// @brief ISR Event types for safe interrupt handling
 enum class ISREventType {

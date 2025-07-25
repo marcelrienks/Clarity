@@ -3,52 +3,72 @@
 #include <esp32-hal-log.h>
 #include <utilities/types.h>
 #include <memory>
+#include <functional>
 
 /**
  * @interface ITrigger
- * @brief Interface for trigger conditions that can cause panel switches
+ * @brief Simplified trigger interface with action/restore pattern
  * 
- * @details Triggers monitor sensor readings and evaluate conditions to determine
- * when a panel switch should occur. Similar to ISensor pattern, triggers provide
- * a standard interface for condition evaluation with lifecycle management.
+ * @details Triggers represent alert conditions with active/inactive states.
+ * Each trigger has an action (executed when active) and restore (executed when inactive).
+ * State changes in GPIO pins directly control trigger active/inactive status.
  * 
- * @lifecycle:
- * 1. init(): Initialize trigger resources and sensor connections
- * 2. evaluate(): Check current conditions and return trigger decision
- * 3. get_target_panel(): Return panel name to switch to when triggered
- * 4. should_restore(): Whether to restore previous panel when condition clears
+ * @key_concepts:
+ * - Active/Inactive: All triggers have binary state based on GPIO pin state
+ * - Action: Function executed when trigger becomes active
+ * - Restore: Function executed when trigger becomes inactive  
+ * - Priority: Triggers are evaluated lowest to highest priority (highest wins)
  * 
- * @usage_examples:
- * - KeyTrigger: Monitor key sensor, trigger when key detected
- * - TemperatureTrigger: Monitor temperature, trigger on over-temperature
- * - PressureTrigger: Monitor pressure, trigger on low pressure warning
- * 
- * @integration: Triggers are registered with TriggerManager and evaluated
- * during the main loop before normal panel updates.
+ * @simplified_flow:
+ * 1. GPIO pin state change -> trigger active/inactive
+ * 2. Action executed on active, restore executed on inactive
+ * 3. Multiple active triggers: highest priority action wins
  */
 class ITrigger
 {
 public:
-    // Destructors
     virtual ~ITrigger() = default;
     
-    // Core Functionality Methods
-    /// @brief Initialize the trigger and any required resources
+    // Core Methods
     virtual void init() = 0;
-    
-    /// @brief Evaluate the trigger condition based on current sensor readings
-    /// @return true if trigger condition is met and panel switch should occur
-    virtual bool evaluate() = 0;
-    
-    /// @brief Get the target panel name to switch to when triggered
-    /// @return Panel name string constant
-    virtual const char* GetTargetPanel() const = 0;
-    
-    /// @brief Get the trigger identifier for registration/management
-    /// @return Unique trigger identifier string
     virtual const char* GetId() const = 0;
+    virtual TriggerPriority GetPriority() const = 0;
+    virtual TriggerExecutionState GetState() const = 0;
     
-    /// @brief Whether to restore the previous panel when condition clears
-    /// @return true if previous panel should be restored, false to stay on target panel
-    virtual bool ShouldRestore() const { return false; }
+    // Action/Restore Pattern
+    virtual void ExecuteAction() = 0;
+    virtual void ExecuteRestore() = 0;
+    
+    // State Management
+    virtual void SetState(TriggerExecutionState state) = 0;
+};
+
+// Base class for alert triggers with function-based actions
+class AlertTrigger : public ITrigger
+{
+protected:
+    TriggerExecutionState state_ = TriggerExecutionState::INIT;
+    TriggerPriority priority_;
+    const char* id_;
+    std::function<void()> actionFunc_;
+    std::function<void()> restoreFunc_;
+
+public:
+    AlertTrigger(const char* id, TriggerPriority priority, 
+                 std::function<void()> action, std::function<void()> restore)
+        : id_(id), priority_(priority), actionFunc_(action), restoreFunc_(restore) {}
+
+    const char* GetId() const override { return id_; }
+    TriggerPriority GetPriority() const override { return priority_; }
+    TriggerExecutionState GetState() const override { return state_; }
+    
+    void ExecuteAction() override { if (actionFunc_) actionFunc_(); }
+    void ExecuteRestore() override { if (restoreFunc_) restoreFunc_(); }
+    
+    void SetState(TriggerExecutionState state) override { 
+        state_ = state;
+        const char* stateStr = (state == TriggerExecutionState::INIT) ? "INIT" : 
+                              (state == TriggerExecutionState::ACTIVE) ? "ACTIVE" : "INACTIVE";
+        log_d("Trigger %s set to %s", id_, stateStr);
+    }
 };

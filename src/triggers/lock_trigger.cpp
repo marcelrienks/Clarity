@@ -1,65 +1,40 @@
 #include "triggers/lock_trigger.h"
+#include "managers/panel_manager.h"
+#include "utilities/types.h"
+#include <esp32-hal-log.h>
 
-// Constructors and Destructors
+LockTrigger::LockTrigger() : AlertTrigger(
+    TRIGGER_LOCK_STATE,
+    TriggerPriority::IMPORTANT,
+    LoadLockPanel,
+    RestorePreviousPanel
+) {}
 
-/// @brief Constructor with optional restoration mode
-/// @param enable_restoration Whether to restore previous panel when lock becomes disengaged
-LockTrigger::LockTrigger(bool enableRestoration)
-    : lockSensor_(std::make_shared<LockSensor>()), 
-      enableRestoration_(enableRestoration)
-{
-}
-
-// Core Functionality Methods
-
-/// @brief Initialize the trigger and GPIO pins
 void LockTrigger::init()
 {
-    log_d("...");
-    
-    lockSensor_->init();
-    
-    // Get initial lock state for logging
-    bool initialState = std::get<bool>(lockSensor_->GetReading());
-    log_d("Lock trigger initialized with state: %s", initialState ? "engaged" : "disengaged");
+    log_d("LockTrigger initialized with IMPORTANT priority");
 }
 
-/// @brief Evaluate the trigger condition based on lock sensor reading
-/// @return true if lock pin is HIGH (engaged), false if LOW (disengaged)
-bool LockTrigger::evaluate()
+void LockTrigger::LoadLockPanel()
 {
-    log_d("...");
-    
-    // Get current lock state from GPIO pin
-    bool currentState = std::get<bool>(lockSensor_->GetReading());
-    
-    // Simple logic: trigger when lock pin is HIGH (engaged)
-    bool shouldTrigger = currentState;
-    
-    log_d("Lock state: %s, shouldTrigger: %d", 
-          currentState ? "engaged" : "disengaged", 
-          shouldTrigger);
-    
-    return shouldTrigger;
+    log_d("Lock engaged - loading lock panel");
+    PanelManager::GetInstance().CreateAndLoadPanel(PanelNames::LOCK, nullptr, true);
 }
 
-/// @brief Get the target panel name to switch to when triggered
-/// @return Panel name for lock status display
-const char* LockTrigger::GetTargetPanel() const
+void LockTrigger::RestorePreviousPanel()
 {
-    return PanelNames::LOCK;
-}
-
-/// @brief Get the trigger identifier for registration/management
-/// @return Unique trigger identifier string
-const char* LockTrigger::GetId() const
-{
-    return TRIGGER_ID;
-}
-
-/// @brief Whether to restore the previous panel when lock becomes disengaged
-/// @return true if previous panel should be restored, false to stay on lock panel
-bool LockTrigger::ShouldRestore() const
-{
-    return enableRestoration_;
+    log_d("Lock disengaged - restoring previous panel");
+    auto& pm = PanelManager::GetInstance();
+    
+    // Check if restoration panel is valid before attempting to load it
+    if (pm.restorationPanel == nullptr || strlen(pm.restorationPanel) == 0)
+    {
+        log_w("No valid restoration panel set - defaulting to OIL panel");
+        pm.CreateAndLoadPanel(PanelNames::OIL, nullptr, false);
+    }
+    else
+    {
+        log_d("Restoring to panel: %s", pm.restorationPanel);
+        pm.CreateAndLoadPanel(pm.restorationPanel, nullptr, false);
+    }
 }
