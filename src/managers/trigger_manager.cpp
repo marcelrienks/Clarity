@@ -59,17 +59,17 @@ void TriggerManager::RegisterTrigger(std::unique_ptr<AlertTrigger> trigger)
     triggers_.push_back(std::move(trigger));
 }
 
-std::vector<TriggerActionRequest> TriggerManager::ProcessPendingTriggerEvents()
+std::map<std::string, TriggerExecutionState> TriggerManager::ProcessPendingTriggerEvents()
 {
-    std::vector<TriggerActionRequest> changeRequests;
+    std::map<std::string, TriggerExecutionState> consolidatedStates;
     ISREvent event;
     UBaseType_t queueCount = uxQueueMessagesWaiting(isrEventQueue);
     
     if (queueCount > 0) {
-        log_i("Core 0: Processing %d pending trigger events", queueCount);
+        log_i("Core 0: Processing %d pending trigger events for state consolidation", queueCount);
     }
     
-    // Process all queued trigger events and generate action requests immediately
+    // Process ALL queued trigger events in FIFO order to build consolidated state
     while (xQueueReceive(isrEventQueue, &event, 0) == pdTRUE)
     {
         log_i("Core 0: Processing trigger event: type=%d, state=%s", (int)event.eventType, event.pinState ? "HIGH" : "LOW");
@@ -110,23 +110,115 @@ std::vector<TriggerActionRequest> TriggerManager::ProcessPendingTriggerEvents()
                       newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE",
                       event.pinState ? "HIGH" : "LOW");
                 
+                // Update trigger object state
                 trigger->SetState(newState);
                 
-                // Generate action request immediately on pin change
-                if (newState == TriggerExecutionState::ACTIVE) {
-                    log_i("*** PIN CHANGE - COLLECTING ACTION REQUEST for trigger: %s ***", triggerId);
-                    changeRequests.push_back(trigger->GetActionRequest());
-                } else if (newState == TriggerExecutionState::INACTIVE) {
-                    log_i("*** PIN CHANGE - COLLECTING RESTORE REQUEST for trigger: %s ***", triggerId);
-                    changeRequests.push_back(trigger->GetRestoreRequest());
-                }
+                // Update consolidated state map (later messages override earlier ones)
+                consolidatedStates[std::string(triggerId)] = newState;
+                
+                log_i("*** STATE CONSOLIDATION - %s set to %s ***", 
+                      triggerId, 
+                      newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
             }
         }
     }
     
-    return changeRequests;
+    if (!consolidatedStates.empty()) {
+        log_i("State consolidation complete. Final states:");
+        for (const auto& [triggerId, state] : consolidatedStates) {
+            log_i("  %s: %s", triggerId.c_str(), state == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
+        }
+    }
+    
+    return consolidatedStates;
 }
 
+ExecutionPlan TriggerManager::PlanExecutionFromStates(const std::map<std::string, TriggerExecutionState>& consolidatedStates)
+{
+    ExecutionPlan plan;
+    
+    log_i("Planning execution from consolidated states...");
+    
+    // Collect all triggers with state changes (both active and inactive)
+    std::vector<std::pair<TriggerPriority, std::pair<AlertTrigger*, TriggerExecutionState>>> allTriggers;
+    
+    for (const auto& [triggerId, state] : consolidatedStates) {
+        AlertTrigger* trigger = FindTriggerById(triggerId.c_str());
+        if (trigger) {
+            allTriggers.push_back({trigger->GetPriority(), {trigger, state}});
+            log_i("Trigger state change found: %s (priority %d, state %s)", 
+                  triggerId.c_str(), (int)trigger->GetPriority(),
+                  state == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
+        }
+    }
+    
+    // Sort by priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
+    // Lower number = higher priority, but we want to process NORMAL first, then IMPORTANT, then CRITICAL
+    std::sort(allTriggers.begin(), allTriggers.end(),
+        [](const auto& a, const auto& b) { return a.first > b.first; });
+    
+    // Categorize actions by type - process all state changes
+    AlertTrigger* highestPriorityPanelTrigger = nullptr;
+    TriggerPriority highestPanelPriority = TriggerPriority::NORMAL;
+    
+    for (const auto& [priority, triggerStatePair] : allTriggers) {
+        auto [trigger, state] = triggerStatePair;
+        
+        // Get appropriate request based on state
+        auto request = (state == TriggerExecutionState::ACTIVE) 
+                      ? trigger->GetActionRequest() 
+                      : trigger->GetRestoreRequest();
+        
+        if (request.type == TriggerActionType::ToggleTheme) {
+            log_i("Adding theme action from trigger: %s", trigger->GetId());
+            plan.themeActions.push_back(request);
+        } else if (request.type == TriggerActionType::LoadPanel && state == TriggerExecutionState::ACTIVE) {
+            // Only consider ACTIVE triggers for panel loading
+            // Track highest priority panel trigger (lowest priority number = highest priority)
+            // For same priority triggers, later triggers override (FIFO behavior)
+            if (!highestPriorityPanelTrigger || priority <= highestPanelPriority) {
+                highestPriorityPanelTrigger = trigger;
+                highestPanelPriority = priority;
+                log_i("New highest priority panel trigger: %s (priority %d)", trigger->GetId(), (int)priority);
+            }
+        } else {
+            log_i("Adding non-panel action from trigger: %s", trigger->GetId());
+            plan.nonPanelActions.push_back(request);
+        }
+    }
+    
+    // Set final panel action
+    if (highestPriorityPanelTrigger) {
+        plan.finalPanelAction = highestPriorityPanelTrigger->GetActionRequest();
+        log_i("Final panel action: Load %s from trigger %s", 
+              plan.finalPanelAction.panelName, 
+              highestPriorityPanelTrigger->GetId());
+    } else {
+        // Check if we have any ACTIVE triggers (including theme-only triggers)
+        bool hasActiveNonPanelTriggers = false;
+        for (const auto& [triggerId, state] : consolidatedStates) {
+            if (state == TriggerExecutionState::ACTIVE) {
+                hasActiveNonPanelTriggers = true;
+                break;
+            }
+        }
+        
+        if (!hasActiveNonPanelTriggers) {
+            // No active triggers at all - restore oil panel
+            plan.finalPanelAction = {TriggerActionType::RestorePanel, nullptr, "system", true};
+            log_i("Final panel action: Restore oil panel (no active triggers)");
+        } else {
+            // Active triggers exist but no panel triggers - no panel action needed
+            plan.finalPanelAction = {TriggerActionType::None, nullptr, "system", false};
+            log_i("Final panel action: None (active non-panel triggers exist)");
+        }
+    }
+    
+    log_i("Execution plan complete: %d theme actions, %d non-panel actions, 1 final panel action",
+          (int)plan.themeActions.size(), (int)plan.nonPanelActions.size());
+    
+    return plan;
+}
 
 void TriggerManager::InitializeTriggersFromGpio()
 {

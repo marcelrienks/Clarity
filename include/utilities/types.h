@@ -121,6 +121,22 @@ struct TriggerActionRequest
     bool isTriggerDriven = false;     ///< Whether this is a trigger-driven panel change
 };
 
+/// @struct ExecutionPlan
+/// @brief Structured execution plan for optimal trigger action processing
+///
+/// @details Organizes trigger actions by type for smart execution ordering:
+/// 1. Theme actions applied first (affect subsequent panel styling)
+/// 2. Non-panel actions applied second (other system changes)
+/// 3. Final panel action applied last (single panel load only)
+struct ExecutionPlan
+{
+    std::vector<TriggerActionRequest> themeActions;     ///< Theme changes to apply first
+    std::vector<TriggerActionRequest> nonPanelActions;  ///< Non-panel actions to apply second
+    TriggerActionRequest finalPanelAction;              ///< Single final panel to load last
+    
+    ExecutionPlan() : finalPanelAction{TriggerActionType::None, nullptr, nullptr, false} {}
+};
+
 /// @struct PanelNames
 /// @brief Static constants for panel type identifiers
 ///

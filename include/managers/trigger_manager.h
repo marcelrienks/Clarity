@@ -10,6 +10,7 @@
 #include <map>
 #include <memory>
 #include <vector>
+#include <string>
 
 /**
  * @class TriggerManager
@@ -36,7 +37,8 @@ public:
     void init();
     void RegisterAllTriggers();
     void RegisterTrigger(std::unique_ptr<AlertTrigger> trigger);
-    std::vector<TriggerActionRequest> ProcessPendingTriggerEvents();
+    std::map<std::string, TriggerExecutionState> ProcessPendingTriggerEvents();
+    ExecutionPlan PlanExecutionFromStates(const std::map<std::string, TriggerExecutionState>& consolidatedStates);
     void InitializeTriggersFromGpio();
 
     // GPIO State Change Handlers (called from Core 1 task)
