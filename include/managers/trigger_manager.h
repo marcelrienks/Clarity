@@ -34,8 +34,10 @@ public:
 
     // Core Functionality
     void init();
+    void RegisterAllTriggers();
     void RegisterTrigger(std::unique_ptr<AlertTrigger> trigger);
-    void EvaluateAndExecuteTriggers();
+    void ProcessPendingTriggerEvents();
+    std::vector<TriggerActionRequest> EvaluateAndGetTriggerRequests();
     void InitializeTriggersFromGpio();
 
     // GPIO State Change Handlers (called from Core 1 task)
@@ -43,6 +45,9 @@ public:
 
     // Core 1 Task Methods
     static void TriggerMonitoringTask(void* pvParameters);
+    
+    // CRITICAL: Get task handle for temporary suspension during LVGL operations
+    TaskHandle_t GetTaskHandle() const { return triggerTaskHandle_; }
     
     // Static interrupt handlers
     static void IRAM_ATTR keyPresentIsrHandler(void* arg);
@@ -58,9 +63,8 @@ private:
     AlertTrigger* FindTriggerById(const char* triggerId);
     void ExecuteHighestPriorityAction();
 
-    // Trigger registry and synchronization
+    // Trigger registry (Core 0 exclusive ownership - no mutex needed)
     std::vector<std::unique_ptr<AlertTrigger>> triggers_;
-    SemaphoreHandle_t triggerMutex_ = nullptr;
     
     // ISR communication
     QueueHandle_t isrEventQueue = nullptr;

@@ -2,219 +2,215 @@
 
 ## Overview
 
-The Clarity project implements a dual-core trigger management system for ESP32-based automotive engine monitoring. This system handles GPIO pin state changes and executes corresponding actions/restores based on priority-driven evaluation.
+The Clarity trigger system implements a **dual-core event-driven architecture** with complete separation of responsibilities between ESP32 cores. The system uses a **producer-consumer pattern** with **dependency injection** to ensure reliable, race-condition-free trigger processing.
 
 ## Dual-Core Architecture
 
-### Core 1 (GPIO Monitoring)
-**Responsibilities:**
-- Monitor GPIO pin state changes via interrupts
-- Update shared trigger state (active/inactive) only
-- Queue ISR events for safe task processing
-- **No action execution** - purely state management
+### Core 1 (Producer) - Event Monitoring
 
-**Key Components:**
-- `TriggerMonitoringTask()` - Main task running on Core 1
-- GPIO interrupt handlers (ISR-safe)
-- Event queue for ISR-to-Task communication
-- Mutex-protected trigger state updates
+#### Hardware Layer
+**GPIO Interrupt Handlers** (`trigger_manager.cpp:320+`)
+- `gpio_key_present_isr()`, `gpio_lock_state_isr()`, `gpio_theme_switch_isr()`
+- **Responsibility**: Detect hardware pin state changes immediately
+- **Output**: Queue ISR events to `isrEventQueue`
 
-### Core 0 (Trigger Evaluation & Execution)
-**Responsibilities:**
-- Evaluate all trigger states based on current GPIO pin state
-- Execute actions for active triggers
-- Execute restores for inactive triggers
-- Process triggers from lowest to highest priority
-- Handle all UI/LVGL operations safely
+#### Task Layer
+**TriggerMonitoringTask** (`trigger_manager.cpp:223-309`)
+- **Responsibility**: 
+  - Receive ISR events from queue
+  - Map hardware events to trigger IDs
+  - Log trigger events for debugging (no state modification)
+- **Priority**: Reduced priority (2) to avoid blocking Core 0
+- **Output**: Events remain queued for Core 0 processing
 
-**Key Components:**
-- `EvaluateAndExecuteTriggers()` - Main evaluation function
-- Priority-based trigger sorting and execution
-- Panel management and UI operations
-- Theme switching and display updates
+### Core 0 (Consumer) - State Management & Execution
 
-## Key Design Principles
-
-### 1. No Complex State Tracking
-- GPIO pin state directly controls trigger active status
-- No transition tracking or complex state machines
-- Pin state changes immediately reflect in trigger evaluation
-
-### 2. Priority-Based Evaluation
+#### Main Loop Orchestration (`main.cpp:34-35`)
 ```cpp
-enum class TriggerPriority {
-    CRITICAL = 0,  // Key presence, safety triggers
-    IMPORTANT = 1, // Lock state, system modes  
-    NORMAL = 2     // Theme changes, settings
+// 1. Process trigger events
+TriggerManager::GetInstance().ProcessPendingTriggerEvents();  
+// 2. Evaluate triggers
+auto triggerRequests = TriggerManager::GetInstance().EvaluateAndGetTriggerRequests();  
+```
+
+#### Trigger Event Processing
+**ProcessPendingTriggerEvents()** (`trigger_manager.cpp:71-120`)
+- **Responsibility**: 
+  - Dequeue all pending trigger events (non-blocking)
+  - Map events to trigger objects
+  - Update trigger states (`INIT` → `ACTIVE`/`INACTIVE`)
+- **Key Feature**: No mutex needed - Core 0 exclusive ownership
+
+#### Trigger Evaluation
+**EvaluateAndGetTriggerRequests()** (`trigger_manager.cpp:122-189`)
+- **Responsibility**:
+  - Read all trigger states
+  - Sort by priority (CRITICAL → IMPORTANT → NORMAL)
+  - Collect action requests based on states
+- **Output**: Vector of `TriggerActionRequest` objects
+
+## Core Design Principles
+
+### 1. Single Responsibility
+- **Triggers**: Know WHAT they need (business logic)
+- **Managers**: Know HOW to provide it (implementation)
+- **Main**: Orchestrates WHO calls WHOM (dependency injection)
+
+### 2. Core Separation
+- **Core 1**: Hardware monitoring only (no UI/logic)
+- **Core 0**: All state management and UI operations
+
+### 3. No Direct Dependencies
+- Triggers don't include manager headers
+- Managers don't know about triggers
+- Communication via request/response pattern
+
+### 4. Mutex-Free Operation
+- Core 1 only writes to queue
+- Core 0 only reads from queue and owns all trigger state
+- No cross-core synchronization needed
+
+## Trigger Implementations
+
+Each trigger class implements specific business logic with **dependency injection**:
+
+### KeyTrigger (`src/triggers/key_trigger.cpp`)
+- **Action**: Request key panel load when key present
+- **Restore**: Request previous panel restoration when key removed
+- **Priority**: CRITICAL (0) - safety-related
+- **Dependencies**: None (returns action requests)
+
+### LockTrigger (`src/triggers/lock_trigger.cpp`)
+- **Action**: Request lock panel load when locked
+- **Restore**: Request previous panel restoration when unlocked  
+- **Priority**: IMPORTANT (1) - security-related
+- **Dependencies**: None (returns action requests)
+
+### LightsTrigger (`src/triggers/lights_trigger.cpp`)
+- **Action**: Request night theme when lights on
+- **Restore**: Request day theme when lights off
+- **Priority**: NORMAL (2) - aesthetic changes
+- **Dependencies**: None (returns action requests)
+
+## Action Request Processing
+
+### Request Structure (`utilities/types.h`)
+```cpp
+enum class TriggerActionType {
+    None,           // No action requested
+    LoadPanel,      // Request to load a specific panel
+    RestorePanel,   // Request to restore previous panel
+    ToggleTheme     // Request to toggle theme
+};
+
+struct TriggerActionRequest {
+    TriggerActionType type = TriggerActionType::None;
+    const char* panelName = nullptr;  // Panel name for LoadPanel actions
+    const char* triggerId = nullptr;  // Trigger ID for callbacks
+    bool isTriggerDriven = false;     // Whether this is a trigger-driven panel change
+};
+```
+
+### Main Loop Processing (`main.cpp:37-71`)
+```cpp
+for (const auto& request : triggerRequests) {
+    switch (request.type) {
+        case TriggerActionType::LoadPanel:
+            PanelManager::GetInstance().CreateAndLoadPanel(...);
+            break;
+        case TriggerActionType::RestorePanel:
+            // Determine restoration panel and load
+            break;
+        case TriggerActionType::ToggleTheme:
+            StyleManager::GetInstance().set_theme(...);
+            break;
+    }
 }
 ```
 
-- Triggers processed from lowest to highest priority (NORMAL → IMPORTANT → CRITICAL)
-- Highest priority action executed last, ensuring it "wins"
-- Multiple concurrent triggers handled gracefully
+### Manager Integration
+- **PanelManager**: Executes panel loading/switching requests
+- **StyleManager**: Executes theme change requests
+- **Main**: Owns the relationship between triggers and managers
 
-### 3. Action/Restore Pattern
-- **Active triggers**: Execute action function
-- **Inactive triggers**: Execute restore function
-- Generic implementation using `std::function<void()>`
+## Event Flow Example
 
-### 4. Cross-Core Safety
-- All UI operations confined to Core 0
-- LVGL single-threaded requirement maintained
-- Mutex-protected shared state access
+### Lights Trigger Flow (Theme Toggle)
 
-## Implementation Details
+1. **Hardware**: Lights pin goes HIGH → GPIO interrupt fires
+2. **Core 1**: ISR queues `THEME_SWITCH` event with `pinState=HIGH`
+3. **Core 0**: Main loop calls `ProcessPendingTriggerEvents()`
+4. **State Update**: Lights trigger state: `INIT` → `ACTIVE`
+5. **Evaluation**: `EvaluateAndGetTriggerRequests()` calls `GetActionRequest()`
+6. **Request**: Returns `{ToggleTheme, "Night", ...}`
+7. **Execution**: Main calls `StyleManager::set_theme("Night")`
+8. **Result**: Theme changes to night mode
 
-### Trigger Registration
-```cpp
-// Example: Lock trigger registration
-auto lockTrigger = std::make_unique<LockTrigger>();
-lockTrigger->init();
-triggerManager.RegisterTrigger(std::move(lockTrigger));
+When pin goes LOW, same flow but trigger goes `ACTIVE` → `INACTIVE` and calls `GetRestoreRequest()` returning day theme.
+
+## State Management
+
+### Trigger States
+- **INIT**: Initial state, no GPIO changes detected yet
+- **ACTIVE**: Trigger condition is active (pin HIGH)
+- **INACTIVE**: Trigger condition is inactive (pin LOW)
+
+### State Transitions
+```
+INIT → ACTIVE    (when pin goes HIGH)
+INIT → INACTIVE  (when pin goes LOW)
+ACTIVE → INACTIVE (when pin goes LOW)
+INACTIVE → ACTIVE (when pin goes HIGH)
 ```
 
-### GPIO Event Flow
-1. **GPIO Pin Change** → ISR Handler
-2. **ISR Handler** → Queue Event (Core 1)
-3. **Monitoring Task** → Update Trigger State (Core 1)
-4. **Panel Manager** → Evaluate Triggers (Core 0)
-5. **Trigger Manager** → Execute Actions/Restores (Core 0)
+### Priority System
+Triggers are processed in priority order (lowest number = highest priority):
+- **CRITICAL (0)**: Safety-related (KeyTrigger)
+- **IMPORTANT (1)**: Security-related (LockTrigger)  
+- **NORMAL (2)**: Aesthetic changes (LightsTrigger)
 
-### Priority Execution Order
-```cpp
-// Execution sequence for concurrent triggers:
-// 1. NORMAL priority triggers (lights/theme)
-// 2. IMPORTANT priority triggers (lock state)
-// 3. CRITICAL priority triggers (key presence)
-// Result: CRITICAL trigger action is final and active
-```
+Higher priority actions override lower priority actions when multiple triggers are active simultaneously.
 
-## Concrete Trigger Implementations
+## Extensibility
 
-### Key Trigger (CRITICAL Priority)
-- **Action**: Load key panel when key detected
-- **Restore**: Restore previous panel when key removed
-- **GPIO**: Monitors key presence pins (25, 26)
+The architecture supports easy addition of new trigger sources:
 
-### Lock Trigger (IMPORTANT Priority)
-- **Action**: Load lock panel when lock engaged
-- **Restore**: Restore previous panel when lock disengaged
-- **GPIO**: Monitors lock state pin (27)
+### GPIO-Based Triggers
+Current implementation supports GPIO interrupts via the existing ISR system.
 
-### Lights Trigger (NORMAL Priority)
-- **Action**: Switch to night theme when lights on
-- **Restore**: Switch to day theme when lights off
-- **GPIO**: Monitors lights state pin (32)
+### Future Trigger Sources
+The generic `ProcessPendingTriggerEvents()` can be extended to handle:
+- **Timer-based triggers**: Scheduled events
+- **Network event triggers**: Remote commands
+- **Sensor threshold triggers**: Analog sensor limits
+- **User input triggers**: Button presses, touch events
+
+### Adding New Triggers
+1. Create trigger class inheriting from `AlertTrigger`
+2. Implement `GetActionRequest()` and `GetRestoreRequest()`
+3. Register trigger in `TriggerManager::RegisterAllTriggers()`
+4. Add event source to queue trigger events
 
 ## Benefits
 
-### Simplified Architecture
-- Eliminated complex state machines
-- Reduced mutex usage and contention
-- Clear separation of concerns between cores
+### Performance
+- **No mutex contention** between cores
+- **Reduced context switching** - GPIO monitoring isolated to Core 1
+- **Predictable timing** - main loop controls execution order
 
-### Robust Priority Handling
-- Concurrent trigger support
-- Predictable behavior with multiple active triggers
-- Highest priority always wins
+### Reliability
+- **No race conditions** - single-threaded state management
+- **No missed events** - queued event processing
+- **Clean error handling** - isolated failure domains
 
-### Cross-Core Safety
-- No LVGL violations
-- Consistent UI thread execution
-- Eliminated cross-core crashes
+### Maintainability
+- **Clean separation of concerns** - hardware vs. logic vs. UI
+- **Easy testing** - triggers can be unit tested without hardware
+- **Flexible architecture** - easy to add new trigger types and actions
 
-### Maintainable Code
-- Generic trigger interface
-- Function-based action/restore pattern
-- Easy to add new trigger types
+### Extensibility
+- **Generic event processing** - supports non-GPIO trigger sources
+- **Dependency injection** - clean interfaces between components
+- **Modular design** - triggers, managers, and main are independently testable
 
-## Usage Examples
-
-### Adding a New Trigger
-```cpp
-// 1. Create trigger class inheriting from AlertTrigger
-class CustomTrigger : public AlertTrigger {
-public:
-    CustomTrigger() : AlertTrigger(
-        "custom_trigger_id",
-        TriggerPriority::NORMAL,
-        CustomAction,    // Action function
-        CustomRestore    // Restore function
-    ) {}
-    
-    static void CustomAction() {
-        // Implement action logic
-    }
-    
-    static void CustomRestore() {
-        // Implement restore logic
-    }
-};
-
-// 2. Register with trigger manager
-auto customTrigger = std::make_unique<CustomTrigger>();
-triggerManager.RegisterTrigger(std::move(customTrigger));
-```
-
-### GPIO Pin Configuration
-```cpp
-// Add to gpio_pins.h
-constexpr int CUSTOM_PIN = 33;
-
-// Add to ISR event types
-enum class ISREventType {
-    // ... existing types
-    CUSTOM_EVENT
-};
-
-// Implement ISR handler and register interrupt
-```
-
-## Thread Safety
-
-### Mutex Protection
-- Single mutex protects trigger collection
-- Timeout-based acquisition (100ms)
-- Consistent lock ordering prevents deadlocks
-
-### ISR Safety
-- ISR handlers use queue-based communication
-- No direct trigger execution from ISR context
-- `IRAM_ATTR` for interrupt handlers
-
-### Memory Management
-- RAII-based trigger lifecycle
-- `std::unique_ptr` for automatic cleanup
-- No manual memory management required
-
-## Performance Characteristics
-
-### Latency
-- GPIO interrupt to action execution: ~10-50ms
-- Priority evaluation: O(n log n) for sorting
-- Typical trigger count: 3-5 triggers
-
-### Memory Usage
-- Minimal per-trigger overhead
-- Function objects more efficient than virtual calls
-- Queue-based ISR communication limits memory usage
-
-### CPU Usage
-- Core 1: Minimal - only GPIO monitoring
-- Core 0: Trigger evaluation integrated with main loop
-- No dedicated high-frequency polling
-
-## Future Enhancements
-
-### Possible Improvements
-1. **Configurable Priorities**: Runtime priority adjustment
-2. **Trigger Groups**: Related trigger coordination
-3. **Conditional Triggers**: Context-dependent activation
-4. **Trigger Metrics**: Performance monitoring and debugging
-5. **Hot-swappable Triggers**: Runtime trigger registration/removal
-
-### Compatibility
-- Designed for ESP32 dual-core architecture
-- FreeRTOS task management
-- LVGL UI framework integration
-- Arduino framework compatibility
+This architecture ensures reliable, scalable trigger processing while maintaining clean code organization and excellent performance characteristics.

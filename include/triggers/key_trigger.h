@@ -18,8 +18,7 @@ class KeyTrigger : public AlertTrigger
 public:
     KeyTrigger();
     void init() override;
-
-private:
-    static void LoadKeyPanel();
-    static void RestorePreviousPanel();
+    
+    TriggerActionRequest GetActionRequest() override;
+    TriggerActionRequest GetRestoreRequest() override;
 };

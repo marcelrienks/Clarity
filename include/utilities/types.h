@@ -95,6 +95,32 @@ enum class KeyState
     NotPresent  ///< Key is not present (GPIO 26 HIGH) - show red key
 };
 
+/// @enum TriggerActionType
+/// @brief Types of actions that triggers can request
+///
+/// @details Used for dependency injection - triggers return action requests
+/// that main loop processes by calling appropriate manager methods
+enum class TriggerActionType
+{
+    None,           ///< No action requested
+    LoadPanel,      ///< Request to load a specific panel
+    RestorePanel,   ///< Request to restore previous panel
+    ToggleTheme     ///< Request to toggle theme
+};
+
+/// @struct TriggerActionRequest
+/// @brief Action request data structure for trigger-to-main communication
+///
+/// @details Contains all information needed for main loop to execute
+/// the requested action via appropriate manager calls
+struct TriggerActionRequest
+{
+    TriggerActionType type = TriggerActionType::None;
+    const char* panelName = nullptr;  ///< Panel name for LoadPanel actions
+    const char* triggerId = nullptr;  ///< Trigger ID for callbacks
+    bool isTriggerDriven = false;     ///< Whether this is a trigger-driven panel change
+};
+
 /// @struct PanelNames
 /// @brief Static constants for panel type identifiers
 ///

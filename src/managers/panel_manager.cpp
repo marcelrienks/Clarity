@@ -22,15 +22,19 @@ void PanelManager::init()
 {
     log_d("...");
     Ticker::handle_lv_tasks();
+}
 
-    PanelManager::RegisterPanels();
+void PanelManager::RegisterAllPanels()
+{
+    log_d("Registering all panels...");
 
-    // Initialize dual-core trigger system
-    TriggerManager &triggerManager = TriggerManager::GetInstance();
-    triggerManager.init();
+    // Register all available panel types with the factory
+    register_panel<SplashPanel>(PanelNames::SPLASH);
+    register_panel<OemOilPanel>(PanelNames::OIL);
+    register_panel<KeyPanel>(PanelNames::KEY);
+    register_panel<LockPanel>(PanelNames::LOCK);
     
-    // Register concrete trigger implementations
-    RegisterTriggers();
+    log_d("All panels registered successfully");
 }
 
 /// @brief Creates and then loads a panel based on the given name
@@ -83,7 +87,6 @@ void PanelManager::UpdatePanel()
 {
     log_d("...");
 
-    ProcessTriggerStates();
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
                    { this->PanelManager::PanelCompletionCallback(); });
@@ -119,40 +122,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     return iterator->second(); // Return the function stored in the map
 }
 
-/// @brief Register all available panel types with the factory
-void PanelManager::RegisterPanels()
-{
-    log_d("...");
 
-    // Register all available panel types with the factory
-    register_panel<SplashPanel>(PanelNames::SPLASH);
-    register_panel<OemOilPanel>(PanelNames::OIL);
-    register_panel<KeyPanel>(PanelNames::KEY);
-    register_panel<LockPanel>(PanelNames::LOCK);
-}
-
-/// @brief Register all available triggers with the trigger manager
-void PanelManager::RegisterTriggers()
-{
-    log_d("Registering triggers...");
-
-    TriggerManager& triggerManager = TriggerManager::GetInstance();
-    
-    // Register concrete trigger implementations
-    auto keyTrigger = std::make_unique<KeyTrigger>();
-    keyTrigger->init();
-    triggerManager.RegisterTrigger(std::move(keyTrigger));
-    
-    auto lockTrigger = std::make_unique<LockTrigger>();
-    lockTrigger->init();
-    triggerManager.RegisterTrigger(std::move(lockTrigger));
-    
-    auto lightsTrigger = std::make_unique<LightsTrigger>();
-    lightsTrigger->init();
-    triggerManager.RegisterTrigger(std::move(lightsTrigger));
-    
-    log_d("Triggers registered successfully");
-}
 
 // Callback Methods
 
@@ -164,8 +134,6 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     panel_.reset();
     Ticker::handle_lv_tasks();
 
-    ProcessTriggerStates();
-
     CreateAndLoadPanel(panelName, [this]()
                        { this->PanelManager::PanelCompletionCallback(); });
 }
@@ -173,7 +141,7 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
 /// @brief callback function to be executed on panel show completion
 void PanelManager::PanelCompletionCallback()
 {
-    log_d("Panel operation complete - evaluating all triggers");
+    log_d("Panel operation complete");
 
     SetUiState(UIState::IDLE);
     
@@ -185,10 +153,6 @@ void PanelManager::PanelCompletionCallback()
         systemInitialized = true;
         log_d("System initialization complete - triggers remain in INIT state until GPIO changes");
     }
-    
-    // Always re-evaluate all triggers after panel operations complete
-    // This ensures continuous evaluation of concurrent triggers
-    ProcessTriggerStates();
 }
 
 /// @brief callback function to be executed when trigger-driven panel loading is complete
@@ -198,31 +162,8 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
     
     SetUiState(UIState::IDLE);
     // No need to clear triggers - GPIO state manages trigger active/inactive status
-    
-    // Re-evaluate all triggers to handle any concurrent triggers
-    log_d("Re-evaluating all triggers after panel switch");
-    ProcessTriggerStates();
 }
 
-/// @brief Process trigger states from Core 1 based on UI state
-void PanelManager::ProcessTriggerStates()
-{
-    switch (uiState_)
-    {
-    case UIState::IDLE: // No throttling - process all triggers
-        ProcessTriggers();
-        break;
-
-    case UIState::UPDATING: // State-based throttling - only high/medium priority triggers
-        ProcessCriticalAndImportantTriggers();
-        break;
-
-    case UIState::LOADING:
-    case UIState::LVGL_BUSY: // No action - don't process any triggers
-        // Triggers remain in shared state for later processing
-        break;
-    }
-}
 
 /// @brief Set current UI state for Core 1 synchronization
 void PanelManager::SetUiState(UIState state)
@@ -268,33 +209,4 @@ void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const 
     }
 }
 
-/// @brief Simplified trigger processing - let TriggerManager handle all logic
-void PanelManager::ProcessTriggers()
-{
-    log_d("Processing triggers...");
-
-    // Only process triggers when not already loading/updating a panel
-    if (uiState_ != UIState::IDLE)
-    {
-        return;
-    }
-
-    // Delegate to TriggerManager for simplified priority-based evaluation
-    TriggerManager::GetInstance().EvaluateAndExecuteTriggers();
-}
-
-/// @brief Process only critical and important priority triggers during updates
-void PanelManager::ProcessCriticalAndImportantTriggers()
-{
-    log_d("Processing critical/important triggers during update...");
-
-    // Only process triggers when updating a panel
-    if (uiState_ != UIState::UPDATING)
-    {
-        return;
-    }
-
-    // Process all triggers - the priority system will handle conflicts
-    TriggerManager::GetInstance().EvaluateAndExecuteTriggers();
-}
 

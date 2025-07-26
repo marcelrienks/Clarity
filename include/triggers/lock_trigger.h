@@ -17,8 +17,7 @@ class LockTrigger : public AlertTrigger
 public:
     LockTrigger();
     void init() override;
-
-private:
-    static void LoadLockPanel();
-    static void RestorePreviousPanel();
+    
+    TriggerActionRequest GetActionRequest() override;
+    TriggerActionRequest GetRestoreRequest() override;
 };

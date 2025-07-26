@@ -35,35 +35,29 @@ public:
     virtual TriggerPriority GetPriority() const = 0;
     virtual TriggerExecutionState GetState() const = 0;
     
-    // Action/Restore Pattern
-    virtual void ExecuteAction() = 0;
-    virtual void ExecuteRestore() = 0;
+    // Action/Restore Pattern - returns requests instead of executing
+    virtual TriggerActionRequest GetActionRequest() = 0;
+    virtual TriggerActionRequest GetRestoreRequest() = 0;
     
     // State Management
     virtual void SetState(TriggerExecutionState state) = 0;
 };
 
-// Base class for alert triggers with function-based actions
+// Base class for alert triggers with request-based actions
 class AlertTrigger : public ITrigger
 {
 protected:
     TriggerExecutionState state_ = TriggerExecutionState::INIT;
     TriggerPriority priority_;
     const char* id_;
-    std::function<void()> actionFunc_;
-    std::function<void()> restoreFunc_;
 
 public:
-    AlertTrigger(const char* id, TriggerPriority priority, 
-                 std::function<void()> action, std::function<void()> restore)
-        : id_(id), priority_(priority), actionFunc_(action), restoreFunc_(restore) {}
+    AlertTrigger(const char* id, TriggerPriority priority)
+        : id_(id), priority_(priority) {}
 
     const char* GetId() const override { return id_; }
     TriggerPriority GetPriority() const override { return priority_; }
     TriggerExecutionState GetState() const override { return state_; }
-    
-    void ExecuteAction() override { if (actionFunc_) actionFunc_(); }
-    void ExecuteRestore() override { if (restoreFunc_) restoreFunc_(); }
     
     void SetState(TriggerExecutionState state) override { 
         state_ = state;

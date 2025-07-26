@@ -74,11 +74,12 @@ public:
     static PanelManager &GetInstance();
 
     // Core Functionality Methods
-    /// @brief Initialize the panel manager, register panels/triggers, and setup dual-core system
+    /// @brief Initialize the panel manager
     void init();
     
-    /// @brief Process trigger states from Core 1 based on UI state
-    void ProcessTriggerStates();
+    /// @brief Register all available panels
+    void RegisterAllPanels();
+    
     
     /// @brief Set current UI state for Core 1 synchronization
     /// @param state Current UI processing state
@@ -110,6 +111,10 @@ public:
         };
     }
 
+    // Trigger Callbacks (public for trigger access)
+    /// @brief Callback executed when trigger-driven panel loading is complete
+    /// @param trigger_id ID of the trigger that initiated the panel switch
+    void TriggerPanelSwitchCallback(const char *triggerId);
 
 private:
     // Constructors and Destructors
@@ -122,12 +127,8 @@ private:
     /// @return Shared pointer to the created panel instance
     std::shared_ptr<IPanel> CreatePanel(const char *panelName);
     
-    /// @brief Register all available panel types with the factory
-    void RegisterPanels();
     
     
-    /// @brief Register all global triggers with the trigger manager
-    void RegisterTriggers();
 
     // Callback Methods
     /// @brief Callback executed when splash screen loading is complete
@@ -137,20 +138,11 @@ private:
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
     
-    /// @brief Callback executed when trigger-driven panel loading is complete
-    /// @param trigger_id ID of the trigger that initiated the panel switch
-    void TriggerPanelSwitchCallback(const char *triggerId);
-    
     /// @brief Execute a trigger action from shared state
     /// @param trigger_state Trigger state to execute
     /// @param trigger_id ID of the trigger for cleanup
     void ExecuteTriggerAction(const TriggerState& triggerState, const char* triggerId);
     
-    /// @brief Process all triggers regardless of priority
-    void ProcessTriggers();
-    
-    /// @brief Process only critical and important priority triggers
-    void ProcessCriticalAndImportantTriggers();
     
     /// @brief Notify Core 1 of state changes
     /// @param panel_name Current panel name

@@ -33,4 +33,6 @@
 #include "device.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
+#include "managers/style_manager.h"
+#include "managers/trigger_manager.h"
 #include "utilities/ticker.h"

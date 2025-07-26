@@ -86,6 +86,7 @@ void OemOilPanel::load(std::function<void()> callbackFunction)
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
+    
     lv_screen_load(screen_);
 }
 
@@ -225,8 +226,23 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
     log_d("...");
 
+    if (!event) {
+        return;
+    }
+
     auto thisInstance = static_cast<OemOilPanel *>(lv_event_get_user_data(event));
-    thisInstance->callbackFunction_();
+    if (!thisInstance) {
+        return;
+    }
+    
+    if (thisInstance->callbackFunction_)
+    {
+        thisInstance->callbackFunction_();
+    }
+    else
+    {
+        log_d("No callback function provided for oil panel completion");
+    }
 }
 
 /// @brief Callback when animation has completed. aka update complete

@@ -17,8 +17,7 @@ class LightsTrigger : public AlertTrigger
 public:
     LightsTrigger();
     void init() override;
-
-private:
-    static void SetNightTheme();
-    static void SetDayTheme();
+    
+    TriggerActionRequest GetActionRequest() override;
+    TriggerActionRequest GetRestoreRequest() override;
 };

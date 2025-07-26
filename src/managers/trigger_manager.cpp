@@ -1,4 +1,7 @@
 #include "managers/trigger_manager.h"
+#include "triggers/key_trigger.h"
+#include "triggers/lock_trigger.h"
+#include "triggers/lights_trigger.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include <algorithm>
@@ -13,60 +16,118 @@ void TriggerManager::init()
 {
     log_d("Initializing simplified trigger system...");
 
-    // Create ISR event queue and mutex
+    // Create ISR event queue (no mutex needed for Core 0 exclusive ownership)
     isrEventQueue = xQueueCreate(10, sizeof(ISREvent));
-    triggerMutex_ = xSemaphoreCreateMutex();
 
     // Configure GPIO pins and attach interrupt handlers
     setup_gpio_interrupts();
 
-    // Launch Core 1 task to process ISR events
-    xTaskCreatePinnedToCore(
-        TriggerManager::TriggerMonitoringTask,
-        TRIGGER_MONITOR_TASK,
-        4096,
-        nullptr,
-        configMAX_PRIORITIES - 1,
-        &triggerTaskHandle_,
-        1  // Core 1
-    );
+    // No Core 1 task needed - GPIO ISRs handle all Core 1 work
+    // ISRs queue events directly, Core 0 processes them
     
     log_d("Simplified trigger system initialized");
 }
 
+void TriggerManager::RegisterAllTriggers()
+{
+    log_d("Registering all triggers...");
+    
+    // Register concrete trigger implementations
+    auto keyTrigger = std::make_unique<KeyTrigger>();
+    keyTrigger->init();
+    RegisterTrigger(std::move(keyTrigger));
+    
+    auto lockTrigger = std::make_unique<LockTrigger>();
+    lockTrigger->init();
+    RegisterTrigger(std::move(lockTrigger));
+    
+    auto lightsTrigger = std::make_unique<LightsTrigger>();
+    lightsTrigger->init();
+    RegisterTrigger(std::move(lightsTrigger));
+    
+    log_d("All triggers registered successfully");
+}
+
 void TriggerManager::RegisterTrigger(std::unique_ptr<AlertTrigger> trigger)
 {
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
-    {
-        log_d("Registering trigger: %s", trigger->GetId());
-        triggers_.push_back(std::move(trigger));
-        xSemaphoreGive(triggerMutex_);
-    }
+    // No mutex needed - only called during setup on Core 0
+    log_d("Registering trigger: %s", trigger->GetId());
+    triggers_.push_back(std::move(trigger));
 }
 
-void TriggerManager::HandleGpioStateChange(const char* triggerId, bool pinState)
+void TriggerManager::ProcessPendingTriggerEvents()
 {
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
+    ISREvent event;
+    UBaseType_t queueCount = uxQueueMessagesWaiting(isrEventQueue);
+    
+    if (queueCount > 0) {
+        log_i("Core 0: Processing %d pending trigger events", queueCount);
+    }
+    
+    // Process all queued trigger events (no mutex needed - Core 0 only)
+    while (xQueueReceive(isrEventQueue, &event, 0) == pdTRUE)
     {
-        AlertTrigger* trigger = FindTriggerById(triggerId);
-        if (trigger)
+        log_i("Core 0: Processing trigger event: type=%d, state=%s", (int)event.eventType, event.pinState ? "HIGH" : "LOW");
+        
+        // Map trigger events to trigger IDs
+        const char* triggerId = nullptr;
+        
+        switch (event.eventType)
         {
-            // Only update trigger state on Core 1 - do NOT execute actions here
-            // Actions will be executed by Core 0 in EvaluateAndExecuteTriggers()
-            TriggerExecutionState newState = pinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
-            trigger->SetState(newState);
-            log_v("Trigger %s state updated to %s on Core 1", triggerId, pinState ? "ACTIVE" : "INACTIVE");
+        case ISREventType::KEY_PRESENT:
+            triggerId = TRIGGER_KEY_PRESENT;
+            break;
+        case ISREventType::KEY_NOT_PRESENT:
+            triggerId = TRIGGER_KEY_NOT_PRESENT;
+            break;
+        case ISREventType::LOCK_STATE_CHANGE:
+            triggerId = TRIGGER_LOCK_STATE;
+            break;
+        case ISREventType::THEME_SWITCH:
+            triggerId = TRIGGER_LIGHTS_STATE;
+            break;
+        default:
+            log_w("Unknown ISR event type: %d", (int)event.eventType);
+            continue;
         }
-        xSemaphoreGive(triggerMutex_);
+        
+        if (triggerId)
+        {
+            AlertTrigger* trigger = FindTriggerById(triggerId);
+            if (trigger)
+            {
+                TriggerExecutionState oldState = trigger->GetState();
+                TriggerExecutionState newState = event.pinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
+                
+                log_i("Trigger %s: %s -> %s (pin: %s)", 
+                      triggerId, 
+                      oldState == TriggerExecutionState::INIT ? "INIT" : (oldState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE"),
+                      newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE",
+                      event.pinState ? "HIGH" : "LOW");
+                
+                trigger->SetState(newState);
+            }
+        }
     }
 }
 
-void TriggerManager::EvaluateAndExecuteTriggers()
+std::vector<TriggerActionRequest> TriggerManager::EvaluateAndGetTriggerRequests()
 {
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
-    {
-        // Execute actions and restores from lowest to highest priority
-        // This ensures highest priority action is the last one executed (and wins)
+    // No mutex needed - Core 0 exclusive ownership of trigger state
+    std::vector<TriggerActionRequest> requests;
+    log_d("=== Evaluating all triggers ===");
+        
+        // Log current state of all triggers first
+        for (auto& trigger : triggers_)
+        {
+            TriggerExecutionState state = trigger->GetState();
+            const char* stateStr = (state == TriggerExecutionState::INIT) ? "INIT" : 
+                                  (state == TriggerExecutionState::ACTIVE) ? "ACTIVE" : "INACTIVE";
+            log_i("Trigger %s: %s (priority %d)", trigger->GetId(), stateStr, (int)trigger->GetPriority());
+        }
+        
+        // Collect action requests from lowest to highest priority
+        // This ensures highest priority action is the last one in the list (and wins)
         std::vector<AlertTrigger*> sortedTriggers;
         for (auto& trigger : triggers_)
         {
@@ -79,7 +140,9 @@ void TriggerManager::EvaluateAndExecuteTriggers()
                       return a->GetPriority() > b->GetPriority(); // Reverse sort: NORMAL -> CRITICAL
                   });
         
-        // Execute from lowest to highest priority based on state
+        log_d("Collecting trigger requests in priority order (lowest to highest)...");
+        
+        // Collect requests from lowest to highest priority based on state
         for (auto* trigger : sortedTriggers)
         {
             TriggerExecutionState state = trigger->GetState();
@@ -92,57 +155,55 @@ void TriggerManager::EvaluateAndExecuteTriggers()
                     break;
                     
                 case TriggerExecutionState::ACTIVE:
-                    log_d("Executing action for trigger: %s (priority %d)", trigger->GetId(), (int)trigger->GetPriority());
-                    trigger->ExecuteAction();
+                    log_i("*** COLLECTING ACTION REQUEST for trigger: %s (priority %d) ***", trigger->GetId(), (int)trigger->GetPriority());
+                    requests.push_back(trigger->GetActionRequest());
                     break;
                     
                 case TriggerExecutionState::INACTIVE:
-                    log_d("Executing restore for trigger: %s (priority %d)", trigger->GetId(), (int)trigger->GetPriority());
-                    trigger->ExecuteRestore();
+                    log_i("*** COLLECTING RESTORE REQUEST for trigger: %s (priority %d) ***", trigger->GetId(), (int)trigger->GetPriority());
+                    requests.push_back(trigger->GetRestoreRequest());
                     break;
             }
         }
         
-        xSemaphoreGive(triggerMutex_);
-    }
+        log_d("=== Trigger evaluation complete, %d requests collected ===", requests.size());
+    
+    return requests;
 }
 
 void TriggerManager::InitializeTriggersFromGpio()
 {
-    if (xSemaphoreTake(triggerMutex_, pdMS_TO_TICKS(100)) == pdTRUE)
+    // No mutex needed - only called during setup on Core 0
+    log_d("Initializing trigger states from current GPIO pin states...");
+    
+    // Read current GPIO pin states and initialize triggers accordingly
+    for (auto& trigger : triggers_)
     {
-        log_d("Initializing trigger states from current GPIO pin states...");
+        const char* triggerId = trigger->GetId();
+        bool currentPinState = false;
         
-        // Read current GPIO pin states and initialize triggers accordingly
-        for (auto& trigger : triggers_)
+        // Determine current pin state based on trigger ID
+        if (strcmp(triggerId, TRIGGER_KEY_PRESENT) == 0)
         {
-            const char* triggerId = trigger->GetId();
-            bool currentPinState = false;
-            
-            // Determine current pin state based on trigger ID
-            if (strcmp(triggerId, TRIGGER_KEY_PRESENT) == 0)
-            {
-                currentPinState = digitalRead(gpio_pins::KEY_PRESENT);
-            }
-            else if (strcmp(triggerId, TRIGGER_LOCK_STATE) == 0)
-            {
-                currentPinState = digitalRead(gpio_pins::LOCK);
-            }
-            else if (strcmp(triggerId, TRIGGER_LIGHTS_STATE) == 0)
-            {
-                currentPinState = digitalRead(gpio_pins::LIGHTS);
-            }
-            
-            // Set trigger state based on current pin state
-            TriggerExecutionState initialState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
-            trigger->SetState(initialState);
-            log_d("Trigger %s initialized to %s based on GPIO state", 
-                  triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
+            currentPinState = digitalRead(gpio_pins::KEY_PRESENT);
+        }
+        else if (strcmp(triggerId, TRIGGER_LOCK_STATE) == 0)
+        {
+            currentPinState = digitalRead(gpio_pins::LOCK);
+        }
+        else if (strcmp(triggerId, TRIGGER_LIGHTS_STATE) == 0)
+        {
+            currentPinState = digitalRead(gpio_pins::LIGHTS);
         }
         
-        xSemaphoreGive(triggerMutex_);
-        log_d("All triggers initialized from GPIO states");
+        // Set trigger state based on current pin state
+        TriggerExecutionState initialState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
+        trigger->SetState(initialState);
+        log_d("Trigger %s initialized to %s based on GPIO state", 
+              triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
     }
+    
+    log_d("All triggers initialized from GPIO states");
 }
 
 AlertTrigger* TriggerManager::FindTriggerById(const char* triggerId)
@@ -156,47 +217,9 @@ AlertTrigger* TriggerManager::FindTriggerById(const char* triggerId)
     }
     return nullptr;
 }
-void TriggerManager::TriggerMonitoringTask(void *pvParameters)
-{
-    log_d("TriggerMonitoringTask started on Core 1");
-
-    TriggerManager &manager = TriggerManager::GetInstance();
-    ISREvent event;
-
-    while (1)
-    {
-        if (xQueueReceive(manager.isrEventQueue, &event, pdMS_TO_TICKS(100)) == pdTRUE)
-        {
-            log_v("Processing ISR event type %d with pin state %d", (int)event.eventType, event.pinState);
-            
-            // Map ISR events to trigger IDs and handle state changes
-            const char* triggerId = nullptr;
-            switch (event.eventType)
-            {
-            case ISREventType::KEY_PRESENT:
-                triggerId = TRIGGER_KEY_PRESENT;
-                break;
-            case ISREventType::KEY_NOT_PRESENT:
-                triggerId = TRIGGER_KEY_NOT_PRESENT;
-                break;
-            case ISREventType::LOCK_STATE_CHANGE:
-                triggerId = TRIGGER_LOCK_STATE;
-                break;
-            case ISREventType::THEME_SWITCH:
-                triggerId = TRIGGER_LIGHTS_STATE;
-                break;
-            default:
-                log_w("Unknown ISR event type: %d", (int)event.eventType);
-                continue;
-            }
-            
-            if (triggerId)
-            {
-                manager.HandleGpioStateChange(triggerId, event.pinState);
-            }
-        }
-    }
-}
+// No Core 1 task needed - removed entirely
+// GPIO ISRs on Core 1 queue events directly
+// Core 0 main loop processes them via ProcessPendingTriggerEvents()
 
 void TriggerManager::setup_gpio_interrupts()
 {
@@ -239,8 +262,19 @@ void IRAM_ATTR TriggerManager::lockStateIsrHandler(void *arg)
 {
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
     bool pinState = digitalRead(gpio_pins::LOCK);
-    ISREvent event(ISREventType::LOCK_STATE_CHANGE, pinState);
-    xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &xHigherPriorityTaskWoken);
+    
+    // ISR-safe logging (minimal)
+    static bool lastPinState = false;
+    static bool firstCall = true;
+    
+    if (firstCall || pinState != lastPinState)
+    {
+        ISREvent event(ISREventType::LOCK_STATE_CHANGE, pinState);
+        xQueueSendFromISR(TriggerManager::GetInstance().isrEventQueue, &event, &xHigherPriorityTaskWoken);
+        lastPinState = pinState;
+        firstCall = false;
+    }
+    
     portYIELD_FROM_ISR(xHigherPriorityTaskWoken);
 }
 
