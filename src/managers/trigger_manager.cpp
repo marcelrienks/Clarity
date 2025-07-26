@@ -37,6 +37,10 @@ void TriggerManager::RegisterAllTriggers()
     keyTrigger->init();
     RegisterTrigger(std::move(keyTrigger));
     
+    auto keyNotPresentTrigger = std::make_unique<KeyNotPresentTrigger>();
+    keyNotPresentTrigger->init();
+    RegisterTrigger(std::move(keyNotPresentTrigger));
+    
     auto lockTrigger = std::make_unique<LockTrigger>();
     lockTrigger->init();
     RegisterTrigger(std::move(lockTrigger));
