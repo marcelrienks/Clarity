@@ -30,9 +30,8 @@ void loop()
 {
   log_d("...");
 
-  // Core 0 responsibilities: trigger event processing, trigger evaluation and UI updates
-  TriggerManager::GetInstance().ProcessPendingTriggerEvents();
-  auto triggerRequests = TriggerManager::GetInstance().EvaluateAndGetTriggerRequests();
+  // Core 0 responsibilities: process pin changes and generate immediate action requests
+  auto triggerRequests = TriggerManager::GetInstance().ProcessPendingTriggerEvents();
   
   // Process trigger requests using dependency injection
   for (const auto& request : triggerRequests)

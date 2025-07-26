@@ -43,7 +43,7 @@ public:
     virtual void SetState(TriggerExecutionState state) = 0;
 };
 
-// Base class for alert triggers with request-based actions
+// Base class for alert triggers with pure pin-change-driven actions
 class AlertTrigger : public ITrigger
 {
 protected:

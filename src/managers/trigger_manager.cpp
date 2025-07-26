@@ -59,8 +59,9 @@ void TriggerManager::RegisterTrigger(std::unique_ptr<AlertTrigger> trigger)
     triggers_.push_back(std::move(trigger));
 }
 
-void TriggerManager::ProcessPendingTriggerEvents()
+std::vector<TriggerActionRequest> TriggerManager::ProcessPendingTriggerEvents()
 {
+    std::vector<TriggerActionRequest> changeRequests;
     ISREvent event;
     UBaseType_t queueCount = uxQueueMessagesWaiting(isrEventQueue);
     
@@ -68,7 +69,7 @@ void TriggerManager::ProcessPendingTriggerEvents()
         log_i("Core 0: Processing %d pending trigger events", queueCount);
     }
     
-    // Process all queued trigger events (no mutex needed - Core 0 only)
+    // Process all queued trigger events and generate action requests immediately
     while (xQueueReceive(isrEventQueue, &event, 0) == pdTRUE)
     {
         log_i("Core 0: Processing trigger event: type=%d, state=%s", (int)event.eventType, event.pinState ? "HIGH" : "LOW");
@@ -110,70 +111,22 @@ void TriggerManager::ProcessPendingTriggerEvents()
                       event.pinState ? "HIGH" : "LOW");
                 
                 trigger->SetState(newState);
+                
+                // Generate action request immediately on pin change
+                if (newState == TriggerExecutionState::ACTIVE) {
+                    log_i("*** PIN CHANGE - COLLECTING ACTION REQUEST for trigger: %s ***", triggerId);
+                    changeRequests.push_back(trigger->GetActionRequest());
+                } else if (newState == TriggerExecutionState::INACTIVE) {
+                    log_i("*** PIN CHANGE - COLLECTING RESTORE REQUEST for trigger: %s ***", triggerId);
+                    changeRequests.push_back(trigger->GetRestoreRequest());
+                }
             }
         }
     }
+    
+    return changeRequests;
 }
 
-std::vector<TriggerActionRequest> TriggerManager::EvaluateAndGetTriggerRequests()
-{
-    // No mutex needed - Core 0 exclusive ownership of trigger state
-    std::vector<TriggerActionRequest> requests;
-    log_d("=== Evaluating all triggers ===");
-        
-        // Log current state of all triggers first
-        for (auto& trigger : triggers_)
-        {
-            TriggerExecutionState state = trigger->GetState();
-            const char* stateStr = (state == TriggerExecutionState::INIT) ? "INIT" : 
-                                  (state == TriggerExecutionState::ACTIVE) ? "ACTIVE" : "INACTIVE";
-            log_i("Trigger %s: %s (priority %d)", trigger->GetId(), stateStr, (int)trigger->GetPriority());
-        }
-        
-        // Collect action requests from lowest to highest priority
-        // This ensures highest priority action is the last one in the list (and wins)
-        std::vector<AlertTrigger*> sortedTriggers;
-        for (auto& trigger : triggers_)
-        {
-            sortedTriggers.push_back(trigger.get());
-        }
-        
-        // Sort by priority (CRITICAL=0, IMPORTANT=1, NORMAL=2, so lower number = higher priority)
-        std::sort(sortedTriggers.begin(), sortedTriggers.end(), 
-                  [](AlertTrigger* a, AlertTrigger* b) {
-                      return a->GetPriority() > b->GetPriority(); // Reverse sort: NORMAL -> CRITICAL
-                  });
-        
-        log_d("Collecting trigger requests in priority order (lowest to highest)...");
-        
-        // Collect requests from lowest to highest priority based on state
-        for (auto* trigger : sortedTriggers)
-        {
-            TriggerExecutionState state = trigger->GetState();
-            
-            switch (state)
-            {
-                case TriggerExecutionState::INIT:
-                    // No action required during initialization
-                    log_v("Trigger %s in INIT state - no action", trigger->GetId());
-                    break;
-                    
-                case TriggerExecutionState::ACTIVE:
-                    log_i("*** COLLECTING ACTION REQUEST for trigger: %s (priority %d) ***", trigger->GetId(), (int)trigger->GetPriority());
-                    requests.push_back(trigger->GetActionRequest());
-                    break;
-                    
-                case TriggerExecutionState::INACTIVE:
-                    log_i("*** COLLECTING RESTORE REQUEST for trigger: %s (priority %d) ***", trigger->GetId(), (int)trigger->GetPriority());
-                    requests.push_back(trigger->GetRestoreRequest());
-                    break;
-            }
-        }
-        
-        log_d("=== Trigger evaluation complete, %d requests collected ===", requests.size());
-    
-    return requests;
-}
 
 void TriggerManager::InitializeTriggersFromGpio()
 {

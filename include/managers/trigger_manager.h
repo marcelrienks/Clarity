@@ -36,8 +36,7 @@ public:
     void init();
     void RegisterAllTriggers();
     void RegisterTrigger(std::unique_ptr<AlertTrigger> trigger);
-    void ProcessPendingTriggerEvents();
-    std::vector<TriggerActionRequest> EvaluateAndGetTriggerRequests();
+    std::vector<TriggerActionRequest> ProcessPendingTriggerEvents();
     void InitializeTriggersFromGpio();
 
     // GPIO State Change Handlers (called from Core 1 task)
