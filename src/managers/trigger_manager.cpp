@@ -203,14 +203,14 @@ ExecutionPlan TriggerManager::PlanExecutionFromStates(const std::map<std::string
             }
         }
         
-        if (!hasActiveNonPanelTriggers) {
-            // No active triggers at all - restore oil panel
+        if (!hasActiveNonPanelTriggers && plan.themeActions.empty()) {
+            // No active triggers and no theme actions - restore oil panel
             plan.finalPanelAction = {TriggerActionType::RestorePanel, nullptr, "system", true};
-            log_i("Final panel action: Restore oil panel (no active triggers)");
+            log_i("Final panel action: Restore oil panel (no active triggers or theme actions)");
         } else {
-            // Active triggers exist but no panel triggers - no panel action needed
+            // Active triggers exist or theme actions present - no panel action needed
             plan.finalPanelAction = {TriggerActionType::None, nullptr, "system", false};
-            log_i("Final panel action: None (active non-panel triggers exist)");
+            log_i("Final panel action: None (active triggers exist or theme actions present)");
         }
     }
     
