@@ -1,11 +1,17 @@
 #include "managers/trigger_manager.h"
-#include "triggers/key_trigger.h"
-#include "triggers/lock_trigger.h"
-#include "triggers/lights_trigger.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
+#include "hardware/gpio_pins.h"
 #include <algorithm>
+
+// Define the trigger mappings array
+TriggerMapping TriggerManager::triggerMappings_[] = {
+    {TRIGGER_KEY_PRESENT, gpio_pins::KEY_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
+    {TRIGGER_KEY_NOT_PRESENT, gpio_pins::KEY_NOT_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
+    {TRIGGER_LOCK_STATE, gpio_pins::LOCK, TriggerActionType::LoadPanel, PanelNames::LOCK, PanelNames::OIL, TriggerPriority::IMPORTANT},
+    {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL}
+};
 
 TriggerManager &TriggerManager::GetInstance()
 {
@@ -23,35 +29,17 @@ void TriggerManager::init()
     log_d("Direct GPIO polling trigger system initialized");
 }
 
-void TriggerManager::RegisterAllTriggers()
+void TriggerManager::InitializeTriggerMappings()
 {
-    log_d("Registering all triggers...");
+    log_d("Initializing trigger mappings...");
     
-    // Register concrete trigger implementations
-    auto keyTrigger = std::make_unique<KeyTrigger>();
-    keyTrigger->init();
-    RegisterTrigger(std::move(keyTrigger));
+    // Initialize all trigger mappings with their configurations
+    for (auto& mapping : triggerMappings_) {
+        mapping.currentState = TriggerExecutionState::INACTIVE;
+        log_d("Trigger mapping initialized: %s", mapping.triggerId);
+    }
     
-    auto keyNotPresentTrigger = std::make_unique<KeyNotPresentTrigger>();
-    keyNotPresentTrigger->init();
-    RegisterTrigger(std::move(keyNotPresentTrigger));
-    
-    auto lockTrigger = std::make_unique<LockTrigger>();
-    lockTrigger->init();
-    RegisterTrigger(std::move(lockTrigger));
-    
-    auto lightsTrigger = std::make_unique<LightsTrigger>();
-    lightsTrigger->init();
-    RegisterTrigger(std::move(lightsTrigger));
-    
-    log_d("All triggers registered successfully");
-}
-
-void TriggerManager::RegisterTrigger(std::unique_ptr<AlertTrigger> trigger)
-{
-    // No mutex needed - only called during setup on Core 0
-    log_d("Registering trigger: %s", trigger->GetId());
-    triggers_.push_back(std::move(trigger));
+    log_d("All trigger mappings initialized successfully");
 }
 
 void TriggerManager::ProcessTriggerEvents()
@@ -77,10 +65,10 @@ void TriggerManager::CheckGpioChanges()
 
 void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinState)
 {
-    AlertTrigger* trigger = FindTriggerById(triggerId);
-    if (!trigger) return;
+    TriggerMapping* mapping = FindTriggerMapping(triggerId);
+    if (!mapping) return;
     
-    TriggerExecutionState oldState = trigger->GetState();
+    TriggerExecutionState oldState = mapping->currentState;
     TriggerExecutionState newState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
     
     // Only process if state actually changed
@@ -90,65 +78,59 @@ void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinSt
               oldState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE",
               newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
         
-        trigger->SetState(newState);
-        UpdateActiveTriggersList(trigger, newState);
+        mapping->currentState = newState;
+        UpdateActiveTriggersList(mapping, newState);
         
         // Execute trigger action immediately
-        ExecuteTriggerAction(trigger, newState);
+        ExecuteTriggerAction(mapping, newState);
     }
 }
 
-void TriggerManager::ExecuteTriggerAction(AlertTrigger* trigger, TriggerExecutionState state)
+void TriggerManager::ExecuteTriggerAction(TriggerMapping* mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
         // Execute trigger action when activated
-        TriggerActionRequest request = trigger->GetActionRequest();
-        
-        if (request.type == TriggerActionType::LoadPanel) {
-            log_i("Executing panel action: Load %s", request.panelName);
-            PanelManager::GetInstance().CreateAndLoadPanel(request.panelName, []() {
+        if (mapping->actionType == TriggerActionType::LoadPanel) {
+            log_i("Executing panel action: Load %s", mapping->actionTarget);
+            PanelManager::GetInstance().CreateAndLoadPanel(mapping->actionTarget, []() {
                 PanelManager::GetInstance().TriggerPanelSwitchCallback("");
-            }, request.isTriggerDriven);
+            }, true);
         }
-        else if (request.type == TriggerActionType::ToggleTheme) {
-            log_i("Executing theme action: %s", request.panelName);
-            StyleManager::GetInstance().set_theme(request.panelName);
+        else if (mapping->actionType == TriggerActionType::ToggleTheme) {
+            log_i("Executing theme action: %s", mapping->actionTarget);
+            StyleManager::GetInstance().set_theme(mapping->actionTarget);
             // Refresh current panel with new theme
             PanelManager::GetInstance().UpdatePanel();
         }
     } else {
-        // Handle trigger deactivation - execute restore request
-        TriggerActionRequest restoreRequest = trigger->GetRestoreRequest();
-        
-        if (restoreRequest.type == TriggerActionType::LoadPanel) {
+        // Handle trigger deactivation - execute restore action
+        if (mapping->actionType == TriggerActionType::LoadPanel) {
             // Check if there are other active panel triggers
-            AlertTrigger* highestPanelTrigger = nullptr;
-            for (const auto& [priority, activeTrigger] : activeTriggers_) {
-                TriggerActionRequest activeRequest = activeTrigger->GetActionRequest();
-                if (activeRequest.type == TriggerActionType::LoadPanel) {
-                    highestPanelTrigger = activeTrigger;
+            TriggerMapping* highestPanelMapping = nullptr;
+            for (const auto& [priority, activeMapping] : activeTriggers_) {
+                if (activeMapping->actionType == TriggerActionType::LoadPanel) {
+                    highestPanelMapping = activeMapping;
                     break; // List is sorted by priority, so first match is highest
                 }
             }
             
-            if (highestPanelTrigger) {
+            if (highestPanelMapping) {
                 // Load panel from highest priority active trigger
-                TriggerActionRequest activeRequest = highestPanelTrigger->GetActionRequest();
-                log_i("Panel trigger deactivated but others active - loading panel: %s", activeRequest.panelName);
-                PanelManager::GetInstance().CreateAndLoadPanel(activeRequest.panelName, []() {
+                log_i("Panel trigger deactivated but others active - loading panel: %s", highestPanelMapping->actionTarget);
+                PanelManager::GetInstance().CreateAndLoadPanel(highestPanelMapping->actionTarget, []() {
                     PanelManager::GetInstance().TriggerPanelSwitchCallback("");
-                }, activeRequest.isTriggerDriven);
+                }, true);
             } else {
                 // No other panel triggers active - restore to default
-                log_i("No other panel triggers active - restoring to default: %s", restoreRequest.panelName);
-                PanelManager::GetInstance().CreateAndLoadPanel(restoreRequest.panelName, []() {
+                log_i("No other panel triggers active - restoring to default: %s", mapping->restoreTarget);
+                PanelManager::GetInstance().CreateAndLoadPanel(mapping->restoreTarget, []() {
                     PanelManager::GetInstance().TriggerPanelSwitchCallback("");
-                }, restoreRequest.isTriggerDriven);
+                }, false);
             }
         }
-        else if (restoreRequest.type == TriggerActionType::ToggleTheme) {
-            log_i("Restoring theme: %s", restoreRequest.panelName);
-            StyleManager::GetInstance().set_theme(restoreRequest.panelName);
+        else if (mapping->actionType == TriggerActionType::ToggleTheme) {
+            log_i("Restoring theme: %s", mapping->restoreTarget);
+            StyleManager::GetInstance().set_theme(mapping->restoreTarget);
             // Refresh current panel with restored theme
             PanelManager::GetInstance().UpdatePanel();
         }
@@ -183,16 +165,14 @@ void TriggerManager::InitializeTriggersFromGpio()
         log_d("Processing initial active triggers for startup actions");
         
         // Process active triggers in priority order for startup
-        for (const auto& [priority, trigger] : activeTriggers_) {
-            TriggerActionRequest request = trigger->GetActionRequest();
-            
-            if (request.type == TriggerActionType::ToggleTheme) {
-                log_i("Applying startup theme action: %s", request.panelName);
-                StyleManager::GetInstance().set_theme(request.panelName);
+        for (const auto& [priority, mapping] : activeTriggers_) {
+            if (mapping->actionType == TriggerActionType::ToggleTheme) {
+                log_i("Applying startup theme action: %s", mapping->actionTarget);
+                StyleManager::GetInstance().set_theme(mapping->actionTarget);
             }
-            else if (request.type == TriggerActionType::LoadPanel) {
-                log_i("Startup panel action detected: Load %s", request.panelName);
-                startupPanelOverride_ = request.panelName;
+            else if (mapping->actionType == TriggerActionType::LoadPanel) {
+                log_i("Startup panel action detected: Load %s", mapping->actionTarget);
+                startupPanelOverride_ = mapping->actionTarget;
                 break; // Only use highest priority panel action
             }
         }
@@ -201,42 +181,42 @@ void TriggerManager::InitializeTriggersFromGpio()
 
 void TriggerManager::InitializeTrigger(const char* triggerId, bool currentPinState)
 {
-    AlertTrigger* trigger = FindTriggerById(triggerId);
-    if (!trigger) return;
+    TriggerMapping* mapping = FindTriggerMapping(triggerId);
+    if (!mapping) return;
     
     TriggerExecutionState initialState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
-    trigger->SetState(initialState);
+    mapping->currentState = initialState;
     
     // Initialize active triggers list
     if (initialState == TriggerExecutionState::ACTIVE) {
-        activeTriggers_.push_back({trigger->GetPriority(), trigger});
+        activeTriggers_.push_back({mapping->priority, mapping});
     }
     
     log_d("Trigger %s initialized to %s based on GPIO state", 
           triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
 }
 
-AlertTrigger* TriggerManager::FindTriggerById(const char* triggerId)
+TriggerMapping* TriggerManager::FindTriggerMapping(const char* triggerId)
 {
-    for (auto& trigger : triggers_)
+    for (auto& mapping : triggerMappings_)
     {
-        if (strcmp(trigger->GetId(), triggerId) == 0)
+        if (strcmp(mapping.triggerId, triggerId) == 0)
         {
-            return trigger.get();
+            return &mapping;
         }
     }
     return nullptr;
 }
 
-void TriggerManager::UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExecutionState newState)
+void TriggerManager::UpdateActiveTriggersList(TriggerMapping* mapping, TriggerExecutionState newState)
 {
     if (newState == TriggerExecutionState::ACTIVE) {
         // Add to active triggers list if not already present
         auto it = std::find_if(activeTriggers_.begin(), activeTriggers_.end(),
-            [trigger](const auto& pair) { return pair.second == trigger; });
+            [mapping](const auto& pair) { return pair.second == mapping; });
         
         if (it == activeTriggers_.end()) {
-            activeTriggers_.push_back({trigger->GetPriority(), trigger});
+            activeTriggers_.push_back({mapping->priority, mapping});
             
             // Maintain sort order: lowest priority number = highest priority first
             // Use stable_sort to preserve FIFO order for same-priority triggers
@@ -246,16 +226,16 @@ void TriggerManager::UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExec
                 });
             
             log_i("Added trigger %s to active list (priority %d)", 
-                  trigger->GetId(), (int)trigger->GetPriority());
+                  mapping->triggerId, (int)mapping->priority);
         }
     } else {
         // Remove from active triggers list
         auto it = std::remove_if(activeTriggers_.begin(), activeTriggers_.end(),
-            [trigger](const auto& pair) { return pair.second == trigger; });
+            [mapping](const auto& pair) { return pair.second == mapping; });
         
         if (it != activeTriggers_.end()) {
             activeTriggers_.erase(it, activeTriggers_.end());
-            log_i("Removed trigger %s from active list", trigger->GetId());
+            log_i("Removed trigger %s from active list", mapping->triggerId);
         }
     }
     

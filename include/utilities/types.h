@@ -270,6 +270,17 @@ constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
 constexpr const char *TRIGGER_LIGHTS_STATE = "lights_state";
 
+/// @brief Direct trigger mapping structure (replaces trigger objects)
+struct TriggerMapping {
+    const char* triggerId;
+    int pin;
+    TriggerActionType actionType;
+    const char* actionTarget;
+    const char* restoreTarget;
+    TriggerPriority priority;
+    TriggerExecutionState currentState = TriggerExecutionState::INACTIVE;
+};
+
 /// @brief ISR Event types for safe interrupt handling
 enum class ISREventType {
     KEY_PRESENT,

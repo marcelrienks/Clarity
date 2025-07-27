@@ -15,7 +15,7 @@ void setup()
 
   TriggerManager &trigger_manager = TriggerManager::GetInstance();
   trigger_manager.init();
-  trigger_manager.RegisterAllTriggers();
+  trigger_manager.InitializeTriggerMappings();
   trigger_manager.InitializeTriggersFromGpio();
 
   PanelManager &panel_manager = PanelManager::GetInstance();

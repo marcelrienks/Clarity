@@ -2,7 +2,6 @@
 
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
-#include "interfaces/i_trigger.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/semphr.h>
 #include <freertos/task.h>
@@ -14,16 +13,18 @@
 
 /**
  * @class TriggerManager
- * @brief Simplified direct GPIO polling trigger manager with priority-based alert evaluation
+ * @brief Simplified direct GPIO polling trigger manager with mapping-based architecture
  * 
  * @architecture:
  * - Core 0: Direct GPIO polling and UI management
+ * - Static trigger mappings replace dynamic trigger objects
  * 
  * @key_simplifications:
  * 1. Direct GPIO polling - no interrupts or queues
  * 2. Pin change detection via state comparison
- * 3. Priority evaluation from lowest to highest (highest priority action wins)
- * 4. No cross-core communication needed
+ * 3. Static TriggerMapping array instead of objects
+ * 4. Priority evaluation from lowest to highest (highest priority action wins)
+ * 5. No cross-core communication needed
  */
 class TriggerManager
 {
@@ -34,10 +35,9 @@ public:
 
     // Core Functionality
     void init();
-    void RegisterAllTriggers();
-    void RegisterTrigger(std::unique_ptr<AlertTrigger> trigger);
+    void InitializeTriggerMappings();
     void ProcessTriggerEvents();
-    void ExecuteTriggerAction(AlertTrigger* trigger, TriggerExecutionState state);
+    void ExecuteTriggerAction(TriggerMapping* mapping, TriggerExecutionState state);
     void InitializeTriggersFromGpio();
     
     // Get startup panel override (null if no override needed)
@@ -52,14 +52,14 @@ private:
     void CheckGpioChanges();
     void CheckTriggerChange(const char* triggerId, bool currentPinState);
     void InitializeTrigger(const char* triggerId, bool currentPinState);
-    AlertTrigger* FindTriggerById(const char* triggerId);
-    void UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExecutionState newState);
+    TriggerMapping* FindTriggerMapping(const char* triggerId);
+    void UpdateActiveTriggersList(TriggerMapping* mapping, TriggerExecutionState newState);
 
-    // Trigger registry (Core 0 exclusive ownership - no mutex needed)
-    std::vector<std::unique_ptr<AlertTrigger>> triggers_;
+    // Static trigger mappings array (Core 0 exclusive ownership - no mutex needed)
+    static TriggerMapping triggerMappings_[];
     
     // Single persistent list of currently active triggers (sorted by priority)
-    std::vector<std::pair<TriggerPriority, AlertTrigger*>> activeTriggers_;
+    std::vector<std::pair<TriggerPriority, TriggerMapping*>> activeTriggers_;
     
     // Startup panel override (set by InitializeTriggersFromGpio if active triggers require specific panel)
     const char* startupPanelOverride_ = nullptr;
