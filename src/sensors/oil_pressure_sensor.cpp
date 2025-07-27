@@ -25,8 +25,6 @@ void OilPressureSensor::init()
     // Take initial reading
     int32_t adcValue = analogRead(gpio_pins::OIL_PRESSURE);
     OilPressureSensor::GetReading(); // Read initial pressure value
-
-    log_i("Initial pressure reading: %d Bar (ADC: %d)", currentReading_, adcValue);
 }
 
 /// @brief Get the current oil pressure reading with time-based sampling

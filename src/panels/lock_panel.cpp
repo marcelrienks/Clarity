@@ -69,12 +69,5 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
     log_d("...");
 
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
-    if (thisInstance->callbackFunction_)
-    {
-        thisInstance->callbackFunction_();
-    }
-    else
-    {
-        log_d("No callback function provided for lock panel completion");
-    }
+    thisInstance->callbackFunction_();
 }

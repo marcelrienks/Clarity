@@ -25,8 +25,6 @@ void TriggerManager::init()
 
     // Configure GPIO pins as inputs
     setup_gpio_pins();
-    
-    log_d("Direct GPIO polling trigger system initialized");
 }
 
 void TriggerManager::InitializeTriggerMappings()
@@ -38,8 +36,6 @@ void TriggerManager::InitializeTriggerMappings()
         mapping.currentState = TriggerExecutionState::INACTIVE;
         log_d("Trigger mapping initialized: %s", mapping.triggerId);
     }
-    
-    log_d("All trigger mappings initialized successfully");
 }
 
 void TriggerManager::ProcessTriggerEvents()
@@ -235,6 +231,4 @@ void TriggerManager::setup_gpio_pins()
     pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
     pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
     pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
-    
-    log_d("GPIO pins configured successfully for direct polling");
 }

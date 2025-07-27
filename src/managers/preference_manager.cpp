@@ -79,7 +79,6 @@ void PreferenceManager::loadConfig()
     }
 
     config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
-    log_i("Preferences loaded successfully: %s", config.panelName.c_str());
 }
 
 /// @brief Save the current configuration to preferences_

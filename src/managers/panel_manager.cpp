@@ -30,8 +30,6 @@ void PanelManager::RegisterAllPanels()
     register_panel<OemOilPanel>(PanelNames::OIL);
     register_panel<KeyPanel>(PanelNames::KEY);
     register_panel<LockPanel>(PanelNames::LOCK);
-    
-    log_d("All panels registered successfully");
 }
 
 /// @brief Creates and then loads a panel based on the given name
@@ -148,7 +146,6 @@ void PanelManager::PanelCompletionCallback()
     if (!systemInitialized)
     {
         systemInitialized = true;
-        log_d("System initialization complete - triggers remain in INIT state until GPIO changes");
     }
 }
 
@@ -166,7 +163,6 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 void PanelManager::SetUiState(UIState state)
 {
     uiState_ = state;
-    log_d("UI State changed to: %d", (int)state);
 }
 
 

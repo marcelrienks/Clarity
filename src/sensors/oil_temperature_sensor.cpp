@@ -25,7 +25,6 @@ void OilTemperatureSensor::init()
     // Take initial reading
     int32_t adcValue = analogRead(gpio_pins::OIL_TEMPERATURE);
     OilTemperatureSensor::GetReading(); // Read initial temperature value
-    log_i("Initial temperature reading: %d°C (ADC: %d)", currentReading_, adcValue);
 }
 
 /// @brief Get the current oil temperature reading with time-based sampling

@@ -235,14 +235,7 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
         return;
     }
     
-    if (thisInstance->callbackFunction_)
-    {
-        thisInstance->callbackFunction_();
-    }
-    else
-    {
-        log_d("No callback function provided for oil panel completion");
-    }
+    thisInstance->callbackFunction_();
 }
 
 /// @brief Callback when animation has completed. aka update complete
