@@ -63,9 +63,13 @@ private:
     void setup_gpio_interrupts();
     AlertTrigger* FindTriggerById(const char* triggerId);
     void ExecuteHighestPriorityAction();
+    void UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExecutionState newState);
 
     // Trigger registry (Core 0 exclusive ownership - no mutex needed)
     std::vector<std::unique_ptr<AlertTrigger>> triggers_;
+    
+    // Single persistent list of currently active triggers (sorted by priority)
+    std::vector<std::pair<TriggerPriority, AlertTrigger*>> activeTriggers_;
     
     // ISR communication
     QueueHandle_t isrEventQueue = nullptr;
