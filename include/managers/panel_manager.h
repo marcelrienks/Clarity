@@ -9,8 +9,6 @@
 #include "utilities/ticker.h"
 #include "managers/trigger_manager.h"
 #include "managers/style_manager.h"
-#include "triggers/key_trigger.h"
-#include "triggers/lock_trigger.h"
 
 #include <string>
 #include <functional>
@@ -138,10 +136,6 @@ private:
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
     
-    /// @brief Execute a trigger action from shared state
-    /// @param trigger_state Trigger state to execute
-    /// @param trigger_id ID of the trigger for cleanup
-    void ExecuteTriggerAction(const TriggerState& triggerState, const char* triggerId);
     
     
     /// @brief Notify Core 1 of state changes

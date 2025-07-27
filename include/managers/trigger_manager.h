@@ -2,14 +2,8 @@
 
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
-#include <freertos/task.h>
 #include <esp32-hal-log.h>
-#include <map>
-#include <memory>
 #include <vector>
-#include <string>
 
 /**
  * @class TriggerManager

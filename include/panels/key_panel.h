@@ -2,7 +2,6 @@
 
 #include "interfaces/i_panel.h"
 #include "components/key_component.h"
-#include "triggers/key_trigger.h"
 #include "utilities/types.h"
 
 #include <utilities/lv_tools.h>

@@ -1,7 +1,4 @@
 #include "managers/panel_manager.h"
-#include "triggers/key_trigger.h"
-#include "triggers/lock_trigger.h"
-#include "triggers/lights_trigger.h"
 
 // Static Methods
 
@@ -172,41 +169,5 @@ void PanelManager::SetUiState(UIState state)
     log_d("UI State changed to: %d", (int)state);
 }
 
-/// @brief Execute a trigger action from shared state
-void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const char *triggerId)
-{
-    log_d("Executing trigger action: %s for trigger: %s", triggerState.action.c_str(), triggerId);
-
-    if (triggerState.action == ACTION_LOAD_PANEL)
-    {
-        CreateAndLoadPanel(triggerState.target.c_str(), [this, triggerId]()
-                           { this->TriggerPanelSwitchCallback(triggerId); }, true);
-    }
-    else if (triggerState.action == ACTION_CHANGE_THEME)
-    {
-        // Only change theme if it's actually different to prevent infinite loops
-        const char* currentTheme = StyleManager::GetInstance().THEME;
-        const char* targetTheme = triggerState.target.c_str();
-        
-        if (strcmp(currentTheme, targetTheme) != 0)
-        {
-            StyleManager::GetInstance().set_theme(targetTheme);
-            log_i("Theme changed from %s to %s", currentTheme, targetTheme);
-            
-            // Update current panel to refresh components with new theme colors
-            if (panel_)
-            {
-                log_d("Refreshing panel components with new theme");
-                panel_->update([this]()
-                              { this->PanelCompletionCallback(); });
-            }
-        }
-        else
-        {
-            log_d("Theme already set to %s, skipping change", targetTheme);
-        }
-        // GPIO system will handle trigger state clearing based on hardware state
-    }
-}
 
 

@@ -24,7 +24,6 @@
 #include <variant>
 #include <vector>
 #include <stdint.h>
-#include <esp_timer.h>
 
 // Types/Structs/Enums
 /// @typedef Reading
@@ -104,19 +103,6 @@ enum class TriggerActionType
 {
     LoadPanel,      ///< Request to load a specific panel
     ToggleTheme     ///< Request to toggle theme
-};
-
-/// @struct TriggerActionRequest
-/// @brief Action request data structure for trigger-to-main communication
-///
-/// @details Contains all information needed for main loop to execute
-/// the requested action via appropriate manager calls
-struct TriggerActionRequest
-{
-    TriggerActionType type = TriggerActionType::LoadPanel;
-    const char* panelName = nullptr;  ///< Panel name for LoadPanel actions
-    const char* triggerId = nullptr;  ///< Trigger ID for callbacks
-    bool isTriggerDriven = false;     ///< Whether this is a trigger-driven panel change
 };
 
 
@@ -230,41 +216,7 @@ enum class TriggerExecutionState {
 };
 
 
-/**
- * @brief Structure for shared trigger state
- * 
- * @details This structure represents the state of a trigger,
- * including its action, target, priority, and active status.
- */
-struct TriggerState
-{
-    std::string action;           ///< Action to perform
-    std::string target;           ///< Target of the action
-    TriggerPriority priority;     ///< Priority level
-    uint64_t timestamp;           ///< When trigger was created (for FIFO within same priority)
-    bool active;                  ///< Whether trigger is currently active (GPIO HIGH)
-    
-    TriggerState() = default;
-    TriggerState(const char* action, const char* target, TriggerPriority priority, uint64_t timestamp)
-        : action(action), target(target), priority(priority), timestamp(timestamp), active(true) {}
-};
-
-/// @brief Configuration constants
-constexpr int PANEL_STATE_MUTEX_TIMEOUT = 100;
-constexpr int THEME_STATE_MUTEX_TIMEOUT = 100;
-
-
-/// @brief Action constants
-constexpr const char *ACTION_LOAD_PANEL = "LoadPanel";
-constexpr const char *ACTION_RESTORE_PREVIOUS_PANEL = "RestorePreviousPanel";
-constexpr const char *ACTION_CHANGE_THEME = "ChangeTheme";
-
-/// @brief Theme name constants
-constexpr const char *THEME_DAY = "Day";
-constexpr const char *THEME_NIGHT = "Night";
-
 /// @brief Trigger ID constants
-constexpr const char *TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
 constexpr const char *TRIGGER_KEY_PRESENT = "key_present";
 constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
@@ -281,20 +233,3 @@ struct TriggerMapping {
     TriggerExecutionState currentState = TriggerExecutionState::INACTIVE;
 };
 
-/// @brief ISR Event types for safe interrupt handling
-enum class ISREventType {
-    KEY_PRESENT,
-    KEY_NOT_PRESENT,
-    LOCK_STATE_CHANGE,
-    THEME_SWITCH
-};
-
-/// @brief ISR Event structure for ISR-to-Task communication
-struct ISREvent {
-    ISREventType eventType;
-    bool pinState;
-    uint32_t timestamp;
-    
-    ISREvent() : eventType(ISREventType::KEY_PRESENT), pinState(false), timestamp(0) {}
-    ISREvent(ISREventType type, bool state) : eventType(type), pinState(state), timestamp(esp_timer_get_time()) {}
-};
