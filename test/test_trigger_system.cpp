@@ -11,13 +11,7 @@ extern "C" {
     void delay(unsigned long ms) {}
 }
 
-void setUp(void) {
-    MockHardware::reset();
-}
-
-void tearDown(void) {
-    // Clean up after each test
-}
+// Note: setUp() and tearDown() are defined in test_main.cpp
 
 // =================================================================
 // 1. SYSTEM STARTUP SCENARIOS (S1.1-S1.5)
@@ -340,42 +334,4 @@ void test_complex_restoration_chain(void) {
     TEST_ASSERT_PANEL_LOADED("OemOilPanel");
 }
 
-// =================================================================
-// TEST RUNNER SETUP
-// =================================================================
-
-void runTriggerSystemTests(void) {
-    UNITY_BEGIN();
-    
-    // System startup scenarios
-    RUN_TEST(test_S1_1_clean_system_startup);
-    RUN_TEST(test_S1_2_startup_with_key_present);
-    RUN_TEST(test_S1_3_startup_with_key_not_present);
-    RUN_TEST(test_S1_4_startup_with_lock_active);
-    RUN_TEST(test_S1_5_startup_with_theme_trigger);
-    
-    // Single trigger scenarios
-    RUN_TEST(test_S2_2_lock_trigger);
-    RUN_TEST(test_S2_3_key_present_trigger);
-    RUN_TEST(test_S2_4_key_not_present_trigger);
-    
-    // Multiple trigger scenarios
-    RUN_TEST(test_S3_1_priority_override_key_over_lock);
-    RUN_TEST(test_S3_2_key_present_vs_key_not_present);
-    RUN_TEST(test_S3_2_intermediate_state_validation);
-    
-    // Edge case scenarios
-    RUN_TEST(test_S4_1_rapid_toggle_single_trigger);
-    RUN_TEST(test_S4_2_rapid_toggle_multiple_triggers);
-    RUN_TEST(test_S4_5_invalid_trigger_combinations);
-    RUN_TEST(test_S4_4_simultaneous_deactivation);
-    
-    // Performance scenarios
-    RUN_TEST(test_S5_1_high_frequency_trigger_events);
-    RUN_TEST(test_S5_3_panel_load_performance);
-    
-    // Complex scenarios
-    RUN_TEST(test_complex_restoration_chain);
-    
-    UNITY_END();
-}
+// Note: PlatformIO will automatically discover and run test_ functions

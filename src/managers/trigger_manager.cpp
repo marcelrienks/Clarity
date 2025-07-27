@@ -6,7 +6,7 @@
 #include <algorithm>
 
 // Define the trigger mappings array
-TriggerMapping TriggerManager::triggerMappings_[] = {
+Trigger TriggerManager::triggers_[] = {
     {TRIGGER_KEY_PRESENT, gpio_pins::KEY_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
     {TRIGGER_KEY_NOT_PRESENT, gpio_pins::KEY_NOT_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
     {TRIGGER_LOCK_STATE, gpio_pins::LOCK, TriggerActionType::LoadPanel, PanelNames::LOCK, PanelNames::OIL, TriggerPriority::IMPORTANT},
@@ -26,22 +26,8 @@ void TriggerManager::init()
     // Configure GPIO pins as inputs
     setup_gpio_pins();
     
-    // Initialize trigger mappings
-    InitializeTriggerMappings();
-    
     // Read current GPIO states and initialize triggers
     InitializeTriggersFromGpio();
-}
-
-void TriggerManager::InitializeTriggerMappings()
-{
-    log_d("Initializing trigger mappings...");
-    
-    // Initialize all trigger mappings with their configurations
-    for (auto& mapping : triggerMappings_) {
-        mapping.currentState = TriggerExecutionState::INACTIVE;
-        log_d("Trigger mapping initialized: %s", mapping.triggerId);
-    }
 }
 
 void TriggerManager::ProcessTriggerEvents()
@@ -75,7 +61,7 @@ void TriggerManager::CheckGpioChanges()
 
 void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinState)
 {
-    TriggerMapping* mapping = FindTriggerMapping(triggerId);
+    Trigger* mapping = FindTriggerMapping(triggerId);
     if (!mapping) return;
     
     TriggerExecutionState oldState = mapping->currentState;
@@ -96,7 +82,7 @@ void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinSt
     }
 }
 
-void TriggerManager::ExecuteTriggerAction(TriggerMapping* mapping, TriggerExecutionState state)
+void TriggerManager::ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
         // Execute trigger action when activated
@@ -165,7 +151,7 @@ void TriggerManager::InitializeTriggersFromGpio()
 
 void TriggerManager::InitializeTrigger(const char* triggerId, bool currentPinState)
 {
-    TriggerMapping* mapping = FindTriggerMapping(triggerId);
+    Trigger* mapping = FindTriggerMapping(triggerId);
     if (!mapping) return;
     
     TriggerExecutionState initialState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
@@ -180,9 +166,9 @@ void TriggerManager::InitializeTrigger(const char* triggerId, bool currentPinSta
           triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
 }
 
-TriggerMapping* TriggerManager::FindTriggerMapping(const char* triggerId)
+Trigger* TriggerManager::FindTriggerMapping(const char* triggerId)
 {
-    for (auto& mapping : triggerMappings_)
+    for (auto& mapping : triggers_)
     {
         if (strcmp(mapping.triggerId, triggerId) == 0)
         {
@@ -192,7 +178,7 @@ TriggerMapping* TriggerManager::FindTriggerMapping(const char* triggerId)
     return nullptr;
 }
 
-void TriggerManager::UpdateActiveTriggersSimple(TriggerMapping* mapping, TriggerExecutionState newState)
+void TriggerManager::UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecutionState newState)
 {
     if (newState == TriggerExecutionState::ACTIVE) {
         if (mapping->actionType == TriggerActionType::LoadPanel) {
@@ -209,7 +195,7 @@ void TriggerManager::UpdateActiveTriggersSimple(TriggerMapping* mapping, Trigger
         if (mapping->actionType == TriggerActionType::LoadPanel && activePanelTrigger_ == mapping) {
             // Find next highest priority active panel trigger
             activePanelTrigger_ = nullptr;
-            for (auto& checkMapping : triggerMappings_) {
+            for (auto& checkMapping : triggers_) {
                 if (checkMapping.actionType == TriggerActionType::LoadPanel && 
                     checkMapping.currentState == TriggerExecutionState::ACTIVE &&
                     &checkMapping != mapping) {

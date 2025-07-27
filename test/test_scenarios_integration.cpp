@@ -1,4 +1,5 @@
 #include <unity.h>
+#include <cstring>
 #include "test_utilities.h"
 
 // Integration test state tracking
@@ -7,19 +8,7 @@ static const char* active_panel = "OemOilPanel";
 static const char* active_theme = "Day";
 static bool triggers_active[4] = {false}; // key_present, key_not_present, lock_state, lights_state
 
-void setUp(void) {
-    MockHardware::reset();
-    system_initialized = false;
-    active_panel = "OemOilPanel";
-    active_theme = "Day";
-    for (int i = 0; i < 4; i++) {
-        triggers_active[i] = false;
-    }
-}
-
-void tearDown(void) {
-    // Clean up after each test
-}
+// Note: setUp() and tearDown() are defined in test_main.cpp
 
 // Mock system integration functions
 void mockSystemInitialization() {
@@ -465,35 +454,4 @@ void test_integration_system_recovery(void) {
     test.ValidateExpectedState(ExpectedStates::OIL_PANEL_DAY);
 }
 
-// =================================================================
-// TEST RUNNER SETUP
-// =================================================================
-
-void runScenarioIntegrationTests(void) {
-    UNITY_BEGIN();
-    
-    // Basic integration scenarios
-    RUN_TEST(test_integration_S1_1_clean_system_startup);
-    RUN_TEST(test_integration_S1_2_startup_with_triggers);
-    
-    // Multi-trigger integration
-    RUN_TEST(test_integration_S3_1_priority_override_complete);
-    RUN_TEST(test_integration_S3_4_theme_and_panel_triggers);
-    RUN_TEST(test_integration_S3_5_triple_trigger_activation);
-    
-    // Edge case integration
-    RUN_TEST(test_integration_S4_5_invalid_combinations);
-    RUN_TEST(test_integration_S4_4_simultaneous_deactivation);
-    
-    // Sensor integration
-    RUN_TEST(test_integration_sensor_and_trigger_system);
-    
-    // Long running tests
-    RUN_TEST(test_integration_long_running_stability);
-    RUN_TEST(test_integration_rapid_state_changes);
-    
-    // Recovery tests
-    RUN_TEST(test_integration_system_recovery);
-    
-    UNITY_END();
-}
+// Note: PlatformIO will automatically discover and run test_ functions

@@ -57,6 +57,9 @@ private:
 #define TEST_ASSERT_TRIGGER_STATE(trigger_name, expected_state) \
     TEST_ASSERT_TRUE_MESSAGE(verifyTriggerState(trigger_name, expected_state), "Trigger state incorrect")
 
+// System simulation
+void simulateSystemResponse();
+
 // Test verification functions
 bool verifyPanelLoaded(const char* panelName);
 bool verifyThemeApplied(const char* themeName);

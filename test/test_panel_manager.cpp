@@ -8,17 +8,7 @@ static bool panel_initialized = false;
 static std::vector<const char*> panel_creation_history;
 static std::vector<const char*> panel_load_history;
 
-void setUp(void) {
-    current_panel = "OemOilPanel";
-    panel_loaded = false;
-    panel_initialized = false;
-    panel_creation_history.clear();
-    panel_load_history.clear();
-}
-
-void tearDown(void) {
-    // Clean up after each test
-}
+// Note: setUp() and tearDown() are defined in test_main.cpp
 
 // Mock panel manager functions
 void mockCreatePanel(const char* panelName) {
@@ -350,42 +340,4 @@ void test_panel_switching_performance(void) {
     TEST_ASSERT_TRUE(panel_loaded);
 }
 
-// =================================================================
-// TEST RUNNER SETUP
-// =================================================================
-
-void runPanelManagerTests(void) {
-    UNITY_BEGIN();
-    
-    // Core functionality
-    RUN_TEST(test_panel_manager_initialization);
-    RUN_TEST(test_panel_registration);
-    RUN_TEST(test_panel_creation_and_loading);
-    RUN_TEST(test_panel_cleanup_on_switch);
-    
-    // Lifecycle tests
-    RUN_TEST(test_panel_lifecycle_init_load_update);
-    RUN_TEST(test_splash_panel_lifecycle);
-    
-    // Panel switching
-    RUN_TEST(test_trigger_driven_panel_switch);
-    RUN_TEST(test_panel_restoration_chain);
-    RUN_TEST(test_rapid_panel_switching);
-    
-    // State management
-    RUN_TEST(test_panel_state_consistency);
-    RUN_TEST(test_panel_memory_management);
-    
-    // Error handling
-    RUN_TEST(test_invalid_panel_creation);
-    RUN_TEST(test_panel_creation_failure_recovery);
-    
-    // Integration tests
-    RUN_TEST(test_panel_trigger_integration);
-    RUN_TEST(test_multiple_trigger_panel_priority);
-    
-    // Performance tests
-    RUN_TEST(test_panel_switching_performance);
-    
-    UNITY_END();
-}
+// Note: PlatformIO will automatically discover and run test_ functions

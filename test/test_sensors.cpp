@@ -12,19 +12,7 @@ static const uint32_t UPDATE_INTERVAL_MS = 100;
 static uint16_t mock_pressure_adc = 0;
 static uint16_t mock_temperature_adc = 0;
 
-void setUp(void) {
-    MockHardware::reset();
-    current_oil_pressure = 0;
-    current_oil_temperature = 0;
-    sensor_initialized = false;
-    last_update_time = 0;
-    mock_pressure_adc = 0;
-    mock_temperature_adc = 0;
-}
-
-void tearDown(void) {
-    // Clean up after each test
-}
+// Note: setUp() and tearDown() are defined in test_main.cpp
 
 // Mock sensor functions
 void mockOilPressureSensorInit() {
@@ -40,9 +28,12 @@ void mockOilTemperatureSensorInit() {
 int32_t mockGetOilPressureReading() {
     if (!sensor_initialized) return -1;
     
-    uint32_t current_time = millis();
-    if (current_time - last_update_time >= UPDATE_INTERVAL_MS) {
-        last_update_time = current_time;
+    // Use mock timing instead of real millis() for unit testing
+    static uint32_t mock_time = 0;
+    mock_time += UPDATE_INTERVAL_MS; // Force update every call for testing
+    
+    if (mock_time - last_update_time >= UPDATE_INTERVAL_MS) {
+        last_update_time = mock_time;
         
         // Convert ADC to pressure (0-4095 -> 0-10 Bar)
         uint16_t adc_value = MockHardware::getAdcReading(34);
@@ -55,9 +46,12 @@ int32_t mockGetOilPressureReading() {
 int32_t mockGetOilTemperatureReading() {
     if (!sensor_initialized) return -1;
     
-    uint32_t current_time = millis();
-    if (current_time - last_update_time >= UPDATE_INTERVAL_MS) {
-        last_update_time = current_time;
+    // Use mock timing instead of real millis() for unit testing
+    static uint32_t mock_time = 0;
+    mock_time += UPDATE_INTERVAL_MS; // Force update every call for testing
+    
+    if (mock_time - last_update_time >= UPDATE_INTERVAL_MS) {
+        last_update_time = mock_time;
         
         // Convert ADC to temperature (0-4095 -> 0-120°C)
         uint16_t adc_value = MockHardware::getAdcReading(35);
@@ -401,41 +395,4 @@ void test_sensor_fault_simulation(void) {
     }
 }
 
-// =================================================================
-// TEST RUNNER SETUP
-// =================================================================
-
-void runSensorTests(void) {
-    UNITY_BEGIN();
-    
-    // Initialization tests
-    RUN_TEST(test_oil_pressure_sensor_initialization);
-    RUN_TEST(test_oil_temperature_sensor_initialization);
-    
-    // Reading accuracy tests
-    RUN_TEST(test_oil_pressure_reading_accuracy);
-    RUN_TEST(test_oil_temperature_reading_accuracy);
-    RUN_TEST(test_sensor_reading_bounds);
-    
-    // Timing tests
-    RUN_TEST(test_sensor_update_interval);
-    RUN_TEST(test_sensor_reading_consistency);
-    
-    // Error handling tests
-    RUN_TEST(test_sensor_reading_without_initialization);
-    RUN_TEST(test_sensor_adc_failure_handling);
-    
-    // Integration tests
-    RUN_TEST(test_dual_sensor_operation);
-    RUN_TEST(test_sensor_value_change_detection);
-    
-    // Performance tests
-    RUN_TEST(test_sensor_reading_performance);
-    RUN_TEST(test_sensor_memory_usage);
-    
-    // Realistic scenarios
-    RUN_TEST(test_engine_startup_scenario);
-    RUN_TEST(test_sensor_fault_simulation);
-    
-    UNITY_END();
-}
+// Note: PlatformIO will automatically discover and run test_ functions
