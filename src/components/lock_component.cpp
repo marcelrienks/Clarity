@@ -18,7 +18,7 @@ LockComponent::~LockComponent()
 // Core Functionality Methods
 void LockComponent::refresh(const Reading& reading)
 {
-    log_d("...");
+    log_d("Refreshing lock component display with new state");
     
     bool is_lock_engaged = std::get<bool>(reading);
     lv_color_t colour = StyleManager::GetInstance().get_colours(StyleManager::GetInstance().THEME).keyPresent;
@@ -29,7 +29,6 @@ void LockComponent::refresh(const Reading& reading)
 
     lv_obj_set_style_image_recolor(lockIcon_, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(lockIcon_, LV_OPA_COVER, MAIN_DEFAULT);
-    log_d("rendered update with colour: R=%d G=%d B=%d", colour.red, colour.green, colour.blue);
 }
 
 /// @brief This method initializes the lock status icon with location parameters
@@ -37,7 +36,7 @@ void LockComponent::refresh(const Reading& reading)
 /// @param location The location parameters for positioning the component.
 void LockComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 {
-    log_d("...");
+    log_d("Rendering lock component icon at specified location");
 
     // Create the lock icon
     lockIcon_ = lv_image_create(screen);
@@ -45,5 +44,4 @@ void LockComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 
     // Apply location settings
     lv_obj_align(lockIcon_, location.align, location.x_offset, location.y_offset);
-    log_d("rendered load with location");
 }

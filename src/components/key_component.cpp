@@ -34,7 +34,6 @@ void KeyComponent::refresh(const Reading& reading)
 
     lv_obj_set_style_image_recolor(keyIcon_, colour, MAIN_DEFAULT);
     lv_obj_set_style_image_recolor_opa(keyIcon_, LV_OPA_COVER, MAIN_DEFAULT);
-    log_d("rendered update with colour: R=%d G=%d B=%d", colour.red, colour.green, colour.blue);
 }
 
 /// @brief This method initializes the key present icon with location parameters
@@ -50,5 +49,4 @@ void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 
     // Apply location settings
     lv_obj_align(keyIcon_, location.align, location.x_offset, location.y_offset);
-    log_d("rendered load with location");
 }

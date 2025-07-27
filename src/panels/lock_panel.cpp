@@ -29,7 +29,7 @@ LockPanel::~LockPanel()
 /// @brief Initialize the lock panel and its components
 void LockPanel::init()
 {
-    log_d("...");
+    log_d("Initializing lock panel with sensor and display components");
 
     screen_ = LvTools::create_blank_screen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -41,7 +41,7 @@ void LockPanel::init()
 /// @brief Load the lock panel UI components
 void LockPanel::load(std::function<void()> callbackFunction)
 {
-    log_d("...");
+    log_d("Loading lock panel with current lock state display");
     callbackFunction_ = callbackFunction;
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
@@ -66,7 +66,7 @@ void LockPanel::update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("...");
+    log_d("Lock panel load completed - screen displayed");
 
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
     thisInstance->callbackFunction_();

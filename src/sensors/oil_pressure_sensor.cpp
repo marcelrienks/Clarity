@@ -53,8 +53,6 @@ Reading OilPressureSensor::GetReading()
             currentReading_ = newValue;
             log_i("Pressure reading changed to %d Bar", currentReading_);
 
-        } else {
-            log_d("Pressure reading unchanged: %d Bar", newValue);
         }
     }
     

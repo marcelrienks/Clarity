@@ -59,7 +59,7 @@ OemOilPanel::~OemOilPanel()
 /// Creates screen and initializes sensors with sentinel values
 void OemOilPanel::init()
 {
-    log_d("...");
+    log_d("Initializing OEM oil panel with sensors and display components");
 
     screen_ = LvTools::create_blank_screen();
 
@@ -74,7 +74,7 @@ void OemOilPanel::init()
 /// @param callbackFunction to be called when the panel load is completed
 void OemOilPanel::load(std::function<void()> callbackFunction)
 {
-    log_d("...");
+    log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
 
     // Create location parameters with rotational start points for scales
@@ -93,7 +93,7 @@ void OemOilPanel::load(std::function<void()> callbackFunction)
 /// @brief Update the reading on the screen
 void OemOilPanel::update(std::function<void()> callbackFunction)
 {
-    log_d("...");
+    log_d("Updating OEM oil panel readings and checking for changes");
 
     callbackFunction_ = callbackFunction;
 
@@ -148,7 +148,6 @@ void OemOilPanel::UpdateOilPressure()
     
     // Skip update only if value is exactly the same as last update AND this is not a forced update
     if (value == currentOilPressureValue_ && !forceComponentRefresh_) {
-        log_d("Pressure value unchanged (%d), skipping update", value);
         return;
     }
     
@@ -195,7 +194,6 @@ void OemOilPanel::UpdateOilTemperature()
     
     // Skip update only if value is exactly the same as last update AND this is not a forced update
     if (value == currentOilTemperatureValue_ && !forceComponentRefresh_) {
-        log_d("Temperature value unchanged (%d), skipping update", value);
         return;
     }
     

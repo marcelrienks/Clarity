@@ -84,8 +84,6 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 /// @brief Update the reading on the currently loaded panel and process trigger messages
 void PanelManager::UpdatePanel()
 {
-    log_d("Updating current panel readings and processing triggers");
-
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
                    { this->PanelManager::PanelCompletionCallback(); });

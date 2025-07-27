@@ -16,7 +16,7 @@ OilTemperatureSensor::OilTemperatureSensor()
 void OilTemperatureSensor::init()
 {
     // Configure GPIO pin for analog input
-    log_d("...");
+    log_d("Initializing oil temperature sensor ADC configuration");
     
     // Configure ADC resolution and attenuation for direct 3.3V operation
     analogReadResolution(12); // 12-bit resolution (0-4095)
@@ -53,8 +53,6 @@ Reading OilTemperatureSensor::GetReading()
             currentReading_ = newValue;
             log_i("Temperature reading changed to %d°C", currentReading_);
 
-        } else {
-            log_d("Temperature reading unchanged: %d°C", newValue);
         }
     }
     

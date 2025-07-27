@@ -35,7 +35,6 @@ void setup()
 
 void loop()
 {
-  log_d("Processing main loop - updating triggers and panels");
 
   // Core 0 responsibilities: process trigger events directly (simplified)
   TriggerManager::GetInstance().ProcessTriggerEvents();
