@@ -53,13 +53,14 @@ private:
     void CheckTriggerChange(const char* triggerId, bool currentPinState);
     void InitializeTrigger(const char* triggerId, bool currentPinState);
     TriggerMapping* FindTriggerMapping(const char* triggerId);
-    void UpdateActiveTriggersList(TriggerMapping* mapping, TriggerExecutionState newState);
+    void UpdateActiveTriggersSimple(TriggerMapping* mapping, TriggerExecutionState newState);
 
     // Static trigger mappings array (Core 0 exclusive ownership - no mutex needed)
     static TriggerMapping triggerMappings_[];
     
-    // Single persistent list of currently active triggers (sorted by priority)
-    std::vector<std::pair<TriggerPriority, TriggerMapping*>> activeTriggers_;
+    // Simplified active trigger tracking
+    TriggerMapping* activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
+    TriggerMapping* activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
     
     // Startup panel override (set by InitializeTriggersFromGpio if active triggers require specific panel)
     const char* startupPanelOverride_ = nullptr;
