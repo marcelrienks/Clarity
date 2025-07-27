@@ -279,6 +279,33 @@ void TriggerManager::InitializeTriggersFromGpio()
     
     log_d("All triggers initialized from GPIO states. %d triggers active at startup", 
           (int)activeTriggers_.size());
+    
+    // Apply initial theme actions from active triggers
+    if (!activeTriggers_.empty()) {
+        log_d("Processing initial active triggers for startup theme application");
+        
+        // Build initial states map for active triggers
+        std::map<std::string, TriggerExecutionState> initialStates;
+        for (const auto& [priority, trigger] : activeTriggers_) {
+            initialStates[trigger->GetId()] = TriggerExecutionState::ACTIVE;
+        }
+        
+        // Plan execution from initial states
+        ExecutionPlan plan = PlanExecutionFromStates(initialStates);
+        
+        // Apply theme actions immediately during startup
+        for (const auto& request : plan.themeActions) {
+            log_i("Applying startup theme action: %s", request.panelName);
+            // Note: StyleManager should be initialized before this call
+            StyleManager::GetInstance().set_theme(request.panelName);
+        }
+        
+        // Store panel action for startup loading (will be used instead of config default)
+        if (plan.finalPanelAction.type == TriggerActionType::LoadPanel) {
+            log_i("Startup panel action detected: Load %s", plan.finalPanelAction.panelName);
+            startupPanelOverride_ = plan.finalPanelAction.panelName;
+        }
+    }
 }
 
 AlertTrigger* TriggerManager::FindTriggerById(const char* triggerId)

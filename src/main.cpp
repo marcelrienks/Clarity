@@ -16,12 +16,21 @@ void setup()
   TriggerManager &trigger_manager = TriggerManager::GetInstance();
   trigger_manager.init();
   trigger_manager.RegisterAllTriggers();
+  trigger_manager.InitializeTriggersFromGpio();
 
   PanelManager &panel_manager = PanelManager::GetInstance();
   panel_manager.init();
   panel_manager.RegisterAllPanels();
 
-  panel_manager.CreateAndLoadPanelWithSplash(preference_manager.config.panelName.c_str());
+  // Check if startup triggers require a specific panel, otherwise use config default
+  const char* startupPanel = trigger_manager.GetStartupPanelOverride();
+  if (startupPanel) {
+    log_i("Using startup panel override: %s", startupPanel);
+    panel_manager.CreateAndLoadPanelWithSplash(startupPanel);
+  } else {
+    log_i("Using config default panel: %s", preference_manager.config.panelName.c_str());
+    panel_manager.CreateAndLoadPanelWithSplash(preference_manager.config.panelName.c_str());
+  }
   
   Ticker::handle_lv_tasks();
 }
@@ -79,11 +88,12 @@ void ExecutePanelAction(const TriggerActionRequest& request)
     case TriggerActionType::RestorePanel:
       log_i("Executing final panel action: Restore panel");
       {
-        auto& pm = PanelManager::GetInstance();
-        const char* restorePanel = (pm.restorationPanel && strlen(pm.restorationPanel) > 0) 
-                                 ? pm.restorationPanel 
-                                 : PanelNames::OIL;
-        pm.CreateAndLoadPanel(restorePanel, []() {
+        // Always restore to the config default when no triggers are active
+        // This ensures consistent behavior regardless of restoration panel state
+        PreferenceManager& prefs = PreferenceManager::GetInstance();
+        const char* restorePanel = prefs.config.panelName.c_str();
+        log_i("Restoring to config default panel: %s", restorePanel);
+        PanelManager::GetInstance().CreateAndLoadPanel(restorePanel, []() {
           PanelManager::GetInstance().TriggerPanelSwitchCallback("");
         }, request.isTriggerDriven);
       }

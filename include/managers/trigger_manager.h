@@ -40,6 +40,9 @@ public:
     std::map<std::string, TriggerExecutionState> ProcessPendingTriggerEvents();
     ExecutionPlan PlanExecutionFromStates(const std::map<std::string, TriggerExecutionState>& consolidatedStates);
     void InitializeTriggersFromGpio();
+    
+    // Get startup panel override (null if no override needed)
+    const char* GetStartupPanelOverride() const { return startupPanelOverride_; }
 
     // GPIO State Change Handlers (called from Core 1 task)
     void HandleGpioStateChange(const char* triggerId, bool pinState);
@@ -70,6 +73,9 @@ private:
     
     // Single persistent list of currently active triggers (sorted by priority)
     std::vector<std::pair<TriggerPriority, AlertTrigger*>> activeTriggers_;
+    
+    // Startup panel override (set by InitializeTriggersFromGpio if active triggers require specific panel)
+    const char* startupPanelOverride_ = nullptr;
     
     // ISR communication
     QueueHandle_t isrEventQueue = nullptr;
