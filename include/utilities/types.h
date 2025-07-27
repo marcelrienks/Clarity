@@ -95,6 +95,48 @@ enum class KeyState
     NotPresent  ///< Key is not present (GPIO 26 HIGH) - show red key
 };
 
+/// @enum TriggerActionType
+/// @brief Types of actions that triggers can request
+///
+/// @details Used for dependency injection - triggers return action requests
+/// that main loop processes by calling appropriate manager methods
+enum class TriggerActionType
+{
+    None,           ///< No action requested
+    LoadPanel,      ///< Request to load a specific panel
+    RestorePanel,   ///< Request to restore previous panel
+    ToggleTheme     ///< Request to toggle theme
+};
+
+/// @struct TriggerActionRequest
+/// @brief Action request data structure for trigger-to-main communication
+///
+/// @details Contains all information needed for main loop to execute
+/// the requested action via appropriate manager calls
+struct TriggerActionRequest
+{
+    TriggerActionType type = TriggerActionType::None;
+    const char* panelName = nullptr;  ///< Panel name for LoadPanel actions
+    const char* triggerId = nullptr;  ///< Trigger ID for callbacks
+    bool isTriggerDriven = false;     ///< Whether this is a trigger-driven panel change
+};
+
+/// @struct ExecutionPlan
+/// @brief Structured execution plan for optimal trigger action processing
+///
+/// @details Organizes trigger actions by type for smart execution ordering:
+/// 1. Theme actions applied first (affect subsequent panel styling)
+/// 2. Non-panel actions applied second (other system changes)
+/// 3. Final panel action applied last (single panel load only)
+struct ExecutionPlan
+{
+    std::vector<TriggerActionRequest> themeActions;     ///< Theme changes to apply first
+    std::vector<TriggerActionRequest> nonPanelActions;  ///< Non-panel actions to apply second
+    TriggerActionRequest finalPanelAction;              ///< Single final panel to load last
+    
+    ExecutionPlan() : finalPanelAction{TriggerActionType::None, nullptr, nullptr, false} {}
+};
+
 /// @struct PanelNames
 /// @brief Static constants for panel type identifiers
 ///
@@ -197,6 +239,13 @@ enum class TriggerPriority {
     NORMAL = 2     ///< Non-critical triggers (theme changes, settings)
 };
 
+/// @brief Trigger execution state enumeration
+enum class TriggerExecutionState {
+    INIT = 0,     ///< Initial state - no action required during system startup
+    ACTIVE = 1,   ///< Active state - execute action function
+    INACTIVE = 2  ///< Inactive state - execute restore function
+};
+
 
 /**
  * @brief Structure for shared trigger state
@@ -236,7 +285,7 @@ constexpr const char *TRIGGER_MONITOR_TASK = "TriggerMonitorTask";
 constexpr const char *TRIGGER_KEY_PRESENT = "key_present";
 constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
-constexpr const char *TRIGGER_THEME_SWITCH = "theme_switch";
+constexpr const char *TRIGGER_LIGHTS_STATE = "lights_state";
 
 /// @brief ISR Event types for safe interrupt handling
 enum class ISREventType {

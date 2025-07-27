@@ -98,8 +98,16 @@ void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location
 {
     log_d("...");
 
+    if (!screen) {
+        return;
+    }
+
     // Create the scale
     scale_ = lv_scale_create(screen);
+    if (!scale_) {
+        return;
+    }
+    
     lv_obj_set_size(scale_, 240, 240);
 
     // Apply location settings
@@ -390,6 +398,10 @@ void OemOilComponent::CreateNeedle()
 /// @brief Sets up the scale properties for the oil component.
 void OemOilComponent::CreateScale(int32_t rotation)
 {
+    if (!scale_) {
+        return;
+    }
+    
     // Store rotation for label positioning
     scaleRotation_ = rotation;
 
@@ -411,6 +423,10 @@ void OemOilComponent::CreateScale(int32_t rotation)
 
     // Create danger zone section
     lv_scale_section_t *section = lv_scale_add_section(scale_);
+    if (!section) {
+        return;
+    }
+    
     lv_scale_section_set_style(section, MAIN_DEFAULT, &styleManager_->gaugeMainStyle);
     lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleManager_->gaugeDangerSectionStyle);
     lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleManager_->gaugeDangerSectionStyle);

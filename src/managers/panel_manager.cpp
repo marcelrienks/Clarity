@@ -1,4 +1,7 @@
 #include "managers/panel_manager.h"
+#include "triggers/key_trigger.h"
+#include "triggers/lock_trigger.h"
+#include "triggers/lights_trigger.h"
 
 // Static Methods
 
@@ -19,12 +22,19 @@ void PanelManager::init()
 {
     log_d("...");
     Ticker::handle_lv_tasks();
+}
 
-    PanelManager::RegisterPanels();
+void PanelManager::RegisterAllPanels()
+{
+    log_d("Registering all panels...");
 
-    // Initialize dual-core trigger system
-    TriggerManager &triggerManager = TriggerManager::GetInstance();
-    triggerManager.init();
+    // Register all available panel types with the factory
+    register_panel<SplashPanel>(PanelNames::SPLASH);
+    register_panel<OemOilPanel>(PanelNames::OIL);
+    register_panel<KeyPanel>(PanelNames::KEY);
+    register_panel<LockPanel>(PanelNames::LOCK);
+    
+    log_d("All panels registered successfully");
 }
 
 /// @brief Creates and then loads a panel based on the given name
@@ -77,7 +87,6 @@ void PanelManager::UpdatePanel()
 {
     log_d("...");
 
-    ProcessTriggerStates();
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
                    { this->PanelManager::PanelCompletionCallback(); });
@@ -113,17 +122,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     return iterator->second(); // Return the function stored in the map
 }
 
-/// @brief Register all available panel types with the factory
-void PanelManager::RegisterPanels()
-{
-    log_d("...");
 
-    // Register all available panel types with the factory
-    register_panel<SplashPanel>(PanelNames::SPLASH);
-    register_panel<OemOilPanel>(PanelNames::OIL);
-    register_panel<KeyPanel>(PanelNames::KEY);
-    register_panel<LockPanel>(PanelNames::LOCK);
-}
 
 // Callback Methods
 
@@ -135,8 +134,6 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     panel_.reset();
     Ticker::handle_lv_tasks();
 
-    ProcessTriggerStates();
-
     CreateAndLoadPanel(panelName, [this]()
                        { this->PanelManager::PanelCompletionCallback(); });
 }
@@ -144,12 +141,18 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
 /// @brief callback function to be executed on panel show completion
 void PanelManager::PanelCompletionCallback()
 {
-    log_d("Panel operation complete - evaluating all triggers");
+    log_d("Panel operation complete");
 
     SetUiState(UIState::IDLE);
-    // Always re-evaluate all triggers after panel operations complete
-    // This ensures continuous evaluation of concurrent triggers
-    ProcessTriggerStates();
+    
+    // System initialization complete - triggers will remain in INIT state
+    // until actual GPIO pin changes occur
+    static bool systemInitialized = false;
+    if (!systemInitialized)
+    {
+        systemInitialized = true;
+        log_d("System initialization complete - triggers remain in INIT state until GPIO changes");
+    }
 }
 
 /// @brief callback function to be executed when trigger-driven panel loading is complete
@@ -159,31 +162,8 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
     
     SetUiState(UIState::IDLE);
     // No need to clear triggers - GPIO state manages trigger active/inactive status
-    
-    // Re-evaluate all triggers to handle any concurrent triggers
-    log_d("Re-evaluating all triggers after panel switch");
-    ProcessTriggerStates();
 }
 
-/// @brief Process trigger states from Core 1 based on UI state
-void PanelManager::ProcessTriggerStates()
-{
-    switch (uiState_)
-    {
-    case UIState::IDLE: // No throttling - process all triggers
-        ProcessTriggers();
-        break;
-
-    case UIState::UPDATING: // State-based throttling - only high/medium priority triggers
-        ProcessCriticalAndImportantTriggers();
-        break;
-
-    case UIState::LOADING:
-    case UIState::LVGL_BUSY: // No action - don't process any triggers
-        // Triggers remain in shared state for later processing
-        break;
-    }
-}
 
 /// @brief Set current UI state for Core 1 synchronization
 void PanelManager::SetUiState(UIState state)
@@ -204,113 +184,29 @@ void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const 
     }
     else if (triggerState.action == ACTION_CHANGE_THEME)
     {
-        StyleManager::GetInstance().set_theme(triggerState.target.c_str());
-        log_i("Theme changed to %s", triggerState.target.c_str());
+        // Only change theme if it's actually different to prevent infinite loops
+        const char* currentTheme = StyleManager::GetInstance().THEME;
+        const char* targetTheme = triggerState.target.c_str();
         
-        // Update current panel to refresh components with new theme colors
-        if (panel_)
+        if (strcmp(currentTheme, targetTheme) != 0)
         {
-            log_d("Refreshing panel components with new theme");
-            panel_->update([this, triggerId]()
-                          { TriggerManager::GetInstance().ClearTriggerState(triggerId); });//TODO: why is panel manager calling clear triggers, when all trigger related activities like setting or clearing should be done through GPIO change triggers
-        }
-        else
-        {
-            // No current panel, clear trigger immediately
-            TriggerManager::GetInstance().ClearTriggerState(triggerId);
-        }
-    }
-}
-
-/// @brief Simple trigger evaluation - get highest priority active trigger and act on it
-void PanelManager::ProcessTriggers()
-{
-    log_d("...");
-
-    // Only process triggers when not already loading/updating a panel
-    if (uiState_ != UIState::IDLE)
-    {
-        return;
-    }
-
-    // Get the highest priority active trigger
-    auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
-    const char* triggerId = triggerPair.first;
-    TriggerState* trigger = triggerPair.second;
-    
-    if (trigger && triggerId)
-    {
-        // We have an active trigger - check what to do
-        const char* targetPanel = trigger->target.c_str();
-        
-        if (trigger->action == ACTION_LOAD_PANEL)
-        {
-            // Only switch panels if we're not already showing the target panel
-            if (strcmp(currentPanel, targetPanel) != 0)
+            StyleManager::GetInstance().set_theme(targetTheme);
+            log_i("Theme changed from %s to %s", currentTheme, targetTheme);
+            
+            // Update current panel to refresh components with new theme colors
+            if (panel_)
             {
-                log_d("Active trigger %s requires panel switch to %s", triggerId, targetPanel);
-                ExecuteTriggerAction(*trigger, triggerId);
-            }
-            else
-            {
-                log_v("Already showing panel %s for trigger %s", targetPanel, triggerId);
+                log_d("Refreshing panel components with new theme");
+                panel_->update([this]()
+                              { this->PanelCompletionCallback(); });
             }
         }
         else
         {
-            // Handle other actions (theme change, etc.)
-            ExecuteTriggerAction(*trigger, triggerId);
+            log_d("Theme already set to %s, skipping change", targetTheme);
         }
-    }
-    else
-    {
-        // No active triggers - restore to previous panel if needed
-        if (strcmp(currentPanel, PanelNames::KEY) == 0 || strcmp(currentPanel, PanelNames::LOCK) == 0)
-        {
-            log_d("No active triggers - restoring from %s to %s", currentPanel, restorationPanel);
-            CreateAndLoadPanel(restorationPanel, [this](){ this->PanelCompletionCallback(); }, false);
-        }
-        else
-        {
-            log_v("No active triggers but showing non-trigger panel %s", currentPanel);
-        }
+        // GPIO system will handle trigger state clearing based on hardware state
     }
 }
 
-/// @brief Process only critical and important priority triggers during updates
-void PanelManager::ProcessCriticalAndImportantTriggers()
-{
-    log_d("...");
-
-    // Only process triggers when updating a panel
-    if (uiState_ != UIState::UPDATING)
-    {
-        return;
-    }
-
-    auto triggerPair = TriggerManager::GetInstance().GetHighestPriorityTrigger();
-    const char* triggerId = triggerPair.first;
-    TriggerState* trigger = triggerPair.second;
-    
-    // Only interrupt for critical/important triggers
-    if (trigger && triggerId &&
-        (trigger->priority == TriggerPriority::CRITICAL || trigger->priority == TriggerPriority::IMPORTANT))
-    {
-        const char* targetPanel = trigger->target.c_str();
-        
-        if (trigger->action == ACTION_LOAD_PANEL)
-        {
-            // Only interrupt updates for critical/important panel switches
-            if (strcmp(currentPanel, targetPanel) != 0)
-            {
-                log_d("Critical/Important trigger %s interrupting update to switch to %s", triggerId, targetPanel);
-                ExecuteTriggerAction(*trigger, triggerId);
-            }
-        }
-        else
-        {
-            ExecuteTriggerAction(*trigger, triggerId);
-        }
-    }
-}
 

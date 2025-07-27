@@ -93,6 +93,7 @@ private:
     bool isPressureAnimationRunning_ = false;
     bool isTemperatureAnimationRunning_ = false;
     bool forceComponentRefresh_ = false;  // Force component refresh regardless of value changes
+    String lastTheme_;  // Track last theme to force refresh when theme changes
 
     // Instance Data Members - Animation Objects
     lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)

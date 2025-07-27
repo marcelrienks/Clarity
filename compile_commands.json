@@ -1,0 +1,158 @@
+[
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\gcc.exe -o .pio\\build\\test\\lib2d5\\Unity\\unity.o -c -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -DUNITY_INCLUDE_CONFIG_H -I.pio\\libdeps\\test\\Unity\\src .pio\\libdeps\\test\\Unity\\src\\unity.c",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": ".pio\\libdeps\\test\\Unity\\src\\unity.c",
+        "output": ".pio\\build\\test\\lib2d5\\Unity\\unity.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\components\\clarity_component.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\components\\clarity_component.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\components\\clarity_component.cpp",
+        "output": ".pio\\build\\test\\src\\components\\clarity_component.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\components\\key_component.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\components\\key_component.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\components\\key_component.cpp",
+        "output": ".pio\\build\\test\\src\\components\\key_component.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\components\\lock_component.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\components\\lock_component.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\components\\lock_component.cpp",
+        "output": ".pio\\build\\test\\src\\components\\lock_component.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\components\\oem\\oem_oil_component.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\components\\oem\\oem_oil_component.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\components\\oem\\oem_oil_component.cpp",
+        "output": ".pio\\build\\test\\src\\components\\oem\\oem_oil_component.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\components\\oem\\oem_oil_pressure_component.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\components\\oem\\oem_oil_pressure_component.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\components\\oem\\oem_oil_pressure_component.cpp",
+        "output": ".pio\\build\\test\\src\\components\\oem\\oem_oil_pressure_component.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\components\\oem\\oem_oil_temperature_component.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\components\\oem\\oem_oil_temperature_component.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\components\\oem\\oem_oil_temperature_component.cpp",
+        "output": ".pio\\build\\test\\src\\components\\oem\\oem_oil_temperature_component.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\device.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\device.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\device.cpp",
+        "output": ".pio\\build\\test\\src\\device.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\main.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\main.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\main.cpp",
+        "output": ".pio\\build\\test\\src\\main.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\managers\\panel_manager.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\managers\\panel_manager.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\managers\\panel_manager.cpp",
+        "output": ".pio\\build\\test\\src\\managers\\panel_manager.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\managers\\preference_manager.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\managers\\preference_manager.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\managers\\preference_manager.cpp",
+        "output": ".pio\\build\\test\\src\\managers\\preference_manager.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\managers\\style_manager.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\managers\\style_manager.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\managers\\style_manager.cpp",
+        "output": ".pio\\build\\test\\src\\managers\\style_manager.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\managers\\trigger_manager.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\managers\\trigger_manager.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\managers\\trigger_manager.cpp",
+        "output": ".pio\\build\\test\\src\\managers\\trigger_manager.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\panels\\key_panel.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\panels\\key_panel.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\panels\\key_panel.cpp",
+        "output": ".pio\\build\\test\\src\\panels\\key_panel.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\panels\\lock_panel.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\panels\\lock_panel.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\panels\\lock_panel.cpp",
+        "output": ".pio\\build\\test\\src\\panels\\lock_panel.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\panels\\oem_oil_panel.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\panels\\oem_oil_panel.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\panels\\oem_oil_panel.cpp",
+        "output": ".pio\\build\\test\\src\\panels\\oem_oil_panel.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\panels\\splash_panel.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\panels\\splash_panel.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\panels\\splash_panel.cpp",
+        "output": ".pio\\build\\test\\src\\panels\\splash_panel.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\sensors\\key_sensor.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\sensors\\key_sensor.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\sensors\\key_sensor.cpp",
+        "output": ".pio\\build\\test\\src\\sensors\\key_sensor.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\sensors\\lock_sensor.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\sensors\\lock_sensor.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\sensors\\lock_sensor.cpp",
+        "output": ".pio\\build\\test\\src\\sensors\\lock_sensor.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\sensors\\oil_pressure_sensor.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\sensors\\oil_pressure_sensor.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\sensors\\oil_pressure_sensor.cpp",
+        "output": ".pio\\build\\test\\src\\sensors\\oil_pressure_sensor.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\sensors\\oil_temperature_sensor.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\sensors\\oil_temperature_sensor.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\sensors\\oil_temperature_sensor.cpp",
+        "output": ".pio\\build\\test\\src\\sensors\\oil_temperature_sensor.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\triggers\\key_trigger.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\triggers\\key_trigger.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\triggers\\key_trigger.cpp",
+        "output": ".pio\\build\\test\\src\\triggers\\key_trigger.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\triggers\\lights_trigger.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\triggers\\lights_trigger.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\triggers\\lights_trigger.cpp",
+        "output": ".pio\\build\\test\\src\\triggers\\lights_trigger.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\triggers\\lock_trigger.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\triggers\\lock_trigger.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\triggers\\lock_trigger.cpp",
+        "output": ".pio\\build\\test\\src\\triggers\\lock_trigger.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\utilities\\lv_tools.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\utilities\\lv_tools.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\utilities\\lv_tools.cpp",
+        "output": ".pio\\build\\test\\src\\utilities\\lv_tools.o"
+    },
+    {
+        "command": "C:\\msys64\\ucrt64\\bin\\g++.exe -o .pio\\build\\test\\src\\utilities\\ticker.o -c -std=c++17 -DPLATFORMIO=60118 -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE -Iinclude -Isrc -I.pio\\libdeps\\test\\Unity\\src src\\utilities\\ticker.cpp",
+        "directory": "C:\\users\\marcelr\\dev\\github\\clarity",
+        "file": "src\\utilities\\ticker.cpp",
+        "output": ".pio\\build\\test\\src\\utilities\\ticker.o"
+    }
+]

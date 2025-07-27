@@ -67,7 +67,14 @@ void SplashPanel::animation_complete_timer_callback(lv_timer_t *animationTimer)
     // Get the splash panel instance
     auto *thisInstance = static_cast<SplashPanel *>(lv_timer_get_user_data(animationTimer));
 
-    thisInstance->callbackFunction_();
+    if (thisInstance->callbackFunction_)
+    {
+        thisInstance->callbackFunction_();
+    }
+    else
+    {
+        log_d("No callback function provided for splash panel completion");
+    }
 
     // Delete the animation_timer
     lv_timer_del(animationTimer);

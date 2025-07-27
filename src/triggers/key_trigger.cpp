@@ -2,88 +2,69 @@
 #include "utilities/types.h"
 #include <esp32-hal-log.h>
 
-// Constructors and Destructors
+// KeyTrigger - handles key present events
+KeyTrigger::KeyTrigger() : AlertTrigger(
+    TRIGGER_KEY_PRESENT,
+    TriggerPriority::CRITICAL
+) {}
 
-/// @brief Constructor with optional restoration mode
-/// @param enable_restoration Whether to restore previous panel when key becomes inactive
-KeyTrigger::KeyTrigger(bool enableRestoration)
-    : enableRestoration_(enableRestoration),
-      lastKeyState_(KeyState::Inactive)
-{
-}
-
-// Core Functionality Methods
-
-
-/// @brief Evaluate the trigger condition based on key sensor reading
-/// @return true if key state has changed and trigger should activate
-bool KeyTrigger::evaluate()
-{
-    log_d("...");
-
-    // Get current key state from sensor
-    Reading sensorReading = keySensor_.GetReading();
-    KeyState currentKeyState = static_cast<KeyState>(std::get<int32_t>(sensorReading));
-
-    // Simple logic: trigger if either pin 25 OR pin 26 is HIGH (but not both)
-    bool shouldTrigger = false;
-
-    if (currentKeyState == KeyState::Present || currentKeyState == KeyState::NotPresent)
-    {
-        // Pin 25 HIGH (Present) OR Pin 26 HIGH (NotPresent) - always trigger
-        shouldTrigger = true;
-        log_d("Key state: %s, triggering",
-              currentKeyState == KeyState::Present ? "Present" : "NotPresent");
-    }
-    else
-    {
-        // Both pins LOW (Inactive) - no trigger
-        shouldTrigger = false;
-        log_d("Key state: Inactive, no trigger");
-    }
-
-    // Update last state
-    lastKeyState_ = currentKeyState;
-
-    log_d("currentKeyState: %d, shouldTrigger: %d", static_cast<int>(currentKeyState), shouldTrigger);
-
-    return shouldTrigger;
-}
-
-/// @brief Get the trigger identifier
-/// @return Unique trigger identifier string
-const char *KeyTrigger::GetId() const
-{
-    return TRIGGER_ID;
-}
-
-/// @brief Get the target panel name to switch to when triggered
-/// @return Panel name based on current key state
-const char* KeyTrigger::GetTargetPanel() const
-{
-    // Always return KeyPanel for active states, restoration handled by InterruptManager
-    return PanelNames::KEY;
-}
-
-/// @brief Initialize the trigger and key sensor
 void KeyTrigger::init()
 {
-    log_d("...");
-
-    // Initialize the key sensor
-    keySensor_.init();
-
-    // Initialize last state to Inactive to ensure trigger fires on first active state
-    lastKeyState_ = KeyState::Inactive;
-    Reading currentReading = keySensor_.GetReading();
-    KeyState currentState = static_cast<KeyState>(std::get<int32_t>(currentReading));
-    log_d("Initial key state: %d (forcing last state to Inactive to enable triggering)", static_cast<int>(currentState));
+    log_d("KeyTrigger initialized with CRITICAL priority");
 }
 
-/// @brief Whether to restore the previous panel when key becomes inactive
-/// @return true if previous panel should be restored when key becomes inactive
-bool KeyTrigger::ShouldRestore() const
+TriggerActionRequest KeyTrigger::GetActionRequest()
 {
-    return enableRestoration_;
+    log_d("Key detected - requesting key panel load (present=true)");
+    return TriggerActionRequest{
+        .type = TriggerActionType::LoadPanel,
+        .panelName = PanelNames::KEY,
+        .triggerId = TRIGGER_KEY_PRESENT,
+        .isTriggerDriven = true
+    };
+}
+
+TriggerActionRequest KeyTrigger::GetRestoreRequest()
+{
+    log_d("Key removed - requesting panel restoration");
+    return TriggerActionRequest{
+        .type = TriggerActionType::RestorePanel,
+        .panelName = nullptr,  // Main will determine restoration panel
+        .triggerId = TRIGGER_KEY_PRESENT,
+        .isTriggerDriven = false
+    };
+}
+
+// KeyNotPresentTrigger - handles key not present events  
+KeyNotPresentTrigger::KeyNotPresentTrigger() : AlertTrigger(
+    TRIGGER_KEY_NOT_PRESENT,
+    TriggerPriority::CRITICAL
+) {}
+
+void KeyNotPresentTrigger::init()
+{
+    log_d("KeyNotPresentTrigger initialized with CRITICAL priority");
+}
+
+TriggerActionRequest KeyNotPresentTrigger::GetActionRequest()
+{
+    log_d("Key not detected - requesting key panel load (present=false)");
+    return TriggerActionRequest{
+        .type = TriggerActionType::LoadPanel,
+        .panelName = PanelNames::KEY,
+        .triggerId = TRIGGER_KEY_NOT_PRESENT,
+        .isTriggerDriven = true
+    };
+}
+
+TriggerActionRequest KeyNotPresentTrigger::GetRestoreRequest()
+{
+    log_d("Key not present trigger restore - requesting panel restoration");
+    return TriggerActionRequest{
+        .type = TriggerActionType::RestorePanel,
+        .panelName = nullptr,  // Main will determine restoration panel
+        .triggerId = TRIGGER_KEY_NOT_PRESENT,
+        .isTriggerDriven = false
+    };
 }
 
