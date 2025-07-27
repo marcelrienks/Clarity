@@ -23,7 +23,7 @@ KeyPanel::~KeyPanel()
 /// @brief Initialize the key panel and its components
 void KeyPanel::init()
 {
-    log_d("...");
+    log_d("Initializing key panel and reading current GPIO key state");
 
     screen_ = LvTools::create_blank_screen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -53,7 +53,7 @@ void KeyPanel::init()
 /// @brief Load the key panel UI components
 void KeyPanel::load(std::function<void()> callbackFunction)
 {
-    log_d("...");
+    log_d("Loading key panel with current key state display");
     callbackFunction_ = callbackFunction;
 
     keyComponent_->render(screen_, centerLocation_);
@@ -68,7 +68,6 @@ void KeyPanel::load(std::function<void()> callbackFunction)
 /// @brief Update the key panel with current sensor data
 void KeyPanel::update(std::function<void()> callbackFunction)
 {
-    log_d("...");
 
     // Re-read GPIO pins to determine current key state
     bool pin25High = digitalRead(gpio_pins::KEY_PRESENT);
@@ -99,10 +98,6 @@ void KeyPanel::update(std::function<void()> callbackFunction)
         currentKeyState_ = newKeyState;
         keyComponent_->refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     }
-    else
-    {
-        log_v("Key state unchanged: %d", (int)currentKeyState_);
-    }
     
     callbackFunction();
 }
@@ -112,15 +107,8 @@ void KeyPanel::update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("...");
+    log_d("Key panel load completed - screen displayed");
 
     auto thisInstance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
-    if (thisInstance->callbackFunction_)
-    {
-        thisInstance->callbackFunction_();
-    }
-    else
-    {
-        log_d("No callback function provided for key panel completion");
-    }
+    thisInstance->callbackFunction_();
 }

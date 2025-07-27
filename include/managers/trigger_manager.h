@@ -2,29 +2,23 @@
 
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
-#include "interfaces/i_trigger.h"
-#include <freertos/FreeRTOS.h>
-#include <freertos/semphr.h>
-#include <freertos/task.h>
 #include <esp32-hal-log.h>
-#include <map>
-#include <memory>
 #include <vector>
-#include <string>
 
 /**
  * @class TriggerManager
- * @brief Simplified dual-core trigger manager with priority-based alert evaluation
+ * @brief Simplified direct GPIO polling trigger manager with mapping-based architecture
  * 
  * @architecture:
- * - Core 1: Monitors GPIO pins, updates trigger active/inactive status
- * - Core 0: Evaluates triggers by priority, executes actions/restore functions
+ * - Core 0: Direct GPIO polling and UI management
+ * - Static trigger mappings replace dynamic trigger objects
  * 
  * @key_simplifications:
- * 1. No complex state tracking - GPIO pin state directly controls trigger active status
- * 2. Priority evaluation from lowest to highest (highest priority action wins)
- * 3. Generic action/restore pattern via function objects
- * 4. Single mutex for trigger access, eliminating complex state management
+ * 1. Direct GPIO polling - no interrupts or queues
+ * 2. Pin change detection via state comparison
+ * 3. Static TriggerMapping array instead of objects
+ * 4. Priority evaluation from lowest to highest (highest priority action wins)
+ * 5. No cross-core communication needed
  */
 class TriggerManager
 {
@@ -35,56 +29,35 @@ public:
 
     // Core Functionality
     void init();
-    void RegisterAllTriggers();
-    void RegisterTrigger(std::unique_ptr<AlertTrigger> trigger);
     void ProcessTriggerEvents();
-    void ExecuteTriggerAction(AlertTrigger* trigger, TriggerExecutionState state);
-    void InitializeTriggersFromGpio();
+    void ExecuteTriggerAction(TriggerMapping* mapping, TriggerExecutionState state);
     
     // Get startup panel override (null if no override needed)
     const char* GetStartupPanelOverride() const { return startupPanelOverride_; }
 
-    // GPIO State Change Handlers (called from Core 1 task)
-    void HandleGpioStateChange(const char* triggerId, bool pinState);
-
-    // Core 1 Task Methods
-    static void TriggerMonitoringTask(void* pvParameters);
-    
-    // CRITICAL: Get task handle for temporary suspension during LVGL operations
-    TaskHandle_t GetTaskHandle() const { return triggerTaskHandle_; }
-    
-    // Static interrupt handlers
-    static void IRAM_ATTR keyPresentIsrHandler(void* arg);
-    static void IRAM_ATTR keyNotPresentIsrHandler(void* arg);
-    static void IRAM_ATTR lockStateIsrHandler(void* arg);
-    static void IRAM_ATTR themeSwitchIsrHandler(void* arg);
 
 private:
     TriggerManager() = default;
     ~TriggerManager() = default;
 
-    void setup_gpio_interrupts();
-    AlertTrigger* FindTriggerById(const char* triggerId);
-    void UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExecutionState newState);
+    void setup_gpio_pins();
+    void InitializeTriggerMappings();
+    void InitializeTriggersFromGpio();
+    GpioState ReadAllGpioPins();
+    void CheckGpioChanges();
+    void CheckTriggerChange(const char* triggerId, bool currentPinState);
+    void InitializeTrigger(const char* triggerId, bool currentPinState);
+    TriggerMapping* FindTriggerMapping(const char* triggerId);
+    void UpdateActiveTriggersSimple(TriggerMapping* mapping, TriggerExecutionState newState);
 
-    // Trigger registry (Core 0 exclusive ownership - no mutex needed)
-    std::vector<std::unique_ptr<AlertTrigger>> triggers_;
+    // Static trigger mappings array (Core 0 exclusive ownership - no mutex needed)
+    static TriggerMapping triggerMappings_[];
     
-    // Single persistent list of currently active triggers (sorted by priority)
-    std::vector<std::pair<TriggerPriority, AlertTrigger*>> activeTriggers_;
+    // Simplified active trigger tracking
+    TriggerMapping* activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
+    TriggerMapping* activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
     
     // Startup panel override (set by InitializeTriggersFromGpio if active triggers require specific panel)
     const char* startupPanelOverride_ = nullptr;
     
-    // ISR communication
-    QueueHandle_t isrEventQueue = nullptr;
-    TaskHandle_t triggerTaskHandle_ = nullptr;
 };
-
-// GPIO Interrupt Service Routine declarations
-extern "C" {
-    void IRAM_ATTR gpio_key_present_isr(void* arg);
-    void IRAM_ATTR gpio_key_not_present_isr(void* arg);
-    void IRAM_ATTR gpio_lock_state_isr(void* arg);
-    void IRAM_ATTR gpio_theme_switch_isr(void* arg);
-}

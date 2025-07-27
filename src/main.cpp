@@ -2,7 +2,7 @@
 
 void setup()
 {
-  log_d("...");
+  log_d("Starting Clarity application setup - initializing managers and display");
 
   PreferenceManager &preference_manager = PreferenceManager::GetInstance();
   preference_manager.init();
@@ -15,18 +15,16 @@ void setup()
 
   TriggerManager &trigger_manager = TriggerManager::GetInstance();
   trigger_manager.init();
-  trigger_manager.RegisterAllTriggers();
-  trigger_manager.InitializeTriggersFromGpio();
 
   PanelManager &panel_manager = PanelManager::GetInstance();
   panel_manager.init();
-  panel_manager.RegisterAllPanels();
 
   // Check if startup triggers require a specific panel, otherwise use config default
   const char* startupPanel = trigger_manager.GetStartupPanelOverride();
   if (startupPanel) {
     log_i("Using startup panel override: %s", startupPanel);
     panel_manager.CreateAndLoadPanelWithSplash(startupPanel);
+    
   } else {
     log_i("Using config default panel: %s", preference_manager.config.panelName.c_str());
     panel_manager.CreateAndLoadPanelWithSplash(preference_manager.config.panelName.c_str());
@@ -37,7 +35,6 @@ void setup()
 
 void loop()
 {
-  log_d("...");
 
   // Core 0 responsibilities: process trigger events directly (simplified)
   TriggerManager::GetInstance().ProcessTriggerEvents();

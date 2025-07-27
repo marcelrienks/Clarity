@@ -28,8 +28,6 @@ Reading KeySensor::GetReading()
     bool pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
     
     KeyState state = DetermineKeyState(pin25High, pin26High);
-    LogKeyState(state, pin25High, pin26High);
-    
     return static_cast<int32_t>(state);
 }
 
@@ -51,29 +49,4 @@ KeyState KeySensor::DetermineKeyState(bool pin25High, bool pin26High)
     }
     
     return KeyState::Inactive;  // Both pins LOW
-}
-
-void KeySensor::LogKeyState(KeyState state, bool pin25High, bool pin26High)
-{
-    switch (state)
-    {
-        case KeyState::Inactive:
-            if (pin25High && pin26High)
-            {
-                log_w("Key state: Invalid (both pins HIGH), treating as Inactive");
-            }
-            else
-            {
-                log_d("Key state: Inactive (both pins LOW)");
-            }
-            break;
-            
-        case KeyState::Present:
-            log_d("Key state: Present (pin %d HIGH)", gpio_pins::KEY_PRESENT);
-            break;
-            
-        case KeyState::NotPresent:
-            log_d("Key state: NotPresent (pin %d HIGH)", gpio_pins::KEY_NOT_PRESENT);
-            break;
-    }
 }

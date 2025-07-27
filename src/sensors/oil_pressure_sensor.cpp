@@ -16,7 +16,7 @@ OilPressureSensor::OilPressureSensor()
 void OilPressureSensor::init()
 {
     // Configure GPIO pin for analog input
-    log_d("...");
+    log_d("Initializing oil pressure sensor ADC configuration");
     
     // Configure ADC resolution and attenuation for direct 3.3V operation
     analogReadResolution(12); // 12-bit resolution (0-4095)
@@ -25,8 +25,6 @@ void OilPressureSensor::init()
     // Take initial reading
     int32_t adcValue = analogRead(gpio_pins::OIL_PRESSURE);
     OilPressureSensor::GetReading(); // Read initial pressure value
-
-    log_i("Initial pressure reading: %d Bar (ADC: %d)", currentReading_, adcValue);
 }
 
 /// @brief Get the current oil pressure reading with time-based sampling
@@ -55,8 +53,6 @@ Reading OilPressureSensor::GetReading()
             currentReading_ = newValue;
             log_i("Pressure reading changed to %d Bar", currentReading_);
 
-        } else {
-            log_d("Pressure reading unchanged: %d Bar", newValue);
         }
     }
     

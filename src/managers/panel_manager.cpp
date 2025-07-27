@@ -1,7 +1,4 @@
 #include "managers/panel_manager.h"
-#include "triggers/key_trigger.h"
-#include "triggers/lock_trigger.h"
-#include "triggers/lights_trigger.h"
 
 // Static Methods
 
@@ -20,7 +17,11 @@ PanelManager &PanelManager::GetInstance()
 /// Also initializes dual-core trigger system
 void PanelManager::init()
 {
-    log_d("...");
+    log_d("Initializing panel manager...");
+    
+    // Register all available panel types with the factory
+    RegisterAllPanels();
+    
     Ticker::handle_lv_tasks();
 }
 
@@ -33,8 +34,6 @@ void PanelManager::RegisterAllPanels()
     register_panel<OemOilPanel>(PanelNames::OIL);
     register_panel<KeyPanel>(PanelNames::KEY);
     register_panel<LockPanel>(PanelNames::LOCK);
-    
-    log_d("All panels registered successfully");
 }
 
 /// @brief Creates and then loads a panel based on the given name
@@ -43,7 +42,7 @@ void PanelManager::RegisterAllPanels()
 /// @param isTriggerDriven whether this panel change is triggered by an interrupt trigger
 void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback, bool isTriggerDriven)
 {
-    log_d("...");
+    log_d("Creating and loading panel: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
 
     // Track this as the last non-trigger panel only for user-driven changes
     if (!isTriggerDriven)
@@ -76,7 +75,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 /// @param panelName the name of the panel to be loaded
 void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
-    log_d("...");
+    log_d("Loading panel with splash screen transition: %s", panelName);
 
     CreateAndLoadPanel(PanelNames::SPLASH, [this, panelName]()
                        { this->PanelManager::SplashCompletionCallback(panelName); });
@@ -85,8 +84,6 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 /// @brief Update the reading on the currently loaded panel and process trigger messages
 void PanelManager::UpdatePanel()
 {
-    log_d("...");
-
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
                    { this->PanelManager::PanelCompletionCallback(); });
@@ -116,7 +113,7 @@ PanelManager::~PanelManager()
 /// @return Interface type representing the panel
 std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
-    log_d("...");
+    log_d("Creating panel instance for type: %s", panelName);
 
     auto iterator = registeredPanels_.find(panelName);
     return iterator->second(); // Return the function stored in the map
@@ -129,7 +126,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 /// @brief callback function to be executed on splash panel show completion
 void PanelManager::SplashCompletionCallback(const char *panelName)
 {
-    log_d("...");
+    log_d("Splash screen animation completed, transitioning to panel: %s", panelName);
 
     panel_.reset();
     Ticker::handle_lv_tasks();
@@ -141,8 +138,6 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
 /// @brief callback function to be executed on panel show completion
 void PanelManager::PanelCompletionCallback()
 {
-    log_d("Panel operation complete");
-
     SetUiState(UIState::IDLE);
     
     // System initialization complete - triggers will remain in INIT state
@@ -151,15 +146,12 @@ void PanelManager::PanelCompletionCallback()
     if (!systemInitialized)
     {
         systemInitialized = true;
-        log_d("System initialization complete - triggers remain in INIT state until GPIO changes");
     }
 }
 
 /// @brief callback function to be executed when trigger-driven panel loading is complete
 void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
-    log_d("Trigger panel switch complete for: %s", triggerId);
-    
     SetUiState(UIState::IDLE);
     // No need to clear triggers - GPIO state manages trigger active/inactive status
 }
@@ -169,44 +161,7 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 void PanelManager::SetUiState(UIState state)
 {
     uiState_ = state;
-    log_d("UI State changed to: %d", (int)state);
 }
 
-/// @brief Execute a trigger action from shared state
-void PanelManager::ExecuteTriggerAction(const TriggerState &triggerState, const char *triggerId)
-{
-    log_d("Executing trigger action: %s for trigger: %s", triggerState.action.c_str(), triggerId);
-
-    if (triggerState.action == ACTION_LOAD_PANEL)
-    {
-        CreateAndLoadPanel(triggerState.target.c_str(), [this, triggerId]()
-                           { this->TriggerPanelSwitchCallback(triggerId); }, true);
-    }
-    else if (triggerState.action == ACTION_CHANGE_THEME)
-    {
-        // Only change theme if it's actually different to prevent infinite loops
-        const char* currentTheme = StyleManager::GetInstance().THEME;
-        const char* targetTheme = triggerState.target.c_str();
-        
-        if (strcmp(currentTheme, targetTheme) != 0)
-        {
-            StyleManager::GetInstance().set_theme(targetTheme);
-            log_i("Theme changed from %s to %s", currentTheme, targetTheme);
-            
-            // Update current panel to refresh components with new theme colors
-            if (panel_)
-            {
-                log_d("Refreshing panel components with new theme");
-                panel_->update([this]()
-                              { this->PanelCompletionCallback(); });
-            }
-        }
-        else
-        {
-            log_d("Theme already set to %s, skipping change", targetTheme);
-        }
-        // GPIO system will handle trigger state clearing based on hardware state
-    }
-}
 
 

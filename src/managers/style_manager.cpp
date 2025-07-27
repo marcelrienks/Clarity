@@ -23,7 +23,7 @@ StyleManager &StyleManager::GetInstance()
 /// @param screen the screen to which the theme will be applied
 void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
 {
-    log_d("...");
+    log_d("Applying current theme styles to screen object");
 
     // Only apply the background style to screens
     // Other styles should be applied to specific components that need them
@@ -38,7 +38,7 @@ void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
 /// @param theme the theme to be applied
 void StyleManager::init(const char* theme)
 {
-    log_d("...");
+    log_d("Initializing style manager with theme: %s", theme);
 
     this->THEME = theme;
 
@@ -63,7 +63,7 @@ void StyleManager::init(const char* theme)
 /// @brief Reset all styles to their default state
 void StyleManager::ResetStyles()
 {
-    log_d("...");
+    log_d("Resetting all LVGL styles to default state");
 
     // Reset all style objects
     lv_style_reset(&backgroundStyle);
@@ -83,7 +83,7 @@ void StyleManager::ResetStyles()
 /// @param theme the theme to be applied
 void StyleManager::set_theme(const char* theme)
 {
-    log_d("...");
+    log_d("Switching application theme to: %s", theme);
 
     // Update current theme
     this->THEME = theme;

@@ -9,8 +9,6 @@
 #include "utilities/ticker.h"
 #include "managers/trigger_manager.h"
 #include "managers/style_manager.h"
-#include "triggers/key_trigger.h"
-#include "triggers/lock_trigger.h"
 
 #include <string>
 #include <functional>
@@ -77,8 +75,6 @@ public:
     /// @brief Initialize the panel manager
     void init();
     
-    /// @brief Register all available panels
-    void RegisterAllPanels();
     
     
     /// @brief Set current UI state for Core 1 synchronization
@@ -122,6 +118,9 @@ private:
     ~PanelManager();
 
     // Core Functionality Methods
+    /// @brief Register all available panels
+    void RegisterAllPanels();
+    
     /// @brief Create a panel instance by name using the registered factory
     /// @param panel_name Name of the panel type to create
     /// @return Shared pointer to the created panel instance
@@ -138,10 +137,6 @@ private:
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
     
-    /// @brief Execute a trigger action from shared state
-    /// @param trigger_state Trigger state to execute
-    /// @param trigger_id ID of the trigger for cleanup
-    void ExecuteTriggerAction(const TriggerState& triggerState, const char* triggerId);
     
     
     /// @brief Notify Core 1 of state changes
