@@ -25,10 +25,11 @@ TriggerActionRequest LockTrigger::GetActionRequest()
 
 TriggerActionRequest LockTrigger::GetRestoreRequest()
 {
-    log_i("*** LOCK TRIGGER RESTORE CALLED - Lock disengaged, requesting panel restoration ***");
+    log_i("Lock disengaged - no specific restoration action needed");
+    // Return default request - trigger manager will handle restoration to config default
     return TriggerActionRequest{
-        .type = TriggerActionType::RestorePanel,
-        .panelName = nullptr,  // Main will determine restoration panel
+        .type = TriggerActionType::LoadPanel,
+        .panelName = "OemOilPanel",  // Default panel for restoration
         .triggerId = TRIGGER_LOCK_STATE,
         .isTriggerDriven = false
     };

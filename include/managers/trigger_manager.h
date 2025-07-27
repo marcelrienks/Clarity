@@ -37,8 +37,8 @@ public:
     void init();
     void RegisterAllTriggers();
     void RegisterTrigger(std::unique_ptr<AlertTrigger> trigger);
-    std::map<std::string, TriggerExecutionState> ProcessPendingTriggerEvents();
-    ExecutionPlan PlanExecutionFromStates(const std::map<std::string, TriggerExecutionState>& consolidatedStates);
+    void ProcessTriggerEvents();
+    void ExecuteTriggerAction(AlertTrigger* trigger, TriggerExecutionState state);
     void InitializeTriggersFromGpio();
     
     // Get startup panel override (null if no override needed)
@@ -65,7 +65,6 @@ private:
 
     void setup_gpio_interrupts();
     AlertTrigger* FindTriggerById(const char* triggerId);
-    void ExecuteHighestPriorityAction();
     void UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExecutionState newState);
 
     // Trigger registry (Core 0 exclusive ownership - no mutex needed)

@@ -3,6 +3,7 @@
 #include "triggers/lock_trigger.h"
 #include "triggers/lights_trigger.h"
 #include "managers/panel_manager.h"
+#include "managers/preference_manager.h"
 #include "managers/style_manager.h"
 #include <algorithm>
 
@@ -59,20 +60,14 @@ void TriggerManager::RegisterTrigger(std::unique_ptr<AlertTrigger> trigger)
     triggers_.push_back(std::move(trigger));
 }
 
-std::map<std::string, TriggerExecutionState> TriggerManager::ProcessPendingTriggerEvents()
+void TriggerManager::ProcessTriggerEvents()
 {
-    std::map<std::string, TriggerExecutionState> consolidatedStates;
     ISREvent event;
-    UBaseType_t queueCount = uxQueueMessagesWaiting(isrEventQueue);
     
-    if (queueCount > 0) {
-        log_i("Core 0: Processing %d pending trigger events for state consolidation", queueCount);
-    }
-    
-    // Process ALL queued trigger events in FIFO order to build consolidated state
+    // Process ALL queued trigger events and execute actions immediately  
     while (xQueueReceive(isrEventQueue, &event, 0) == pdTRUE)
     {
-        log_i("Core 0: Processing trigger event: type=%d, state=%s", (int)event.eventType, event.pinState ? "HIGH" : "LOW");
+        log_i("Processing trigger event: type=%d, state=%s", (int)event.eventType, event.pinState ? "HIGH" : "LOW");
         
         // Map trigger events to trigger IDs
         const char* triggerId = nullptr;
@@ -104,135 +99,70 @@ std::map<std::string, TriggerExecutionState> TriggerManager::ProcessPendingTrigg
                 TriggerExecutionState oldState = trigger->GetState();
                 TriggerExecutionState newState = event.pinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
                 
-                log_i("Trigger %s: %s -> %s (pin: %s)", 
+                log_i("Trigger %s: %s -> %s", 
                       triggerId, 
-                      oldState == TriggerExecutionState::INIT ? "INIT" : (oldState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE"),
-                      newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE",
-                      event.pinState ? "HIGH" : "LOW");
+                      oldState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE",
+                      newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
                 
-                // Update trigger object state
                 trigger->SetState(newState);
-                
-                // Update persistent active triggers list immediately
                 UpdateActiveTriggersList(trigger, newState);
                 
-                // Update consolidated state map (later messages override earlier ones)
-                consolidatedStates[std::string(triggerId)] = newState;
-                
-                log_i("*** STATE CONSOLIDATION - %s set to %s ***", 
-                      triggerId, 
-                      newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
+                // Execute trigger action immediately
+                ExecuteTriggerAction(trigger, newState);
             }
         }
     }
-    
-    if (!consolidatedStates.empty()) {
-        log_i("State consolidation complete. Final states:");
-        for (const auto& [triggerId, state] : consolidatedStates) {
-            log_i("  %s: %s", triggerId.c_str(), state == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
-        }
-    }
-    
-    return consolidatedStates;
 }
 
-ExecutionPlan TriggerManager::PlanExecutionFromStates(const std::map<std::string, TriggerExecutionState>& consolidatedStates)
+void TriggerManager::ExecuteTriggerAction(AlertTrigger* trigger, TriggerExecutionState state)
 {
-    ExecutionPlan plan;
-    
-    log_i("Planning execution from consolidated states using persistent active triggers list...");
-    
-    // Process ONLY changed triggers for theme and non-panel actions
-    std::vector<std::pair<TriggerPriority, std::pair<AlertTrigger*, TriggerExecutionState>>> changedTriggers;
-    
-    for (const auto& [triggerId, state] : consolidatedStates) {
-        AlertTrigger* trigger = FindTriggerById(triggerId.c_str());
-        if (trigger) {
-            changedTriggers.push_back({trigger->GetPriority(), {trigger, state}});
-            log_i("Trigger state change found: %s (priority %d, state %s)", 
-                  triggerId.c_str(), (int)trigger->GetPriority(),
-                  state == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
-        }
-    }
-    
-    // Use pre-maintained activeTriggers_ list instead of rebuilding
-    log_i("Using persistent active triggers list with %d active triggers", (int)activeTriggers_.size());
-    for (const auto& [priority, trigger] : activeTriggers_) {
-        log_i("Active trigger: %s (priority %d)", trigger->GetId(), (int)priority);
-    }
-    
-    // Sort changed triggers by priority for action/theme processing
-    std::sort(changedTriggers.begin(), changedTriggers.end(),
-        [](const auto& a, const auto& b) { return a.first > b.first; });
-    
-    // activeTriggers_ is already sorted by priority during maintenance
-    
-    // Process state changes for theme and non-panel actions
-    for (const auto& [priority, triggerStatePair] : changedTriggers) {
-        auto [trigger, state] = triggerStatePair;
-        
-        // Get appropriate request based on state
-        auto request = (state == TriggerExecutionState::ACTIVE) 
-                      ? trigger->GetActionRequest() 
-                      : trigger->GetRestoreRequest();
-        
-        if (request.type == TriggerActionType::ToggleTheme) {
-            log_i("Adding theme action from trigger: %s", trigger->GetId());
-            plan.themeActions.push_back(request);
-        } else if (request.type == TriggerActionType::RestorePanel) {
-            // RestorePanel requests are stored to influence panel planning
-            log_i("RestorePanel request from trigger: %s (will be considered in panel planning)", trigger->GetId());
-            // Don't add to nonPanelActions - will be handled in panel planning below
-        } else if (request.type != TriggerActionType::LoadPanel) {
-            log_i("Adding non-panel action from trigger: %s", trigger->GetId());
-            plan.nonPanelActions.push_back(request);
-        }
-        // Note: LoadPanel requests from changed triggers are ignored here
-        // Panel planning uses ALL currently active triggers instead
-    }
-    
-    // Determine final panel from persistent activeTriggers_ list
-    AlertTrigger* highestPriorityPanelTrigger = nullptr;
-    TriggerPriority highestPanelPriority = TriggerPriority::NORMAL;
-    
-    for (const auto& [priority, trigger] : activeTriggers_) {
-        auto request = trigger->GetActionRequest(); // Active triggers use action request
+    if (state == TriggerExecutionState::ACTIVE) {
+        // Execute trigger action when activated
+        TriggerActionRequest request = trigger->GetActionRequest();
         
         if (request.type == TriggerActionType::LoadPanel) {
-            // Track highest priority panel trigger (lowest priority number = highest priority)
-            // For same priority triggers, later triggers override (FIFO behavior)
-            if (!highestPriorityPanelTrigger || priority <= highestPanelPriority) {
-                highestPriorityPanelTrigger = trigger;
-                highestPanelPriority = priority;
-                log_i("Highest priority active panel trigger: %s (priority %d)", trigger->GetId(), (int)priority);
+            log_i("Executing panel action: Load %s", request.panelName);
+            PanelManager::GetInstance().CreateAndLoadPanel(request.panelName, []() {
+                PanelManager::GetInstance().TriggerPanelSwitchCallback("");
+            }, request.isTriggerDriven);
+        }
+        else if (request.type == TriggerActionType::ToggleTheme) {
+            log_i("Executing theme action: %s", request.panelName);
+            StyleManager::GetInstance().set_theme(request.panelName);
+            // Refresh current panel with new theme
+            PanelManager::GetInstance().UpdatePanel();
+        }
+    } else {
+        // Handle trigger deactivation - execute restore request
+        TriggerActionRequest restoreRequest = trigger->GetRestoreRequest();
+        
+        if (restoreRequest.type == TriggerActionType::LoadPanel) {
+            // Only restore panel if no other panel-loading triggers are active
+            bool hasPanelTriggers = false;
+            for (const auto& [priority, activeTrigger] : activeTriggers_) {
+                TriggerActionRequest activeRequest = activeTrigger->GetActionRequest();
+                if (activeRequest.type == TriggerActionType::LoadPanel) {
+                    hasPanelTriggers = true;
+                    break;
+                }
+            }
+            
+            if (!hasPanelTriggers) {
+                log_i("No panel-loading triggers active - restoring panel: %s", restoreRequest.panelName);
+                PanelManager::GetInstance().CreateAndLoadPanel(restoreRequest.panelName, []() {
+                    PanelManager::GetInstance().TriggerPanelSwitchCallback("");
+                }, restoreRequest.isTriggerDriven);
+            } else {
+                log_i("Other panel-loading triggers still active - skipping panel restoration");
             }
         }
-    }
-    
-    // Set final panel action based on active triggers
-    if (highestPriorityPanelTrigger) {
-        plan.finalPanelAction = highestPriorityPanelTrigger->GetActionRequest();
-        log_i("Final panel action: Load %s from active trigger %s", 
-              plan.finalPanelAction.panelName, 
-              highestPriorityPanelTrigger->GetId());
-    } else if (!plan.themeActions.empty()) {
-        // Only theme actions present - no panel change needed
-        plan.finalPanelAction = {TriggerActionType::None, nullptr, "system", false};
-        log_i("Final panel action: None (only theme actions present)");
-    } else {
-        // No active panel triggers and no theme actions - restore to default panel
-        plan.finalPanelAction = {TriggerActionType::RestorePanel, nullptr, "system", true};
-        if (activeTriggers_.empty()) {
-            log_i("Final panel action: Restore panel (no active triggers)");
-        } else {
-            log_i("Final panel action: Restore panel (no active panel triggers, %d non-panel triggers remain)", (int)activeTriggers_.size());
+        else if (restoreRequest.type == TriggerActionType::ToggleTheme) {
+            log_i("Restoring theme: %s", restoreRequest.panelName);
+            StyleManager::GetInstance().set_theme(restoreRequest.panelName);
+            // Refresh current panel with restored theme
+            PanelManager::GetInstance().UpdatePanel();
         }
     }
-    
-    log_i("Execution plan complete: %d theme actions, %d non-panel actions, 1 final panel action",
-          (int)plan.themeActions.size(), (int)plan.nonPanelActions.size());
-    
-    return plan;
 }
 
 void TriggerManager::InitializeTriggersFromGpio()
@@ -280,30 +210,24 @@ void TriggerManager::InitializeTriggersFromGpio()
     log_d("All triggers initialized from GPIO states. %d triggers active at startup", 
           (int)activeTriggers_.size());
     
-    // Apply initial theme actions from active triggers
+    // Apply initial actions from active triggers (simplified direct execution)
     if (!activeTriggers_.empty()) {
-        log_d("Processing initial active triggers for startup theme application");
+        log_d("Processing initial active triggers for startup actions");
         
-        // Build initial states map for active triggers
-        std::map<std::string, TriggerExecutionState> initialStates;
+        // Process active triggers in priority order for startup
         for (const auto& [priority, trigger] : activeTriggers_) {
-            initialStates[trigger->GetId()] = TriggerExecutionState::ACTIVE;
-        }
-        
-        // Plan execution from initial states
-        ExecutionPlan plan = PlanExecutionFromStates(initialStates);
-        
-        // Apply theme actions immediately during startup
-        for (const auto& request : plan.themeActions) {
-            log_i("Applying startup theme action: %s", request.panelName);
-            // Note: StyleManager should be initialized before this call
-            StyleManager::GetInstance().set_theme(request.panelName);
-        }
-        
-        // Store panel action for startup loading (will be used instead of config default)
-        if (plan.finalPanelAction.type == TriggerActionType::LoadPanel) {
-            log_i("Startup panel action detected: Load %s", plan.finalPanelAction.panelName);
-            startupPanelOverride_ = plan.finalPanelAction.panelName;
+            TriggerActionRequest request = trigger->GetActionRequest();
+            
+            if (request.type == TriggerActionType::ToggleTheme) {
+                log_i("Applying startup theme action: %s", request.panelName);
+                // Note: StyleManager should be initialized before this call
+                StyleManager::GetInstance().set_theme(request.panelName);
+            }
+            else if (request.type == TriggerActionType::LoadPanel) {
+                log_i("Startup panel action detected: Load %s", request.panelName);
+                startupPanelOverride_ = request.panelName;
+                break; // Only use highest priority panel action
+            }
         }
     }
 }

@@ -39,4 +39,3 @@
 #include "utilities/types.h"
 
 // Function declarations
-void ExecutePanelAction(const TriggerActionRequest& request);
