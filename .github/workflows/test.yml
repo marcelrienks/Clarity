@@ -41,7 +41,7 @@ jobs:
         with:
           token: ${{ secrets.WOKWI_CLI_TOKEN }}
           path: /
-          scenario: test_scenarios.yaml
+          scenario: test/test_scenarios.yaml
           expect_text: 'SplashPanel'
           timeout: 120000
 
