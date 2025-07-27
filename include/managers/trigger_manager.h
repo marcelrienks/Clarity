@@ -29,10 +29,8 @@ public:
 
     // Core Functionality
     void init();
-    void InitializeTriggerMappings();
     void ProcessTriggerEvents();
     void ExecuteTriggerAction(TriggerMapping* mapping, TriggerExecutionState state);
-    void InitializeTriggersFromGpio();
     
     // Get startup panel override (null if no override needed)
     const char* GetStartupPanelOverride() const { return startupPanelOverride_; }
@@ -43,6 +41,8 @@ private:
     ~TriggerManager() = default;
 
     void setup_gpio_pins();
+    void InitializeTriggerMappings();
+    void InitializeTriggersFromGpio();
     GpioState ReadAllGpioPins();
     void CheckGpioChanges();
     void CheckTriggerChange(const char* triggerId, bool currentPinState);

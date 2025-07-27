@@ -25,6 +25,12 @@ void TriggerManager::init()
 
     // Configure GPIO pins as inputs
     setup_gpio_pins();
+    
+    // Initialize trigger mappings
+    InitializeTriggerMappings();
+    
+    // Read current GPIO states and initialize triggers
+    InitializeTriggersFromGpio();
 }
 
 void TriggerManager::InitializeTriggerMappings()

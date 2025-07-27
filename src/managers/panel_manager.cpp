@@ -17,7 +17,11 @@ PanelManager &PanelManager::GetInstance()
 /// Also initializes dual-core trigger system
 void PanelManager::init()
 {
-    log_d("...");
+    log_d("Initializing panel manager...");
+    
+    // Register all available panel types with the factory
+    RegisterAllPanels();
+    
     Ticker::handle_lv_tasks();
 }
 
