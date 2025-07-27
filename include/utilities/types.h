@@ -222,6 +222,14 @@ constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
 constexpr const char *TRIGGER_LIGHTS_STATE = "lights_state";
 
+/// @brief Consolidated GPIO state structure for single-read pattern
+struct GpioState {
+    bool keyPresent;
+    bool keyNotPresent;
+    bool lockState;
+    bool lightsState;
+};
+
 /// @brief Direct trigger mapping structure (replaces trigger objects)
 struct TriggerMapping {
     const char* triggerId;

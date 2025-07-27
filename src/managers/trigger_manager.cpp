@@ -48,19 +48,27 @@ void TriggerManager::ProcessTriggerEvents()
     CheckGpioChanges();
 }
 
+GpioState TriggerManager::ReadAllGpioPins()
+{
+    // Single consolidated GPIO read for all trigger pins
+    GpioState state;
+    state.keyPresent = digitalRead(gpio_pins::KEY_PRESENT);
+    state.keyNotPresent = digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    state.lockState = digitalRead(gpio_pins::LOCK);
+    state.lightsState = digitalRead(gpio_pins::LIGHTS);
+    return state;
+}
+
 void TriggerManager::CheckGpioChanges()
 {
-    // Read current GPIO states
-    bool keyPresent = digitalRead(gpio_pins::KEY_PRESENT);
-    bool keyNotPresent = digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    bool lockState = digitalRead(gpio_pins::LOCK);
-    bool lightsState = digitalRead(gpio_pins::LIGHTS);
+    // Read all GPIO states once
+    GpioState currentState = ReadAllGpioPins();
     
     // Check for changes and process them
-    CheckTriggerChange(TRIGGER_KEY_PRESENT, keyPresent);
-    CheckTriggerChange(TRIGGER_KEY_NOT_PRESENT, keyNotPresent);
-    CheckTriggerChange(TRIGGER_LOCK_STATE, lockState);
-    CheckTriggerChange(TRIGGER_LIGHTS_STATE, lightsState);
+    CheckTriggerChange(TRIGGER_KEY_PRESENT, currentState.keyPresent);
+    CheckTriggerChange(TRIGGER_KEY_NOT_PRESENT, currentState.keyNotPresent);
+    CheckTriggerChange(TRIGGER_LOCK_STATE, currentState.lockState);
+    CheckTriggerChange(TRIGGER_LIGHTS_STATE, currentState.lightsState);
 }
 
 void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinState)
@@ -132,17 +140,14 @@ void TriggerManager::InitializeTriggersFromGpio()
 {
     log_d("Initializing trigger states from current GPIO pin states...");
     
-    // Read current GPIO pin states and initialize triggers accordingly
-    bool keyPresent = digitalRead(gpio_pins::KEY_PRESENT);
-    bool keyNotPresent = digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    bool lockState = digitalRead(gpio_pins::LOCK);
-    bool lightsState = digitalRead(gpio_pins::LIGHTS);
+    // Read all GPIO pin states once using consolidated method
+    GpioState currentState = ReadAllGpioPins();
     
     // Initialize all triggers based on current pin states
-    InitializeTrigger(TRIGGER_KEY_PRESENT, keyPresent);
-    InitializeTrigger(TRIGGER_KEY_NOT_PRESENT, keyNotPresent);
-    InitializeTrigger(TRIGGER_LOCK_STATE, lockState);
-    InitializeTrigger(TRIGGER_LIGHTS_STATE, lightsState);
+    InitializeTrigger(TRIGGER_KEY_PRESENT, currentState.keyPresent);
+    InitializeTrigger(TRIGGER_KEY_NOT_PRESENT, currentState.keyNotPresent);
+    InitializeTrigger(TRIGGER_LOCK_STATE, currentState.lockState);
+    InitializeTrigger(TRIGGER_LIGHTS_STATE, currentState.lightsState);
     
     log_d("All triggers initialized from GPIO states.");
     

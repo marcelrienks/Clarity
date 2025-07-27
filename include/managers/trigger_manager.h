@@ -43,6 +43,7 @@ private:
     ~TriggerManager() = default;
 
     void setup_gpio_pins();
+    GpioState ReadAllGpioPins();
     void CheckGpioChanges();
     void CheckTriggerChange(const char* triggerId, bool currentPinState);
     void InitializeTrigger(const char* triggerId, bool currentPinState);
