@@ -137,23 +137,29 @@ void TriggerManager::ExecuteTriggerAction(AlertTrigger* trigger, TriggerExecutio
         TriggerActionRequest restoreRequest = trigger->GetRestoreRequest();
         
         if (restoreRequest.type == TriggerActionType::LoadPanel) {
-            // Only restore panel if no other panel-loading triggers are active
-            bool hasPanelTriggers = false;
+            // Check if there are other active panel triggers
+            AlertTrigger* highestPanelTrigger = nullptr;
             for (const auto& [priority, activeTrigger] : activeTriggers_) {
                 TriggerActionRequest activeRequest = activeTrigger->GetActionRequest();
                 if (activeRequest.type == TriggerActionType::LoadPanel) {
-                    hasPanelTriggers = true;
-                    break;
+                    highestPanelTrigger = activeTrigger;
+                    break; // List is sorted by priority, so first match is highest
                 }
             }
             
-            if (!hasPanelTriggers) {
-                log_i("No panel-loading triggers active - restoring panel: %s", restoreRequest.panelName);
+            if (highestPanelTrigger) {
+                // Load panel from highest priority active trigger
+                TriggerActionRequest activeRequest = highestPanelTrigger->GetActionRequest();
+                log_i("Panel trigger deactivated but others active - loading panel: %s", activeRequest.panelName);
+                PanelManager::GetInstance().CreateAndLoadPanel(activeRequest.panelName, []() {
+                    PanelManager::GetInstance().TriggerPanelSwitchCallback("");
+                }, activeRequest.isTriggerDriven);
+            } else {
+                // No other panel triggers active - restore to default
+                log_i("No other panel triggers active - restoring to default: %s", restoreRequest.panelName);
                 PanelManager::GetInstance().CreateAndLoadPanel(restoreRequest.panelName, []() {
                     PanelManager::GetInstance().TriggerPanelSwitchCallback("");
                 }, restoreRequest.isTriggerDriven);
-            } else {
-                log_i("Other panel-loading triggers still active - skipping panel restoration");
             }
         }
         else if (restoreRequest.type == TriggerActionType::ToggleTheme) {
