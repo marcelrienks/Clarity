@@ -26,10 +26,10 @@ TriggerActionRequest KeyTrigger::GetActionRequest()
 
 TriggerActionRequest KeyTrigger::GetRestoreRequest()
 {
-    log_d("Key removed - requesting panel restoration");
+    log_d("Key removed - no specific restoration action needed");
     return TriggerActionRequest{
-        .type = TriggerActionType::RestorePanel,
-        .panelName = nullptr,  // Main will determine restoration panel
+        .type = TriggerActionType::LoadPanel,
+        .panelName = "OemOilPanel",  // Default panel for restoration
         .triggerId = TRIGGER_KEY_PRESENT,
         .isTriggerDriven = false
     };
@@ -59,10 +59,10 @@ TriggerActionRequest KeyNotPresentTrigger::GetActionRequest()
 
 TriggerActionRequest KeyNotPresentTrigger::GetRestoreRequest()
 {
-    log_d("Key not present trigger restore - requesting panel restoration");
+    log_d("Key not present trigger restore - no specific restoration action needed");
     return TriggerActionRequest{
-        .type = TriggerActionType::RestorePanel,
-        .panelName = nullptr,  // Main will determine restoration panel
+        .type = TriggerActionType::LoadPanel,
+        .panelName = "OemOilPanel",  // Default panel for restoration
         .triggerId = TRIGGER_KEY_NOT_PRESENT,
         .isTriggerDriven = false
     };

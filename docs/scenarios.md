@@ -206,7 +206,7 @@ Messages: [KEY_PRESENT: HIGH, KEY_PRESENT: LOW, KEY_PRESENT: HIGH]
 Consolidated State: {KEY_PRESENT: ACTIVE}
 Expected Result: Key Panel (green)
 ```
-**Validation:** Message consolidation works correctly, final state used
+**Validation:** correct final state
 
 ### S4.2: Rapid Toggle Multiple Triggers
 **Initial State:** Oil panel
@@ -216,7 +216,7 @@ Messages: [KEY_PRESENT: HIGH, KEY_NOT_PRESENT: HIGH, KEY_PRESENT: LOW]
 Consolidated State: {KEY_NOT_PRESENT: ACTIVE}
 Expected Result: Key Panel (red)
 ```
-**Validation:** Complex message consolidation, correct final state
+**Validation:** correct final state
 
 ### S4.3: All Triggers Rapid Activation
 **Initial State:** Oil panel, Day theme
