@@ -375,6 +375,7 @@ void TriggerManager::setup_gpio_interrupts()
     
     log_d("GPIO interrupts configured successfully");
 }
+
 // ISR handlers - queue events for safe task processing
 void IRAM_ATTR TriggerManager::keyPresentIsrHandler(void *arg)
 {
@@ -446,4 +447,3 @@ extern "C"
         TriggerManager::themeSwitchIsrHandler(arg);
     }
 }
-
