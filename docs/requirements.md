@@ -12,10 +12,9 @@ The Clarity trigger system implements a **pure pin-change-driven architecture** 
 - **No state tracking complexity** - triggers respond immediately to pin changes
 - **INIT state prevents startup noise** - no restoration events until first pin change
 
-### 2. Dual-Core Separation
-- **Core 1 (Producer)**: GPIO trigger states monitored
-- **Core 0 (Consumer)**: UI and panel management
-- **No cross-core synchronization** - pure producer-consumer via event queue
+### 2. Direct GPIO Polling
+- **Core 0 only**: Direct GPIO reading and UI management
+- **No cross-core synchronization** - no need for queues or ISRs
 - **No mutexes** - Core 0 has exclusive ownership of all application state
 
 ### 3. Maximum Simplicity
@@ -29,34 +28,26 @@ The Clarity trigger system implements a **pure pin-change-driven architecture** 
 - **Main loop owns all managers** - orchestrates dependencies via request/response
 - **Clean interfaces** - triggers don't know about panels, panels don't know about triggers
 
-## Dual-Core Architecture
+## Single-Core Architecture
 
-### Core 1 (Producer) - Hardware Only
+### Core 0 (All Logic) - Direct GPIO Polling
 ```
-GPIO Pin Change → ISR Handler → Queue Event
-```
-
-**Responsibilities:**
-- GPIO interrupt service routines (ISRs)
-- Queue ISR events to `isrEventQueue`
-
-### Core 0 (Consumer) - All Logic
-```
-Main Loop → ProcessPendingTriggerEvents() → Action Requests → Execute Actions
+Main Loop → Read GPIO Pins → Detect Changes → Action Requests → Execute Actions
 ```
 
 **Responsibilities:**
-- Process queued ISR events
+- Direct GPIO pin reading
+- Pin change detection via state comparison
 - Generate action requests on pin changes
 - Execute actions via PanelManager/StyleManager
 - All UI operations and state management
 
 ## Key Architecture Benefits
 
-### 1. No Race Conditions
-- Core 1 only writes to queue
-- Core 0 only reads from queue  
-- No shared state between cores
+### 1. Maximum Simplicity
+- Single core handles everything
+- Direct GPIO reads - no interrupts or queues
+- No shared state or synchronization needed
 
 ### 2. Immediate Response
 - No artificial delays
@@ -94,17 +85,13 @@ if (trigger->GetState() == ACTIVE) {
 vTaskDelay(pdMS_TO_TICKS(100));
 ```
 
-### ❌ Cross-Core Dependencies
+### ✅ Direct GPIO Reading
 ```cpp
-// DON'T: Core 1 calling Core 0 functions
-PanelManager::GetInstance().LoadPanel(); // From ISR - NO!
-```
-
-### ✅ Clean Core Separation
-```cpp
-// DO: Core 1 only produces, Core 0 only consumes, and handle UI
-// ISR: xQueueSendFromISR(queue, &event, &woken);
-// Main: xQueueReceive(queue, &event, 0);
+// DO: Core 0 directly reads GPIO and processes changes
+bool currentState = digitalRead(gpio_pins::KEY_PRESENT);
+if (currentState != lastState) {
+    // Process the pin change
+}
 ```
 
 The architecture is designed to remain simple and extensible while maintaining the core principle: **pin changes drive actions, nothing else**.

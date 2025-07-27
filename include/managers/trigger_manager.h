@@ -14,17 +14,16 @@
 
 /**
  * @class TriggerManager
- * @brief Simplified dual-core trigger manager with priority-based alert evaluation
+ * @brief Simplified direct GPIO polling trigger manager with priority-based alert evaluation
  * 
  * @architecture:
- * - Core 1: Monitors GPIO pins, updates trigger active/inactive status
- * - Core 0: Evaluates triggers by priority, executes actions/restore functions
+ * - Core 0: Direct GPIO polling and UI management
  * 
  * @key_simplifications:
- * 1. No complex state tracking - GPIO pin state directly controls trigger active status
- * 2. Priority evaluation from lowest to highest (highest priority action wins)
- * 3. Generic action/restore pattern via function objects
- * 4. Single mutex for trigger access, eliminating complex state management
+ * 1. Direct GPIO polling - no interrupts or queues
+ * 2. Pin change detection via state comparison
+ * 3. Priority evaluation from lowest to highest (highest priority action wins)
+ * 4. No cross-core communication needed
  */
 class TriggerManager
 {
@@ -44,26 +43,15 @@ public:
     // Get startup panel override (null if no override needed)
     const char* GetStartupPanelOverride() const { return startupPanelOverride_; }
 
-    // GPIO State Change Handlers (called from Core 1 task)
-    void HandleGpioStateChange(const char* triggerId, bool pinState);
-
-    // Core 1 Task Methods
-    static void TriggerMonitoringTask(void* pvParameters);
-    
-    // CRITICAL: Get task handle for temporary suspension during LVGL operations
-    TaskHandle_t GetTaskHandle() const { return triggerTaskHandle_; }
-    
-    // Static interrupt handlers
-    static void IRAM_ATTR keyPresentIsrHandler(void* arg);
-    static void IRAM_ATTR keyNotPresentIsrHandler(void* arg);
-    static void IRAM_ATTR lockStateIsrHandler(void* arg);
-    static void IRAM_ATTR themeSwitchIsrHandler(void* arg);
 
 private:
     TriggerManager() = default;
     ~TriggerManager() = default;
 
-    void setup_gpio_interrupts();
+    void setup_gpio_pins();
+    void CheckGpioChanges();
+    void CheckTriggerChange(const char* triggerId, bool currentPinState);
+    void InitializeTrigger(const char* triggerId, bool currentPinState);
     AlertTrigger* FindTriggerById(const char* triggerId);
     void UpdateActiveTriggersList(AlertTrigger* trigger, TriggerExecutionState newState);
 
@@ -76,15 +64,4 @@ private:
     // Startup panel override (set by InitializeTriggersFromGpio if active triggers require specific panel)
     const char* startupPanelOverride_ = nullptr;
     
-    // ISR communication
-    QueueHandle_t isrEventQueue = nullptr;
-    TaskHandle_t triggerTaskHandle_ = nullptr;
 };
-
-// GPIO Interrupt Service Routine declarations
-extern "C" {
-    void IRAM_ATTR gpio_key_present_isr(void* arg);
-    void IRAM_ATTR gpio_key_not_present_isr(void* arg);
-    void IRAM_ATTR gpio_lock_state_isr(void* arg);
-    void IRAM_ATTR gpio_theme_switch_isr(void* arg);
-}
