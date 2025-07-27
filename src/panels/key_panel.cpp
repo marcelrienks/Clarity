@@ -23,7 +23,7 @@ KeyPanel::~KeyPanel()
 /// @brief Initialize the key panel and its components
 void KeyPanel::init()
 {
-    log_d("...");
+    log_d("Initializing key panel and reading current GPIO key state");
 
     screen_ = LvTools::create_blank_screen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);

@@ -7,7 +7,7 @@
 /// @param screen the screen on which to render the component
 /// @param location the location parameters for positioning the component
 void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& location) {
-    log_d("...");
+    log_d("Rendering Clarity splash text component");
      
     // Using a label (recommended for text display)
     lv_obj_t *splash = lv_label_create(screen);

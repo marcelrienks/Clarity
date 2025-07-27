@@ -151,8 +151,6 @@ void TriggerManager::InitializeTriggersFromGpio()
     InitializeTrigger(TRIGGER_LOCK_STATE, currentState.lockState);
     InitializeTrigger(TRIGGER_LIGHTS_STATE, currentState.lightsState);
     
-    log_d("All triggers initialized from GPIO states.");
-    
     // Apply initial actions from active triggers
     if (activeThemeTrigger_) {
         log_i("Applying startup theme action: %s", activeThemeTrigger_->actionTarget);

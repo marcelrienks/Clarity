@@ -2,7 +2,7 @@
 
 void setup()
 {
-  log_d("...");
+  log_d("Starting Clarity application setup - initializing managers and display");
 
   PreferenceManager &preference_manager = PreferenceManager::GetInstance();
   preference_manager.init();
@@ -35,7 +35,7 @@ void setup()
 
 void loop()
 {
-  log_d("...");
+  log_d("Processing main loop - updating triggers and panels");
 
   // Core 0 responsibilities: process trigger events directly (simplified)
   TriggerManager::GetInstance().ProcessTriggerEvents();

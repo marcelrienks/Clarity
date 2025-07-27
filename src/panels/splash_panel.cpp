@@ -29,7 +29,7 @@ SplashPanel::~SplashPanel()
 /// Creates blank screens for animation transitions
 void SplashPanel::init()
 {
-    log_d("...");
+    log_d("Initializing splash panel screen and animation components");
     blankScreen_ = LvTools::create_blank_screen();
     screen_ = LvTools::create_blank_screen();
 }

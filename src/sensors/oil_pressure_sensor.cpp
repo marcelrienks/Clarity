@@ -16,7 +16,7 @@ OilPressureSensor::OilPressureSensor()
 void OilPressureSensor::init()
 {
     // Configure GPIO pin for analog input
-    log_d("...");
+    log_d("Initializing oil pressure sensor ADC configuration");
     
     // Configure ADC resolution and attenuation for direct 3.3V operation
     analogReadResolution(12); // 12-bit resolution (0-4095)

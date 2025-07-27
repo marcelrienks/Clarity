@@ -18,7 +18,7 @@ KeyComponent::~KeyComponent()
 // Core Functionality Methods
 void KeyComponent::refresh(const Reading& reading)
 {
-    log_d("...");
+    log_d("Refreshing key component display with new state");
     
     KeyState key_state = static_cast<KeyState>(std::get<int32_t>(reading));
     lv_color_t colour;
@@ -42,7 +42,7 @@ void KeyComponent::refresh(const Reading& reading)
 /// @param location The location parameters for positioning the component.
 void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location)
 {
-    log_d("...");
+    log_d("Rendering key component icon at specified location");
 
     // Create the key icon
     keyIcon_ = lv_image_create(screen);

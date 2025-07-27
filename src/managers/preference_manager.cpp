@@ -15,7 +15,7 @@ PreferenceManager &PreferenceManager::GetInstance()
 /// @brief Initialises the preference manager to handle application preferences_
 void PreferenceManager::init()
 {
-    log_d("...");
+    log_d("Initializing preference manager and loading configuration from NVS");
 
     // Initialize preferences_
     if (!preferences_.begin("clarity", false))
@@ -43,7 +43,7 @@ void PreferenceManager::init()
 /// @return true if the save was successful
 void PreferenceManager::createDefaultConfig()
 {
-    log_d("...");
+    log_d("Creating default configuration with OEM oil panel as default");
 
     config.panelName = PanelNames::OIL;
 
@@ -55,7 +55,7 @@ void PreferenceManager::createDefaultConfig()
 /// @return true if the load was successful, false otherwise
 void PreferenceManager::loadConfig()
 {
-    log_d("...");
+    log_d("Loading application configuration from NVS preferences");
 
     String jsonString = preferences_.getString(CONFIG_KEY, "");
     if (jsonString.length() == 0)
@@ -85,7 +85,7 @@ void PreferenceManager::loadConfig()
 /// @return true if the save was successful, false otherwise
 void PreferenceManager::saveConfig()
 {
-    log_d("...");
+    log_d("Saving current configuration to NVS preferences");
 
     preferences_.remove(CONFIG_KEY);
 

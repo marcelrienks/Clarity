@@ -42,7 +42,7 @@ void PanelManager::RegisterAllPanels()
 /// @param isTriggerDriven whether this panel change is triggered by an interrupt trigger
 void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback, bool isTriggerDriven)
 {
-    log_d("...");
+    log_d("Creating and loading panel: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
 
     // Track this as the last non-trigger panel only for user-driven changes
     if (!isTriggerDriven)
@@ -75,7 +75,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 /// @param panelName the name of the panel to be loaded
 void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
-    log_d("...");
+    log_d("Loading panel with splash screen transition: %s", panelName);
 
     CreateAndLoadPanel(PanelNames::SPLASH, [this, panelName]()
                        { this->PanelManager::SplashCompletionCallback(panelName); });
@@ -84,7 +84,7 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 /// @brief Update the reading on the currently loaded panel and process trigger messages
 void PanelManager::UpdatePanel()
 {
-    log_d("...");
+    log_d("Updating current panel readings and processing triggers");
 
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
@@ -115,7 +115,7 @@ PanelManager::~PanelManager()
 /// @return Interface type representing the panel
 std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
-    log_d("...");
+    log_d("Creating panel instance for type: %s", panelName);
 
     auto iterator = registeredPanels_.find(panelName);
     return iterator->second(); // Return the function stored in the map
@@ -128,7 +128,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 /// @brief callback function to be executed on splash panel show completion
 void PanelManager::SplashCompletionCallback(const char *panelName)
 {
-    log_d("...");
+    log_d("Splash screen animation completed, transitioning to panel: %s", panelName);
 
     panel_.reset();
     Ticker::handle_lv_tasks();
@@ -140,8 +140,6 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
 /// @brief callback function to be executed on panel show completion
 void PanelManager::PanelCompletionCallback()
 {
-    log_d("Panel operation complete");
-
     SetUiState(UIState::IDLE);
     
     // System initialization complete - triggers will remain in INIT state
@@ -156,8 +154,6 @@ void PanelManager::PanelCompletionCallback()
 /// @brief callback function to be executed when trigger-driven panel loading is complete
 void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
-    log_d("Trigger panel switch complete for: %s", triggerId);
-    
     SetUiState(UIState::IDLE);
     // No need to clear triggers - GPIO state manages trigger active/inactive status
 }
