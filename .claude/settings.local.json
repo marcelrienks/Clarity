@@ -3,7 +3,17 @@
     "allow": [
       "Bash(mv:*)",
       "Bash(rg:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(chmod:*)",
+      "Bash(pio test:*)",
+      "Bash(g++:*)",
+      "Bash(../build/trigger_test)",
+      "Bash(grep:*)",
+      "Bash(touch:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(git checkout:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
