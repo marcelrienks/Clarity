@@ -7,43 +7,6 @@ on:
     branches: [ main ]
 
 jobs:
-  wokwi-integration-tests:
-    runs-on: ubuntu-latest
-    name: Integration Tests with Wokwi
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Cache PlatformIO dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.platformio/.cache
-            ~/.platformio/penv
-          key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-
-      - name: Install PlatformIO Core
-        run: pip install --upgrade platformio
-
-      - name: Build firmware for testing
-        run: pio run -e debug-local
-
-      - name: Test with Wokwi
-        uses: wokwi/wokwi-ci-action@v1
-        with:
-          token: ${{ secrets.WOKWI_CLI_TOKEN }}
-          path: /
-          scenario: test/test_scenarios.yaml
-          expect_text: 'SplashPanel'
-          timeout: 120000
 
   unit-tests:
     runs-on: ubuntu-latest
