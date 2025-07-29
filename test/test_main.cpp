@@ -1,6 +1,6 @@
 #include <unity.h>
-#include "test_utilities.h"
-#include "test_sensor_integration.h"
+#include "unit/utilities/test_utilities.h"
+#include "sensors/test_sensor_integration.h"
 
 void setUp(void) {
     // Global setup for all tests

@@ -12,8 +12,8 @@ CXX="g++"
 CXXFLAGS="-std=c++17 -I. -I../include -DUNIT_TESTING -DUNITY_INCLUDE_DOUBLE"
 UNITY_LIB="unity"
 
-# Create build directory
-mkdir -p ../build/test
+# Create build directories
+mkdir -p ../build/test/{unit,integration}
 
 echo "Compiling test files..."
 
@@ -24,21 +24,32 @@ if [ ! -f "/usr/lib/libunity.a" ] && [ ! -f "/usr/local/lib/libunity.a" ]; then
     echo "Or download from: https://github.com/ThrowTheSwitch/Unity"
 fi
 
-# Compile test files
-echo "Compiling test utilities..."
-$CXX $CXXFLAGS -c test_utilities.cpp -o ../build/test/test_utilities.o
+# Compile unit tests
+echo "Compiling unit tests..."
+for file in unit/**/*.cpp unit/*.cpp; do
+    if [ -f "$file" ]; then
+        echo "Compiling $file..."
+        $CXX $CXXFLAGS -c "$file" -o "../build/test/${file//\//_}"
+    fi
+done
 
-echo "Compiling trigger system tests..."
-$CXX $CXXFLAGS -c test_trigger_system.cpp -o ../build/test/test_trigger_system.o
-
-echo "Compiling panel manager tests..."
-$CXX $CXXFLAGS -c test_panel_manager.cpp -o ../build/test/test_panel_manager.o
-
-echo "Compiling sensor tests..."
-$CXX $CXXFLAGS -c test_sensors.cpp -o ../build/test/test_sensors.o
-
+# Compile integration tests
 echo "Compiling integration tests..."
-$CXX $CXXFLAGS -c test_scenarios_integration.cpp -o ../build/test/test_scenarios_integration.o
+for file in integration/**/*.cpp integration/*.cpp; do
+    if [ -f "$file" ]; then
+        echo "Compiling $file..."
+        $CXX $CXXFLAGS -c "$file" -o "../build/test/${file//\//_}"
+    fi
+done
+
+# Compile mocks
+echo "Compiling mocks..."
+for file in mocks/*.cpp; do
+    if [ -f "$file" ]; then
+        echo "Compiling $file..."
+        $CXX $CXXFLAGS -c "$file" -o "../build/test/${file//\//_}"
+    fi
+done
 
 echo "Compiling test main..."
 $CXX $CXXFLAGS -c test_main.cpp -o ../build/test/test_main.o
