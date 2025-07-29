@@ -1,5 +1,6 @@
 #include <unity.h>
 #include "test_utilities.h"
+#include "test_sensor_integration.h"
 
 void setUp(void) {
     // Global setup for all tests
@@ -506,8 +507,20 @@ int main(int argc, char **argv) {
     RUN_TEST(test_device_memory_usage_validation);
     RUN_TEST(test_device_configuration_efficiency);
     
+    // =================================================================
+    // ADVANCED SENSOR INTEGRATION TESTS (5 tests)
+    // =================================================================
+    printf("\n=== ADVANCED SENSOR INTEGRATION TESTS ===\n");
+    
+    // Failure and recovery tests
+    RUN_TEST(test_integration_sensor_initialization_failure);
+    RUN_TEST(test_integration_sensor_intermittent_failure);
+    RUN_TEST(test_integration_sensor_noise_handling);
+    RUN_TEST(test_integration_sensor_and_trigger_interaction);
+    RUN_TEST(test_integration_long_term_sensor_stability);
+
     printf("\n=== ALL TESTS COMPLETE ===\n");
-    printf("Total: 147 comprehensive tests (60 original + 18 PreferenceManager + 14 Utilities + 27 StyleManager + 28 Device/Hardware)\n");
+    printf("Total: 152 comprehensive tests (60 original + 18 PreferenceManager + 14 Utilities + 27 StyleManager + 28 Device/Hardware + 5 Advanced Sensor Integration)\n");
     
     return UNITY_END();
 }

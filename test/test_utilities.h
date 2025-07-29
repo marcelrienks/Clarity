@@ -29,9 +29,11 @@ public:
     static bool getGpioState(uint8_t pin);
     static void simulateAdcReading(uint8_t pin, uint16_t value);
     static uint16_t getAdcReading(uint8_t pin);
+    static void simulateAdcFailure(uint8_t pin, bool failed);
     
 private:
     static uint16_t mock_adc_readings[40];
+    static bool mock_adc_failures[40];
 };
 
 // Test scenario framework

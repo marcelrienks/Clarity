@@ -13,11 +13,13 @@ bool mock_theme_active = false;
 
 // MockHardware implementation
 uint16_t MockHardware::mock_adc_readings[40] = {0};
+bool MockHardware::mock_adc_failures[40] = {false};
 
 void MockHardware::reset() {
     for (int i = 0; i < 40; i++) {
         mock_gpio_states[i] = false;
         mock_adc_readings[i] = 0;
+        mock_adc_failures[i] = false;
     }
     // Reset trigger states
     mock_key_present_active = false;
@@ -46,8 +48,17 @@ void MockHardware::simulateAdcReading(uint8_t pin, uint16_t value) {
     }
 }
 
+void MockHardware::simulateAdcFailure(uint8_t pin, bool failed) {
+    if (pin < 40) {
+        mock_adc_failures[pin] = failed;
+    }
+}
+
 uint16_t MockHardware::getAdcReading(uint8_t pin) {
     if (pin < 40) {
+        if (mock_adc_failures[pin]) {
+            return 0; // Simulate failure by returning 0
+        }
         return mock_adc_readings[pin];
     }
     return 0;
