@@ -1,5 +1,6 @@
 #include <unity.h>
 #include "test_utilities.h"
+#include "mock_style_manager.h"
 
 // Mock LVGL dependencies for component testing
 extern "C" {
@@ -16,8 +17,11 @@ extern "C" {
         int32_t x_offset;
         int32_t y_offset;
         uint32_t color_value;
-        uint8_t recolor_opa;
-        const void* image_src;
+        uint8_t recolor_ovoid test_oem_oil_component_destructor_cleanup(void) {
+    resetMockComponentState();
+    
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};        const void* image_src;
     } mock_lv_obj_t;
     
     typedef struct {
@@ -353,7 +357,7 @@ void test_clarity_component_render_basic(void) {
     resetMockComponentState();
     MockClarityComponent component;
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    mock_lv_obj_t screen = create_mock_lv_obj();
     mock_component_location_t location = {LV_ALIGN_CENTER, 0, -50};
     
     component.render(&screen, location);
@@ -643,7 +647,7 @@ void test_oem_oil_component_set_value_method(void) {
 void test_oem_oil_component_destructor_cleanup(void) {
     resetMockComponentState();
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    mock_lv_obj_t screen = create_mock_lv_obj();
     mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
     
     {

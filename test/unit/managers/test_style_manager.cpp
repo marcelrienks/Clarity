@@ -2,24 +2,23 @@
 #include "test_utilities.h"
 #include <cstring>
 
-// Local mock types for style manager testing (to avoid conflicts)
+// Ensure we use the exact same types as the test
 typedef struct {
     uint32_t hex_value;
 } local_style_lv_color_t;
     
-    // Mock lv_style_t
-    typedef struct {
-        bool initialized;
-        mock_lv_color_t bg_color;
-        mock_lv_color_t text_color;
-        mock_lv_color_t line_color;
-        uint8_t bg_opa;
-        uint8_t text_opa;
-        uint16_t length;
-        uint16_t line_width;
-        uint16_t arc_width;
-        bool reset_called;
-    } mock_lv_style_t;
+typedef struct {
+    bool initialized;
+    local_style_lv_color_t bg_color;
+    local_style_lv_color_t text_color;
+    local_style_lv_color_t line_color;
+    uint8_t bg_opa;
+    uint8_t text_opa;
+    uint16_t length;
+    uint16_t line_width;
+    uint16_t arc_width;
+    bool reset_called;
+} mock_lv_style_t;
     
     // Mock lv_obj_t
     typedef struct {

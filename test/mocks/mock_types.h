@@ -1,10 +1,11 @@
 #pragma once
 #include <cstdint>
+#include "mock_colors.h"
 
 // MOCK: LVGL Types and Constants
 typedef void* lv_obj_t;
-typedef void* lv_style_t;
-typedef int lv_color_t;
+typedef mock_lv_style_t lv_style_t;
+typedef MockColor lv_color_t;
 
 // Panel Names from types.h
 namespace PanelNames {
