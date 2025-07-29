@@ -1,0 +1,69 @@
+version: 1
+name: Clarity Integration Tests
+
+steps:
+  - name: Wait for initialization
+    delay: 1000ms
+  
+  - name: Check splash screen
+    wait-serial: "Panel: SplashPanel"
+
+  - name: Wait before key test
+    delay: 1000ms
+  
+  - name: Set key present
+    set-control: ["sw1", 0, true]  # Turn on first switch (key present)
+  
+  - name: Wait for key detection
+    delay: 500ms
+  
+  - name: Check key panel
+    wait-serial: "Panel: KeyPanel"
+
+  - name: Wait before lock test
+    delay: 1000ms
+  
+  - name: Set lock state
+    set-control: ["sw1", 2, true]  # Turn on third switch (lock state)
+  
+  - name: Wait for lock detection
+    delay: 500ms
+  
+  - name: Check lock panel
+    wait-serial: "Panel: LockPanel"
+
+  - name: Wait before oil temp test
+    delay: 1000ms
+  
+  - name: Set oil temperature
+    set-control: ["pot1", 0.75]  # Set potentiometer to 75%
+  
+  - name: Wait for temperature reading
+    delay: 500ms
+  
+  - name: Check oil temperature
+    wait-serial: "Oil Temperature:"
+
+  - name: Wait before oil pressure test
+    delay: 1000ms
+  
+  - name: Set oil pressure
+    set-control: ["pot2", 0.5]  # Set potentiometer to 50%
+  
+  - name: Wait for pressure reading
+    delay: 500ms
+  
+  - name: Check oil pressure
+    wait-serial: "Oil Pressure:"
+
+  - name: Wait before night mode test
+    delay: 1000ms
+  
+  - name: Set lights state
+    set-control: ["sw1", 3, true]  # Turn on fourth switch (lights state)
+  
+  - name: Wait for theme change
+    delay: 500ms
+  
+  - name: Check night theme
+    wait-serial: "Theme: Night"
