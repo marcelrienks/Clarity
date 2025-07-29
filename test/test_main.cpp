@@ -25,6 +25,16 @@ void setUp(void) {
     current_oil_pressure = 0;
     current_oil_temperature = 0;
     resetSensorMockTiming();
+    
+    // Reset integrated test mock states
+    extern void resetPreferenceManagerMockState(void);
+    extern void resetMockUtilitiesState(void);
+    extern void resetStyleManagerMockState(void);
+    extern void resetDeviceMockState(void);
+    resetPreferenceManagerMockState();
+    resetMockUtilitiesState();
+    resetStyleManagerMockState();
+    resetDeviceMockState();
 }
 
 void tearDown(void) {
@@ -102,6 +112,101 @@ extern void test_integration_sensor_and_trigger_system(void);
 extern void test_integration_long_running_stability(void);
 extern void test_integration_rapid_state_changes(void);
 extern void test_integration_system_recovery(void);
+
+// PreferenceManager Tests (18 tests)
+extern void test_preference_manager_singleton_access(void);
+extern void test_preference_manager_successful_initialization(void);
+extern void test_preference_manager_nvs_failure_recovery(void);
+extern void test_preference_manager_persistent_failure(void);
+extern void test_preference_manager_load_empty_config(void);
+extern void test_preference_manager_load_valid_config(void);
+extern void test_preference_manager_load_corrupted_config(void);
+extern void test_preference_manager_load_missing_panel_name(void);
+extern void test_preference_manager_save_config(void);
+extern void test_preference_manager_save_and_load_roundtrip(void);
+extern void test_preference_manager_config_persistence(void);
+extern void test_preference_manager_create_default_config(void);
+extern void test_preference_manager_default_config_consistency(void);
+extern void test_preference_manager_full_lifecycle(void);
+extern void test_preference_manager_error_recovery_flow(void);
+extern void test_preference_manager_rapid_save_load(void);
+extern void test_preference_manager_memory_consistency(void);
+extern void test_preference_manager_panel_name_validation(void);
+
+// Utilities Tests (14 tests)
+extern void test_ticker_get_elapsed_millis_initial(void);
+extern void test_ticker_get_elapsed_millis_subsequent_calls(void);
+extern void test_ticker_get_elapsed_millis_multiple_calls(void);
+extern void test_ticker_handle_dynamic_delay_fast_processing(void);
+extern void test_ticker_handle_dynamic_delay_slow_processing(void);
+extern void test_ticker_handle_dynamic_delay_exact_timing(void);
+extern void test_ticker_handle_lv_tasks_tick_increment(void);
+extern void test_ticker_handle_lv_tasks_multiple_calls(void);
+extern void test_ticker_handle_lv_tasks_no_time_elapsed(void);
+extern void test_lvtools_create_blank_screen(void);
+extern void test_lvtools_create_blank_screen_multiple(void);
+extern void test_lvtools_reset_screen(void);
+extern void test_lvtools_reset_screen_null_handling(void);
+extern void test_lvtools_screen_lifecycle(void);
+
+// StyleManager Tests (27 tests)
+extern void test_style_manager_singleton_access(void);
+extern void test_style_manager_initialization_day_theme(void);
+extern void test_style_manager_initialization_night_theme(void);
+extern void test_style_manager_all_styles_initialized(void);
+extern void test_style_manager_theme_switching_day_to_night(void);
+extern void test_style_manager_theme_switching_night_to_day(void);
+extern void test_style_manager_multiple_theme_switches(void);
+extern void test_style_manager_day_theme_colors(void);
+extern void test_style_manager_night_theme_colors(void);
+extern void test_style_manager_color_consistency_across_themes(void);
+extern void test_style_manager_apply_theme_to_screen(void);
+extern void test_style_manager_screen_invalidation_on_theme_change(void);
+extern void test_style_manager_background_style_properties(void);
+extern void test_style_manager_text_style_properties(void);
+extern void test_style_manager_gauge_indicator_properties(void);
+extern void test_style_manager_gauge_items_properties(void);
+extern void test_style_manager_gauge_main_properties(void);
+extern void test_style_manager_gauge_danger_section_properties(void);
+extern void test_style_manager_reset_styles(void);
+extern void test_style_manager_reset_all_gauge_styles(void);
+extern void test_style_manager_full_lifecycle(void);
+extern void test_style_manager_theme_persistence(void);
+extern void test_style_manager_null_theme_handling(void);
+extern void test_style_manager_invalid_theme_handling(void);
+extern void test_style_manager_repeated_initialization(void);
+extern void test_style_manager_rapid_theme_switching(void);
+extern void test_style_manager_memory_consistency(void);
+
+// Device/Hardware Tests (28 tests)
+extern void test_device_singleton_access(void);
+extern void test_device_constants_validation(void);
+extern void test_device_pin_configuration(void);
+extern void test_device_spi_bus_configuration(void);
+extern void test_device_spi_bus_parameters(void);
+extern void test_device_spi_pin_mapping(void);
+extern void test_device_panel_configuration(void);
+extern void test_device_panel_geometry(void);
+extern void test_device_panel_timing_parameters(void);
+extern void test_device_panel_color_inversion(void);
+extern void test_device_light_configuration(void);
+extern void test_device_light_parameters(void);
+extern void test_device_prepare_initialization(void);
+extern void test_device_initialization_sequence(void);
+extern void test_device_display_dependencies(void);
+extern void test_device_lvgl_display_creation(void);
+extern void test_device_buffer_configuration(void);
+extern void test_device_dual_buffer_allocation(void);
+extern void test_device_flush_callback_functionality(void);
+extern void test_device_flush_callback_area_calculation(void);
+extern void test_device_main_screen_creation(void);
+extern void test_device_screen_lifecycle(void);
+extern void test_device_display_initialization_failure(void);
+extern void test_device_partial_configuration_failure(void);
+extern void test_device_complete_initialization_flow(void);
+extern void test_device_hardware_consistency(void);
+extern void test_device_memory_usage_validation(void);
+extern void test_device_configuration_efficiency(void);
 
 int main(int argc, char **argv) {
     UNITY_BEGIN();
@@ -238,8 +343,171 @@ int main(int argc, char **argv) {
     // Recovery tests
     RUN_TEST(test_integration_system_recovery);
     
+    // =================================================================
+    // PREFERENCE MANAGER TESTS (18 tests)
+    // =================================================================
+    printf("\n=== PREFERENCE MANAGER TESTS ===\n");
+    
+    // Core functionality
+    RUN_TEST(test_preference_manager_singleton_access);
+    RUN_TEST(test_preference_manager_successful_initialization);
+    RUN_TEST(test_preference_manager_nvs_failure_recovery);
+    RUN_TEST(test_preference_manager_persistent_failure);
+    
+    // Configuration loading
+    RUN_TEST(test_preference_manager_load_empty_config);
+    RUN_TEST(test_preference_manager_load_valid_config);
+    RUN_TEST(test_preference_manager_load_corrupted_config);
+    RUN_TEST(test_preference_manager_load_missing_panel_name);
+    
+    // Configuration saving
+    RUN_TEST(test_preference_manager_save_config);
+    RUN_TEST(test_preference_manager_save_and_load_roundtrip);
+    RUN_TEST(test_preference_manager_config_persistence);
+    
+    // Default configuration
+    RUN_TEST(test_preference_manager_create_default_config);
+    RUN_TEST(test_preference_manager_default_config_consistency);
+    
+    // Integration and lifecycle
+    RUN_TEST(test_preference_manager_full_lifecycle);
+    RUN_TEST(test_preference_manager_error_recovery_flow);
+    
+    // Performance and validation
+    RUN_TEST(test_preference_manager_rapid_save_load);
+    RUN_TEST(test_preference_manager_memory_consistency);
+    RUN_TEST(test_preference_manager_panel_name_validation);
+    
+    // =================================================================
+    // UTILITIES TESTS (14 tests)
+    // =================================================================
+    printf("\n=== UTILITIES TESTS ===\n");
+    
+    // Ticker tests
+    RUN_TEST(test_ticker_get_elapsed_millis_initial);
+    RUN_TEST(test_ticker_get_elapsed_millis_subsequent_calls);
+    RUN_TEST(test_ticker_get_elapsed_millis_multiple_calls);
+    RUN_TEST(test_ticker_handle_dynamic_delay_fast_processing);
+    RUN_TEST(test_ticker_handle_dynamic_delay_slow_processing);
+    RUN_TEST(test_ticker_handle_dynamic_delay_exact_timing);
+    RUN_TEST(test_ticker_handle_lv_tasks_tick_increment);
+    RUN_TEST(test_ticker_handle_lv_tasks_multiple_calls);
+    RUN_TEST(test_ticker_handle_lv_tasks_no_time_elapsed);
+    
+    // LvTools tests
+    RUN_TEST(test_lvtools_create_blank_screen);
+    RUN_TEST(test_lvtools_create_blank_screen_multiple);
+    RUN_TEST(test_lvtools_reset_screen);
+    RUN_TEST(test_lvtools_reset_screen_null_handling);
+    RUN_TEST(test_lvtools_screen_lifecycle);
+    
+    // =================================================================
+    // STYLE MANAGER TESTS (27 tests)
+    // =================================================================
+    printf("\n=== STYLE MANAGER TESTS ===\n");
+    
+    // Core functionality
+    RUN_TEST(test_style_manager_singleton_access);
+    RUN_TEST(test_style_manager_initialization_day_theme);
+    RUN_TEST(test_style_manager_initialization_night_theme);
+    RUN_TEST(test_style_manager_all_styles_initialized);
+    
+    // Theme switching
+    RUN_TEST(test_style_manager_theme_switching_day_to_night);
+    RUN_TEST(test_style_manager_theme_switching_night_to_day);
+    RUN_TEST(test_style_manager_multiple_theme_switches);
+    
+    // Color schemes
+    RUN_TEST(test_style_manager_day_theme_colors);
+    RUN_TEST(test_style_manager_night_theme_colors);
+    RUN_TEST(test_style_manager_color_consistency_across_themes);
+    
+    // Style application
+    RUN_TEST(test_style_manager_apply_theme_to_screen);
+    RUN_TEST(test_style_manager_screen_invalidation_on_theme_change);
+    RUN_TEST(test_style_manager_background_style_properties);
+    RUN_TEST(test_style_manager_text_style_properties);
+    
+    // Gauge styles
+    RUN_TEST(test_style_manager_gauge_indicator_properties);
+    RUN_TEST(test_style_manager_gauge_items_properties);
+    RUN_TEST(test_style_manager_gauge_main_properties);
+    RUN_TEST(test_style_manager_gauge_danger_section_properties);
+    
+    // Style reset
+    RUN_TEST(test_style_manager_reset_styles);
+    RUN_TEST(test_style_manager_reset_all_gauge_styles);
+    
+    // Integration
+    RUN_TEST(test_style_manager_full_lifecycle);
+    RUN_TEST(test_style_manager_theme_persistence);
+    
+    // Error handling
+    RUN_TEST(test_style_manager_null_theme_handling);
+    RUN_TEST(test_style_manager_invalid_theme_handling);
+    RUN_TEST(test_style_manager_repeated_initialization);
+    
+    // Performance
+    RUN_TEST(test_style_manager_rapid_theme_switching);
+    RUN_TEST(test_style_manager_memory_consistency);
+    
+    // =================================================================
+    // DEVICE/HARDWARE TESTS (28 tests)
+    // =================================================================
+    printf("\n=== DEVICE/HARDWARE TESTS ===\n");
+    
+    // Device singleton tests
+    RUN_TEST(test_device_singleton_access);
+    RUN_TEST(test_device_constants_validation);
+    RUN_TEST(test_device_pin_configuration);
+    
+    // SPI bus configuration tests
+    RUN_TEST(test_device_spi_bus_configuration);
+    RUN_TEST(test_device_spi_bus_parameters);
+    RUN_TEST(test_device_spi_pin_mapping);
+    
+    // Panel configuration tests
+    RUN_TEST(test_device_panel_configuration);
+    RUN_TEST(test_device_panel_geometry);
+    RUN_TEST(test_device_panel_timing_parameters);
+    RUN_TEST(test_device_panel_color_inversion);
+    
+    // Light configuration tests
+    RUN_TEST(test_device_light_configuration);
+    RUN_TEST(test_device_light_parameters);
+    
+    // Display initialization tests
+    RUN_TEST(test_device_prepare_initialization);
+    RUN_TEST(test_device_initialization_sequence);
+    RUN_TEST(test_device_display_dependencies);
+    
+    // LVGL integration tests
+    RUN_TEST(test_device_lvgl_display_creation);
+    RUN_TEST(test_device_buffer_configuration);
+    RUN_TEST(test_device_dual_buffer_allocation);
+    
+    // Display flush callback tests
+    RUN_TEST(test_device_flush_callback_functionality);
+    RUN_TEST(test_device_flush_callback_area_calculation);
+    
+    // Screen management tests
+    RUN_TEST(test_device_main_screen_creation);
+    RUN_TEST(test_device_screen_lifecycle);
+    
+    // Error handling tests
+    RUN_TEST(test_device_display_initialization_failure);
+    RUN_TEST(test_device_partial_configuration_failure);
+    
+    // Integration tests
+    RUN_TEST(test_device_complete_initialization_flow);
+    RUN_TEST(test_device_hardware_consistency);
+    
+    // Performance tests
+    RUN_TEST(test_device_memory_usage_validation);
+    RUN_TEST(test_device_configuration_efficiency);
+    
     printf("\n=== ALL TESTS COMPLETE ===\n");
-    printf("Total: 60 comprehensive tests covering all scenarios from docs/scenarios.md\n");
+    printf("Total: 147 comprehensive tests (60 original + 18 PreferenceManager + 14 Utilities + 27 StyleManager + 28 Device/Hardware)\n");
     
     return UNITY_END();
 }

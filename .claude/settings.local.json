@@ -8,7 +8,12 @@
       "Bash(pio test:*)",
       "Bash(g++:*)",
       "Bash(../build/trigger_test)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(touch:*)",
+      "Bash(find:*)",
+      "Bash(mkdir:*)",
+      "Bash(git checkout:*)",
+      "Bash(cp:*)"
     ],
     "deny": []
   }
