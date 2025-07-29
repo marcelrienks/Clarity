@@ -142,6 +142,25 @@ bool verifyTriggerState(const char* triggerName, bool expectedActive) {
     return false;
 }
 
+// Helper function to set GPIO state and trigger system response
+void setGpioAndUpdate(uint8_t pin, bool state) {
+    MockHardware::setGpioState(pin, state);
+    
+    // Update corresponding trigger state
+    if (pin == 25) { // key_present
+        trigger_states[0] = state;
+    } else if (pin == 26) { // key_not_present
+        trigger_states[1] = state;
+    } else if (pin == 27) { // lock_state
+        trigger_states[2] = state;
+    } else if (pin == 28) { // lights_state
+        trigger_states[3] = state;
+    }
+    
+    // Trigger system response
+    simulateSystemResponse();
+}
+
 // Performance testing
 void measureMemoryUsage() {
     // Mock implementation - in real tests would measure actual memory

@@ -2,10 +2,10 @@
 #include "test_utilities.h"
 
 // Mock sensor data
-static int32_t current_oil_pressure = 0;
-static int32_t current_oil_temperature = 0;
-static bool sensor_initialized = false;
-static uint32_t last_update_time = 0;
+int32_t current_oil_pressure = 0;
+int32_t current_oil_temperature = 0;
+bool sensor_initialized = false;
+uint32_t last_update_time = 0;
 static const uint32_t UPDATE_INTERVAL_MS = 100;
 
 // Mock ADC readings for testing
@@ -25,19 +25,59 @@ void mockOilTemperatureSensorInit() {
     MockHardware::simulateAdcReading(35, mock_temperature_adc); // Mock temperature pin
 }
 
+// Static mock time variables that need to be reset between tests
+static uint32_t pressure_mock_time = 0;
+static uint32_t temperature_mock_time = 0;
+static uint32_t pressure_last_update = 0;
+static uint32_t temperature_last_update = 0;
+static uint16_t pressure_last_adc = 0xFFFF;
+static uint16_t temperature_last_adc = 0xFFFF;
+static bool use_timing_cache = false; // Flag to control caching behavior
+
+void resetSensorMockTiming() {
+    pressure_mock_time = 0;
+    temperature_mock_time = 0;
+    pressure_last_update = 0;
+    temperature_last_update = 0;
+    pressure_last_adc = 0xFFFF;
+    temperature_last_adc = 0xFFFF;
+    use_timing_cache = false;
+}
+
+void forceNextSensorUpdate() {
+    pressure_last_update = 0;
+    temperature_last_update = 0;
+}
+
+void enableSensorTimingCache() {
+    use_timing_cache = true;
+}
+
 int32_t mockGetOilPressureReading() {
     if (!sensor_initialized) return -1;
     
-    // Use mock timing instead of real millis() for unit testing
-    static uint32_t mock_time = 0;
-    mock_time += UPDATE_INTERVAL_MS; // Force update every call for testing
+    uint16_t current_adc_value = MockHardware::getAdcReading(34);
     
-    if (mock_time - last_update_time >= UPDATE_INTERVAL_MS) {
-        last_update_time = mock_time;
-        
+    bool should_update = false;
+    
+    if (use_timing_cache) {
+        // Timing test mode: Only update on first call or when forced
+        if (pressure_last_update == 0) {
+            should_update = true;
+        }
+    } else {
+        // Normal mode: Update on first call or when ADC value changes
+        if (pressure_last_update == 0 || current_adc_value != pressure_last_adc) {
+            should_update = true;
+        }
+    }
+    
+    if (should_update) {
         // Convert ADC to pressure (0-4095 -> 0-10 Bar)
-        uint16_t adc_value = MockHardware::getAdcReading(34);
-        current_oil_pressure = (adc_value * 10) / 4095;
+        if (current_adc_value > 4095) current_adc_value = 4095; // Clamp invalid ADC values
+        current_oil_pressure = (current_adc_value * 10) / 4095;
+        pressure_last_update = 1; // Mark as updated
+        pressure_last_adc = current_adc_value;
     }
     
     return current_oil_pressure;
@@ -46,16 +86,15 @@ int32_t mockGetOilPressureReading() {
 int32_t mockGetOilTemperatureReading() {
     if (!sensor_initialized) return -1;
     
-    // Use mock timing instead of real millis() for unit testing
-    static uint32_t mock_time = 0;
-    mock_time += UPDATE_INTERVAL_MS; // Force update every call for testing
+    uint16_t current_adc_value = MockHardware::getAdcReading(35);
     
-    if (mock_time - last_update_time >= UPDATE_INTERVAL_MS) {
-        last_update_time = mock_time;
-        
+    // Update if: first call (temperature_last_update == 0) or ADC value changed or forced update
+    if (temperature_last_update == 0 || current_adc_value != temperature_last_adc) {
         // Convert ADC to temperature (0-4095 -> 0-120°C)
-        uint16_t adc_value = MockHardware::getAdcReading(35);
-        current_oil_temperature = (adc_value * 120) / 4095;
+        if (current_adc_value > 4095) current_adc_value = 4095; // Clamp invalid ADC values
+        current_oil_temperature = (current_adc_value * 120) / 4095;
+        temperature_last_update = 1; // Mark as updated
+        temperature_last_adc = current_adc_value;
     }
     
     return current_oil_temperature;
@@ -176,6 +215,7 @@ void test_sensor_reading_bounds(void) {
 
 void test_sensor_update_interval(void) {
     mockOilPressureSensorInit();
+    enableSensorTimingCache(); // Enable timing-based caching for this test
     
     // Set initial ADC value
     MockHardware::simulateAdcReading(34, 1000);
@@ -190,7 +230,7 @@ void test_sensor_update_interval(void) {
     
     // Simulate time passage (in real test would need proper time mocking)
     // For this mock, we'll force an update by calling again
-    last_update_time = 0; // Force update
+    forceNextSensorUpdate(); // Force update
     int32_t reading_after_interval = mockGetOilPressureReading();
     
     // Reading should be different now

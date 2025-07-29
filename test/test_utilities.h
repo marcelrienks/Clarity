@@ -9,6 +9,18 @@
 // Mock GPIO states for testing
 extern bool mock_gpio_states[40]; // ESP32 has up to 40 GPIO pins
 
+// Panel manager mock state (defined in test_panel_manager.cpp)
+extern std::vector<const char*> panel_creation_history;
+extern std::vector<const char*> panel_load_history;
+extern bool panel_loaded;
+extern bool panel_initialized;
+
+// Sensor mock state (defined in test_sensors.cpp)
+extern bool sensor_initialized;
+extern uint32_t last_update_time;
+extern int32_t current_oil_pressure;
+extern int32_t current_oil_temperature;
+
 // Test utilities for mocking hardware
 class MockHardware {
 public:
@@ -64,6 +76,14 @@ void simulateSystemResponse();
 bool verifyPanelLoaded(const char* panelName);
 bool verifyThemeApplied(const char* themeName);
 bool verifyTriggerState(const char* triggerName, bool expectedActive);
+
+// Helper function to set GPIO state and trigger system response
+void setGpioAndUpdate(uint8_t pin, bool state);
+
+// Helper function to reset sensor mock timing (declared in test_sensors.cpp)
+void resetSensorMockTiming();
+void forceNextSensorUpdate();
+void enableSensorTimingCache();
 
 // Test data generation
 std::vector<TriggerEvent> generateRapidToggleSequence();

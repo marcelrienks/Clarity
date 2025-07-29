@@ -175,17 +175,17 @@ void test_S3_2_intermediate_state_validation(void) {
     MockHardware::reset();
     
     // Step 1: Key present first
-    MockHardware::setGpioState(25, true); // key_present
+    setGpioAndUpdate(25, true); // key_present
     TEST_ASSERT_PANEL_LOADED("KeyPanel");
     TEST_ASSERT_TRIGGER_STATE("key_present", true);
     
     // Step 2: Key not present overrides (same priority FIFO)
-    MockHardware::setGpioState(26, true); // key_not_present
+    setGpioAndUpdate(26, true); // key_not_present
     TEST_ASSERT_PANEL_LOADED("KeyPanel");
     TEST_ASSERT_TRIGGER_STATE("key_not_present", true);
     
     // Step 3: Remove key present (not present should remain)
-    MockHardware::setGpioState(25, false);
+    setGpioAndUpdate(25, false);
     TEST_ASSERT_PANEL_LOADED("KeyPanel");
     TEST_ASSERT_TRIGGER_STATE("key_not_present", true);
     TEST_ASSERT_TRIGGER_STATE("key_present", false);
@@ -311,26 +311,26 @@ void test_complex_restoration_chain(void) {
     MockHardware::reset();
     
     // Build complex trigger stack
-    MockHardware::setGpioState(27, true); // lock
+    setGpioAndUpdate(27, true); // lock
     TEST_ASSERT_PANEL_LOADED("LockPanel");
     
-    MockHardware::setGpioState(26, true); // key_not_present (higher priority)
+    setGpioAndUpdate(26, true); // key_not_present (higher priority)
     TEST_ASSERT_PANEL_LOADED("KeyPanel");
     
-    MockHardware::setGpioState(25, true); // key_present (same priority, FIFO)
+    setGpioAndUpdate(25, true); // key_present (same priority, FIFO)
     TEST_ASSERT_PANEL_LOADED("KeyPanel");
     TEST_ASSERT_TRIGGER_STATE("key_present", true);
     
     // Unwind the stack
-    MockHardware::setGpioState(25, false); // Remove key_present -> key_not_present
+    setGpioAndUpdate(25, false); // Remove key_present -> key_not_present
     TEST_ASSERT_PANEL_LOADED("KeyPanel");
     TEST_ASSERT_TRIGGER_STATE("key_not_present", true);
     
-    MockHardware::setGpioState(26, false); // Remove key_not_present -> lock
+    setGpioAndUpdate(26, false); // Remove key_not_present -> lock
     TEST_ASSERT_PANEL_LOADED("LockPanel");
     TEST_ASSERT_TRIGGER_STATE("lock_state", true);
     
-    MockHardware::setGpioState(27, false); // Remove lock -> oil panel
+    setGpioAndUpdate(27, false); // Remove lock -> oil panel
     TEST_ASSERT_PANEL_LOADED("OemOilPanel");
 }
 

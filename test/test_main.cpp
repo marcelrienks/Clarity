@@ -4,6 +4,27 @@
 void setUp(void) {
     // Global setup for all tests
     MockHardware::reset();
+    
+    // Reset panel manager mock state (declared in test_panel_manager.cpp)
+    extern std::vector<const char*> panel_creation_history;
+    extern std::vector<const char*> panel_load_history;
+    extern bool panel_loaded;
+    extern bool panel_initialized;
+    panel_creation_history.clear();
+    panel_load_history.clear();
+    panel_loaded = false;
+    panel_initialized = false;
+    
+    // Reset sensor mock state (declared in test_sensors.cpp)
+    extern bool sensor_initialized;
+    extern uint32_t last_update_time;
+    extern int32_t current_oil_pressure;
+    extern int32_t current_oil_temperature;
+    sensor_initialized = false;
+    last_update_time = 0;
+    current_oil_pressure = 0;
+    current_oil_temperature = 0;
+    resetSensorMockTiming();
 }
 
 void tearDown(void) {

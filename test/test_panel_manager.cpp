@@ -3,10 +3,10 @@
 
 // Mock panel states for testing
 static const char* current_panel = "OemOilPanel";
-static bool panel_loaded = false;
-static bool panel_initialized = false;
-static std::vector<const char*> panel_creation_history;
-static std::vector<const char*> panel_load_history;
+bool panel_loaded = false;
+bool panel_initialized = false;
+std::vector<const char*> panel_creation_history;
+std::vector<const char*> panel_load_history;
 
 // Note: setUp() and tearDown() are defined in test_main.cpp
 
