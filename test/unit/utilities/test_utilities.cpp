@@ -16,7 +16,7 @@ typedef struct {
 } local_mock_lv_obj_t;
 
 // Local mock functions for utilities testing
-static local_local_mock_lv_obj_t* local_local_mock_lv_obj_create(local_local_mock_lv_obj_t* parent) {
+static local_mock_lv_obj_t* local_mock_lv_obj_create(local_mock_lv_obj_t* parent) {
     static local_mock_lv_obj_t obj = {true, false, false};
     obj.created = true;
     obj.deleted = false;
@@ -24,7 +24,7 @@ static local_local_mock_lv_obj_t* local_local_mock_lv_obj_create(local_local_moc
     return &obj;
 }
 
-static void local_local_mock_lv_obj_del(local_local_mock_lv_obj_t* obj) {
+static void local_mock_lv_obj_del(local_mock_lv_obj_t* obj) {
     if (obj) {
         obj->deleted = true;
         obj->created = false;
@@ -60,7 +60,7 @@ public:
     
     bool theme_applied_to_screen = false;
     
-    void apply_theme_to_screen(local_local_mock_lv_obj_t* screen) {
+    void apply_theme_to_screen(local_mock_lv_obj_t* screen) {
         if (screen) {
             screen->theme_applied = true;
             theme_applied_to_screen = true;
@@ -113,14 +113,14 @@ public:
 
 class LocalMockLvTools {
 public:
-    static local_local_mock_lv_obj_t* create_blank_screen() {
-        local_local_mock_lv_obj_t* screen = local_local_mock_lv_obj_create(nullptr);
+    static local_mock_lv_obj_t* create_blank_screen() {
+        local_mock_lv_obj_t* screen = local_mock_lv_obj_create(nullptr);
         reset_screen(screen);
         return screen;
     }
     
-    static void reset_screen(local_local_mock_lv_obj_t* screen) {
-        LocalLocalMockStyleManager::GetInstance().apply_theme_to_screen(screen);
+    static void reset_screen(local_mock_lv_obj_t* screen) {
+        LocalMockStyleManager::GetInstance().apply_theme_to_screen(screen);
     }
 };
 
@@ -132,7 +132,7 @@ void resetMockUtilitiesState() {
     mock_tick_increment = 0;
     mock_timer_handler_called = false;
     mock_delay_call_count = 0;
-    LocalLocalMockStyleManager::GetInstance().theme_applied_to_screen = false;
+    LocalMockStyleManager::GetInstance().theme_applied_to_screen = false;
 }
 
 // =================================================================
@@ -143,7 +143,7 @@ void test_ticker_get_elapsed_millis_initial(void) {
     resetMockUtilitiesState();
     
     mock_current_time = 1000;
-    uint32_t elapsed = LocalLocalMockTicker::get_elapsed_millis();
+    uint32_t elapsed = LocalMockTicker::get_elapsed_millis();
     
     // First call should return the time difference from start
     TEST_ASSERT_EQUAL_UINT32(1000, elapsed);
