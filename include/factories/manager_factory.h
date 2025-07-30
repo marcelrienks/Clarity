@@ -7,6 +7,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_component_factory.h"
+#include "interfaces/i_panel_factory.h"
 #include <memory>
 
 /**
@@ -43,7 +44,7 @@ public:
     /// @brief Create PanelManager with injected dependencies
     /// @param display Display provider for UI operations
     /// @param gpio GPIO provider for hardware access (optional for some managers)
-    /// @param componentFactory Component factory for creating panels with DI
+    /// @param componentFactory Component factory for creating components with DI
     /// @return Unique pointer to configured PanelManager instance
     static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio = nullptr, IComponentFactory* componentFactory = nullptr);
     

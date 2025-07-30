@@ -1,4 +1,5 @@
 #include "factories/manager_factory.h"
+#include "factories/panel_factory.h"
 #include "utilities/types.h"
 #include <esp32-hal-log.h>
 
@@ -8,7 +9,16 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
 {
     log_d("Creating PanelManager with injected dependencies");
     
-    auto manager = std::make_unique<PanelManager>(display, gpio, componentFactory);
+    // Create the PanelFactory with injected dependencies
+    auto panelFactory = std::make_unique<PanelFactory>(componentFactory, display, gpio);
+    
+    // Create PanelManager with the PanelFactory
+    // Note: We need to manage the PanelFactory lifetime. For now, we'll use a static instance
+    // This will be improved in later steps when we have a proper service container
+    static std::unique_ptr<PanelFactory> g_panelFactory;
+    g_panelFactory = std::move(panelFactory);
+    
+    auto manager = std::make_unique<PanelManager>(display, gpio, g_panelFactory.get());
     manager->init();
     
     return manager;

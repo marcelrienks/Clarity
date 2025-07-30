@@ -5,6 +5,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_component_factory.h"
+#include "interfaces/i_panel_factory.h"
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/key_panel.h"
@@ -68,7 +69,7 @@ class PanelManager
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider* display = nullptr, IGpioProvider* gpio = nullptr, IComponentFactory* componentFactory = nullptr);
+    PanelManager(IDisplayProvider* display = nullptr, IGpioProvider* gpio = nullptr, IPanelFactory* panelFactory = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -164,6 +165,6 @@ private:
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
     IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider* displayProvider_ = nullptr; ///< Display provider for UI operations
-    IComponentFactory* componentFactory_ = nullptr; ///< Component factory for creating panels with DI
+    IPanelFactory* panelFactory_ = nullptr;       ///< Panel factory for creating panels with DI
     // Removed queue handles - now using shared state trigger system
 };

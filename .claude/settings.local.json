@@ -17,7 +17,8 @@
       "Bash(./run_quick_tests.sh:*)",
       "Bash(pio.exe run:*)",
       "Bash(pio.exe test:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(pio run:*)"
     ],
     "deny": []
   }

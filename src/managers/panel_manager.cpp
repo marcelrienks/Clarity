@@ -115,8 +115,8 @@ void PanelManager::UpdatePanel()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IComponentFactory* componentFactory)
-    : gpioProvider_(gpio), displayProvider_(display), componentFactory_(componentFactory)
+PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IPanelFactory* panelFactory)
+    : gpioProvider_(gpio), displayProvider_(display), panelFactory_(panelFactory)
 {
     if (display || gpio) {
         log_d("Creating PanelManager with injected dependencies");
@@ -144,14 +144,14 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_d("Creating panel instance for type: %s", panelName);
 
-    // Use the new ComponentFactory approach for dependency injection
-    if (componentFactory_) {
-        auto uniquePanel = componentFactory_->createPanel(panelName, gpioProvider_, displayProvider_);
+    // Use the new PanelFactory approach for dependency injection
+    if (panelFactory_) {
+        auto uniquePanel = panelFactory_->createPanel(panelName);
         return std::shared_ptr<IPanel>(uniquePanel.release());
     }
     
     // Fallback to old template-based approach (DEPRECATED - will be removed in Step 4)
-    log_w("ComponentFactory not available, falling back to old template-based creation");
+    log_w("PanelFactory not available, falling back to old template-based creation");
     auto iterator = registeredPanels_.find(panelName);
     if (iterator != registeredPanels_.end()) {
         return iterator->second(); // Return the function stored in the map
