@@ -47,6 +47,21 @@ public:
     /// @return Pointer to the created arc object
     lv_obj_t* createArc(lv_obj_t* parent) override;
 
+    /// @brief Create a scale object
+    /// @param parent Parent object (screen or container)
+    /// @return Pointer to the created scale object
+    lv_obj_t* createScale(lv_obj_t* parent) override;
+
+    /// @brief Create an image object
+    /// @param parent Parent object (screen or container)
+    /// @return Pointer to the created image object
+    lv_obj_t* createImage(lv_obj_t* parent) override;
+
+    /// @brief Create a line object
+    /// @param parent Parent object (screen or container)
+    /// @return Pointer to the created line object
+    lv_obj_t* createLine(lv_obj_t* parent) override;
+
     /// @brief Delete an object and its children
     /// @param obj Object to delete
     void deleteObject(lv_obj_t* obj) override;

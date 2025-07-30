@@ -34,6 +34,21 @@ public:
     /// @return Pointer to the created arc object
     virtual lv_obj_t* createArc(lv_obj_t* parent) = 0;
 
+    /// @brief Create a scale object
+    /// @param parent Parent object (screen or container)
+    /// @return Pointer to the created scale object
+    virtual lv_obj_t* createScale(lv_obj_t* parent) = 0;
+
+    /// @brief Create an image object
+    /// @param parent Parent object (screen or container)
+    /// @return Pointer to the created image object
+    virtual lv_obj_t* createImage(lv_obj_t* parent) = 0;
+
+    /// @brief Create a line object
+    /// @param parent Parent object (screen or container)
+    /// @return Pointer to the created line object
+    virtual lv_obj_t* createLine(lv_obj_t* parent) = 0;
+
     /// @brief Delete an object and its children
     /// @param obj Object to delete
     virtual void deleteObject(lv_obj_t* obj) = 0;

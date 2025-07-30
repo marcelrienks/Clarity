@@ -6,7 +6,14 @@
 /// @return instance of PanelManager
 PanelManager &PanelManager::GetInstance()
 {
-    static PanelManager instance; // this ensures that the instance is created only once
+    // Return the factory-created global instance for consistency with new architecture
+    extern std::unique_ptr<PanelManager> g_panelManager;
+    if (g_panelManager) {
+        return *g_panelManager;
+    }
+    
+    // Fallback to static instance if global not available (shouldn't happen in normal flow)
+    static PanelManager instance;
     return instance;
 }
 

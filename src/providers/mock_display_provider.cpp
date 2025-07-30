@@ -35,6 +35,21 @@ lv_obj_t* MockDisplayProvider::createArc(lv_obj_t* parent)
     return createMockObject();
 }
 
+lv_obj_t* MockDisplayProvider::createScale(lv_obj_t* parent)
+{
+    return createMockObject();
+}
+
+lv_obj_t* MockDisplayProvider::createImage(lv_obj_t* parent)
+{
+    return createMockObject();
+}
+
+lv_obj_t* MockDisplayProvider::createLine(lv_obj_t* parent)
+{
+    return createMockObject();
+}
+
 void MockDisplayProvider::deleteObject(lv_obj_t* obj)
 {
     if (obj == nullptr) return;

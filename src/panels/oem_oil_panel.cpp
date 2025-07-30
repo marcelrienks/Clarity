@@ -1,4 +1,5 @@
 #include "panels/oem_oil_panel.h"
+#include "utilities/lv_tools.h"
 
 // Constructors and Destructors
 

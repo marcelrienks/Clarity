@@ -84,9 +84,6 @@ protected:
     lv_obj_t *pivotCircle_;     // Main pivot circle
     lv_obj_t *pivotHighlight_;  // Highlight on pivot for 3D effect
     
-    // Cached StyleManager reference (optimization)
-    StyleManager* styleManager_;
-
     // Common constants
     static constexpr int32_t NEEDLE_LENGTH = 90;
     

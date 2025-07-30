@@ -1,4 +1,5 @@
 #include "providers/lvgl_display_provider.h"
+#include "managers/style_manager.h"
 
 LvglDisplayProvider::LvglDisplayProvider(lv_obj_t* mainScreen)
     : mainScreen_(mainScreen)
@@ -28,6 +29,21 @@ lv_obj_t* LvglDisplayProvider::createObject(lv_obj_t* parent)
 lv_obj_t* LvglDisplayProvider::createArc(lv_obj_t* parent)
 {
     return lv_arc_create(parent);
+}
+
+lv_obj_t* LvglDisplayProvider::createScale(lv_obj_t* parent)
+{
+    return lv_scale_create(parent);
+}
+
+lv_obj_t* LvglDisplayProvider::createImage(lv_obj_t* parent)
+{
+    return lv_image_create(parent);
+}
+
+lv_obj_t* LvglDisplayProvider::createLine(lv_obj_t* parent)
+{
+    return lv_line_create(parent);
 }
 
 void LvglDisplayProvider::deleteObject(lv_obj_t* obj)
