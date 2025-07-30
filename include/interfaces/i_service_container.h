@@ -3,7 +3,8 @@
 // System/Library Includes
 #include <memory>
 #include <functional>
-#include <typeinfo>
+#include <string>
+#include <type_traits>
 
 /**
  * @interface IServiceContainer
@@ -40,9 +41,12 @@ public:
     template<typename TInterface>
     void registerSingleton(std::function<std::unique_ptr<TInterface>()> factory)
     {
-        registerSingletonImpl(typeid(TInterface), 
-                             [factory]() -> std::unique_ptr<void> {
-                                 return std::unique_ptr<void>(factory().release());
+        registerSingletonImpl(getTypeId<TInterface>(), 
+                             [factory]() -> void* {
+                                 return factory().release();
+                             },
+                             [](void* ptr) {
+                                 delete static_cast<TInterface*>(ptr);
                              });
     }
 
@@ -55,9 +59,12 @@ public:
     template<typename TInterface>
     void registerTransient(std::function<std::unique_ptr<TInterface>(IServiceContainer*)> factory)
     {
-        registerTransientImpl(typeid(TInterface),
-                             [factory](IServiceContainer* container) -> std::unique_ptr<void> {
-                                 return std::unique_ptr<void>(factory(container).release());
+        registerTransientImpl(getTypeId<TInterface>(),
+                             [factory](IServiceContainer* container) -> void* {
+                                 return factory(container).release();
+                             },
+                             [](void* ptr) {
+                                 delete static_cast<TInterface*>(ptr);
                              });
     }
 
@@ -73,7 +80,7 @@ public:
     template<typename TInterface>
     TInterface* resolve()
     {
-        return static_cast<TInterface*>(resolveImpl(typeid(TInterface)));
+        return static_cast<TInterface*>(resolveImpl(getTypeId<TInterface>()));
     }
 
     /**
@@ -86,8 +93,8 @@ public:
     template<typename TInterface>
     std::unique_ptr<TInterface> create()
     {
-        auto ptr = createImpl(typeid(TInterface));
-        return std::unique_ptr<TInterface>(static_cast<TInterface*>(ptr.release()));
+        auto ptr = createImpl(getTypeId<TInterface>());
+        return std::unique_ptr<TInterface>(static_cast<TInterface*>(ptr));
     }
 
     // Container Management Methods
@@ -106,46 +113,57 @@ public:
     template<typename TInterface>
     bool isRegistered() const
     {
-        return isRegisteredImpl(typeid(TInterface));
+        return isRegisteredImpl(getTypeId<TInterface>());
     }
 
 protected:
+    // Type ID system without RTTI
+    template<typename T>
+    static const char* getTypeId()
+    {
+        return __PRETTY_FUNCTION__; // GCC/Clang specific - includes template parameter
+    }
+    
     // Protected implementation methods (to be implemented by concrete classes)
     
     /**
      * @brief Implementation method for singleton registration
-     * @param type Type information for the service interface
-     * @param factory Type-erased factory function
+     * @param typeId String identifier for the service interface
+     * @param factory Type-erased factory function returning raw pointer
+     * @param deleter Type-erased deleter function
      */
-    virtual void registerSingletonImpl(const std::type_info& type, 
-                                      std::function<std::unique_ptr<void>()> factory) = 0;
+    virtual void registerSingletonImpl(const char* typeId, 
+                                      std::function<void*()> factory,
+                                      std::function<void(void*)> deleter) = 0;
 
     /**
      * @brief Implementation method for transient registration
-     * @param type Type information for the service interface
+     * @param typeId String identifier for the service interface
      * @param factory Type-erased factory function with container access
+     * @param deleter Type-erased deleter function
      */
-    virtual void registerTransientImpl(const std::type_info& type,
-                                      std::function<std::unique_ptr<void>(IServiceContainer*)> factory) = 0;
+    virtual void registerTransientImpl(const char* typeId,
+                                      std::function<void*(IServiceContainer*)> factory,
+                                      std::function<void(void*)> deleter) = 0;
 
     /**
      * @brief Implementation method for service resolution
-     * @param type Type information for the service interface
+     * @param typeId String identifier for the service interface
      * @return Pointer to service instance (type-erased)
      */
-    virtual void* resolveImpl(const std::type_info& type) = 0;
+    virtual void* resolveImpl(const char* typeId) = 0;
 
     /**
      * @brief Implementation method for service creation
-     * @param type Type information for the service interface
-     * @return Unique pointer to new instance (type-erased)
+     * @param typeId String identifier for the service interface
+     * @return Raw pointer to new instance (type-erased, caller must manage)
      */
-    virtual std::unique_ptr<void> createImpl(const std::type_info& type) = 0;
+    virtual void* createImpl(const char* typeId) = 0;
 
     /**
      * @brief Implementation method for registration checking
-     * @param type Type information for the service interface
+     * @param typeId String identifier for the service interface
      * @return True if service is registered, false otherwise
      */
-    virtual bool isRegisteredImpl(const std::type_info& type) const = 0;
+    virtual bool isRegisteredImpl(const char* typeId) const = 0;
 };
