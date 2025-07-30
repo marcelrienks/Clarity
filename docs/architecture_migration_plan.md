@@ -278,35 +278,113 @@ public:
 
 ## Implementation Order
 
-### Sprint 1: Foundation (Interfaces & Container)
-1. Create service interfaces
-2. Implement service container
-3. Create mock implementations
+### Sprint 1: Foundation (Interfaces & Container) ✅
+**Goal:** Create foundation interfaces and container infrastructure
+**Testability:** Each step should compile and existing functionality preserved
+
+1. **Step 1.1:** Create service interfaces ✅
+   - *Testing:* Code compiles, interfaces are well-defined
+   - *Manual Test:* Build project with `pio run -e debug-local`
+   
+2. **Step 1.2:** Implement service container
+   - *Testing:* Container unit tests pass, registration/resolution works
+   - *Manual Test:* Container can register and resolve test services
+   
+3. **Step 1.3:** Create mock implementations
+   - *Testing:* Mock services implement interfaces correctly
+   - *Manual Test:* Test suite can use mocks for isolated testing
 
 ### Sprint 2: Component Refactoring
-1. Refactor oil components for DI
-2. Create component factory
-3. Update component tests
+**Goal:** Convert components to use dependency injection
+**Testability:** Components render correctly with injected dependencies
+
+1. **Step 2.1:** Refactor oil components for DI
+   - *Testing:* Oil panel displays correctly, gauges render as arcs
+   - *Manual Test:* Load oil panel via Wokwi simulator, verify gauge rendering
+   
+2. **Step 2.2:** Create component factory with DI
+   - *Testing:* Factory creates components with proper dependencies
+   - *Manual Test:* All component types can be created via factory
+   
+3. **Step 2.3:** Update component tests
+   - *Testing:* All component unit tests pass with new DI approach
+   - *Manual Test:* Test coverage maintained, no regression in functionality
 
 ### Sprint 3: Panel Refactoring
-1. Refactor panels for DI
-2. Create panel factory
-3. Update panel tests
+**Goal:** Convert panels to use dependency injection
+**Testability:** Panel transitions work correctly with injected services
+
+1. **Step 3.1:** Refactor panels for DI
+   - *Testing:* All panels load correctly, transitions smooth
+   - *Manual Test:* Navigate between panels (splash → oil → key → lock)
+   
+2. **Step 3.2:** Create panel factory with DI
+   - *Testing:* Factory creates panels with proper dependencies
+   - *Manual Test:* Panel switching works via trigger system
+   
+3. **Step 3.3:** Update panel tests
+   - *Testing:* All panel unit tests pass with new DI approach
+   - *Manual Test:* Integration tests verify panel behavior
 
 ### Sprint 4: Manager Interface Implementation
-1. Make managers implement service interfaces directly
-2. Remove singleton patterns from managers
-3. Update manager tests to use interfaces
+**Goal:** Make managers implement service interfaces directly
+**Testability:** Application works identically to before, but with interfaces
+
+1. **Step 4.1:** StyleManager implements IStyleService
+   - *Testing:* Themes apply correctly, styles render properly
+   - *Manual Test:* Switch between day/night themes, verify style changes
+   
+2. **Step 4.2:** PanelManager implements IPanelService
+   - *Testing:* Panel management works identically to before
+   - *Manual Test:* Panel loading, updating, and transitions function correctly
+   
+3. **Step 4.3:** TriggerManager implements ITriggerService
+   - *Testing:* GPIO triggers work correctly, panel switching responsive
+   - *Manual Test:* Test trigger-driven panel changes, verify responsiveness
+   
+4. **Step 4.4:** PreferenceManager implements IPreferenceService
+   - *Testing:* Configuration saves/loads correctly, defaults work
+   - *Manual Test:* Change settings, restart device, verify persistence
+   
+5. **Step 4.5:** Remove singleton GetInstance() methods
+   - *Testing:* Application compiles, no more singleton access
+   - *Manual Test:* Full application functionality preserved
 
 ### Sprint 5: Application Integration
-1. Create composition root
-2. Update main application
-3. Integration testing
+**Goal:** Wire everything together with service container
+**Testability:** Complete application works with full dependency injection
+
+1. **Step 5.1:** Create composition root in main.cpp
+   - *Testing:* Application starts correctly with DI container
+   - *Manual Test:* Device boots, loads default panel, functions normally
+   
+2. **Step 5.2:** Remove global manager variables
+   - *Testing:* No global state, all dependencies injected
+   - *Manual Test:* Application behavior identical to singleton version
+   
+3. **Step 5.3:** Integration testing with real hardware
+   - *Testing:* All integration tests pass, no regression
+   - *Manual Test:* Full device testing - display, GPIO, triggers, persistence
 
 ### Sprint 6: Testing & Cleanup
-1. Comprehensive test coverage
-2. Remove deprecated code
-3. Documentation updates
+**Goal:** Comprehensive testing and code cleanup
+**Testability:** Full test coverage with clean, maintainable code
+
+1. **Step 6.1:** Comprehensive unit test coverage
+   - *Testing:* 90%+ code coverage, all critical paths tested
+   - *Manual Test:* Test suite runs quickly, provides clear feedback
+   
+2. **Step 6.2:** Remove deprecated singleton code
+   - *Testing:* Clean compile, no deprecated warnings
+   - *Manual Test:* Code review shows clean architecture
+   
+3. **Step 6.3:** Performance testing and optimization
+   - *Testing:* No performance regression, startup time acceptable
+   - *Manual Test:* Device feels responsive, no noticeable slowdown
+   
+4. **Step 6.4:** Documentation updates
+   - *Testing:* Documentation matches implementation
+   - *Manual Test:* New developers can understand and extend the system
 
 ## Benefits After Migration
 
@@ -341,39 +419,110 @@ public:
 
 ## Migration Strategy
 
-### Gradual Migration
-1. Start with least coupled managers (StyleManager → IStyleService)
-2. Move to more complex managers (PanelManager → IPanelService)
-3. Keep both patterns during transition
-4. Remove old patterns after validation
+### Gradual Migration with Continuous Testing
+1. **Start with least coupled managers** (StyleManager → IStyleService)
+   - *Test after each change:* Verify themes and styling work correctly
+   - *Manual verification:* Load application, switch themes, verify visual changes
+   
+2. **Move to more complex managers** (PanelManager → IPanelService)
+   - *Test after each change:* Verify panel loading and transitions
+   - *Manual verification:* Navigate between all panels, test trigger responses
+   
+3. **Keep both patterns during transition**
+   - *Validate continuously:* Ensure no functionality loss during migration
+   - *Performance check:* Monitor startup time and responsiveness
+   
+4. **Remove old patterns only after full validation**
+   - *Comprehensive testing:* Full test suite passes before removal
+   - *Integration testing:* Real hardware testing confirms no regression
 
-### Backward Compatibility
-- Maintain old interfaces during migration
-- Create adapter patterns where needed
-- Deprecate old patterns gradually
+### Backward Compatibility with Validation
+- **Maintain old interfaces during migration**
+  - *Step-by-step testing:* Each interface change tested independently
+  - *Rollback capability:* Can revert to previous step if issues found
+  
+- **Create adapter patterns where needed**
+  - *Isolated testing:* Adapters tested separately from main logic
+  - *Behavioral verification:* Ensure adapters preserve exact behavior
+  
+- **Deprecate old patterns gradually**
+  - *Warning phase:* Mark deprecated but keep functional
+  - *Testing phase:* Verify new patterns work before removing old ones
 
-### Testing Strategy
-- Test each phase independently
-- Maintain existing functionality
-- Add new tests for DI patterns
+### Comprehensive Testing Strategy
+- **Test each step independently**
+  - *Unit tests:* Each service interface has comprehensive test coverage
+  - *Integration tests:* Manager-to-interface conversion tested thoroughly
+  - *Manual testing:* Real device testing after each major step
+  
+- **Maintain existing functionality**
+  - *Regression testing:* Automated tests prevent functionality loss
+  - *Visual testing:* Screenshots/recordings verify UI behavior unchanged
+  - *Performance testing:* Ensure no performance degradation
+  
+- **Add new tests for DI patterns**
+  - *Mock testing:* Verify components work with mocked dependencies
+  - *Injection testing:* Confirm proper dependency injection flow
+  - *Container testing:* Service container registration/resolution tested
 
 ## Success Criteria
 
-### Functional
-- [ ] All existing functionality preserved
-- [ ] No regressions in behavior
-- [ ] Improved boot time (better initialization order)
+### Functional (Verified at Each Step)
+- [ ] **All existing functionality preserved**
+  - *Per-step verification:* Manual testing after each major change
+  - *Automated verification:* Integration tests pass continuously
+  - *Visual verification:* Screenshots show identical UI behavior
+  
+- [ ] **No regressions in behavior**
+  - *Regression testing:* Automated test suite prevents functionality loss
+  - *Performance monitoring:* No slowdown in critical operations
+  - *User experience:* Device feels identical to singleton version
+  
+- [ ] **Improved boot time (better initialization order)**
+  - *Measurement:* Track startup time at each step
+  - *Optimization:* Dependency injection enables optimized initialization
+  - *Validation:* Boot time equal or better than original
 
-### Architectural
-- [ ] No singleton patterns in application code
-- [ ] All dependencies explicit in constructors
-- [ ] Clear service boundaries
-- [ ] Mockable interfaces
+### Architectural (Validated Incrementally)
+- [ ] **No singleton patterns in application code**
+  - *Step-by-step removal:* Each GetInstance() method removed and tested
+  - *Code review:* Static analysis confirms no global state access
+  - *Testing verification:* All tests work without singletons
+  
+- [ ] **All dependencies explicit in constructors**
+  - *Interface compliance:* Every service follows DI constructor pattern
+  - *Documentation:* Constructor parameters clearly document dependencies
+  - *Testing:* Mock injection proves explicit dependency pattern
+  
+- [ ] **Clear service boundaries**
+  - *Interface design:* Each service has focused, single-responsibility interface
+  - *Dependency mapping:* Clear dependency graph with no circular references
+  - *Testing isolation:* Services can be tested in complete isolation
+  
+- [ ] **Mockable interfaces**
+  - *Mock implementation:* Every interface has corresponding mock
+  - *Test coverage:* Unit tests use mocks for all dependencies
+  - *Verification:* Components work correctly with mocked services
 
-### Testing
-- [ ] 90%+ unit test coverage
-- [ ] All components testable in isolation
-- [ ] Integration tests with mocked dependencies
-- [ ] Performance tests show no regression
+### Testing (Comprehensive Verification)
+- [ ] **90%+ unit test coverage**
+  - *Incremental measurement:* Coverage tracked and improved at each step
+  - *Critical path focus:* All essential functionality covered by tests
+  - *Quality gates:* No step proceeds without maintaining coverage threshold
+  
+- [ ] **All components testable in isolation**
+  - *Individual verification:* Each component tested with mocked dependencies
+  - *Fast test execution:* Isolated tests run quickly for rapid feedback
+  - *Dependency injection:* Easy to inject test doubles for all dependencies
+  
+- [ ] **Integration tests with mocked dependencies**
+  - *System-level testing:* Full application flow tested with controlled inputs
+  - *Realistic scenarios:* Tests cover real user interaction patterns
+  - *Reliable execution:* Tests are deterministic and repeatable
+  
+- [ ] **Performance tests show no regression**
+  - *Benchmark establishment:* Current performance metrics documented
+  - *Continuous monitoring:* Performance tracked throughout migration
+  - *Regression detection:* Automated alerts if performance degrades
 
 This migration will transform the codebase into a clean, testable, and maintainable architecture following modern C++ and dependency injection best practices.
