@@ -53,11 +53,11 @@ void registerProductionComponents() {
   
   
   registry.registerComponent("oem_oil_pressure", [](IDisplayProvider* display) {
-    return std::make_unique<OemOilPressureComponent>();
+    return std::make_unique<OemOilPressureComponent>(&StyleManager::GetInstance());
   });
   
   registry.registerComponent("oem_oil_temperature", [](IDisplayProvider* display) {
-    return std::make_unique<OemOilTemperatureComponent>();
+    return std::make_unique<OemOilTemperatureComponent>(&StyleManager::GetInstance());
   });
 }
 

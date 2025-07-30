@@ -5,7 +5,7 @@
 
 // Project Includes
 #include "interfaces/i_component.h"
-#include "managers/style_manager.h"
+#include "interfaces/i_style_service.h"
 #include "utilities/types.h"
 
 /**
@@ -47,7 +47,7 @@ class OemOilComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    OemOilComponent();
+    OemOilComponent(IStyleService* styleService);
     virtual ~OemOilComponent();
 
     // Core Functionality Methods
@@ -56,6 +56,9 @@ public:
     void SetValue(int32_t value) override;
 
 protected:
+    // Protected Data Members
+    IStyleService* styleService_;
+
     // Protected Methods
     virtual const lv_image_dsc_t* get_icon() const = 0;
     virtual int32_t get_scale_min() const = 0;

@@ -3,6 +3,9 @@
 // System/Library Includes
 #include <lvgl.h>
 
+// Project Includes
+#include "utilities/types.h"
+
 /**
  * @interface IStyleService
  * @brief Interface for style management and theme operations
@@ -104,4 +107,12 @@ public:
      * @return Current theme string identifier
      */
     virtual const char* getCurrentTheme() const = 0;
+
+    // Color Access Methods
+    
+    /**
+     * @brief Get the theme colors for the current theme
+     * @return Reference to ThemeColors structure with all color definitions
+     */
+    virtual const ThemeColors& getThemeColors() const = 0;
 };

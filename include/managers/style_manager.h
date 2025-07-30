@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
+#include "interfaces/i_style_service.h"
 
 #include <lvgl.h>
 #include <memory>
@@ -8,22 +9,6 @@
 #define MAIN_DEFAULT LV_PART_MAIN | LV_STATE_DEFAULT
 #define ITEMS_DEFAULT LV_PART_ITEMS | LV_STATE_DEFAULT
 #define INDICATOR_DEFAULT LV_PART_INDICATOR | LV_STATE_DEFAULT
-
-// Theme color definitions
-struct ThemeColors
-{
-    lv_color_t background;      // Background color
-    lv_color_t text;            // Text color
-    lv_color_t primary;         // Primary accent color
-    lv_color_t gaugeNormal;    // Normal gauge color
-    lv_color_t gaugeWarning;   // Warning gauge color
-    lv_color_t gaugeDanger;    // Danger gauge color
-    lv_color_t gaugeTicks;     // Gauge tick marks (soft off-white)
-    lv_color_t needleNormal;   // Normal needle color (bright white)
-    lv_color_t needleDanger;   // Danger needle color (bright red/orange)
-    lv_color_t keyPresent;     // Normal key present clor (pure white)
-    lv_color_t keyNotPresent; // Normal Key not present color (bright red)
-};
 
 /**
  * @class StyleManager
@@ -72,7 +57,7 @@ struct ThemeColors
  * Components get their styles from here to ensure consistency. The night
  * theme uses red accents while day theme uses white/neutral colors.
  */
-class StyleManager
+class StyleManager : public IStyleService
 {
 public:
     // Constructors and Destructors
@@ -84,13 +69,29 @@ public:
     // Static Methods (kept for backward compatibility during transition)
     static StyleManager &GetInstance();
 
-    // Core Functionality Methods
-    void init(const char *theme);
+    // Core Functionality Methods (IStyleService implementation)
+    void init(const char *theme) override;
     void set_theme(const char *theme);
     void apply_theme_to_screen(lv_obj_t *screen);
 
     // Accessor Methods  
     const ThemeColors &get_colours(const char *theme) const;
+    
+    // IStyleService Interface Implementation (delegate to existing methods)
+    // Note: We already have init() method, so no need to add override
+    void applyThemeToScreen(lv_obj_t* screen) override { apply_theme_to_screen(screen); }
+    void setTheme(const char* theme) override { set_theme(theme); }
+    lv_style_t& getBackgroundStyle() override { return backgroundStyle; }
+    lv_style_t& getTextStyle() override { return textStyle; }
+    lv_style_t& getGaugeNormalStyle() override { return gaugeNormalStyle; }
+    lv_style_t& getGaugeWarningStyle() override { return gaugeWarningStyle; }
+    lv_style_t& getGaugeDangerStyle() override { return gaugeDangerStyle; }
+    lv_style_t& getGaugeIndicatorStyle() override { return gaugeIndicatorStyle; }
+    lv_style_t& getGaugeItemsStyle() override { return gaugeItemsStyle; }
+    lv_style_t& getGaugeMainStyle() override { return gaugeMainStyle; }
+    lv_style_t& getGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
+    const char* getCurrentTheme() const override { return THEME; }
+    const ThemeColors& getThemeColors() const override { return get_colours(THEME); }
     
     // Public Data Members - Theme State
     const char *THEME = Themes::NIGHT;

@@ -1,11 +1,12 @@
 #include "panels/oem_oil_panel.h"
 #include "utilities/lv_tools.h"
+#include "managers/style_manager.h"
 
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel()
-    : oemOilPressureComponent_(std::make_shared<OemOilPressureComponent>()),
-      oemOilTemperatureComponent_(std::make_shared<OemOilTemperatureComponent>()),
+    : oemOilPressureComponent_(std::make_shared<OemOilPressureComponent>(&StyleManager::GetInstance())),
+      oemOilTemperatureComponent_(std::make_shared<OemOilTemperatureComponent>(&StyleManager::GetInstance())),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>()),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>()) {}
 
