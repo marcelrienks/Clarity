@@ -25,6 +25,21 @@ void PanelManager::init()
     Ticker::handle_lv_tasks();
 }
 
+/// @brief Initialize the panel manager with hardware providers (backward compatibility)
+/// @param gpio GPIO provider for hardware access
+/// @param display Display provider for UI operations
+void PanelManager::init(IGpioProvider* gpio, IDisplayProvider* display)
+{
+    log_d("Initializing panel manager with legacy init method...");
+    
+    // Store hardware providers if not already set
+    if (!gpioProvider_) gpioProvider_ = gpio;
+    if (!displayProvider_) displayProvider_ = display;
+    
+    // Call the main init method
+    init();
+}
+
 void PanelManager::RegisterAllPanels()
 {
     log_d("Registering all panels...");
@@ -96,16 +111,12 @@ void PanelManager::UpdatePanel()
 PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio)
     : gpioProvider_(gpio), displayProvider_(display)
 {
-    log_d("Creating PanelManager with injected dependencies");
+    if (display || gpio) {
+        log_d("Creating PanelManager with injected dependencies");
+    } else {
+        log_d("Creating PanelManager with default constructor (for singleton compatibility)");
+    }
     
-    // Initialize the current panel buffer with the default value
-    strncpy(currentPanelBuffer, PanelNames::OIL, sizeof(currentPanelBuffer) - 1);
-    currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';
-    currentPanel = currentPanelBuffer;
-}
-
-PanelManager::PanelManager()
-{
     // Initialize the current panel buffer with the default value
     strncpy(currentPanelBuffer, PanelNames::OIL, sizeof(currentPanelBuffer) - 1);
     currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';

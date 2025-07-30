@@ -16,7 +16,11 @@ Trigger TriggerManager::triggers_[] = {
 TriggerManager::TriggerManager(IGpioProvider* gpio)
     : gpioProvider_(gpio)
 {
-    log_d("Creating TriggerManager with injected GPIO provider");
+    if (gpio) {
+        log_d("Creating TriggerManager with injected GPIO provider");
+    } else {
+        log_d("Creating TriggerManager with default constructor (for singleton compatibility)");
+    }
 }
 
 TriggerManager &TriggerManager::GetInstance()
@@ -51,6 +55,12 @@ GpioState TriggerManager::ReadAllGpioPins()
         state.keyNotPresent = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
         state.lockState = gpioProvider_->digitalRead(gpio_pins::LOCK);
         state.lightsState = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
+    } else {
+        // Fallback to direct GPIO calls for singleton compatibility
+        state.keyPresent = digitalRead(gpio_pins::KEY_PRESENT);
+        state.keyNotPresent = digitalRead(gpio_pins::KEY_NOT_PRESENT);
+        state.lockState = digitalRead(gpio_pins::LOCK);
+        state.lightsState = digitalRead(gpio_pins::LIGHTS);
     }
     return state;
 }
@@ -230,5 +240,11 @@ void TriggerManager::setup_gpio_pins()
         gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
         gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
         gpioProvider_->pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
+    } else {
+        // Fallback to direct GPIO calls for singleton compatibility
+        pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
+        pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
+        pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
+        pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
     }
 }

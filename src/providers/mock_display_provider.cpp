@@ -39,6 +39,7 @@ void MockDisplayProvider::deleteObject(lv_obj_t* obj)
 {
     if (obj == nullptr) return;
 
+#ifdef UNIT_TESTING
     auto it = std::find_if(createdObjects_.begin(), createdObjects_.end(),
         [obj](const std::unique_ptr<lv_obj_t>& ptr) {
             return ptr.get() == obj;
@@ -47,6 +48,7 @@ void MockDisplayProvider::deleteObject(lv_obj_t* obj)
     if (it != createdObjects_.end()) {
         createdObjects_.erase(it);
     }
+#endif
 
     if (currentScreen_ == obj) {
         currentScreen_ = nullptr;
@@ -70,20 +72,32 @@ lv_obj_t* MockDisplayProvider::getCurrentScreen() const
 
 size_t MockDisplayProvider::getObjectCount() const
 {
+#ifdef UNIT_TESTING
     return createdObjects_.size();
+#else
+    return 0;
+#endif
 }
 
 void MockDisplayProvider::reset()
 {
+#ifdef UNIT_TESTING
     createdObjects_.clear();
+#endif
     currentScreen_ = nullptr;
     mainScreen_ = createMockObject();
 }
 
 lv_obj_t* MockDisplayProvider::createMockObject()
 {
+#ifdef UNIT_TESTING
     auto obj = std::make_unique<lv_obj_t>();
     lv_obj_t* ptr = obj.get();
     createdObjects_.push_back(std::move(obj));
     return ptr;
+#else
+    // For ESP32 build, return nullptr since we can't instantiate incomplete types
+    // This mock is primarily for testing environments
+    return nullptr;
+#endif
 }

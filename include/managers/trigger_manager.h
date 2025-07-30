@@ -25,7 +25,7 @@ class TriggerManager
 {
 public:
     // Constructors and Destructors
-    TriggerManager(IGpioProvider* gpio);
+    TriggerManager(IGpioProvider* gpio = nullptr);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
@@ -43,8 +43,6 @@ public:
 
 
 private:
-    // Private default constructor for singleton compatibility
-    TriggerManager() = default;
 
     void setup_gpio_pins();
     void InitializeTriggerMappings();

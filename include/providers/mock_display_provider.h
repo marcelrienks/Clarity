@@ -11,8 +11,11 @@ class MockDisplayProvider : public IDisplayProvider
 {
 private:
     lv_obj_t* mainScreen_;
-    std::vector<std::unique_ptr<lv_obj_t>> createdObjects_;
     lv_obj_t* currentScreen_;
+    
+#ifdef UNIT_TESTING
+    std::vector<std::unique_ptr<lv_obj_t>> createdObjects_;
+#endif
 
 public:
     /// @brief Constructor
