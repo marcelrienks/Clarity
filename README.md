@@ -11,6 +11,8 @@ Currently all unit tests and environment builds are working, but the integration
 * Cleanup:
    * Are there any inconsistencies in code/testing
    * Are there any redundant, pointless, or unused functions/tests
+   * Are code/test readme files up to date with current architecture
+   * Is all code properly commented
 
 ## Main Libraries:
 * Arduino
