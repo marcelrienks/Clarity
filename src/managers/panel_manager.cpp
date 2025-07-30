@@ -15,9 +15,13 @@ PanelManager &PanelManager::GetInstance()
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 /// Registers all available panel types with the factory for dynamic creation
 /// Also initializes dual-core trigger system
-void PanelManager::init()
+void PanelManager::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing panel manager...");
+    
+    // Store hardware providers
+    gpioProvider_ = gpio;
+    displayProvider_ = display;
     
     // Register all available panel types with the factory
     RegisterAllPanels();
@@ -58,7 +62,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     }
 
     panel_ = PanelManager::CreatePanel(panelName);
-    panel_->init();
+    panel_->init(gpioProvider_, displayProvider_);
 
     // Make a copy of the panel name to avoid pointer issues
     strncpy(currentPanelBuffer, panelName, sizeof(currentPanelBuffer) - 1);
@@ -66,7 +70,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     currentPanel = currentPanelBuffer;
 
     SetUiState(UIState::LOADING);
-    panel_->load(completionCallback);
+    panel_->load(completionCallback, gpioProvider_, displayProvider_);
     Ticker::handle_lv_tasks();
 }
 
@@ -86,7 +90,7 @@ void PanelManager::UpdatePanel()
 {
     SetUiState(UIState::UPDATING);
     panel_->update([this]()
-                   { this->PanelManager::PanelCompletionCallback(); });
+                   { this->PanelManager::PanelCompletionCallback(); }, gpioProvider_, displayProvider_);
 
     Ticker::handle_lv_tasks();
 }

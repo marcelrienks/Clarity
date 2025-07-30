@@ -2,6 +2,8 @@
 
 #include "interfaces/i_panel.h"
 #include "interfaces/i_device.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/key_panel.h"
@@ -72,8 +74,10 @@ public:
     static PanelManager &GetInstance();
 
     // Core Functionality Methods
-    /// @brief Initialize the panel manager
-    void init();
+    /// @brief Initialize the panel manager with hardware providers
+    /// @param gpio GPIO provider for hardware access
+    /// @param display Display provider for UI operations
+    void init(IGpioProvider* gpio, IDisplayProvider* display);
     
     
     
@@ -155,5 +159,7 @@ private:
     std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // Map of panel type names to creator functions for each of those names
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
+    IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
+    IDisplayProvider* displayProvider_ = nullptr; ///< Display provider for UI operations
     // Removed queue handles - now using shared state trigger system
 };

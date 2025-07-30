@@ -27,5 +27,5 @@ class ClarityComponent : public IComponent
 {
 public:
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
 };

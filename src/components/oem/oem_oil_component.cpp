@@ -94,7 +94,7 @@ OemOilComponent::~OemOilComponent()
 /// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location)
+void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
     log_d("...");
 

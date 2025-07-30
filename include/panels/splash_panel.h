@@ -38,9 +38,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::SPLASH;
-    void init() override;
-    void load(std::function<void()> callbackFunction) override;
-    void update(std::function<void()> callbackFunction = nullptr) override;
+    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
 
 private:
     // Private Data Members

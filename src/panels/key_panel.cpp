@@ -21,16 +21,30 @@ KeyPanel::~KeyPanel()
 
 // Core Functionality Methods
 /// @brief Initialize the key panel and its components
-void KeyPanel::init()
+void KeyPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing key panel and reading current GPIO key state");
 
-    screen_ = LvTools::create_blank_screen();
+    // TODO: Remove fallback when providers are fully implemented in Step 4
+    if (display) {
+        screen_ = display->createScreen();
+    } else {
+        // Fallback to direct LVGL calls for now
+        screen_ = LvTools::create_blank_screen();
+    }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    // Get current key state by reading GPIO pins directly
-    bool pin25High = digitalRead(gpio_pins::KEY_PRESENT);
-    bool pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    // Get current key state by reading GPIO pins via provider
+    // TODO: Remove fallback when providers are fully implemented in Step 4
+    bool pin25High, pin26High;
+    if (gpio) {
+        pin25High = gpio->digitalRead(gpio_pins::KEY_PRESENT);
+        pin26High = gpio->digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    } else {
+        // Fallback to direct GPIO calls for now
+        pin25High = digitalRead(gpio_pins::KEY_PRESENT);
+        pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    }
     
     if (pin25High && pin26High)
     {
@@ -51,12 +65,18 @@ void KeyPanel::init()
 }
 
 /// @brief Load the key panel UI components
-void KeyPanel::load(std::function<void()> callbackFunction)
+void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Loading key panel with current key state display");
     callbackFunction_ = callbackFunction;
 
-    keyComponent_->render(screen_, centerLocation_);
+    // TODO: Remove fallback when providers are fully implemented in Step 4
+    if (display) {
+        keyComponent_->render(screen_, centerLocation_, display);
+    } else {
+        // Fallback - components need to handle nullptr display
+        keyComponent_->render(screen_, centerLocation_, nullptr);
+    }
     keyComponent_->refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     
     lv_obj_add_event_cb(screen_, KeyPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
@@ -66,7 +86,7 @@ void KeyPanel::load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the key panel with current sensor data
-void KeyPanel::update(std::function<void()> callbackFunction)
+void KeyPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
 
     // Re-read GPIO pins to determine current key state

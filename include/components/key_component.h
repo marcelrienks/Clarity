@@ -34,7 +34,7 @@ public:
     virtual ~KeyComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
     void refresh(const Reading& reading) override;
 
 protected:

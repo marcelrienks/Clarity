@@ -39,11 +39,12 @@ void KeyComponent::refresh(const Reading& reading)
 /// @brief This method initializes the key present icon with location parameters
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location)
+void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
     log_d("Rendering key component icon at specified location");
 
     // Create the key icon
+    // Note: LVGL doesn't have image creation in IDisplayProvider yet, keeping direct call
     keyIcon_ = lv_image_create(screen);
     lv_image_set_src(keyIcon_, &key_solid);
 

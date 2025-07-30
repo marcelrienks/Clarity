@@ -51,7 +51,7 @@ public:
     virtual ~OemOilComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
     void refresh(const Reading& reading) override;
     void SetValue(int32_t value) override;
 

@@ -27,11 +27,11 @@ LockPanel::~LockPanel()
 // Core Functionality Methods
 
 /// @brief Initialize the lock panel and its components
-void LockPanel::init()
+void LockPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing lock panel with sensor and display components");
 
-    screen_ = LvTools::create_blank_screen();
+    screen_ = display->createScreen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     lockSensor_->init();
@@ -39,13 +39,13 @@ void LockPanel::init()
 }
 
 /// @brief Load the lock panel UI components
-void LockPanel::load(std::function<void()> callbackFunction)
+void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Loading lock panel with current lock state display");
     callbackFunction_ = callbackFunction;
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
-    lockComponent_->render(screen_, centerLocation_);
+    lockComponent_->render(screen_, centerLocation_, display);
     lockComponent_->refresh(Reading{isLockEngaged_});
     lv_obj_add_event_cb(screen_, LockPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -54,7 +54,7 @@ void LockPanel::load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the lock panel with current sensor data
-void LockPanel::update(std::function<void()> callbackFunction)
+void LockPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     // Immediately call the completion callback so that lock/unlock logic is processed
     callbackFunction();

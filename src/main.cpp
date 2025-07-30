@@ -17,7 +17,8 @@ void setup()
   trigger_manager.init();
 
   PanelManager &panel_manager = PanelManager::GetInstance();
-  panel_manager.init();
+  // TODO: Replace with actual providers from Device in Step 4 of roadmap
+  panel_manager.init(nullptr, nullptr);
 
   // Check if startup triggers require a specific panel, otherwise use config default
   const char* startupPanel = trigger_manager.GetStartupPanelOverride();

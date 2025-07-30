@@ -57,11 +57,11 @@ OemOilPanel::~OemOilPanel()
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
-void OemOilPanel::init()
+void OemOilPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing OEM oil panel with sensors and display components");
 
-    screen_ = LvTools::create_blank_screen();
+    screen_ = display->createScreen();
 
     oemOilPressureSensor_->init();
     currentOilPressureValue_ = -1; // Sentinel value to ensure first update
@@ -72,7 +72,7 @@ void OemOilPanel::init()
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
-void OemOilPanel::load(std::function<void()> callbackFunction)
+void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
@@ -81,8 +81,8 @@ void OemOilPanel::load(std::function<void()> callbackFunction)
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    oemOilPressureComponent_->render(screen_, pressureLocation);
-    oemOilTemperatureComponent_->render(screen_, temperatureLocation);
+    oemOilPressureComponent_->render(screen_, pressureLocation, display);
+    oemOilTemperatureComponent_->render(screen_, temperatureLocation, display);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -91,7 +91,7 @@ void OemOilPanel::load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::update(std::function<void()> callbackFunction)
+void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Updating OEM oil panel readings and checking for changes");
 

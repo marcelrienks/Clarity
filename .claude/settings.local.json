@@ -14,7 +14,8 @@
       "Bash(mkdir:*)",
       "Bash(git checkout:*)",
       "Bash(cp:*)",
-      "Bash(./run_quick_tests.sh:*)"
+      "Bash(./run_quick_tests.sh:*)",
+      "Bash(pio.exe run:*)"
     ],
     "deny": []
   }

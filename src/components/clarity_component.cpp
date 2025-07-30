@@ -6,11 +6,18 @@
 /// @brief Initialises the Clarity Component by rendering a splash screen with location parameters
 /// @param screen the screen on which to render the component
 /// @param location the location parameters for positioning the component
-void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& location) {
+void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) {
     log_d("Rendering Clarity splash text component");
      
     // Using a label (recommended for text display)
-    lv_obj_t *splash = lv_label_create(screen);
+    // TODO: Remove fallback when providers are fully implemented in Step 4
+    lv_obj_t *splash;
+    if (display) {
+        splash = display->createLabel(screen);
+    } else {
+        // Fallback to direct LVGL calls
+        splash = lv_label_create(screen);
+    }
     lv_label_set_text(splash, "Clarity");
     
     // Apply the current theme's text style

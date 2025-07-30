@@ -9,6 +9,8 @@
 // Project Includes
 #include "interfaces/i_device.h"
 #include "interfaces/i_sensor.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
 
 class IPanel
 {
@@ -18,15 +20,21 @@ public:
 
     // Core Interface Methods
     /// @brief Initialize the panel and its components
-    virtual void init() = 0;
+    /// @param gpio GPIO provider for hardware access
+    /// @param display Display provider for UI operations
+    virtual void init(IGpioProvider* gpio, IDisplayProvider* display) = 0;
 
     /// @brief Load the panel with asynchronous completion callback
     /// @param callbackFunction Function to call when loading is complete
-    virtual void load(std::function<void()> callbackFunction) = 0;
+    /// @param gpio GPIO provider for hardware access
+    /// @param display Display provider for UI operations
+    virtual void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) = 0;
 
     /// @brief Update the panel data with asynchronous completion callback
     /// @param callbackFunction Function to call when update is complete
-    virtual void update(std::function<void()> callbackFunction) = 0;
+    /// @param gpio GPIO provider for hardware access
+    /// @param display Display provider for UI operations
+    virtual void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) = 0;
 
 protected:
     // Protected Data Members

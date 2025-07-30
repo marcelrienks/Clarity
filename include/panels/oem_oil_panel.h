@@ -49,9 +49,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::OIL;
-    void init() override;
-    void load(std::function<void()> callbackFunction) override;
-    void update(std::function<void()> callbackFunction = nullptr) override;
+    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 1000;

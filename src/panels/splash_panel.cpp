@@ -27,16 +27,23 @@ SplashPanel::~SplashPanel()
 
 /// @brief Initialize the screen with component
 /// Creates blank screens for animation transitions
-void SplashPanel::init()
+void SplashPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing splash panel screen and animation components");
-    blankScreen_ = LvTools::create_blank_screen();
-    screen_ = LvTools::create_blank_screen();
+    // TODO: Remove fallback when providers are fully implemented in Step 4
+    if (display) {
+        blankScreen_ = display->createScreen();
+        screen_ = display->createScreen();
+    } else {
+        // Fallback to direct LVGL calls
+        blankScreen_ = LvTools::create_blank_screen();
+        screen_ = LvTools::create_blank_screen();
+    }
 }
 
 /// @brief Show the screen
 /// @param callbackFunction the function to call when the splash screen is complete
-void SplashPanel::load(std::function<void()> callbackFunction)
+void SplashPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_i("Loading splash panel with fade-in animation");
 
@@ -45,12 +52,17 @@ void SplashPanel::load(std::function<void()> callbackFunction)
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
-    component_->render(screen_, splashLocation);
+    // TODO: Remove fallback when providers are fully implemented in Step 4
+    if (display) {
+        component_->render(screen_, splashLocation, display);
+    } else {
+        component_->render(screen_, splashLocation, nullptr);
+    }
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::update(std::function<void()> callbackFunction)
+void SplashPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     // Immediately call the completion callback so that lock/unlock logic is processed
     callbackFunction();
