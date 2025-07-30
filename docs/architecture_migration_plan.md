@@ -35,17 +35,17 @@ This document outlines the complete migration from the current mixed singleton/f
 
 ### Service Interfaces
 ```cpp
-// Core service interfaces
-interface IStyleService
-interface IPreferenceService  
-interface ITriggerService
-interface IPanelService
+// Core service interfaces (implemented directly by managers)
+interface IStyleService      // Implemented by StyleManager
+interface IPreferenceService // Implemented by PreferenceManager
+interface ITriggerService    // Implemented by TriggerManager
+interface IPanelService      // Implemented by PanelManager
 
 // Hardware abstraction interfaces (already exist)
 interface IGpioProvider
 interface IDisplayProvider
 
-// New service interfaces
+// Factory interfaces
 interface IComponentFactory
 interface IServiceContainer
 ```
@@ -62,10 +62,11 @@ interface IServiceContainer
 - [ ] `IComponentFactory`: Component creation with dependencies
 - [ ] `IServiceContainer`: Dependency resolution container
 
-### 1.2 Abstract Manager Implementations
-- [ ] Create interfaces that abstract current manager functionality
+### 1.2 Manager Interface Implementation
+- [ ] Make managers directly implement service interfaces (no additional abstraction layer)
 - [ ] Ensure interfaces are mockable for testing
 - [ ] Define clear service boundaries
+- [ ] Remove singleton patterns from managers
 
 ## Phase 2: Component Architecture Refactoring
 
@@ -148,17 +149,18 @@ public:
 - [ ] Define service lifetimes (singleton vs transient)
 - [ ] Handle circular dependencies if any
 
-## Phase 5: Manager Service Implementation
+## Phase 5: Manager Interface Implementation
 
-### 5.1 Convert Managers to Services
-- [ ] `StyleManager` → `StyleService` (implements `IStyleService`)
-- [ ] `PreferenceManager` → `PreferenceService` (implements `IPreferenceService`)
-- [ ] `TriggerManager` → `TriggerService` (implements `ITriggerService`)
-- [ ] `PanelManager` → `PanelService` (implements `IPanelService`)
+### 5.1 Direct Manager Interface Implementation
+- [ ] `StyleManager` directly implements `IStyleService` (no separate service class)
+- [ ] `PreferenceManager` directly implements `IPreferenceService`
+- [ ] `TriggerManager` directly implements `ITriggerService`
+- [ ] `PanelManager` directly implements `IPanelService`
 
 ### 5.2 Remove Singleton Pattern
-- [ ] Remove all `GetInstance()` methods
-- [ ] Remove static instances
+- [ ] Remove all `GetInstance()` methods from managers
+- [ ] Remove static instances and global variables
+- [ ] Add constructor injection for dependencies
 - [ ] Ensure thread safety where needed
 
 ## Phase 6: Application Composition Root
@@ -183,30 +185,29 @@ void setup() {
         return std::make_unique<LvglDisplayProvider>(device.screen);
     });
     
-    // Register services
+    // Register managers as services (direct interface implementation)
     container->registerSingleton<IStyleService>([&]() {
-        auto service = std::make_unique<StyleService>();
-        service->init(Themes::DAY);
-        return service;
+        auto manager = std::make_unique<StyleManager>();
+        manager->init(Themes::DAY);
+        return manager;
     });
     
     container->registerSingleton<IPreferenceService>([]() {
-        auto service = std::make_unique<PreferenceService>();
-        service->init();
-        return service;
+        auto manager = std::make_unique<PreferenceManager>();
+        manager->init();
+        return manager;
     });
     
     container->registerSingleton<ITriggerService>([&]() {
-        return std::make_unique<TriggerService>(
+        return std::make_unique<TriggerManager>(
             container->resolve<IGpioProvider>()
         );
     });
     
     container->registerSingleton<IPanelService>([&]() {
-        return std::make_unique<PanelService>(
+        return std::make_unique<PanelManager>(
             container->resolve<IDisplayProvider>(),
-            container->resolve<IGpioProvider>(),
-            container->resolve<IPanelFactory>()
+            container->resolve<IGpioProvider>()
         );
     });
     
@@ -226,11 +227,11 @@ void setup() {
         );
     });
     
-    // Create application
+    // Create application with injected manager interfaces
     auto app = std::make_unique<ClarityApplication>(
-        container->resolve<IPanelService>(),
-        container->resolve<ITriggerService>(),
-        container->resolve<IPreferenceService>()
+        container->resolve<IPanelService>(),    // PanelManager as IPanelService
+        container->resolve<ITriggerService>(),  // TriggerManager as ITriggerService
+        container->resolve<IPreferenceService>() // PreferenceManager as IPreferenceService
     );
     
     app->run();
@@ -241,10 +242,10 @@ void setup() {
 
 ### 7.1 Mock Implementations
 - [ ] Create mock implementations of all service interfaces
-- [ ] `MockStyleService`
-- [ ] `MockPreferenceService`
-- [ ] `MockTriggerService`
-- [ ] `MockPanelService`
+- [ ] `MockStyleManager` (implements `IStyleService`)
+- [ ] `MockPreferenceManager` (implements `IPreferenceService`)
+- [ ] `MockTriggerManager` (implements `ITriggerService`)
+- [ ] `MockPanelManager` (implements `IPanelService`)
 - [ ] `MockComponentFactory`
 - [ ] `MockPanelFactory`
 
@@ -269,7 +270,7 @@ class OilComponentTestBuilder {
     TestServiceContainer container_;
     
 public:
-    OilComponentTestBuilder& withMockStyle(std::unique_ptr<MockStyleService> mock);
+    OilComponentTestBuilder& withMockStyle(std::unique_ptr<MockStyleManager> mock);
     OilComponentTestBuilder& withMockDisplay(std::unique_ptr<MockDisplayProvider> mock);
     std::unique_ptr<OilComponent> build();
 };
@@ -292,10 +293,10 @@ public:
 2. Create panel factory
 3. Update panel tests
 
-### Sprint 4: Service Implementation
-1. Convert managers to services
-2. Remove singleton patterns
-3. Update service tests
+### Sprint 4: Manager Interface Implementation
+1. Make managers implement service interfaces directly
+2. Remove singleton patterns from managers
+3. Update manager tests to use interfaces
 
 ### Sprint 5: Application Integration
 1. Create composition root
@@ -341,8 +342,8 @@ public:
 ## Migration Strategy
 
 ### Gradual Migration
-1. Start with least coupled components (StyleService)
-2. Move to more complex managers
+1. Start with least coupled managers (StyleManager → IStyleService)
+2. Move to more complex managers (PanelManager → IPanelService)
 3. Keep both patterns during transition
 4. Remove old patterns after validation
 
