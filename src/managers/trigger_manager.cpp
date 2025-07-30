@@ -40,7 +40,7 @@ void TriggerManager::init()
     InitializeTriggersFromGpio();
 }
 
-void TriggerManager::ProcessTriggerEvents()
+void TriggerManager::processTriggerEvents()
 {
     // Direct GPIO polling - check for pin changes
     CheckGpioChanges();
@@ -96,11 +96,11 @@ void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinSt
         UpdateActiveTriggersSimple(mapping, newState);
         
         // Execute trigger action immediately
-        ExecuteTriggerAction(mapping, newState);
+        executeTriggerAction(mapping, newState);
     }
 }
 
-void TriggerManager::ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state)
+void TriggerManager::executeTriggerAction(Trigger* mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
         // Execute trigger action when activated

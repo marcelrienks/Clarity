@@ -3,6 +3,7 @@
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_trigger_service.h"
 #include <esp32-hal-log.h>
 #include <vector>
 
@@ -21,7 +22,7 @@
  * 4. Priority evaluation from lowest to highest (highest priority action wins)
  * 5. No cross-core communication needed
  */
-class TriggerManager
+class TriggerManager : public ITriggerService
 {
 public:
     // Constructors and Destructors
@@ -33,13 +34,16 @@ public:
     // Static Methods (kept for backward compatibility during transition)
     static TriggerManager &GetInstance();
 
-    // Core Functionality
-    void init();
-    void ProcessTriggerEvents();
-    void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state);
+    // ITriggerService Interface Implementation
+    void init() override;
+    void processTriggerEvents() override;
+    void executeTriggerAction(Trigger* mapping, TriggerExecutionState state) override;
+    const char* getStartupPanelOverride() const override { return startupPanelOverride_; }
     
-    // Get startup panel override (null if no override needed)
-    const char* GetStartupPanelOverride() const { return startupPanelOverride_; }
+    // Legacy Methods (for backward compatibility during transition)
+    void ProcessTriggerEvents() { processTriggerEvents(); }
+    void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state) { executeTriggerAction(mapping, state); }
+    const char* GetStartupPanelOverride() const { return getStartupPanelOverride(); }
 
 
 private:
