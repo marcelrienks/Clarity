@@ -2,7 +2,8 @@
 #include <icons/key_solid.h>
 
 // Constructors and Destructors
-KeyComponent::KeyComponent() : keyIcon_(nullptr)
+KeyComponent::KeyComponent(IStyleService* styleService) 
+    : keyIcon_(nullptr), styleService_(styleService)
 {
 }
 
@@ -25,15 +26,15 @@ void KeyComponent::refresh(const Reading& reading)
     
     if (key_state == KeyState::Present)
     {
-        colour = StyleManager::GetInstance().get_colours(StyleManager::GetInstance().THEME).keyPresent;
+        colour = styleService_->getThemeColors().keyPresent;
     }
     else // KeyState::NotPresent or KeyState::Inactive
     {
-        colour = StyleManager::GetInstance().get_colours(StyleManager::GetInstance().THEME).keyNotPresent;
+        colour = styleService_->getThemeColors().keyNotPresent;
     }
 
-    lv_obj_set_style_image_recolor(keyIcon_, colour, MAIN_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(keyIcon_, LV_OPA_COVER, MAIN_DEFAULT);
+    lv_obj_set_style_image_recolor(keyIcon_, colour, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(keyIcon_, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
 
 /// @brief This method initializes the key present icon with location parameters

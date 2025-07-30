@@ -2,6 +2,7 @@
 
 // Project Includes
 #include "interfaces/i_component.h"
+#include "interfaces/i_style_service.h"
 
 /**
  * @class ClarityComponent
@@ -26,6 +27,13 @@
 class ClarityComponent : public IComponent
 {
 public:
+    // Constructors and Destructors
+    explicit ClarityComponent(IStyleService* styleService);
+    virtual ~ClarityComponent() = default;
+
     // Core Functionality Methods
     void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
+
+private:
+    IStyleService* styleService_;
 };

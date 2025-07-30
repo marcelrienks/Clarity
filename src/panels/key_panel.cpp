@@ -1,11 +1,12 @@
 #include "panels/key_panel.h"
+#include "managers/style_manager.h"
 #include "hardware/gpio_pins.h"
 #include <variant>
 #include <Arduino.h>
 
 // Constructors and Destructors
 KeyPanel::KeyPanel() 
-    : keyComponent_(std::make_shared<KeyComponent>()) {}
+    : keyComponent_(std::make_shared<KeyComponent>(&StyleManager::GetInstance())) {}
 
 KeyPanel::~KeyPanel()
 {

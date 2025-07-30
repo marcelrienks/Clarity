@@ -64,7 +64,8 @@ void MockComponentFactory::registerComponent(const std::string& name, ComponentF
 }
 
 std::unique_ptr<IComponent> MockComponentFactory::createComponent(const std::string& name, 
-                                                                 IDisplayProvider* display)
+                                                                 IDisplayProvider* display,
+                                                                 IStyleService* style)
 {
     componentCreationCount_++;
     bool success = false;
@@ -85,7 +86,7 @@ std::unique_ptr<IComponent> MockComponentFactory::createComponent(const std::str
     if (factoryIt != componentFactories_.end()) {
         success = true;
         recordCreation("component", name, true);
-        return factoryIt->second(display);
+        return factoryIt->second(display, style);
     }
     
     // Create mock component if factory not found and we're not returning null
@@ -163,7 +164,7 @@ void MockComponentFactory::registerMockPanel(const std::string& name)
 
 void MockComponentFactory::registerMockComponent(const std::string& name)
 {
-    registerComponent(name, [name](IDisplayProvider* display) -> std::unique_ptr<IComponent> {
+    registerComponent(name, [name](IDisplayProvider* display, IStyleService* style) -> std::unique_ptr<IComponent> {
         return std::make_unique<MockComponent>(name);
     });
 }

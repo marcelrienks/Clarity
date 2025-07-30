@@ -1,5 +1,10 @@
 #include "components/clarity_component.h"
-#include "managers/style_manager.h"
+
+// Constructors and Destructors
+ClarityComponent::ClarityComponent(IStyleService* styleService) 
+    : styleService_(styleService)
+{
+}
 
 // Core Functionality Methods
 
@@ -21,7 +26,7 @@ void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& locatio
     lv_label_set_text(splash, "Clarity");
     
     // Apply the current theme's text style
-    lv_obj_add_style(splash, &StyleManager::GetInstance().textStyle, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_style(splash, &styleService_->getTextStyle(), LV_PART_MAIN | LV_STATE_DEFAULT);
     
     // Apply location settings
     lv_obj_align(splash, location.align, location.x_offset, location.y_offset);

@@ -1,9 +1,10 @@
 #include "panels/splash_panel.h"
+#include "managers/style_manager.h"
 
 // Constructors and Destructors
 
 SplashPanel::SplashPanel()
-    : component_(std::make_shared<ClarityComponent>()) {}
+    : component_(std::make_shared<ClarityComponent>(&StyleManager::GetInstance())) {}
 
 SplashPanel::~SplashPanel()
 {

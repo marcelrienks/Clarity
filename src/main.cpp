@@ -39,25 +39,25 @@ void registerProductionComponents() {
   });
   
   // Register components
-  registry.registerComponent("key", [](IDisplayProvider* display) {
-    return std::make_unique<KeyComponent>();
+  registry.registerComponent("key", [](IDisplayProvider* display, IStyleService* style) {
+    return std::make_unique<KeyComponent>(style);
   });
   
-  registry.registerComponent("lock", [](IDisplayProvider* display) {
-    return std::make_unique<LockComponent>();
+  registry.registerComponent("lock", [](IDisplayProvider* display, IStyleService* style) {
+    return std::make_unique<LockComponent>(style);
   });
   
-  registry.registerComponent("clarity", [](IDisplayProvider* display) {
-    return std::make_unique<ClarityComponent>();
+  registry.registerComponent("clarity", [](IDisplayProvider* display, IStyleService* style) {
+    return std::make_unique<ClarityComponent>(style);
   });
   
   
-  registry.registerComponent("oem_oil_pressure", [](IDisplayProvider* display) {
-    return std::make_unique<OemOilPressureComponent>(&StyleManager::GetInstance());
+  registry.registerComponent("oem_oil_pressure", [](IDisplayProvider* display, IStyleService* style) {
+    return std::make_unique<OemOilPressureComponent>(style);
   });
   
-  registry.registerComponent("oem_oil_temperature", [](IDisplayProvider* display) {
-    return std::make_unique<OemOilTemperatureComponent>(&StyleManager::GetInstance());
+  registry.registerComponent("oem_oil_temperature", [](IDisplayProvider* display, IStyleService* style) {
+    return std::make_unique<OemOilTemperatureComponent>(style);
   });
 }
 

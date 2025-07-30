@@ -21,10 +21,10 @@ std::unique_ptr<IPanel> ComponentRegistry::createPanel(const std::string& name, 
     return nullptr;
 }
 
-std::unique_ptr<IComponent> ComponentRegistry::createComponent(const std::string& name, IDisplayProvider* display) {
+std::unique_ptr<IComponent> ComponentRegistry::createComponent(const std::string& name, IDisplayProvider* display, IStyleService* style) {
     auto it = componentFactories.find(name);
     if (it != componentFactories.end()) {
-        return it->second(display);
+        return it->second(display, style);
     }
     return nullptr;
 }

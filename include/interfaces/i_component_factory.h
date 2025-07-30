@@ -10,6 +10,7 @@
 #include "interfaces/i_panel.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_style_service.h"
 
 /**
  * @interface IComponentFactory
@@ -30,7 +31,7 @@ class IComponentFactory
 public:
     // Type Definitions
     using PanelFactoryFunction = std::function<std::unique_ptr<IPanel>(IGpioProvider*, IDisplayProvider*)>;
-    using ComponentFactoryFunction = std::function<std::unique_ptr<IComponent>(IDisplayProvider*)>;
+    using ComponentFactoryFunction = std::function<std::unique_ptr<IComponent>(IDisplayProvider*, IStyleService*)>;
 
     virtual ~IComponentFactory() = default;
 
@@ -74,10 +75,12 @@ public:
      * @brief Create a component instance by name with injected dependencies
      * @param name Component type identifier
      * @param display Display provider for UI operations
+     * @param style Style service for theme and styling operations
      * @return Unique pointer to created component instance
      */
     virtual std::unique_ptr<IComponent> createComponent(const std::string& name, 
-                                                       IDisplayProvider* display) = 0;
+                                                       IDisplayProvider* display,
+                                                       IStyleService* style) = 0;
 
     /**
      * @brief Check if a component type is registered

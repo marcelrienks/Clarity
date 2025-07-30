@@ -1,9 +1,10 @@
 #include "panels/lock_panel.h"
+#include "managers/style_manager.h"
 #include <variant>
 
 // Constructors and Destructors
 LockPanel::LockPanel()
-    : lockComponent_(std::make_shared<LockComponent>()),
+    : lockComponent_(std::make_shared<LockComponent>(&StyleManager::GetInstance())),
       lockSensor_(std::make_shared<LockSensor>()) {}
 
 LockPanel::~LockPanel()

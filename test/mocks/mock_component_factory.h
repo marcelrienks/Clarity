@@ -52,7 +52,8 @@ public:
     // Component Factory Methods
     void registerComponent(const std::string& name, ComponentFactoryFunction factory) override;
     std::unique_ptr<IComponent> createComponent(const std::string& name, 
-                                               IDisplayProvider* display) override;
+                                               IDisplayProvider* display,
+                                               IStyleService* style) override;
     bool hasComponentRegistration(const std::string& name) const override;
 
     // Utility Methods
