@@ -78,9 +78,7 @@ public:
      * @param style Style service for theme and styling operations
      * @return Unique pointer to created component instance
      */
-    virtual std::unique_ptr<IComponent> createComponent(const std::string& name, 
-                                                       IDisplayProvider* display,
-                                                       IStyleService* style) = 0;
+    virtual std::unique_ptr<IComponent> createComponent(const std::string& name) = 0;
 
     /**
      * @brief Check if a component type is registered

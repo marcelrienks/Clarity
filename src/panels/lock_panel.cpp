@@ -49,8 +49,8 @@ void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio
     callbackFunction_ = callbackFunction;
 
     // Create component using the injected component factory
-    IStyleService* styleService = &StyleManager::GetInstance();
-    lockComponent_ = componentFactory_->createComponent("lock", display, styleService);
+    // The factory now has all required dependencies (style service and display provider) injected
+    lockComponent_ = componentFactory_->createComponent("lock");
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->render(screen_, centerLocation_, display);

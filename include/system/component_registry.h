@@ -20,7 +20,7 @@ public:
     void registerComponent(const std::string& name, ComponentFactoryFunction factory) override;
 
     std::unique_ptr<IPanel> createPanel(const std::string& name, IGpioProvider* gpio, IDisplayProvider* display) override;
-    std::unique_ptr<IComponent> createComponent(const std::string& name, IDisplayProvider* display, IStyleService* style) override;
+    std::unique_ptr<IComponent> createComponent(const std::string& name) override;
 
     bool hasPanelRegistration(const std::string& name) const override;
     bool hasComponentRegistration(const std::string& name) const override;

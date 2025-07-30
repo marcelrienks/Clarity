@@ -9,21 +9,7 @@ StyleManager::~StyleManager()
     ResetStyles();
 }
 
-// Static Methods
-/// @brief Get the singleton instance of StyleManager
-/// @return instance of StyleManager
-StyleManager &StyleManager::GetInstance()
-{
-    // Return the factory-created global instance for consistency with new architecture
-    extern std::unique_ptr<StyleManager> g_styleManager;
-    if (g_styleManager) {
-        return *g_styleManager;
-    }
-    
-    // Fallback to static instance if global not available (shouldn't happen in normal flow)
-    static StyleManager instance;
-    return instance;
-}
+// Singleton pattern removed - StyleManager is now managed by ServiceContainer
 
 // Core Functionality Methods
 /// @brief Apply the current theme to a specific screen

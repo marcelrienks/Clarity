@@ -54,10 +54,8 @@ void SplashPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
     callbackFunction_ = callbackFunction;
 
     // Create component using the injected component factory
-    // Note: We need the style service but don't have direct access, so we'll get it from the StyleManager for now
-    // This will be improved in Step 4 when managers implement service interfaces directly
-    IStyleService* styleService = &StyleManager::GetInstance();
-    component_ = componentFactory_->createComponent("clarity", display, styleService);
+    // The factory now has all required dependencies (style service and display provider) injected
+    component_ = componentFactory_->createComponent("clarity");
 
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);

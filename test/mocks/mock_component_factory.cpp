@@ -63,9 +63,7 @@ void MockComponentFactory::registerComponent(const std::string& name, ComponentF
     componentFactories_[name] = factory;
 }
 
-std::unique_ptr<IComponent> MockComponentFactory::createComponent(const std::string& name, 
-                                                                 IDisplayProvider* display,
-                                                                 IStyleService* style)
+std::unique_ptr<IComponent> MockComponentFactory::createComponent(const std::string& name)
 {
     componentCreationCount_++;
     bool success = false;
@@ -86,7 +84,8 @@ std::unique_ptr<IComponent> MockComponentFactory::createComponent(const std::str
     if (factoryIt != componentFactories_.end()) {
         success = true;
         recordCreation("component", name, true);
-        return factoryIt->second(display, style);
+        // Mock factory: pass null for dependencies during transition
+        return factoryIt->second(nullptr, nullptr);
     }
     
     // Create mock component if factory not found and we're not returning null

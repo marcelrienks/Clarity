@@ -112,7 +112,9 @@ void TriggerManager::ExecuteTriggerAction(Trigger* mapping, TriggerExecutionStat
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme) {
             log_i("Executing theme action: %s", mapping->actionTarget);
-            StyleManager::GetInstance().set_theme(mapping->actionTarget);
+            // During transition: access global StyleManager instance
+            extern std::unique_ptr<StyleManager> g_styleManager;
+            g_styleManager->set_theme(mapping->actionTarget);
             // Refresh current panel with new theme
             PanelManager::GetInstance().UpdatePanel();
         }
@@ -135,7 +137,9 @@ void TriggerManager::ExecuteTriggerAction(Trigger* mapping, TriggerExecutionStat
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme) {
             log_i("Restoring theme: %s", mapping->restoreTarget);
-            StyleManager::GetInstance().set_theme(mapping->restoreTarget);
+            // During transition: access global StyleManager instance
+            extern std::unique_ptr<StyleManager> g_styleManager;
+            g_styleManager->set_theme(mapping->restoreTarget);
             // Refresh current panel with restored theme
             PanelManager::GetInstance().UpdatePanel();
         }
@@ -158,7 +162,9 @@ void TriggerManager::InitializeTriggersFromGpio()
     // Apply initial actions from active triggers
     if (activeThemeTrigger_) {
         log_i("Applying startup theme action: %s", activeThemeTrigger_->actionTarget);
-        StyleManager::GetInstance().set_theme(activeThemeTrigger_->actionTarget);
+        // During transition: access global StyleManager instance
+        extern std::unique_ptr<StyleManager> g_styleManager;
+        g_styleManager->set_theme(activeThemeTrigger_->actionTarget);
     }
     
     if (activePanelTrigger_) {

@@ -21,5 +21,7 @@ void LvTools::reset_screen(lv_obj_t *screen)
     log_d("Applying theme background style to screen");
     
     // Apply the current theme's background style from the StyleManager
-    StyleManager::GetInstance().apply_theme_to_screen(screen);
+    // During transition: access global StyleManager instance
+    extern std::unique_ptr<StyleManager> g_styleManager;
+    g_styleManager->apply_theme_to_screen(screen);
 }

@@ -75,8 +75,8 @@ void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio,
     callbackFunction_ = callbackFunction;
 
     // Create component using the injected component factory
-    IStyleService* styleService = &StyleManager::GetInstance();
-    keyComponent_ = componentFactory_->createComponent("key", display, styleService);
+    // The factory now has all required dependencies (style service and display provider) injected
+    keyComponent_ = componentFactory_->createComponent("key");
 
     // Render the component
     if (display) {

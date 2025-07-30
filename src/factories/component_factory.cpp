@@ -1,5 +1,10 @@
 #include "factories/component_factory.h"
 
+ComponentFactory::ComponentFactory(IStyleService* styleService, IDisplayProvider* displayProvider)
+    : styleService_(styleService), displayProvider_(displayProvider)
+{
+}
+
 void ComponentFactory::registerPanel(const std::string& name, PanelFactoryFunction factory)
 {
     panelFactories_[name] = factory;
@@ -26,13 +31,11 @@ void ComponentFactory::registerComponent(const std::string& name, ComponentFacto
     componentFactories_[name] = factory;
 }
 
-std::unique_ptr<IComponent> ComponentFactory::createComponent(const std::string& name, 
-                                                             IDisplayProvider* display,
-                                                             IStyleService* style)
+std::unique_ptr<IComponent> ComponentFactory::createComponent(const std::string& name)
 {
     auto it = componentFactories_.find(name);
     if (it != componentFactories_.end()) {
-        return it->second(display, style);
+        return it->second(displayProvider_, styleService_);
     }
     return nullptr;
 }

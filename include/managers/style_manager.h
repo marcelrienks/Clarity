@@ -12,13 +12,13 @@
 
 /**
  * @class StyleManager
- * @brief Singleton theme and LVGL style management system
+ * @brief Theme and LVGL style management service
  *
- * @details This manager provides centralized theme management and LVGL style
+ * @details This service provides centralized theme management and LVGL style
  * allocation for the entire application. It implements efficient style sharing
  * to reduce memory usage and provides consistent theming across all components.
  *
- * @design_pattern Singleton - ensures consistent theming across app
+ * @design_pattern Service with Dependency Injection - managed by ServiceContainer
  * @theme_system Day/Night themes with customizable color schemes
  * @style_sharing Shared style objects reduce memory fragmentation
  * @memory_optimization Single style instances used by multiple components
@@ -66,8 +66,7 @@ public:
     StyleManager(const StyleManager&) = delete;
     StyleManager& operator=(const StyleManager&) = delete;
 
-    // Static Methods (kept for backward compatibility during transition)
-    static StyleManager &GetInstance();
+    // Removed singleton pattern - StyleManager is now managed by ServiceContainer
 
     // Core Functionality Methods (IStyleService implementation)
     void init(const char *theme) override;

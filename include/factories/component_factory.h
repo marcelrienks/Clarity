@@ -30,7 +30,7 @@
 class ComponentFactory : public IComponentFactory
 {
 public:
-    ComponentFactory() = default;
+    ComponentFactory(IStyleService* styleService, IDisplayProvider* displayProvider);
     virtual ~ComponentFactory() = default;
 
     // Panel Factory Methods
@@ -42,15 +42,15 @@ public:
 
     // Component Factory Methods
     void registerComponent(const std::string& name, ComponentFactoryFunction factory) override;
-    std::unique_ptr<IComponent> createComponent(const std::string& name, 
-                                               IDisplayProvider* display,
-                                               IStyleService* style) override;
+    std::unique_ptr<IComponent> createComponent(const std::string& name) override;
     bool hasComponentRegistration(const std::string& name) const override;
 
     // Utility Methods
     void clear() override;
 
 private:
+    IStyleService* styleService_;
+    IDisplayProvider* displayProvider_;
     std::unordered_map<std::string, PanelFactoryFunction> panelFactories_;
     std::unordered_map<std::string, ComponentFactoryFunction> componentFactories_;
 };

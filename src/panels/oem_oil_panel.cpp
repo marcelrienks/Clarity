@@ -82,11 +82,9 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
     callbackFunction_ = callbackFunction;
 
     // Create components using the injected component factory
-    // Note: We need the style service but don't have direct access, so we'll get it from the StyleManager for now
-    // This will be improved in Step 4 when managers implement service interfaces directly
-    IStyleService* styleService = &StyleManager::GetInstance();
-    oemOilPressureComponent_ = componentFactory_->createComponent("oem_oil_pressure", display, styleService);
-    oemOilTemperatureComponent_ = componentFactory_->createComponent("oem_oil_temperature", display, styleService);
+    // The factory now has all required dependencies (style service and display provider) injected
+    oemOilPressureComponent_ = componentFactory_->createComponent("oem_oil_pressure");
+    oemOilTemperatureComponent_ = componentFactory_->createComponent("oem_oil_temperature");
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
@@ -110,7 +108,9 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
 
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
-    const char* currentTheme = StyleManager::GetInstance().THEME;
+    // During transition: access global StyleManager instance
+    extern std::unique_ptr<StyleManager> g_styleManager;
+    const char* currentTheme = g_styleManager->THEME;
     if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme)) {
         forceComponentRefresh_ = true;
         log_d("Theme changed to %s, forcing component refresh", currentTheme);
