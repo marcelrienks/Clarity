@@ -13,6 +13,7 @@ Currently all unit tests and environment builds are working, but the integration
    * Are there any redundant, pointless, or unused functions/tests
    * Are code/test readme files up to date with current architecture
    * Is all code properly commented
+   * Search for and remove any backwards compatability
 
 ## Main Libraries:
 * Arduino

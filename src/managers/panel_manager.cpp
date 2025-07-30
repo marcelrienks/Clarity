@@ -1,25 +1,8 @@
 #include "managers/panel_manager.h"
 
-// Static Methods
-
-/// @brief Get the singleton instance of PanelManager
-/// @return instance of PanelManager
-PanelManager &PanelManager::GetInstance()
-{
-    // Return the factory-created global instance for consistency with new architecture
-    extern std::unique_ptr<PanelManager> g_panelManager;
-    if (g_panelManager) {
-        return *g_panelManager;
-    }
-    
-    // Fallback to static instance if global not available (shouldn't happen in normal flow)
-    static PanelManager instance;
-    return instance;
-}
-
 // Core Functionality Methods
 
-/// @brief Initialise the panel manager to control the flow and rendering of all panels
+/// @brief Initialise the panel service to control the flow and rendering of all panels
 /// Registers all available panel types with the factory for dynamic creation
 /// Hardware providers are already injected via constructor
 void PanelManager::init()
@@ -199,11 +182,64 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 }
 
 
-/// @brief Set current UI state for Core 1 synchronization
+/// @brief Set current UI state for synchronization
 void PanelManager::SetUiState(UIState state)
 {
     uiState_ = state;
 }
 
+// State Management Methods (IPanelService implementation)
 
+/// @brief Get the current panel name
+const char* PanelManager::getCurrentPanel() const
+{
+    return currentPanel;
+}
+
+/// @brief Get the restoration panel name (panel to restore when triggers are inactive)
+const char* PanelManager::getRestorationPanel() const
+{
+    return restorationPanel;
+}
+
+// Temporary backward compatibility methods (will be removed in step 4.3)
+
+/// @brief Get the singleton instance of PanelManager (temporary compatibility)
+PanelManager &PanelManager::GetInstance()
+{
+    extern std::unique_ptr<PanelManager> g_panelManager;
+    return *g_panelManager;
+}
+
+// IPanelService interface implementations (delegate to original methods)
+
+/// @brief IPanelService implementation - delegate to CreateAndLoadPanel
+void PanelManager::createAndLoadPanel(const char* panelName, std::function<void()> completionCallback, bool isTriggerDriven)
+{
+    CreateAndLoadPanel(panelName, completionCallback, isTriggerDriven);
+}
+
+/// @brief IPanelService implementation - delegate to CreateAndLoadPanelWithSplash
+void PanelManager::createAndLoadPanelWithSplash(const char* panelName)
+{
+    CreateAndLoadPanelWithSplash(panelName);
+}
+
+/// @brief IPanelService implementation - delegate to UpdatePanel
+void PanelManager::updatePanel()
+{
+    UpdatePanel();
+}
+
+/// @brief IPanelService implementation - delegate to SetUiState
+void PanelManager::setUiState(UIState state)
+{
+    SetUiState(state);
+}
+
+/// @brief IPanelService implementation - delegate to TriggerPanelSwitchCallback
+void PanelManager::triggerPanelSwitchCallback(const char* triggerId)
+{
+    TriggerPanelSwitchCallback(triggerId);
+}
 

@@ -6,6 +6,7 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_component_factory.h"
 #include "interfaces/i_panel_factory.h"
+#include "interfaces/i_panel_service.h"
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/key_panel.h"
@@ -26,17 +27,16 @@
 
 /**
  * @class PanelManager
- * @brief Singleton factory for panel lifecycle management and transitions
+ * @brief Panel lifecycle management and transitions service implementing IPanelService
  * 
- * @details This manager handles the complete lifecycle of panels including
- * creation, loading, updating, and transitions. It implements both Factory
- * and Singleton patterns to provide centralized panel management with
- * dynamic panel registration and creation.
+ * @details This service handles the complete lifecycle of panels including
+ * creation, loading, updating, and transitions. It implements dependency injection
+ * patterns to provide centralized panel management with dynamic panel creation.
  * 
  * @design_patterns:
- * - Singleton: Single instance manages all panels
- * - Factory: Dynamic panel creation via registration
- * - Template: Type-safe panel registration
+ * - Dependency Injection: Dependencies injected via constructor
+ * - Factory: Dynamic panel creation via IPanelFactory
+ * - Service: Implements IPanelService interface
  * 
  * @panel_lifecycle:
  * 1. Register panel types with register_panel<T>()
@@ -65,7 +65,7 @@
  * The factory pattern allows easy addition of new panel types.
  */
 
-class PanelManager
+class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
@@ -74,36 +74,43 @@ public:
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
 
-    // Static Methods (kept for backward compatibility during transition)
+    // Temporary backward compatibility methods (will be removed in step 4.3)
     static PanelManager &GetInstance();
+    void CreateAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false);
+    void CreateAndLoadPanelWithSplash(const char* panelName);
+    void UpdatePanel();
+    void SetUiState(UIState state);
+    void TriggerPanelSwitchCallback(const char *triggerId);
 
-    // Core Functionality Methods
-    /// @brief Initialize the panel manager (dependencies already injected via constructor)
-    void init();
+
+    // Core Functionality Methods (IPanelService implementation)
+    /// @brief Initialize the panel service and register available panels
+    void init() override;
     
-    /// @brief Initialize the panel manager with hardware providers (backward compatibility)
+    /// @brief Initialize the panel service with hardware providers (backward compatibility)
     /// @param gpio GPIO provider for hardware access
     /// @param display Display provider for UI operations
-    void init(IGpioProvider* gpio, IDisplayProvider* display);
+    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
     
     
     
-    /// @brief Set current UI state for Core 1 synchronization
+    /// @brief Set current UI state for synchronization
     /// @param state Current UI processing state
-    void SetUiState(UIState state);
+    void setUiState(UIState state) override;
     
     
     /// @brief Create and load a panel by name with optional completion callback
-    /// @param panel_name Name of the panel to create and load
-    /// @param completion_callback Optional callback function to execute when loading is complete
-    void CreateAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false);
+    /// @param panelName Name of the panel to create and load
+    /// @param completionCallback Optional callback function to execute when loading is complete
+    /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
+    void createAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false) override;
     
     /// @brief Load a panel after first showing a splash screen transition
-    /// @param panel_name Name of the target panel to load after splash
-    void CreateAndLoadPanelWithSplash(const char* panelName);
+    /// @param panelName Name of the target panel to load after splash
+    void createAndLoadPanelWithSplash(const char* panelName) override;
     
     /// @brief Update the currently active panel (called from main loop)
-    void UpdatePanel();
+    void updatePanel() override;
     
     
 
@@ -118,10 +125,19 @@ public:
         };
     }
 
-    // Trigger Callbacks (public for trigger access)
+    // State Management Methods (IPanelService implementation)
+    /// @brief Get the current panel name
+    /// @return Current panel identifier string
+    const char* getCurrentPanel() const override;
+    
+    /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
+    /// @return Restoration panel identifier string
+    const char* getRestorationPanel() const override;
+    
+    // Trigger Integration Methods (IPanelService implementation)
     /// @brief Callback executed when trigger-driven panel loading is complete
-    /// @param trigger_id ID of the trigger that initiated the panel switch
-    void TriggerPanelSwitchCallback(const char *triggerId);
+    /// @param triggerId ID of the trigger that initiated the panel switch
+    void triggerPanelSwitchCallback(const char *triggerId) override;
 
 private:
 
@@ -160,7 +176,7 @@ public:
 private:
     // Instance Data Members
     std::shared_ptr<IPanel> panel_ = nullptr;
-    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // Map of panel type names to creator functions for each of those names (DEPRECATED - will be removed in Step 4)
+    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // DEPRECATED - to be removed once DI migration is complete
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
     IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
