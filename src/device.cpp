@@ -1,4 +1,6 @@
 #include "device.h"
+#include "providers/esp32_gpio_provider.h"
+#include "providers/lvgl_display_provider.h"
 
 // Constructors and Destructors
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
@@ -63,6 +65,9 @@ Device::Device()
     }
 
     setPanel(&panelInstance_);
+    
+    // Initialize providers
+    gpioProvider_ = std::make_unique<Esp32GpioProvider>();
 }
 
 // Static Methods
@@ -105,6 +110,27 @@ void Device::prepare()
     lv_display_set_user_data(display, this);
     lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, lvBuffer_[0], lvBuffer_[1], LV_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    
+    // Create main screen for display provider
+    screen = lv_screen_active();
+    
+    // Initialize display provider with the main screen
+    displayProvider_ = std::make_unique<LvglDisplayProvider>(screen);
+}
+
+// Provider Access Methods
+/// @brief Get GPIO provider for hardware I/O operations
+/// @return Pointer to GPIO provider instance
+IGpioProvider* Device::getGpioProvider()
+{
+    return gpioProvider_.get();
+}
+
+/// @brief Get display provider for LVGL operations  
+/// @return Pointer to display provider instance
+IDisplayProvider* Device::getDisplayProvider()
+{
+    return displayProvider_.get();
 }
 
 // Static Methods

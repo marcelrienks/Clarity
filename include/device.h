@@ -3,11 +3,14 @@
 #define LGFX_USE_V1
 
 #include "interfaces/i_device.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
 #include "managers/style_manager.h"
 #include "managers/preference_manager.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
+#include <memory>
 
 // Screen
 #define SCREEN_WIDTH 240
@@ -62,6 +65,10 @@ public:
 
     // Core Functionality Methods
     void prepare() override;
+    
+    // Provider Access Methods
+    IGpioProvider* getGpioProvider() override;
+    IDisplayProvider* getDisplayProvider() override;
 
     // Public Data Members
     lv_obj_t *screen;
@@ -80,4 +87,8 @@ private:
 
     const static unsigned int LV_BUFFER_SIZE = (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
     uint8_t lvBuffer_[2][LV_BUFFER_SIZE];
+    
+    // Provider instances
+    std::unique_ptr<IGpioProvider> gpioProvider_;
+    std::unique_ptr<IDisplayProvider> displayProvider_;
 };
