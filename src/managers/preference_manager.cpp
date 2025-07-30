@@ -101,4 +101,27 @@ void PreferenceManager::saveConfig()
     size_t written = preferences_.putString(CONFIG_KEY, jsonString);
 }
 
+// IPreferenceService interface implementation
+
+/// @brief Get the current configuration object
+/// @return Reference to current configuration settings
+Configs& PreferenceManager::getConfig()
+{
+    return config;
+}
+
+/// @brief Get the current configuration object (read-only)
+/// @return Const reference to current configuration settings
+const Configs& PreferenceManager::getConfig() const
+{
+    return config;
+}
+
+/// @brief Update the configuration object
+/// @param newConfig New configuration settings to apply
+void PreferenceManager::setConfig(const Configs& newConfig)
+{
+    config = newConfig;
+}
+
 // Private Methods

@@ -2,6 +2,7 @@
 
 #include "utilities/types.h"
 #include "managers/panel_manager.h"
+#include "interfaces/i_preference_service.h"
 
 #include <Preferences.h>
 #include <nvs_flash.h>
@@ -44,17 +45,20 @@
  * the default panel to show on startup. It uses ESP32's built-in NVS for
  * persistent storage across reboots.
  */
-class PreferenceManager
+class PreferenceManager : public IPreferenceService
 {
 public:
     // Static Methods
     static PreferenceManager &GetInstance();
 
-    // Core Functionality Methods
-    void init();
-    void saveConfig();
-    void loadConfig();
-    void createDefaultConfig();
+    // IPreferenceService interface implementation
+    void init() override;
+    void saveConfig() override;
+    void loadConfig() override;
+    void createDefaultConfig() override;
+    Configs& getConfig() override;
+    const Configs& getConfig() const override;
+    void setConfig(const Configs& config) override;
 
     // Public Data Members
     inline static Configs config;
