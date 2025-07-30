@@ -3,9 +3,12 @@
 #include <variant>
 
 // Constructors and Destructors
-LockPanel::LockPanel()
-    : lockComponent_(std::make_shared<LockComponent>(&StyleManager::GetInstance())),
-      lockSensor_(std::make_shared<LockSensor>()) {}
+LockPanel::LockPanel(IComponentFactory* componentFactory)
+    : componentFactory_(componentFactory),
+      lockSensor_(std::make_shared<LockSensor>()) 
+{
+    // Component will be created during load() method using the component factory
+}
 
 LockPanel::~LockPanel()
 {
@@ -44,6 +47,10 @@ void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio
 {
     log_d("Loading lock panel with current lock state display");
     callbackFunction_ = callbackFunction;
+
+    // Create component using the injected component factory
+    IStyleService* styleService = &StyleManager::GetInstance();
+    lockComponent_ = componentFactory_->createComponent("lock", display, styleService);
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->render(screen_, centerLocation_, display);

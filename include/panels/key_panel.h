@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
+#include "interfaces/i_component_factory.h"
 #include "components/key_component.h"
 #include "utilities/types.h"
 
@@ -33,7 +34,7 @@ class KeyPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    KeyPanel();
+    KeyPanel(IComponentFactory* componentFactory);
     ~KeyPanel();
 
     // Core Functionality Methods
@@ -47,8 +48,9 @@ private:
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
+    IComponentFactory* componentFactory_; // Dependencies
     lv_obj_t *screen_; // All panels should always have their own screens
-    std::shared_ptr<KeyComponent> keyComponent_;
+    std::shared_ptr<IComponent> keyComponent_;
     ComponentLocation centerLocation_;
     KeyState currentKeyState_ = KeyState::Inactive;
 };

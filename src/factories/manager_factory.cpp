@@ -4,11 +4,11 @@
 
 // Factory Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider* display, IGpioProvider* gpio)
+std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IComponentFactory* componentFactory)
 {
     log_d("Creating PanelManager with injected dependencies");
     
-    auto manager = std::make_unique<PanelManager>(display, gpio);
+    auto manager = std::make_unique<PanelManager>(display, gpio, componentFactory);
     manager->init();
     
     return manager;

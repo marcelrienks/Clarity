@@ -2,6 +2,7 @@
 
 // Project Includes
 #include "interfaces/i_panel.h"
+#include "interfaces/i_component_factory.h"
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
 
@@ -33,7 +34,7 @@ class SplashPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    SplashPanel();
+    SplashPanel(IComponentFactory* componentFactory);
     ~SplashPanel();
 
     // Core Functionality Methods
@@ -48,6 +49,9 @@ private:
     static constexpr const int _ANIMATION_TIME = 2000;
     static constexpr const int _DELAY_TIME = 200;
     static constexpr const int _DISPLAY_TIME = 850;
+
+    // Dependencies
+    IComponentFactory* componentFactory_;
 
     // Components
     lv_obj_t *screen_; // All panels should always have their own screens

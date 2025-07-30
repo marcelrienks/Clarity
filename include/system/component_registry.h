@@ -9,26 +9,25 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_component_factory.h"
 
-class ComponentRegistry {
+class ComponentRegistry : public IComponentFactory {
 public:
-    using PanelFactory = std::function<std::unique_ptr<IPanel>(IGpioProvider*, IDisplayProvider*)>;
-    using ComponentFactory = std::function<std::unique_ptr<IComponent>(IDisplayProvider*, IStyleService*)>;
-
     static ComponentRegistry& GetInstance();
 
-    void registerPanel(const std::string& name, PanelFactory factory);
-    void registerComponent(const std::string& name, ComponentFactory factory);
+    // IComponentFactory interface implementation
+    void registerPanel(const std::string& name, PanelFactoryFunction factory) override;
+    void registerComponent(const std::string& name, ComponentFactoryFunction factory) override;
 
-    std::unique_ptr<IPanel> createPanel(const std::string& name, IGpioProvider* gpio, IDisplayProvider* display);
-    std::unique_ptr<IComponent> createComponent(const std::string& name, IDisplayProvider* display, IStyleService* style);
+    std::unique_ptr<IPanel> createPanel(const std::string& name, IGpioProvider* gpio, IDisplayProvider* display) override;
+    std::unique_ptr<IComponent> createComponent(const std::string& name, IDisplayProvider* display, IStyleService* style) override;
 
-    bool hasPanelRegistration(const std::string& name) const;
-    bool hasComponentRegistration(const std::string& name) const;
+    bool hasPanelRegistration(const std::string& name) const override;
+    bool hasComponentRegistration(const std::string& name) const override;
 
-    void clear();
+    void clear() override;
 
 private:
-    std::unordered_map<std::string, PanelFactory> panelFactories;
-    std::unordered_map<std::string, ComponentFactory> componentFactories;
+    std::unordered_map<std::string, PanelFactoryFunction> panelFactories;
+    std::unordered_map<std::string, ComponentFactoryFunction> componentFactories;
 };

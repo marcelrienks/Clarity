@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
+#include "interfaces/i_component_factory.h"
 #include "components/lock_component.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
@@ -34,7 +35,7 @@ class LockPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    LockPanel();
+    LockPanel(IComponentFactory* componentFactory);
     ~LockPanel();
 
     // Core Functionality Methods
@@ -48,8 +49,9 @@ private:
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
+    IComponentFactory* componentFactory_; // Dependencies
     lv_obj_t *screen_; // All panels should always have their own screens
-    std::shared_ptr<LockComponent> lockComponent_;
+    std::shared_ptr<IComponent> lockComponent_;
     std::shared_ptr<LockSensor> lockSensor_;
     ComponentLocation centerLocation_;
     bool isLockEngaged_ = false;

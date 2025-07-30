@@ -5,8 +5,11 @@
 #include <Arduino.h>
 
 // Constructors and Destructors
-KeyPanel::KeyPanel() 
-    : keyComponent_(std::make_shared<KeyComponent>(&StyleManager::GetInstance())) {}
+KeyPanel::KeyPanel(IComponentFactory* componentFactory) 
+    : componentFactory_(componentFactory) 
+{
+    // Component will be created during load() method using the component factory
+}
 
 KeyPanel::~KeyPanel()
 {
@@ -71,7 +74,11 @@ void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio,
     log_d("Loading key panel with current key state display");
     callbackFunction_ = callbackFunction;
 
-    // TODO: Remove fallback when providers are fully implemented in Step 4
+    // Create component using the injected component factory
+    IStyleService* styleService = &StyleManager::GetInstance();
+    keyComponent_ = componentFactory_->createComponent("key", display, styleService);
+
+    // Render the component
     if (display) {
         keyComponent_->render(screen_, centerLocation_, display);
     } else {

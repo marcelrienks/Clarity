@@ -3,8 +3,11 @@
 
 // Constructors and Destructors
 
-SplashPanel::SplashPanel()
-    : component_(std::make_shared<ClarityComponent>(&StyleManager::GetInstance())) {}
+SplashPanel::SplashPanel(IComponentFactory* componentFactory)
+    : componentFactory_(componentFactory)
+{
+    // Component will be created during load() method using the component factory
+}
 
 SplashPanel::~SplashPanel()
 {
@@ -50,15 +53,17 @@ void SplashPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
 
     callbackFunction_ = callbackFunction;
 
+    // Create component using the injected component factory
+    // Note: We need the style service but don't have direct access, so we'll get it from the StyleManager for now
+    // This will be improved in Step 4 when managers implement service interfaces directly
+    IStyleService* styleService = &StyleManager::GetInstance();
+    component_ = componentFactory_->createComponent("clarity", display, styleService);
+
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
-    // TODO: Remove fallback when providers are fully implemented in Step 4
-    if (display) {
-        component_->render(screen_, splashLocation, display);
-    } else {
-        component_->render(screen_, splashLocation, nullptr);
-    }
+    // Render the component
+    component_->render(screen_, splashLocation, display);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 

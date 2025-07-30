@@ -5,11 +5,11 @@ ComponentRegistry& ComponentRegistry::GetInstance() {
     return instance;
 }
 
-void ComponentRegistry::registerPanel(const std::string& name, PanelFactory factory) {
+void ComponentRegistry::registerPanel(const std::string& name, PanelFactoryFunction factory) {
     panelFactories[name] = factory;
 }
 
-void ComponentRegistry::registerComponent(const std::string& name, ComponentFactory factory) {
+void ComponentRegistry::registerComponent(const std::string& name, ComponentFactoryFunction factory) {
     componentFactories[name] = factory;
 }
 

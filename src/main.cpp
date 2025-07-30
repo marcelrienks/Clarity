@@ -1,6 +1,7 @@
 #include "main.h"
 #include "factories/manager_factory.h"
 #include "system/component_registry.h"
+#include "utilities/types.h"
 #include "panels/key_panel.h"
 #include "panels/lock_panel.h"
 #include "panels/splash_panel.h"
@@ -21,21 +22,21 @@ std::unique_ptr<PanelManager> g_panelManager;
 void registerProductionComponents() {
   auto& registry = ComponentRegistry::GetInstance();
   
-  // Register panels
-  registry.registerPanel("key", [](IGpioProvider* gpio, IDisplayProvider* display) {
-    return std::make_unique<KeyPanel>();
+  // Register panels using PanelNames constants
+  registry.registerPanel(PanelNames::KEY, [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
+    return std::make_unique<KeyPanel>(&registry);
   });
   
-  registry.registerPanel("lock", [](IGpioProvider* gpio, IDisplayProvider* display) {
-    return std::make_unique<LockPanel>();
+  registry.registerPanel(PanelNames::LOCK, [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
+    return std::make_unique<LockPanel>(&registry);
   });
   
-  registry.registerPanel("splash", [](IGpioProvider* gpio, IDisplayProvider* display) {
-    return std::make_unique<SplashPanel>();
+  registry.registerPanel(PanelNames::SPLASH, [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
+    return std::make_unique<SplashPanel>(&registry);
   });
   
-  registry.registerPanel("oem_oil", [](IGpioProvider* gpio, IDisplayProvider* display) {
-    return std::make_unique<OemOilPanel>();
+  registry.registerPanel(PanelNames::OIL, [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
+    return std::make_unique<OemOilPanel>(&registry);
   });
   
   // Register components
@@ -65,6 +66,9 @@ void setup()
 {
   log_d("Starting Clarity application setup - using factory pattern");
 
+  // Get the component registry for panel/component registration and DI
+  auto& registry = ComponentRegistry::GetInstance();
+  
   // Register production components (Step 5)
   registerProductionComponents();
 
@@ -83,7 +87,7 @@ void setup()
   IDisplayProvider* displayProvider = device.getDisplayProvider();
 
   g_triggerManager = ManagerFactory::createTriggerManager(gpioProvider);
-  g_panelManager = ManagerFactory::createPanelManager(displayProvider, gpioProvider);
+  g_panelManager = ManagerFactory::createPanelManager(displayProvider, gpioProvider, &registry);
 
   // Check if startup triggers require a specific panel, otherwise use config default
   const char* startupPanel = g_triggerManager->GetStartupPanelOverride();

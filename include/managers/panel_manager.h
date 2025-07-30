@@ -4,6 +4,7 @@
 #include "interfaces/i_device.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
+#include "interfaces/i_component_factory.h"
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/key_panel.h"
@@ -67,7 +68,7 @@ class PanelManager
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider* display = nullptr, IGpioProvider* gpio = nullptr);
+    PanelManager(IDisplayProvider* display = nullptr, IGpioProvider* gpio = nullptr, IComponentFactory* componentFactory = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -158,10 +159,11 @@ public:
 private:
     // Instance Data Members
     std::shared_ptr<IPanel> panel_ = nullptr;
-    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // Map of panel type names to creator functions for each of those names
+    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // Map of panel type names to creator functions for each of those names (DEPRECATED - will be removed in Step 4)
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
     IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider* displayProvider_ = nullptr; ///< Display provider for UI operations
+    IComponentFactory* componentFactory_ = nullptr; ///< Component factory for creating panels with DI
     // Removed queue handles - now using shared state trigger system
 };

@@ -4,11 +4,13 @@
 
 // Constructors and Destructors
 
-OemOilPanel::OemOilPanel()
-    : oemOilPressureComponent_(std::make_shared<OemOilPressureComponent>(&StyleManager::GetInstance())),
-      oemOilTemperatureComponent_(std::make_shared<OemOilTemperatureComponent>(&StyleManager::GetInstance())),
+OemOilPanel::OemOilPanel(IComponentFactory* componentFactory)
+    : componentFactory_(componentFactory),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>()),
-      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>()) {}
+      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>()) 
+{
+    // Components will be created during load() method using the component factory
+}
 
 OemOilPanel::~OemOilPanel()
 {
@@ -78,6 +80,13 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
 {
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
+
+    // Create components using the injected component factory
+    // Note: We need the style service but don't have direct access, so we'll get it from the StyleManager for now
+    // This will be improved in Step 4 when managers implement service interfaces directly
+    IStyleService* styleService = &StyleManager::GetInstance();
+    oemOilPressureComponent_ = componentFactory_->createComponent("oem_oil_pressure", display, styleService);
+    oemOilTemperatureComponent_ = componentFactory_->createComponent("oem_oil_temperature", display, styleService);
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees

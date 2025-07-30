@@ -51,11 +51,11 @@ void PanelManager::RegisterAllPanels()
 {
     log_d("Registering all panels...");
 
-    // Register all available panel types with the factory
-    register_panel<SplashPanel>(PanelNames::SPLASH);
-    register_panel<OemOilPanel>(PanelNames::OIL);
-    register_panel<KeyPanel>(PanelNames::KEY);
-    register_panel<LockPanel>(PanelNames::LOCK);
+    // DEPRECATED: Old template-based registration system disabled during DI migration
+    // Panel registration is now handled by ComponentRegistry in main.cpp
+    // This method will be removed in Step 4 of the architecture migration
+    
+    log_d("Panel registration now handled by ComponentRegistry - old system disabled");
 }
 
 /// @brief Creates and then loads a panel based on the given name
@@ -115,8 +115,8 @@ void PanelManager::UpdatePanel()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio)
-    : gpioProvider_(gpio), displayProvider_(display)
+PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IComponentFactory* componentFactory)
+    : gpioProvider_(gpio), displayProvider_(display), componentFactory_(componentFactory)
 {
     if (display || gpio) {
         log_d("Creating PanelManager with injected dependencies");
@@ -144,8 +144,21 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_d("Creating panel instance for type: %s", panelName);
 
+    // Use the new ComponentFactory approach for dependency injection
+    if (componentFactory_) {
+        auto uniquePanel = componentFactory_->createPanel(panelName, gpioProvider_, displayProvider_);
+        return std::shared_ptr<IPanel>(uniquePanel.release());
+    }
+    
+    // Fallback to old template-based approach (DEPRECATED - will be removed in Step 4)
+    log_w("ComponentFactory not available, falling back to old template-based creation");
     auto iterator = registeredPanels_.find(panelName);
-    return iterator->second(); // Return the function stored in the map
+    if (iterator != registeredPanels_.end()) {
+        return iterator->second(); // Return the function stored in the map
+    }
+    
+    log_e("Panel type not found: %s", panelName);
+    return nullptr;
 }
 
 
