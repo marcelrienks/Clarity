@@ -2,6 +2,7 @@
 
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
+#include "interfaces/i_gpio_provider.h"
 #include <esp32-hal-log.h>
 #include <vector>
 
@@ -23,8 +24,13 @@
 class TriggerManager
 {
 public:
+    // Constructors and Destructors
+    TriggerManager(IGpioProvider* gpio);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
+    ~TriggerManager() = default;
+
+    // Static Methods (kept for backward compatibility during transition)
     static TriggerManager &GetInstance();
 
     // Core Functionality
@@ -37,8 +43,8 @@ public:
 
 
 private:
+    // Private default constructor for singleton compatibility
     TriggerManager() = default;
-    ~TriggerManager() = default;
 
     void setup_gpio_pins();
     void InitializeTriggerMappings();
@@ -60,4 +66,6 @@ private:
     // Startup panel override (set by InitializeTriggersFromGpio if active triggers require specific panel)
     const char* startupPanelOverride_ = nullptr;
     
+    // Hardware provider
+    IGpioProvider* gpioProvider_ = nullptr;
 };

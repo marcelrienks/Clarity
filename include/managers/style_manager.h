@@ -75,7 +75,13 @@ struct ThemeColors
 class StyleManager
 {
 public:
-    // Static Methods
+    // Constructors and Destructors
+    StyleManager() = default;
+    ~StyleManager();
+    StyleManager(const StyleManager&) = delete;
+    StyleManager& operator=(const StyleManager&) = delete;
+
+    // Static Methods (kept for backward compatibility during transition)
     static StyleManager &GetInstance();
 
     // Core Functionality Methods
@@ -103,8 +109,6 @@ public:
     lv_style_t gaugeDangerSectionStyle; // Style for danger zone sections
 
 private:
-    // Constructors and Destructors
-    ~StyleManager();
 
     // Core Functionality Methods
     void InitStyles();

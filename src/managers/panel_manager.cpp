@@ -14,14 +14,10 @@ PanelManager &PanelManager::GetInstance()
 
 /// @brief Initialise the panel manager to control the flow and rendering of all panels
 /// Registers all available panel types with the factory for dynamic creation
-/// Also initializes dual-core trigger system
-void PanelManager::init(IGpioProvider* gpio, IDisplayProvider* display)
+/// Hardware providers are already injected via constructor
+void PanelManager::init()
 {
     log_d("Initializing panel manager...");
-    
-    // Store hardware providers
-    gpioProvider_ = gpio;
-    displayProvider_ = display;
     
     // Register all available panel types with the factory
     RegisterAllPanels();
@@ -96,6 +92,17 @@ void PanelManager::UpdatePanel()
 }
 
 // Constructors and Destructors
+
+PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio)
+    : gpioProvider_(gpio), displayProvider_(display)
+{
+    log_d("Creating PanelManager with injected dependencies");
+    
+    // Initialize the current panel buffer with the default value
+    strncpy(currentPanelBuffer, PanelNames::OIL, sizeof(currentPanelBuffer) - 1);
+    currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';
+    currentPanel = currentPanelBuffer;
+}
 
 PanelManager::PanelManager()
 {

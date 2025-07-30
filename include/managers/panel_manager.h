@@ -67,17 +67,17 @@ class PanelManager
 {
 public:
     // Constructors and Destructors
+    PanelManager(IDisplayProvider* display, IGpioProvider* gpio);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
+    ~PanelManager();
 
-    // Static Methods
+    // Static Methods (kept for backward compatibility during transition)
     static PanelManager &GetInstance();
 
     // Core Functionality Methods
-    /// @brief Initialize the panel manager with hardware providers
-    /// @param gpio GPIO provider for hardware access
-    /// @param display Display provider for UI operations
-    void init(IGpioProvider* gpio, IDisplayProvider* display);
+    /// @brief Initialize the panel manager (dependencies already injected via constructor)
+    void init();
     
     
     
@@ -117,9 +117,8 @@ public:
     void TriggerPanelSwitchCallback(const char *triggerId);
 
 private:
-    // Constructors and Destructors
+    // Constructors and Destructors (private default constructor for singleton compatibility)
     PanelManager();
-    ~PanelManager();
 
     // Core Functionality Methods
     /// @brief Register all available panels

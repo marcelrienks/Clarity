@@ -1,34 +1,40 @@
 #include "main.h"
+#include "factories/manager_factory.h"
+
+// Global manager instances (replacing singletons for Step 3)
+std::unique_ptr<PreferenceManager> g_preferenceManager;
+std::unique_ptr<StyleManager> g_styleManager;
+std::unique_ptr<TriggerManager> g_triggerManager;
+std::unique_ptr<PanelManager> g_panelManager;
 
 void setup()
 {
-  log_d("Starting Clarity application setup - initializing managers and display");
+  log_d("Starting Clarity application setup - using factory pattern");
 
-  PreferenceManager &preference_manager = PreferenceManager::GetInstance();
-  preference_manager.init();
+  // Create managers using factory pattern
+  g_preferenceManager = ManagerFactory::createPreferenceManager();
 
   Device::GetInstance().prepare();
   Ticker::handle_lv_tasks();
 
-  StyleManager::GetInstance().init(Themes::DAY);
+  g_styleManager = ManagerFactory::createStyleManager(Themes::DAY);
   Ticker::handle_lv_tasks();
 
-  TriggerManager &trigger_manager = TriggerManager::GetInstance();
-  trigger_manager.init();
+  // TODO: Replace with actual GPIO provider from Device in Step 4 of roadmap
+  g_triggerManager = ManagerFactory::createTriggerManager(nullptr);
 
-  PanelManager &panel_manager = PanelManager::GetInstance();
   // TODO: Replace with actual providers from Device in Step 4 of roadmap
-  panel_manager.init(nullptr, nullptr);
+  g_panelManager = ManagerFactory::createPanelManager(nullptr, nullptr);
 
   // Check if startup triggers require a specific panel, otherwise use config default
-  const char* startupPanel = trigger_manager.GetStartupPanelOverride();
+  const char* startupPanel = g_triggerManager->GetStartupPanelOverride();
   if (startupPanel) {
     log_i("Using startup panel override: %s", startupPanel);
-    panel_manager.CreateAndLoadPanelWithSplash(startupPanel);
+    g_panelManager->CreateAndLoadPanelWithSplash(startupPanel);
     
   } else {
-    log_i("Using config default panel: %s", preference_manager.config.panelName.c_str());
-    panel_manager.CreateAndLoadPanelWithSplash(preference_manager.config.panelName.c_str());
+    log_i("Using config default panel: %s", g_preferenceManager->config.panelName.c_str());
+    g_panelManager->CreateAndLoadPanelWithSplash(g_preferenceManager->config.panelName.c_str());
   }
   
   Ticker::handle_lv_tasks();
@@ -36,11 +42,10 @@ void setup()
 
 void loop()
 {
-
   // Core 0 responsibilities: process trigger events directly (simplified)
-  TriggerManager::GetInstance().ProcessTriggerEvents();
+  g_triggerManager->ProcessTriggerEvents();
   
-  PanelManager::GetInstance().UpdatePanel();
+  g_panelManager->UpdatePanel();
   Ticker::handle_lv_tasks();
   Ticker::handle_dynamic_delay(millis());
 }

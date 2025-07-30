@@ -13,6 +13,12 @@ Trigger TriggerManager::triggers_[] = {
     {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL}
 };
 
+TriggerManager::TriggerManager(IGpioProvider* gpio)
+    : gpioProvider_(gpio)
+{
+    log_d("Creating TriggerManager with injected GPIO provider");
+}
+
 TriggerManager &TriggerManager::GetInstance()
 {
     static TriggerManager instance;
@@ -40,10 +46,12 @@ GpioState TriggerManager::ReadAllGpioPins()
 {
     // Single consolidated GPIO read for all trigger pins
     GpioState state;
-    state.keyPresent = digitalRead(gpio_pins::KEY_PRESENT);
-    state.keyNotPresent = digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    state.lockState = digitalRead(gpio_pins::LOCK);
-    state.lightsState = digitalRead(gpio_pins::LIGHTS);
+    if (gpioProvider_) {
+        state.keyPresent = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
+        state.keyNotPresent = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
+        state.lockState = gpioProvider_->digitalRead(gpio_pins::LOCK);
+        state.lightsState = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
+    }
     return state;
 }
 
@@ -217,8 +225,10 @@ void TriggerManager::setup_gpio_pins()
     log_d("Setting up GPIO pins for direct polling...");
 
     // Configure GPIO pins as inputs with pull-down resistors
-    pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
-    pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
-    pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
-    pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
+    if (gpioProvider_) {
+        gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
+        gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
+        gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
+        gpioProvider_->pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
+    }
 }
