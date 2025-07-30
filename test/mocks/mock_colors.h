@@ -24,7 +24,28 @@ typedef struct {
 typedef struct {
     bool styles_applied;
     bool invalidated;
+    bool created;
+    bool aligned;
+    bool deleted;
+    bool text_set;
+    bool image_set;
+    int32_t align_type;
+    int32_t x_offset;
+    int32_t y_offset;
+    int32_t color_value;
+    uint8_t recolor_opa;
+    mock_lv_style_t* style;
+    const char* text_content;
+    const void* image_src;
 } mock_lv_obj_t;
+
+// Alias for backward compatibility
+typedef mock_lv_color_t local_style_lv_color_t;
+
+// Mock color conversion
+inline mock_lv_color_t mock_lv_color_hex(uint32_t hex) {
+    return mock_lv_color_t{hex};
+}
 
 // Theme colors structure for different display themes
 struct MockThemeColors {
@@ -110,11 +131,6 @@ inline void mock_lv_obj_add_style(mock_lv_obj_t* obj, mock_lv_style_t* style, ui
 
 inline void mock_lv_obj_invalidate(mock_lv_obj_t* obj) {
     obj->invalidated = true;
-}
-
-// Mock color conversion
-inline mock_lv_color_t mock_lv_color_hex(uint32_t hex) {
-    return mock_lv_color_t{hex};
 }
 
 // Constants

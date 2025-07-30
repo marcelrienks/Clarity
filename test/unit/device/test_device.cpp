@@ -76,10 +76,7 @@ extern "C" {
         void* user_data;
     } mock_lv_display_t;
     
-    typedef struct {
-        bool created;
-        bool styles_applied;
-    } mock_lv_obj_t;
+    // mock_lv_obj_t is now defined in mock_colors.h
     
     // Mock hardware classes
     class MockBusSPI {

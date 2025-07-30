@@ -1,4 +1,5 @@
 #include "test_utilities.h"
+#include "mock_utilities.h"
 #include <cstring>
 #include <iostream>
 
@@ -10,6 +11,10 @@ bool mock_key_present_active = false;
 bool mock_key_not_present_active = false;
 bool mock_lock_active = false;
 bool mock_theme_active = false;
+
+// Panel and theme state
+const char* mock_current_panel = PANEL_OIL;
+const char* mock_current_theme = "Day";
 
 // MockHardware implementation
 uint16_t MockHardware::mock_adc_readings[40] = {0};
@@ -346,14 +351,7 @@ extern "C" {
         // Mock function
     }
     
-    // Mock color function
-    struct mock_lv_color_t {
-        uint32_t hex_value;
-    };
-    
-    mock_lv_color_t mock_lv_color_hex(uint32_t hex) {
-        return {hex};
-    }
+    // Mock color function is now in mock_colors.h
     
     // Mock LVGL object functions
     void* mock_lv_obj_create(void* parent) {
@@ -377,4 +375,111 @@ extern "C" {
         static int dummy_screen = 1;
         return &dummy_screen;
     }
+}
+
+// Mock trigger and panel management functions
+void InitializeTriggersFromGpio(void) {
+    // Reset all trigger states
+    mock_key_present_active = false;
+    mock_key_not_present_active = false;
+    mock_lock_active = false;
+    mock_theme_active = false;
+    mock_current_panel = PANEL_OIL;
+}
+
+const char* GetCurrentPanel(void) {
+    return mock_current_panel;
+}
+
+void SetTrigger(const char* trigger, bool active) {
+    if (strcmp(trigger, TRIGGER_KEY_PRESENT) == 0) {
+        mock_key_present_active = active;
+        if (active) {
+            mock_current_panel = PANEL_KEY;
+            mock_key_not_present_active = false; // Mutually exclusive
+        }
+    } else if (strcmp(trigger, TRIGGER_KEY_NOT_PRESENT) == 0) {
+        mock_key_not_present_active = active;
+        if (active) {
+            mock_current_panel = PANEL_KEY;
+            mock_key_present_active = false; // Mutually exclusive
+        }
+    } else if (strcmp(trigger, TRIGGER_LOCK) == 0) {
+        mock_lock_active = active;
+        if (active) {
+            mock_current_panel = PANEL_LOCK;
+        }
+    } else if (strcmp(trigger, TRIGGER_THEME) == 0) {
+        mock_theme_active = active;
+        if (active) {
+            mock_current_theme = (strcmp(mock_current_theme, "Day") == 0) ? "Night" : "Day";
+        }
+    }
+    
+    // If no triggers are active, return to oil panel
+    if (!mock_key_present_active && !mock_key_not_present_active && !mock_lock_active) {
+        mock_current_panel = PANEL_OIL;
+    }
+}
+
+bool IsTriggerActive(const char* trigger) {
+    if (strcmp(trigger, TRIGGER_KEY_PRESENT) == 0) {
+        return mock_key_present_active;
+    } else if (strcmp(trigger, TRIGGER_KEY_NOT_PRESENT) == 0) {
+        return mock_key_not_present_active;
+    } else if (strcmp(trigger, TRIGGER_LOCK) == 0) {
+        return mock_lock_active;
+    } else if (strcmp(trigger, TRIGGER_THEME) == 0) {
+        return mock_theme_active;
+    }
+    return false;
+}
+
+void ResetAllTriggers(void) {
+    mock_key_present_active = false;
+    mock_key_not_present_active = false;
+    mock_lock_active = false;
+    mock_theme_active = false;
+    mock_current_panel = PANEL_OIL;
+}
+
+void SimulateSystemTick(uint32_t ms) {
+    // Mock system tick for timing tests
+    // This could be used to simulate time-based behavior
+}
+
+void SetTheme(const char* theme) {
+    mock_current_theme = theme;
+}
+
+const char* GetCurrentTheme(void) {
+    return mock_current_theme;
+}
+
+// Additional mock functions for scenario tests
+bool IsNightThemeActive(void) {
+    return strcmp(mock_current_theme, "Night") == 0;
+}
+
+bool IsKeyPresent(void) {
+    return mock_key_present_active;
+}
+
+bool IsKeyNotPresent(void) {
+    return mock_key_not_present_active;
+}
+
+bool IsLockActive(void) {
+    return mock_lock_active;
+}
+
+// Oil sensor mock functions
+void InitializeOilPressureSensor(void) {
+    // Mock initialization
+    current_oil_pressure = DEFAULT_OIL_PRESSURE;
+}
+
+void InitializeOilTemperatureSensor(void) {
+    // Mock initialization  
+    current_oil_temperature = DEFAULT_OIL_TEMPERATURE;
 }

@@ -2,90 +2,16 @@
 #include "test_utilities.h"
 #include <cstring>
 
-// Ensure we use the exact same types as the test
-typedef struct {
-    uint32_t hex_value;
-} local_style_lv_color_t;
+// local_style_lv_color_t is now defined in mock_colors.h
     
-typedef struct {
-    bool initialized;
-    local_style_lv_color_t bg_color;
-    local_style_lv_color_t text_color;
-    local_style_lv_color_t line_color;
-    uint8_t bg_opa;
-    uint8_t text_opa;
-    uint16_t length;
-    uint16_t line_width;
-    uint16_t arc_width;
-    bool reset_called;
-} mock_lv_style_t;
+// Types are now defined in mock_colors.h
     
-    // Mock lv_obj_t
-    typedef struct {
-        bool styles_applied;
-        bool invalidated;
-    } mock_lv_obj_t;
-    
-    // Mock LVGL functions
-    void mock_lv_style_init(mock_lv_style_t* style) {
-        style->initialized = true;
-        style->reset_called = false;
-    }
-    
-    void mock_lv_style_reset(mock_lv_style_t* style) {
-        style->reset_called = true;
-        style->initialized = false;
-    }
-    
-    void mock_lv_style_set_bg_color(mock_lv_style_t* style, mock_lv_color_t color) {
-        style->bg_color = color;
-    }
-    
-    void mock_lv_style_set_bg_opa(mock_lv_style_t* style, uint8_t opa) {
-        style->bg_opa = opa;
-    }
-    
-    void mock_lv_style_set_text_color(mock_lv_style_t* style, mock_lv_color_t color) {
-        style->text_color = color;
-    }
-    
-    void mock_lv_style_set_text_opa(mock_lv_style_t* style, uint8_t opa) {
-        style->text_opa = opa;
-    }
-    
-    void mock_lv_style_set_line_color(mock_lv_style_t* style, mock_lv_color_t color) {
-        style->line_color = color;
-    }
-    
-    void mock_lv_style_set_length(mock_lv_style_t* style, uint16_t length) {
-        style->length = length;
-    }
-    
-    void mock_lv_style_set_line_width(mock_lv_style_t* style, uint16_t width) {
-        style->line_width = width;
-    }
-    
-    void mock_lv_style_set_arc_width(mock_lv_style_t* style, uint16_t width) {
-        style->arc_width = width;
-    }
-    
-    void mock_lv_obj_add_style(mock_lv_obj_t* obj, mock_lv_style_t* style, uint32_t selector) {
-        obj->styles_applied = true;
-    }
-    
-    void mock_lv_obj_invalidate(mock_lv_obj_t* obj) {
-        obj->invalidated = true;
-    }
-    
-    // Mock screen
-    mock_lv_obj_t mock_screen = {false, false};
-    mock_lv_obj_t* mock_lv_scr_act() {
-        return &mock_screen;
-    }
-    
-    // Mock constants
-    const uint8_t LV_OPA_COVER = 255;
-    const uint32_t MAIN_DEFAULT = 0x01;
+// Mock LVGL functions are now defined in mock_colors.h
+
+// Mock screen
+mock_lv_obj_t mock_screen = create_mock_lv_obj();
+mock_lv_obj_t* mock_lv_scr_act() {
+    return &mock_screen;
 }
 
 // Mock Themes namespace
@@ -94,20 +20,7 @@ namespace Themes {
     const char* NIGHT = "Night";
 }
 
-// Mock ThemeColors structure
-struct MockThemeColors {
-    mock_lv_color_t background;
-    mock_lv_color_t text;
-    mock_lv_color_t primary;
-    mock_lv_color_t gaugeNormal;
-    mock_lv_color_t gaugeWarning;
-    mock_lv_color_t gaugeDanger;
-    mock_lv_color_t gaugeTicks;
-    mock_lv_color_t needleNormal;
-    mock_lv_color_t needleDanger;
-    mock_lv_color_t keyPresent;
-    mock_lv_color_t keyNotPresent;
-};
+// MockThemeColors structure is now defined in mock_colors.h
 
 // Mock StyleManager for testing
 class MockStyleManager {

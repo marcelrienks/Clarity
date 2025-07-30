@@ -2,7 +2,12 @@
 
 #include <unity.h>
 #include <vector>
-#include <function// Forward declare lvgl types and icons
+#include <functional>
+#include <string>
+#include <memory>
+#include "../../mocks/mock_colors.h"
+
+// Forward declare lvgl types and icons
 typedef struct _lv_font_t lv_font_t;
 extern "C" {
     extern const lv_font_t lv_font_montserrat_20;
@@ -11,76 +16,8 @@ extern "C" {
     extern const uint8_t oil_can_regular[];
 }
 
-// Additional mock functions
-extern "C" {
-    mock_lv_obj_t* mock_lv_arc_create(mock_lv_obj_t* screen);
-    mock_lv_obj_t* mock_lv_line_create(mock_lv_obj_t* screen);
-    mock_lv_color_t mock_lv_color_hex(uint32_t hex);
-    void mock_lv_obj_add_style(mock_lv_obj_t* obj, mock_lv_style_t* style, uint32_t selector);
-    void mock_lv_obj_del(mock_lv_obj_t* obj);
-    void mock_lv_label_set_text(mock_lv_obj_t* obj, const char* text);
-    void mock_lv_image_set_src(mock_lv_obj_t* obj, const void* src);
-    void mock_lv_obj_set_style_text_font(mock_lv_obj_t* obj, const lv_font_t* font, uint32_t selector);
-    void mock_lv_obj_set_style_image_recolor(mock_lv_obj_t* obj, mock_lv_color_t color, uint32_t selector);
-    void mock_lv_obj_set_style_image_recolor_opa(mock_lv_obj_t* obj, uint8_t opa, uint32_t selector);
-    void mock_lv_style_init(mock_lv_style_t* style);
-    void mock_lv_style_reset(mock_lv_style_t* style);
-    void mock_lv_style_set_bg_color(mock_lv_style_t* style, mock_lv_color_t color);
-    void mock_lv_style_set_text_color(mock_lv_style_t* style, mock_lv_color_t color);
-    void mock_lv_style_set_line_color(mock_lv_style_t* style, mock_lv_color_t color);
-    void mock_lv_style_set_bg_opa(mock_lv_style_t* style, uint8_t opa);
-    void mock_lv_style_set_text_opa(mock_lv_style_t* style, uint8_t opa);
-    void mock_lv_style_set_length(mock_lv_style_t* style, uint16_t length);
-    void mock_lv_style_set_line_width(mock_lv_style_t* style, uint16_t width);
-    void mock_lv_style_set_arc_width(mock_lv_style_t* style, uint16_t width);
-}ude <string>
-#include <memory>
-
-// Mock LVGL Constants
+// LVGL Constants needed for tests
 #define LV_ALIGN_CENTER 1
-#define MAIN_DEFAULT 0
-#define LV_OPA_COVER 255
-
-// Mock color type
-typedef struct {
-    uint32_t hex_value;
-} mock_lv_color_t;
-
-// Alias for backward compatibility
-typedef mock_lv_color_t local_style_lv_color_t;
-
-// Mock LVGL style structure
-typedef struct {
-    bool initialized;
-    mock_lv_color_t bg_color;
-    mock_lv_color_t text_color;
-    mock_lv_color_t line_color;
-    uint8_t bg_opa;
-    uint8_t text_opa;
-    uint16_t length;
-    uint16_t line_width;
-    uint16_t arc_width;
-    bool reset_called;
-} mock_lv_style_t;
-
-// Mock LVGL object structure
-typedef struct {
-    bool styles_applied;
-    bool invalidated;
-    bool created;
-    bool aligned;
-    bool deleted;
-    bool text_set;
-    bool image_set;
-    int32_t align_type;
-    int32_t x_offset;
-    int32_t y_offset;
-    int32_t color_value;
-    uint8_t recolor_opa;
-    mock_lv_style_t* style;
-    const char* text_content;
-    const void* image_src;
-} mock_lv_obj_t;
 
 // Mock component location type
 typedef struct {
@@ -96,36 +33,9 @@ typedef struct {
     bool bool_value;
 } mock_reading_t;
 
-// LVGL Constants
-#define MAIN_DEFAULT 0
-#define LV_OPA_COVER 255
-#define LV_ALIGN_CENTER 1
-
-// Forward declare lvgl types and icons
-typedef struct _lv_font_t lv_font_t;
-extern const lv_font_t lv_font_montserrat_20;
-extern const uint8_t key_solid[];
-extern const uint8_t lock_alt_solid[];
-extern const uint8_t oil_can_regular[];
-
-// Additional mock functions
+// Additional mock functions not in mock_colors.h
 mock_lv_obj_t* mock_lv_arc_create(mock_lv_obj_t* screen);
 mock_lv_obj_t* mock_lv_line_create(mock_lv_obj_t* screen);
-
-// Mock LVGL function declarations
-void mock_lv_style_init(mock_lv_style_t* style);
-void mock_lv_style_reset(mock_lv_style_t* style);
-void mock_lv_style_set_bg_color(mock_lv_style_t* style, mock_lv_color_t color);
-void mock_lv_style_set_text_color(mock_lv_style_t* style, mock_lv_color_t color);
-void mock_lv_style_set_line_color(mock_lv_style_t* style, mock_lv_color_t color);
-void mock_lv_style_set_bg_opa(mock_lv_style_t* style, uint8_t opa);
-void mock_lv_style_set_text_opa(mock_lv_style_t* style, uint8_t opa);
-void mock_lv_style_set_length(mock_lv_style_t* style, uint16_t length);
-void mock_lv_style_set_line_width(mock_lv_style_t* style, uint16_t width);
-void mock_lv_style_set_arc_width(mock_lv_style_t* style, uint16_t width);
-void mock_lv_obj_add_style(mock_lv_obj_t* obj, mock_lv_style_t* style, uint32_t selector);
-void mock_lv_obj_invalidate(mock_lv_obj_t* obj);
-mock_lv_color_t mock_lv_color_hex(uint32_t hex);
 
 // Helper function to create mock_lv_obj_t
 inline mock_lv_obj_t create_mock_lv_obj() {

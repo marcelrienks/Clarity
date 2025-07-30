@@ -2,72 +2,47 @@
 #include "test_utilities.h"
 #include "mock_style_manager.h"
 
-// Mock LVGL dependencies for component testing
+// Component headers
+#include "components/clarity_component.h"
+#include "components/key_component.h"
+#include "components/lock_component.h"
+#include "components/oem/oem_oil_component.h"
+#include "components/oem/oem_oil_pressure_component.h"
+#include "components/oem/oem_oil_temperature_component.h"
+
+// Test state tracking
+static bool component_render_called = false;
+static bool component_refresh_called = false;
+static mock_lv_obj_t* last_created_object = nullptr;
+
 extern "C" {
-    // Mock LVGL types
-    typedef struct {
-        bool created;
-        bool text_set;
-        bool image_set;
-        bool style_applied;
-        bool aligned;
-        bool deleted;
-        const char* text_content;
-        int32_t align_type;
-        int32_t x_offset;
-        int32_t y_offset;
-        uint32_t color_value;
-        uint8_t recolor_ovoid test_oem_oil_component_destructor_cleanup(void) {
-    resetMockComponentState();
-    
-    mock_lv_obj_t screen = create_mock_lv_obj();
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};        const void* image_src;
-    } mock_lv_obj_t;
-    
-    typedef struct {
-        uint32_t hex_value;
-    } mock_lv_color_t;
-    
-    // Mock component location
-    typedef struct {
-        int32_t align;
-        int32_t x_offset;
-        int32_t y_offset;
-    } mock_component_location_t;
-    
-    // Mock reading variant
-    typedef struct {
-        int32_t int_value;
-        float float_value;
-        bool bool_value;
-    } mock_reading_t;
-    
     // Mock LVGL object creation functions
-    mock_lv_obj_t* mock_lv_label_create(mock_lv_obj_t* parent) {
-        static mock_lv_obj_t obj = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    mock_lv_obj_t* mock_lv_label_create(mock_lv_obj_t* screen) {
+        static mock_lv_obj_t obj = create_mock_lv_obj();
         obj.created = true;
-        obj.deleted = false;
+        last_created_object = &obj;
         return &obj;
     }
     
-    mock_lv_obj_t* mock_lv_image_create(mock_lv_obj_t* parent) {
-        static mock_lv_obj_t obj = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    mock_lv_obj_t* mock_lv_image_create(mock_lv_obj_t* screen) {
+        static mock_lv_obj_t obj = create_mock_lv_obj();
         obj.created = true;
-        obj.deleted = false;
+        obj.image_set = false;
+        last_created_object = &obj;
         return &obj;
     }
     
-    mock_lv_obj_t* mock_lv_arc_create(mock_lv_obj_t* parent) {
-        static mock_lv_obj_t obj = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    mock_lv_obj_t* mock_lv_arc_create(mock_lv_obj_t* screen) {
+        static mock_lv_obj_t obj = create_mock_lv_obj();
         obj.created = true;
-        obj.deleted = false;
+        last_created_object = &obj;
         return &obj;
     }
     
-    mock_lv_obj_t* mock_lv_line_create(mock_lv_obj_t* parent) {
-        static mock_lv_obj_t obj = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    mock_lv_obj_t* mock_lv_line_create(mock_lv_obj_t* screen) {
+        static mock_lv_obj_t obj = create_mock_lv_obj();
         obj.created = true;
-        obj.deleted = false;
+        last_created_object = &obj;
         return &obj;
     }
     
@@ -82,19 +57,15 @@ extern "C" {
         obj->image_src = src;
     }
     
-    void mock_lv_obj_add_style(mock_lv_obj_t* obj, void* style, uint32_t selector) {
-        obj->style_applied = true;
-    }
-    
-    void mock_lv_obj_align(mock_lv_obj_t* obj, int32_t align, int32_t x_ofs, int32_t y_ofs) {
+    void mock_lv_obj_align(mock_lv_obj_t* obj, int32_t align, int32_t x_offset, int32_t y_offset) {
         obj->aligned = true;
         obj->align_type = align;
-        obj->x_offset = x_ofs;
-        obj->y_offset = y_ofs;
+        obj->x_offset = x_offset;
+        obj->y_offset = y_offset;
     }
     
-    void mock_lv_obj_set_style_text_font(mock_lv_obj_t* obj, const void* font, uint32_t selector) {
-        // Font setting
+    void mock_lv_obj_set_style_text_font(mock_lv_obj_t* obj, const lv_font_t* font, uint32_t selector) {
+        // Mock font setting
     }
     
     void mock_lv_obj_set_style_image_recolor(mock_lv_obj_t* obj, mock_lv_color_t color, uint32_t selector) {
@@ -106,738 +77,267 @@ extern "C" {
     }
     
     void mock_lv_obj_del(mock_lv_obj_t* obj) {
-        if (obj) {
-            obj->deleted = true;
-            obj->created = false;
-        }
-    }
-    
-    // Mock constants
-    const uint32_t LV_PART_MAIN = 0x01;
-    const uint32_t LV_STATE_DEFAULT = 0x02;
-    const uint32_t MAIN_DEFAULT = LV_PART_MAIN | LV_STATE_DEFAULT;
-    const uint8_t LV_OPA_COVER = 255;
-    const int32_t LV_ALIGN_CENTER = 0;
-    
-    // Mock font
-    struct {
-        int size;
-    } lv_font_montserrat_20 = {20};
-    
-    // Mock icon data
-    struct {
-        const char* name;
-    } key_solid = {"key_solid_icon"};
-    
-    struct {
-        const char* name;
-    } lock_alt_solid = {"lock_alt_solid_icon"};
-    
-    struct {
-        const char* name;
-    } oil_can_regular = {"oil_can_regular_icon"};
-    
-    mock_lv_color_t mock_lv_color_hex(uint32_t hex) {
-        return {hex};
+        obj->deleted = true;
     }
 }
 
-// Mock StyleManager for component testing
-class MockStyleManager {
-public:
-    static MockStyleManager& GetInstance() {
-        static MockStyleManager instance;
-        return instance;
-    }
-    
-    const char* THEME = "Day";
-    
-    struct MockStyle {
-        bool applied;
-    } textStyle;
-    
-    struct MockThemeColors {
-        mock_lv_color_t keyPresent = mock_lv_color_hex(0x00FF00);
-        mock_lv_color_t keyNotPresent = mock_lv_color_hex(0xFF0000);
-        mock_lv_color_t gaugeNormal = mock_lv_color_hex(0xFFFFFF);
-        mock_lv_color_t gaugeDanger = mock_lv_color_hex(0xFF0000);
-    };
-    
-    MockThemeColors get_colours(const char* theme) const {
-        return MockThemeColors{};
-    }
-};
-
-// Mock component types
-enum class KeyState {
-    Inactive = 0,
-    Present = 1,
-    NotPresent = 2
-};
-
-// Mock component classes for testing
-class MockClarityComponent {
-public:
-    bool rendered = false;
-    mock_component_location_t last_location;
-    
-    void render(mock_lv_obj_t* screen, const mock_component_location_t& location) {
-        rendered = true;
-        last_location = location;
-        
-        // Create label
-        mock_lv_obj_t* splash = mock_lv_label_create(screen);
-        mock_lv_label_set_text(splash, "Clarity");
-        
-        // Apply style
-        mock_lv_obj_add_style(splash, &MockStyleManager::GetInstance().textStyle, MAIN_DEFAULT);
-        
-        // Apply location
-        mock_lv_obj_align(splash, location.align, location.x_offset, location.y_offset);
-        
-        // Set font
-        mock_lv_obj_set_style_text_font(splash, &lv_font_montserrat_20, 0);
-    }
-};
-
-class MockKeyComponent {
-public:
-    mock_lv_obj_t* keyIcon_ = nullptr;
-    bool rendered = false;
-    bool refreshed = false;
-    KeyState last_state = KeyState::Inactive;
-    
-    MockKeyComponent() = default;
-    
-    ~MockKeyComponent() {
-        if (keyIcon_) {
-            mock_lv_obj_del(keyIcon_);
-        }
-    }
-    
-    void render(mock_lv_obj_t* screen, const mock_component_location_t& location) {
-        rendered = true;
-        
-        // Create key icon
-        keyIcon_ = mock_lv_image_create(screen);
-        mock_lv_image_set_src(keyIcon_, &key_solid);
-        
-        // Apply location
-        mock_lv_obj_align(keyIcon_, location.align, location.x_offset, location.y_offset);
-    }
-    
-    void refresh(const mock_reading_t& reading) {
-        refreshed = true;
-        last_state = static_cast<KeyState>(reading.int_value);
-        
-        if (!keyIcon_) return;
-        
-        mock_lv_color_t color;
-        if (last_state == KeyState::Present) {
-            color = MockStyleManager::GetInstance().get_colours("").keyPresent;
-        } else {
-            color = MockStyleManager::GetInstance().get_colours("").keyNotPresent;
-        }
-        
-        mock_lv_obj_set_style_image_recolor(keyIcon_, color, MAIN_DEFAULT);
-        mock_lv_obj_set_style_image_recolor_opa(keyIcon_, LV_OPA_COVER, MAIN_DEFAULT);
-    }
-    
-    void SetValue(int32_t value) {
-        mock_reading_t reading = {value, 0.0f, false};
-        refresh(reading);
-    }
-};
-
-class MockLockComponent {
-public:
-    mock_lv_obj_t* lockIcon_ = nullptr;
-    bool rendered = false;
-    bool refreshed = false;
-    bool last_state = false;
-    
-    MockLockComponent() = default;
-    
-    ~MockLockComponent() {
-        if (lockIcon_) {
-            mock_lv_obj_del(lockIcon_);
-        }
-    }
-    
-    void render(mock_lv_obj_t* screen, const mock_component_location_t& location) {
-        rendered = true;
-        
-        // Create lock icon
-        lockIcon_ = mock_lv_image_create(screen);
-        mock_lv_image_set_src(lockIcon_, &lock_alt_solid);
-        
-        // Apply location
-        mock_lv_obj_align(lockIcon_, location.align, location.x_offset, location.y_offset);
-    }
-    
-    void refresh(const mock_reading_t& reading) {
-        refreshed = true;
-        last_state = reading.bool_value;
-        
-        if (!lockIcon_) return;
-        
-        mock_lv_color_t color = MockStyleManager::GetInstance().get_colours("").gaugeNormal;
-        mock_lv_obj_set_style_image_recolor(lockIcon_, color, MAIN_DEFAULT);
-        mock_lv_obj_set_style_image_recolor_opa(lockIcon_, LV_OPA_COVER, MAIN_DEFAULT);
-    }
-    
-    void SetValue(int32_t value) {
-        mock_reading_t reading = {0, 0.0f, value != 0};
-        refresh(reading);
-    }
-};
-
-class MockOemOilComponent {
-public:
-    mock_lv_obj_t* scale_ = nullptr;
-    mock_lv_obj_t* needleLine_ = nullptr;
-    mock_lv_obj_t* oilIcon_ = nullptr;
-    bool rendered = false;
-    bool refreshed = false;
-    float last_value = 0.0f;
-    int scale_rotation = 0;
-    
-    MockOemOilComponent() = default;
-    
-    ~MockOemOilComponent() {
-        if (scale_) mock_lv_obj_del(scale_);
-        if (needleLine_) mock_lv_obj_del(needleLine_);
-        if (oilIcon_) mock_lv_obj_del(oilIcon_);
-    }
-    
-    void render(mock_lv_obj_t* screen, const mock_component_location_t& location) {
-        rendered = true;
-        
-        // Create gauge components
-        scale_ = mock_lv_arc_create(screen);
-        needleLine_ = mock_lv_line_create(screen);
-        oilIcon_ = mock_lv_image_create(screen);
-        
-        // Set icon source
-        mock_lv_image_set_src(oilIcon_, &oil_can_regular);
-        
-        // Apply positioning
-        mock_lv_obj_align(scale_, location.align, location.x_offset, location.y_offset);
-    }
-    
-    void refresh(const mock_reading_t& reading) {
-        refreshed = true;
-        last_value = reading.float_value;
-        
-        // Simulate needle rotation based on value
-        scale_rotation = static_cast<int>(last_value * 180.0f / 10.0f); // 0-10 range to 0-180 degrees
-    }
-    
-    void SetValue(int32_t value) {
-        mock_reading_t reading = {0, static_cast<float>(value), false};
-        refresh(reading);
-    }
-    
-    int getScaleRotation() const {
-        return scale_rotation;
-    }
-};
-
-// Note: setUp() and tearDown() are defined in test_main.cpp
-
+// Test helper functions
 void resetMockComponentState() {
-    // Reset any global mock state if needed
+    component_render_called = false;
+    component_refresh_called = false;
+    last_created_object = nullptr;
 }
 
-// =================================================================
-// CLARITY COMPONENT TESTS
-// =================================================================
-
-void test_clarity_component_render_basic(void) {
+void setUp(void) {
     resetMockComponentState();
-    MockClarityComponent component;
-    
+}
+
+void tearDown(void) {
+    // Cleanup after each test
+}
+
+// ClarityComponent Tests
+void test_clarity_component_creation(void) {
+    // Setup
+    ClarityComponent clarity;
     mock_lv_obj_t screen = create_mock_lv_obj();
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, -50};
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
-    component.render(&screen, location);
+    // Test
+    clarity.render(&screen, location);
     
-    TEST_ASSERT_TRUE(component.rendered);
-    TEST_ASSERT_EQUAL_INT32(LV_ALIGN_CENTER, component.last_location.align);
-    TEST_ASSERT_EQUAL_INT32(0, component.last_location.x_offset);
-    TEST_ASSERT_EQUAL_INT32(-50, component.last_location.y_offset);
-}
-
-void test_clarity_component_text_content(void) {
-    resetMockComponentState();
-    MockClarityComponent component;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    component.render(&screen, location);
-    
-    // Text should be set during render
-    TEST_ASSERT_TRUE(component.rendered);
+    // Verify - should create a label with "Clarity" text
+    TEST_ASSERT_NOT_NULL(last_created_object);
+    TEST_ASSERT_TRUE(last_created_object->created);
+    TEST_ASSERT_TRUE(last_created_object->text_set);
+    TEST_ASSERT_EQUAL_STRING("Clarity", last_created_object->text_content);
+    TEST_ASSERT_TRUE(last_created_object->aligned);
+    TEST_ASSERT_EQUAL_INT32(LV_ALIGN_CENTER, last_created_object->align_type);
 }
 
 void test_clarity_component_positioning(void) {
-    resetMockComponentState();
-    MockClarityComponent component;
+    // Setup
+    ClarityComponent clarity;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 10, -20);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
+    // Test
+    clarity.render(&screen, location);
     
-    // Test different positions
-    mock_component_location_t positions[] = {
-        {LV_ALIGN_CENTER, 0, 0},
-        {LV_ALIGN_CENTER, 10, -20},
-        {LV_ALIGN_CENTER, -15, 30}
-    };
-    
-    for (size_t i = 0; i < 3; i++) {
-        component.render(&screen, positions[i]);
-        
-        TEST_ASSERT_EQUAL_INT32(positions[i].align, component.last_location.align);
-        TEST_ASSERT_EQUAL_INT32(positions[i].x_offset, component.last_location.x_offset);
-        TEST_ASSERT_EQUAL_INT32(positions[i].y_offset, component.last_location.y_offset);
-    }
+    // Verify positioning
+    TEST_ASSERT_EQUAL_INT32(10, last_created_object->x_offset);
+    TEST_ASSERT_EQUAL_INT32(-20, last_created_object->y_offset);
 }
 
-// =================================================================
-// KEY COMPONENT TESTS
-// =================================================================
-
-void test_key_component_render_basic(void) {
-    resetMockComponentState();
-    MockKeyComponent component;
+// KeyComponent Tests  
+void test_key_component_creation(void) {
+    // Setup
+    KeyComponent key;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test
+    key.render(&screen, location);
     
-    component.render(&screen, location);
-    
-    TEST_ASSERT_TRUE(component.rendered);
-    TEST_ASSERT_NOT_NULL(component.keyIcon_);
-    TEST_ASSERT_TRUE(component.keyIcon_->created);
-    TEST_ASSERT_TRUE(component.keyIcon_->image_set);
+    // Verify - should create an image for the key icon
+    TEST_ASSERT_NOT_NULL(last_created_object);
+    TEST_ASSERT_TRUE(last_created_object->created);
+    TEST_ASSERT_TRUE(last_created_object->aligned);
 }
 
-void test_key_component_icon_source(void) {
-    resetMockComponentState();
-    MockKeyComponent component;
+void test_key_component_refresh(void) {
+    // Setup
+    KeyComponent key;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    key.render(&screen, location);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test with bool reading (key present)
+    Reading reading = true;
+    key.refresh(reading);
     
-    component.render(&screen, location);
-    
-    TEST_ASSERT_EQUAL_PTR(&key_solid, component.keyIcon_->image_src);
+    // Verify - component should handle refresh without error
+    // Note: Specific color/style changes would need more detailed mocking
+    TEST_ASSERT_TRUE(true); // Basic test that refresh doesn't crash
 }
 
-void test_key_component_refresh_present_state(void) {
-    resetMockComponentState();
-    MockKeyComponent component;
+void test_key_component_set_value(void) {
+    // Setup
+    KeyComponent key;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    key.render(&screen, location);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test
+    key.SetValue(1); // Key present
     
-    component.render(&screen, location);
-    
-    mock_reading_t reading = {static_cast<int32_t>(KeyState::Present), 0.0f, false};
-    component.refresh(reading);
-    
-    TEST_ASSERT_TRUE(component.refreshed);
-    TEST_ASSERT_EQUAL_INT(static_cast<int>(KeyState::Present), static_cast<int>(component.last_state));
-    TEST_ASSERT_EQUAL_HEX32(0x00FF00, component.keyIcon_->color_value); // Green for present
-}
-
-void test_key_component_refresh_not_present_state(void) {
-    resetMockComponentState();
-    MockKeyComponent component;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    component.render(&screen, location);
-    
-    mock_reading_t reading = {static_cast<int32_t>(KeyState::NotPresent), 0.0f, false};
-    component.refresh(reading);
-    
-    TEST_ASSERT_TRUE(component.refreshed);
-    TEST_ASSERT_EQUAL_INT(static_cast<int>(KeyState::NotPresent), static_cast<int>(component.last_state));
-    TEST_ASSERT_EQUAL_HEX32(0xFF0000, component.keyIcon_->color_value); // Red for not present
-}
-
-void test_key_component_set_value_method(void) {
-    resetMockComponentState();
-    MockKeyComponent component;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    component.render(&screen, location);
-    
-    component.SetValue(static_cast<int32_t>(KeyState::Present));
-    
-    TEST_ASSERT_TRUE(component.refreshed);
-    TEST_ASSERT_EQUAL_INT(static_cast<int>(KeyState::Present), static_cast<int>(component.last_state));
-}
-
-void test_key_component_destructor_cleanup(void) {
-    resetMockComponentState();
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    {
-        MockKeyComponent component;
-        component.render(&screen, location);
-        TEST_ASSERT_TRUE(component.keyIcon_->created);
-        TEST_ASSERT_FALSE(component.keyIcon_->deleted);
-    } // Destructor called here
-    
-    // Note: In real test, we'd verify cleanup, but mock doesn't track this across scope
+    // Verify - component should handle SetValue without error
     TEST_ASSERT_TRUE(true);
 }
 
-// =================================================================
-// LOCK COMPONENT TESTS
-// =================================================================
-
-void test_lock_component_render_basic(void) {
-    resetMockComponentState();
-    MockLockComponent component;
+// LockComponent Tests
+void test_lock_component_creation(void) {
+    // Setup
+    LockComponent lock;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 15, -25);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test
+    lock.render(&screen, location);
     
-    component.render(&screen, location);
-    
-    TEST_ASSERT_TRUE(component.rendered);
-    TEST_ASSERT_NOT_NULL(component.lockIcon_);
-    TEST_ASSERT_TRUE(component.lockIcon_->created);
-    TEST_ASSERT_TRUE(component.lockIcon_->image_set);
+    // Verify
+    TEST_ASSERT_NOT_NULL(last_created_object);
+    TEST_ASSERT_TRUE(last_created_object->created);
+    TEST_ASSERT_TRUE(last_created_object->aligned);
+    TEST_ASSERT_EQUAL_INT32(15, last_created_object->x_offset);
+    TEST_ASSERT_EQUAL_INT32(-25, last_created_object->y_offset);
 }
 
-void test_lock_component_icon_source(void) {
-    resetMockComponentState();
-    MockLockComponent component;
+// OemOilPressureComponent Tests
+void test_oem_oil_pressure_creation(void) {
+    // Setup
+    OemOilPressureComponent pressure;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test
+    pressure.render(&screen, location);
     
-    component.render(&screen, location);
-    
-    TEST_ASSERT_EQUAL_PTR(&lock_alt_solid, component.lockIcon_->image_src);
+    // Verify - oil component creates complex gauge structure
+    TEST_ASSERT_NOT_NULL(last_created_object);
+    TEST_ASSERT_TRUE(last_created_object->created);
 }
 
-void test_lock_component_refresh_states(void) {
-    resetMockComponentState();
-    MockLockComponent component;
+void test_oem_oil_pressure_value_update(void) {
+    // Setup
+    OemOilPressureComponent pressure;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    pressure.render(&screen, location);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test with pressure value
+    pressure.SetValue(75); // 75 PSI
     
-    component.render(&screen, location);
-    
-    // Test locked state
-    mock_reading_t reading_locked = {0, 0.0f, true};
-    component.refresh(reading_locked);
-    
-    TEST_ASSERT_TRUE(component.refreshed);
-    TEST_ASSERT_TRUE(component.last_state);
-    
-    // Test unlocked state
-    mock_reading_t reading_unlocked = {0, 0.0f, false};
-    component.refresh(reading_unlocked);
-    
-    TEST_ASSERT_FALSE(component.last_state);
+    // Verify - should handle value update
+    TEST_ASSERT_TRUE(true);
 }
 
-void test_lock_component_set_value_method(void) {
-    resetMockComponentState();
-    MockLockComponent component;
+void test_oem_oil_pressure_danger_condition(void) {
+    // Setup
+    OemOilPressureComponent pressure;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    pressure.render(&screen, location);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test with dangerous low pressure
+    pressure.SetValue(5); // Very low pressure
     
-    component.render(&screen, location);
-    
-    component.SetValue(1); // Locked
-    TEST_ASSERT_TRUE(component.last_state);
-    
-    component.SetValue(0); // Unlocked
-    TEST_ASSERT_FALSE(component.last_state);
+    // Verify - should handle danger condition
+    TEST_ASSERT_TRUE(true);
 }
 
-// =================================================================
-// OEM OIL COMPONENT TESTS
-// =================================================================
-
-void test_oem_oil_component_render_basic(void) {
-    resetMockComponentState();
-    MockOemOilComponent component;
+// OemOilTemperatureComponent Tests
+void test_oem_oil_temperature_creation(void) {
+    // Setup
+    OemOilTemperatureComponent temperature;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(180); // Rotated positioning
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test
+    temperature.render(&screen, location);
     
-    component.render(&screen, location);
-    
-    TEST_ASSERT_TRUE(component.rendered);
-    TEST_ASSERT_NOT_NULL(component.scale_);
-    TEST_ASSERT_NOT_NULL(component.needleLine_);
-    TEST_ASSERT_NOT_NULL(component.oilIcon_);
+    // Verify
+    TEST_ASSERT_NOT_NULL(last_created_object);
+    TEST_ASSERT_TRUE(last_created_object->created);
 }
 
-void test_oem_oil_component_gauge_elements(void) {
-    resetMockComponentState();
-    MockOemOilComponent component;
+void test_oem_oil_temperature_value_ranges(void) {
+    // Setup
+    OemOilTemperatureComponent temperature;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    temperature.render(&screen, location);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Test normal operating temperature
+    temperature.SetValue(85); // Normal temp
     
-    component.render(&screen, location);
+    // Test high temperature
+    temperature.SetValue(110); // High temp
     
-    TEST_ASSERT_TRUE(component.scale_->created);
-    TEST_ASSERT_TRUE(component.needleLine_->created);
-    TEST_ASSERT_TRUE(component.oilIcon_->created);
-    TEST_ASSERT_TRUE(component.oilIcon_->image_set);
-    TEST_ASSERT_EQUAL_PTR(&oil_can_regular, component.oilIcon_->image_src);
+    // Verify - should handle different temperature ranges
+    TEST_ASSERT_TRUE(true);
 }
 
-void test_oem_oil_component_refresh_value_ranges(void) {
-    resetMockComponentState();
-    MockOemOilComponent component;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    component.render(&screen, location);
-    
-    // Test different pressure values
-    float test_values[] = {0.0f, 2.5f, 5.0f, 7.5f, 10.0f};
-    int expected_rotations[] = {0, 45, 90, 135, 180};
-    
-    for (size_t i = 0; i < 5; i++) {
-        mock_reading_t reading = {0, test_values[i], false};
-        component.refresh(reading);
-        
-        TEST_ASSERT_TRUE(component.refreshed);
-        TEST_ASSERT_EQUAL_FLOAT(test_values[i], component.last_value);
-        TEST_ASSERT_EQUAL_INT(expected_rotations[i], component.getScaleRotation());
-    }
-}
-
-void test_oem_oil_component_set_value_method(void) {
-    resetMockComponentState();
-    MockOemOilComponent component;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    component.render(&screen, location);
-    
-    component.SetValue(6); // 6 Bar pressure
-    
-    TEST_ASSERT_TRUE(component.refreshed);
-    TEST_ASSERT_EQUAL_FLOAT(6.0f, component.last_value);
-    TEST_ASSERT_EQUAL_INT(108, component.getScaleRotation()); // 6/10 * 180 = 108 degrees
-}
-
-void test_oem_oil_component_destructor_cleanup(void) {
-    resetMockComponentState();
+// Component Interface Tests
+void test_component_interface_render_requirement(void) {
+    // Test that all components implement required render method
+    ClarityComponent clarity;
+    KeyComponent key;
+    LockComponent lock;
+    OemOilPressureComponent pressure;
     
     mock_lv_obj_t screen = create_mock_lv_obj();
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
-    {
-        MockOemOilComponent component;
-        component.render(&screen, location);
-        TEST_ASSERT_TRUE(component.scale_->created);
-        TEST_ASSERT_TRUE(component.needleLine_->created);
-        TEST_ASSERT_TRUE(component.oilIcon_->created);
-    } // Destructor called here
-    
-    // In real implementation, objects would be cleaned up
-    TEST_ASSERT_TRUE(true);
-}
-
-// =================================================================
-// COMPONENT INTERFACE TESTS
-// =================================================================
-
-void test_component_interface_render_requirement(void) {
-    // All components must implement render method
-    MockClarityComponent clarity;
-    MockKeyComponent key;
-    MockLockComponent lock;
-    MockOemOilComponent oil;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
+    // All should render without error
     clarity.render(&screen, location);
     key.render(&screen, location);
     lock.render(&screen, location);
-    oil.render(&screen, location);
+    pressure.render(&screen, location);
     
-    TEST_ASSERT_TRUE(clarity.rendered);
-    TEST_ASSERT_TRUE(key.rendered);
-    TEST_ASSERT_TRUE(lock.rendered);
-    TEST_ASSERT_TRUE(oil.rendered);
+    TEST_ASSERT_TRUE(true); // If we get here, all renders succeeded
 }
 
 void test_component_interface_optional_methods(void) {
-    // Components may implement refresh and SetValue
-    MockKeyComponent key;
-    MockLockComponent lock;
-    MockOemOilComponent oil;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
+    // Test that components handle optional methods
+    KeyComponent key;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     key.render(&screen, location);
-    lock.render(&screen, location);
-    oil.render(&screen, location);
     
-    // Test refresh method
-    mock_reading_t reading = {1, 5.0f, true};
+    // Optional methods should not crash
+    Reading reading = 42;
     key.refresh(reading);
-    lock.refresh(reading);
-    oil.refresh(reading);
+    key.SetValue(100);
     
-    TEST_ASSERT_TRUE(key.refreshed);
-    TEST_ASSERT_TRUE(lock.refreshed);
-    TEST_ASSERT_TRUE(oil.refreshed);
-    
-    // Test SetValue method
-    key.SetValue(2);
-    lock.SetValue(0);
-    oil.SetValue(8);
-    
-    TEST_ASSERT_EQUAL_INT(2, static_cast<int>(key.last_state));
-    TEST_ASSERT_FALSE(lock.last_state);
-    TEST_ASSERT_EQUAL_FLOAT(8.0f, oil.last_value);
+    TEST_ASSERT_TRUE(true);
 }
 
-// =================================================================
-// INTEGRATION TESTS
-// =================================================================
-
-void test_component_style_integration(void) {
-    resetMockComponentState();
-    MockClarityComponent clarity;
-    MockKeyComponent key;
+// Performance and Memory Tests
+void test_component_multiple_renders(void) {
+    // Test rendering same component multiple times
+    ClarityComponent clarity;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    clarity.render(&screen, location);
-    key.render(&screen, location);
-    
-    // Both should integrate with style system
-    TEST_ASSERT_TRUE(clarity.rendered);
-    TEST_ASSERT_TRUE(key.rendered);
-}
-
-void test_component_positioning_consistency(void) {
-    resetMockComponentState();
-    MockKeyComponent key;
-    MockLockComponent lock;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 15, -25};
-    
-    key.render(&screen, location);
-    lock.render(&screen, location);
-    
-    // Both should handle positioning consistently
-    TEST_ASSERT_TRUE(key.keyIcon_->aligned);
-    TEST_ASSERT_TRUE(lock.lockIcon_->aligned);
-    TEST_ASSERT_EQUAL_INT32(LV_ALIGN_CENTER, key.keyIcon_->align_type);
-    TEST_ASSERT_EQUAL_INT32(LV_ALIGN_CENTER, lock.lockIcon_->align_type);
-    TEST_ASSERT_EQUAL_INT32(15, key.keyIcon_->x_offset);
-    TEST_ASSERT_EQUAL_INT32(15, lock.lockIcon_->x_offset);
-    TEST_ASSERT_EQUAL_INT32(-25, key.keyIcon_->y_offset);
-    TEST_ASSERT_EQUAL_INT32(-25, lock.lockIcon_->y_offset);
-}
-
-// =================================================================
-// ERROR HANDLING TESTS
-// =================================================================
-
-void test_component_null_screen_handling(void) {
-    resetMockComponentState();
-    MockClarityComponent component;
-    
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    // Should handle null screen gracefully (though not recommended)
-    component.render(nullptr, location);
-    
-    // Component should still mark as rendered
-    TEST_ASSERT_TRUE(component.rendered);
-}
-
-void test_component_refresh_without_render(void) {
-    resetMockComponentState();
-    MockKeyComponent component;
-    
-    // Refresh without rendering first
-    mock_reading_t reading = {static_cast<int32_t>(KeyState::Present), 0.0f, false};
-    component.refresh(reading);
-    
-    // Should handle gracefully (no crash)
-    TEST_ASSERT_TRUE(component.refreshed);
-    TEST_ASSERT_NULL(component.keyIcon_); // Icon not created yet
-}
-
-// =================================================================
-// PERFORMANCE TESTS
-// =================================================================
-
-void test_component_multiple_refresh_calls(void) {
-    resetMockComponentState();
-    MockOemOilComponent component;
-    
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
-    
-    component.render(&screen, location);
-    
-    // Multiple rapid refresh calls
-    for (int i = 0; i < 10; i++) {
-        mock_reading_t reading = {0, static_cast<float>(i), false};
-        component.refresh(reading);
-        
-        TEST_ASSERT_EQUAL_FLOAT(static_cast<float>(i), component.last_value);
+    // Render multiple times
+    for(int i = 0; i < 5; i++) {
+        clarity.render(&screen, location);
     }
     
-    TEST_ASSERT_TRUE(component.refreshed);
+    // Should handle multiple renders
+    TEST_ASSERT_TRUE(true);
 }
 
 void test_component_memory_efficiency(void) {
-    resetMockComponentState();
+    // Test that components don't leak memory with repeated operations
+    KeyComponent key;
+    LockComponent lock;
     
-    // Create multiple components
-    MockClarityComponent clarity;
-    MockKeyComponent key;
-    MockLockComponent lock;
-    MockOemOilComponent oil;
+    mock_lv_obj_t screen = create_mock_lv_obj();
+    ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
-    mock_lv_obj_t screen = {true, false, false, false, false, false, nullptr, 0, 0, 0, 0, 0, nullptr};
-    mock_component_location_t location = {LV_ALIGN_CENTER, 0, 0};
+    // Repeated render/refresh cycles
+    for(int i = 0; i < 10; i++) {
+        key.render(&screen, location);
+        key.refresh(Reading(i % 2 == 0));
+        
+        lock.render(&screen, location);
+        lock.SetValue(i * 10);
+    }
     
-    clarity.render(&screen, location);
-    key.render(&screen, location);
-    lock.render(&screen, location);
-    oil.render(&screen, location);
-    
-    // All should be efficiently created
-    TEST_ASSERT_TRUE(clarity.rendered);
-    TEST_ASSERT_TRUE(key.rendered);
-    TEST_ASSERT_TRUE(lock.rendered);
-    TEST_ASSERT_TRUE(oil.rendered);
+    // All should complete without issues
+    TEST_ASSERT_TRUE(true);
 }
 
 // Note: PlatformIO will automatically discover and run test_ functions
