@@ -10,7 +10,7 @@ MockPanelFactory::MockPanelFactory()
 {
     // Set up default creator that returns a basic mock panel
     defaultCreator_ = []() {
-        return std::make_unique<MockPanel>();
+        return std::make_unique<MockPanel>("MockPanel");
     };
     
     // Set up default supported panels
@@ -71,7 +71,7 @@ void MockPanelFactory::reset()
     
     // Restore defaults
     defaultCreator_ = []() {
-        return std::make_unique<MockPanel>();
+        return std::make_unique<MockPanel>("MockPanel");
     };
     
     setSupportedPanel("splash", true);

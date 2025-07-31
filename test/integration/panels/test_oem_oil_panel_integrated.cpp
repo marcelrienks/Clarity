@@ -7,8 +7,8 @@
 static bool oil_panel_initialized = false;
 static bool pressure_sensor_active = false;
 static bool temperature_sensor_active = false;
-static float current_oil_pressure = 0.0f;
-static float current_oil_temperature = 0.0f;
+static float oem_oil_pressure = 0.0f;
+static float oem_oil_temperature = 0.0f;
 static const char* current_panel_state = "Inactive";
 
 // Test utility functions
@@ -23,8 +23,8 @@ void initializeOilPanelSystem() {
     oil_panel_initialized = true;
     pressure_sensor_active = true;
     temperature_sensor_active = true;
-    current_oil_pressure = 75.0f;
-    current_oil_temperature = 85.0f;
+    oem_oil_pressure = 75.0f;
+    oem_oil_temperature = 85.0f;
     current_panel_state = "OemOilPanel";
 }
 
@@ -32,42 +32,42 @@ void simulateEngineStartup() {
     // Engine startup sequence - pressure builds gradually
     MockHardware::simulateAdcReading(34, 0);     // 0 PSI - engine off
     MockHardware::simulateAdcReading(35, 1200);  // 20°C - cold engine
-    current_oil_pressure = 0.0f;
-    current_oil_temperature = 20.0f;
+    oem_oil_pressure = 0.0f;
+    oem_oil_temperature = 20.0f;
     
     // Cranking - pressure starts building
     MockHardware::simulateAdcReading(34, 500);   // 12 PSI - cranking
-    current_oil_pressure = 12.0f;
+    oem_oil_pressure = 12.0f;
     
     // Running - normal operating pressure
     MockHardware::simulateAdcReading(34, 2048);  // 75 PSI - running
     MockHardware::simulateAdcReading(35, 1500);  // 85°C - operating temp
-    current_oil_pressure = 75.0f;
-    current_oil_temperature = 85.0f;
+    oem_oil_pressure = 75.0f;
+    oem_oil_temperature = 85.0f;
 }
 
 void simulateOilPressureWarning() {
     // Simulate dangerous low oil pressure
     MockHardware::simulateAdcReading(34, 200);   // 3 PSI - critically low
-    current_oil_pressure = 3.0f;
+    oem_oil_pressure = 3.0f;
 }
 
 void simulateOilTemperatureWarning() {
     // Simulate overheating
     MockHardware::simulateAdcReading(35, 3500);  // 125°C - overheating
-    current_oil_temperature = 125.0f;
+    oem_oil_temperature = 125.0f;
 }
 
 void simulateSensorFailure(bool pressure_fail, bool temperature_fail) {
     if (pressure_fail) {
         MockHardware::simulateAdcFailure(34, true);
         pressure_sensor_active = false;
-        current_oil_pressure = 0.0f;
+        oem_oil_pressure = 0.0f;
     }
     if (temperature_fail) {
         MockHardware::simulateAdcFailure(35, true);
         temperature_sensor_active = false;
-        current_oil_temperature = 0.0f;
+        oem_oil_temperature = 0.0f;
     }
 }
 
@@ -98,8 +98,8 @@ void test_oem_oil_panel_normal_operation(void) {
     
     TEST_ASSERT_EQUAL(2048, pressure_adc);
     TEST_ASSERT_EQUAL(1500, temp_adc);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
     
     test.ValidateExpectedState(ExpectedStates::OIL_PANEL_DAY);
 }
@@ -122,8 +122,8 @@ void test_oem_oil_panel_engine_startup_sequence(void) {
     
     TEST_ASSERT_EQUAL(2048, final_pressure);
     TEST_ASSERT_EQUAL(1500, final_temp);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
     
     test.ValidateExpectedState(ExpectedStates::OIL_PANEL_DAY);
 }
@@ -140,7 +140,7 @@ void test_oem_oil_panel_pressure_warning_condition(void) {
     // Verify warning condition is detected
     uint16_t warning_pressure = MockHardware::getAdcReading(34);
     TEST_ASSERT_EQUAL(200, warning_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, oem_oil_pressure);
     
     // System should remain on oil panel to show warning
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
@@ -148,7 +148,7 @@ void test_oem_oil_panel_pressure_warning_condition(void) {
     // Temperature should remain normal
     uint16_t normal_temp = MockHardware::getAdcReading(35);
     TEST_ASSERT_EQUAL(1500, normal_temp);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
 }
 
 void test_oem_oil_panel_temperature_warning_condition(void) {
@@ -163,7 +163,7 @@ void test_oem_oil_panel_temperature_warning_condition(void) {
     // Verify overheating condition is detected
     uint16_t warning_temp = MockHardware::getAdcReading(35);
     TEST_ASSERT_EQUAL(3500, warning_temp);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 125.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 125.0f, oem_oil_temperature);
     
     // System should remain on oil panel to show warning
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
@@ -171,7 +171,7 @@ void test_oem_oil_panel_temperature_warning_condition(void) {
     // Pressure should remain normal
     uint16_t normal_pressure = MockHardware::getAdcReading(34);
     TEST_ASSERT_EQUAL(2048, normal_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
 }
 
 void test_oem_oil_panel_dual_warning_condition(void) {
@@ -190,8 +190,8 @@ void test_oem_oil_panel_dual_warning_condition(void) {
     
     TEST_ASSERT_EQUAL(200, warning_pressure);
     TEST_ASSERT_EQUAL(3500, warning_temp);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 125.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 125.0f, oem_oil_temperature);
     
     // System should remain on oil panel to show both warnings
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
@@ -214,13 +214,13 @@ void test_oem_oil_panel_pressure_sensor_failure(void) {
     uint16_t failed_pressure = MockHardware::getAdcReading(34);
     TEST_ASSERT_EQUAL(0, failed_pressure);
     TEST_ASSERT_FALSE(pressure_sensor_active);
-    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, oem_oil_pressure);
     
     // Temperature sensor should continue working
     uint16_t normal_temp = MockHardware::getAdcReading(35);
     TEST_ASSERT_EQUAL(1500, normal_temp);
     TEST_ASSERT_TRUE(temperature_sensor_active);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
     
     // Panel should remain active to show temperature and sensor error
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
@@ -239,13 +239,13 @@ void test_oem_oil_panel_temperature_sensor_failure(void) {
     uint16_t failed_temp = MockHardware::getAdcReading(35);
     TEST_ASSERT_EQUAL(0, failed_temp);
     TEST_ASSERT_FALSE(temperature_sensor_active);
-    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, oem_oil_temperature);
     
     // Pressure sensor should continue working
     uint16_t normal_pressure = MockHardware::getAdcReading(34);
     TEST_ASSERT_EQUAL(2048, normal_pressure);
     TEST_ASSERT_TRUE(pressure_sensor_active);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
     
     // Panel should remain active to show pressure and sensor error
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
@@ -268,8 +268,8 @@ void test_oem_oil_panel_dual_sensor_failure(void) {
     TEST_ASSERT_EQUAL(0, failed_temp);
     TEST_ASSERT_FALSE(pressure_sensor_active);
     TEST_ASSERT_FALSE(temperature_sensor_active);
-    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(0.1f, 0.0f, oem_oil_temperature);
     
     // Panel should remain active to show sensor error state
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
@@ -292,8 +292,8 @@ void test_oem_oil_panel_sensor_recovery(void) {
     resetSensorFailures();
     MockHardware::simulateAdcReading(34, 2048);
     MockHardware::simulateAdcReading(35, 1500);
-    current_oil_pressure = 75.0f;
-    current_oil_temperature = 85.0f;
+    oem_oil_pressure = 75.0f;
+    oem_oil_temperature = 85.0f;
     
     // Verify recovery
     uint16_t recovered_pressure = MockHardware::getAdcReading(34);
@@ -303,8 +303,8 @@ void test_oem_oil_panel_sensor_recovery(void) {
     TEST_ASSERT_EQUAL(1500, recovered_temp);
     TEST_ASSERT_TRUE(pressure_sensor_active);
     TEST_ASSERT_TRUE(temperature_sensor_active);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
     
     test.ValidateExpectedState(ExpectedStates::OIL_PANEL_DAY);
 }
@@ -321,7 +321,7 @@ void test_oem_oil_panel_with_key_present_override(void) {
     
     // Verify oil panel is active with normal readings
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
     
     // Activate key present trigger
     MockHardware::setGpioState(25, true);
@@ -342,8 +342,8 @@ void test_oem_oil_panel_with_key_present_override(void) {
     
     // Should return to oil panel with maintained readings
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
     
     test.ValidateExpectedState(ExpectedStates::OIL_PANEL_DAY);
 }
@@ -365,7 +365,7 @@ void test_oem_oil_panel_warning_during_trigger_override(void) {
     // Warning should be detected in background
     uint16_t warning_pressure = MockHardware::getAdcReading(34);
     TEST_ASSERT_EQUAL(200, warning_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, oem_oil_pressure);
     
     // Key panel should remain active (trigger priority)
     TEST_ASSERT_EQUAL_STRING("KeyPanel", current_panel_state);
@@ -376,7 +376,7 @@ void test_oem_oil_panel_warning_during_trigger_override(void) {
     
     // Should return to oil panel showing warning condition
     TEST_ASSERT_EQUAL_STRING("OemOilPanel", current_panel_state);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, current_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, oem_oil_pressure);
 }
 
 void test_oem_oil_panel_theme_switching_integration(void) {
@@ -399,8 +399,8 @@ void test_oem_oil_panel_theme_switching_integration(void) {
     TEST_ASSERT_EQUAL_STRING("Night", current_theme);
     
     // Oil readings should be unaffected by theme change
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, current_oil_pressure);
-    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, current_oil_temperature);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 75.0f, oem_oil_pressure);
+    TEST_ASSERT_FLOAT_WITHIN(1.0f, 85.0f, oem_oil_temperature);
     
     // Deactivate night theme
     MockHardware::setGpioState(28, false);
@@ -469,19 +469,19 @@ void test_oem_oil_panel_extended_operation_stability(void) {
             // Simulate low pressure warning
             resetSensorFailures();
             simulateOilPressureWarning();
-            TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, current_oil_pressure);
+            TEST_ASSERT_FLOAT_WITHIN(1.0f, 3.0f, oem_oil_pressure);
         } else if (high_temp) {
             // Simulate high temperature warning  
             resetSensorFailures();
             simulateOilTemperatureWarning();
-            TEST_ASSERT_FLOAT_WITHIN(1.0f, 125.0f, current_oil_temperature);
+            TEST_ASSERT_FLOAT_WITHIN(1.0f, 125.0f, oem_oil_temperature);
         } else {
             // Normal operation
             resetSensorFailures();
             MockHardware::simulateAdcReading(34, 2048);
             MockHardware::simulateAdcReading(35, 1500);
-            current_oil_pressure = 75.0f;
-            current_oil_temperature = 85.0f;
+            oem_oil_pressure = 75.0f;
+            oem_oil_temperature = 85.0f;
         }
         
         // System should remain stable throughout

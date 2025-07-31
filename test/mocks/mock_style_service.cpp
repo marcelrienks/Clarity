@@ -1,5 +1,6 @@
 #include "mock_style_service.h"
 #include "mock_utilities.h"
+#include "utilities/types.h"
 
 MockStyleService::MockStyleService()
     : currentTheme_(Themes::DAY)
@@ -109,32 +110,12 @@ void MockStyleService::setThemeChangeCallback(std::function<void(const char*)> c
 
 void MockStyleService::initializeStyles()
 {
-    // Initialize all mock styles
-    mock_lv_style_init(&backgroundStyle_);
-    mock_lv_style_init(&textStyle_);
-    mock_lv_style_init(&gaugeNormalStyle_);
-    mock_lv_style_init(&gaugeWarningStyle_);
-    mock_lv_style_init(&gaugeDangerStyle_);
-    mock_lv_style_init(&gaugeIndicatorStyle_);
-    mock_lv_style_init(&gaugeItemsStyle_);
-    mock_lv_style_init(&gaugeMainStyle_);
-    mock_lv_style_init(&gaugeDangerSectionStyle_);
+    // Initialize all mock styles - using no-op for testing
+    // In actual implementation, these would initialize LVGL styles
 }
 
 void MockStyleService::updateStylesForTheme(const char* theme)
 {
-    // Mock theme-specific style updates
-    if (std::string(theme) == Themes::NIGHT) {
-        // Night theme colors
-        mock_lv_style_set_bg_color(&backgroundStyle_, mock_lv_color_hex(0x000000));
-        mock_lv_style_set_text_color(&textStyle_, mock_lv_color_hex(0xFFFFFF));
-        mock_lv_style_set_line_color(&gaugeNormalStyle_, mock_lv_color_hex(0x00FF00));
-        mock_lv_style_set_line_color(&gaugeDangerStyle_, mock_lv_color_hex(0xFF0000));
-    } else {
-        // Day theme colors (default)
-        mock_lv_style_set_bg_color(&backgroundStyle_, mock_lv_color_hex(0xFFFFFF));
-        mock_lv_style_set_text_color(&textStyle_, mock_lv_color_hex(0x000000));
-        mock_lv_style_set_line_color(&gaugeNormalStyle_, mock_lv_color_hex(0x0000FF));
-        mock_lv_style_set_line_color(&gaugeDangerStyle_, mock_lv_color_hex(0xFF0000));
-    }
+    // Mock theme-specific style updates - no-op for testing
+    // In actual implementation, these would set LVGL style properties
 }

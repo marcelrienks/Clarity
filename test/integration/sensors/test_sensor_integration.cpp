@@ -3,6 +3,7 @@
 #include "test_utilities.h"
 #include "mock_types.h"
 #include "mock_managers.h"
+#include "utilities/types.h"
 
 // Test state tracking
 static bool system_initialized = false;

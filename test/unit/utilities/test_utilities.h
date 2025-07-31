@@ -16,8 +16,7 @@ extern "C" {
     extern const uint8_t oil_can_regular[];
 }
 
-// LVGL Constants needed for tests
-#define LV_ALIGN_CENTER 1
+// LVGL Constants are defined in the lvgl.h mock
 
 // Mock component location type
 typedef struct {

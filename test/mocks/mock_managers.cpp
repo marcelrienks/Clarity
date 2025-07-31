@@ -1,5 +1,6 @@
 #include "mock_managers.h"
 #include "test_utilities.h"
+#include "utilities/types.h"
 
 // Global mock state
 static const char* current_panel = PanelNames::OIL;

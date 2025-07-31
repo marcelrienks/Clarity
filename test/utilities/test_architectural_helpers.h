@@ -4,6 +4,7 @@
 #include <memory>
 #include <map>
 #include <string>
+#include <set>
 
 // Project Includes
 #include "system/service_container.h"

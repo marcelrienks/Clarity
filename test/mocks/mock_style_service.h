@@ -3,6 +3,7 @@
 // System/Library Includes
 #include <string>
 #include <map>
+#include <functional>
 
 // Project Includes  
 #include "interfaces/i_style_service.h"
@@ -57,16 +58,16 @@ public:
     void setThemeChangeCallback(std::function<void(const char*)> callback);
 
 private:
-    // Mock Styles
-    mock_lv_style_t backgroundStyle_;
-    mock_lv_style_t textStyle_;
-    mock_lv_style_t gaugeNormalStyle_;
-    mock_lv_style_t gaugeWarningStyle_;
-    mock_lv_style_t gaugeDangerStyle_;
-    mock_lv_style_t gaugeIndicatorStyle_;
-    mock_lv_style_t gaugeItemsStyle_;
-    mock_lv_style_t gaugeMainStyle_;
-    mock_lv_style_t gaugeDangerSectionStyle_;
+    // Mock Styles using LVGL mock types for compatibility
+    lv_style_t backgroundStyle_;
+    lv_style_t textStyle_;
+    lv_style_t gaugeNormalStyle_;
+    lv_style_t gaugeWarningStyle_;
+    lv_style_t gaugeDangerStyle_;
+    lv_style_t gaugeIndicatorStyle_;
+    lv_style_t gaugeItemsStyle_;
+    lv_style_t gaugeMainStyle_;
+    lv_style_t gaugeDangerSectionStyle_;
 
     // State Tracking
     std::string currentTheme_;

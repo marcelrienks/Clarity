@@ -6,24 +6,57 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-// Mock LVGL types
-typedef struct _lv_obj_t lv_obj_t;
-typedef struct _lv_font_t lv_font_t;
-typedef struct _lv_image_dsc_t lv_image_dsc_t;
-typedef struct _lv_style_t lv_style_t;
-typedef struct _lv_scale_section_t lv_scale_section_t;
+// Mock LVGL types - define as complete types for field usage
+typedef struct _lv_obj_t {
+    int dummy;  // Empty struct needs at least one member
+} lv_obj_t;
+
+typedef struct _lv_font_t {
+    int dummy;
+} lv_font_t;
+
+typedef struct _lv_image_dsc_t {
+    int dummy;
+} lv_image_dsc_t;
+
+typedef struct _lv_style_t {
+    int dummy;
+} lv_style_t;
+
+typedef struct _lv_scale_section_t {
+    int dummy;
+} lv_scale_section_t;
+
+typedef struct _lv_timer_t {
+    int dummy;
+} lv_timer_t;
+
+typedef struct _lv_anim_t {
+    int dummy;
+} lv_anim_t;
 
 typedef int16_t lv_coord_t;
 typedef uint8_t lv_align_t;
 typedef uint32_t lv_part_t;
 typedef uint32_t lv_state_t;
 typedef uint32_t lv_scale_mode_t;
+typedef uint32_t lv_event_code_t;
+
+// Mock event callback type
+typedef void (*lv_event_cb_t)(struct _lv_event_t * e);
+typedef struct _lv_event_t {
+    int dummy;
+} lv_event_t;
 
 // Mock LVGL constants
 #define LV_ALIGN_CENTER 9
 #define LV_ALIGN_LEFT_MID 5
 #define LV_PART_MAIN 0x00000000
 #define LV_STATE_DEFAULT 0x00000000
+#define LV_ATTRIBUTE_MEM_ALIGN
+#define LV_ATTRIBUTE_LARGE_CONST
+#define LV_IMAGE_HEADER_MAGIC 0x1234
+#define LV_COLOR_FORMAT_RGB565A8 0
 
 // Mock color type
 typedef struct {
@@ -43,3 +76,10 @@ static inline void lv_obj_set_style_text_font(lv_obj_t* obj, const lv_font_t* fo
 
 // Mock font
 extern const lv_font_t lv_font_montserrat_20;
+
+// Mock color functions
+static inline lv_color_t lv_color_hex(uint32_t color) {
+    lv_color_t c;
+    c.full = color;
+    return c;
+}
