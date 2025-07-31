@@ -18,7 +18,8 @@
       "Bash(pio.exe run:*)",
       "Bash(pio.exe test:*)",
       "Bash(ls:*)",
-      "Bash(pio run:*)"
+      "Bash(pio run:*)",
+      "Bash(./run_tests.sh)"
     ],
     "deny": []
   }

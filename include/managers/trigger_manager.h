@@ -33,8 +33,7 @@ public:
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
 
-    // Static Methods (kept for backward compatibility during transition)
-    static TriggerManager &GetInstance();
+    // Static Methods removed - using dependency injection
 
     // ITriggerService Interface Implementation
     void init() override;

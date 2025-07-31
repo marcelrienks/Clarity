@@ -74,8 +74,7 @@ public:
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
 
-    // Temporary backward compatibility methods (will be removed in step 4.3)
-    static PanelManager &GetInstance();
+    // Backward compatibility methods (legacy interface support)
     void CreateAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false);
     void CreateAndLoadPanelWithSplash(const char* panelName);
     void UpdatePanel();

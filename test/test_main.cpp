@@ -10,8 +10,20 @@ void tearDown(void) {
     // Global cleanup after each test
 }
 
+// Service Container Tests
+extern void run_service_container_tests(void);
+
+// Dependency Injection Coverage Tests  
+extern void run_dependency_injection_coverage_tests(void);
+
 int main(void) {
     UNITY_BEGIN();
+    
+    printf("\n=== SERVICE CONTAINER TESTS ===\n");
+    run_service_container_tests();
+    
+    printf("\n=== DEPENDENCY INJECTION COVERAGE TESTS ===\n");
+    run_dependency_injection_coverage_tests();
     
     printf("\n=== UTILITIES TESTS ===\n");
     // No tests implemented yet

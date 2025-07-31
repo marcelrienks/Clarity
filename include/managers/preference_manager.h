@@ -48,8 +48,7 @@
 class PreferenceManager : public IPreferenceService
 {
 public:
-    // Static Methods
-    static PreferenceManager &GetInstance();
+    // Static Methods removed - using dependency injection
 
     // IPreferenceService interface implementation
     void init() override;
