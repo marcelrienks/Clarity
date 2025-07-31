@@ -9,6 +9,16 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
 {
     log_d("Creating PanelManager with injected dependencies");
     
+    if (!display) {
+        throw std::invalid_argument("ManagerFactory::createPanelManager requires valid IDisplayProvider");
+    }
+    if (!gpio) {
+        throw std::invalid_argument("ManagerFactory::createPanelManager requires valid IGpioProvider");
+    }
+    if (!componentFactory) {
+        throw std::invalid_argument("ManagerFactory::createPanelManager requires valid IComponentFactory");
+    }
+    
     // Create the PanelFactory with injected dependencies
     auto panelFactory = std::make_unique<PanelFactory>(componentFactory, display, gpio);
     
@@ -37,6 +47,16 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char* the
 std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
 {
     log_d("Creating TriggerManager with injected dependencies");
+    
+    if (!gpio) {
+        throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IGpioProvider");
+    }
+    if (!panelService) {
+        throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IPanelService");
+    }
+    if (!styleService) {
+        throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IStyleService");
+    }
     
     auto manager = std::make_unique<TriggerManager>(gpio, panelService, styleService);
     manager->init();

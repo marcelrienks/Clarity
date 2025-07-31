@@ -65,19 +65,8 @@ Device::Device()
     }
 
     setPanel(&panelInstance_);
-    
-    // Initialize providers
-    gpioProvider_ = std::make_unique<Esp32GpioProvider>();
 }
 
-// Static Methods
-/// @brief Get the singleton instance of Device
-/// @return instance of Device
-Device &Device::GetInstance()
-{
-    static Device instance; // this ensures that the instance is created only once
-    return instance;
-}
 
 // Core Functionality Methods
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
@@ -113,25 +102,8 @@ void Device::prepare()
     
     // Create main screen for display provider
     screen = lv_screen_active();
-    
-    // Initialize display provider with the main screen
-    displayProvider_ = std::make_unique<LvglDisplayProvider>(screen);
 }
 
-// Provider Access Methods
-/// @brief Get GPIO provider for hardware I/O operations
-/// @return Pointer to GPIO provider instance
-IGpioProvider* Device::getGpioProvider()
-{
-    return gpioProvider_.get();
-}
-
-/// @brief Get display provider for LVGL operations  
-/// @return Pointer to display provider instance
-IDisplayProvider* Device::getDisplayProvider()
-{
-    return displayProvider_.get();
-}
 
 // Static Methods
 /// @brief Static Display Flush Wrapper function for LVGL display driver

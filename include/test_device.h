@@ -32,15 +32,6 @@ public:
     // Core Interface Methods
     /// @brief Prepare device for testing - lightweight initialization
     void prepare() override;
-    
-    // Provider Access Methods
-    /// @brief Get injected GPIO provider
-    /// @return Pointer to GPIO provider instance
-    IGpioProvider* getGpioProvider() override;
-    
-    /// @brief Get injected display provider
-    /// @return Pointer to display provider instance
-    IDisplayProvider* getDisplayProvider() override;
 
 private:
     // Provider instances

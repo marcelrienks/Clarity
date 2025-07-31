@@ -37,7 +37,7 @@
  * @class Device
  * @brief Hardware abstraction layer for ESP32 with GC9A01 display
  * 
- * @details This singleton class provides the concrete implementation of the IDevice interface,
+ * @details This class provides the concrete implementation of the IDevice interface,
  * managing the physical display hardware and LVGL integration. It handles the SPI communication
  * with the GC9A01 display controller and provides display buffer management.
  * 
@@ -46,7 +46,7 @@
  * @interface SPI2_HOST with hardware-defined pins
  * @buffer_strategy Dual 60-line buffers for smooth rendering
  * 
- * @design_pattern Singleton - ensures single display instance
+ * @design_pattern Dependency Injectable - managed through service container
  * @thread_safety LVGL display callbacks are thread-safe
  * @memory_usage ~57KB for dual display buffers (240*60*2*2 bytes)
  * 
@@ -56,26 +56,19 @@
 class Device : public IDevice
 {
 public:
-    // Constructors and Destructors (deleted copy/move)
+    // Constructors and Destructors
+    Device();
     Device(const Device &) = delete;
     Device &operator=(const Device &) = delete;
-
-    // Static Methods
-    static Device &GetInstance();
 
     // Core Functionality Methods
     void prepare() override;
     
-    // Provider Access Methods
-    IGpioProvider* getGpioProvider() override;
-    IDisplayProvider* getDisplayProvider() override;
 
     // Public Data Members
     lv_obj_t *screen;
 
 private:
-    // Constructors and Destructors
-    Device();
 
     // Static Methods
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
@@ -87,8 +80,4 @@ private:
 
     const static unsigned int LV_BUFFER_SIZE = (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
     uint8_t lvBuffer_[2][LV_BUFFER_SIZE];
-    
-    // Provider instances
-    std::unique_ptr<IGpioProvider> gpioProvider_;
-    std::unique_ptr<IDisplayProvider> displayProvider_;
 };

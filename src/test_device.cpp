@@ -16,13 +16,3 @@ void TestDevice::prepare()
     // The mock providers handle all display/GPIO operations
 }
 
-// Provider Access Methods
-IGpioProvider* TestDevice::getGpioProvider()
-{
-    return gpioProvider_.get();
-}
-
-IDisplayProvider* TestDevice::getDisplayProvider()
-{
-    return displayProvider_.get();
-}

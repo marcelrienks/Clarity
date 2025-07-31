@@ -15,13 +15,4 @@ class IDevice : public lgfx::LGFX_Device
 public:
     // Core Interface Methods
     virtual void prepare() = 0;
-    
-    // Provider Access Methods
-    /// @brief Get GPIO provider for hardware I/O operations
-    /// @return Pointer to GPIO provider instance
-    virtual IGpioProvider* getGpioProvider() = 0;
-    
-    /// @brief Get display provider for LVGL operations
-    /// @return Pointer to display provider instance
-    virtual IDisplayProvider* getDisplayProvider() = 0;
 };

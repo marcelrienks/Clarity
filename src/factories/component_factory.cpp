@@ -3,6 +3,12 @@
 ComponentFactory::ComponentFactory(IStyleService* styleService, IDisplayProvider* displayProvider)
     : styleService_(styleService), displayProvider_(displayProvider)
 {
+    if (!styleService) {
+        throw std::invalid_argument("ComponentFactory requires valid IStyleService");
+    }
+    if (!displayProvider) {
+        throw std::invalid_argument("ComponentFactory requires valid IDisplayProvider");
+    }
 }
 
 void ComponentFactory::registerPanel(const std::string& name, PanelFactoryFunction factory)

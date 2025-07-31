@@ -7,6 +7,15 @@ PanelFactory::PanelFactory(IComponentFactory* componentFactory,
     , displayProvider_(displayProvider)
     , gpioProvider_(gpioProvider)
 {
+    if (!componentFactory) {
+        throw std::invalid_argument("PanelFactory requires valid IComponentFactory");
+    }
+    if (!displayProvider) {
+        throw std::invalid_argument("PanelFactory requires valid IDisplayProvider");
+    }
+    if (!gpioProvider) {
+        throw std::invalid_argument("PanelFactory requires valid IGpioProvider");
+    }
 }
 
 std::unique_ptr<IPanel> PanelFactory::createPanel(const std::string& panelType)
@@ -24,7 +33,8 @@ std::unique_ptr<IPanel> PanelFactory::createPanel(const std::string& panelType)
         return std::make_unique<LockPanel>(componentFactory_);
     }
     
-    throw std::runtime_error("Unsupported panel type: " + panelType);
+    throw std::runtime_error("PanelFactory: Unsupported panel type '" + 
+                             panelType + "'. Valid types: splash, oem_oil, key, lock");
 }
 
 bool PanelFactory::supportsPanel(const std::string& panelType) const
