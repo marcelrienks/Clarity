@@ -24,9 +24,6 @@ TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService,
     }
 }
 
-// REMOVED in Step 4.5: GetInstance() method removed for dependency injection
-// Use ITriggerService interface through service container instead
-
 const char* TriggerManager::getStartupPanelOverride() const {
     // Check key presence on startup using required gpio provider
     if (gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT)) {

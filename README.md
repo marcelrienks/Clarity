@@ -5,20 +5,12 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 
 _**Note:** If all you want is a project for displaying one screen that does one job, this project is sincerely over complicated. This was a test bed for implementing the usual design patterns of OOP, as well as MVP allowing for multiple screens, with multiple components, and warning triggers. That combined with using it to test out AI code assistent Claude means it's far more featured than most would need. But it does work._
 
-## TODO:
-* Integration tests:  
-Currently all unit tests and environment builds are working, but the integration tests have not been completed due to having reached wokwi monthly usage limit, so this must still be completed
-* Cleanup:
-   * Are there any inconsistencies in code/testing
-   * Are there any redundant, pointless, or unused functions/tests
-   * Are code/test readme files up to date with current architecture
-   * Is all code properly commented
-   * Search for and remove any backwards compatability
-   * Review all code comments and remove any referencing change made, like // Note: UIState checking removed - not available in IPanelService interface
-   * Review:
-      * Create Arch doc
-      * Create requirements doc
-      * Create scenario doc
+## Project Status:
+✅ **Architecture Migration Complete** - Pure dependency injection implementation achieved  
+✅ **Unit Tests Passing** - All component and service tests working  
+✅ **Build System Working** - All environments compile successfully  
+🔄 **Integration Tests** - Pending wokwi service availability  
+📝 **Documentation** - Architecture and requirements docs available in `/docs`
 
 ## Main Libraries:
 * Arduino
@@ -26,16 +18,37 @@ Currently all unit tests and environment builds are working, but the integration
 * [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
 
 ## Architecture:
-Conceptually there is one `device`, with one `display` (this is based on lvgl structure), this can show one of many `panel` configurations, each of which having one or many `component(s)` shown together. _Note: components can be part of many panel configurations (many to many relationship)_
-> Device > Display > Panels > Components
 
-This is designed around an MVP pattern.  
-A sensor will represent the model, and be responsible for handling data reading. A component will represent the view, and be responsible for building the view for the sensor data. And the panel will represent the presenter, and will be responsible for building and displaying one or more components at once.
-> Sensor(model) <> Panel(presenter) <> Component(view)  
+### Design Pattern: MVP + Dependency Injection
+The system implements **MVP (Model-View-Presenter)** with **pure dependency injection** for enterprise-grade maintainability and testability.
 
-Based on an input (either from sensor signal or from a button press) the device/display will load different screens. For example an emergency panel can be shown when a sensor signal moves beyond a threshold, replacing the panel that was configured to display using a button input which normally cycles through multiple screen configurations.
+**Layer Structure:**
+> Device → Display → Panels → Components
 
-_This would also allow for future extension with more panels configurations and sensors._
+- **Device**: Hardware abstraction layer (LVGL display management)
+- **Panels**: Presenters coordinating between sensors and components  
+- **Components**: Views rendering UI elements with data from sensors
+- **Sensors**: Models handling data acquisition from hardware inputs
+
+**MVP Relationships:**
+> Sensor (Model) ↔ Panel (Presenter) ↔ Component (View)
+
+### Dependency Injection Architecture
+- **Service Container**: Manages all service lifetimes and dependencies
+- **Factory Pattern**: Creates objects with proper dependency injection
+- **Interface Abstraction**: All services accessed through interfaces (I*)
+- **No Global State**: All dependencies resolved through DI container
+- **Lifecycle Management**: Centralized object creation and cleanup
+
+**Key Services:**
+- `IDevice`: Hardware display abstraction
+- `IPanelService`: Panel lifecycle and switching management  
+- `IStyleService`: LVGL styling and theme management
+- `IPreferenceService`: Persistent configuration storage
+- `ITriggerService`: GPIO trigger monitoring
+
+### Dynamic Panel Switching
+Input-driven panel switching enables responsive UI changes based on sensor triggers or user interaction. Emergency panels can override normal cycling based on sensor thresholds.
 
 ## Panels (Screens)
 

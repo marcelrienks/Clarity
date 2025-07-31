@@ -10,14 +10,14 @@
 
 /**
  * @class PreferenceManager
- * @brief Singleton configuration persistence manager using ESP32 NVS
+ * @brief Configuration persistence manager using ESP32 NVS
  * 
  * @details This manager handles all persistent configuration storage and
  * retrieval using the ESP32 Non-Volatile Storage (NVS) system. It provides
  * a centralized interface for saving and loading user preferences, with
  * automatic JSON serialization and default configuration creation.
  * 
- * @design_pattern Singleton - ensures single configuration instance
+ * @design_pattern Dependency Injection - managed by service container
  * @storage_backend ESP32 NVS (Non-Volatile Storage)
  * @serialization_format JSON via ArduinoJson library
  * @configuration_key "config" (stored in NVS)

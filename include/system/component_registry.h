@@ -17,7 +17,6 @@ class ServiceContainer;
 class ComponentRegistry : public IComponentFactory, public ISensorFactory {
 public:
     explicit ComponentRegistry(ServiceContainer& container) : serviceContainer_(container) {}
-    // GetInstance removed - ComponentRegistry is now managed by ServiceContainer only
 
     // IComponentFactory interface implementation
     void registerPanel(const std::string& name, PanelFactoryFunction factory) override;

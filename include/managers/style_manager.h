@@ -66,8 +66,6 @@ public:
     StyleManager(const StyleManager&) = delete;
     StyleManager& operator=(const StyleManager&) = delete;
 
-    // Removed singleton pattern - StyleManager is now managed by ServiceContainer
-
     // Core Functionality Methods (IStyleService implementation)
     void initializeStyles() override;
     void init(const char *theme) override;

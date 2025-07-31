@@ -8,7 +8,6 @@ LvglDisplayProvider::LvglDisplayProvider(lv_obj_t* mainScreen)
 
 void LvglDisplayProvider::initialize() {
     if (!initialized_) {
-        // TODO: Add any necessary LVGL initialization here
         initialized_ = true;
     }
 }

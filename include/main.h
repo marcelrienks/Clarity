@@ -17,7 +17,7 @@
  * 4. Main event loop with ticker-based updates
  * 
  * @context This is the main entry point for the application. The system
- * follows a strict initialization order and uses manager singletons for
+ * follows a strict initialization order and uses dependency injection for
  * coordinating system services.
  */
 

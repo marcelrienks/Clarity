@@ -8,8 +8,6 @@ StyleManager::~StyleManager()
     ResetStyles();
 }
 
-// Singleton pattern removed - StyleManager is now managed by ServiceContainer
-
 // Core Functionality Methods
 
 void StyleManager::initializeStyles()

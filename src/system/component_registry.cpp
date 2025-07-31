@@ -3,8 +3,6 @@
 #include "device.h"
 #include "managers/style_manager.h"
 
-// GetInstance removed - ComponentRegistry is now managed by ServiceContainer only
-
 void ComponentRegistry::registerPanel(const std::string& name, PanelFactoryFunction factory) {
     panelFactories[name] = factory;
 }
