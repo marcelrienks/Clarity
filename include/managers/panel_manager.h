@@ -80,6 +80,7 @@ public:
     void CreateAndLoadPanelWithSplash(const char* panelName);
     void UpdatePanel();
     void SetUiState(UIState state);
+    UIState GetUiState() const;
     void TriggerPanelSwitchCallback(const char *triggerId);
 
 

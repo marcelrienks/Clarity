@@ -26,11 +26,11 @@ std::unique_ptr<IPanel> ComponentRegistry::createPanel(const std::string& name, 
 std::unique_ptr<IComponent> ComponentRegistry::createComponent(const std::string& name) {
     auto it = componentFactories.find(name);
     if (it != componentFactories.end()) {
-        // During transition phase: get dependencies from global instances
-        extern std::unique_ptr<StyleManager> g_styleManager;
+        // Step 4.5: Use global service pointers for backward compatibility
+        extern IStyleService* g_styleService;
         auto& device = Device::GetInstance();
         IDisplayProvider* display = device.getDisplayProvider();
-        IStyleService* style = g_styleManager.get();
+        IStyleService* style = g_styleService;
         
         return it->second(display, style);
     }

@@ -21,7 +21,9 @@ void LvTools::reset_screen(lv_obj_t *screen)
     log_d("Applying theme background style to screen");
     
     // Apply the current theme's background style from the StyleManager
-    // During transition: access global StyleManager instance
-    extern std::unique_ptr<StyleManager> g_styleManager;
-    g_styleManager->apply_theme_to_screen(screen);
+    // Step 4.5: Use global service pointer for backward compatibility
+    extern IStyleService* g_styleService;
+    if (g_styleService) {
+        g_styleService->applyThemeToScreen(screen);
+    }
 }

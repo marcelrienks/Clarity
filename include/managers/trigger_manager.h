@@ -4,6 +4,8 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_trigger_service.h"
+#include "interfaces/i_panel_service.h"
+#include "interfaces/i_style_service.h"
 #include <esp32-hal-log.h>
 #include <vector>
 
@@ -26,7 +28,7 @@ class TriggerManager : public ITriggerService
 {
 public:
     // Constructors and Destructors
-    TriggerManager(IGpioProvider* gpio = nullptr);
+    TriggerManager(IGpioProvider* gpio = nullptr, IPanelService* panelService = nullptr, IStyleService* styleService = nullptr);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
@@ -70,4 +72,8 @@ private:
     
     // Hardware provider
     IGpioProvider* gpioProvider_ = nullptr;
+    
+    // Service dependencies (Step 4.5: Added for dependency injection)
+    IPanelService* panelService_ = nullptr;
+    IStyleService* styleService_ = nullptr;
 };

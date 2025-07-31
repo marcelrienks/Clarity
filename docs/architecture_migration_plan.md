@@ -434,10 +434,17 @@ public:
      - No constructor changes needed (PreferenceManager has no external dependencies)
      - Build integration successful with clean compilation (`pio run -e debug-local`)
    
-5. **Step 4.5:** Remove singleton GetInstance() methods ⏳ **NEXT**
-   - *Manual Test:* Application compiles, no more singleton access
-   - *Manual Test:* Full application functionality preserved
-   - *Status:* Ready to proceed - Step 4.4 completed successfully
+5. **Step 4.5:** Remove singleton GetInstance() methods ✅ **COMPLETE**
+   - *Manual Test:* Application compiles, no more singleton access - ✅ PASSED
+   - *Manual Test:* Full application functionality preserved - ✅ PASSED
+   - *Status:* Step 4.5 completed successfully
+   - Removed global manager instances (g_panelManager, g_triggerManager, g_styleManager, g_preferenceManager)
+   - Updated TriggerManager constructor with dependency injection for IPanelService and IStyleService
+   - Fixed service registration order to avoid circular dependencies
+   - Removed GetInstance() methods from PanelManager and TriggerManager
+   - Added backward compatibility global service pointers for legacy components
+   - Added missing TriggerService.init() call to fix application hang
+   - Build integration successful with clean compilation and runtime execution (`pio run -e debug-local`)
 
 ### Sprint 5: Application Integration ⏳ **PENDING**
 **Goal:** Wire everything together with service container  

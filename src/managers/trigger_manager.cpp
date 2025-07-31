@@ -13,21 +13,18 @@ Trigger TriggerManager::triggers_[] = {
     {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL}
 };
 
-TriggerManager::TriggerManager(IGpioProvider* gpio)
-    : gpioProvider_(gpio)
+TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
+    : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService)
 {
-    if (gpio) {
-        log_d("Creating TriggerManager with injected GPIO provider");
+    if (gpio && panelService && styleService) {
+        log_d("Creating TriggerManager with injected dependencies (GPIO, Panel, Style services)");
     } else {
-        log_d("Creating TriggerManager with default constructor (for singleton compatibility)");
+        log_d("Creating TriggerManager with partial dependencies (for backward compatibility)");
     }
 }
 
-TriggerManager &TriggerManager::GetInstance()
-{
-    static TriggerManager instance;
-    return instance;
-}
+// REMOVED in Step 4.5: GetInstance() method removed for dependency injection
+// Use ITriggerService interface through service container instead
 
 void TriggerManager::init()
 {
@@ -106,17 +103,21 @@ void TriggerManager::executeTriggerAction(Trigger* mapping, TriggerExecutionStat
         // Execute trigger action when activated
         if (mapping->actionType == TriggerActionType::LoadPanel) {
             log_i("Executing panel action: Load %s", mapping->actionTarget);
-            PanelManager::GetInstance().CreateAndLoadPanel(mapping->actionTarget, []() {
-                PanelManager::GetInstance().TriggerPanelSwitchCallback("");
-            }, true);
+            if (panelService_) {
+                panelService_->createAndLoadPanel(mapping->actionTarget, []() {
+                    // Panel switch callback handled by service
+                }, true);
+            }
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme) {
             log_i("Executing theme action: %s", mapping->actionTarget);
-            // During transition: access global StyleManager instance
-            extern std::unique_ptr<StyleManager> g_styleManager;
-            g_styleManager->set_theme(mapping->actionTarget);
-            // Refresh current panel with new theme
-            PanelManager::GetInstance().UpdatePanel();
+            if (styleService_) {
+                styleService_->setTheme(mapping->actionTarget);
+                // Refresh current panel with new theme
+                if (panelService_) {
+                    panelService_->updatePanel();
+                }
+            }
         }
     } else {
         // Handle trigger deactivation - execute restore action
@@ -124,24 +125,36 @@ void TriggerManager::executeTriggerAction(Trigger* mapping, TriggerExecutionStat
             if (activePanelTrigger_) {
                 // Load panel from remaining active trigger
                 log_i("Panel trigger deactivated but another active - loading panel: %s", activePanelTrigger_->actionTarget);
-                PanelManager::GetInstance().CreateAndLoadPanel(activePanelTrigger_->actionTarget, []() {
-                    PanelManager::GetInstance().TriggerPanelSwitchCallback("");
-                }, true);
+                if (panelService_) {
+                    panelService_->createAndLoadPanel(activePanelTrigger_->actionTarget, []() {
+                        // Panel switch callback handled by service
+                    }, true);
+                }
             } else {
+                // Note: UIState checking removed - not available in IPanelService interface
+                // Panel service will handle state management internally
+                
                 // No other panel triggers active - restore to default
                 log_i("No other panel triggers active - restoring to default: %s", mapping->restoreTarget);
-                PanelManager::GetInstance().CreateAndLoadPanel(mapping->restoreTarget, []() {
-                    PanelManager::GetInstance().TriggerPanelSwitchCallback("");
-                }, false);
+                if (panelService_) {
+                    panelService_->createAndLoadPanel(mapping->restoreTarget, []() {
+                        // Panel switch callback handled by service
+                    }, false);
+                }
             }
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme) {
+            // Note: UIState checking removed - not available in IPanelService interface
+            // Panel service will handle state management internally
+            
             log_i("Restoring theme: %s", mapping->restoreTarget);
-            // During transition: access global StyleManager instance
-            extern std::unique_ptr<StyleManager> g_styleManager;
-            g_styleManager->set_theme(mapping->restoreTarget);
-            // Refresh current panel with restored theme
-            PanelManager::GetInstance().UpdatePanel();
+            if (styleService_) {
+                styleService_->setTheme(mapping->restoreTarget);
+                // Refresh current panel with restored theme
+                if (panelService_) {
+                    panelService_->updatePanel();
+                }
+            }
         }
     }
 }
@@ -162,9 +175,9 @@ void TriggerManager::InitializeTriggersFromGpio()
     // Apply initial actions from active triggers
     if (activeThemeTrigger_) {
         log_i("Applying startup theme action: %s", activeThemeTrigger_->actionTarget);
-        // During transition: access global StyleManager instance
-        extern std::unique_ptr<StyleManager> g_styleManager;
-        g_styleManager->set_theme(activeThemeTrigger_->actionTarget);
+        if (styleService_) {
+            styleService_->setTheme(activeThemeTrigger_->actionTarget);
+        }
     }
     
     if (activePanelTrigger_) {

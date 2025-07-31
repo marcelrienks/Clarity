@@ -82,8 +82,10 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
     log_d("Loading panel with splash screen transition: %s", panelName);
 
-    CreateAndLoadPanel(PanelNames::SPLASH, [this, panelName]()
-                       { this->PanelManager::SplashCompletionCallback(panelName); });
+    // Capture panel name as string to avoid pointer corruption issues
+    std::string targetPanel(panelName);
+    CreateAndLoadPanel(PanelNames::SPLASH, [this, targetPanel]()
+                       { this->PanelManager::SplashCompletionCallback(targetPanel.c_str()); });
 }
 
 /// @brief Update the reading on the currently loaded panel and process trigger messages
@@ -188,6 +190,11 @@ void PanelManager::SetUiState(UIState state)
     uiState_ = state;
 }
 
+UIState PanelManager::GetUiState() const
+{
+    return uiState_;
+}
+
 // State Management Methods (IPanelService implementation)
 
 /// @brief Get the current panel name
@@ -205,11 +212,8 @@ const char* PanelManager::getRestorationPanel() const
 // Temporary backward compatibility methods (will be removed in step 4.3)
 
 /// @brief Get the singleton instance of PanelManager (temporary compatibility)
-PanelManager &PanelManager::GetInstance()
-{
-    extern std::unique_ptr<PanelManager> g_panelManager;
-    return *g_panelManager;
-}
+// REMOVED in Step 4.5: GetInstance() method removed for dependency injection
+// Use IPanelService interface through service container instead
 
 // IPanelService interface implementations (delegate to original methods)
 
