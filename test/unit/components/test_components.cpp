@@ -15,6 +15,40 @@ static bool component_render_called = false;
 static bool component_refresh_called = false;
 static mock_lv_obj_t* last_created_object = nullptr;
 
+// Mock service implementations for component testing
+class MockStyleService : public IStyleService {
+public:
+    void init(const char* theme) override {}
+    void applyThemeToScreen(lv_obj_t* screen) override {}
+    void setTheme(const char* theme) override {}
+    const char* getCurrentTheme() const override { return "Day"; }
+    lv_style_t& getBackgroundStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getTextStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeNormalStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeWarningStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeDangerStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeIndicatorStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeItemsStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeMainStyle() override { static lv_style_t style; return style; }
+    lv_style_t& getGaugeDangerSectionStyle() override { static lv_style_t style; return style; }
+    const ThemeColors& getThemeColors() const override { static ThemeColors colors; return colors; }
+};
+
+class MockDisplayProvider : public IDisplayProvider {
+public:
+    lv_obj_t* createScreen() override { static mock_lv_obj_t screen; return (lv_obj_t*)&screen; }
+    void loadScreen(lv_obj_t* screen) override {}
+    lv_obj_t* createLabel(lv_obj_t* parent) override { static mock_lv_obj_t label; return (lv_obj_t*)&label; }
+    lv_obj_t* createObject(lv_obj_t* parent) override { static mock_lv_obj_t object; return (lv_obj_t*)&object; }
+    lv_obj_t* createArc(lv_obj_t* parent) override { static mock_lv_obj_t arc; return (lv_obj_t*)&arc; }
+    lv_obj_t* createScale(lv_obj_t* parent) override { static mock_lv_obj_t scale; return (lv_obj_t*)&scale; }
+    lv_obj_t* createImage(lv_obj_t* parent) override { static mock_lv_obj_t image; return (lv_obj_t*)&image; }
+    lv_obj_t* createLine(lv_obj_t* parent) override { static mock_lv_obj_t line; return (lv_obj_t*)&line; }
+    void deleteObject(lv_obj_t* obj) override {}
+    void addEventCallback(lv_obj_t* obj, lv_event_cb_t callback, lv_event_code_t event_code, void* user_data) override {}
+    lv_obj_t* getMainScreen() override { return createScreen(); }
+};
+
 extern "C" {
     // Mock LVGL object creation functions
     mock_lv_obj_t* mock_lv_label_create(mock_lv_obj_t* screen) {
@@ -99,12 +133,14 @@ void tearDown(void) {
 // ClarityComponent Tests
 void test_clarity_component_creation(void) {
     // Setup
-    ClarityComponent clarity;
+    MockStyleService mockStyle;
+    ClarityComponent clarity(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    MockDisplayProvider mockDisplay;
     
     // Test
-    clarity.render(&screen, location);
+    clarity.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Verify - should create a label with "Clarity" text
     TEST_ASSERT_NOT_NULL(last_created_object);
@@ -117,12 +153,14 @@ void test_clarity_component_creation(void) {
 
 void test_clarity_component_positioning(void) {
     // Setup
-    ClarityComponent clarity;
+    MockStyleService mockStyle;
+    ClarityComponent clarity(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 10, -20);
+    MockDisplayProvider mockDisplay;
     
     // Test
-    clarity.render(&screen, location);
+    clarity.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Verify positioning
     TEST_ASSERT_EQUAL_INT32(10, last_created_object->x_offset);
@@ -132,12 +170,14 @@ void test_clarity_component_positioning(void) {
 // KeyComponent Tests  
 void test_key_component_creation(void) {
     // Setup
-    KeyComponent key;
+    MockStyleService mockStyle;
+    KeyComponent key(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
     // Test
-    key.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    key.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Verify - should create an image for the key icon
     TEST_ASSERT_NOT_NULL(last_created_object);
@@ -147,10 +187,12 @@ void test_key_component_creation(void) {
 
 void test_key_component_refresh(void) {
     // Setup
-    KeyComponent key;
+    MockStyleService mockStyle;
+    KeyComponent key(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
-    key.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    key.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Test with bool reading (key present)
     Reading reading = true;
@@ -163,10 +205,12 @@ void test_key_component_refresh(void) {
 
 void test_key_component_set_value(void) {
     // Setup
-    KeyComponent key;
+    MockStyleService mockStyle;
+    KeyComponent key(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
-    key.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    key.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Test
     key.SetValue(1); // Key present
@@ -178,12 +222,14 @@ void test_key_component_set_value(void) {
 // LockComponent Tests
 void test_lock_component_creation(void) {
     // Setup
-    LockComponent lock;
+    MockStyleService mockStyle;
+    LockComponent lock(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 15, -25);
     
     // Test
-    lock.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    lock.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Verify
     TEST_ASSERT_NOT_NULL(last_created_object);
@@ -196,12 +242,14 @@ void test_lock_component_creation(void) {
 // OemOilPressureComponent Tests
 void test_oem_oil_pressure_creation(void) {
     // Setup
-    OemOilPressureComponent pressure;
+    MockStyleService mockStyle;
+    OemOilPressureComponent pressure(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    MockDisplayProvider mockDisplay;
     
     // Test
-    pressure.render(&screen, location);
+    pressure.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Verify - oil component creates complex gauge structure
     TEST_ASSERT_NOT_NULL(last_created_object);
@@ -210,10 +258,12 @@ void test_oem_oil_pressure_creation(void) {
 
 void test_oem_oil_pressure_value_update(void) {
     // Setup
-    OemOilPressureComponent pressure;
+    MockStyleService mockStyle;
+    OemOilPressureComponent pressure(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
-    pressure.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    pressure.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Test with pressure value
     pressure.SetValue(75); // 75 PSI
@@ -224,10 +274,12 @@ void test_oem_oil_pressure_value_update(void) {
 
 void test_oem_oil_pressure_danger_condition(void) {
     // Setup
-    OemOilPressureComponent pressure;
+    MockStyleService mockStyle;
+    OemOilPressureComponent pressure(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
-    pressure.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    pressure.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Test with dangerous low pressure
     pressure.SetValue(5); // Very low pressure
@@ -239,12 +291,14 @@ void test_oem_oil_pressure_danger_condition(void) {
 // OemOilTemperatureComponent Tests
 void test_oem_oil_temperature_creation(void) {
     // Setup
-    OemOilTemperatureComponent temperature;
+    MockStyleService mockStyle;
+    OemOilTemperatureComponent temperature(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(180); // Rotated positioning
+    MockDisplayProvider mockDisplay;
     
     // Test
-    temperature.render(&screen, location);
+    temperature.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Verify
     TEST_ASSERT_NOT_NULL(last_created_object);
@@ -253,10 +307,12 @@ void test_oem_oil_temperature_creation(void) {
 
 void test_oem_oil_temperature_value_ranges(void) {
     // Setup
-    OemOilTemperatureComponent temperature;
+    MockStyleService mockStyle;
+    OemOilTemperatureComponent temperature(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
-    temperature.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    temperature.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Test normal operating temperature
     temperature.SetValue(85); // Normal temp
@@ -271,29 +327,33 @@ void test_oem_oil_temperature_value_ranges(void) {
 // Component Interface Tests
 void test_component_interface_render_requirement(void) {
     // Test that all components implement required render method
-    ClarityComponent clarity;
-    KeyComponent key;
-    LockComponent lock;
-    OemOilPressureComponent pressure;
+    MockStyleService mockStyle;
+    ClarityComponent clarity(&mockStyle);
+    KeyComponent key(&mockStyle);
+    LockComponent lock(&mockStyle);
+    OemOilPressureComponent pressure(&mockStyle);
     
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    MockDisplayProvider mockDisplay;
     
     // All should render without error
-    clarity.render(&screen, location);
-    key.render(&screen, location);
-    lock.render(&screen, location);
-    pressure.render(&screen, location);
+    clarity.render((lv_obj_t*)&screen, location, &mockDisplay);
+    key.render((lv_obj_t*)&screen, location, &mockDisplay);
+    lock.render((lv_obj_t*)&screen, location, &mockDisplay);
+    pressure.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     TEST_ASSERT_TRUE(true); // If we get here, all renders succeeded
 }
 
 void test_component_interface_optional_methods(void) {
     // Test that components handle optional methods
-    KeyComponent key;
+    MockStyleService mockStyle;
+    KeyComponent key(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
-    key.render(&screen, location);
+    MockDisplayProvider mockDisplay;
+    key.render((lv_obj_t*)&screen, location, &mockDisplay);
     
     // Optional methods should not crash
     Reading reading = 42;
@@ -306,13 +366,15 @@ void test_component_interface_optional_methods(void) {
 // Performance and Memory Tests
 void test_component_multiple_renders(void) {
     // Test rendering same component multiple times
-    ClarityComponent clarity;
+    MockStyleService mockStyle;
+    ClarityComponent clarity(&mockStyle);
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
+    MockDisplayProvider mockDisplay;
     
     // Render multiple times
     for(int i = 0; i < 5; i++) {
-        clarity.render(&screen, location);
+        clarity.render((lv_obj_t*)&screen, location, &mockDisplay);
     }
     
     // Should handle multiple renders
@@ -321,18 +383,20 @@ void test_component_multiple_renders(void) {
 
 void test_component_memory_efficiency(void) {
     // Test that components don't leak memory with repeated operations
-    KeyComponent key;
-    LockComponent lock;
+    MockStyleService mockStyle;
+    KeyComponent key(&mockStyle);
+    LockComponent lock(&mockStyle);
     
     mock_lv_obj_t screen = create_mock_lv_obj();
     ComponentLocation location(LV_ALIGN_CENTER, 0, 0);
     
     // Repeated render/refresh cycles
+    MockDisplayProvider mockDisplay;
     for(int i = 0; i < 10; i++) {
-        key.render(&screen, location);
+        key.render((lv_obj_t*)&screen, location, &mockDisplay);
         key.refresh(Reading(i % 2 == 0));
         
-        lock.render(&screen, location);
+        lock.render((lv_obj_t*)&screen, location, &mockDisplay);
         lock.SetValue(i * 10);
     }
     

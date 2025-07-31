@@ -91,6 +91,11 @@ const char* MockStyleService::getCurrentTheme() const
     return currentTheme_.c_str();
 }
 
+const ThemeColors& MockStyleService::getThemeColors() const
+{
+    return themeColors_;
+}
+
 void MockStyleService::reset()
 {
     initCalled_ = false;

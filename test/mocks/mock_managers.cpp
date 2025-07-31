@@ -20,13 +20,13 @@ void TriggerManager::ProcessTriggerEvents() {
     // Process mock GPIO states and update panels accordingly
     bool keyPresent = MockHardware::getGpioState(25);
     if (keyPresent) {
-        PanelManager::GetInstance().loadPanel(PanelNames::KEY);
+        current_panel = PanelNames::KEY;
     } else {
-        PanelManager::GetInstance().loadPanel(PanelNames::OIL);
+        current_panel = PanelNames::OIL;
     }
 }
 
-// PanelManager implementation
+// Mock PanelManager implementation
 PanelManager& PanelManager::GetInstance() {
     static PanelManager instance;
     return instance;
@@ -34,6 +34,7 @@ PanelManager& PanelManager::GetInstance() {
 
 void PanelManager::init() {
     // Initialize mock panel manager
+    current_panel = "OemOilPanel";
 }
 
 void PanelManager::loadPanel(const char* panelName) {

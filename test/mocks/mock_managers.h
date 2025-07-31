@@ -10,6 +10,7 @@ private:
     TriggerManager() = default;
 };
 
+// Mock PanelManager for integration tests (singleton pattern for testing)
 class PanelManager {
 public:
     static PanelManager& GetInstance();

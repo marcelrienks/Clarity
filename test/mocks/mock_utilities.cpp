@@ -359,8 +359,11 @@ extern "C" {
         return &dummy_obj;
     }
     
-    void mock_lv_obj_del(void* obj) {
+    void mock_lv_obj_del(mock_lv_obj_t* obj) {
         // Mock delete
+        if (obj) {
+            obj->deleted = true;
+        }
     }
     
     void mock_lv_obj_add_style(void* obj, void* style, uint32_t selector) {

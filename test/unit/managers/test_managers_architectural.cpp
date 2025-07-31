@@ -33,6 +33,52 @@ public:
     void updateDisplay() override {}
     bool isInitialized() const override { return initialized_; }
     
+    // IDisplayProvider interface implementation
+    lv_obj_t* createScreen() override { 
+        static mock_lv_obj_t screen = create_mock_lv_obj();
+        return (lv_obj_t*)&screen;
+    }
+    
+    void loadScreen(lv_obj_t* screen) override {}
+    
+    lv_obj_t* createLabel(lv_obj_t* parent) override { 
+        static mock_lv_obj_t label = create_mock_lv_obj();
+        return (lv_obj_t*)&label;
+    }
+    
+    lv_obj_t* createObject(lv_obj_t* parent) override { 
+        static mock_lv_obj_t object = create_mock_lv_obj();
+        return (lv_obj_t*)&object;
+    }
+    
+    lv_obj_t* createArc(lv_obj_t* parent) override { 
+        static mock_lv_obj_t arc = create_mock_lv_obj();
+        return (lv_obj_t*)&arc;
+    }
+    
+    lv_obj_t* createScale(lv_obj_t* parent) override { 
+        static mock_lv_obj_t scale = create_mock_lv_obj();
+        return (lv_obj_t*)&scale;
+    }
+    
+    lv_obj_t* createImage(lv_obj_t* parent) override { 
+        static mock_lv_obj_t image = create_mock_lv_obj();
+        return (lv_obj_t*)&image;
+    }
+    
+    lv_obj_t* createLine(lv_obj_t* parent) override { 
+        static mock_lv_obj_t line = create_mock_lv_obj();
+        return (lv_obj_t*)&line;
+    }
+    
+    void deleteObject(lv_obj_t* obj) override {}
+    
+    void addEventCallback(lv_obj_t* obj, lv_event_cb_t callback, lv_event_code_t event_code, void* user_data) override {}
+    
+    lv_obj_t* getMainScreen() override { 
+        return createScreen();
+    }
+    
 private:
     bool initialized_;
 };
@@ -47,6 +93,7 @@ public:
     }
     
     void setPinMode(int pin, int mode) override {}
+    void pinMode(int pin, int mode) override {}
     bool digitalRead(int pin) override { 
         return (pin >= 0 && pin < 40) ? pin_states_[pin] : false; 
     }
@@ -74,15 +121,51 @@ private:
 
 class TestStyleService : public IStyleService {
 public:
-    TestStyleService() : current_theme_("Day"), initialized_(false) {}
+    TestStyleService() : current_theme_("Day"), initialized_(false) {
+        // Initialize mock styles
+        mock_lv_style_init(&background_style_);
+        mock_lv_style_init(&text_style_);
+        mock_lv_style_init(&gauge_normal_style_);
+        mock_lv_style_init(&gauge_warning_style_);
+        mock_lv_style_init(&gauge_danger_style_);
+        mock_lv_style_init(&gauge_indicator_style_);
+        mock_lv_style_init(&gauge_items_style_);
+        mock_lv_style_init(&gauge_main_style_);
+        mock_lv_style_init(&gauge_danger_section_style_);
+    }
     
-    void initializeStyles() override { initialized_ = true; }
+    // IStyleService interface implementation
+    void init(const char* theme) override { 
+        initialized_ = true; 
+        if (theme) current_theme_ = theme;
+    }
+    
+    void applyThemeToScreen(lv_obj_t* screen) override {}
+    
     void setTheme(const char* theme) override { 
         if (theme) current_theme_ = theme; 
     }
+    
     const char* getCurrentTheme() const override { return current_theme_.c_str(); }
-    void applyToScreen(void* screen) override {}
-    void resetStyles() override { 
+    
+    // Style accessor methods - return references to mock styles
+    lv_style_t& getBackgroundStyle() override { return (lv_style_t&)background_style_; }
+    lv_style_t& getTextStyle() override { return (lv_style_t&)text_style_; }
+    lv_style_t& getGaugeNormalStyle() override { return (lv_style_t&)gauge_normal_style_; }
+    lv_style_t& getGaugeWarningStyle() override { return (lv_style_t&)gauge_warning_style_; }
+    lv_style_t& getGaugeDangerStyle() override { return (lv_style_t&)gauge_danger_style_; }
+    lv_style_t& getGaugeIndicatorStyle() override { return (lv_style_t&)gauge_indicator_style_; }
+    lv_style_t& getGaugeItemsStyle() override { return (lv_style_t&)gauge_items_style_; }
+    lv_style_t& getGaugeMainStyle() override { return (lv_style_t&)gauge_main_style_; }
+    lv_style_t& getGaugeDangerSectionStyle() override { return (lv_style_t&)gauge_danger_section_style_; }
+    
+    const ThemeColors& getThemeColors() const override { 
+        static ThemeColors colors; // Mock theme colors
+        return colors; 
+    }
+    
+    // Test helper methods
+    void resetStyles() { 
         current_theme_ = "Day"; 
         initialized_ = false;
     }
@@ -92,26 +175,59 @@ public:
 private:
     std::string current_theme_;
     bool initialized_;
+    
+    // Mock styles
+    mock_lv_style_t background_style_;
+    mock_lv_style_t text_style_;
+    mock_lv_style_t gauge_normal_style_;
+    mock_lv_style_t gauge_warning_style_;
+    mock_lv_style_t gauge_danger_style_;
+    mock_lv_style_t gauge_indicator_style_;
+    mock_lv_style_t gauge_items_style_;
+    mock_lv_style_t gauge_main_style_;
+    mock_lv_style_t gauge_danger_section_style_;
 };
 
 class TestPreferenceService : public IPreferenceService {
 public:
     TestPreferenceService() : initialized_(false) {}
     
-    void init() override { initialized_ = true; }
-    bool isInitialized() const override { return initialized_; }
-    void saveConfig(const char* key, const char* value) override {
-        if (key && value) config_[key] = value;
+    // IPreferenceService interface implementation
+    void init() override { 
+        initialized_ = true; 
+        createDefaultConfig();
     }
-    std::string loadConfig(const char* key, const char* defaultValue) override {
-        if (!key) return defaultValue ? defaultValue : "";
-        auto it = config_.find(key);
-        return (it != config_.end()) ? it->second : (defaultValue ? defaultValue : "");
+    
+    void saveConfig() override {
+        // Mock save - no-op for testing
     }
+    
+    void loadConfig() override {
+        // Mock load - no-op for testing
+    }
+    
+    void createDefaultConfig() override {
+        config_.panelName = PanelNames::OIL;
+    }
+    
+    Configs& getConfig() override {
+        return config_;
+    }
+    
+    const Configs& getConfig() const override {
+        return config_;
+    }
+    
+    void setConfig(const Configs& config) override {
+        config_ = config;
+    }
+    
+    // Test helper
+    bool isInitialized() const { return initialized_; }
     
 private:
     bool initialized_;
-    std::map<std::string, std::string> config_;
+    Configs config_;
 };
 
 // Global DI container for tests
@@ -152,13 +268,14 @@ void tearDown(void)
 void test_architectural_panel_manager_with_di(void)
 {
     // Register PanelManager as a service
-    container->registerSingleton<PanelManager>([this]() {
+    container->registerSingleton<PanelManager>([&]() {
         // PanelManager gets its dependencies injected
         auto displayProvider = container->resolve<IDisplayProvider>();
         auto styleService = container->resolve<IStyleService>();
         auto prefService = container->resolve<IPreferenceService>();
         
-        return std::make_unique<PanelManager>(displayProvider, styleService, prefService);
+        auto gpioProvider = container->resolve<IGpioProvider>();
+        return std::make_unique<PanelManager>(displayProvider, gpioProvider, nullptr);
     });
     
     // Resolve PanelManager through DI
@@ -171,7 +288,7 @@ void test_architectural_panel_manager_with_di(void)
     IPreferenceService* prefService = container->resolve<IPreferenceService>();
     
     displayProvider->initialize();
-    styleService->initializeStyles();
+    styleService->init("Day");
     prefService->init();
     
     // PanelManager should work with injected dependencies
@@ -184,22 +301,18 @@ void test_architectural_panel_manager_with_di(void)
 
 void test_architectural_style_manager_with_di(void)
 {
-    // Register StyleManager as a service with dependencies
-    container->registerSingleton<StyleManager>([this]() {
-        auto displayProvider = container->resolve<IDisplayProvider>();
-        return std::make_unique<StyleManager>(displayProvider);
+    // Register StyleManager as a service (uses default constructor)
+    container->registerSingleton<StyleManager>([&]() {
+        return std::make_unique<StyleManager>();
     });
     
     // Resolve StyleManager through DI
     StyleManager* styleManager = container->resolve<StyleManager>();
     TEST_ASSERT_NOT_NULL(styleManager);
     
-    // Initialize dependencies
+    // Test with display provider
     IDisplayProvider* displayProvider = container->resolve<IDisplayProvider>();
-    displayProvider->initialize();
-    
-    // StyleManager should work with injected display provider
-    TEST_ASSERT_TRUE(displayProvider->isInitialized());
+    TEST_ASSERT_NOT_NULL(displayProvider);
     TEST_ASSERT_NOT_NULL(displayProvider->getScreen());
     
     // Test style operations
@@ -211,10 +324,9 @@ void test_architectural_style_manager_with_di(void)
 
 void test_architectural_preference_manager_with_di(void)
 {
-    // Register PreferenceManager with its dependencies
-    container->registerSingleton<PreferenceManager>([this]() {
-        auto prefService = container->resolve<IPreferenceService>();
-        return std::make_unique<PreferenceManager>(prefService);
+    // Register PreferenceManager (uses default constructor)
+    container->registerSingleton<PreferenceManager>([&]() {
+        return std::make_unique<PreferenceManager>();
     });
     
     // Resolve through DI
@@ -229,15 +341,19 @@ void test_architectural_preference_manager_with_di(void)
     TEST_ASSERT_TRUE(prefService->isInitialized());
     
     // Test preference operations through service
-    prefService->saveConfig("test_key", "test_value");
-    std::string value = prefService->loadConfig("test_key", "default");
-    TEST_ASSERT_EQUAL_STRING("test_value", value.c_str());
+    auto& config = prefService->getConfig();
+    config.panelName = PanelNames::KEY; // Set test value
+    prefService->saveConfig();
+    
+    // Verify the configuration was set
+    const auto& loadedConfig = prefService->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, loadedConfig.panelName);
 }
 
 void test_architectural_trigger_manager_with_di(void)
 {
     // Register TriggerManager with GPIO dependency
-    container->registerSingleton<TriggerManager>([this]() {
+    container->registerSingleton<TriggerManager>([&]() {
         auto gpioProvider = container->resolve<IGpioProvider>();
         return std::make_unique<TriggerManager>(gpioProvider);
     });
@@ -273,19 +389,20 @@ void test_architectural_trigger_manager_with_di(void)
 void test_architectural_managers_shared_dependencies(void)
 {
     // Register all managers with shared dependencies
-    container->registerSingleton<PanelManager>([this]() {
+    container->registerSingleton<PanelManager>([&]() {
         auto displayProvider = container->resolve<IDisplayProvider>();
         auto styleService = container->resolve<IStyleService>();
         auto prefService = container->resolve<IPreferenceService>();
-        return std::make_unique<PanelManager>(displayProvider, styleService, prefService);
+        auto gpioProvider = container->resolve<IGpioProvider>();
+        return std::make_unique<PanelManager>(displayProvider, gpioProvider, nullptr);
     });
     
-    container->registerSingleton<StyleManager>([this]() {
+    container->registerSingleton<StyleManager>([&]() {
         auto displayProvider = container->resolve<IDisplayProvider>();
-        return std::make_unique<StyleManager>(displayProvider);
+        return std::make_unique<StyleManager>();
     });
     
-    container->registerSingleton<TriggerManager>([this]() {
+    container->registerSingleton<TriggerManager>([&]() {
         auto gpioProvider = container->resolve<IGpioProvider>();
         return std::make_unique<TriggerManager>(gpioProvider);
     });
@@ -322,16 +439,17 @@ void test_architectural_manager_lifecycle_management(void)
     // Test that managers are properly managed through their entire lifecycle
     
     // Register managers
-    container->registerSingleton<PanelManager>([this]() {
+    container->registerSingleton<PanelManager>([&]() {
         auto displayProvider = container->resolve<IDisplayProvider>();
         auto styleService = container->resolve<IStyleService>();
         auto prefService = container->resolve<IPreferenceService>();
-        return std::make_unique<PanelManager>(displayProvider, styleService, prefService);
+        auto gpioProvider = container->resolve<IGpioProvider>();
+        return std::make_unique<PanelManager>(displayProvider, gpioProvider, nullptr);
     });
     
-    container->registerSingleton<PreferenceManager>([this]() {
+    container->registerSingleton<PreferenceManager>([&]() {
         auto prefService = container->resolve<IPreferenceService>();
-        return std::make_unique<PreferenceManager>(prefService);
+        return std::make_unique<PreferenceManager>();
     });
     
     // Initial state - managers not yet created
@@ -345,7 +463,7 @@ void test_architectural_manager_lifecycle_management(void)
     
     displayProvider->initialize();
     prefService->init();
-    styleService->initializeStyles();
+    styleService->init("Day");
     
     // Create managers - should get initialized services
     PanelManager* panelManager = container->resolve<PanelManager>();
@@ -362,21 +480,25 @@ void test_architectural_manager_lifecycle_management(void)
     TEST_ASSERT_TRUE(testStyle->isInitialized());
     
     // Test preference operations
-    prefService->saveConfig("panel_type", "OemOilPanel");
-    std::string savedPanel = prefService->loadConfig("panel_type", "SplashPanel");
-    TEST_ASSERT_EQUAL_STRING("OemOilPanel", savedPanel.c_str());
+    auto& config = prefService->getConfig();
+    config.panelName = PanelNames::OIL; // Set to oil panel
+    prefService->saveConfig();
+    
+    // Verify the configuration was set
+    const auto& loadedConfig = prefService->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, loadedConfig.panelName);
 }
 
 void test_architectural_manager_cross_communication(void)
 {
     // Test that managers can communicate through shared services
     
-    container->registerSingleton<StyleManager>([this]() {
+    container->registerSingleton<StyleManager>([&]() {
         auto displayProvider = container->resolve<IDisplayProvider>();
-        return std::make_unique<StyleManager>(displayProvider);
+        return std::make_unique<StyleManager>();
     });
     
-    container->registerSingleton<TriggerManager>([this]() {
+    container->registerSingleton<TriggerManager>([&]() {
         auto gpioProvider = container->resolve<IGpioProvider>();
         return std::make_unique<TriggerManager>(gpioProvider);
     });
@@ -391,7 +513,7 @@ void test_architectural_manager_cross_communication(void)
     TestGpioProvider* testGpio = dynamic_cast<TestGpioProvider*>(gpioProvider);
     
     // Initialize
-    styleService->initializeStyles();
+    styleService->init("Day");
     
     // Test cross-manager communication via shared services
     // TriggerManager detects lights on -> StyleManager switches theme
@@ -459,7 +581,7 @@ void test_architectural_container_clear_and_rebuild(void)
         return std::make_unique<TestDisplayProvider>();
     });
     
-    container->registerSingleton<PanelManager>([this]() {
+    container->registerSingleton<PanelManager>([&]() {
         auto displayProvider = container->resolve<IDisplayProvider>();
         return std::make_unique<PanelManager>(displayProvider);
     });

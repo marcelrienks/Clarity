@@ -9,11 +9,10 @@
 
 // Forward declare lvgl types and icons
 typedef struct _lv_font_t lv_font_t;
+
+// Mock font declarations for testing
 extern "C" {
     extern const lv_font_t lv_font_montserrat_20;
-    extern const uint8_t key_solid[];
-    extern const uint8_t lock_alt_solid[];
-    extern const uint8_t oil_can_regular[];
 }
 
 // LVGL Constants are defined in the lvgl.h mock
@@ -32,9 +31,11 @@ typedef struct {
     bool bool_value;
 } mock_reading_t;
 
-// Additional mock functions not in mock_colors.h
-mock_lv_obj_t* mock_lv_arc_create(mock_lv_obj_t* screen);
-mock_lv_obj_t* mock_lv_line_create(mock_lv_obj_t* screen);
+// Additional mock functions not in mock_colors.h (declared in mock_lvgl_components.h)
+extern "C" {
+    mock_lv_obj_t* mock_lv_arc_create(mock_lv_obj_t* screen);
+    mock_lv_obj_t* mock_lv_line_create(mock_lv_obj_t* screen);
+}
 
 // Helper function to create mock_lv_obj_t
 inline mock_lv_obj_t create_mock_lv_obj() {
@@ -57,7 +58,8 @@ inline mock_lv_obj_t create_mock_lv_obj() {
     return obj;
 }
 
-// LVGL Layout Functions
+// LVGL Layout Functions (C linkage to match implementations)
+extern "C" {
 void lv_obj_set_align(mock_lv_obj_t* obj, int32_t align_type);
 void lv_obj_set_pos(mock_lv_obj_t* obj, int32_t x, int32_t y);
 void mock_lv_obj_align(mock_lv_obj_t* obj, int32_t align, int32_t x_offset, int32_t y_offset);
@@ -68,7 +70,8 @@ void mock_lv_image_set_src(mock_lv_obj_t* obj, const void* src);
 void mock_lv_obj_set_style_text_font(mock_lv_obj_t* obj, const lv_font_t* font, uint32_t selector);
 void mock_lv_obj_set_style_image_recolor(mock_lv_obj_t* obj, mock_lv_color_t color, uint32_t selector);
 void mock_lv_obj_set_style_image_recolor_opa(mock_lv_obj_t* obj, uint8_t opa, uint32_t selector);
-void mock_lv_obj_del(mock_lv_obj_t* obj);
+}
+extern "C" void mock_lv_obj_del(mock_lv_obj_t* obj);
 
 // Mock GPIO states for testing
 extern bool mock_gpio_states[40]; // ESP32 has up to 40 GPIO pins

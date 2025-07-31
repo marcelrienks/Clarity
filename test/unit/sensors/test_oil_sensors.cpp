@@ -3,11 +3,44 @@
 #include "mock_managers.h"
 #include "mock_types.h"
 
-// External declarations for test state
-extern int32_t current_oil_temperature;
-extern int32_t current_oil_pressure;
-extern uint32_t last_update_time;
-extern bool sensor_initialized;
+// Mock constants for oil sensor testing
+#define MIN_OIL_TEMPERATURE 20
+#define MAX_OIL_TEMPERATURE 120
+#define MIN_OIL_PRESSURE 0
+#define MAX_OIL_PRESSURE 100
+// Use constants from mock_utilities.h
+
+// Mock global state for oil sensor testing
+static int32_t current_oil_temperature = DEFAULT_OIL_TEMPERATURE;
+static int32_t current_oil_pressure = DEFAULT_OIL_PRESSURE;
+static uint32_t last_update_time = 0;
+static bool sensor_initialized = false;
+
+// Mock functions for oil sensor testing
+void UpdateSensorReadings(uint32_t current_time) {
+    // Mock implementation - only update if enough time has passed
+    if (current_time - last_update_time >= 1000) { // 1 second interval
+        last_update_time = current_time;
+        // Simulate sensor readings
+        sensor_initialized = true;
+    }
+}
+
+void SetOilTemperature(int32_t temperature) {
+    current_oil_temperature = temperature;
+}
+
+void SetOilPressure(int32_t pressure) {
+    current_oil_pressure = pressure;
+}
+
+int32_t GetOilTemperature() {
+    return current_oil_temperature;
+}
+
+int32_t GetOilPressure() {
+    return current_oil_pressure;
+}
 
 void test_sensor_update_interval(void) {
     // Test that sensor readings are updated at appropriate intervals

@@ -435,7 +435,7 @@ void test_component_registry_full_panel_integration(void)
     TEST_ASSERT_TRUE(displayProvider->isInitialized());
     
     // Panel should initialize successfully with all dependencies
-    panelInterface->init();
+    panelInterface->init(gpioProvider.get(), displayProvider.get());
     // Panel should be able to load without errors
     panelInterface->load();
 }
@@ -586,10 +586,10 @@ void test_component_registry_full_system_integration(void)
     TEST_ASSERT_NOT_NULL(oilPanelInterface);
     
     // Initialize all panels (should succeed with proper dependencies)
-    splashPanelInterface->init();
-    keyPanelInterface->init();
-    lockPanelInterface->init();
-    oilPanelInterface->init();
+    splashPanelInterface->init(gpioProvider.get(), displayProvider.get());
+    keyPanelInterface->init(gpioProvider.get(), displayProvider.get());
+    lockPanelInterface->init(gpioProvider.get(), displayProvider.get());
+    oilPanelInterface->init(gpioProvider.get(), displayProvider.get());
     
     // Test sensor readings work
     gpioProvider->setTestGpioState(25, true);  // Key present

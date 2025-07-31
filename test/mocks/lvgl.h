@@ -16,7 +16,15 @@ typedef struct _lv_font_t {
 } lv_font_t;
 
 typedef struct _lv_image_dsc_t {
-    int dummy;
+    struct {
+        uint32_t magic;
+        uint32_t cf;
+        uint32_t flags;
+        uint32_t w;
+        uint32_t h;
+    } header;
+    uint32_t data_size;
+    const uint8_t* data;
 } lv_image_dsc_t;
 
 typedef struct _lv_style_t {

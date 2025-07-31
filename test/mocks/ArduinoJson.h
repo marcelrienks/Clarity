@@ -6,6 +6,7 @@
 #include <string>
 #include <map>
 #include <stdint.h>
+#include <cstring>
 
 // Mock ArduinoJson namespace
 namespace ArduinoJson {

@@ -21,7 +21,7 @@ public:
     }
     void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override {}
     void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override {}
-    const char* GetPanelName() const override { return "test_key"; }
+    const char* getPanelName() const { return "test_key"; }
     bool isInitialized() const { return initialized_; }
 
 private:
@@ -62,7 +62,7 @@ void registerTestComponents() {
     });
     
     // Register test components
-    registry.registerComponent("key", [](IDisplayProvider* display) {
+    registry.registerComponent("key", [](IDisplayProvider* display, IStyleService* style) {
         return std::make_unique<TestKeyComponent>();
     });
 }

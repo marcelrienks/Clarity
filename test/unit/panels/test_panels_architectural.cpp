@@ -23,18 +23,61 @@
 // Test Service Implementations (DI-compatible)
 class TestDisplayProvider : public IDisplayProvider {
 public:
-    TestDisplayProvider() : initialized_(false) {}
+    TestDisplayProvider() : main_screen_(nullptr) {}
     
-    void initialize() override { initialized_ = true; }
-    void* getScreen() override { 
-        static mock_lv_obj_t screen = create_mock_lv_obj();
+    // IDisplayProvider interface implementation
+    lv_obj_t* createScreen() override { 
+        static lv_obj_t screen;
         return &screen; 
     }
-    void updateDisplay() override {}
-    bool isInitialized() const override { return initialized_; }
+    
+    void loadScreen(lv_obj_t* screen) override { 
+        main_screen_ = screen; 
+    }
+    
+    lv_obj_t* createLabel(lv_obj_t* parent) override { 
+        static lv_obj_t label;
+        return &label; 
+    }
+    
+    lv_obj_t* createObject(lv_obj_t* parent) override { 
+        static lv_obj_t obj;
+        return &obj; 
+    }
+    
+    lv_obj_t* createArc(lv_obj_t* parent) override { 
+        static lv_obj_t arc;
+        return &arc; 
+    }
+    
+    lv_obj_t* createScale(lv_obj_t* parent) override { 
+        static lv_obj_t scale;
+        return &scale; 
+    }
+    
+    lv_obj_t* createImage(lv_obj_t* parent) override { 
+        static lv_obj_t image;
+        return &image; 
+    }
+    
+    lv_obj_t* createLine(lv_obj_t* parent) override { 
+        static lv_obj_t line;
+        return &line; 
+    }
+    
+    void deleteObject(lv_obj_t* obj) override {}
+    
+    void addEventCallback(lv_obj_t* obj, lv_event_cb_t callback, lv_event_code_t event_code, void* user_data) override {}
+    
+    lv_obj_t* getMainScreen() override { 
+        if (!main_screen_) {
+            main_screen_ = createScreen();
+        }
+        return main_screen_; 
+    }
     
 private:
-    bool initialized_;
+    lv_obj_t* main_screen_;
 };
 
 class TestGpioProvider : public IGpioProvider {
@@ -46,7 +89,7 @@ public:
         }
     }
     
-    void setPinMode(int pin, int mode) override {}
+    void pinMode(int pin, int mode) override {}
     bool digitalRead(int pin) override { 
         return (pin >= 0 && pin < 40) ? pin_states_[pin] : false; 
     }
@@ -76,33 +119,80 @@ class TestStyleService : public IStyleService {
 public:
     TestStyleService() : current_theme_("Day") {}
     
-    void initializeStyles() override {}
-    void setTheme(const char* theme) override { current_theme_ = theme; }
+    // IStyleService interface implementation
+    void init(const char* theme) override { if (theme) current_theme_ = theme; }
+    void applyThemeToScreen(lv_obj_t* screen) override {}
+    void setTheme(const char* theme) override { if (theme) current_theme_ = theme; }
+    
+    // Style accessor methods - return mock styles
+    lv_style_t& getBackgroundStyle() override { return background_style_; }
+    lv_style_t& getTextStyle() override { return text_style_; }
+    lv_style_t& getGaugeNormalStyle() override { return gauge_normal_style_; }
+    lv_style_t& getGaugeWarningStyle() override { return gauge_warning_style_; }
+    lv_style_t& getGaugeDangerStyle() override { return gauge_danger_style_; }
+    lv_style_t& getGaugeIndicatorStyle() override { return gauge_indicator_style_; }
+    lv_style_t& getGaugeItemsStyle() override { return gauge_items_style_; }
+    lv_style_t& getGaugeMainStyle() override { return gauge_main_style_; }
+    lv_style_t& getGaugeDangerSectionStyle() override { return gauge_danger_section_style_; }
+    
     const char* getCurrentTheme() const override { return current_theme_.c_str(); }
-    void applyToScreen(void* screen) override {}
-    void resetStyles() override {}
+    const ThemeColors& getThemeColors() const override { return theme_colors_; }
     
 private:
     std::string current_theme_;
+    lv_style_t background_style_;
+    lv_style_t text_style_;
+    lv_style_t gauge_normal_style_;
+    lv_style_t gauge_warning_style_;
+    lv_style_t gauge_danger_style_;
+    lv_style_t gauge_indicator_style_;
+    lv_style_t gauge_items_style_;
+    lv_style_t gauge_main_style_;
+    lv_style_t gauge_danger_section_style_;
+    ThemeColors theme_colors_;
 };
 
 class TestPreferenceService : public IPreferenceService {
 public:
     TestPreferenceService() : initialized_(false) {}
     
-    void init() override { initialized_ = true; }
-    bool isInitialized() const override { return initialized_; }
-    void saveConfig(const char* key, const char* value) override {
-        config_[key] = value;
+    // Core Functionality Methods
+    void init() override { 
+        initialized_ = true; 
+        createDefaultConfig();
     }
-    std::string loadConfig(const char* key, const char* defaultValue) override {
-        auto it = config_.find(key);
-        return (it != config_.end()) ? it->second : defaultValue;
+    
+    void saveConfig() override {
+        // Mock save - no-op for testing
     }
+    
+    void loadConfig() override {
+        // Mock load - no-op for testing
+    }
+    
+    void createDefaultConfig() override {
+        config_.panelName = PanelNames::OIL;
+    }
+    
+    // Configuration Access Methods
+    Configs& getConfig() override {
+        return config_;
+    }
+    
+    const Configs& getConfig() const override {
+        return config_;
+    }
+    
+    void setConfig(const Configs& config) override {
+        config_ = config;
+    }
+    
+    // Test helper
+    bool isInitialized() const { return initialized_; }
     
 private:
     bool initialized_;
-    std::map<std::string, std::string> config_;
+    Configs config_;
 };
 
 // Global DI container for tests
@@ -162,7 +252,7 @@ void test_architectural_key_panel_creation_via_registry(void)
     displayProvider->initialize();
     
     // Panel should initialize successfully with injected dependencies
-    panelInterface->init();
+    panelInterface->init(gpioProvider, displayProvider);
     panelInterface->load();
     
     // Test that panel has access to its dependencies
@@ -190,7 +280,7 @@ void test_architectural_lock_panel_creation_via_registry(void)
     styleService->initializeStyles();
     
     // Panel should work with injected services
-    panelInterface->init();
+    panelInterface->init(gpioProvider, displayProvider);
     panelInterface->load();
     
     TEST_ASSERT_TRUE(displayProvider->isInitialized());
@@ -229,7 +319,7 @@ void test_architectural_oem_oil_panel_with_full_dependencies(void)
     testGpio->setTestAnalog(35, 1500); // Normal oil temperature
     
     // Panel should initialize with all dependencies
-    panelInterface->init();
+    panelInterface->init(gpioProvider, displayProvider);
     panelInterface->load();
     
     // Verify all services are properly injected and working
@@ -261,7 +351,7 @@ void test_architectural_splash_panel_lifecycle_with_di(void)
     styleService->initializeStyles();
     
     // Test full panel lifecycle
-    panelInterface->init();
+    panelInterface->init(gpioProvider, displayProvider);
     panelInterface->load();
     panelInterface->update();
     
@@ -306,13 +396,13 @@ void test_architectural_panel_switching_via_registry(void)
     TEST_ASSERT_NOT_NULL(oilPanelInterface);
     
     // Test panel switching
-    keyPanelInterface->init();
+    keyPanelInterface->init(gpioProvider, displayProvider);
     keyPanelInterface->load();
     
-    lockPanelInterface->init();
+    lockPanelInterface->init(gpioProvider, displayProvider);
     lockPanelInterface->load();
     
-    oilPanelInterface->init();
+    oilPanelInterface->init(gpioProvider, displayProvider);
     oilPanelInterface->load();
     
     // All should share the same display provider instance (singleton)
@@ -341,7 +431,7 @@ void test_architectural_panel_with_sensor_integration(void)
     testGpio->setTestAnalog(35, 2000); // High temperature
     
     // Panel should respond to sensor changes
-    panelInterface->init();
+    panelInterface->init(gpioProvider, displayProvider);
     panelInterface->load();
     panelInterface->update();
     

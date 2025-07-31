@@ -43,33 +43,33 @@ public:
     mock_lv_style_t gaugeDangerSectionStyle;
     
     // Theme colors
-    MockThemeColors dayThemeColours_ = {
-        mock_lv_color_hex(0x121212), // background
-        mock_lv_color_hex(0xEEEEEE), // text
-        mock_lv_color_hex(0xEEEEEE), // primary
-        mock_lv_color_hex(0xEEEEEE), // gaugeNormal
-        mock_lv_color_hex(0xFB8C00), // gaugeWarning
-        mock_lv_color_hex(0xB00020), // gaugeDanger
-        mock_lv_color_hex(0xF0F0E8), // gaugeTicks
-        mock_lv_color_hex(0xFFFFFF), // needleNormal
-        mock_lv_color_hex(0xDC143C), // needleDanger
-        mock_lv_color_hex(0x006400), // keyPresent
-        mock_lv_color_hex(0xDC143C)  // keyNotPresent
-    };
+    MockThemeColors dayThemeColours_ = MockThemeColors(
+        0x121212, // background
+        0xEEEEEE, // text
+        0xEEEEEE, // primary
+        0xEEEEEE, // gaugeNormal
+        0xFB8C00, // gaugeWarning
+        0xB00020, // gaugeDanger
+        0xF0F0E8, // gaugeTicks
+        0xFFFFFF, // needleNormal
+        0xDC143C, // needleDanger
+        0x006400, // keyPresent
+        0xDC143C  // keyNotPresent
+    );
     
-    MockThemeColors nightThemeColours_ = {
-        mock_lv_color_hex(0x000000), // background
-        mock_lv_color_hex(0xB00020), // text
-        mock_lv_color_hex(0xB00020), // primary
-        mock_lv_color_hex(0xB00020), // gaugeNormal
-        mock_lv_color_hex(0xFB8C00), // gaugeWarning
-        mock_lv_color_hex(0xB00020), // gaugeDanger
-        mock_lv_color_hex(0xB00020), // gaugeTicks
-        mock_lv_color_hex(0xFFFFFF), // needleNormal
-        mock_lv_color_hex(0xDC143C), // needleDanger
-        mock_lv_color_hex(0x006400), // keyPresent
-        mock_lv_color_hex(0xDC143C)  // keyNotPresent
-    };
+    MockThemeColors nightThemeColours_ = MockThemeColors(
+        0x000000, // background
+        0xB00020, // text
+        0xB00020, // primary
+        0xB00020, // gaugeNormal
+        0xFB8C00, // gaugeWarning
+        0xB00020, // gaugeDanger
+        0xB00020, // gaugeTicks
+        0xFFFFFF, // needleNormal
+        0xDC143C, // needleDanger
+        0x006400, // keyPresent
+        0xDC143C  // keyNotPresent
+    );
     
     void init(const char* theme) {
         THEME = theme;

@@ -45,6 +45,7 @@ public:
 
     // Theme Information Methods
     const char* getCurrentTheme() const override;
+    const ThemeColors& getThemeColors() const override;
 
     // Test Helper Methods
     bool wasInitCalled() const { return initCalled_; }
@@ -76,6 +77,7 @@ private:
     bool setThemeCalled_;
     const char* lastScreenApplied_;
     int themeChangeCount_;
+    ThemeColors themeColors_;
 
     // Test Callbacks
     std::function<void(const char*)> themeChangeCallback_;

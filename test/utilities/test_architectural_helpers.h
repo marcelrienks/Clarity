@@ -29,18 +29,61 @@ namespace ArchitecturalTestHelpers {
      */
     class TestDisplayProvider : public IDisplayProvider {
     public:
-        TestDisplayProvider() : initialized_(false) {}
+        TestDisplayProvider() : main_screen_(nullptr) {}
         
-        void initialize() override { initialized_ = true; }
-        void* getScreen() override { 
-            static mock_lv_obj_t screen = create_mock_lv_obj();
+        // IDisplayProvider interface implementation
+        lv_obj_t* createScreen() override { 
+            static lv_obj_t screen;
             return &screen; 
         }
-        void updateDisplay() override {}
-        bool isInitialized() const override { return initialized_; }
+        
+        void loadScreen(lv_obj_t* screen) override { 
+            main_screen_ = screen; 
+        }
+        
+        lv_obj_t* createLabel(lv_obj_t* parent) override { 
+            static lv_obj_t label;
+            return &label; 
+        }
+        
+        lv_obj_t* createObject(lv_obj_t* parent) override { 
+            static lv_obj_t obj;
+            return &obj; 
+        }
+        
+        lv_obj_t* createArc(lv_obj_t* parent) override { 
+            static lv_obj_t arc;
+            return &arc; 
+        }
+        
+        lv_obj_t* createScale(lv_obj_t* parent) override { 
+            static lv_obj_t scale;
+            return &scale; 
+        }
+        
+        lv_obj_t* createImage(lv_obj_t* parent) override { 
+            static lv_obj_t image;
+            return &image; 
+        }
+        
+        lv_obj_t* createLine(lv_obj_t* parent) override { 
+            static lv_obj_t line;
+            return &line; 
+        }
+        
+        void deleteObject(lv_obj_t* obj) override {}
+        
+        void addEventCallback(lv_obj_t* obj, lv_event_cb_t callback, lv_event_code_t event_code, void* user_data) override {}
+        
+        lv_obj_t* getMainScreen() override { 
+            if (!main_screen_) {
+                main_screen_ = createScreen();
+            }
+            return main_screen_; 
+        }
         
     private:
-        bool initialized_;
+        lv_obj_t* main_screen_;
     };
 
     /**
@@ -53,7 +96,7 @@ namespace ArchitecturalTestHelpers {
             reset();
         }
         
-        void setPinMode(int pin, int mode) override {}
+        void pinMode(int pin, int mode) override {}
         
         bool digitalRead(int pin) override { 
             return (pin >= 0 && pin < 40) ? pin_states_[pin] : false; 
@@ -121,7 +164,15 @@ namespace ArchitecturalTestHelpers {
     public:
         TestStyleService() : current_theme_("Day"), initialized_(false) {}
         
-        void initializeStyles() override { initialized_ = true; }
+        // IStyleService interface implementation
+        void init(const char* theme) override { 
+            initialized_ = true; 
+            if (theme) current_theme_ = theme;
+        }
+        
+        void applyThemeToScreen(lv_obj_t* screen) override {
+            last_screen_applied_ = screen;
+        }
         
         void setTheme(const char* theme) override { 
             if (theme) {
@@ -130,19 +181,23 @@ namespace ArchitecturalTestHelpers {
             }
         }
         
+        // Style accessor methods - return mock styles
+        lv_style_t& getBackgroundStyle() override { return background_style_; }
+        lv_style_t& getTextStyle() override { return text_style_; }
+        lv_style_t& getGaugeNormalStyle() override { return gauge_normal_style_; }
+        lv_style_t& getGaugeWarningStyle() override { return gauge_warning_style_; }
+        lv_style_t& getGaugeDangerStyle() override { return gauge_danger_style_; }
+        lv_style_t& getGaugeIndicatorStyle() override { return gauge_indicator_style_; }
+        lv_style_t& getGaugeItemsStyle() override { return gauge_items_style_; }
+        lv_style_t& getGaugeMainStyle() override { return gauge_main_style_; }
+        lv_style_t& getGaugeDangerSectionStyle() override { return gauge_danger_section_style_; }
+        
         const char* getCurrentTheme() const override { 
             return current_theme_.c_str(); 
         }
         
-        void applyToScreen(void* screen) override {
-            last_screen_applied_ = screen;
-        }
-        
-        void resetStyles() override { 
-            current_theme_ = "Day"; 
-            initialized_ = false;
-            theme_changes_.clear();
-            last_screen_applied_ = nullptr;
+        const ThemeColors& getThemeColors() const override {
+            return theme_colors_;
         }
         
         // Test helper methods
@@ -155,6 +210,18 @@ namespace ArchitecturalTestHelpers {
         bool initialized_;
         std::vector<std::string> theme_changes_;
         void* last_screen_applied_ = nullptr;
+        
+        // Mock style objects
+        lv_style_t background_style_;
+        lv_style_t text_style_;
+        lv_style_t gauge_normal_style_;
+        lv_style_t gauge_warning_style_;
+        lv_style_t gauge_danger_style_;
+        lv_style_t gauge_indicator_style_;
+        lv_style_t gauge_items_style_;
+        lv_style_t gauge_main_style_;
+        lv_style_t gauge_danger_section_style_;
+        ThemeColors theme_colors_;
     };
 
     /**
@@ -164,40 +231,43 @@ namespace ArchitecturalTestHelpers {
     public:
         TestPreferenceService() : initialized_(false) {}
         
-        void init() override { initialized_ = true; }
-        bool isInitialized() const override { return initialized_; }
-        
-        void saveConfig(const char* key, const char* value) override {
-            if (key && value) {
-                config_[key] = value;
-                save_history_.push_back({key, value});
-            }
+        // IPreferenceService interface implementation
+        void init() override { 
+            initialized_ = true; 
+            createDefaultConfig();
         }
         
-        std::string loadConfig(const char* key, const char* defaultValue) override {
-            if (!key) return defaultValue ? defaultValue : "";
-            
-            load_history_.push_back(key);
-            auto it = config_.find(key);
-            return (it != config_.end()) ? it->second : (defaultValue ? defaultValue : "");
+        void saveConfig() override {
+            // Mock save - no-op for testing
         }
         
-        // Test helper methods
-        void clearConfig() { 
-            config_.clear(); 
-            save_history_.clear();
-            load_history_.clear();
+        void loadConfig() override {
+            // Mock load - no-op for testing
         }
         
-        const std::map<std::string, std::string>& getConfig() const { return config_; }
-        const std::vector<std::pair<std::string, std::string>>& getSaveHistory() const { return save_history_; }
-        const std::vector<std::string>& getLoadHistory() const { return load_history_; }
+        void createDefaultConfig() override {
+            config_.panelName = PanelNames::OIL;
+        }
+        
+        Configs& getConfig() override {
+            return config_;
+        }
+        
+        const Configs& getConfig() const override {
+            return config_;
+        }
+        
+        void setConfig(const Configs& config) override {
+            config_ = config;
+        }
+        
+        // Test helper
+        bool isInitialized() const { return initialized_; }
+        
         
     private:
         bool initialized_;
-        std::map<std::string, std::string> config_;
-        std::vector<std::pair<std::string, std::string>> save_history_;
-        std::vector<std::string> load_history_;
+        Configs config_;
     };
 
     /**
@@ -236,12 +306,10 @@ namespace ArchitecturalTestHelpers {
         
         // Initialize all services for testing
         void initializeServices() {
-            auto displayProvider = getTestDisplayProvider();
             auto styleService = getTestStyleService();
             auto prefService = getTestPreferenceService();
             
-            if (displayProvider) displayProvider->initialize();
-            if (styleService) styleService->initializeStyles();
+            if (styleService) styleService->init("Day");
             if (prefService) prefService->init();
         }
         
@@ -252,8 +320,8 @@ namespace ArchitecturalTestHelpers {
             auto prefService = getTestPreferenceService();
             
             if (gpioProvider) gpioProvider->reset();
-            if (styleService) styleService->resetStyles();
-            if (prefService) prefService->clearConfig();
+            if (styleService) styleService->init("Day");  // Reset to default
+            if (prefService) prefService->createDefaultConfig();  // Reset to defaults
         }
         
     private:
