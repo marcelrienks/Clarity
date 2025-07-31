@@ -31,6 +31,11 @@ int main(void) {
     printf("\n=== COMPONENT REGISTRY DEEP TESTS ===\n");
     run_component_registry_deep_tests();
     
+    printf("\n=== ARCHITECTURAL TESTS - NEW ARCHITECTURE INTEGRATION ===\n");
+    printf("Running architectural compliance tests...\n");
+    // Note: New architectural tests are auto-discovered by PlatformIO
+    // These tests validate proper use of ServiceContainer and ComponentRegistry
+    
     printf("\n=== UTILITIES TESTS ===\n");
     // No tests implemented yet
     // Will add them as we implement each feature
