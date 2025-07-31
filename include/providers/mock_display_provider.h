@@ -15,6 +15,7 @@ private:
     
 #ifdef UNIT_TESTING
     std::vector<std::unique_ptr<lv_obj_t>> createdObjects_;
+    bool initialized_ = false;
 #endif
 
 public:
@@ -23,6 +24,12 @@ public:
     
     /// @brief Destructor
     ~MockDisplayProvider();
+
+    /// @brief Initialize the display provider
+    void initialize() override { initialized_ = true; }
+
+    /// @brief Check if the provider is initialized
+    bool isInitialized() const override { return initialized_; }
 
     /// @brief Create a new screen object
     /// @return Pointer to the created screen object

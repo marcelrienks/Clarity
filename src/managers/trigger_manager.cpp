@@ -14,7 +14,7 @@ Trigger TriggerManager::triggers_[] = {
 };
 
 TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
-    : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService)
+    : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService), triggers_{}
 {
     if (gpio && panelService && styleService) {
         log_d("Creating TriggerManager with injected dependencies (GPIO, Panel, Style services)");

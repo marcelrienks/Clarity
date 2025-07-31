@@ -193,6 +193,8 @@ struct ComponentLocation
 struct Configs
 {
     std::string panelName = PanelNames::OIL; ///< Default panel on startup
+    std::string theme = "Day";               ///< Theme preference (Day/Night)
+    int updateRate = 500;                    ///< Sensor update rate in milliseconds
 };
 
 /// @brief UI state for Core 0 processing decisions

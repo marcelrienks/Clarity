@@ -10,24 +10,51 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_style_service.h"
 #include "interfaces/i_component_factory.h"
+#include "interfaces/i_sensor_factory.h"
 
-class ComponentRegistry : public IComponentFactory {
+class ServiceContainer;
+
+class ComponentRegistry : public IComponentFactory, public ISensorFactory {
 public:
+    explicit ComponentRegistry(ServiceContainer& container) : serviceContainer_(container) {}
     static ComponentRegistry& GetInstance();
 
     // IComponentFactory interface implementation
     void registerPanel(const std::string& name, PanelFactoryFunction factory) override;
     void registerComponent(const std::string& name, ComponentFactoryFunction factory) override;
 
+    // Template helper for panel registration
+    template<typename T>
+    void registerPanel(const std::string& name) {
+        registerPanel(name, [this](IGpioProvider* gpio, IDisplayProvider* display) {
+            return std::make_unique<T>(this);
+        });
+    }
+
+    // Template helper for sensor registration
+    template<typename T>
+    void registerSensor(const std::string& name) {
+        sensorFactories[name] = [this]() {
+            return std::make_unique<T>();
+        };
+    }
+
     std::unique_ptr<IPanel> createPanel(const std::string& name, IGpioProvider* gpio, IDisplayProvider* display) override;
     std::unique_ptr<IComponent> createComponent(const std::string& name) override;
+    std::unique_ptr<ISensor> createSensor(const std::string& name);
 
     bool hasPanelRegistration(const std::string& name) const override;
     bool hasComponentRegistration(const std::string& name) const override;
+    bool hasSensorRegistration(const std::string& name) const;
 
     void clear() override;
 
+    // ISensorFactory interface implementation
+    std::unique_ptr<ISensor> createSensor(const std::string& name) override;
+
 private:
     std::unordered_map<std::string, PanelFactoryFunction> panelFactories;
+    std::unordered_map<std::string, std::function<std::unique_ptr<ISensor>()>> sensorFactories;
     std::unordered_map<std::string, ComponentFactoryFunction> componentFactories;
+    ServiceContainer& serviceContainer_;
 };

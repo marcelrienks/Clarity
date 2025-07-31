@@ -45,7 +45,28 @@ bool ComponentRegistry::hasComponentRegistration(const std::string& name) const 
     return componentFactories.find(name) != componentFactories.end();
 }
 
+std::unique_ptr<ISensor> ComponentRegistry::createSensor(const std::string& name) {
+    auto it = sensorFactories.find(name);
+    if (it != sensorFactories.end()) {
+        return it->second();
+    }
+    return nullptr;
+}
+
+bool ComponentRegistry::hasSensorRegistration(const std::string& name) const {
+    return sensorFactories.find(name) != sensorFactories.end();
+}
+
 void ComponentRegistry::clear() {
     panelFactories.clear();
     componentFactories.clear();
+    sensorFactories.clear();
+}
+
+std::unique_ptr<ISensor> ComponentRegistry::createSensor(const std::string& name) {
+    auto it = sensorFactories.find(name);
+    if (it != sensorFactories.end()) {
+        return it->second();
+    }
+    return nullptr;
 }

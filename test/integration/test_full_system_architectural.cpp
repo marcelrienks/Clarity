@@ -4,6 +4,7 @@
 // Project Includes
 #include "system/service_container.h"
 #include "system/component_registry.h"
+#include "interfaces/i_sensor_factory.h"
 
 // Actual Clarity Components
 #include "components/clarity_component.h"
@@ -60,19 +61,25 @@ void test_architectural_complete_system_integration(void)
     
     // Register ALL system components using the new architecture
     
+    // Get component factory from container
+    auto componentFactory = container.resolve<IComponentFactory>();
+    
     // Register all panels with factory functions
-    registry.registerPanel("SplashPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<SplashPanel>(&registry);
+    registry.registerPanel("SplashPanel", [](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<SplashPanel>(componentFactory);
     });
-    registry.registerPanel("KeyPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<KeyPanel>(&registry);
+    registry.registerPanel("KeyPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<KeyPanel>(componentFactory);
     });
-    registry.registerPanel("LockPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<LockPanel>(&registry);
+    registry.registerPanel("LockPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<LockPanel>(componentFactory);
     });
-    registry.registerPanel("OemOilPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<OemOilPanel>(&registry);
+    registry.registerPanel("OemOilPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<OemOilPanel>(componentFactory);
     });
+    
+    // Get style service from container
+    auto styleService = container.resolve<IStyleService>();
     
     // Register all components with factory functions
     registry.registerComponent("ClarityComponent", [](IDisplayProvider* display, IStyleService* style) {
@@ -94,10 +101,11 @@ void test_architectural_complete_system_integration(void)
     // Note: ComponentRegistry doesn't have registerSensor - sensors are created separately
     
     // Register all managers
-    container.registerSingleton<PanelManager>([&container]() {
+    container.registerSingleton<PanelManager>([&]() {
         auto displayProvider = container.resolve<IDisplayProvider>();
         auto gpioProvider = container.resolve<IGpioProvider>();
-        return std::make_unique<PanelManager>(displayProvider, gpioProvider, nullptr);
+        auto panelFactory = container.resolve<IPanelFactory>();
+        return std::make_unique<PanelManager>(displayProvider, gpioProvider, panelFactory);
     });
     
     container.registerSingleton<StyleManager>([&container]() {
@@ -128,11 +136,12 @@ void test_architectural_complete_system_integration(void)
     auto pressureComp = registry.createComponent("OemOilPressureComponent");
     auto tempComp = registry.createComponent("OemOilTemperatureComponent");
     
-    // Note: Sensors are created directly, not through registry
-    // auto keySensor = std::make_unique<KeySensor>();
-    // auto lockSensor = std::make_unique<LockSensor>();
-    // auto pressureSensor = std::make_unique<OilPressureSensor>();
-    // auto tempSensor = std::make_unique<OilTemperatureSensor>();
+    // Create sensors through sensor factory
+    auto sensorFactory = container.resolve<ISensorFactory>();
+    auto keySensor = sensorFactory->createSensor("KeySensor");
+    auto lockSensor = sensorFactory->createSensor("LockSensor");
+    auto pressureSensor = sensorFactory->createSensor("OilPressureSensor");
+    auto tempSensor = sensorFactory->createSensor("OilTemperatureSensor");
     
     auto panelManager = container.resolve<PanelManager>();
     auto styleManager = container.resolve<StyleManager>();
@@ -178,6 +187,22 @@ void test_architectural_complete_system_integration(void)
     // Note: Sensor functionality is tested in separate sensor-specific tests
     // For this architectural integration test, we focus on the DI container and registry working together
     
+    // Configure trigger system
+    triggerManager->addTrigger("KeyTrigger", keySensor.get(), [keyInterface]() {
+        keyInterface->show();
+    });
+    triggerManager->addTrigger("LockTrigger", lockSensor.get(), [lockInterface]() {
+        lockInterface->show();
+    });
+    triggerManager->addTrigger("OilTrigger", tempSensor.get(), [oilInterface]() {
+        oilInterface->show();
+    });
+
+    // Verify trigger setup
+    TEST_ASSERT_TRUE(triggerManager->hasTrigger("KeyTrigger"));
+    TEST_ASSERT_TRUE(triggerManager->hasTrigger("LockTrigger")); 
+    TEST_ASSERT_TRUE(triggerManager->hasTrigger("OilTrigger"));
+
     // System integration successful
     TEST_ASSERT_TRUE(true);
 }
@@ -190,46 +215,62 @@ void test_architectural_startup_sequence_with_di(void)
     auto gpioProvider = container.resolve<IGpioProvider>();
     auto displayProvider = container.resolve<IDisplayProvider>();
     
-    // Register essential components
-    registry.registerPanel("SplashPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<SplashPanel>(&registry);
+    // Get dependencies
+    auto styleService = container.resolve<IStyleService>();
+    auto factory = container.resolve<IComponentFactory>();
+
+    // Register panels
+    registry.registerPanel("SplashPanel", [factory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<SplashPanel>(factory);
     });
-    registry.registerPanel("OemOilPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<OemOilPanel>(&registry);
+    registry.registerPanel("OemOilPanel", [factory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<OemOilPanel>(factory);
     });
-    registry.registerComponent<ClarityComponent>("ClarityComponent");
-    
+
+    // Register base components
+    registry.registerComponent("ClarityComponent", [styleService](IDisplayProvider* display, IStyleService* style) { 
+        return std::make_unique<ClarityComponent>(style); 
+    });
+
+    // Initialize services
+    displayProvider->initialize();
+    styleService->initializeStyles();
+
     // Register managers
-    container.registerSingleton<PanelManager>([&container]() {
-        auto displayProvider = container.resolve<IDisplayProvider>();
-        auto gpioProvider = container.resolve<IGpioProvider>();
-        return std::make_unique<PanelManager>(displayProvider, gpioProvider, nullptr);
+    container.registerSingleton<PanelManager>([&]() {
+        auto panelFactory = container.resolve<IPanelFactory>();
+        return std::make_unique<PanelManager>(displayProvider, gpioProvider, panelFactory);
     });
-    
-    // Simulate system startup sequence
+
+    // Create and initialize panels
     auto splashPanel = registry.createPanel("SplashPanel", gpioProvider, displayProvider);
     auto panelManager = container.resolve<PanelManager>();
     
     TEST_ASSERT_NOT_NULL(splashPanel.get());
     TEST_ASSERT_NOT_NULL(panelManager);
     
-    // Initialize splash panel
+    // Initialize splash panel with callback for completion
     IPanel* splashInterface = dynamic_cast<IPanel*>(splashPanel.get());
+    TEST_ASSERT_NOT_NULL(splashInterface);
+
     splashInterface->init(gpioProvider, displayProvider);
-    splashInterface->load();
     
-    // Simulate splash completion and transition to oil panel
+    // Load splash panel with completion callback
+    auto onLoadComplete = []() { /* Splash loaded */ };
+    splashInterface->load(onLoadComplete, gpioProvider, displayProvider);
+
     auto oilPanel = registry.createPanel("OemOilPanel", gpioProvider, displayProvider);
     IPanel* oilInterface = dynamic_cast<IPanel*>(oilPanel.get());
+    TEST_ASSERT_NOT_NULL(oilInterface);
     
+    // Initialize and load oil panel
     oilInterface->init(gpioProvider, displayProvider);
-    oilInterface->load();
+    auto onOilPanelLoaded = []() { /* Oil panel loaded */ };
+    oilInterface->load(onOilPanelLoaded, gpioProvider, displayProvider);
     
-    // Verify services are shared between panels
-    auto displayProvider = testSetup->getTestDisplayProvider();
+    // Verify service states
     TEST_ASSERT_TRUE(displayProvider->isInitialized());
-    
-    auto styleService = testSetup->getTestStyleService();
+    TEST_ASSERT_NOT_NULL(displayProvider->getMainScreen());
     TEST_ASSERT_TRUE(styleService->isInitialized());
     TEST_ASSERT_EQUAL_STRING("Day", styleService->getCurrentTheme());
 }
@@ -239,24 +280,46 @@ void test_architectural_engine_startup_scenario_with_di(void)
     auto& container = testSetup->getContainer();
     auto& registry = testSetup->getRegistry();
     
+    // Get required services
     auto gpioProvider = container.resolve<IGpioProvider>();
     auto displayProvider = container.resolve<IDisplayProvider>();
+    auto sensorFactory = container.resolve<ISensorFactory>();
     
+    // Initialize services
+    displayProvider->initialize();
+    
+    // Get factories
+    auto componentFactory = container.resolve<IComponentFactory>();
+    auto styleService = container.resolve<IStyleService>();
+
     // Register oil-related components
-    registry.registerPanel("OemOilPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<OemOilPanel>(&registry);
+    registry.registerPanel("OemOilPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<OemOilPanel>(componentFactory);
     });
-    registry.registerComponent<OemOilPressureComponent>("OemOilPressureComponent");
-    registry.registerComponent<OemOilTemperatureComponent>("OemOilTemperatureComponent");
-    registry.registerSensor<OilPressureSensor>("OilPressureSensor");
-    registry.registerSensor<OilTemperatureSensor>("OilTemperatureSensor");
     
-    // Create components via DI
+    registry.registerComponent("OemOilPressureComponent", [styleService](IDisplayProvider* display, IStyleService* style) {
+        return std::make_unique<OemOilPressureComponent>(style);
+    });
+    
+    registry.registerComponent("OemOilTemperatureComponent", [styleService](IDisplayProvider* display, IStyleService* style) {
+        return std::make_unique<OemOilTemperatureComponent>(style);
+    });
+    
+    // Register sensors
+    sensorFactory->registerSensor("OilPressureSensor", []() {
+        return std::make_unique<OilPressureSensor>();
+    });
+    
+    sensorFactory->registerSensor("OilTemperatureSensor", []() {
+        return std::make_unique<OilTemperatureSensor>();
+    });
+    
+    // Create components via factories
     auto oilPanel = registry.createPanel("OemOilPanel", gpioProvider, displayProvider);
     auto pressureComp = registry.createComponent("OemOilPressureComponent");
     auto tempComp = registry.createComponent("OemOilTemperatureComponent");
-    auto pressureSensor = registry.createSensor("OilPressureSensor");
-    auto tempSensor = registry.createSensor("OilTemperatureSensor");
+    auto pressureSensor = sensorFactory->createSensor("OilPressureSensor");
+    auto tempSensor = sensorFactory->createSensor("OilTemperatureSensor");
     
     TEST_ASSERT_NOT_NULL(oilPanel.get());
     TEST_ASSERT_NOT_NULL(pressureComp.get());
@@ -266,8 +329,12 @@ void test_architectural_engine_startup_scenario_with_di(void)
     
     // Initialize panel
     IPanel* oilInterface = dynamic_cast<IPanel*>(oilPanel.get());
+    TEST_ASSERT_NOT_NULL(oilInterface);
+    
     oilInterface->init(gpioProvider, displayProvider);
-    oilInterface->load();
+    
+    auto onOilPanelLoaded = []() { /* Oil panel loaded */ };
+    oilInterface->load(onOilPanelLoaded, gpioProvider, displayProvider);
     
     // Simulate engine startup sequence using scenario helper
     scenarioHelper->simulateEngineStartup();
@@ -276,8 +343,11 @@ void test_architectural_engine_startup_scenario_with_di(void)
     ISensor* pressureInterface = dynamic_cast<ISensor*>(pressureSensor.get());
     ISensor* tempInterface = dynamic_cast<ISensor*>(tempSensor.get());
     
-    Reading finalPressure = pressureInterface->read();
-    Reading finalTemp = tempInterface->read();
+    TEST_ASSERT_NOT_NULL(pressureInterface);
+    TEST_ASSERT_NOT_NULL(tempInterface);
+    
+    Reading finalPressure = pressureInterface->GetReading();
+    Reading finalTemp = tempInterface->GetReading();
     
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(finalPressure));
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(finalTemp));
@@ -296,37 +366,50 @@ void test_architectural_trigger_system_integration_with_di(void)
     auto gpioProvider = container.resolve<IGpioProvider>();
     auto displayProvider = container.resolve<IDisplayProvider>();
     
-    // Register panels and sensors
-    registry.registerPanel("KeyPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<KeyPanel>(&registry);
-    });
-    registry.registerPanel("LockPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<LockPanel>(&registry);
-    });
-    registry.registerPanel("OemOilPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<OemOilPanel>(&registry);
-    });
-    registry.registerSensor<KeySensor>("KeySensor");
-    registry.registerSensor<LockSensor>("LockSensor");
+    // Get required services
+    auto sensorFactory = container.resolve<ISensorFactory>();
+    auto styleService = container.resolve<IStyleService>();
     
-    // Register managers
-    container.registerSingleton<TriggerManager>([&container]() {
-        auto gpioProvider = container.resolve<IGpioProvider>();
+    displayProvider->initialize();
+    styleService->initializeStyles();
+    
+    // Get component factory and register panels
+    auto componentFactory = container.resolve<IComponentFactory>();
+    
+    registry.registerPanel("KeyPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<KeyPanel>(componentFactory);
+    });
+    registry.registerPanel("LockPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<LockPanel>(componentFactory);
+    });
+    registry.registerPanel("OemOilPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<OemOilPanel>(componentFactory);
+    });
+    
+    // Register sensors
+    sensorFactory->registerSensor("KeySensor", []() {
+        return std::make_unique<KeySensor>();
+    });
+    sensorFactory->registerSensor("LockSensor", []() {
+        return std::make_unique<LockSensor>();
+    });
+    
+    // Register managers with dependencies
+    container.registerSingleton<TriggerManager>([&]() {
         return std::make_unique<TriggerManager>(gpioProvider);
     });
     
-    container.registerSingleton<PanelManager>([&container]() {
-        auto displayProvider = container.resolve<IDisplayProvider>();
-        auto gpioProvider = container.resolve<IGpioProvider>();
-        return std::make_unique<PanelManager>(displayProvider, gpioProvider, nullptr);
+    container.registerSingleton<PanelManager>([&]() {
+        auto panelFactory = container.resolve<IPanelFactory>();
+        return std::make_unique<PanelManager>(displayProvider, gpioProvider, panelFactory);
     });
     
     // Create system components
     auto keyPanel = registry.createPanel("KeyPanel", gpioProvider, displayProvider);
     auto lockPanel = registry.createPanel("LockPanel", gpioProvider, displayProvider);
     auto oilPanel = registry.createPanel("OemOilPanel", gpioProvider, displayProvider);
-    auto keySensor = registry.createSensor("KeySensor");
-    auto lockSensor = registry.createSensor("LockSensor");
+    auto keySensor = sensorFactory->createSensor("KeySensor");
+    auto lockSensor = sensorFactory->createSensor("LockSensor");
     
     auto triggerManager = container.resolve<TriggerManager>();
     auto panelManager = container.resolve<PanelManager>();
@@ -338,7 +421,7 @@ void test_architectural_trigger_system_integration_with_di(void)
     // Start with oil panel
     IPanel* oilInterface = dynamic_cast<IPanel*>(oilPanel.get());
     oilInterface->init(gpioProvider, displayProvider);
-    oilInterface->load();
+    oilInterface->load([]{}, gpioProvider, displayProvider);
     
     // Simulate key present trigger
     scenarioHelper->simulateKeyPresentSequence();
@@ -346,11 +429,11 @@ void test_architectural_trigger_system_integration_with_di(void)
     // Switch to key panel
     IPanel* keyInterface = dynamic_cast<IPanel*>(keyPanel.get());
     keyInterface->init(gpioProvider, displayProvider);
-    keyInterface->load();
+    keyInterface->load([]{}, gpioProvider, displayProvider);
     
     // Verify sensor reads key present
     ISensor* keySensorInterface = dynamic_cast<ISensor*>(keySensor.get());
-    Reading keyReading = keySensorInterface->read();
+    Reading keyReading = keySensorInterface->GetReading();
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(keyReading));
     
     // Verify GPIO state through DI
@@ -363,7 +446,7 @@ void test_architectural_trigger_system_integration_with_di(void)
     // Key panel should remain active (higher priority)
     // But lock sensor should also read active
     ISensor* lockSensorInterface = dynamic_cast<ISensor*>(lockSensor.get());
-    Reading lockReading = lockSensorInterface->read();
+    Reading lockReading = lockSensorInterface->GetReading();
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(lockReading));
     
     TEST_ASSERT_TRUE(gpio->digitalRead(27)); // Lock active pin
@@ -401,8 +484,8 @@ void test_architectural_style_theme_integration_with_di(void)
     IPanel* keyInterface = dynamic_cast<IPanel*>(keyPanel.get());
     
     oilInterface->init(gpioProvider, displayProvider);
-    oilInterface->load();
-    
+    oilInterface->load([]{}, gpioProvider, displayProvider);
+
     // Test day theme (default)
     auto styleService = testSetup->getTestStyleService();
     TEST_ASSERT_EQUAL_STRING("Day", styleService->getCurrentTheme());
@@ -413,15 +496,15 @@ void test_architectural_style_theme_integration_with_di(void)
     
     // Switch panels while in night mode
     keyInterface->init(gpioProvider, displayProvider);
-    keyInterface->load();
+    keyInterface->load([]{}, gpioProvider, displayProvider);
     
     // Theme should persist across panel switches
     TEST_ASSERT_EQUAL_STRING("Night", styleService->getCurrentTheme());
     
     // Verify theme was applied to screen
-    auto displayProvider = testSetup->getTestDisplayProvider();
+    displayProvider = testSetup->getTestDisplayProvider();
     TEST_ASSERT_TRUE(displayProvider->isInitialized());
-    TEST_ASSERT_NOT_NULL(displayProvider->getScreen());
+    TEST_ASSERT_NOT_NULL(displayProvider->getMainScreen());
 }
 
 void test_architectural_preference_persistence_with_di(void)
@@ -444,25 +527,27 @@ void test_architectural_preference_persistence_with_di(void)
     TEST_ASSERT_TRUE(prefService->isInitialized());
     
     // Test preference operations through DI
-    prefService->saveConfig("default_panel", "KeyPanel");
-    prefService->saveConfig("theme_preference", "Night");
-    prefService->saveConfig("sensor_update_rate", "100");
+    Configs testConfig;
+    testConfig.panelName = PanelNames::KEY;
+    testConfig.theme = "Night";
+    testConfig.updateRate = 100;
+    prefService->setConfig(testConfig);
+    prefService->saveConfig();
     
     // Verify preferences were saved
-    std::string defaultPanel = prefService->loadConfig("default_panel", "OemOilPanel");
-    std::string themePreference = prefService->loadConfig("theme_preference", "Day");
-    std::string updateRate = prefService->loadConfig("sensor_update_rate", "500");
+    const auto& loadedConfig = prefService->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, loadedConfig.panelName.c_str());
+    TEST_ASSERT_EQUAL_STRING("Night", loadedConfig.theme.c_str());
+    TEST_ASSERT_EQUAL_INT(100, loadedConfig.updateRate);
     
-    TEST_ASSERT_EQUAL_STRING("KeyPanel", defaultPanel.c_str());
-    TEST_ASSERT_EQUAL_STRING("Night", themePreference.c_str());
-    TEST_ASSERT_EQUAL_STRING("100", updateRate.c_str());
+    // Load a different config
+    prefService->loadConfig();
     
-    // Verify save/load history tracking
-    const auto& saveHistory = prefService->getSaveHistory();
-    const auto& loadHistory = prefService->getLoadHistory();
-    
-    TEST_ASSERT_EQUAL_size_t(3, saveHistory.size());
-    TEST_ASSERT_EQUAL_size_t(3, loadHistory.size());
+    // Verify config persists after load
+    const auto& reloadedConfig = prefService->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, reloadedConfig.panelName.c_str());
+    TEST_ASSERT_EQUAL_STRING("Night", reloadedConfig.theme.c_str());
+    TEST_ASSERT_EQUAL_INT(100, reloadedConfig.updateRate);
 }
 
 void test_architectural_error_recovery_with_di(void)
@@ -473,29 +558,31 @@ void test_architectural_error_recovery_with_di(void)
     auto gpioProvider = container.resolve<IGpioProvider>();
     auto displayProvider = container.resolve<IDisplayProvider>();
     
-    // Register oil-related components
-    registry.registerPanel("OemOilPanel", [&registry](IGpioProvider* gpio, IDisplayProvider* display) {
-        return std::make_unique<OemOilPanel>(&registry);
+    // Get necessary factories
+    auto componentFactory = container.resolve<IComponentFactory>();
+    auto sensorFactory = container.resolve<ISensorFactory>();
+    
+    // Register oil panel
+    registry.registerPanel("OemOilPanel", [componentFactory](IGpioProvider* gpio, IDisplayProvider* display) {
+        return std::make_unique<OemOilPanel>(componentFactory);
     });
-    registry.registerSensor<OilPressureSensor>("OilPressureSensor");
-    registry.registerSensor<OilTemperatureSensor>("OilTemperatureSensor");
     
     // Create components
     auto oilPanel = registry.createPanel("OemOilPanel", gpioProvider, displayProvider);
-    auto pressureSensor = registry.createSensor("OilPressureSensor");
-    auto tempSensor = registry.createSensor("OilTemperatureSensor");
+    auto pressureSensor = sensorFactory->createSensor("OilPressureSensor");
+    auto tempSensor = sensorFactory->createSensor("OilTemperatureSensor");
     
     // Initialize panel
     IPanel* oilInterface = dynamic_cast<IPanel*>(oilPanel.get());
     oilInterface->init(gpioProvider, displayProvider);
-    oilInterface->load();
+    oilInterface->load([]{}, gpioProvider, displayProvider);
     
     // Normal operation first
     ISensor* pressureInterface = dynamic_cast<ISensor*>(pressureSensor.get());
     ISensor* tempInterface = dynamic_cast<ISensor*>(tempSensor.get());
     
-    Reading normalPressure = pressureInterface->read();
-    Reading normalTemp = tempInterface->read();
+    Reading normalPressure = pressureInterface->GetReading();
+    Reading normalTemp = tempInterface->GetReading();
     
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(normalPressure));
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(normalTemp));
@@ -505,8 +592,8 @@ void test_architectural_error_recovery_with_di(void)
     gpio->simulateFailure(34, true); // Pressure sensor failure
     gpio->simulateFailure(35, true); // Temperature sensor failure
     
-    Reading failedPressure = pressureInterface->read();
-    Reading failedTemp = tempInterface->read();
+    Reading failedPressure = pressureInterface->GetReading();
+    Reading failedTemp = tempInterface->GetReading();
     
     // Sensors should still return readings (likely error values)
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(failedPressure));
@@ -522,8 +609,8 @@ void test_architectural_error_recovery_with_di(void)
     gpio->setTestAnalogValue(34, 2048);
     gpio->setTestAnalogValue(35, 1500);
     
-    Reading recoveredPressure = pressureInterface->read();
-    Reading recoveredTemp = tempInterface->read();
+    Reading recoveredPressure = pressureInterface->GetReading();
+    Reading recoveredTemp = tempInterface->GetReading();
     
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(recoveredPressure));
     TEST_ASSERT_TRUE(!std::holds_alternative<std::monostate>(recoveredTemp));

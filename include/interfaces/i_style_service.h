@@ -27,6 +27,17 @@ public:
     // Core Functionality Methods
     
     /**
+     * @brief Initialize all styles with default values
+     */
+    virtual void initializeStyles() = 0;
+
+    /**
+     * @brief Check if the style service has been initialized
+     * @return true if initialized, false otherwise
+     */
+    virtual bool isInitialized() const = 0;
+
+    /**
      * @brief Initialize the style service with a specific theme
      * @param theme Theme identifier (e.g., "DAY", "NIGHT")
      */

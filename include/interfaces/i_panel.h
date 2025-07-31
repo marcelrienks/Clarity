@@ -36,6 +36,17 @@ public:
     /// @param display Display provider for UI operations
     virtual void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) = 0;
 
+    /// @brief Show the panel in the display
+    virtual void show() {
+        if (screen_) {
+            display_->loadScreen(screen_);
+        }
+    }
+
+protected:
+    lv_obj_t* screen_ = nullptr;
+    IDisplayProvider* display_ = nullptr;
+
 protected:
     // Protected Data Members
     std::function<void()> callbackFunction_;

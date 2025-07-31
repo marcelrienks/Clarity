@@ -11,6 +11,13 @@ class IDisplayProvider
 public:
     virtual ~IDisplayProvider() = default;
 
+    /// @brief Initialize the display hardware and LVGL
+    virtual void initialize() = 0;
+
+    /// @brief Check if the display has been initialized
+    /// @return True if initialized, false otherwise
+    virtual bool isInitialized() const = 0;
+
     /// @brief Create a new screen object
     /// @return Pointer to the created screen object
     virtual lv_obj_t* createScreen() = 0;

@@ -61,7 +61,7 @@ class StyleManager : public IStyleService
 {
 public:
     // Constructors and Destructors
-    StyleManager() = default;
+    StyleManager() : initialized_(false) {}
     ~StyleManager();
     StyleManager(const StyleManager&) = delete;
     StyleManager& operator=(const StyleManager&) = delete;
@@ -69,6 +69,7 @@ public:
     // Removed singleton pattern - StyleManager is now managed by ServiceContainer
 
     // Core Functionality Methods (IStyleService implementation)
+    void initializeStyles() override;
     void init(const char *theme) override;
     void set_theme(const char *theme);
     void apply_theme_to_screen(lv_obj_t *screen);
@@ -141,4 +142,7 @@ private:
         .keyPresent = lv_color_hex(0x006400),    // Deep green for key present
         .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
+
+private:
+    bool initialized_ = false;
 };

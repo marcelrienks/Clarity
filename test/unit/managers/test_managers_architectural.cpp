@@ -128,6 +128,30 @@ public:
         mock_lv_style_init(&gauge_normal_style_);
         mock_lv_style_init(&gauge_warning_style_);
         mock_lv_style_init(&gauge_danger_style_);
+    }
+
+    void initializeStyles() override {
+        initialized_ = true;
+    }
+
+    bool isInitialized() const override {
+        return initialized_;
+    }
+
+    lv_style_t* getBackgroundStyle() override { return &background_style_; }
+    lv_style_t* getTextStyle() override { return &text_style_; }
+    lv_style_t* getGaugeNormalStyle() override { return &gauge_normal_style_; }
+    lv_style_t* getGaugeWarningStyle() override { return &gauge_warning_style_; }
+    lv_style_t* getGaugeDangerStyle() override { return &gauge_danger_style_; }
+
+private:
+    std::string current_theme_;
+    bool initialized_;
+    lv_style_t background_style_;
+    lv_style_t text_style_;
+    lv_style_t gauge_normal_style_;
+    lv_style_t gauge_warning_style_;
+    lv_style_t gauge_danger_style_;
         mock_lv_style_init(&gauge_indicator_style_);
         mock_lv_style_init(&gauge_items_style_);
         mock_lv_style_init(&gauge_main_style_);
@@ -486,7 +510,7 @@ void test_architectural_manager_lifecycle_management(void)
     
     // Verify the configuration was set
     const auto& loadedConfig = prefService->getConfig();
-    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, loadedConfig.panelName);
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, loadedConfig.panelName.c_str());
 }
 
 void test_architectural_manager_cross_communication(void)

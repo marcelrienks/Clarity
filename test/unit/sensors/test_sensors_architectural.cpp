@@ -6,6 +6,7 @@
 #include "system/component_registry.h"
 #include "interfaces/i_sensor.h"
 #include "interfaces/i_gpio_provider.h"
+#include "utilities/reading_helper.h"
 
 // Actual Sensor Implementations
 #include "sensors/key_sensor.h"
@@ -174,20 +175,22 @@ void test_architectural_oil_pressure_sensor_via_registry(void)
     
     // Test different pressure values
     testGpio->setTestAnalogValue(34, 0);      // No pressure
-    Reading reading1 = sensorInterface->read();
-    TEST_ASSERT_TRUE(reading1.isValid());
+    Reading reading1 = sensorInterface->GetReading();
+    TEST_ASSERT_TRUE(ReadingHelper::isValid(reading1));
     
     testGpio->setTestAnalogValue(34, 2048);   // Normal pressure
-    Reading reading2 = sensorInterface->read();
-    TEST_ASSERT_TRUE(reading2.isValid());
+    Reading reading2 = sensorInterface->GetReading();
+    TEST_ASSERT_TRUE(ReadingHelper::isValid(reading2));
     
     testGpio->setTestAnalogValue(34, 4095);   // Max pressure
-    Reading reading3 = sensorInterface->read();
-    TEST_ASSERT_TRUE(reading3.isValid());
+    Reading reading3 = sensorInterface->GetReading();
+    TEST_ASSERT_TRUE(ReadingHelper::isValid(reading3));
     
     // Values should be different
-    TEST_ASSERT_NOT_EQUAL(reading1.getValue(), reading2.getValue());
-    TEST_ASSERT_NOT_EQUAL(reading2.getValue(), reading3.getValue());
+    TEST_ASSERT_NOT_EQUAL(ReadingHelper::getValue<int32_t>(reading1),
+                         ReadingHelper::getValue<int32_t>(reading2));
+    TEST_ASSERT_NOT_EQUAL(ReadingHelper::getValue<int32_t>(reading2),
+                         ReadingHelper::getValue<int32_t>(reading3));
 }
 
 void test_architectural_oil_temperature_sensor_via_registry(void)
@@ -425,9 +428,9 @@ void test_architectural_sensor_registry_lifecycle(void)
     Reading reading3 = sensor3Interface->read();
     
     // All should read the same value from the shared GPIO provider
-    TEST_ASSERT_TRUE(reading1.isValid());
-    TEST_ASSERT_TRUE(reading2.isValid());
-    TEST_ASSERT_TRUE(reading3.isValid());
+    TEST_ASSERT_FALSE(std::holds_alternative<std::monostate>(reading1));
+    TEST_ASSERT_FALSE(std::holds_alternative<std::monostate>(reading2));
+    TEST_ASSERT_FALSE(std::holds_alternative<std::monostate>(reading3));
 }
 
 // Note: PlatformIO will automatically discover and run test_ functions

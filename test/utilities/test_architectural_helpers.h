@@ -13,6 +13,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_style_service.h"
 #include "interfaces/i_preference_service.h"
+#include "interfaces/i_sensor_factory.h"
 
 /**
  * @brief Architectural Test Helpers
@@ -29,24 +30,28 @@ namespace ArchitecturalTestHelpers {
      */
     class TestDisplayProvider : public IDisplayProvider {
     public:
-        TestDisplayProvider() : main_screen_(nullptr) {}
+        TestDisplayProvider() : main_screen_(nullptr), initialized_(false) {}
         
         // IDisplayProvider interface implementation
         lv_obj_t* createScreen() override { 
+            if (!initialized_) return nullptr;
             static lv_obj_t screen;
             return &screen; 
         }
         
         void loadScreen(lv_obj_t* screen) override { 
+            if (!initialized_) return;
             main_screen_ = screen; 
         }
         
         lv_obj_t* createLabel(lv_obj_t* parent) override { 
+            if (!initialized_) return nullptr;
             static lv_obj_t label;
             return &label; 
         }
         
         lv_obj_t* createObject(lv_obj_t* parent) override { 
+            if (!initialized_) return nullptr;
             static lv_obj_t obj;
             return &obj; 
         }
@@ -81,9 +86,22 @@ namespace ArchitecturalTestHelpers {
             }
             return main_screen_; 
         }
+
+        void initialize() override { 
+            initialized_ = true; 
+        }
+
+        bool isInitialized() const override { 
+            return initialized_; 
+        }
+
+        lv_obj_t* getCurrentScreen() override {
+            return main_screen_;
+        }
         
     private:
         lv_obj_t* main_screen_;
+        bool initialized_;
     };
 
     /**
@@ -165,7 +183,16 @@ namespace ArchitecturalTestHelpers {
         TestStyleService() : current_theme_("Day"), initialized_(false) {}
         
         // IStyleService interface implementation
-        void init(const char* theme) override { 
+        void initializeStyles() override {
+            initialized_ = true;
+        }
+
+        // IStyleService interface implementation
+    void initializeStyles() override {
+        initialized_ = true;
+    }
+
+    void init(const char *theme) override { 
             initialized_ = true; 
             if (theme) current_theme_ = theme;
         }
@@ -229,24 +256,33 @@ namespace ArchitecturalTestHelpers {
      */
     class TestPreferenceService : public IPreferenceService {
     public:
-        TestPreferenceService() : initialized_(false) {}
-        
-        // IPreferenceService interface implementation
-        void init() override { 
-            initialized_ = true; 
+        TestPreferenceService() : initialized_(false), hasStoredConfig_(false) {}
+
+        void init() override {
+            initialized_ = true;
+            initCalled_ = true;
             createDefaultConfig();
         }
-        
+
         void saveConfig() override {
-            // Mock save - no-op for testing
+            if (!initialized_) return;
+            saveCount_++;
+            configHistory_.push_back(config_);
         }
-        
+
         void loadConfig() override {
-            // Mock load - no-op for testing
+            if (!initialized_) return;
+            loadCount_++;
+            if (!configHistory_.empty()) {
+                config_ = configHistory_.back();
+            }
         }
-        
+
         void createDefaultConfig() override {
             config_.panelName = PanelNames::OIL;
+            config_.theme = "Day";
+            config_.updateRate = 500;
+            hasStoredConfig_ = true;
         }
         
         Configs& getConfig() override {
@@ -261,13 +297,23 @@ namespace ArchitecturalTestHelpers {
             config_ = config;
         }
         
-        // Test helper
+        // Test helpers
         bool isInitialized() const { return initialized_; }
-        
+        const std::vector<Configs>& getConfigHistory() const { return configHistory_; }
+        int getSaveCount() const { return saveCount_; }
+        int getLoadCount() const { return loadCount_; }
+        bool wasInitCalled() const { return initCalled_; }
         
     private:
         bool initialized_;
+        bool hasStoredConfig_;
+        int saveCount_ = 0;
+        int loadCount_ = 0;
+        bool initCalled_ = false;
         Configs config_;
+        std::vector<Configs> configHistory_;
+        std::vector<std::pair<std::string, std::string>> saveHistory_;
+        std::vector<std::pair<std::string, std::string>> loadHistory_;
     };
 
     /**
@@ -341,6 +387,14 @@ namespace ArchitecturalTestHelpers {
             
             container_->registerSingleton<IPreferenceService>([]() {
                 return std::make_unique<TestPreferenceService>();
+            });
+
+            container_->registerSingleton<IComponentFactory>([this]() {
+                return registry_.get();
+            });
+
+            container_->registerSingleton<ISensorFactory>([this]() {
+                return registry_.get();
             });
         }
         

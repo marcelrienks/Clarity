@@ -38,6 +38,21 @@ public:
     virtual void processTriggerEvents() = 0;
 
     /**
+     * @brief Add a new trigger with associated sensor and callback
+     * @param triggerName Unique name for the trigger
+     * @param sensor Sensor to monitor for trigger conditions
+     * @param callback Function to call when trigger fires
+     */
+    virtual void addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) = 0;
+
+    /**
+     * @brief Check if a trigger exists with the given name
+     * @param triggerName Name of the trigger to check
+     * @return true if trigger exists, false otherwise
+     */
+    virtual bool hasTrigger(const std::string& triggerName) const = 0;
+
+    /**
      * @brief Execute a specific trigger action
      * @param mapping Pointer to trigger mapping configuration
      * @param state Execution state for the trigger
