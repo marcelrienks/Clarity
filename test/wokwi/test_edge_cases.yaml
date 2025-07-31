@@ -1,0 +1,231 @@
+version: 1
+name: Clarity Edge Case Tests
+
+steps:
+  - name: Wait for system initialization
+    delay: 1000ms
+  
+  - name: Check splash screen
+    wait-serial: "Panel: SplashPanel"
+
+  - name: Wait for oil panel
+    delay: 2000ms
+  
+  - name: Verify oil panel startup
+    wait-serial: "Panel: OemOilPanel"
+
+  # Edge Case 1: Rapid trigger switching
+  - name: Wait before rapid switching test
+    delay: 1000ms
+  
+  - name: Rapid key trigger on/off cycle 1
+    set-control: ["sw1", 0, true]
+  - name: Brief delay
+    delay: 100ms
+  - name: Rapid key trigger off 1
+    set-control: ["sw1", 0, false]
+  - name: Brief delay
+    delay: 100ms
+  
+  - name: Rapid key trigger on/off cycle 2
+    set-control: ["sw1", 0, true]
+  - name: Brief delay
+    delay: 100ms
+  - name: Rapid key trigger off 2
+    set-control: ["sw1", 0, false]
+  
+  - name: Wait for system stabilization
+    delay: 500ms
+  
+  - name: Check system stability after rapid switching
+    wait-serial: "Panel: OemOilPanel"
+
+  # Edge Case 2: All triggers active simultaneously
+  - name: Wait before simultaneous trigger test
+    delay: 1000ms
+  
+  - name: Activate all triggers simultaneously
+    set-control: ["sw1", 0, true]  # Key present
+  - name: Activate lock trigger
+    set-control: ["sw1", 2, true]  # Lock state
+  - name: Activate lights trigger
+    set-control: ["sw1", 3, true]  # Lights state
+  
+  - name: Wait for priority resolution
+    delay: 1000ms
+  
+  - name: Check highest priority wins (Key Panel + Night Theme)
+    wait-serial: "Panel: KeyPanel"
+  
+  - name: Verify night theme activation
+    wait-serial: "Theme: Night"
+
+  # Edge Case 3: Sequential trigger deactivation
+  - name: Wait before sequential deactivation test
+    delay: 1000ms
+  
+  - name: Deactivate key trigger (highest priority)
+    set-control: ["sw1", 0, false]
+  
+  - name: Wait for priority shift
+    delay: 500ms
+  
+  - name: Check lock panel activation (next priority)
+    wait-serial: "Panel: LockPanel"
+  
+  - name: Deactivate lock trigger
+    set-control: ["sw1", 2, false]
+  
+  - name: Wait for oil panel restoration
+    delay: 500ms
+  
+  - name: Check oil panel with night theme maintained
+    wait-serial: "Panel: OemOilPanel"
+  
+  - name: Verify night theme still active
+    wait-serial: "Theme: Night"
+  
+  - name: Deactivate lights trigger
+    set-control: ["sw1", 3, false]
+  
+  - name: Wait for day theme restoration
+    delay: 500ms
+  
+  - name: Check day theme restoration
+    wait-serial: "Theme: Day"
+
+  # Edge Case 4: Sensor boundary conditions
+  - name: Wait before boundary test
+    delay: 1000ms
+  
+  - name: Set oil pressure to maximum
+    set-control: ["pot1", 1.0]  # 100% = maximum pressure
+  
+  - name: Set oil temperature to maximum  
+    set-control: ["pot2", 1.0]  # 100% = maximum temperature
+  
+  - name: Wait for maximum readings
+    delay: 500ms
+  
+  - name: Check maximum oil pressure handling
+    wait-serial: "Oil Pressure:"
+  
+  - name: Check maximum oil temperature handling
+    wait-serial: "Oil Temperature:"
+
+  # Edge Case 5: Sensor minimum boundary
+  - name: Wait before minimum boundary test
+    delay: 1000ms
+  
+  - name: Set oil pressure to just above zero
+    set-control: ["pot1", 0.01]  # 1% = minimum operational
+  
+  - name: Set oil temperature to just above zero
+    set-control: ["pot2", 0.01]  # 1% = minimum operational
+  
+  - name: Wait for minimum readings
+    delay: 500ms
+  
+  - name: Check minimum oil pressure handling
+    wait-serial: "Oil Pressure:"
+  
+  - name: Check minimum oil temperature handling
+    wait-serial: "Oil Temperature:"
+
+  # Edge Case 6: Trigger state contradictions
+  - name: Wait before contradiction test
+    delay: 1000ms
+  
+  - name: Attempt to activate contradictory key states
+    set-control: ["sw1", 0, true]  # Key present
+  - name: Try to activate key not present (DIP switch 2)
+    set-control: ["sw1", 1, true]  # Key not present
+  
+  - name: Wait for contradiction resolution
+    delay: 500ms
+  
+  - name: Check system handles contradiction gracefully
+    wait-serial: "Panel: KeyPanel"
+  
+  - name: Clear contradictory states
+    set-control: ["sw1", 0, false]
+  - name: Clear key not present
+    set-control: ["sw1", 1, false]
+  
+  - name: Wait for state normalization
+    delay: 500ms
+  
+  - name: Check return to oil panel
+    wait-serial: "Panel: OemOilPanel"
+
+  # Edge Case 7: Trigger activation during panel transitions
+  - name: Wait before transition interference test
+    delay: 1000ms
+  
+  - name: Start key trigger activation
+    set-control: ["sw1", 0, true]
+  
+  - name: Immediately activate lock trigger during transition
+    set-control: ["sw1", 2, true]
+  
+  - name: Wait for priority resolution during transition
+    delay: 750ms
+  
+  - name: Check key panel wins (higher priority)
+    wait-serial: "Panel: KeyPanel"
+  
+  - name: Clean up triggers
+    set-control: ["sw1", 0, false]
+  - name: Clean up lock trigger
+    set-control: ["sw1", 2, false]
+  
+  - name: Wait for final state
+    delay: 500ms
+  
+  - name: Check final oil panel state
+    wait-serial: "Panel: OemOilPanel"
+
+  # Edge Case 8: System recovery after multiple errors
+  - name: Wait before recovery test
+    delay: 1000ms
+  
+  - name: Create multiple error conditions
+    set-control: ["pot1", 0.0]     # Pressure sensor failure
+  - name: Add temperature error
+    set-control: ["pot2", 0.0]     # Temperature sensor failure
+  - name: Add trigger conflicts
+    set-control: ["sw1", 0, true]  # Key present
+  - name: Add more trigger conflicts
+    set-control: ["sw1", 1, true]  # Key not present
+  - name: Add lock trigger
+    set-control: ["sw1", 2, true]  # Lock state
+  
+  - name: Wait for error state stabilization
+    delay: 1000ms
+  
+  - name: Check system maintains key panel despite errors
+    wait-serial: "Panel: KeyPanel"
+  
+  - name: Begin systematic recovery - clear trigger conflicts
+    set-control: ["sw1", 0, false]
+  - name: Clear key not present
+    set-control: ["sw1", 1, false]
+  - name: Clear lock trigger
+    set-control: ["sw1", 2, false]
+  
+  - name: Restore sensors
+    set-control: ["pot1", 0.5]     # Normal pressure
+  - name: Restore temperature sensor
+    set-control: ["pot2", 0.4]     # Normal temperature
+  
+  - name: Wait for full system recovery
+    delay: 1000ms
+  
+  - name: Check complete recovery to normal state
+    wait-serial: "Panel: OemOilPanel"
+  
+  - name: Verify oil pressure restored
+    wait-serial: "Oil Pressure:"
+  
+  - name: Verify oil temperature restored
+    wait-serial: "Oil Temperature:"

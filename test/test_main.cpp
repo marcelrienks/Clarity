@@ -16,6 +16,9 @@ extern void run_service_container_tests(void);
 // Dependency Injection Coverage Tests  
 extern void run_dependency_injection_coverage_tests(void);
 
+// Component Registry Deep Tests
+extern void run_component_registry_deep_tests(void);
+
 int main(void) {
     UNITY_BEGIN();
     
@@ -24,6 +27,9 @@ int main(void) {
     
     printf("\n=== DEPENDENCY INJECTION COVERAGE TESTS ===\n");
     run_dependency_injection_coverage_tests();
+    
+    printf("\n=== COMPONENT REGISTRY DEEP TESTS ===\n");
+    run_component_registry_deep_tests();
     
     printf("\n=== UTILITIES TESTS ===\n");
     // No tests implemented yet
@@ -96,6 +102,22 @@ extern void test_integration_sensor_and_trigger_system(void);
 extern void test_integration_long_running_stability(void);
 extern void test_integration_rapid_state_changes(void);
 extern void test_integration_system_recovery(void);
+
+// OEM Oil Panel Integration Tests (17 tests)
+extern void test_oem_oil_panel_normal_operation(void);
+extern void test_oem_oil_panel_engine_startup_sequence(void);
+extern void test_oem_oil_panel_pressure_warning_condition(void);
+extern void test_oem_oil_panel_temperature_warning_condition(void);
+extern void test_oem_oil_panel_dual_warning_condition(void);
+extern void test_oem_oil_panel_pressure_sensor_failure(void);
+extern void test_oem_oil_panel_temperature_sensor_failure(void);
+extern void test_oem_oil_panel_dual_sensor_failure(void);
+extern void test_oem_oil_panel_sensor_recovery(void);
+extern void test_oem_oil_panel_with_key_present_override(void);
+extern void test_oem_oil_panel_warning_during_trigger_override(void);
+extern void test_oem_oil_panel_theme_switching_integration(void);
+extern void test_oem_oil_panel_rapid_sensor_changes(void);
+extern void test_oem_oil_panel_extended_operation_stability(void);
 
 // PreferenceManager Tests (18 tests)
 extern void test_preference_manager_singleton_access(void);
