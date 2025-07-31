@@ -27,6 +27,9 @@
 class TriggerManager : public ITriggerService
 {
 public:
+    // Startup panel override method
+    const char* getStartupPanelOverride() const override;
+
     // Constructors and Destructors
     TriggerManager(IGpioProvider* gpio = nullptr, IPanelService* panelService = nullptr, IStyleService* styleService = nullptr);
     TriggerManager(const TriggerManager &) = delete;
@@ -54,6 +57,7 @@ private:
     void InitializeTrigger(const char* triggerId, bool currentPinState);
     Trigger* FindTriggerMapping(const char* triggerId);
     void UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecutionState newState);
+    void executeTriggerAction(Trigger* mapping, TriggerExecutionState state);
 
     // Hardware and service dependencies
     IGpioProvider* gpioProvider_ = nullptr;
@@ -61,7 +65,7 @@ private:
     IStyleService* styleService_ = nullptr;
     
     // State tracking
-    std::unordered_map<std::string, std::pair<ISensor*, std::function<void()>>> triggers_;
+    static Trigger triggers_[];
     Trigger* activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
     Trigger* activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
     const char* startupPanelOverride_ = nullptr;

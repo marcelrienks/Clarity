@@ -236,11 +236,11 @@ struct GpioState {
 
 /// @brief Direct trigger mapping structure (replaces trigger objects)
 struct Trigger {
-    const char* triggerId;
+    const char *triggerId;
     int pin;
     TriggerActionType actionType;
-    const char* actionTarget;
-    const char* restoreTarget;
+    const char *actionTarget;
+    const char *restoreTarget;
     TriggerPriority priority;
     TriggerExecutionState currentState = TriggerExecutionState::INIT;
 };

@@ -17,11 +17,12 @@ class ServiceContainer;
 class ComponentRegistry : public IComponentFactory, public ISensorFactory {
 public:
     explicit ComponentRegistry(ServiceContainer& container) : serviceContainer_(container) {}
-    static ComponentRegistry& GetInstance();
+    // GetInstance removed - ComponentRegistry is now managed by ServiceContainer only
 
     // IComponentFactory interface implementation
     void registerPanel(const std::string& name, PanelFactoryFunction factory) override;
     void registerComponent(const std::string& name, ComponentFactoryFunction factory) override;
+    void registerSensor(const std::string& name, SensorFactoryFunction factory) override;
 
     // Template helper for panel registration
     template<typename T>
@@ -41,16 +42,13 @@ public:
 
     std::unique_ptr<IPanel> createPanel(const std::string& name, IGpioProvider* gpio, IDisplayProvider* display) override;
     std::unique_ptr<IComponent> createComponent(const std::string& name) override;
-    std::unique_ptr<ISensor> createSensor(const std::string& name);
+    std::unique_ptr<ISensor> createSensor(const std::string& name) override;
 
     bool hasPanelRegistration(const std::string& name) const override;
     bool hasComponentRegistration(const std::string& name) const override;
     bool hasSensorRegistration(const std::string& name) const;
 
     void clear() override;
-
-    // ISensorFactory interface implementation
-    std::unique_ptr<ISensor> createSensor(const std::string& name) override;
 
 private:
     std::unordered_map<std::string, PanelFactoryFunction> panelFactories;

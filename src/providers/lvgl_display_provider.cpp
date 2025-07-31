@@ -2,8 +2,19 @@
 #include "managers/style_manager.h"
 
 LvglDisplayProvider::LvglDisplayProvider(lv_obj_t* mainScreen)
-    : mainScreen_(mainScreen)
+    : mainScreen_(mainScreen), initialized_(false)
 {
+}
+
+void LvglDisplayProvider::initialize() {
+    if (!initialized_) {
+        // TODO: Add any necessary LVGL initialization here
+        initialized_ = true;
+    }
+}
+
+bool LvglDisplayProvider::isInitialized() const {
+    return initialized_;
 }
 
 lv_obj_t* LvglDisplayProvider::createScreen()

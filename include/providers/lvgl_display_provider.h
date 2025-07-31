@@ -9,10 +9,18 @@ class LvglDisplayProvider : public IDisplayProvider
 {
 private:
     lv_obj_t* mainScreen_;
+    bool initialized_;
 
 public:
     /// @brief Constructor
     explicit LvglDisplayProvider(lv_obj_t* mainScreen);
+
+    /// @brief Initialize the display provider
+    void initialize() override;
+
+    /// @brief Check if the display provider is initialized
+    /// @return True if initialized, false otherwise
+    bool isInitialized() const override;
 
     /// @brief Create a new screen object
     /// @return Pointer to the created screen object

@@ -14,7 +14,7 @@ Trigger TriggerManager::triggers_[] = {
 };
 
 TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
-    : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService), triggers_{}
+    : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService)
 {
     if (gpio && panelService && styleService) {
         log_d("Creating TriggerManager with injected dependencies (GPIO, Panel, Style services)");
@@ -25,6 +25,14 @@ TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService,
 
 // REMOVED in Step 4.5: GetInstance() method removed for dependency injection
 // Use ITriggerService interface through service container instead
+
+const char* TriggerManager::getStartupPanelOverride() const {
+    // Check key presence on startup
+    if (gpioProvider_ && gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT)) {
+        return PanelNames::KEY;
+    }
+    return nullptr; // No override needed
+}
 
 void TriggerManager::init()
 {
@@ -203,13 +211,13 @@ void TriggerManager::InitializeTrigger(const char* triggerId, bool currentPinSta
           triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
 }
 
-Trigger* TriggerManager::FindTriggerMapping(const char* triggerId)
+Trigger* TriggerManager::FindTriggerMapping(const char *triggerId)
 {
-    for (auto& mapping : triggers_)
+    for (auto& trigger : triggers_)
     {
-        if (strcmp(mapping.triggerId, triggerId) == 0)
+        if (trigger.triggerId == triggerId)
         {
-            return &mapping;
+            return &trigger;
         }
     }
     return nullptr;
@@ -266,4 +274,21 @@ void TriggerManager::setup_gpio_pins()
         pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
         pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
     }
+}
+
+void TriggerManager::addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) {
+    log_d("Adding trigger %s", triggerName.c_str());
+    // Currently a no-op since triggers are statically defined
+    // This interface method is maintained for compatibility with ITriggerService
+}
+
+bool TriggerManager::hasTrigger(const std::string& triggerName) const {
+    log_d("Checking for trigger %s", triggerName.c_str());
+    // Check if the trigger exists in our static mapping
+    for (const auto& trigger : triggers_) {
+        if (trigger.triggerId == triggerName) {
+            return true;
+        }
+    }
+    return false;
 }

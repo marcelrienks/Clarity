@@ -1,11 +1,9 @@
 #include "system/component_registry.h"
+#include "system/service_container.h"
 #include "device.h"
 #include "managers/style_manager.h"
 
-ComponentRegistry& ComponentRegistry::GetInstance() {
-    static ComponentRegistry instance;
-    return instance;
-}
+// GetInstance removed - ComponentRegistry is now managed by ServiceContainer only
 
 void ComponentRegistry::registerPanel(const std::string& name, PanelFactoryFunction factory) {
     panelFactories[name] = factory;
@@ -13,6 +11,10 @@ void ComponentRegistry::registerPanel(const std::string& name, PanelFactoryFunct
 
 void ComponentRegistry::registerComponent(const std::string& name, ComponentFactoryFunction factory) {
     componentFactories[name] = factory;
+}
+
+void ComponentRegistry::registerSensor(const std::string& name, SensorFactoryFunction factory) {
+    sensorFactories[name] = factory;
 }
 
 std::unique_ptr<IPanel> ComponentRegistry::createPanel(const std::string& name, IGpioProvider* gpio, IDisplayProvider* display) {
@@ -61,12 +63,4 @@ void ComponentRegistry::clear() {
     panelFactories.clear();
     componentFactories.clear();
     sensorFactories.clear();
-}
-
-std::unique_ptr<ISensor> ComponentRegistry::createSensor(const std::string& name) {
-    auto it = sensorFactories.find(name);
-    if (it != sensorFactories.end()) {
-        return it->second();
-    }
-    return nullptr;
 }

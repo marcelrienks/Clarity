@@ -3,6 +3,9 @@
 // Project Includes
 #include "utilities/types.h"
 #include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_sensor.h"
+
+#include <functional>
 
 /**
  * @interface ITriggerService

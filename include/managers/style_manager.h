@@ -61,7 +61,7 @@ class StyleManager : public IStyleService
 {
 public:
     // Constructors and Destructors
-    StyleManager() : initialized_(false) {}
+    StyleManager() {}
     ~StyleManager();
     StyleManager(const StyleManager&) = delete;
     StyleManager& operator=(const StyleManager&) = delete;
@@ -92,11 +92,12 @@ public:
     lv_style_t& getGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
     const char* getCurrentTheme() const override { return THEME; }
     const ThemeColors& getThemeColors() const override { return get_colours(THEME); }
+    bool isInitialized() const override { return initialized_; }
     
     // Public Data Members - Theme State
     const char *THEME = Themes::NIGHT;
 
-    // Public Data Members
+    // Core Style Objects
     lv_style_t backgroundStyle;    // Style for backgrounds
     lv_style_t textStyle;          // Style for general text
     lv_style_t gaugeNormalStyle;  // Style for gauges in normal range

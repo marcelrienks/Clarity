@@ -12,22 +12,14 @@ StyleManager::~StyleManager()
 // Singleton pattern removed - StyleManager is now managed by ServiceContainer
 
 // Core Functionality Methods
+
 void StyleManager::initializeStyles()
 {
-    log_d("Initializing style manager styles");
-
-    lv_style_init(&backgroundStyle);
-    lv_style_init(&textStyle);
-    lv_style_init(&gaugeNormalStyle);
-    lv_style_init(&gaugeWarningStyle);
-    lv_style_init(&gaugeDangerStyle);
-    lv_style_init(&gaugeIndicatorStyle);
-    lv_style_init(&gaugeItemsStyle);
-    lv_style_init(&gaugeMainStyle);
-    lv_style_init(&gaugeDangerSectionStyle);
-
-    // Set initial theme
-    init(THEME);
+    if (!initialized_) {
+        log_d("Initializing style manager styles");
+        init(THEME);
+        initialized_ = true;
+    }
 }
 
 /// @brief Apply the current theme to a specific screen
