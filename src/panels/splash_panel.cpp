@@ -34,15 +34,13 @@ SplashPanel::~SplashPanel()
 void SplashPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing splash panel screen and animation components");
-    // TODO: Remove fallback when providers are fully implemented in Step 4
-    if (display) {
-        blankScreen_ = display->createScreen();
-        screen_ = display->createScreen();
-    } else {
-        // Fallback to direct LVGL calls
-        blankScreen_ = LvTools::create_blank_screen();
-        screen_ = LvTools::create_blank_screen();
+    if (!display) {
+        log_e("SplashPanel requires display provider");
+        return;
     }
+
+    blankScreen_ = display->createScreen();
+    screen_ = display->createScreen();
 }
 
 /// @brief Show the screen

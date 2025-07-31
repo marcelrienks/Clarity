@@ -49,6 +49,10 @@ public:
     bool hasSensorRegistration(const std::string& name) const;
 
     void clear() override;
+    
+    // Dependency Access Methods
+    IStyleService* getStyleService() const override;
+    IDisplayProvider* getDisplayProvider() const override;
 
 private:
     std::unordered_map<std::string, PanelFactoryFunction> panelFactories;

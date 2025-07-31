@@ -55,8 +55,10 @@ public:
     
     /// @brief Create TriggerManager with injected dependencies
     /// @param gpio GPIO provider for hardware access
+    /// @param panelService Panel service for loading panels
+    /// @param styleService Style service for theme management
     /// @return Unique pointer to configured TriggerManager instance
-    static std::unique_ptr<TriggerManager> createTriggerManager(IGpioProvider* gpio = nullptr);
+    static std::unique_ptr<TriggerManager> createTriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService);
     
     /// @brief Create PreferenceManager (no dependencies currently)
     /// @return Unique pointer to configured PreferenceManager instance

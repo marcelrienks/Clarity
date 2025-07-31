@@ -50,3 +50,13 @@ void ComponentFactory::clear()
     panelFactories_.clear();
     componentFactories_.clear();
 }
+
+IStyleService* ComponentFactory::getStyleService() const
+{
+    return styleService_;
+}
+
+IDisplayProvider* ComponentFactory::getDisplayProvider() const
+{
+    return displayProvider_;
+}

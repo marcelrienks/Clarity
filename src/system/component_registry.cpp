@@ -28,11 +28,9 @@ std::unique_ptr<IPanel> ComponentRegistry::createPanel(const std::string& name, 
 std::unique_ptr<IComponent> ComponentRegistry::createComponent(const std::string& name) {
     auto it = componentFactories.find(name);
     if (it != componentFactories.end()) {
-        // Step 4.5: Use global service pointers for backward compatibility
-        extern IStyleService* g_styleService;
-        auto& device = Device::GetInstance();
-        IDisplayProvider* display = device.getDisplayProvider();
-        IStyleService* style = g_styleService;
+        // Use dependency injection through service container
+        auto* display = serviceContainer_.resolve<IDisplayProvider>();
+        auto* style = serviceContainer_.resolve<IStyleService>();
         
         return it->second(display, style);
     }
@@ -63,4 +61,12 @@ void ComponentRegistry::clear() {
     panelFactories.clear();
     componentFactories.clear();
     sensorFactories.clear();
+}
+
+IStyleService* ComponentRegistry::getStyleService() const {
+    return serviceContainer_.resolve<IStyleService>();
+}
+
+IDisplayProvider* ComponentRegistry::getDisplayProvider() const {
+    return serviceContainer_.resolve<IDisplayProvider>();
 }

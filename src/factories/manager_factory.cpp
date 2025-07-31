@@ -34,11 +34,11 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char* the
     return manager;
 }
 
-std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider* gpio)
+std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
 {
     log_d("Creating TriggerManager with injected dependencies");
     
-    auto manager = std::make_unique<TriggerManager>(gpio);
+    auto manager = std::make_unique<TriggerManager>(gpio, panelService, styleService);
     manager->init();
     
     return manager;

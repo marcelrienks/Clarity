@@ -20,7 +20,6 @@
 #include <memory>
 #include <list>
 #include <vector>
-#include <map>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <esp32-hal-log.h>
@@ -69,28 +68,15 @@ class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider* display = nullptr, IGpioProvider* gpio = nullptr, IPanelFactory* panelFactory = nullptr);
+    PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IPanelFactory* panelFactory);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
-
-    // Backward compatibility methods (legacy interface support)
-    void CreateAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false);
-    void CreateAndLoadPanelWithSplash(const char* panelName);
-    void UpdatePanel();
-    void SetUiState(UIState state);
-    UIState GetUiState() const;
-    void TriggerPanelSwitchCallback(const char *triggerId);
 
 
     // Core Functionality Methods (IPanelService implementation)
     /// @brief Initialize the panel service and register available panels
     void init() override;
-    
-    /// @brief Initialize the panel service with hardware providers (backward compatibility)
-    /// @param gpio GPIO provider for hardware access
-    /// @param display Display provider for UI operations
-    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
     
     
     
@@ -114,16 +100,6 @@ public:
     
     
 
-    // Template Methods
-    /// @brief Register a panel type with the factory for dynamic creation
-    /// @tparam T Panel type that implements IPanel interface
-    /// @param panel_name String identifier for the panel type
-    template<typename T> // Note the implementation of a template type must exist in header
-    void register_panel(const char *panelName) {
-        registeredPanels_[panelName] = []() -> std::shared_ptr<IPanel> { 
-            return std::make_shared<T>(); 
-        };
-    }
 
     // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
@@ -176,7 +152,6 @@ public:
 private:
     // Instance Data Members
     std::shared_ptr<IPanel> panel_ = nullptr;
-    std::map<std::string, std::function<std::shared_ptr<IPanel>()>> registeredPanels_; // DEPRECATED - to be removed once DI migration is complete
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
     IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access

@@ -21,10 +21,6 @@
 std::unique_ptr<ServiceContainer> g_serviceContainer;
 std::unique_ptr<ClarityApplication> g_application;
 
-// Legacy global service pointer for backward compatibility 
-// TODO Sprint 6: Remove when all legacy components use proper dependency injection
-IStyleService* g_styleService = nullptr;
-
 void registerProductionComponents(IComponentFactory* componentFactory) {
   // Register components with the factory
   componentFactory->registerComponent("key", [](IDisplayProvider* display, IStyleService* style) {
@@ -126,9 +122,6 @@ void setup()
     g_serviceContainer->resolve<ITriggerService>(),  // TriggerManager as ITriggerService
     g_serviceContainer->resolve<IPreferenceService>() // PreferenceManager as IPreferenceService
   );
-  
-  // Set legacy global service pointer for backward compatibility
-  g_styleService = g_serviceContainer->resolve<IStyleService>();
   
   // Initialize the application
   g_application->initialize();

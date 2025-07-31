@@ -31,7 +31,7 @@ public:
     const char* getStartupPanelOverride() const override;
 
     // Constructors and Destructors
-    TriggerManager(IGpioProvider* gpio = nullptr, IPanelService* panelService = nullptr, IStyleService* styleService = nullptr);
+    TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
@@ -43,9 +43,6 @@ public:
     // Trigger Management
     void addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) override;
     bool hasTrigger(const std::string& triggerName) const override;
-
-    // Legacy Methods (for backward compatibility during transition)
-    void ProcessTriggerEvents() { processTriggerEvents(); }
 
 private:
     void setup_gpio_pins();

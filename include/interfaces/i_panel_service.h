@@ -37,13 +37,6 @@ public:
     virtual void init() = 0;
 
     /**
-     * @brief Initialize the panel service with hardware providers (backward compatibility)
-     * @param gpio GPIO provider for hardware access
-     * @param display Display provider for UI operations
-     */
-    virtual void init(IGpioProvider* gpio, IDisplayProvider* display) = 0;
-
-    /**
      * @brief Create and load a panel by name with optional completion callback
      * @param panelName Name of the panel to create and load
      * @param completionCallback Optional callback function to execute when loading is complete

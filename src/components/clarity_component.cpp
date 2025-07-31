@@ -15,14 +15,12 @@ void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& locatio
     log_d("Rendering Clarity splash text component");
      
     // Using a label (recommended for text display)
-    // TODO: Remove fallback when providers are fully implemented in Step 4
-    lv_obj_t *splash;
-    if (display) {
-        splash = display->createLabel(screen);
-    } else {
-        // Fallback to direct LVGL calls
-        splash = lv_label_create(screen);
+    if (!display) {
+        log_e("ClarityComponent requires display provider");
+        return;
     }
+    
+    lv_obj_t *splash = display->createLabel(screen);
     lv_label_set_text(splash, "Clarity");
     
     // Apply the current theme's text style

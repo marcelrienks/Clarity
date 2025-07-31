@@ -93,4 +93,18 @@ public:
      * @brief Clear all registered factories (useful for testing)
      */
     virtual void clear() = 0;
+    
+    // Dependency Access Methods
+    
+    /**
+     * @brief Get the style service instance used by this factory
+     * @return Pointer to the style service instance
+     */
+    virtual IStyleService* getStyleService() const = 0;
+    
+    /**
+     * @brief Get the display provider instance used by this factory
+     * @return Pointer to the display provider instance
+     */
+    virtual IDisplayProvider* getDisplayProvider() const = 0;
 };

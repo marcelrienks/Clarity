@@ -16,10 +16,11 @@ Trigger TriggerManager::triggers_[] = {
 TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
     : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService)
 {
-    if (gpio && panelService && styleService) {
-        log_d("Creating TriggerManager with injected dependencies (GPIO, Panel, Style services)");
+    if (!gpio || !panelService || !styleService) {
+        log_e("TriggerManager requires all dependencies: gpio, panelService, and styleService");
+        // In a real embedded system, you might want to handle this more gracefully
     } else {
-        log_d("Creating TriggerManager with partial dependencies (for backward compatibility)");
+        log_d("Creating TriggerManager with injected dependencies (GPIO, Panel, Style services)");
     }
 }
 
@@ -27,8 +28,8 @@ TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService,
 // Use ITriggerService interface through service container instead
 
 const char* TriggerManager::getStartupPanelOverride() const {
-    // Check key presence on startup
-    if (gpioProvider_ && gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT)) {
+    // Check key presence on startup using required gpio provider
+    if (gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT)) {
         return PanelNames::KEY;
     }
     return nullptr; // No override needed
@@ -53,20 +54,12 @@ void TriggerManager::processTriggerEvents()
 
 GpioState TriggerManager::ReadAllGpioPins()
 {
-    // Single consolidated GPIO read for all trigger pins
+    // Single consolidated GPIO read for all trigger pins using required gpio provider
     GpioState state;
-    if (gpioProvider_) {
-        state.keyPresent = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
-        state.keyNotPresent = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
-        state.lockState = gpioProvider_->digitalRead(gpio_pins::LOCK);
-        state.lightsState = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
-    } else {
-        // Fallback to direct GPIO calls for singleton compatibility
-        state.keyPresent = digitalRead(gpio_pins::KEY_PRESENT);
-        state.keyNotPresent = digitalRead(gpio_pins::KEY_NOT_PRESENT);
-        state.lockState = digitalRead(gpio_pins::LOCK);
-        state.lightsState = digitalRead(gpio_pins::LIGHTS);
-    }
+    state.keyPresent = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
+    state.keyNotPresent = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    state.lockState = gpioProvider_->digitalRead(gpio_pins::LOCK);
+    state.lightsState = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
     return state;
 }
 
@@ -261,25 +254,17 @@ void TriggerManager::setup_gpio_pins()
 {
     log_d("Setting up GPIO pins for direct polling...");
 
-    // Configure GPIO pins as inputs with pull-down resistors
-    if (gpioProvider_) {
-        gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
-        gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
-        gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
-        gpioProvider_->pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
-    } else {
-        // Fallback to direct GPIO calls for singleton compatibility
-        pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
-        pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
-        pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
-        pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
-    }
+    // Configure GPIO pins as inputs with pull-down resistors using required gpio provider
+    gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
+    gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
+    gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
+    gpioProvider_->pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
 }
 
 void TriggerManager::addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) {
     log_d("Adding trigger %s", triggerName.c_str());
     // Currently a no-op since triggers are statically defined
-    // This interface method is maintained for compatibility with ITriggerService
+    // This interface method is part of ITriggerService interface
 }
 
 bool TriggerManager::hasTrigger(const std::string& triggerName) const {

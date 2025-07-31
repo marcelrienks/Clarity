@@ -29,26 +29,17 @@ void KeyPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing key panel and reading current GPIO key state");
 
-    // TODO: Remove fallback when providers are fully implemented in Step 4
-    if (display) {
-        screen_ = display->createScreen();
-    } else {
-        // Fallback to direct LVGL calls for now
-        screen_ = LvTools::create_blank_screen();
+    if (!display || !gpio) {
+        log_e("KeyPanel requires display and gpio providers");
+        return;
     }
+
+    screen_ = display->createScreen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Get current key state by reading GPIO pins via provider
-    // TODO: Remove fallback when providers are fully implemented in Step 4
-    bool pin25High, pin26High;
-    if (gpio) {
-        pin25High = gpio->digitalRead(gpio_pins::KEY_PRESENT);
-        pin26High = gpio->digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    } else {
-        // Fallback to direct GPIO calls for now
-        pin25High = digitalRead(gpio_pins::KEY_PRESENT);
-        pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    }
+    bool pin25High = gpio->digitalRead(gpio_pins::KEY_PRESENT);
+    bool pin26High = gpio->digitalRead(gpio_pins::KEY_NOT_PRESENT);
     
     if (pin25High && pin26High)
     {
@@ -79,12 +70,11 @@ void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio,
     keyComponent_ = componentFactory_->createComponent("key");
 
     // Render the component
-    if (display) {
-        keyComponent_->render(screen_, centerLocation_, display);
-    } else {
-        // Fallback - components need to handle nullptr display
-        keyComponent_->render(screen_, centerLocation_, nullptr);
+    if (!display) {
+        log_e("KeyPanel load requires display provider");
+        return;
     }
+    keyComponent_->render(screen_, centerLocation_, display);
     keyComponent_->refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     
     lv_obj_add_event_cb(screen_, KeyPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
@@ -96,10 +86,14 @@ void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio,
 /// @brief Update the key panel with current sensor data
 void KeyPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
+    if (!gpio) {
+        log_e("KeyPanel update requires gpio provider");
+        return;
+    }
 
     // Re-read GPIO pins to determine current key state
-    bool pin25High = digitalRead(gpio_pins::KEY_PRESENT);
-    bool pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    bool pin25High = gpio->digitalRead(gpio_pins::KEY_PRESENT);
+    bool pin26High = gpio->digitalRead(gpio_pins::KEY_NOT_PRESENT);
     
     KeyState newKeyState;
     if (pin25High && pin26High)

@@ -15,6 +15,10 @@ Currently all unit tests and environment builds are working, but the integration
    * Is all code properly commented
    * Search for and remove any backwards compatability
    * Review all code comments and remove any referencing change made, like // Note: UIState checking removed - not available in IPanelService interface
+   * Review:
+      * Create Arch doc
+      * Create requirements doc
+      * Create scenario doc
 
 ## Main Libraries:
 * Arduino

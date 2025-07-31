@@ -47,6 +47,10 @@ public:
 
     // Utility Methods
     void clear() override;
+    
+    // Dependency Access Methods
+    IStyleService* getStyleService() const override;
+    IDisplayProvider* getDisplayProvider() const override;
 
 private:
     IStyleService* styleService_;
