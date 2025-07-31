@@ -6,8 +6,8 @@
 #include "interfaces/i_trigger_service.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
-#include <esp32-hal-log.h>
 #include <vector>
+#include <functional>
 
 /**
  * @class TriggerManager

@@ -1,4 +1,6 @@
 #include "sensors/oil_pressure_sensor.h"
+#include <Arduino.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 
@@ -24,12 +26,12 @@ void OilPressureSensor::init()
     
     // Take initial reading
     int32_t adcValue = analogRead(gpio_pins::OIL_PRESSURE);
-    OilPressureSensor::GetReading(); // Read initial pressure value
+    OilPressureSensor::getReading(); // Read initial pressure value
 }
 
 /// @brief Get the current oil pressure reading with time-based sampling
 /// @return Current pressure reading in Bar
-Reading OilPressureSensor::GetReading()
+Reading OilPressureSensor::getReading()
 {
     unsigned long currentTime = millis();
     

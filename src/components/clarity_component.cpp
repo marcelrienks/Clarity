@@ -1,7 +1,8 @@
 #include "components/clarity_component.h"
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
-ClarityComponent::ClarityComponent(IStyleService* styleService) 
+ClarityComponent::ClarityComponent(IStyleService* styleService)
     : styleService_(styleService)
 {
 }
@@ -13,7 +14,7 @@ ClarityComponent::ClarityComponent(IStyleService* styleService)
 /// @param location the location parameters for positioning the component
 void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) {
     log_d("Rendering Clarity splash text component");
-     
+    
     // Using a label (recommended for text display)
     if (!display) {
         log_e("ClarityComponent requires display provider");

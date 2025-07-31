@@ -4,8 +4,6 @@
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 
-#include <lvgl.h>
-#include <LovyanGFX.hpp>
 #include <random>
 
 /**
@@ -41,5 +39,5 @@ public:
 
     // Core Functionality Methods
     void init() override;
-    Reading GetReading() override;
+    Reading getReading() override;
 };

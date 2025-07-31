@@ -9,9 +9,6 @@
 #define SCREEN_WIDTH  240
 #define SCREEN_HEIGHT 240
 
-// Forward declare lv_obj_t for STL containers
-typedef struct _lv_obj_t lv_obj_t;
-
 /// @brief Mock implementation of display provider for testing
 /// @details Provides controllable display behavior for unit and integration tests
 class MockDisplayProvider : public IDisplayProvider

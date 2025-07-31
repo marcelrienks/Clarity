@@ -20,8 +20,8 @@ class IStyleService;
  * @theme_integration Direct IStyleService integration (no globals)
  * 
  * @core_functions:
- * - reset_screen(): Clean screen reset with theme application
- * - create_blank_screen(): Create new screen with default theming
+ * - resetScreen(): Clean screen reset with theme application
+ * - createBlankScreen(): Create new screen with default theming
  * 
  * @standardization_benefits:
  * - Consistent screen styling across all panels
@@ -42,6 +42,6 @@ class LvTools
 {
 public:
     // Static Methods with dependency injection
-    static lv_obj_t* create_blank_screen(IStyleService* styleService);
-    static void reset_screen(lv_obj_t *screen, IStyleService* styleService);
+    static lv_obj_t* createBlankScreen(IStyleService* styleService);
+    static void resetScreen(lv_obj_t *screen, IStyleService* styleService);
 };

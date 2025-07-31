@@ -1,7 +1,6 @@
 #pragma once
 
 #include <lvgl.h>
-#include <functional>
 
 /// @brief Interface for display hardware abstraction
 /// @details Provides abstraction for LVGL display operations

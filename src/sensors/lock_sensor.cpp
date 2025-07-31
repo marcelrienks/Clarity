@@ -1,4 +1,6 @@
 #include "sensors/lock_sensor.h"
+#include <Arduino.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 
@@ -18,7 +20,7 @@ void LockSensor::init()
 
 /// @brief Get the current lock status reading
 /// @return Current lock status (true if engaged, false if disengaged)
-Reading LockSensor::GetReading()
+Reading LockSensor::getReading()
 {
     bool isLockEngaged = digitalRead(gpio_pins::LOCK);
     log_d("Lock sensor reading: %s (pin %d %s)", 

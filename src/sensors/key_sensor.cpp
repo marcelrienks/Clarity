@@ -1,4 +1,6 @@
 #include "sensors/key_sensor.h"
+#include <Arduino.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 
@@ -22,7 +24,7 @@ void KeySensor::init()
 
 /// @brief Get the current key reading
 /// @return KeyState indicating present, not present, or inactive
-Reading KeySensor::GetReading()
+Reading KeySensor::getReading()
 {
     bool pin25High = digitalRead(gpio_pins::KEY_PRESENT);
     bool pin26High = digitalRead(gpio_pins::KEY_NOT_PRESENT);

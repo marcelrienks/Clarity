@@ -3,14 +3,9 @@
 #define LGFX_USE_V1
 
 #include "interfaces/i_device.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_display_provider.h"
-#include "managers/style_manager.h"
-#include "managers/preference_manager.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
-#include <memory>
 
 // Screen
 #define SCREEN_WIDTH 240

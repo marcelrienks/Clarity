@@ -1,4 +1,6 @@
 #include "sensors/oil_temperature_sensor.h"
+#include <Arduino.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 
@@ -24,12 +26,12 @@ void OilTemperatureSensor::init()
     
     // Take initial reading
     int32_t adcValue = analogRead(gpio_pins::OIL_TEMPERATURE);
-    OilTemperatureSensor::GetReading(); // Read initial temperature value
+    OilTemperatureSensor::getReading(); // Read initial temperature value
 }
 
 /// @brief Get the current oil temperature reading with time-based sampling
 /// @return Current temperature reading in Celsius
-Reading OilTemperatureSensor::GetReading()
+Reading OilTemperatureSensor::getReading()
 {
     unsigned long currentTime = millis();
     

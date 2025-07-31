@@ -1,4 +1,5 @@
 #include "components/oem/oem_oil_component.h"
+#include <esp32-hal-log.h>
 #include "managers/style_manager.h"  // For MAIN_DEFAULT, ITEMS_DEFAULT, INDICATOR_DEFAULT constants
 #include <math.h>
 #include <cstring>
@@ -188,7 +189,7 @@ void OemOilComponent::refresh(const Reading& reading)
 /// @brief Sets the value of the oil component.
 /// This method updates the needle position based on the provided value.
 /// @param value
-void OemOilComponent::SetValue(int32_t value)
+void OemOilComponent::setValue(int32_t value)
 {
     log_i("value is %i", value);
 

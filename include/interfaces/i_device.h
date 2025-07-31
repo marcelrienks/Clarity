@@ -1,7 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 // System/Library Includes
-#include <esp32-hal-log.h>
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
 

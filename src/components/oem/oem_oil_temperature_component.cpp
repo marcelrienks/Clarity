@@ -1,4 +1,5 @@
 #include "components/oem/oem_oil_temperature_component.h"
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 

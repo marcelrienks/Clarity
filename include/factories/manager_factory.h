@@ -1,14 +1,20 @@
 #pragma once
 
-#include "managers/panel_manager.h"
-#include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
-#include "managers/preference_manager.h"
+#include "interfaces/i_panel_service.h"
+#include "interfaces/i_style_service.h"
+#include "interfaces/i_trigger_service.h"
+#include "interfaces/i_preference_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_component_factory.h"
 #include "interfaces/i_panel_factory.h"
 #include <memory>
+
+// Forward declarations
+class PanelManager;
+class StyleManager;
+class TriggerManager;
+class PreferenceManager;
 
 /**
  * @class ManagerFactory

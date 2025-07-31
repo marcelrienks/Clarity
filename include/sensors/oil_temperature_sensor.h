@@ -1,8 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 // System/Library Includes
-#include <LovyanGFX.hpp>
-#include <lvgl.h>
 
 // Project Includes
 #include "interfaces/i_sensor.h"
@@ -54,7 +52,7 @@ public:
 
     // Core Functionality Methods
     void init() override;
-    Reading GetReading() override;
+    Reading getReading() override;
 
 private:
     // Private Data Members

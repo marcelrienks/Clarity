@@ -1,28 +1,15 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "interfaces/i_device.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
-#include "interfaces/i_component_factory.h"
 #include "interfaces/i_panel_factory.h"
 #include "interfaces/i_panel_service.h"
-#include "panels/splash_panel.h"
-#include "panels/oem_oil_panel.h"
-#include "panels/key_panel.h"
-#include "panels/lock_panel.h"
-#include "utilities/ticker.h"
-#include "managers/trigger_manager.h"
-#include "managers/style_manager.h"
+#include "utilities/types.h"
 
 #include <string>
 #include <functional>
 #include <memory>
-#include <list>
-#include <vector>
-#include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
-#include <esp32-hal-log.h>
 
 /**
  * @class PanelManager

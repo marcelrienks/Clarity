@@ -1,5 +1,6 @@
 #include "components/lock_component.h"
 #include <icons/lock_alt_solid.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 LockComponent::LockComponent(IStyleService* styleService) 

@@ -1,7 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
-#include "managers/panel_manager.h"
 #include "interfaces/i_preference_service.h"
 
 #include <Preferences.h>

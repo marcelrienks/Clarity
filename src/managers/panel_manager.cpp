@@ -1,4 +1,6 @@
 #include "managers/panel_manager.h"
+#include "utilities/ticker.h"
+#include <esp32-hal-log.h>
 
 // Core Functionality Methods
 
@@ -12,7 +14,7 @@ void PanelManager::init()
     // Register all available panel types with the factory
     RegisterAllPanels();
     
-    Ticker::handle_lv_tasks();
+    Ticker::handleLvTasks();
 }
 
 
@@ -79,7 +81,7 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     log_d("Splash screen animation completed, transitioning to panel: %s", panelName);
 
     panel_.reset();
-    Ticker::handle_lv_tasks();
+    Ticker::handleLvTasks();
 
     createAndLoadPanel(panelName, [this]()
                        { this->PanelManager::PanelCompletionCallback(); });
@@ -130,7 +132,7 @@ void PanelManager::createAndLoadPanel(const char* panelName, std::function<void(
 
         setUiState(UIState::LOADING);
         panel_->load(completionCallback, gpioProvider_, displayProvider_);
-        Ticker::handle_lv_tasks();
+        Ticker::handleLvTasks();
     }
 }
 
@@ -152,7 +154,7 @@ void PanelManager::updatePanel()
         setUiState(UIState::UPDATING);
         panel_->update([this]()
                        { this->PanelManager::PanelCompletionCallback(); }, gpioProvider_, displayProvider_);
-        Ticker::handle_lv_tasks();
+        Ticker::handleLvTasks();
     }
 }
 

@@ -17,7 +17,7 @@ void ClarityApplication::initialize() {
     // Initialize trigger service after all dependencies are resolved
     triggerService_->init();
 
-    Ticker::handle_lv_tasks();
+    Ticker::handleLvTasks();
 
     // Check if startup triggers require a specific panel, otherwise use config default
     const char* startupPanel = triggerService_->getStartupPanelOverride();
@@ -30,7 +30,7 @@ void ClarityApplication::initialize() {
         panelService_->createAndLoadPanelWithSplash(config.panelName.c_str());
     }
     
-    Ticker::handle_lv_tasks();
+    Ticker::handleLvTasks();
 }
 
 void ClarityApplication::update() {
@@ -38,8 +38,8 @@ void ClarityApplication::update() {
     triggerService_->processTriggerEvents();
     
     panelService_->updatePanel();
-    Ticker::handle_lv_tasks();
-    Ticker::handle_dynamic_delay(millis());
+    Ticker::handleLvTasks();
+    Ticker::handleDynamicDelay(millis());
 }
 
 void ClarityApplication::run() {

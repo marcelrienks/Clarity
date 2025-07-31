@@ -1,7 +1,5 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include <lvgl.h>
-
 /**
  * @typedef Reading
  * @brief Variant type for sensor readings supporting multiple data types

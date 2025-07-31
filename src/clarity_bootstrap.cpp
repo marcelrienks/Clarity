@@ -122,7 +122,7 @@ void ClarityBootstrap::initialize() {
     // Initialize hardware through DI container
     auto device = serviceContainer_->resolve<IDevice>();
     device->prepare();
-    Ticker::handle_lv_tasks();
+    Ticker::handleLvTasks();
 
     // Create application with injected service interfaces
     application_ = std::make_unique<ClarityApplication>(
@@ -134,7 +134,7 @@ void ClarityBootstrap::initialize() {
     // Initialize the application
     application_->initialize();
     
-    Ticker::handle_lv_tasks();
+    Ticker::handleLvTasks();
 }
 
 void ClarityBootstrap::run() {

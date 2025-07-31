@@ -146,7 +146,7 @@ void OemOilPanel::UpdateOilPressure()
     }
 
     // Use delta-based updates for better performance
-    auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
+    auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->getReading());
     auto value = MapPressureValue(sensorValue);
     
     // Handle forced refresh (theme changes) even when values unchanged
@@ -192,7 +192,7 @@ void OemOilPanel::UpdateOilTemperature()
     }
 
     // Use delta-based updates for better performance
-    auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
+    auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->getReading());
     auto value = MapTemperatureValue(sensorValue);
     
     // Handle forced refresh (theme changes) even when values unchanged
@@ -292,7 +292,7 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
     
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                    // use the animation to get the var which is this instance
     if (thisInstance->oemOilPressureComponent_) {
-        thisInstance->oemOilPressureComponent_.get()->SetValue(value);
+        thisInstance->oemOilPressureComponent_.get()->setValue(value);
     }
 }
 
@@ -311,7 +311,7 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
     
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
     if (thisInstance->oemOilTemperatureComponent_) {
-        thisInstance->oemOilTemperatureComponent_.get()->SetValue(value);
+        thisInstance->oemOilTemperatureComponent_.get()->setValue(value);
     }
 }
 

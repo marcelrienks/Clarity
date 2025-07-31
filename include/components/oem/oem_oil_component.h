@@ -53,7 +53,7 @@ public:
     // Core Functionality Methods
     void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
     void refresh(const Reading& reading) override;
-    void SetValue(int32_t value) override;
+    void setValue(int32_t value) override;
 
 protected:
     // Protected Data Members

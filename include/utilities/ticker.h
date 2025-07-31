@@ -18,9 +18,9 @@
  * @performance_optimization Dynamic delays prevent CPU overload
  * 
  * @core_functions:
- * - get_elapsed_millis(): High-resolution timing using Arduino millis()
- * - handle_lv_tasks(): Process LVGL timer callbacks and animations
- * - handle_dynamic_delay(): Adaptive delay based on execution time
+ * - getElapsedMillis(): High-resolution timing using Arduino millis()
+ * - handleLvTasks(): Process LVGL timer callbacks and animations
+ * - handleDynamicDelay(): Adaptive delay based on execution time
  * 
  * @timing_strategy:
  * - Fixed LVGL tick processing
@@ -41,7 +41,7 @@ class Ticker
 {
 public:
     // Static Methods
-    static uint32_t get_elapsed_millis();
-    static void handle_dynamic_delay(uint32_t startTime);
-    static void handle_lv_tasks();
+    static uint32_t getElapsedMillis();
+    static void handleDynamicDelay(uint32_t startTime);
+    static void handleLvTasks();
 };

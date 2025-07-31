@@ -1,5 +1,6 @@
 #include "components/key_component.h"
 #include <icons/key_solid.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 KeyComponent::KeyComponent(IStyleService* styleService) 
