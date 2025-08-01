@@ -6,6 +6,39 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 _**Note:** If all you want is an ESP32 project for displaying one or two screens that do one job, this project is sincerely over complicated for your purposes. This was a test bed for implementing the usual design patterns of OOP, and trying to see if I could make an MVP pattern work in an embedded project. This now allows for multiple screens, with multiple (reusable) components, and warning triggers.  
 After I had built this architecture, the project then became a test bed for using AI agents, meaning it's far more featured and "properly" architected with extensive unit and integration testing than anyone would actually ever need. But hey, it does work._
 
+## Todo:
+* 1. Create Arch doc (and link it in this readme under the existing architecture section):
+   * include patterns:
+      * MVP Relationships
+      * Layer Structure
+   * include roles and responsibilities
+   * include logic flow
+   * dynamic panel switching based on sensor input
+   * trigger system interrupts
+   * panels
+   * components
+   * hardware config
+      * GPIO pins
+      * Display/LCD Interface (SPI)
+      * Sensor Inputs (Digital + Analog)
+* 2. Create Scenario doc (and link it in this readme under the existing Scenario section):
+   * Major scenario that tests all aspects in one  
+   app starts with pressure and temperate values set to half way > splash animates with day theme (white text) > oil panel loads with day theme (white scale ticks and icon) > oil panel needles animates > lights trigger high = oil panel does NOT reload, simply changes theme to night (red scale ticks and icon) > lock trigger high = lock panel > key not present trigger high = key panel (present = false means red icon) > key present trigger high = lock panel (both key present and key not present true = invalid state) > key not present trigger low = key panel (present = true means green icon because key present trigger still high) > key present trigger low = lock panel (because lock panel still high) > lock trigger low = oil panel loads with night theme (red scale ticks and icon because lights trigger still active) > oil panel needles animates > lights trigger low = oil panel does NOT reload, simply theme changes to day (white scale ticks and icon)
+   * Individual test scenarios:
+      * app starts > splash animates with day theme (white text)
+      * app starts with pressure and temperate values set to half way > splash animates with day theme (white text) > oil panel loads with day theme (white scale ticks and icon) > oil panel needles animates
+      * app starts > splash animates with day theme (white text) > oil panel loads with day theme (white scale ticks and icon) > key present trigger high = key panel loads (present = true means green icon) > key present trigger low = oil panel loads
+      * app starts with key present trigger high > splash animates > oil panel does NOT load, key panel loads (present = true means green icon) > key present trigger low = oil panel loads
+      * app starts > splash animates with day theme (white text) > oil panel loads with day theme (white scale ticks and icon) > key not present trigger high = key panel loads (present = false means red icon) > key not present trigger low = oil panel loads
+      * app starts with key not present trigger high > splash animates > oil panel does NOT load, key panel loads (present = false means red icon) > key not present trigger low = oil panel loads
+      * app starts > splash animates with day theme (white text) > oil panel loads with day theme (white scale ticks and icon) > lock trigger high = lock panel loads > lock trigger low = oil panel loads
+      * app starts with lock trigger high > splash animates > oil panel does NOT load, lock panel loads > lock trigger low = oil panel loads
+      * app starts > splash animates with day theme (white text) > oil panel loads with day theme (white scale ticks and icon) > lights trigger high = oil panel does NOT reload, simply theme changes to night (red scale ticks and icon) > lights trigger low = oil panel does NOT reload, simply theme changes to day (white scale ticks and icon)
+      * app starts with lights trigger high > splash animates with night theme (red text) > oil panel loads with night theme (red scale ticks and icon) > lights trigger low = oil panel does NOT reload, simply theme changes to day (white scale ticks and icon)
+* 3. Create unit tests
+* 4. Create integration tests (is it possible to do so to prove scenarios?)
+* 5. Create wokwi tests based on scenarios
+
 ## Main Libraries:
 * Arduino
 * [LVGL](https://docs.lvgl.io/master/)
@@ -13,403 +46,11 @@ After I had built this architecture, the project then became a test bed for usin
 
 ## Architecture:
 
-### Design Pattern: MVP + Dependency Injection
-The system implements **MVP (Model-View-Presenter)** with **pure dependency injection** for enterprise-grade maintainability and testability.
+<architecture.md>
 
-**Layer Structure:**
-> Device → Display → Panels → Components
+## Scenarios:
 
-- **Device**: Hardware abstraction layer (LVGL display management)
-- **Panels**: Presenters coordinating between sensors and components  
-- **Components**: Views rendering UI elements with data from sensors
-- **Sensors**: Models handling data acquisition from hardware inputs
-
-**MVP Relationships:**
-> Sensor (Model) ↔ Panel (Presenter) ↔ Component (View)
-
-### Dependency Injection Architecture
-- **Service Container**: Manages all service lifetimes and dependencies
-- **Factory Pattern**: Creates objects with proper dependency injection
-- **Interface Abstraction**: All services accessed through interfaces (I*)
-- **No Global State**: All dependencies resolved through DI container
-- **Lifecycle Management**: Centralized object creation and cleanup
-
-**Key Services:**
-- `IDevice`: Hardware display abstraction
-- `IPanelService`: Panel lifecycle and switching management  
-- `IStyleService`: LVGL styling and theme management
-- `IPreferenceService`: Persistent configuration storage
-- `ITriggerService`: GPIO trigger monitoring
-
-### Dynamic Panel Switching
-Input-driven panel switching enables responsive UI changes based on sensor triggers or user interaction. Emergency panels can override normal cycling based on sensor thresholds.
-
-## Panels (Screens)
-
-### **OemOilPanel** 
-**Primary dashboard displaying engine oil monitoring**
-- **Components**: OemOilComponent (pressure gauge), OemOilTemperatureComponent (temperature gauge)
-- **Sensors**: OilPressureSensor, OilTemperatureSensor  
-- **Display**: Dual circular gauges with animated value updates
-- **Role**: Default panel, restoration target for trigger system
-- **Features**: Real-time sensor data, smooth animations, threshold monitoring
-
-### **KeyPanel**
-**Key/ignition status indicator**
-- **Component**: KeyComponent (key status icon)
-- **Sensor**: KeySensor (via KeyTrigger)
-- **Display**: Key icon with state-based coloring
-- **Trigger**: KeyTrigger (GPIO pins 25 & 26)
-- **States**: 
-  - Present: Green key icon
-  - Not Present: Red key icon  
-  - Invalid (both pins HIGH): No panel load
-- **Features**: Automatic panel switching, restoration on clear
-
-### **LockPanel**
-**Vehicle lock/immobilizer status**
-- **Component**: LockComponent (lock status display)
-- **Sensor**: LockSensor (via LockTrigger)  
-- **Trigger**: LockTrigger (GPIO pin 27)
-- **Display**: Lock status indication
-- **Features**: Trigger-driven activation, priority-based switching
-
-### **SplashPanel**
-**Startup/transition screen**
-- **Purpose**: Loading screen during panel transitions
-- **Usage**: Smooth visual transitions between panels
-- **Features**: Branding display, initialization feedback
-
-## Components
-
-### **OemOilComponent**
-**Primary oil pressure gauge display**
-- **Type**: Circular gauge with needle indicator
-- **Range**: Configurable pressure range with color zones
-- **Features**: Smooth animations, threshold-based styling
-- **Integration**: Direct sensor binding for real-time updates
-
-### **OemOilTemperatureComponent** 
-**Oil temperature gauge display**
-- **Type**: Circular gauge with temperature mapping
-- **Features**: Value mapping, color-coded zones, animated updates
-- **Integration**: Temperature sensor data processing
-
-### **KeyComponent**
-**Key status icon display**
-- **Type**: SVG-based key icon with state colors
-- **States**: Present (green), Not Present (red), Inactive (hidden)
-- **Features**: State-based color changes, clean icon rendering
-- **Integration**: KeySensor data via panel coordination
-
-### **LockComponent**
-**Lock/immobilizer status display**  
-- **Type**: Lock status indicator
-- **Features**: Binary state display, clear visual feedback
-- **Integration**: LockSensor data via trigger system
-
-### **ClarityComponent**
-**Base component providing common functionality**
-- **Type**: Abstract base class for component inheritance
-- **Features**: Common rendering pipeline, shared utilities
-- **Usage**: Foundation for all display components
-
-## Hardware Configuration
-
-### Components
-* **NodeMCU-32S** development board (ESP32-WROOM-32)
-* **1.28" round display** (GC9A01 driver, 240x240 resolution)
-* **Oil pressure sensor** (analog input)
-* **Oil temperature sensor** (analog input)
-* **Digital input switches** for key and lock detection
-
-### GPIO Pin Mappings
-
-#### Display/LCD Interface (SPI)
-| Function | GPIO Pin | Description |
-|----------|----------|-------------|
-| **SCLK** | **18** | SPI Clock (Serial Clock) |
-| **MOSI** | **23** | SPI Master Out Slave In (Data) |
-| **DC** | **16** | Data/Command control pin |
-| **CS** | **22** | Chip Select (SPI Slave Select) |
-| **RST** | **4** | Display Reset pin |
-| **BL** | **3** | Backlight control (PWM, 44.1 kHz) |
-
-**SPI Configuration**: SPI2_HOST, 80MHz write / 20MHz read, Mode 0
-
-#### Sensor Inputs (Analog)
-| Function | GPIO Pin | Type | Range | Description |
-|----------|----------|------|-------|-------------|
-| **Oil Pressure** | **36** | ADC | 0-4095 | Engine oil pressure sensor |
-| **Oil Temperature** | **39** | ADC | 0-4095 | Engine oil temperature sensor |
-
-**ADC Configuration**: 12-bit resolution, input-only pins (no pull-up/down)
-
-#### Trigger Inputs (Digital)  
-| Function | GPIO Pin | Type | Description |
-|----------|----------|------|-------------|
-| **Key Present** | **25** | INPUT_PULLDOWN | Key presence detection |
-| **Key Not Present** | **26** | INPUT_PULLDOWN | Key absence detection |
-| **Lock State** | **27** | INPUT_PULLDOWN | Vehicle lock/immobilizer status |
-
-**Digital Configuration**: All trigger inputs use internal pull-down resistors
-
-#### Hardware Testing (Wokwi)
-| Function | Control | DIP Switch | Description |
-|----------|---------|------------|-------------|
-| **Key Present** | sw1:1 | Position 1 | Simulates GPIO 25 trigger |
-| **Key Not Present** | sw1:2 | Position 2 | Simulates GPIO 26 trigger |
-| **Lock State** | sw1:3 | Position 3 | Simulates GPIO 27 trigger |
-
-### Pin Usage Summary
-- **Display**: 6 pins (SPI + control)
-- **Sensors**: 2 pins (analog inputs)
-- **Triggers**: 3 pins (digital inputs)
-- **Total Used**: 11 GPIO pins
-- **Available**: 17+ additional GPIO pins for expansion
-
-## Partitions:
-This is specific to an NodeMCU-32S dev board, using a ESP32-WROOM-32 (ESP32-D0WD-V3 chip) with 32Mb(4MB) flash
-> - **nvs:** Minimal non-volatile storage for key-value pairs (12 KB).
-> - **otadata:** OTA data partition (8 KB).
-> - **ota_0:** Application partition for OTA updates (2 MB).
-> - **coredump:** Minimal core dump partition (64 KB).
-> - **fat:** FAT filesystem partition using the remaining space (1.875 MB).
-
-## LVGL guidelines
-### Screens & Components:
-Screen Loading is for:
-- Panel switching (Oil Panel → Key Panel)
-- Major layout changes
-
-Component Updates are for:
-- Data changes within the same panel
-- Status updates (key present/absent)
-
-### LVGL Screen Memory Model:
-1. Multiple screens can exist in memory simultaneously - Creating screen B doesn't delete screen A
-2. Only one screen is active/displayed at a time - When you call lv_screen_load(screen_B), screen A is no longer visible
-3. Inactive screens are NOT rendered - LVGL only renders the currently active screen, so screen A stops being drawn/updated
-4. Memory remains allocated - Screen A and all its components stay in memory until explicitly deleted with lv_obj_del(screen_A)
-
-## Panel-Trigger Architectural Patterns
-
-The system implements several well-established design patterns to coordinate between panels and triggers:
-
-### 🏗️ Core Architectural Patterns
-
-#### **MVP (Model-View-Presenter) Pattern**
-- **Model**: Sensors (KeySensor, LockSensor, OilPressureSensor, etc.)
-- **View**: Components (KeyComponent, LockComponent, OemOilComponent, etc.) 
-- **Presenter**: Panels (KeyPanel, LockPanel, OemOilPanel, etc.)
-
-#### **Observer Pattern (Trigger System)**
-- **Subject**: TriggerManager continuously evaluates triggers
-- **Observers**: Triggers (KeyTrigger, LockTrigger) monitor sensor states
-- **Notification**: Panel switches when trigger conditions are met
-
-### 🔄 Panel-Trigger Interaction Patterns
-
-#### **Pattern 1: Direct Panel-to-Sensor Binding**
-**Example**: OemOilPanel ↔ Oil Sensors
-```
-OemOilPanel → directly reads from → OilPressureSensor, OilTemperatureSensor
-```
-- Panel directly owns and updates from sensors
-- No trigger involvement for normal operation
-- Used for continuous data display
-
-#### **Pattern 2: Trigger-Driven Panel Switching**
-**Example**: KeyTrigger → KeyPanel, LockTrigger → LockPanel
-```
-Sensor → Trigger → TriggerManager → PanelManager → Panel
-```
-- Sensors provide data
-- Triggers evaluate conditions and decide when to switch
-- Triggers specify target panels
-- Global trigger system manages the switching
-
-#### **Pattern 3: Sensor Abstraction Layer**
-**Consistent Pattern**:
-```
-Trigger → Sensor (abstraction) → Hardware (GPIO pins)
-```
-- **KeyTrigger** uses **KeySensor** 
-- **LockTrigger** uses **LockSensor**
-- Sensors encapsulate hardware details (GPIO pins, debouncing, etc.)
-- Triggers focus on business logic (when to switch panels)
-
-### 🎯 Trigger Management Patterns
-
-#### **Priority-Based Evaluation**
-```
-TriggerManager evaluates triggers by priority:
-0 = KeyTrigger (highest priority)
-1 = LockTrigger (lower priority)
-```
-- Higher priority triggers can override lower priority ones
-- Active trigger prevents lower priority triggers from activating
-
-#### **State Machine Pattern**
-```
-Inactive → Active → Restoration
-```
-- **Inactive**: No trigger conditions met
-- **Active**: Trigger condition met, panel switched
-- **Restoration**: Trigger cleared, restore previous panel
-
-#### **Factory Pattern**
-```cpp
-PanelManager.register_panel<KeyPanel>("KeyPanel");
-TriggerManager.register_trigger<KeyTrigger>("key_trigger");
-```
-- Dynamic registration of panels and triggers
-- Template-based type-safe creation
-
-### 📋 Data Flow Patterns
-
-#### **Continuous Monitoring Flow (Oil Panel)**
-```
-Sensors → continuous readings → Panel → Components → UI Update
-```
-
-#### **Event-Driven Flow (Key/Lock)**
-```
-Hardware Event → Sensor → Trigger → TriggerManager → PanelManager → Panel Switch
-```
-
-#### **Restoration Flow**
-```
-Trigger Clears → TriggerManager → PanelManager.get_restoration_panel() → Restore Previous Panel
-```
-
-### 🔧 Design Patterns Used
-
-#### **Singleton Pattern**
-- `PanelManager::get_instance()`
-- `TriggerManager::get_instance()`
-- Central coordination points
-
-#### **Strategy Pattern**
-- Different triggers implement `ITrigger` interface
-- Different panels implement `IPanel` interface
-- Pluggable behavior for different hardware states
-
-#### **Template Method Pattern**
-- Panel lifecycle: `init() → load() → update() → callbacks`
-- Trigger lifecycle: `init() → evaluate() → get_target_panel()`
-
-#### **Dependency Injection**
-- Triggers receive sensors in constructor/as members
-- Panels receive sensors for data updates
-- Loose coupling between components
-
-### 🎭 Specific Panel-Trigger Relationships
-
-#### **KeyPanel ↔ KeyTrigger**
-- **Trigger owns**: KeySensor instance
-- **Panel owns**: KeyComponent (for display)
-- **Data flow**: KeySensor → KeyTrigger (logic) + KeyPanel → KeyComponent (display)
-- **Triggering**: Any key state change (Present/NotPresent) → load KeyPanel
-
-#### **LockPanel ↔ LockTrigger**
-- **Trigger owns**: LockSensor instance  
-- **Panel owns**: LockComponent (for display)
-- **Triggering**: Lock engaged (HIGH) → load LockPanel
-
-#### **OemOilPanel (No Direct Trigger)**
-- **Panel owns**: Oil sensors directly
-- **Role**: Default/restoration panel
-- **Triggering**: Restoration target when other triggers clear
-
-### 🔄 Lifecycle Coordination
-
-#### **Startup Flow**
-```
-1. PanelManager.init()
-2. Register all panels with factory
-3. Register all triggers with TriggerManager  
-4. Load default panel (OemOilPanel)
-5. Start continuous trigger evaluation
-```
-
-#### **Runtime Flow**
-```
-1. Continuous sensor monitoring
-2. Trigger evaluation every loop
-3. Panel switching on trigger activation
-4. Panel restoration when triggers clear
-5. Continuous UI updates within active panel
-```
-
-This architecture provides clean separation of concerns, with sensors handling hardware, triggers handling business logic for panel switching, and panels handling presentation logic.
-
-## Development Commands
-
-### Quick Development
-```bash
-pio.exe run -e debug-local    # Fastest build for testing changes
-pio.exe run --target size     # Check program size
-pio.exe run --target upload   # Build and upload to device
-```
-
-### Build Environments
-```bash
-pio.exe run -e debug-local    # Debug build for local testing (fastest)
-pio.exe run -e debug-upload   # Debug build with inverted colors for waveshare display
-pio.exe run -e release        # Optimized release build with inverted colors
-```
-
-### Testing Setup and Commands
-
-#### Windows PowerShell Setup
-1. **Prerequisites**: Install PlatformIO
-   ```powershell
-   pip install platformio
-   ```
-
-2. **Download Wokwi CLI** (for integration tests):
-   - Download `wokwi-cli.exe` from [GitHub releases](https://github.com/wokwi/wokwi-cli/releases/latest)
-   - Place in project root directory
-
-3. **Set Wokwi Token** (get from wokwi.com):
-   ```powershell
-   $env:WOKWI_CLI_TOKEN="<your_wokwi_token>"
-   ```
-
-4. **Run All Tests**:
-   ```powershell
-   .\run_all_tests.bat
-   ```
-
-5. **Individual Test Commands**:
-   ```powershell
-   # Unit tests only
-   pio.exe test -e test --verbose
-   
-   # Integration tests only
-   .\wokwi-cli.exe test --scenario test_scenarios.yaml --timeout 120000
-   
-   # Build verification only
-   pio.exe run -e debug-local; pio.exe run -e debug-upload; pio.exe run -e release
-   ```
-
-#### VS Code Integration
-1. **Install PlatformIO Extension** for VS Code
-2. **Reload VS Code** after adding `.vscode/tasks.json`
-3. **Run via Command Palette**:
-   - `Ctrl+Shift+P` → "Tasks: Run Task" → "Run All Tests (Complete Suite)"
-4. **Or use Terminal**: 
-   - Windows: `.\run_all_tests.bat`
-
-#### Test Prerequisites Summary
-- **Unit Tests**: PlatformIO with Unity framework
-- **Integration Tests**: Wokwi CLI + `WOKWI_CLI_TOKEN` environment variable
-- **Build Tests**: PlatformIO with all dependencies installed
-- **GitHub Actions**: `WOKWI_CLI_TOKEN` repository secret required for CI integration tests
-
-#### Note on CI/CD
-GitHub Actions runs successfully on Ubuntu runners because it explicitly installs PlatformIO and uses direct `pio` commands rather than the bash scripts. The CI workflow installs all dependencies automatically, ensuring consistent testing across all environments.
+<scenario.md>
 
 ## Credits
 
@@ -419,4 +60,4 @@ The code is also based on other projects from:
 * [Garage Tinkering](https://github.com/garagetinkering)
 * [fbiego](https://github.com/fbiego)
 
-As well as contributions from [Eugene Petersen](https://github.com/gino247)
+As well as contributions and criticism from [Eugene Petersen](https://github.com/gino247)
