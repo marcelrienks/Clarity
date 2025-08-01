@@ -20,6 +20,17 @@ After I had built this architecture, the project then became a test bed for usin
 * [LVGL](https://docs.lvgl.io/master/)
 * [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
 
+<<<<<<< Updated upstream
+=======
+## Architecture:
+
+[Architecture Documentation](docs/architecture.md)
+
+## Scenarios:
+
+[Scenario Documentation](docs/scenario.md)
+
+>>>>>>> Stashed changes
 ## Credits
 
 This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
