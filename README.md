@@ -7,14 +7,12 @@ _**Note:** If all you want is an ESP32 project for displaying one or two screens
 After I had built this architecture, the project then became a test bed for using AI agents, meaning it's far more featured and "properly" architected with extensive unit and integration testing than anyone would actually ever need. But hey, it does work._
 
 ## Todo:
-<todo.md>
+[Items to do](docs/todo.md)
 
 ## Architecture:
-
 <architecture.md>
 
 ## Scenarios:
-
 <scenario.md>
 
 ## Main Libraries:
