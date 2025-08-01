@@ -142,6 +142,29 @@ struct JsonDocNames
     static constexpr const char *PANEL_NAME = "panel_name"; ///< Default panel setting
 };
 
+/// @struct SystemConstants
+/// @brief Static constants for system configuration
+///
+/// @details Defines system-level constants like preferences namespace
+/// and configuration keys.
+struct SystemConstants
+{
+    static constexpr const char* PREFERENCES_NAMESPACE = "clarity"; ///< NVS preferences namespace
+};
+
+
+/// @struct UIConstants
+/// @brief Static constants for UI text and labels
+///
+/// @details Defines reusable UI text constants to avoid magic strings
+/// and ensure consistency across components.
+struct UIConstants
+{
+    static constexpr const char* APP_NAME = "Clarity";          ///< Application name
+    static constexpr const char* GAUGE_LOW_LABEL = "L";        ///< Low gauge indicator
+    static constexpr const char* GAUGE_HIGH_LABEL = "H";       ///< High gauge indicator
+};
+
 /// @struct ComponentLocation
 /// @brief UI component positioning and sizing parameters
 ///
@@ -191,7 +214,7 @@ struct ComponentLocation
 struct Configs
 {
     std::string panelName = PanelNames::OIL; ///< Default panel on startup
-    std::string theme = "Day";               ///< Theme preference (Day/Night)
+    std::string theme = Themes::DAY;         ///< Theme preference (Day/Night)
     int updateRate = 500;                    ///< Sensor update rate in milliseconds
 };
 

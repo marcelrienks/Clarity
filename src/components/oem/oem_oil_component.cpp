@@ -301,13 +301,13 @@ void OemOilComponent::CreateLabels()
 
     // Create "L" label for low end
     lowLabel_ = lv_label_create(scale_);
-    lv_label_set_text(lowLabel_, "L");
+    lv_label_set_text(lowLabel_, UIConstants::GAUGE_LOW_LABEL);
     lv_obj_add_style(lowLabel_, &styleService_->getTextStyle(), MAIN_DEFAULT);
     lv_obj_set_style_text_font(lowLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
     // Create "H" label for high end
     highLabel_ = lv_label_create(scale_);
-    lv_label_set_text(highLabel_, "H");
+    lv_label_set_text(highLabel_, UIConstants::GAUGE_HIGH_LABEL);
     lv_obj_add_style(highLabel_, &styleService_->getTextStyle(), MAIN_DEFAULT);
     lv_obj_set_style_text_font(highLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 

@@ -10,7 +10,7 @@ void PreferenceManager::init()
     log_d("Initializing preference manager and loading configuration from NVS");
 
     // Initialize preferences_
-    if (!preferences_.begin("clarity", false))
+    if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
     {
         log_w("Failed to initialize preferences_, retrying after format");
 
@@ -18,7 +18,7 @@ void PreferenceManager::init()
         nvs_flash_erase();
 
         // Try again
-        if (!preferences_.begin("clarity", false))
+        if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
             log_w("Failed to initialize preferences_ after format");
 
         else

@@ -22,7 +22,7 @@ void ClarityComponent::render(lv_obj_t *screen, const ComponentLocation& locatio
     }
     
     lv_obj_t *splash = display->createLabel(screen);
-    lv_label_set_text(splash, "Clarity");
+    lv_label_set_text(splash, UIConstants::APP_NAME);
     
     // Apply the current theme's text style
     lv_obj_add_style(splash, &styleService_->getTextStyle(), LV_PART_MAIN | LV_STATE_DEFAULT);

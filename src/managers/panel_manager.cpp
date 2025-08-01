@@ -64,13 +64,13 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     // Use UIFactory for direct panel creation
     std::unique_ptr<IPanel> uniquePanel;
     
-    if (strcmp(panelName, "KeyPanel") == 0) {
+    if (strcmp(panelName, PanelNames::KEY) == 0) {
         uniquePanel = UIFactory::createKeyPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, "LockPanel") == 0) {
+    } else if (strcmp(panelName, PanelNames::LOCK) == 0) {
         uniquePanel = UIFactory::createLockPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, "SplashPanel") == 0) {
+    } else if (strcmp(panelName, PanelNames::SPLASH) == 0) {
         uniquePanel = UIFactory::createSplashPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, "OemOilPanel") == 0) {
+    } else if (strcmp(panelName, PanelNames::OIL) == 0) {
         uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
     } else {
         log_e("Unknown panel type: %s", panelName);
