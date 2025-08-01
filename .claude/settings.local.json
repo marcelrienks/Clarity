@@ -19,7 +19,8 @@
       "Bash(pio.exe test:*)",
       "Bash(ls:*)",
       "Bash(pio run:*)",
-      "Bash(./run_tests.sh)"
+      "Bash(./run_tests.sh)",
+      "Bash(git mv:*)"
     ],
     "deny": []
   }

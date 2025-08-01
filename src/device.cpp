@@ -1,5 +1,5 @@
 #include "device.h"
-#include "providers/esp32_gpio_provider.h"
+#include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
 
 // Constructors and Destructors

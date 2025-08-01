@@ -123,13 +123,6 @@ private:
     
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
-    
-    
-    
-    /// @brief Notify of state changes
-    /// @param panel_name Current panel name
-    /// @param theme_name Current theme name
-    void NotifyStateChange(const char* panelName, const char* themeName);
 
 public:
     // Public Data Members

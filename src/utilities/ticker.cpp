@@ -3,18 +3,6 @@
 
 // Static Methods
 
-/// @brief Get the elapsed time since the last call to this function and update internal timestamp
-/// @return elapsed time since last call in milliseconds
-uint32_t Ticker::getElapsedMillis() {
-    static uint32_t lastTimeStamp = millis();
-
-    auto currentTimeStamp = millis();
-    auto elapsed = currentTimeStamp - lastTimeStamp;
-    lastTimeStamp = currentTimeStamp;
-
-    return elapsed;
-}
-
 /// @brief Adaptive Timing to generate a ~60fps refresh rate
 /// @param start_time the start time of the loop method
 void Ticker::handleDynamicDelay(uint32_t startTime) {

@@ -41,7 +41,6 @@ class Ticker
 {
 public:
     // Static Methods
-    static uint32_t getElapsedMillis();
     static void handleDynamicDelay(uint32_t startTime);
     static void handleLvTasks();
 };

@@ -3,21 +3,16 @@
 #include "interfaces/i_gpio_provider.h"
 #include <Arduino.h>
 
-/// @brief ESP32 hardware implementation of GPIO provider
-/// @details Provides concrete implementation for ESP32 GPIO operations
+/// @brief Hardware implementation of GPIO provider
+/// @details Provides concrete implementation for GPIO operations
 /// using the Arduino framework
-class Esp32GpioProvider : public IGpioProvider
+class GpioProvider : public IGpioProvider
 {
 public:
     /// @brief Read digital value from a GPIO pin
     /// @param pin GPIO pin number
     /// @return true if pin is HIGH, false if LOW
     bool digitalRead(int pin) override;
-
-    /// @brief Write digital value to a GPIO pin
-    /// @param pin GPIO pin number  
-    /// @param value true for HIGH, false for LOW
-    void digitalWrite(int pin, bool value) override;
 
     /// @brief Read analog value from an ADC pin
     /// @param pin ADC pin number

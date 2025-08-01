@@ -6,7 +6,7 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
-#include "providers/esp32_gpio_provider.h"
+#include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
 #include "utilities/types.h"
 #include "utilities/ticker.h"
@@ -54,7 +54,7 @@ void registerServices() {
 
     // Register hardware providers directly
     serviceContainer->registerSingleton<IGpioProvider>([]() {
-        return std::make_unique<Esp32GpioProvider>();
+        return std::make_unique<GpioProvider>();
     });
 
     serviceContainer->registerSingleton<IDisplayProvider>([&]() {

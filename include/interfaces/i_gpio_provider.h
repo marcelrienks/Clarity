@@ -15,11 +15,6 @@ public:
     /// @return true if pin is HIGH, false if LOW
     virtual bool digitalRead(int pin) = 0;
 
-    /// @brief Write digital value to a GPIO pin
-    /// @param pin GPIO pin number  
-    /// @param value true for HIGH, false for LOW
-    virtual void digitalWrite(int pin, bool value) = 0;
-
     /// @brief Read analog value from an ADC pin
     /// @param pin ADC pin number
     /// @return ADC reading (0-4095 for 12-bit ADC)

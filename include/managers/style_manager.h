@@ -111,7 +111,6 @@ public:
 private:
 
     // Core Functionality Methods
-    void InitStyles();
     void ResetStyles();
 
     // Instance Data Members
