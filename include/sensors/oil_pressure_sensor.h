@@ -4,6 +4,7 @@
 
 // Project Includes
 #include "interfaces/i_sensor.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 
@@ -42,7 +43,7 @@ class OilPressureSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    OilPressureSensor();
+    OilPressureSensor(IGpioProvider* gpioProvider);
 
     // Core Functionality Methods
     void init() override;
@@ -50,6 +51,7 @@ public:
 
 private:
     // Private Data Members
+    IGpioProvider* gpioProvider_;
     int32_t currentReading_ = 0;
     int32_t previousReading_ = -1;
     unsigned long lastUpdateTime_ = 0;

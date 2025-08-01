@@ -2,6 +2,7 @@
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "hardware/gpio_pins.h"
+#include "utilities/reading_helper.h"
 #include <variant>
 #include <Arduino.h>
 
@@ -38,26 +39,8 @@ void KeyPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
     screen_ = display->createScreen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    // Get current key state by reading GPIO pins via provider
-    bool pin25High = gpio->digitalRead(gpio_pins::KEY_PRESENT);
-    bool pin26High = gpio->digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    
-    if (pin25High && pin26High)
-    {
-        currentKeyState_ = KeyState::Inactive; // Both pins HIGH - invalid state
-    }
-    else if (pin25High)
-    {
-        currentKeyState_ = KeyState::Present;
-    }
-    else if (pin26High)
-    {
-        currentKeyState_ = KeyState::NotPresent;
-    }
-    else
-    {
-        currentKeyState_ = KeyState::Inactive; // Both pins LOW
-    }
+    // Get current key state using shared utility function
+    currentKeyState_ = ReadingHelper::readKeyState(gpio);
 }
 
 /// @brief Load the key panel UI components
@@ -91,27 +74,8 @@ void KeyPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpi
         return;
     }
 
-    // Re-read GPIO pins to determine current key state
-    bool pin25High = gpio->digitalRead(gpio_pins::KEY_PRESENT);
-    bool pin26High = gpio->digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    
-    KeyState newKeyState;
-    if (pin25High && pin26High)
-    {
-        newKeyState = KeyState::Inactive; // Both pins HIGH - invalid state
-    }
-    else if (pin25High)
-    {
-        newKeyState = KeyState::Present;
-    }
-    else if (pin26High)
-    {
-        newKeyState = KeyState::NotPresent;
-    }
-    else
-    {
-        newKeyState = KeyState::Inactive; // Both pins LOW
-    }
+    // Re-read GPIO pins to determine current key state using shared utility function
+    KeyState newKeyState = ReadingHelper::readKeyState(gpio);
     
     // Update display if key state has changed
     if (newKeyState != currentKeyState_)

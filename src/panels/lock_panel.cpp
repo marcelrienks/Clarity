@@ -6,7 +6,7 @@
 // Constructors and Destructors
 LockPanel::LockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      lockSensor_(std::make_shared<LockSensor>()) 
+      lockSensor_(std::make_shared<LockSensor>(gpio)) 
 {
     // Component will be created during load() method
 }

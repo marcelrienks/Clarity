@@ -5,7 +5,7 @@
 // Constructors and Destructors
 
 /// @brief Constructor for OilPressureSensor
-OilPressureSensor::OilPressureSensor()
+OilPressureSensor::OilPressureSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
 {
     // Initialize with zero reading
     currentReading_ = 0;
@@ -25,7 +25,7 @@ void OilPressureSensor::init()
     analogSetAttenuation(ADC_11db); // 0-3.3V range
     
     // Take initial reading
-    int32_t adcValue = analogRead(gpio_pins::OIL_PRESSURE);
+    int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_PRESSURE);
     OilPressureSensor::getReading(); // Read initial pressure value
 }
 
@@ -41,7 +41,7 @@ Reading OilPressureSensor::getReading()
         previousReading_ = currentReading_; // Store current before reading new
         
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
-        int32_t adcValue = analogRead(gpio_pins::OIL_PRESSURE);
+        int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_PRESSURE);
         
         // Convert ADC value to pressure using voltage divider calculation
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V

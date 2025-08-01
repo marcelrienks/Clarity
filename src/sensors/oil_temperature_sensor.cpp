@@ -5,7 +5,7 @@
 // Constructors and Destructors
 
 /// @brief Constructor for OilTemperatureSensor
-OilTemperatureSensor::OilTemperatureSensor()
+OilTemperatureSensor::OilTemperatureSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
 {
     // Initialize with zero reading
     currentReading_ = 0;
@@ -25,7 +25,7 @@ void OilTemperatureSensor::init()
     analogSetAttenuation(ADC_11db); // 0-3.3V range
     
     // Take initial reading
-    int32_t adcValue = analogRead(gpio_pins::OIL_TEMPERATURE);
+    int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_TEMPERATURE);
     OilTemperatureSensor::getReading(); // Read initial temperature value
 }
 
@@ -41,7 +41,7 @@ Reading OilTemperatureSensor::getReading()
         previousReading_ = currentReading_; // Store current before reading new
         
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
-        int32_t adcValue = analogRead(gpio_pins::OIL_TEMPERATURE);
+        int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_TEMPERATURE);
         
         // Convert ADC value to temperature using voltage divider calculation
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V

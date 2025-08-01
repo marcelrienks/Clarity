@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_sensor.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 
@@ -35,13 +36,12 @@ class KeySensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    KeySensor();
+    KeySensor(IGpioProvider* gpioProvider);
 
     // Core Functionality Methods
     void init() override;
     Reading getReading() override;
 
 private:
-    // Helper methods for simplified logic
-    KeyState DetermineKeyState(bool pin25High, bool pin26High);
+    IGpioProvider* gpioProvider_;
 };
