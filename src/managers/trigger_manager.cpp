@@ -14,7 +14,7 @@ Trigger TriggerManager::triggers_[] = {
 };
 
 TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
-                               std::shared_ptr<LightSensor> lightSensor, IPanelService* panelService, IStyleService* styleService)
+                               std::shared_ptr<LightSensor> lightSensor, IPanelService *panelService, IStyleService *styleService)
     : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), panelService_(panelService), styleService_(styleService)
 {
     if (!keySensor || !lockSensor || !lightSensor || !panelService || !styleService) {
@@ -25,7 +25,7 @@ TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared
     }
 }
 
-const char* TriggerManager::getStartupPanelOverride() const {
+const char *TriggerManager::getStartupPanelOverride() const {
     // Check key presence on startup using sensor
     if (keySensor_->getKeyState() == KeyState::Present) {
         return PanelNames::KEY;
@@ -84,9 +84,9 @@ void TriggerManager::CheckSensorChanges()
     CheckTriggerChange(TRIGGER_LIGHTS_STATE, currentState.lightsState);
 }
 
-void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinState)
+void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinState)
 {
-    Trigger* mapping = FindTriggerMapping(triggerId);
+    Trigger *mapping = FindTriggerMapping(triggerId);
     if (!mapping) return;
     
     TriggerExecutionState oldState = mapping->currentState;
@@ -107,7 +107,7 @@ void TriggerManager::CheckTriggerChange(const char* triggerId, bool currentPinSt
     }
 }
 
-void TriggerManager::executeTriggerAction(Trigger* mapping, TriggerExecutionState state)
+void TriggerManager::executeTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
         // Execute trigger action when activated
@@ -196,9 +196,9 @@ void TriggerManager::InitializeTriggersFromSensors()
     }
 }
 
-void TriggerManager::InitializeTrigger(const char* triggerId, bool currentPinState)
+void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinState)
 {
-    Trigger* mapping = FindTriggerMapping(triggerId);
+    Trigger *mapping = FindTriggerMapping(triggerId);
     if (!mapping) return;
     
     TriggerExecutionState initialState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
@@ -213,7 +213,7 @@ void TriggerManager::InitializeTrigger(const char* triggerId, bool currentPinSta
           triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
 }
 
-Trigger* TriggerManager::FindTriggerMapping(const char *triggerId)
+Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
 {
     for (auto& trigger : triggers_)
     {
@@ -225,7 +225,7 @@ Trigger* TriggerManager::FindTriggerMapping(const char *triggerId)
     return nullptr;
 }
 
-void TriggerManager::UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecutionState newState)
+void TriggerManager::UpdateActiveTriggersSimple(Trigger *mapping, TriggerExecutionState newState)
 {
     if (newState == TriggerExecutionState::ACTIVE) {
         if (mapping->actionType == TriggerActionType::LoadPanel) {
@@ -260,7 +260,7 @@ void TriggerManager::UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecuti
     }
 }
 
-void TriggerManager::addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) {
+void TriggerManager::addTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) {
     log_d("Adding trigger %s", triggerName.c_str());
     // Currently a no-op since triggers are statically defined
     // This interface method is part of ITriggerService interface

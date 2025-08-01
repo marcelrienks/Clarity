@@ -36,7 +36,7 @@ class LightSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    LightSensor(IGpioProvider* gpioProvider);
+    LightSensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
     void init() override;
@@ -47,5 +47,5 @@ public:
     bool getLightsState();
 
 private:
-    IGpioProvider* gpioProvider_;
+    IGpioProvider *gpioProvider_;
 };

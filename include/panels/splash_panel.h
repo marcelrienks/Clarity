@@ -36,14 +36,14 @@ class SplashPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    SplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~SplashPanel();
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::SPLASH;
-    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
-    void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
-    void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
 private:
     // Private Data Members
@@ -53,9 +53,9 @@ private:
     static constexpr const int _DISPLAY_TIME = 850;
 
     // Dependencies
-    IGpioProvider* gpioProvider_;
-    IDisplayProvider* displayProvider_;
-    IStyleService* styleService_;
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_;
+    IStyleService *styleService_;
 
     // Components
     lv_obj_t *screen_; // All panels should always have their own screens

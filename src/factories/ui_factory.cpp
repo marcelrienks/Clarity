@@ -9,38 +9,38 @@
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 
-std::unique_ptr<IComponent> UIFactory::createKeyComponent(IStyleService* styleService) {
+std::unique_ptr<IComponent> UIFactory::createKeyComponent(IStyleService *styleService) {
     return std::make_unique<KeyComponent>(styleService);
 }
 
-std::unique_ptr<IComponent> UIFactory::createLockComponent(IStyleService* styleService) {
+std::unique_ptr<IComponent> UIFactory::createLockComponent(IStyleService *styleService) {
     return std::make_unique<LockComponent>(styleService);
 }
 
-std::unique_ptr<IComponent> UIFactory::createClarityComponent(IStyleService* styleService) {
+std::unique_ptr<IComponent> UIFactory::createClarityComponent(IStyleService *styleService) {
     return std::make_unique<ClarityComponent>(styleService);
 }
 
-std::unique_ptr<IComponent> UIFactory::createOemOilPressureComponent(IStyleService* styleService) {
+std::unique_ptr<IComponent> UIFactory::createOemOilPressureComponent(IStyleService *styleService) {
     return std::make_unique<OemOilPressureComponent>(styleService);
 }
 
-std::unique_ptr<IComponent> UIFactory::createOemOilTemperatureComponent(IStyleService* styleService) {
+std::unique_ptr<IComponent> UIFactory::createOemOilTemperatureComponent(IStyleService *styleService) {
     return std::make_unique<OemOilTemperatureComponent>(styleService);
 }
 
-std::unique_ptr<IPanel> UIFactory::createKeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
+std::unique_ptr<IPanel> UIFactory::createKeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService) {
     return std::make_unique<KeyPanel>(gpio, display, styleService);
 }
 
-std::unique_ptr<IPanel> UIFactory::createLockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
+std::unique_ptr<IPanel> UIFactory::createLockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService) {
     return std::make_unique<LockPanel>(gpio, display, styleService);
 }
 
-std::unique_ptr<IPanel> UIFactory::createSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
+std::unique_ptr<IPanel> UIFactory::createSplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService) {
     return std::make_unique<SplashPanel>(gpio, display, styleService);
 }
 
-std::unique_ptr<IPanel> UIFactory::createOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
+std::unique_ptr<IPanel> UIFactory::createOemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService) {
     return std::make_unique<OemOilPanel>(gpio, display, styleService);
 }

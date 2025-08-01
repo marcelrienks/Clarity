@@ -49,16 +49,16 @@ private:
         std::function<void*()> singletonFactory;
         std::function<void*(ServiceContainer*)> transientFactory;
         std::function<void(void*)> deleter;
-        void* singletonInstance; ///< Cached singleton instance (raw pointer)
+        void *singletonInstance; ///< Cached singleton instance (raw pointer)
         
         ServiceRegistration(ServiceLifetime lt, 
-                          std::function<void*()> factory,
-                          std::function<void(void*)> del)
+                          std::function<void *()> factory,
+                          std::function<void(void *)> del)
             : lifetime(lt), singletonFactory(std::move(factory)), deleter(std::move(del)), singletonInstance(nullptr) {}
             
         ServiceRegistration(ServiceLifetime lt,
-                          std::function<void*(ServiceContainer*)> factory,
-                          std::function<void(void*)> del)
+                          std::function<void *(ServiceContainer *)> factory,
+                          std::function<void(void *)> del)
             : lifetime(lt), transientFactory(std::move(factory)), deleter(std::move(del)), singletonInstance(nullptr) {}
             
         ~ServiceRegistration() {
@@ -69,10 +69,10 @@ private:
         
         // Make non-copyable due to raw pointer management
         ServiceRegistration(const ServiceRegistration&) = delete;
-        ServiceRegistration& operator=(const ServiceRegistration&) = delete;
+        ServiceRegistration &operator=(const ServiceRegistration &) = delete;
         
         // Allow moving
-        ServiceRegistration(ServiceRegistration&& other) noexcept
+        ServiceRegistration(ServiceRegistration &&other) noexcept
             : lifetime(other.lifetime)
             , singletonFactory(std::move(other.singletonFactory))
             , transientFactory(std::move(other.transientFactory))
@@ -82,7 +82,7 @@ private:
             other.singletonInstance = nullptr; // Transfer ownership
         }
         
-        ServiceRegistration& operator=(ServiceRegistration&& other) noexcept
+        ServiceRegistration &operator=(ServiceRegistration &&other) noexcept
         {
             if (this != &other) {
                 // Clean up existing instance
@@ -110,9 +110,9 @@ public:
     
     // Disable copy/move to maintain singleton instance integrity
     ServiceContainer(const ServiceContainer&) = delete;
-    ServiceContainer& operator=(const ServiceContainer&) = delete;
-    ServiceContainer(ServiceContainer&&) = delete;
-    ServiceContainer& operator=(ServiceContainer&&) = delete;
+    ServiceContainer &operator=(const ServiceContainer &) = delete;
+    ServiceContainer(ServiceContainer &&) = delete;
+    ServiceContainer &operator=(ServiceContainer &&) = delete;
     
     // Public interface implementation
     void clear();
@@ -125,41 +125,41 @@ public:
     }
     
     template<typename T>
-    T* resolve() {
-        return static_cast<T*>(resolveImpl(getTypeId<T>()));
+    T *resolve() {
+        return static_cast<T *>(resolveImpl(getTypeId<T>()));
     }
     
     // Explicit registration with string ID
     template<typename T>
-    void registerSingleton(const char* typeId, std::function<std::unique_ptr<T>()> factory) {
+    void registerSingleton(const char *typeId, std::function<std::unique_ptr<T>()> factory) {
         registerSingletonImpl(typeId, 
-                             [factory]() -> void* { return factory().release(); },
-                             [](void* ptr) { delete static_cast<T*>(ptr); });
+                             [factory]() -> void * { return factory().release(); },
+                             [](void *ptr) { delete static_cast<T *>(ptr); });
     }
 
 private:
     // Type ID generation - use simple class name strings
     template<typename T>
-    constexpr const char* getTypeId() {
+    constexpr const char *getTypeId() {
         // This will be specialized for each type
         return "UnknownType";
     }
 
 protected:
     // Protected implementation methods
-    void registerSingletonImpl(const char* typeId, 
-                              std::function<void*()> factory,
-                              std::function<void(void*)> deleter);
+    void registerSingletonImpl(const char *typeId, 
+                              std::function<void *()> factory,
+                              std::function<void(void *)> deleter);
                               
-    void registerTransientImpl(const char* typeId,
-                              std::function<void*(ServiceContainer*)> factory,
-                              std::function<void(void*)> deleter);
+    void registerTransientImpl(const char *typeId,
+                              std::function<void *(ServiceContainer *)> factory,
+                              std::function<void(void *)> deleter);
                               
-    void* resolveImpl(const char* typeId);
+    void *resolveImpl(const char *typeId);
     
-    void* createImpl(const char* typeId);
+    void *createImpl(const char *typeId);
     
-    bool isRegisteredImpl(const char* typeId) const;
+    bool isRegisteredImpl(const char *typeId) const;
 
 private:
     /**
@@ -168,7 +168,7 @@ private:
      * @return Reference to service registration
      * @throws std::runtime_error if service is not registered
      */
-    ServiceRegistration& getRegistration(const char* typeId);
+    ServiceRegistration &getRegistration(const char *typeId);
     
     /**
      * @brief Get service registration by type (const version)
@@ -176,7 +176,7 @@ private:
      * @return Const reference to service registration
      * @throws std::runtime_error if service is not registered
      */
-    const ServiceRegistration& getRegistration(const char* typeId) const;
+    const ServiceRegistration &getRegistration(const char *typeId) const;
 };
 
 // Forward declarations for specializations
@@ -189,10 +189,10 @@ class IPanelService;
 class ITriggerService;
 
 // Template specializations for type IDs
-template<> constexpr const char* ServiceContainer::getTypeId<Device>() { return "Device"; }
-template<> constexpr const char* ServiceContainer::getTypeId<IGpioProvider>() { return "IGpioProvider"; }
-template<> constexpr const char* ServiceContainer::getTypeId<IDisplayProvider>() { return "IDisplayProvider"; }
-template<> constexpr const char* ServiceContainer::getTypeId<IStyleService>() { return "IStyleService"; }
-template<> constexpr const char* ServiceContainer::getTypeId<IPreferenceService>() { return "IPreferenceService"; }
-template<> constexpr const char* ServiceContainer::getTypeId<IPanelService>() { return "IPanelService"; }
-template<> constexpr const char* ServiceContainer::getTypeId<ITriggerService>() { return "ITriggerService"; }
+template<> constexpr const char *ServiceContainer::getTypeId<Device>() { return "Device"; }
+template<> constexpr const char *ServiceContainer::getTypeId<IGpioProvider>() { return "IGpioProvider"; }
+template<> constexpr const char *ServiceContainer::getTypeId<IDisplayProvider>() { return "IDisplayProvider"; }
+template<> constexpr const char *ServiceContainer::getTypeId<IStyleService>() { return "IStyleService"; }
+template<> constexpr const char *ServiceContainer::getTypeId<IPreferenceService>() { return "IPreferenceService"; }
+template<> constexpr const char *ServiceContainer::getTypeId<IPanelService>() { return "IPanelService"; }
+template<> constexpr const char *ServiceContainer::getTypeId<ITriggerService>() { return "ITriggerService"; }

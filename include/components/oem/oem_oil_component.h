@@ -47,20 +47,20 @@ class OemOilComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    OemOilComponent(IStyleService* styleService);
+    OemOilComponent(IStyleService *styleService);
     virtual ~OemOilComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
     void refresh(const Reading& reading) override;
     void setValue(int32_t value) override;
 
 protected:
     // Protected Data Members
-    IStyleService* styleService_;
+    IStyleService *styleService_;
 
     // Protected Methods
-    virtual const lv_image_dsc_t* get_icon() const = 0;
+    virtual const lv_image_dsc_t *get_icon() const = 0;
     virtual int32_t get_scale_min() const = 0;
     virtual int32_t get_scale_max() const = 0;
     virtual int32_t get_danger_zone() const = 0;
@@ -70,7 +70,7 @@ protected:
     virtual int32_t map_value_for_display(int32_t value) const;
     virtual void setup_danger_zone(lv_scale_section_t *section) const = 0;
     virtual int32_t get_icon_y_offset() const = 0;
-    virtual void get_label_angles(int32_t& lAngle, int32_t& hAngle) const = 0;
+    virtual void get_label_angles(int32_t &lAngle, int32_t &hAngle) const = 0;
 
     // Protected Data Members
     // LVGL objects

@@ -36,7 +36,7 @@ class KeySensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    KeySensor(IGpioProvider* gpioProvider);
+    KeySensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
     void init() override;
@@ -47,7 +47,7 @@ public:
     KeyState getKeyState();
 
 private:
-    IGpioProvider* gpioProvider_;
+    IGpioProvider *gpioProvider_;
     
     /// @brief Read GPIO pins and determine key state
     /// @return KeyState based on GPIO pin readings

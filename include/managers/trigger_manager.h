@@ -32,11 +32,11 @@ class TriggerManager : public ITriggerService
 {
 public:
     // Startup panel override method
-    const char* getStartupPanelOverride() const override;
+    const char *getStartupPanelOverride() const override;
 
     // Constructors and Destructors
     TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
-                   std::shared_ptr<LightSensor> lightSensor, IPanelService* panelService, IStyleService* styleService);
+                   std::shared_ptr<LightSensor> lightSensor, IPanelService *panelService, IStyleService *styleService);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
@@ -46,29 +46,29 @@ public:
     void processTriggerEvents() override;
 
     // Trigger Management
-    void addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) override;
+    void addTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) override;
     bool hasTrigger(const std::string& triggerName) const override;
 
 private:
     void InitializeTriggersFromSensors();
     GpioState ReadAllSensorStates();
     void CheckSensorChanges();
-    void CheckTriggerChange(const char* triggerId, bool currentPinState);
-    void InitializeTrigger(const char* triggerId, bool currentPinState);
-    Trigger* FindTriggerMapping(const char* triggerId);
-    void UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecutionState newState);
-    void executeTriggerAction(Trigger* mapping, TriggerExecutionState state);
+    void CheckTriggerChange(const char *triggerId, bool currentPinState);
+    void InitializeTrigger(const char *triggerId, bool currentPinState);
+    Trigger *FindTriggerMapping(const char *triggerId);
+    void UpdateActiveTriggersSimple(Trigger *mapping, TriggerExecutionState newState);
+    void executeTriggerAction(Trigger *mapping, TriggerExecutionState state);
 
     // Sensor and service dependencies
     std::shared_ptr<KeySensor> keySensor_;
     std::shared_ptr<LockSensor> lockSensor_;
     std::shared_ptr<LightSensor> lightSensor_;
-    IPanelService* panelService_ = nullptr;
-    IStyleService* styleService_ = nullptr;
+    IPanelService *panelService_ = nullptr;
+    IStyleService *styleService_ = nullptr;
     
     // State tracking
     static Trigger triggers_[];
-    Trigger* activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
-    Trigger* activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
-    const char* startupPanelOverride_ = nullptr;
+    Trigger *activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
+    Trigger *activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
+    const char *startupPanelOverride_ = nullptr;
 };

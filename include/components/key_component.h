@@ -30,17 +30,17 @@ class KeyComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    explicit KeyComponent(IStyleService* styleService);
+    explicit KeyComponent(IStyleService *styleService);
     virtual ~KeyComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
     void refresh(const Reading& reading) override;
 
 protected:
     // Protected Data Members
     lv_obj_t *keyIcon_;
-    IStyleService* styleService_;
+    IStyleService *styleService_;
 
 private:
     // Core Functionality Methods

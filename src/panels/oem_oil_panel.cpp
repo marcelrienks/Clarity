@@ -108,8 +108,8 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
 
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
-    auto* styleService = styleService_;
-    const char* currentTheme = styleService ? styleService->getCurrentTheme() : "";
+    auto *styleService = styleService_;
+    const char *currentTheme = styleService ? styleService->getCurrentTheme() : "";
     if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme)) {
         forceComponentRefresh_ = true;
         log_d("Theme changed to %s, forcing component refresh", currentTheme);

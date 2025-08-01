@@ -7,9 +7,9 @@ void ServiceContainer::clear()
     services_.clear();
 }
 
-void ServiceContainer::registerSingletonImpl(const char* typeId, 
-                                            std::function<void*()> factory,
-                                            std::function<void(void*)> deleter)
+void ServiceContainer::registerSingletonImpl(const char *typeId, 
+                                            std::function<void *()> factory,
+                                            std::function<void(void *)> deleter)
 {
     std::string key(typeId);
     services_.emplace(std::piecewise_construct,
@@ -17,9 +17,9 @@ void ServiceContainer::registerSingletonImpl(const char* typeId,
                      std::forward_as_tuple(ServiceLifetime::Singleton, std::move(factory), std::move(deleter)));
 }
 
-void ServiceContainer::registerTransientImpl(const char* typeId,
-                                            std::function<void*(ServiceContainer*)> factory,
-                                            std::function<void(void*)> deleter)
+void ServiceContainer::registerTransientImpl(const char *typeId,
+                                            std::function<void *(ServiceContainer *)> factory,
+                                            std::function<void(void *)> deleter)
 {
     std::string key(typeId);
     services_.emplace(std::piecewise_construct,
@@ -27,9 +27,9 @@ void ServiceContainer::registerTransientImpl(const char* typeId,
                      std::forward_as_tuple(ServiceLifetime::Transient, std::move(factory), std::move(deleter)));
 }
 
-void* ServiceContainer::resolveImpl(const char* typeId)
+void *ServiceContainer::resolveImpl(const char *typeId)
 {
-    auto& registration = getRegistration(typeId);
+    auto &registration = getRegistration(typeId);
     
     if (registration.lifetime == ServiceLifetime::Singleton) {
         // For singletons, create instance if it doesn't exist and cache it
@@ -44,9 +44,9 @@ void* ServiceContainer::resolveImpl(const char* typeId)
     }
 }
 
-void* ServiceContainer::createImpl(const char* typeId)
+void *ServiceContainer::createImpl(const char *typeId)
 {
-    auto& registration = getRegistration(typeId);
+    auto &registration = getRegistration(typeId);
     
     if (registration.lifetime == ServiceLifetime::Singleton) {
         // For singletons via create(), always create a new instance (don't use cached)
@@ -57,13 +57,13 @@ void* ServiceContainer::createImpl(const char* typeId)
     }
 }
 
-bool ServiceContainer::isRegisteredImpl(const char* typeId) const
+bool ServiceContainer::isRegisteredImpl(const char *typeId) const
 {
     std::string key(typeId);
     return services_.find(key) != services_.end();
 }
 
-ServiceContainer::ServiceRegistration& ServiceContainer::getRegistration(const char* typeId)
+ServiceContainer::ServiceRegistration &ServiceContainer::getRegistration(const char *typeId)
 {
     std::string key(typeId);
     auto it = services_.find(key);
@@ -77,7 +77,7 @@ ServiceContainer::ServiceRegistration& ServiceContainer::getRegistration(const c
     return it->second;
 }
 
-const ServiceContainer::ServiceRegistration& ServiceContainer::getRegistration(const char* typeId) const
+const ServiceContainer::ServiceRegistration &ServiceContainer::getRegistration(const char *typeId) const
 {
     std::string key(typeId);
     auto it = services_.find(key);

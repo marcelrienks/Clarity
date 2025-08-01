@@ -37,23 +37,23 @@ class KeyPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    KeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~KeyPanel();
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::KEY;
-    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
-    void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
-    void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
 private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
-    IGpioProvider* gpioProvider_;
-    IDisplayProvider* displayProvider_; 
-    IStyleService* styleService_;
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_; 
+    IStyleService *styleService_;
     lv_obj_t *screen_; // All panels should always have their own screens
     std::shared_ptr<IComponent> keyComponent_;
     std::shared_ptr<KeySensor> keySensor_;

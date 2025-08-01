@@ -36,12 +36,12 @@ class LockSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    LockSensor(IGpioProvider* gpioProvider);
+    LockSensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
     void init() override;
     Reading getReading() override;
 
 private:
-    IGpioProvider* gpioProvider_;
+    IGpioProvider *gpioProvider_;
 };

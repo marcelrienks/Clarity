@@ -11,7 +11,7 @@
 
 // Factory Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService)
+std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService)
 {
     log_d("Creating PanelManager with injected dependencies");
     
@@ -32,7 +32,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
     return manager;
 }
 
-std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char* theme)
+std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *theme)
 {
     log_d("Creating StyleManager with theme: %s", theme ? theme : "default");
     
@@ -42,7 +42,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char* the
     return manager;
 }
 
-std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
+std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider *gpio, IPanelService *panelService, IStyleService *styleService)
 {
     log_d("Creating TriggerManager with injected sensor dependencies");
     

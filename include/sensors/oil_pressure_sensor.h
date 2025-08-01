@@ -43,7 +43,7 @@ class OilPressureSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    OilPressureSensor(IGpioProvider* gpioProvider);
+    OilPressureSensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
     void init() override;
@@ -51,7 +51,7 @@ public:
 
 private:
     // Private Data Members
-    IGpioProvider* gpioProvider_;
+    IGpioProvider *gpioProvider_;
     int32_t currentReading_ = 0;
     int32_t previousReading_ = -1;
     unsigned long lastUpdateTime_ = 0;

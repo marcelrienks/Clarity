@@ -31,7 +31,7 @@ void PanelManager::RegisterAllPanels()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService)
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
 {
     if (!display || !gpio || !styleService) {
@@ -113,7 +113,7 @@ void PanelManager::PanelCompletionCallback()
 // Core IPanelService interface implementations
 
 /// @brief Create and load a panel by name with optional completion callback
-void PanelManager::createAndLoadPanel(const char* panelName, std::function<void()> completionCallback, bool isTriggerDriven)
+void PanelManager::createAndLoadPanel(const char *panelName, std::function<void()> completionCallback, bool isTriggerDriven)
 {
     log_d("Creating and loading panel: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
 
@@ -146,7 +146,7 @@ void PanelManager::createAndLoadPanel(const char* panelName, std::function<void(
 }
 
 /// @brief Load a panel after first showing a splash screen transition
-void PanelManager::createAndLoadPanelWithSplash(const char* panelName)
+void PanelManager::createAndLoadPanelWithSplash(const char *panelName)
 {
     log_d("Loading panel with splash screen transition: %s", panelName);
 
@@ -174,19 +174,19 @@ void PanelManager::setUiState(UIState state)
 }
 
 /// @brief Get the current panel name
-const char* PanelManager::getCurrentPanel() const
+const char *PanelManager::getCurrentPanel() const
 {
     return currentPanel;
 }
 
 /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
-const char* PanelManager::getRestorationPanel() const
+const char *PanelManager::getRestorationPanel() const
 {
     return restorationPanel;
 }
 
 /// @brief Callback executed when trigger-driven panel loading is complete
-void PanelManager::triggerPanelSwitchCallback(const char* triggerId)
+void PanelManager::triggerPanelSwitchCallback(const char *triggerId)
 {
     setUiState(UIState::IDLE);
     // No need to clear triggers - GPIO state manages trigger active/inactive status

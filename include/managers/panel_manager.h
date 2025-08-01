@@ -56,7 +56,7 @@ class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -77,11 +77,11 @@ public:
     /// @param panelName Name of the panel to create and load
     /// @param completionCallback Optional callback function to execute when loading is complete
     /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void createAndLoadPanel(const char* panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false) override;
+    void createAndLoadPanel(const char *panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false) override;
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panelName Name of the target panel to load after splash
-    void createAndLoadPanelWithSplash(const char* panelName) override;
+    void createAndLoadPanelWithSplash(const char *panelName) override;
     
     /// @brief Update the currently active panel (called from main loop)
     void updatePanel() override;
@@ -92,11 +92,11 @@ public:
     // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
     /// @return Current panel identifier string
-    const char* getCurrentPanel() const override;
+    const char *getCurrentPanel() const override;
     
     /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
     /// @return Restoration panel identifier string
-    const char* getRestorationPanel() const override;
+    const char *getRestorationPanel() const override;
     
     // Trigger Integration Methods (IPanelService implementation)
     /// @brief Callback executed when trigger-driven panel loading is complete
@@ -120,24 +120,24 @@ private:
     // Callback Methods
     /// @brief Callback executed when splash screen loading is complete
     /// @param panel_name Name of the target panel to load after splash
-    void SplashCompletionCallback(const char* panelName);
+    void SplashCompletionCallback(const char *panelName);
     
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
 
 public:
     // Public Data Members
-    const char* currentPanel = PanelNames::OIL;     ///< Current panel state
-    const char* restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
+    const char *currentPanel = PanelNames::OIL;     ///< Current panel state
+    const char *restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
 
 private:
     // Instance Data Members
     std::shared_ptr<IPanel> panel_ = nullptr;
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
-    IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
-    IDisplayProvider* displayProvider_ = nullptr; ///< Display provider for UI operations
-    IStyleService* styleService_ = nullptr;       ///< Style service for UI theming
+    IGpioProvider *gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
+    IDisplayProvider *displayProvider_ = nullptr; ///< Display provider for UI operations
+    IStyleService *styleService_ = nullptr;       ///< Style service for UI theming
     // Removed IPanelFactory - using UIFactory directly
     // Removed queue handles - now using shared state trigger system
 };

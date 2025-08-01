@@ -47,14 +47,14 @@ class OemOilPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~OemOilPanel();
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::OIL;
-    void init(IGpioProvider* gpio, IDisplayProvider* display) override;
-    void load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
-    void update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display) override;
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 1000;
@@ -82,9 +82,9 @@ private:
     static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
 
     // Instance Data Members - Dependencies
-    IGpioProvider* gpioProvider_;
-    IDisplayProvider* displayProvider_;
-    IStyleService* styleService_;
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_;
+    IStyleService *styleService_;
 
     // Instance Data Members - UI Objects
     lv_obj_t *screen_; // All panels should always have their own screens

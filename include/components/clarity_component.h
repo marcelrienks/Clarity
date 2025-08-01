@@ -28,12 +28,12 @@ class ClarityComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    explicit ClarityComponent(IStyleService* styleService);
+    explicit ClarityComponent(IStyleService *styleService);
     virtual ~ClarityComponent() = default;
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
 
 private:
-    IStyleService* styleService_;
+    IStyleService *styleService_;
 };

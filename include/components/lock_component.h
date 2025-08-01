@@ -30,17 +30,17 @@ class LockComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    explicit LockComponent(IStyleService* styleService);
+    explicit LockComponent(IStyleService *styleService);
     virtual ~LockComponent();
 
     // Core Functionality Methods
     void refresh(const Reading& reading) override;
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider* display) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
 
 protected:
     // Protected Data Members
     lv_obj_t *lockIcon_;
-    IStyleService* styleService_;
+    IStyleService *styleService_;
 
 private:
     // Core Functionality Methods
