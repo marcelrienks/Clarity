@@ -2,8 +2,8 @@
 
 // Constructors and Destructors
 
-OemOilPressureComponent::OemOilPressureComponent()
-    : OemOilComponent()
+OemOilPressureComponent::OemOilPressureComponent(IStyleService* styleService)
+    : OemOilComponent(styleService)
 {
     // Constructor delegates to base class
 }

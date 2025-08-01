@@ -1,6 +1,9 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_style_service.h"
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"
 #include "sensors/oil_pressure_sensor.h"
@@ -44,14 +47,14 @@ class OemOilPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    OemOilPanel();
+    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~OemOilPanel();
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::OIL;
-    void init() override;
-    void load(std::function<void()> callbackFunction) override;
-    void update(std::function<void()> callbackFunction = nullptr) override;
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 1000;
@@ -77,6 +80,11 @@ private:
     static void UpdatePanelCompletionCallback(lv_anim_t *animation);
     static void ExecutePressureAnimationCallback(void *target, int32_t value);
     static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
+
+    // Instance Data Members - Dependencies
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_;
+    IStyleService *styleService_;
 
     // Instance Data Members - UI Objects
     lv_obj_t *screen_; // All panels should always have their own screens

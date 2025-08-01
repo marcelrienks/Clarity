@@ -1,11 +1,10 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_sensor.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 
-#include <lvgl.h>
-#include <LovyanGFX.hpp>
 #include <random>
 
 /**
@@ -37,14 +36,20 @@ class KeySensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    KeySensor();
+    KeySensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
     void init() override;
-    Reading GetReading() override;
+    Reading getReading() override;
+    
+    /// @brief Get current key state directly (for panels)
+    /// @return Current KeyState based on GPIO readings
+    KeyState getKeyState();
 
 private:
-    // Helper methods for simplified logic
-    KeyState DetermineKeyState(bool pin25High, bool pin26High);
-    void LogKeyState(KeyState state, bool pin25High, bool pin26High);
+    IGpioProvider *gpioProvider_;
+    
+    /// @brief Read GPIO pins and determine key state
+    /// @return KeyState based on GPIO pin readings
+    KeyState readKeyState();
 };

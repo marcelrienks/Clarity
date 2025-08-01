@@ -1,9 +1,14 @@
 #include "panels/splash_panel.h"
+#include "factories/ui_factory.h"
+#include "managers/style_manager.h"
 
 // Constructors and Destructors
 
-SplashPanel::SplashPanel()
-    : component_(std::make_shared<ClarityComponent>()) {}
+SplashPanel::SplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
+{
+    // Component will be created during load() method
+}
 
 SplashPanel::~SplashPanel()
 {
@@ -27,30 +32,39 @@ SplashPanel::~SplashPanel()
 
 /// @brief Initialize the screen with component
 /// Creates blank screens for animation transitions
-void SplashPanel::init()
+void SplashPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing splash panel screen and animation components");
-    blankScreen_ = LvTools::create_blank_screen();
-    screen_ = LvTools::create_blank_screen();
+    if (!display) {
+        log_e("SplashPanel requires display provider");
+        return;
+    }
+
+    blankScreen_ = display->createScreen();
+    screen_ = display->createScreen();
 }
 
 /// @brief Show the screen
 /// @param callbackFunction the function to call when the splash screen is complete
-void SplashPanel::load(std::function<void()> callbackFunction)
+void SplashPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_i("Loading splash panel with fade-in animation");
 
     callbackFunction_ = callbackFunction;
 
+    // Create component directly using UIFactory
+    component_ = UIFactory::createClarityComponent(styleService_);
+
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
-    component_->render(screen_, splashLocation);
+    // Render the component
+    component_->render(screen_, splashLocation, display);
     lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::update(std::function<void()> callbackFunction)
+void SplashPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     // Immediately call the completion callback so that lock/unlock logic is processed
     callbackFunction();

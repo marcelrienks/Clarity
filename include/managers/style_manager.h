@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
+#include "interfaces/i_style_service.h"
 
 #include <lvgl.h>
 #include <memory>
@@ -9,31 +10,15 @@
 #define ITEMS_DEFAULT LV_PART_ITEMS | LV_STATE_DEFAULT
 #define INDICATOR_DEFAULT LV_PART_INDICATOR | LV_STATE_DEFAULT
 
-// Theme color definitions
-struct ThemeColors
-{
-    lv_color_t background;      // Background color
-    lv_color_t text;            // Text color
-    lv_color_t primary;         // Primary accent color
-    lv_color_t gaugeNormal;    // Normal gauge color
-    lv_color_t gaugeWarning;   // Warning gauge color
-    lv_color_t gaugeDanger;    // Danger gauge color
-    lv_color_t gaugeTicks;     // Gauge tick marks (soft off-white)
-    lv_color_t needleNormal;   // Normal needle color (bright white)
-    lv_color_t needleDanger;   // Danger needle color (bright red/orange)
-    lv_color_t keyPresent;     // Normal key present clor (pure white)
-    lv_color_t keyNotPresent; // Normal Key not present color (bright red)
-};
-
 /**
  * @class StyleManager
- * @brief Singleton theme and LVGL style management system
+ * @brief Theme and LVGL style management service
  *
- * @details This manager provides centralized theme management and LVGL style
+ * @details This service provides centralized theme management and LVGL style
  * allocation for the entire application. It implements efficient style sharing
  * to reduce memory usage and provides consistent theming across all components.
  *
- * @design_pattern Singleton - ensures consistent theming across app
+ * @design_pattern Service with Dependency Injection - managed by ServiceContainer
  * @theme_system Day/Night themes with customizable color schemes
  * @style_sharing Shared style objects reduce memory fragmentation
  * @memory_optimization Single style instances used by multiple components
@@ -72,24 +57,45 @@ struct ThemeColors
  * Components get their styles from here to ensure consistency. The night
  * theme uses red accents while day theme uses white/neutral colors.
  */
-class StyleManager
+class StyleManager : public IStyleService
 {
 public:
-    // Static Methods
-    static StyleManager &GetInstance();
+    // Constructors and Destructors
+    StyleManager() {}
+    ~StyleManager();
+    StyleManager(const StyleManager&) = delete;
+    StyleManager& operator=(const StyleManager&) = delete;
 
-    // Core Functionality Methods
-    void init(const char *theme);
+    // Core Functionality Methods (IStyleService implementation)
+    void initializeStyles() override;
+    void init(const char *theme) override;
     void set_theme(const char *theme);
     void apply_theme_to_screen(lv_obj_t *screen);
 
     // Accessor Methods  
     const ThemeColors &get_colours(const char *theme) const;
     
+    // IStyleService Interface Implementation (delegate to existing methods)
+    // Note: We already have init() method, so no need to add override
+    void applyThemeToScreen(lv_obj_t* screen) override { apply_theme_to_screen(screen); }
+    void setTheme(const char* theme) override { set_theme(theme); }
+    lv_style_t& getBackgroundStyle() override { return backgroundStyle; }
+    lv_style_t& getTextStyle() override { return textStyle; }
+    lv_style_t& getGaugeNormalStyle() override { return gaugeNormalStyle; }
+    lv_style_t& getGaugeWarningStyle() override { return gaugeWarningStyle; }
+    lv_style_t& getGaugeDangerStyle() override { return gaugeDangerStyle; }
+    lv_style_t& getGaugeIndicatorStyle() override { return gaugeIndicatorStyle; }
+    lv_style_t& getGaugeItemsStyle() override { return gaugeItemsStyle; }
+    lv_style_t& getGaugeMainStyle() override { return gaugeMainStyle; }
+    lv_style_t& getGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
+    const char* getCurrentTheme() const override { return THEME; }
+    const ThemeColors& getThemeColors() const override { return get_colours(THEME); }
+    bool isInitialized() const override { return initialized_; }
+    
     // Public Data Members - Theme State
     const char *THEME = Themes::NIGHT;
 
-    // Public Data Members
+    // Core Style Objects
     lv_style_t backgroundStyle;    // Style for backgrounds
     lv_style_t textStyle;          // Style for general text
     lv_style_t gaugeNormalStyle;  // Style for gauges in normal range
@@ -103,11 +109,8 @@ public:
     lv_style_t gaugeDangerSectionStyle; // Style for danger zone sections
 
 private:
-    // Constructors and Destructors
-    ~StyleManager();
 
     // Core Functionality Methods
-    void InitStyles();
     void ResetStyles();
 
     // Instance Data Members
@@ -137,4 +140,7 @@ private:
         .keyPresent = lv_color_hex(0x006400),    // Deep green for key present
         .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
+
+private:
+    bool initialized_ = false;
 };

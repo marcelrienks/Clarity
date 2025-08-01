@@ -1,14 +1,6 @@
 #include "managers/preference_manager.h"
 
-// Static Methods
-
-/// @brief Get the singleton instance of PreferenceManager
-/// @return instance of PreferenceManager
-PreferenceManager &PreferenceManager::GetInstance()
-{
-    static PreferenceManager instance; // this ensures that the instance is created only once
-    return instance;
-}
+// Static Methods removed - using dependency injection
 
 // Core Functionality Methods
 
@@ -18,7 +10,7 @@ void PreferenceManager::init()
     log_d("Initializing preference manager and loading configuration from NVS");
 
     // Initialize preferences_
-    if (!preferences_.begin("clarity", false))
+    if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
     {
         log_w("Failed to initialize preferences_, retrying after format");
 
@@ -26,7 +18,7 @@ void PreferenceManager::init()
         nvs_flash_erase();
 
         // Try again
-        if (!preferences_.begin("clarity", false))
+        if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
             log_w("Failed to initialize preferences_ after format");
 
         else
@@ -99,6 +91,29 @@ void PreferenceManager::saveConfig()
 
     // Save the JSON string to preferences_
     size_t written = preferences_.putString(CONFIG_KEY, jsonString);
+}
+
+// IPreferenceService interface implementation
+
+/// @brief Get the current configuration object
+/// @return Reference to current configuration settings
+Configs& PreferenceManager::getConfig()
+{
+    return config;
+}
+
+/// @brief Get the current configuration object (read-only)
+/// @return Const reference to current configuration settings
+const Configs& PreferenceManager::getConfig() const
+{
+    return config;
+}
+
+/// @brief Update the configuration object
+/// @param newConfig New configuration settings to apply
+void PreferenceManager::setConfig(const Configs& newConfig)
+{
+    config = newConfig;
 }
 
 // Private Methods

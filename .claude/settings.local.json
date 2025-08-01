@@ -13,7 +13,14 @@
       "Bash(find:*)",
       "Bash(mkdir:*)",
       "Bash(git checkout:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(./run_quick_tests.sh:*)",
+      "Bash(pio.exe run:*)",
+      "Bash(pio.exe test:*)",
+      "Bash(ls:*)",
+      "Bash(pio run:*)",
+      "Bash(./run_tests.sh)",
+      "Bash(git mv:*)"
     ],
     "deny": []
   }

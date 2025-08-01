@@ -1,11 +1,14 @@
 #include "components/oem/oem_oil_component.h"
+#include <esp32-hal-log.h>
+#include "managers/style_manager.h"  // For MAIN_DEFAULT, ITEMS_DEFAULT, INDICATOR_DEFAULT constants
 #include <math.h>
 #include <cstring>
 
 // Constructors and Destructors
 
-OemOilComponent::OemOilComponent()
-    : scale_(nullptr),
+OemOilComponent::OemOilComponent(IStyleService* styleService)
+    : styleService_(styleService),
+      scale_(nullptr),
       needleLine_(nullptr),
       needleMiddle_(nullptr),
       needleBase_(nullptr),
@@ -17,10 +20,12 @@ OemOilComponent::OemOilComponent()
       highLabel_(nullptr),
       pivotCircle_(nullptr),
       pivotHighlight_(nullptr),
-      scaleRotation_(0),
-      styleManager_(&StyleManager::GetInstance())
+      scaleRotation_(0)
 {
-    // Cache StyleManager reference for performance
+    // Validate styleService dependency
+    if (!styleService_) {
+        log_e("StyleService is required but was null");
+    }
 }
 
 OemOilComponent::~OemOilComponent()
@@ -94,13 +99,15 @@ OemOilComponent::~OemOilComponent()
 /// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location)
+void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
     log_d("...");
 
     if (!screen) {
         return;
     }
+    
+    // Ignore display provider parameter - use direct LVGL calls like original implementation
 
     // Create the scale
     scale_ = lv_scale_create(screen);
@@ -129,12 +136,12 @@ void OemOilComponent::refresh(const Reading& reading)
     log_d("...");
 
     int32_t value = std::get<int32_t>(reading);
-    const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
+    const ThemeColors &colours = styleService_->getThemeColors();
     
     // Icon color logic - in night mode, always use gaugeNormal (red)
     // In day mode, use gaugeNormal normally, gaugeDanger when in danger
     lv_color_t iconColour;
-    if (strcmp(styleManager_->THEME, Themes::NIGHT) == 0)
+    if (strcmp(styleService_->getCurrentTheme(), Themes::NIGHT) == 0)
     {
         // Night mode: icons are always red regardless of danger condition
         iconColour = colours.gaugeNormal;
@@ -182,7 +189,7 @@ void OemOilComponent::refresh(const Reading& reading)
 /// @brief Sets the value of the oil component.
 /// This method updates the needle position based on the provided value.
 /// @param value
-void OemOilComponent::SetValue(int32_t value)
+void OemOilComponent::setValue(int32_t value)
 {
     log_i("value is %i", value);
 
@@ -215,9 +222,9 @@ void OemOilComponent::UpdatePivotStyling()
 {
     if (pivotCircle_)
     {
-        const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
+        const ThemeColors &colours = styleService_->getThemeColors();
         
-        if (strcmp(styleManager_->THEME, Themes::NIGHT) == 0)
+        if (strcmp(styleService_->getCurrentTheme(), Themes::NIGHT) == 0)
         {
             // Night mode - make pivot completely invisible by matching background exactly
             lv_obj_set_style_bg_color(pivotCircle_, colours.background, MAIN_DEFAULT);
@@ -275,7 +282,7 @@ void OemOilComponent::UpdatePivotStyling()
 /// @brief Creates the oil icon for the oil component.
 void OemOilComponent::CreateIcon()
 {
-    const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
+    const ThemeColors &colours = styleService_->getThemeColors();
 
     oilIcon_ = lv_image_create(scale_);
     lv_image_set_src(oilIcon_, get_icon());
@@ -290,18 +297,18 @@ void OemOilComponent::CreateIcon()
 /// Labels automatically follow when scale rotation changes.
 void OemOilComponent::CreateLabels()
 {
-    const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
+    const ThemeColors &colours = styleService_->getThemeColors();
 
     // Create "L" label for low end
     lowLabel_ = lv_label_create(scale_);
-    lv_label_set_text(lowLabel_, "L");
-    lv_obj_add_style(lowLabel_, &styleManager_->textStyle, MAIN_DEFAULT);
+    lv_label_set_text(lowLabel_, UIConstants::GAUGE_LOW_LABEL);
+    lv_obj_add_style(lowLabel_, &styleService_->getTextStyle(), MAIN_DEFAULT);
     lv_obj_set_style_text_font(lowLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
     // Create "H" label for high end
     highLabel_ = lv_label_create(scale_);
-    lv_label_set_text(highLabel_, "H");
-    lv_obj_add_style(highLabel_, &styleManager_->textStyle, MAIN_DEFAULT);
+    lv_label_set_text(highLabel_, UIConstants::GAUGE_HIGH_LABEL);
+    lv_obj_add_style(highLabel_, &styleService_->getTextStyle(), MAIN_DEFAULT);
     lv_obj_set_style_text_font(highLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
     // Calculate label positions based on scale rotation and angle range
@@ -328,7 +335,7 @@ void OemOilComponent::CreateLabels()
 /// @brief Creates the needle line for the oil component.
 void OemOilComponent::CreateNeedle()
 {
-    const ThemeColors &colours = styleManager_->get_colours(styleManager_->THEME);
+    const ThemeColors &colours = styleService_->getThemeColors();
 
     // Create realistic 3-section tapered needle (based on actual car dashboard reference)
 
@@ -417,9 +424,9 @@ void OemOilComponent::CreateScale(int32_t rotation)
     lv_scale_set_label_show(scale_, false); // Disable built-in labels, use custom L/H positioning
 
     // Apply shared styles to scale parts
-    lv_obj_add_style(scale_, &styleManager_->gaugeMainStyle, MAIN_DEFAULT);
-    lv_obj_add_style(scale_, &styleManager_->gaugeIndicatorStyle, INDICATOR_DEFAULT);
-    lv_obj_add_style(scale_, &styleManager_->gaugeItemsStyle, ITEMS_DEFAULT);
+    lv_obj_add_style(scale_, &styleService_->getGaugeMainStyle(), MAIN_DEFAULT);
+    lv_obj_add_style(scale_, &styleService_->getGaugeIndicatorStyle(), INDICATOR_DEFAULT);
+    lv_obj_add_style(scale_, &styleService_->getGaugeItemsStyle(), ITEMS_DEFAULT);
 
     // Create danger zone section
     lv_scale_section_t *section = lv_scale_add_section(scale_);
@@ -427,9 +434,9 @@ void OemOilComponent::CreateScale(int32_t rotation)
         return;
     }
     
-    lv_scale_section_set_style(section, MAIN_DEFAULT, &styleManager_->gaugeMainStyle);
-    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleManager_->gaugeDangerSectionStyle);
-    lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleManager_->gaugeDangerSectionStyle);
+    lv_scale_section_set_style(section, MAIN_DEFAULT, &styleService_->getGaugeMainStyle());
+    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleService_->getGaugeDangerSectionStyle());
+    lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleService_->getGaugeDangerSectionStyle());
 
     // Set danger zone range - derived classes will handle specific ranges
     setup_danger_zone(section);

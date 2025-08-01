@@ -1,9 +1,10 @@
 #include "components/oem/oem_oil_temperature_component.h"
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 
-OemOilTemperatureComponent::OemOilTemperatureComponent()
-    : OemOilComponent()
+OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService* styleService)
+    : OemOilComponent(styleService)
 {
     // Constructor delegates to base class
 }

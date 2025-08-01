@@ -1,4 +1,6 @@
 #include "device.h"
+#include "providers/gpio_provider.h"
+#include "providers/lvgl_display_provider.h"
 
 // Constructors and Destructors
 /// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
@@ -65,14 +67,6 @@ Device::Device()
     setPanel(&panelInstance_);
 }
 
-// Static Methods
-/// @brief Get the singleton instance of Device
-/// @return instance of Device
-Device &Device::GetInstance()
-{
-    static Device instance; // this ensures that the instance is created only once
-    return instance;
-}
 
 // Core Functionality Methods
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
@@ -105,7 +99,11 @@ void Device::prepare()
     lv_display_set_user_data(display, this);
     lv_display_set_flush_cb(display, Device::display_flush_callback);
     lv_display_set_buffers(display, lvBuffer_[0], lvBuffer_[1], LV_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    
+    // Create main screen for display provider
+    screen = lv_screen_active();
 }
+
 
 // Static Methods
 /// @brief Static Display Flush Wrapper function for LVGL display driver

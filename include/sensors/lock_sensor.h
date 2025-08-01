@@ -1,11 +1,10 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_sensor.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 
-#include <lvgl.h>
-#include <LovyanGFX.hpp>
 #include <random>
 
 /**
@@ -37,9 +36,12 @@ class LockSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    LockSensor();
+    LockSensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
     void init() override;
-    Reading GetReading() override;
+    Reading getReading() override;
+
+private:
+    IGpioProvider *gpioProvider_;
 };

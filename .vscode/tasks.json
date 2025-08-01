@@ -46,8 +46,8 @@
         {
             "label": "Integration Tests Only",
             "type": "shell",
-            "command": "${workspaceFolder}/wokwi-cli",
-            "args": ["test", "--scenario", "test_scenarios.yaml", "--timeout", "120000"],
+            "command": "${workspaceFolder}/test/wokwi-cli.exe",
+            "args": ["test", "--scenario", "wokwi/test_scenarios.yaml", "--timeout", "120000"],
             "group": "test",
             "presentation": {
                 "echo": true,

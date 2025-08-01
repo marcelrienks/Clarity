@@ -58,7 +58,8 @@
         "typeinfo": "cpp",
         "iostream": "cpp",
         "any": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "set": "cpp"
     },
     "cSpell.words": [
         "anim",

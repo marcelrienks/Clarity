@@ -1,8 +1,8 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_component.h"
+#include "interfaces/i_style_service.h"
 #include "utilities/types.h"
-#include "managers/style_manager.h"
 
 #include <lvgl.h>
 
@@ -30,16 +30,17 @@ class KeyComponent : public IComponent
 {
 public:
     // Constructors and Destructors
-    KeyComponent();
+    explicit KeyComponent(IStyleService *styleService);
     virtual ~KeyComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location) override;
+    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
     void refresh(const Reading& reading) override;
 
 protected:
     // Protected Data Members
     lv_obj_t *keyIcon_;
+    IStyleService *styleService_;
 
 private:
     // Core Functionality Methods

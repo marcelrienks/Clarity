@@ -1,7 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "utilities/types.h"
-#include "managers/panel_manager.h"
+#include "interfaces/i_preference_service.h"
 
 #include <Preferences.h>
 #include <nvs_flash.h>
@@ -9,14 +9,14 @@
 
 /**
  * @class PreferenceManager
- * @brief Singleton configuration persistence manager using ESP32 NVS
+ * @brief Configuration persistence manager using ESP32 NVS
  * 
  * @details This manager handles all persistent configuration storage and
  * retrieval using the ESP32 Non-Volatile Storage (NVS) system. It provides
  * a centralized interface for saving and loading user preferences, with
  * automatic JSON serialization and default configuration creation.
  * 
- * @design_pattern Singleton - ensures single configuration instance
+ * @design_pattern Dependency Injection - managed by service container
  * @storage_backend ESP32 NVS (Non-Volatile Storage)
  * @serialization_format JSON via ArduinoJson library
  * @configuration_key "config" (stored in NVS)
@@ -44,17 +44,19 @@
  * the default panel to show on startup. It uses ESP32's built-in NVS for
  * persistent storage across reboots.
  */
-class PreferenceManager
+class PreferenceManager : public IPreferenceService
 {
 public:
-    // Static Methods
-    static PreferenceManager &GetInstance();
+    // Static Methods removed - using dependency injection
 
-    // Core Functionality Methods
-    void init();
-    void saveConfig();
-    void loadConfig();
-    void createDefaultConfig();
+    // IPreferenceService interface implementation
+    void init() override;
+    void saveConfig() override;
+    void loadConfig() override;
+    void createDefaultConfig() override;
+    Configs& getConfig() override;
+    const Configs& getConfig() const override;
+    void setConfig(const Configs& config) override;
 
     // Public Data Members
     inline static Configs config;

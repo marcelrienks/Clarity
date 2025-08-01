@@ -2,6 +2,9 @@
 
 // Project Includes
 #include "interfaces/i_panel.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_style_service.h"
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
 
@@ -33,14 +36,14 @@ class SplashPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    SplashPanel();
+    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~SplashPanel();
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::SPLASH;
-    void init() override;
-    void load(std::function<void()> callbackFunction) override;
-    void update(std::function<void()> callbackFunction = nullptr) override;
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
 private:
     // Private Data Members
@@ -48,6 +51,11 @@ private:
     static constexpr const int _ANIMATION_TIME = 2000;
     static constexpr const int _DELAY_TIME = 200;
     static constexpr const int _DISPLAY_TIME = 850;
+
+    // Dependencies
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_;
+    IStyleService *styleService_;
 
     // Components
     lv_obj_t *screen_; // All panels should always have their own screens

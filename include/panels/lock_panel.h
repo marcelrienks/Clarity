@@ -1,6 +1,9 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_style_service.h"
 #include "components/lock_component.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
@@ -34,22 +37,25 @@ class LockPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    LockPanel();
+    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~LockPanel();
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::LOCK;
-    void init() override;
-    void load(std::function<void()> callbackFunction = nullptr) override;
-    void update(std::function<void()> callbackFunction = nullptr) override;
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
 private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_;
+    IStyleService *styleService_;
     lv_obj_t *screen_; // All panels should always have their own screens
-    std::shared_ptr<LockComponent> lockComponent_;
+    std::shared_ptr<IComponent> lockComponent_;
     std::shared_ptr<LockSensor> lockSensor_;
     ComponentLocation centerLocation_;
     bool isLockEngaged_ = false;

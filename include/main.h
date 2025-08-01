@@ -17,7 +17,7 @@
  * 4. Main event loop with ticker-based updates
  * 
  * @context This is the main entry point for the application. The system
- * follows a strict initialization order and uses manager singletons for
+ * follows a strict initialization order and uses dependency injection for
  * coordinating system services.
  */
 
@@ -27,15 +27,9 @@
 // System/Library Includes
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
-#include <memory>
 
 // Project Includes
-#include "device.h"
-#include "managers/panel_manager.h"
-#include "managers/preference_manager.h"
-#include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
+#include "system/service_container.h"
 #include "utilities/ticker.h"
-#include "utilities/types.h"
 
 // Function declarations

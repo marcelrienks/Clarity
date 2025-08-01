@@ -1,7 +1,6 @@
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
 #include <cstring>
-//TODO: ensure that all implementations only have reference to their headers, and the headers contain all the include statements
 
 // Constructors and Destructors
 StyleManager::~StyleManager()
@@ -9,16 +8,17 @@ StyleManager::~StyleManager()
     ResetStyles();
 }
 
-// Static Methods
-/// @brief Get the singleton instance of StyleManager
-/// @return instance of StyleManager
-StyleManager &StyleManager::GetInstance()
+// Core Functionality Methods
+
+void StyleManager::initializeStyles()
 {
-    static StyleManager instance; // this ensures that the instance is created only once
-    return instance;
+    if (!initialized_) {
+        log_d("Initializing style manager styles");
+        init(THEME);
+        initialized_ = true;
+    }
 }
 
-// Core Functionality Methods
 /// @brief Apply the current theme to a specific screen
 /// @param screen the screen to which the theme will be applied
 void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
