@@ -10,19 +10,6 @@ After I had built this architecture, the project then became a test bed for usin
 [Items to do](docs/todo.md)
 
 ## Architecture:
-<architecture.md>
-
-## Scenarios:
-<scenario.md>
-
-## Main Libraries:
-* Arduino
-* [LVGL](https://docs.lvgl.io/master/)
-* [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
-
-<<<<<<< Updated upstream
-=======
-## Architecture:
 
 [Architecture Documentation](docs/architecture.md)
 
@@ -30,7 +17,39 @@ After I had built this architecture, the project then became a test bed for usin
 
 [Scenario Documentation](docs/scenario.md)
 
->>>>>>> Stashed changes
+## Testing
+
+This project includes comprehensive unit tests for core logic and components.
+
+### Running Tests
+
+Execute all unit tests:
+```bash
+pio.exe test -e test
+```
+
+### Test Coverage
+
+The test suite covers:
+- **Timing/Ticker Logic** - Frame timing calculations and dynamic delay handling
+- **Sensor Logic** - Value change detection, ADC conversions, key state determination  
+- **Configuration Management** - Settings persistence, validation, and default creation
+
+### Test Results
+
+Tests run on the native platform (not requiring ESP32 hardware) and provide fast feedback on core functionality:
+```
+12 test cases: 12 succeeded in 00:00:08.063
+```
+
+### Test Implementation
+
+Tests are implemented using the Unity testing framework and focus on business logic without ESP32/LVGL dependencies. See `/test/test_all.cpp` for the complete test implementation.
+
+## Main Libraries:
+* Arduino
+* [LVGL](https://docs.lvgl.io/master/)
+* [LovyanGFX](https://docs.arduino.cc/libraries/lovyangfx/)
 ## Credits
 
 This project took inspiration from a product that [Rotarytronics](https://www.rotarytronics.com/) has already built and can be purchased online.
