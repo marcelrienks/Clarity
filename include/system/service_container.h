@@ -7,7 +7,6 @@
 #include <string>
 
 // Project Includes
-#include "interfaces/i_service_container.h"
 
 /**
  * @class ServiceContainer
@@ -27,7 +26,7 @@
  * - Resolution: O(1) average case for singletons, O(1) + creation time for transients
  * - Memory: Proportional to number of registered services + singleton instances
  */
-class ServiceContainer : public IServiceContainer
+class ServiceContainer
 {
 private:
     /**
@@ -48,7 +47,7 @@ private:
     {
         ServiceLifetime lifetime;
         std::function<void*()> singletonFactory;
-        std::function<void*(IServiceContainer*)> transientFactory;
+        std::function<void*(ServiceContainer*)> transientFactory;
         std::function<void(void*)> deleter;
         void* singletonInstance; ///< Cached singleton instance (raw pointer)
         
@@ -58,7 +57,7 @@ private:
             : lifetime(lt), singletonFactory(std::move(factory)), deleter(std::move(del)), singletonInstance(nullptr) {}
             
         ServiceRegistration(ServiceLifetime lt,
-                          std::function<void*(IServiceContainer*)> factory,
+                          std::function<void*(ServiceContainer*)> factory,
                           std::function<void(void*)> del)
             : lifetime(lt), transientFactory(std::move(factory)), deleter(std::move(del)), singletonInstance(nullptr) {}
             
@@ -115,24 +114,52 @@ public:
     ServiceContainer(ServiceContainer&&) = delete;
     ServiceContainer& operator=(ServiceContainer&&) = delete;
     
-    // IServiceContainer interface implementation
-    void clear() override;
+    // Public interface implementation
+    void clear();
+    
+    // Template methods for type-safe registration and resolution
+    template<typename T>
+    void registerSingleton(std::function<std::unique_ptr<T>()> factory) {
+        // Use explicit string ID instead of RTTI/template magic
+        registerSingleton(getTypeId<T>(), factory);
+    }
+    
+    template<typename T>
+    T* resolve() {
+        return static_cast<T*>(resolveImpl(getTypeId<T>()));
+    }
+    
+    // Explicit registration with string ID
+    template<typename T>
+    void registerSingleton(const char* typeId, std::function<std::unique_ptr<T>()> factory) {
+        registerSingletonImpl(typeId, 
+                             [factory]() -> void* { return factory().release(); },
+                             [](void* ptr) { delete static_cast<T*>(ptr); });
+    }
+
+private:
+    // Type ID generation - use simple class name strings
+    template<typename T>
+    constexpr const char* getTypeId() {
+        // This will be specialized for each type
+        return "UnknownType";
+    }
 
 protected:
-    // Protected implementation methods from IServiceContainer
+    // Protected implementation methods
     void registerSingletonImpl(const char* typeId, 
                               std::function<void*()> factory,
-                              std::function<void(void*)> deleter) override;
+                              std::function<void(void*)> deleter);
                               
     void registerTransientImpl(const char* typeId,
-                              std::function<void*(IServiceContainer*)> factory,
-                              std::function<void(void*)> deleter) override;
+                              std::function<void*(ServiceContainer*)> factory,
+                              std::function<void(void*)> deleter);
                               
-    void* resolveImpl(const char* typeId) override;
+    void* resolveImpl(const char* typeId);
     
-    void* createImpl(const char* typeId) override;
+    void* createImpl(const char* typeId);
     
-    bool isRegisteredImpl(const char* typeId) const override;
+    bool isRegisteredImpl(const char* typeId) const;
 
 private:
     /**
@@ -151,3 +178,21 @@ private:
      */
     const ServiceRegistration& getRegistration(const char* typeId) const;
 };
+
+// Forward declarations for specializations
+class Device;
+class IGpioProvider;
+class IDisplayProvider;
+class IStyleService;
+class IPreferenceService;
+class IPanelService;
+class ITriggerService;
+
+// Template specializations for type IDs
+template<> constexpr const char* ServiceContainer::getTypeId<Device>() { return "Device"; }
+template<> constexpr const char* ServiceContainer::getTypeId<IGpioProvider>() { return "IGpioProvider"; }
+template<> constexpr const char* ServiceContainer::getTypeId<IDisplayProvider>() { return "IDisplayProvider"; }
+template<> constexpr const char* ServiceContainer::getTypeId<IStyleService>() { return "IStyleService"; }
+template<> constexpr const char* ServiceContainer::getTypeId<IPreferenceService>() { return "IPreferenceService"; }
+template<> constexpr const char* ServiceContainer::getTypeId<IPanelService>() { return "IPanelService"; }
+template<> constexpr const char* ServiceContainer::getTypeId<ITriggerService>() { return "ITriggerService"; }

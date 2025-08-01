@@ -3,7 +3,8 @@
 #include "interfaces/i_panel.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
-#include "interfaces/i_panel_factory.h"
+#include "interfaces/i_style_service.h"
+#include "factories/ui_factory.h"
 #include "interfaces/i_panel_service.h"
 #include "utilities/types.h"
 
@@ -55,7 +56,7 @@ class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IPanelFactory* panelFactory);
+    PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -136,6 +137,7 @@ private:
     char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
     IGpioProvider* gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider* displayProvider_ = nullptr; ///< Display provider for UI operations
-    IPanelFactory* panelFactory_ = nullptr;       ///< Panel factory for creating panels with DI
+    IStyleService* styleService_ = nullptr;       ///< Style service for UI theming
+    // Removed IPanelFactory - using UIFactory directly
     // Removed queue handles - now using shared state trigger system
 };

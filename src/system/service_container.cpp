@@ -18,7 +18,7 @@ void ServiceContainer::registerSingletonImpl(const char* typeId,
 }
 
 void ServiceContainer::registerTransientImpl(const char* typeId,
-                                            std::function<void*(IServiceContainer*)> factory,
+                                            std::function<void*(ServiceContainer*)> factory,
                                             std::function<void(void*)> deleter)
 {
     std::string key(typeId);

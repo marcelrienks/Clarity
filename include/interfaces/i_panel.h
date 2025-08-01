@@ -6,7 +6,6 @@
 #include <memory>
 
 // Project Includes
-#include "interfaces/i_device.h"
 #include "interfaces/i_sensor.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"

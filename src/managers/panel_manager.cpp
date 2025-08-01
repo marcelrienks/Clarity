@@ -31,11 +31,11 @@ void PanelManager::RegisterAllPanels()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IPanelFactory* panelFactory)
-    : gpioProvider_(gpio), displayProvider_(display), panelFactory_(panelFactory)
+PanelManager::PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
 {
-    if (!display || !gpio || !panelFactory) {
-        log_e("PanelManager requires all dependencies: display, gpio, and panelFactory");
+    if (!display || !gpio || !styleService) {
+        log_e("PanelManager requires all dependencies: display, gpio, and styleService");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
         log_d("Creating PanelManager with injected dependencies");
@@ -61,14 +61,23 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_d("Creating panel instance for type: %s", panelName);
 
-    // Use the PanelFactory approach for dependency injection
-    if (panelFactory_) {
-        auto uniquePanel = panelFactory_->createPanel(panelName);
-        return std::shared_ptr<IPanel>(uniquePanel.release());
+    // Use UIFactory for direct panel creation
+    std::unique_ptr<IPanel> uniquePanel;
+    
+    if (strcmp(panelName, "KeyPanel") == 0) {
+        uniquePanel = UIFactory::createKeyPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, "LockPanel") == 0) {
+        uniquePanel = UIFactory::createLockPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, "SplashPanel") == 0) {
+        uniquePanel = UIFactory::createSplashPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, "OemOilPanel") == 0) {
+        uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
+    } else {
+        log_e("Unknown panel type: %s", panelName);
+        return nullptr;
     }
     
-    log_e("PanelFactory not available - cannot create panel: %s", panelName);
-    return nullptr;
+    return std::shared_ptr<IPanel>(uniquePanel.release());
 }
 
 

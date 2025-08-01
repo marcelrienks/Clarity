@@ -1,12 +1,13 @@
 #include "panels/splash_panel.h"
+#include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 
 // Constructors and Destructors
 
-SplashPanel::SplashPanel(IComponentFactory* componentFactory)
-    : componentFactory_(componentFactory)
+SplashPanel::SplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
 {
-    // Component will be created during load() method using the component factory
+    // Component will be created during load() method
 }
 
 SplashPanel::~SplashPanel()
@@ -51,9 +52,8 @@ void SplashPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
 
     callbackFunction_ = callbackFunction;
 
-    // Create component using the injected component factory
-    // The factory now has all required dependencies (style service and display provider) injected
-    component_ = componentFactory_->createComponent("clarity");
+    // Create component directly using UIFactory
+    component_ = UIFactory::createClarityComponent(styleService_);
 
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);

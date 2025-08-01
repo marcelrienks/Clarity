@@ -1,15 +1,16 @@
 #include "panels/oem_oil_panel.h"
+#include "factories/ui_factory.h"
 #include "utilities/lv_tools.h"
 #include "managers/style_manager.h"
 
 // Constructors and Destructors
 
-OemOilPanel::OemOilPanel(IComponentFactory* componentFactory)
-    : componentFactory_(componentFactory),
+OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>()),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>()) 
 {
-    // Components will be created during load() method using the component factory
+    // Components will be created during load() method
 }
 
 OemOilPanel::~OemOilPanel()
@@ -81,10 +82,9 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
 
-    // Create components using the injected component factory
-    // The factory now has all required dependencies (style service and display provider) injected
-    oemOilPressureComponent_ = componentFactory_->createComponent("oem_oil_pressure");
-    oemOilTemperatureComponent_ = componentFactory_->createComponent("oem_oil_temperature");
+    // Create components directly using UIFactory
+    oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
+    oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
@@ -108,7 +108,7 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
 
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
-    auto* styleService = componentFactory_->getStyleService();
+    auto* styleService = styleService_;
     const char* currentTheme = styleService ? styleService->getCurrentTheme() : "";
     if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme)) {
         forceComponentRefresh_ = true;

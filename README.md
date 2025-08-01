@@ -6,12 +6,10 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 _**Note:** If all you want is an ESP32 project for displaying one or two screens that do one job, this project is sincerely over complicated for your purposes. This was a test bed for implementing the usual design patterns of OOP, and trying to see if I could make an MVP pattern work in an embedded project. This now allows for multiple screens, with multiple (reusable) components, and warning triggers.  
 After I had built this architecture, the project then became a test bed for using AI agents, meaning it's far more featured and "properly" architected with extensive unit and integration testing than anyone would actually ever need. But hey, it does work._
 
-## Project Status:
-✅ **Architecture Migration Complete** - Pure dependency injection implementation achieved  
-✅ **Unit Tests Passing** - All component and service tests working  
-✅ **Build System Working** - All environments compile successfully  
-🔄 **Integration Tests** - Pending wokwi service availability  
-📝 **Documentation** - Architecture and requirements docs available in `/docs`
+## TODO:
+* Ensure that every header file of an implementation has a summary comment explaining the purpose and role of that implementation
+* Ensure that types are being used throughout, no usages of duplicated magic strings
+* try ensure that variable names have a pointer * prefix, rather then the type having a pointer * suffix
 
 ## Main Libraries:
 * Arduino

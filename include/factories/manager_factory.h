@@ -6,8 +6,6 @@
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
-#include "interfaces/i_component_factory.h"
-#include "interfaces/i_panel_factory.h"
 #include <memory>
 
 // Forward declarations
@@ -52,7 +50,7 @@ public:
     /// @param gpio GPIO provider for hardware access (optional for some managers)
     /// @param componentFactory Component factory for creating components with DI
     /// @return Unique pointer to configured PanelManager instance
-    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio = nullptr, IComponentFactory* componentFactory = nullptr);
+    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService);
     
     /// @brief Create StyleManager with optional theme
     /// @param theme Initial theme to apply (defaults to night theme)

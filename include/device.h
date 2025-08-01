@@ -2,7 +2,6 @@
 
 #define LGFX_USE_V1
 
-#include "interfaces/i_device.h"
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
@@ -48,7 +47,7 @@
  * @context This is the main hardware interface that all panels and components
  * render to. The display is 240x240 pixels with a round form factor.
  */
-class Device : public IDevice
+class Device : public lgfx::LGFX_Device
 {
 public:
     // Constructors and Destructors
@@ -57,7 +56,7 @@ public:
     Device &operator=(const Device &) = delete;
 
     // Core Functionality Methods
-    void prepare() override;
+    void prepare();
     
 
     // Public Data Members

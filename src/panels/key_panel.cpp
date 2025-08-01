@@ -1,14 +1,15 @@
 #include "panels/key_panel.h"
+#include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "hardware/gpio_pins.h"
 #include <variant>
 #include <Arduino.h>
 
 // Constructors and Destructors
-KeyPanel::KeyPanel(IComponentFactory* componentFactory) 
-    : componentFactory_(componentFactory) 
+KeyPanel::KeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) 
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
 {
-    // Component will be created during load() method using the component factory
+    // Component will be created during load() method
 }
 
 KeyPanel::~KeyPanel()
@@ -65,9 +66,8 @@ void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio,
     log_d("Loading key panel with current key state display");
     callbackFunction_ = callbackFunction;
 
-    // Create component using the injected component factory
-    // The factory now has all required dependencies (style service and display provider) injected
-    keyComponent_ = componentFactory_->createComponent("key");
+    // Create component directly using UIFactory
+    keyComponent_ = UIFactory::createKeyComponent(styleService_);
 
     // Render the component
     if (!display) {

@@ -1,7 +1,9 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "interfaces/i_component_factory.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_style_service.h"
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"
 #include "sensors/oil_pressure_sensor.h"
@@ -45,7 +47,7 @@ class OemOilPanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    OemOilPanel(IComponentFactory* componentFactory);
+    OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     ~OemOilPanel();
 
     // Core Functionality Methods
@@ -80,7 +82,9 @@ private:
     static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
 
     // Instance Data Members - Dependencies
-    IComponentFactory* componentFactory_;
+    IGpioProvider* gpioProvider_;
+    IDisplayProvider* displayProvider_;
+    IStyleService* styleService_;
 
     // Instance Data Members - UI Objects
     lv_obj_t *screen_; // All panels should always have their own screens
