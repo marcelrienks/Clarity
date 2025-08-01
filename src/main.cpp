@@ -4,6 +4,7 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
+#include "factories/manager_factory.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
 #include "utilities/types.h"
@@ -48,7 +49,7 @@ void initializeServices() {
     );
     
     log_d("Creating TriggerManager...");
-    triggerManager = std::make_unique<TriggerManager>(
+    triggerManager = ManagerFactory::createTriggerManager(
         gpioProvider.get(),
         panelManager.get(),
         styleManager.get()

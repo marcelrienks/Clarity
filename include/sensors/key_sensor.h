@@ -41,7 +41,15 @@ public:
     // Core Functionality Methods
     void init() override;
     Reading getReading() override;
+    
+    /// @brief Get current key state directly (for panels)
+    /// @return Current KeyState based on GPIO readings
+    KeyState getKeyState();
 
 private:
     IGpioProvider* gpioProvider_;
+    
+    /// @brief Read GPIO pins and determine key state
+    /// @return KeyState based on GPIO pin readings
+    KeyState readKeyState();
 };

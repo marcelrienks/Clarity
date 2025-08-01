@@ -57,8 +57,8 @@ public:
     /// @return Unique pointer to configured StyleManager instance
     static std::unique_ptr<StyleManager> createStyleManager(const char* theme = nullptr);
     
-    /// @brief Create TriggerManager with injected dependencies
-    /// @param gpio GPIO provider for hardware access
+    /// @brief Create TriggerManager with injected sensor dependencies
+    /// @param gpio GPIO provider for creating sensors
     /// @param panelService Panel service for loading panels
     /// @param styleService Style service for theme management
     /// @return Unique pointer to configured TriggerManager instance

@@ -4,6 +4,9 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/preference_manager.h"
+#include "sensors/key_sensor.h"
+#include "sensors/lock_sensor.h"
+#include "sensors/light_sensor.h"
 #include <esp32-hal-log.h>
 
 // Factory Methods
@@ -41,7 +44,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char* the
 
 std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
 {
-    log_d("Creating TriggerManager with injected dependencies");
+    log_d("Creating TriggerManager with injected sensor dependencies");
     
     if (!gpio) {
         throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IGpioProvider");
@@ -53,7 +56,12 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
         throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IStyleService");
     }
     
-    auto manager = std::make_unique<TriggerManager>(gpio, panelService, styleService);
+    // Create sensors that TriggerManager needs
+    auto keySensor = std::make_shared<KeySensor>(gpio);
+    auto lockSensor = std::make_shared<LockSensor>(gpio);
+    auto lightSensor = std::make_shared<LightSensor>(gpio);
+    
+    auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, panelService, styleService);
     manager->init();
     
     return manager;

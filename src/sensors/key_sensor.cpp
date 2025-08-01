@@ -1,5 +1,4 @@
 #include "sensors/key_sensor.h"
-#include "utilities/reading_helper.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -27,7 +26,35 @@ void KeySensor::init()
 /// @return KeyState indicating present, not present, or inactive
 Reading KeySensor::getReading()
 {
-    // Use injected GPIO provider for consistent hardware abstraction
-    KeyState state = ReadingHelper::readKeyState(gpioProvider_);
+    KeyState state = readKeyState();
     return static_cast<int32_t>(state);
+}
+
+/// @brief Get current key state directly (for panels)
+/// @return Current KeyState based on GPIO readings
+KeyState KeySensor::getKeyState()
+{
+    return readKeyState();
+}
+
+/// @brief Read GPIO pins and determine key state
+/// @return KeyState based on GPIO pin readings
+KeyState KeySensor::readKeyState()
+{
+    bool pin25High = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
+    bool pin26High = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    
+    if (pin25High && pin26High) {
+        return KeyState::Inactive; // Both pins HIGH - invalid state
+    }
+    
+    if (pin25High) {
+        return KeyState::Present;
+    }
+    
+    if (pin26High) {
+        return KeyState::NotPresent;
+    }
+    
+    return KeyState::Inactive; // Both pins LOW
 }

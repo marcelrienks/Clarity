@@ -1,14 +1,13 @@
 #include "panels/key_panel.h"
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
-#include "hardware/gpio_pins.h"
-#include "utilities/reading_helper.h"
 #include <variant>
 #include <Arduino.h>
 
 // Constructors and Destructors
 KeyPanel::KeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) 
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+      keySensor_(std::make_shared<KeySensor>(gpio))
 {
     // Component will be created during load() method
 }
@@ -39,8 +38,9 @@ void KeyPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
     screen_ = display->createScreen();
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    // Get current key state using shared utility function
-    currentKeyState_ = ReadingHelper::readKeyState(gpio);
+    // Initialize sensor and get current key state
+    keySensor_->init();
+    currentKeyState_ = keySensor_->getKeyState();
 }
 
 /// @brief Load the key panel UI components
@@ -74,8 +74,8 @@ void KeyPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpi
         return;
     }
 
-    // Re-read GPIO pins to determine current key state using shared utility function
-    KeyState newKeyState = ReadingHelper::readKeyState(gpio);
+    // Get current key state from sensor
+    KeyState newKeyState = keySensor_->getKeyState();
     
     // Update display if key state has changed
     if (newKeyState != currentKeyState_)

@@ -5,6 +5,7 @@
 #include "interfaces/i_display_provider.h"  
 #include "interfaces/i_style_service.h"
 #include "components/key_component.h"
+#include "sensors/key_sensor.h"
 #include "utilities/types.h"
 
 #include <utilities/lv_tools.h>
@@ -55,6 +56,7 @@ private:
     IStyleService* styleService_;
     lv_obj_t *screen_; // All panels should always have their own screens
     std::shared_ptr<IComponent> keyComponent_;
+    std::shared_ptr<KeySensor> keySensor_;
     ComponentLocation centerLocation_;
     KeyState currentKeyState_ = KeyState::Inactive;
 };

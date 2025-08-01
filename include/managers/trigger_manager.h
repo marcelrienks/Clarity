@@ -6,8 +6,12 @@
 #include "interfaces/i_trigger_service.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
+#include "sensors/key_sensor.h"
+#include "sensors/lock_sensor.h"
+#include "sensors/light_sensor.h"
 #include <vector>
 #include <functional>
+#include <memory>
 
 /**
  * @class TriggerManager
@@ -31,7 +35,8 @@ public:
     const char* getStartupPanelOverride() const override;
 
     // Constructors and Destructors
-    TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService);
+    TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
+                   std::shared_ptr<LightSensor> lightSensor, IPanelService* panelService, IStyleService* styleService);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
@@ -45,19 +50,19 @@ public:
     bool hasTrigger(const std::string& triggerName) const override;
 
 private:
-    void setup_gpio_pins();
-    void InitializeTriggerMappings();
-    void InitializeTriggersFromGpio();
-    GpioState ReadAllGpioPins();
-    void CheckGpioChanges();
+    void InitializeTriggersFromSensors();
+    GpioState ReadAllSensorStates();
+    void CheckSensorChanges();
     void CheckTriggerChange(const char* triggerId, bool currentPinState);
     void InitializeTrigger(const char* triggerId, bool currentPinState);
     Trigger* FindTriggerMapping(const char* triggerId);
     void UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecutionState newState);
     void executeTriggerAction(Trigger* mapping, TriggerExecutionState state);
 
-    // Hardware and service dependencies
-    IGpioProvider* gpioProvider_ = nullptr;
+    // Sensor and service dependencies
+    std::shared_ptr<KeySensor> keySensor_;
+    std::shared_ptr<LockSensor> lockSensor_;
+    std::shared_ptr<LightSensor> lightSensor_;
     IPanelService* panelService_ = nullptr;
     IStyleService* styleService_ = nullptr;
     

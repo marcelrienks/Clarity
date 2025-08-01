@@ -13,20 +13,21 @@ Trigger TriggerManager::triggers_[] = {
     {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL}
 };
 
-TriggerManager::TriggerManager(IGpioProvider* gpio, IPanelService* panelService, IStyleService* styleService)
-    : gpioProvider_(gpio), panelService_(panelService), styleService_(styleService)
+TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
+                               std::shared_ptr<LightSensor> lightSensor, IPanelService* panelService, IStyleService* styleService)
+    : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), panelService_(panelService), styleService_(styleService)
 {
-    if (!gpio || !panelService || !styleService) {
-        log_e("TriggerManager requires all dependencies: gpio, panelService, and styleService");
+    if (!keySensor || !lockSensor || !lightSensor || !panelService || !styleService) {
+        log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, panelService, and styleService");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
-        log_d("Creating TriggerManager with injected dependencies (GPIO, Panel, Style services)");
+        log_d("Creating TriggerManager with injected sensor and service dependencies");
     }
 }
 
 const char* TriggerManager::getStartupPanelOverride() const {
-    // Check key presence on startup using required gpio provider
-    if (gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT)) {
+    // Check key presence on startup using sensor
+    if (keySensor_->getKeyState() == KeyState::Present) {
         return PanelNames::KEY;
     }
     return nullptr; // No override needed
@@ -34,36 +35,47 @@ const char* TriggerManager::getStartupPanelOverride() const {
 
 void TriggerManager::init()
 {
-    log_d("Initializing direct GPIO polling trigger system...");
+    log_d("Initializing sensor-based trigger system...");
 
-    // Configure GPIO pins as inputs
-    setup_gpio_pins();
+    // Initialize sensors (they handle their own GPIO setup)
+    keySensor_->init();
+    lockSensor_->init();
+    lightSensor_->init();
     
-    // Read current GPIO states and initialize triggers
-    InitializeTriggersFromGpio();
+    // Read current sensor states and initialize triggers
+    InitializeTriggersFromSensors();
 }
 
 void TriggerManager::processTriggerEvents()
 {
-    // Direct GPIO polling - check for pin changes
-    CheckGpioChanges();
+    // Sensor-based polling - check for state changes
+    CheckSensorChanges();
 }
 
-GpioState TriggerManager::ReadAllGpioPins()
+GpioState TriggerManager::ReadAllSensorStates()
 {
-    // Single consolidated GPIO read for all trigger pins using required gpio provider
+    // Single consolidated sensor read for all trigger states
     GpioState state;
-    state.keyPresent = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
-    state.keyNotPresent = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
-    state.lockState = gpioProvider_->digitalRead(gpio_pins::LOCK);
-    state.lightsState = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
+    
+    // Read key state from sensor
+    KeyState keyState = keySensor_->getKeyState();
+    state.keyPresent = (keyState == KeyState::Present);
+    state.keyNotPresent = (keyState == KeyState::NotPresent);
+    
+    // Read lock state from sensor  
+    auto lockReading = lockSensor_->getReading();
+    state.lockState = std::get<bool>(lockReading);
+    
+    // Read lights state from sensor
+    state.lightsState = lightSensor_->getLightsState();
+    
     return state;
 }
 
-void TriggerManager::CheckGpioChanges()
+void TriggerManager::CheckSensorChanges()
 {
-    // Read all GPIO states once
-    GpioState currentState = ReadAllGpioPins();
+    // Read all sensor states once
+    GpioState currentState = ReadAllSensorStates();
     
     // Check for changes and process them
     CheckTriggerChange(TRIGGER_KEY_PRESENT, currentState.keyPresent);
@@ -157,12 +169,12 @@ void TriggerManager::executeTriggerAction(Trigger* mapping, TriggerExecutionStat
     }
 }
 
-void TriggerManager::InitializeTriggersFromGpio()
+void TriggerManager::InitializeTriggersFromSensors()
 {
-    log_d("Initializing trigger states from current GPIO pin states...");
+    log_d("Initializing trigger states from current sensor states...");
     
-    // Read all GPIO pin states once using consolidated method
-    GpioState currentState = ReadAllGpioPins();
+    // Read all sensor states once using consolidated method
+    GpioState currentState = ReadAllSensorStates();
     
     // Initialize all triggers based on current pin states
     InitializeTrigger(TRIGGER_KEY_PRESENT, currentState.keyPresent);
@@ -246,16 +258,6 @@ void TriggerManager::UpdateActiveTriggersSimple(Trigger* mapping, TriggerExecuti
             log_i("Removed theme trigger: %s", mapping->triggerId);
         }
     }
-}
-void TriggerManager::setup_gpio_pins()
-{
-    log_d("Setting up GPIO pins for direct polling...");
-
-    // Configure GPIO pins as inputs with pull-down resistors using required gpio provider
-    gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
-    gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
-    gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
-    gpioProvider_->pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
 }
 
 void TriggerManager::addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) {
