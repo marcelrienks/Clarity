@@ -16,22 +16,12 @@ The MVP pattern implementation:
 - **Views**: Components that render UI elements
 - **Presenters**: Panels that coordinate between models and views
 
-## Application Entry Point & Bootstrap
+## Application Entry Point
 
 ### `src/main.cpp`
-- **Purpose**: Arduino-style application entry point providing `setup()` and `loop()` functions
-- **Role**: Application entry point - delegates to bootstrap system
-- **Dependencies**: `ClarityBootstrap`
-
-### `src/clarity_bootstrap.cpp`
-- **Purpose**: Orchestrates application initialization, service registration, and dependency injection setup
-- **Role**: Application orchestrator - configures entire system architecture
-- **Dependencies**: All service interfaces, factories, and managers
-
-### `src/clarity_application.cpp`
-- **Purpose**: Controls application lifecycle, manages panel switching, and coordinates service interactions
-- **Role**: Primary presenter coordinating between services
-- **Dependencies**: `IPanelService`, `ITriggerService`, `IPreferenceService`
+- **Purpose**: Arduino-style application entry point with integrated dependency injection setup and application lifecycle management
+- **Role**: Complete application orchestration - hardware initialization, service registration, and main loop coordination
+- **Dependencies**: All service interfaces, factories, managers, and hardware providers
 
 ## Hardware Abstraction Layer
 
