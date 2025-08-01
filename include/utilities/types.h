@@ -195,7 +195,7 @@ struct Configs
     int updateRate = 500;                    ///< Sensor update rate in milliseconds
 };
 
-/// @brief UI state for Core 0 processing decisions
+/// @brief UI state for processing decisions
 enum class UIState {
     IDLE,        ///< Safe to process all messages immediately
     UPDATING,    ///< Throttled processing (high/medium priority only)

@@ -34,7 +34,7 @@ void ClarityApplication::initialize() {
 }
 
 void ClarityApplication::update() {
-    // Core 0 responsibilities: process trigger events directly (simplified)
+    // Process trigger events directly
     triggerService_->processTriggerEvents();
     
     panelService_->updatePanel();

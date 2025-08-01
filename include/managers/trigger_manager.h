@@ -14,7 +14,7 @@
  * @brief Simplified direct GPIO polling trigger manager with mapping-based architecture
  * 
  * @architecture:
- * - Core 0: Direct GPIO polling and UI management
+ * - Direct GPIO polling and UI management
  * - Static trigger mappings replace dynamic trigger objects
  * 
  * @key_simplifications:

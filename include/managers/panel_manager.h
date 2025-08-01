@@ -126,14 +126,14 @@ private:
     
     
     
-    /// @brief Notify Core 1 of state changes
+    /// @brief Notify of state changes
     /// @param panel_name Current panel name
     /// @param theme_name Current theme name
-    void NotifyCore1StateChange(const char* panelName, const char* themeName);
+    void NotifyStateChange(const char* panelName, const char* themeName);
 
 public:
     // Public Data Members
-    const char* currentPanel = PanelNames::OIL;     ///< Current panel for Core 1 sync
+    const char* currentPanel = PanelNames::OIL;     ///< Current panel state
     const char* restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
 
 private:
