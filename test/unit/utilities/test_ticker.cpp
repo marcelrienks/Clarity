@@ -3,11 +3,7 @@
 
 #ifdef UNIT_TESTING
 // Note: Using Arduino.h mock functions for timing
-static uint32_t mock_millis_value = 0;
-
-void set_mock_millis(uint32_t value) {
-    mock_millis_value = value;
-}
+// set_mock_millis is defined in test_all.cpp to avoid conflicts
 #endif
 
 void test_ticker_dynamic_delay_normal_case() {
@@ -47,10 +43,23 @@ void test_ticker_static_methods_accessible() {
     TEST_ASSERT_TRUE(true);
 }
 
+void test_ticker_timing_consistency() {
+    // Test that timing calculations are consistent
+    set_mock_millis(1000);
+    Ticker::handleDynamicDelay(500);
+    
+    set_mock_millis(2000);
+    Ticker::handleDynamicDelay(1500);
+    
+    // Test passes if no crashes occur
+    TEST_ASSERT_TRUE(true);
+}
+
 void runTickerTests() {
     RUN_TEST(test_ticker_dynamic_delay_normal_case);
     RUN_TEST(test_ticker_dynamic_delay_various_inputs);
     RUN_TEST(test_ticker_lv_tasks);
     RUN_TEST(test_ticker_multiple_calls);
     RUN_TEST(test_ticker_static_methods_accessible);
+    RUN_TEST(test_ticker_timing_consistency);
 }

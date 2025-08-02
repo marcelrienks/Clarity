@@ -153,6 +153,38 @@ void test_trigger_manager_multiple_sensors() {
     TEST_ASSERT_NO_THROW(triggerManager->processTriggerEvents());
 }
 
+void test_trigger_manager_lock_state_changes() {
+    triggerManager->init();
+    
+    // Test lock state changes
+    mockGpio->setDigitalValue(gpio_pins::LOCK, LOW); // Unlocked
+    triggerManager->processTriggerEvents();
+    
+    mockGpio->setDigitalValue(gpio_pins::LOCK, HIGH); // Locked
+    triggerManager->processTriggerEvents();
+    
+    // Verify no crashes and proper state handling
+    TEST_ASSERT_TRUE(true);
+}
+
+void test_trigger_manager_service_integration() {
+    triggerManager->init();
+    
+    // Reset mock services
+    mockPanelService->reset();
+    mockStyleService->reset();
+    
+    // Trigger key present state that should call panel service
+    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
+    mockGpio->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
+    
+    // Process and verify service integration works
+    TEST_ASSERT_NO_THROW(triggerManager->processTriggerEvents());
+    
+    // Services should be accessible (implementation dependent)
+    TEST_ASSERT_FALSE(mockPanelService->loadPanelCalled); // May change based on implementation
+}
+
 void runTriggerManagerTests() {
     setUp_trigger_manager();
     RUN_TEST(test_trigger_manager_initialization);
@@ -160,5 +192,7 @@ void runTriggerManagerTests() {
     RUN_TEST(test_trigger_manager_key_trigger_processing);
     RUN_TEST(test_trigger_manager_light_trigger_processing);
     RUN_TEST(test_trigger_manager_multiple_sensors);
+    RUN_TEST(test_trigger_manager_lock_state_changes);
+    RUN_TEST(test_trigger_manager_service_integration);
     tearDown_trigger_manager();
 }

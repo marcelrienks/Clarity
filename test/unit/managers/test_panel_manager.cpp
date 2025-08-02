@@ -35,20 +35,20 @@ public:
 
 #include "test_fixtures.h"
 
-std::unique_ptr<ManagerTestFixture> fixture;
+std::unique_ptr<ManagerTestFixture> panelManagerFixture;
 PanelManager* panelManager = nullptr;
 
 void setUp_panel_manager() {
-    fixture = std::make_unique<ManagerTestFixture>();
-    fixture->SetUp();
-    panelManager = new PanelManager(fixture->getDisplayProvider(), fixture->getGpioProvider(), fixture->getStyleService());
+    panelManagerFixture = std::make_unique<ManagerTestFixture>();
+    panelManagerFixture->SetUp();
+    panelManager = new PanelManager(panelManagerFixture->getDisplayProvider(), panelManagerFixture->getGpioProvider(), panelManagerFixture->getStyleService());
 }
 
 void tearDown_panel_manager() {
     delete panelManager;
     panelManager = nullptr;
-    fixture->TearDown();
-    fixture.reset();
+    panelManagerFixture->TearDown();
+    panelManagerFixture.reset();
 }
 
 void test_panel_manager_init() {
@@ -60,7 +60,7 @@ void test_panel_manager_init() {
 void test_panel_manager_construction() {
     // Test that manager can be created and destroyed
     TEST_ASSERT_NOT_NULL(panelManager);
-    TEST_ASSERT_NOT_NULL(fixture->getDisplayProvider());
+    TEST_ASSERT_NOT_NULL(panelManagerFixture->getDisplayProvider());
 }
 
 void test_panel_manager_create_and_load_panel() {
@@ -110,7 +110,7 @@ void test_panel_manager_ui_state() {
     panelManager->init();
     
     // Test setting UI state
-    panelManager->setUiState(UIState::READY);
+    panelManager->setUiState(UIState::IDLE);
     TEST_ASSERT_TRUE(true);
     
     panelManager->setUiState(UIState::LOADING);

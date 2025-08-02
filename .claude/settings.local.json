@@ -25,7 +25,8 @@
       "Bash(gcov:*)",
       "Bash(lcov:*)",
       "Bash(genhtml:*)",
-      "Bash(.pio/build/test-coverage/program.exe)"
+      "Bash(.pio/build/test-coverage/program.exe)",
+      "WebFetch(domain:docs.anthropic.com)"
     ],
     "deny": []
   }

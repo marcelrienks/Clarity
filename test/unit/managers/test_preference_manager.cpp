@@ -10,20 +10,20 @@
 #include "utilities/types.h"
 #include "ArduinoJson.h"
 
-std::unique_ptr<ManagerTestFixture> fixture;
+std::unique_ptr<ManagerTestFixture> prefManagerFixture;
 PreferenceManager* prefManager = nullptr;
 
 void setUp_preference_manager() {
-    fixture = std::make_unique<ManagerTestFixture>();
-    fixture->SetUp();
+    prefManagerFixture = std::make_unique<ManagerTestFixture>();
+    prefManagerFixture->SetUp();
     prefManager = new PreferenceManager();
 }
 
 void tearDown_preference_manager() {
     delete prefManager;
     prefManager = nullptr;
-    fixture->TearDown();
-    fixture.reset();
+    prefManagerFixture->TearDown();
+    prefManagerFixture.reset();
 }
 
 void test_preference_manager_init() {
@@ -31,7 +31,7 @@ void test_preference_manager_init() {
     prefManager->init();
     
     // Verify preference service was called during init
-    TEST_ASSERT_TRUE(fixture->getPreferenceService()->wasLoadCalled());
+    TEST_ASSERT_TRUE(prefManagerFixture->getPreferenceService()->wasLoadCalled());
     
     // After init, config should have default panel name
     const Configs& config = prefManager->getConfig();
@@ -72,7 +72,7 @@ void test_preference_manager_save_load_cycle() {
     
     // Save and load should work without crashing
     prefManager->saveConfig();
-    TEST_ASSERT_TRUE(fixture->getPreferenceService()->wasSaveCalled());
+    TEST_ASSERT_TRUE(prefManagerFixture->getPreferenceService()->wasSaveCalled());
     
     prefManager->loadConfig();
     
@@ -109,21 +109,21 @@ void test_preference_manager_json_serialization() {
     prefManager->saveConfig();
     
     // Verify service interaction occurred
-    TEST_ASSERT_TRUE(fixture->getPreferenceService()->wasSaveCalled());
+    TEST_ASSERT_TRUE(prefManagerFixture->getPreferenceService()->wasSaveCalled());
 }
 
 void test_preference_manager_json_deserialization() {
     prefManager->init();
     
     // Set up test data in preference service
-    fixture->setPreference("config", "{\"panelName\":\"DeserializedPanel\"}");
+    prefManagerFixture->setPreference("config", "{\"panelName\":\"DeserializedPanel\"}");
     
     // Load configuration
     prefManager->loadConfig();
     
     // In a real implementation, we'd verify the config was loaded from JSON
     // For now, just verify the load operation occurred
-    TEST_ASSERT_TRUE(fixture->getPreferenceService()->wasLoadCalled());
+    TEST_ASSERT_TRUE(prefManagerFixture->getPreferenceService()->wasLoadCalled());
 }
 
 void test_preference_manager_error_handling() {
@@ -158,7 +158,7 @@ void test_preference_manager_service_integration() {
     prefManager->init();
     
     // Test that preference manager properly uses the preference service
-    auto* prefService = fixture->getPreferenceService();
+    auto* prefService = prefManagerFixture->getPreferenceService();
     
     // Initially should have called load
     TEST_ASSERT_TRUE(prefService->wasLoadCalled());

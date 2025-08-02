@@ -279,15 +279,15 @@ int main(int argc, char **argv) {
     runOilTemperatureSensorTests();// 5 tests (testing fixes)
     runGpioProviderTests();        // 7 tests (added for Phase 1 completion)
     
-    // Manager tests (currently have interface issues - see busy.md)
-    // runPreferenceManagerTests();    // 14 tests
-    // runTriggerManagerTests();       // 7 tests  
-    // runPanelManagerTests();         // 8 tests
-    // runStyleManagerTests();         // 9 tests
-    // runServiceContainerTests();    // 7 tests
-    // runTickerTests();              // 6 tests
-    // runSimpleTickerTests();        // 4 tests
-    // runConfigLogicTests();         // 8 tests
+    // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
+    // runPreferenceManagerTests();    // 14 tests - missing PreferenceManager source
+    // runTriggerManagerTests();       // 7 tests - interface conflicts (shared_ptr mismatch)
+    // runPanelManagerTests();         // 8 tests - missing PanelManager source  
+    // runStyleManagerTests();         // 9 tests - missing StyleManager source
+    // runServiceContainerTests();     // 8 tests - interface mismatch (missing methods)
+    runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
+    // runSimpleTickerTests();        // 4 tests (keeping commented)
+    // runConfigLogicTests();         // 8 tests (keeping commented)
     
     return UNITY_END();
 }
@@ -304,12 +304,12 @@ int main(int argc, char **argv) {
 // Adding GPIO Provider tests to complete Phase 1:
 #include "unit/providers/test_gpio_provider.cpp"
 
-// Manager tests temporarily excluded due to interface compatibility issues
-// #include "unit/managers/test_preference_manager.cpp"
-// #include "unit/managers/test_trigger_manager.cpp"
-// #include "unit/managers/test_panel_manager.cpp"
-// #include "unit/managers/test_style_manager.cpp"
-// #include "unit/system/test_service_container.cpp"
-// #include "unit/utilities/test_ticker.cpp"
-// #include "unit/utilities/test_simple_ticker.cpp"
-// #include "unit/managers/test_config_logic.cpp"
+// Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
+// #include "unit/managers/test_preference_manager.cpp"  // Missing PreferenceManager source
+// #include "unit/managers/test_trigger_manager.cpp"  // Interface conflicts - shared_ptr mismatch
+// #include "unit/managers/test_panel_manager.cpp"  // Missing PanelManager source
+// #include "unit/managers/test_style_manager.cpp"  // Missing StyleManager source
+// #include "unit/system/test_service_container.cpp"   // Interface mismatch - missing methods
+#include "unit/utilities/test_ticker.cpp"
+// #include "unit/utilities/test_simple_ticker.cpp"  // Keeping commented
+// #include "unit/managers/test_config_logic.cpp"    // Keeping commented
