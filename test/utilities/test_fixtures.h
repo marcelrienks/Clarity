@@ -116,28 +116,33 @@ public:
         
         // Initialize services that managers typically depend on
         mockDisplayProvider->init();
-        mockPreferenceService->load_preferences();
+        mockPreferenceService->loadConfig();
     }
     
     // Utility methods for manager testing
-    void simulateTrigger(TriggerType trigger, bool state) {
-        mockTriggerService->simulateTrigger(trigger, state);
+    void simulateTrigger(const std::string& triggerName) {
+        mockTriggerService->simulateTrigger(triggerName);
     }
     
-    void setTheme(Theme theme) {
-        mockStyleService->set_theme(theme);
+    void setTheme(const std::string& theme) {
+        mockStyleService->setTheme(theme.c_str());
     }
     
     void setPreference(const std::string& key, const std::string& value) {
         mockPreferenceService->set_preference(key, value);
     }
     
-    PanelType getCurrentPanel() {
-        return mockPanelService->get_current_panel();
+    const char* getCurrentPanel() {
+        return mockPanelService->getCurrentPanel();
     }
     
-    bool isPanelVisible(PanelType panel) {
-        return mockPanelService->is_panel_visible(panel);
+    bool isPanelVisible(const std::string& panelName) {
+        // Check if panel exists in panel history as a simple visibility check
+        const auto& history = mockPanelService->getPanelHistory();
+        for (const auto& entry : history) {
+            if (entry.first == panelName) return true;
+        }
+        return false;
     }
 };
 
@@ -204,9 +209,9 @@ public:
         
         // Initialize all services for integration testing
         mockDisplayProvider->init();
-        mockPreferenceService->load_preferences();
+        mockPreferenceService->loadConfig();
         mockTriggerService->init();
-        mockStyleService->init();
+        mockStyleService->init(Themes::DAY);
         mockPanelService->init();
     }
     
@@ -235,20 +240,16 @@ public:
     }
     
     // Common scenario actions
-    void triggerKeyPresent(bool state) {
-        mockTriggerService->simulateTrigger(TriggerType::KEY_PRESENT, state);
+    void triggerKeyPresent() {
+        mockTriggerService->simulateTrigger(TriggerNames::KEY_PRESENT);
     }
     
-    void triggerKeyNotPresent(bool state) {
-        mockTriggerService->simulateTrigger(TriggerType::KEY_NOT_PRESENT, state);
+    void triggerKeyNotPresent() {
+        mockTriggerService->simulateTrigger(TriggerNames::KEY_NOT_PRESENT);
     }
     
-    void triggerLock(bool state) {
-        mockTriggerService->simulateTrigger(TriggerType::LOCK, state);
-    }
-    
-    void triggerLights(bool state) {
-        mockTriggerService->simulateTrigger(TriggerType::LIGHTS, state);
+    void triggerLock() {
+        mockTriggerService->simulateTrigger(TriggerNames::LOCK);
     }
     
     void waitForTime(uint32_t ms) {
@@ -256,16 +257,12 @@ public:
     }
     
     // Common scenario verifications
-    bool verifyPanelShown(PanelType expectedPanel) {
-        return mockPanelService->get_current_panel() == expectedPanel;
+    bool verifyPanelShown(const char* expectedPanel) {
+        return std::string(mockPanelService->getCurrentPanel()) == std::string(expectedPanel);
     }
     
-    bool verifyTheme(Theme expectedTheme) {
-        return mockStyleService->get_theme() == expectedTheme;
-    }
-    
-    bool verifyTriggerState(TriggerType trigger, bool expectedState) {
-        return mockTriggerService->get_trigger_state(trigger) == expectedState;
+    bool verifyTheme(const char* expectedTheme) {
+        return std::string(mockStyleService->getCurrentTheme()) == std::string(expectedTheme);
     }
 };
 
@@ -294,29 +291,28 @@ public:
     // Stress testing utilities
     void stressTestTriggers(int iterations) {
         for (int i = 0; i < iterations; i++) {
-            TriggerType triggers[] = {
-                TriggerType::KEY_PRESENT,
-                TriggerType::KEY_NOT_PRESENT,
-                TriggerType::LOCK,
-                TriggerType::LIGHTS
+            const char* triggers[] = {
+                TriggerNames::KEY_PRESENT,
+                TriggerNames::KEY_NOT_PRESENT,
+                TriggerNames::LOCK
             };
             
             for (auto trigger : triggers) {
-                mockTriggerService->simulateTrigger(trigger, i % 2);
+                mockTriggerService->simulateTrigger(trigger);
             }
         }
     }
     
     void stressTestPanelSwitching(int iterations) {
-        PanelType panels[] = {
-            PanelType::SPLASH,
-            PanelType::OEM_OIL,
-            PanelType::KEY,
-            PanelType::LOCK
+        const char* panels[] = {
+            PanelNames::SPLASH,
+            PanelNames::OIL,
+            PanelNames::KEY,
+            PanelNames::LOCK
         };
         
         for (int i = 0; i < iterations; i++) {
-            mockPanelService->show_panel(panels[i % 4]);
+            mockPanelService->createAndLoadPanel(panels[i % 4]);
         }
     }
 };

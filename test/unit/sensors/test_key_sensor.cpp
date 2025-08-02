@@ -94,22 +94,17 @@ void test_key_sensor_value_change_detection() {
     fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, LOW);
     
     Reading reading1 = sensor->getReading();
-    bool hasChanged1 = sensor->hasValueChanged();
+    TEST_ASSERT_EQUAL(static_cast<int32_t>(KeyState::Inactive), std::get<int32_t>(reading1));
     
-    // First reading should indicate change
-    TEST_ASSERT_TRUE(hasChanged1);
-    
-    // Same state should not indicate change
+    // Same state should give same reading
     Reading reading2 = sensor->getReading();
-    bool hasChanged2 = sensor->hasValueChanged();
-    TEST_ASSERT_FALSE(hasChanged2);
+    TEST_ASSERT_EQUAL(std::get<int32_t>(reading1), std::get<int32_t>(reading2));
     
-    // Change to different state should indicate change
+    // Change to different state should give different reading
     fixture->setDigitalPin(gpio_pins::KEY_PRESENT, HIGH);
     Reading reading3 = sensor->getReading();
-    bool hasChanged3 = sensor->hasValueChanged();
-    TEST_ASSERT_TRUE(hasChanged3);
-    TEST_ASSERT_NOT_EQUAL(reading1, reading3);
+    TEST_ASSERT_EQUAL(static_cast<int32_t>(KeyState::Present), std::get<int32_t>(reading3));
+    TEST_ASSERT_NOT_EQUAL(std::get<int32_t>(reading1), std::get<int32_t>(reading3));
 }
 
 void test_key_sensor_construction() {
@@ -130,9 +125,9 @@ void test_key_sensor_reading_consistency() {
     KeyState state1 = sensor->getKeyState();
     KeyState state2 = sensor->getKeyState();
     
-    TEST_ASSERT_EQUAL(reading1, reading2);
+    TEST_ASSERT_EQUAL(std::get<int32_t>(reading1), std::get<int32_t>(reading2));
     TEST_ASSERT_EQUAL(state1, state2);
-    TEST_ASSERT_EQUAL(reading1, static_cast<int32_t>(state1));
+    TEST_ASSERT_EQUAL(std::get<int32_t>(reading1), static_cast<int32_t>(state1));
 }
 
 void test_key_sensor_timing_behavior() {
@@ -257,7 +252,6 @@ void test_key_sensor_performance() {
     for (int i = 0; i < 1000; i++) {
         sensor->getReading();
         sensor->getKeyState();
-        sensor->hasValueChanged();
     }
     
     uint32_t endTime = fixture->getCurrentTime();
@@ -293,17 +287,13 @@ void test_key_sensor_concurrent_access() {
     // Simulate concurrent access patterns
     KeyState state1 = sensor->getKeyState();
     Reading reading1 = sensor->getReading();
-    bool changed1 = sensor->hasValueChanged();
     
     KeyState state2 = sensor->getKeyState();
     Reading reading2 = sensor->getReading();
-    bool changed2 = sensor->hasValueChanged();
     
     // Concurrent access should be consistent
     TEST_ASSERT_EQUAL(state1, state2);
-    TEST_ASSERT_EQUAL(reading1, reading2);
-    // First call may indicate change, second should not
-    TEST_ASSERT_FALSE(changed2);
+    TEST_ASSERT_EQUAL(std::get<int32_t>(reading1), std::get<int32_t>(reading2));
 }
 
 void runKeySensorTests() {

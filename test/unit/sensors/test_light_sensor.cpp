@@ -60,24 +60,18 @@ void test_light_sensor_value_change_detection() {
     
     // Set initial value
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 1000);
-    double reading1 = sensor->getReading();
-    bool hasChanged1 = sensor->hasValueChanged();
+    Reading lightReading1 = sensor->getReading();
+    double reading1 = std::get<double>(lightReading1);
     
-    // First reading should indicate change (from initial state)
-    TEST_ASSERT_TRUE(hasChanged1);
-    
-    // Same value should not indicate change
+    // Same value should give same reading
     Reading lightReading2 = sensor->getReading();
     double reading2 = std::get<double>(lightReading2);
-    bool hasChanged2 = sensor->hasValueChanged();
-    TEST_ASSERT_FALSE(hasChanged2);
+    TEST_ASSERT_EQUAL_DOUBLE(reading1, reading2);
     
-    // Different value should indicate change
+    // Different value should give different reading
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 2000);
     Reading lightReading3 = sensor->getReading();
     double reading3 = std::get<double>(lightReading3);
-    bool hasChanged3 = sensor->hasValueChanged();
-    TEST_ASSERT_TRUE(hasChanged3);
     TEST_ASSERT_NOT_EQUAL(reading1, reading3);
 }
 

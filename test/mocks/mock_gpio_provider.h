@@ -8,6 +8,7 @@ private:
     std::map<int, bool> digitalValues;
     std::map<int, uint16_t> analogValues;
     std::map<int, int> pinModes;
+    std::map<int, bool> interrupts;
 
 public:
     // IGpioProvider interface - matches actual interface
@@ -40,9 +41,29 @@ public:
         pinMode(pin, mode);
     }
     
+    // Missing methods used by tests
+    void setPinValue(uint8_t pin, int value) {
+        if (pinModes[pin] == INPUT || pinModes[pin] == INPUT_PULLUP) {
+            // For digital pins, convert value to boolean
+            digitalValues[pin] = (value != 0);
+        } else {
+            // For analog pins, store as analog value
+            analogValues[pin] = (uint16_t)value;
+        }
+    }
+    
+    void triggerInterrupt(uint8_t pin) {
+        interrupts[pin] = true;
+    }
+    
+    bool hasInterrupt(uint8_t pin) {
+        return interrupts.count(pin) && interrupts[pin];
+    }
+    
     void reset() {
         digitalValues.clear();
         analogValues.clear();
         pinModes.clear();
+        interrupts.clear();
     }
 };

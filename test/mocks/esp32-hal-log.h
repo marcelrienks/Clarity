@@ -12,12 +12,6 @@
 #define log_w(format, ...) printf("[W] " format "\n", ##__VA_ARGS__)
 #define log_e(format, ...) printf("[E] " format "\n", ##__VA_ARGS__)
 
-// ADC attenuation types (ESP32 specific)
-typedef enum {
-    ADC_ATTEN_DB_0   = 0,
-    ADC_ATTEN_DB_2_5 = 1, 
-    ADC_ATTEN_DB_6   = 2,
-    ADC_ATTEN_DB_11  = 3
-} adc_attenuation_t;
+// ADC attenuation types are defined in Arduino.h
 
 #endif // UNIT_TESTING
