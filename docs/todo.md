@@ -223,3 +223,7 @@ Create integration tests to validate full scenario flows.
 ## 5. Wokwi Tests
 
 Create Wokwi-based simulations for the documented scenarios.
+
+## 6. General
+
+* Night theme (triggered by lights) is not changing the background of the screen to fully black, only the central pivot is turning full black
