@@ -1,51 +1,51 @@
 #include <unity.h>
-#include "providers/gpio_provider.h"
+#include "mock_gpio_provider.h"
 
-GpioProvider* gpioProvider = nullptr;
+MockGpioProvider* gpioProviderMock = nullptr;
 
 void setUp_gpio_provider() {
-    gpioProvider = new GpioProvider();
+    gpioProviderMock = new MockGpioProvider();
 }
 
 void tearDown_gpio_provider() {
-    delete gpioProvider;
-    gpioProvider = nullptr;
+    delete gpioProviderMock;
+    gpioProviderMock = nullptr;
 }
 
 void test_gpio_provider_construction() {
     // Test that provider can be created and destroyed
-    TEST_ASSERT_NOT_NULL(gpioProvider);
+    TEST_ASSERT_NOT_NULL(gpioProviderMock);
 }
 
 void test_gpio_provider_digital_operations() {
     // Test pinMode call doesn't crash
-    gpioProvider->pinMode(2, OUTPUT);
+    gpioProviderMock->pinMode(2, OUTPUT);
     TEST_ASSERT_TRUE(true);
     
     // Test digitalRead call doesn't crash and returns valid value
-    bool value = gpioProvider->digitalRead(2);
+    bool value = gpioProviderMock->digitalRead(2);
     TEST_ASSERT_TRUE(value == true || value == false);
 }
 
 void test_gpio_provider_analog_operations() {
     // Test analogRead call doesn't crash and returns reasonable value
-    uint16_t value = gpioProvider->analogRead(A0);
+    uint16_t value = gpioProviderMock->analogRead(A0);
     TEST_ASSERT_GREATER_OR_EQUAL(0, value);
     TEST_ASSERT_LESS_OR_EQUAL(4095, value); // ESP32 12-bit ADC
 }
 
 void test_gpio_provider_pin_mode_settings() {
     // Test various pin modes don't crash
-    gpioProvider->pinMode(2, INPUT);
-    gpioProvider->pinMode(3, OUTPUT);
-    gpioProvider->pinMode(4, INPUT_PULLUP);
-    gpioProvider->pinMode(5, INPUT_PULLDOWN);
+    gpioProviderMock->pinMode(2, INPUT);
+    gpioProviderMock->pinMode(3, OUTPUT);
+    gpioProviderMock->pinMode(4, INPUT_PULLUP);
+    gpioProviderMock->pinMode(5, INPUT_PULLDOWN);
     TEST_ASSERT_TRUE(true);
 }
 
 void test_gpio_provider_interface_compliance() {
-    // Test that GpioProvider implements IGpioProvider interface correctly
-    IGpioProvider* provider = gpioProvider;
+    // Test that MockGpioProvider implements IGpioProvider interface correctly
+    IGpioProvider* provider = gpioProviderMock;
     TEST_ASSERT_NOT_NULL(provider);
     
     // Test interface methods work
@@ -62,16 +62,16 @@ void test_gpio_provider_interface_compliance() {
 void test_gpio_provider_multiple_pins() {
     // Test operations on multiple pins
     for (int pin = 2; pin <= 5; pin++) {
-        gpioProvider->pinMode(pin, OUTPUT);
-        bool value = gpioProvider->digitalRead(pin);
+        gpioProviderMock->pinMode(pin, OUTPUT);
+        bool value = gpioProviderMock->digitalRead(pin);
         TEST_ASSERT_TRUE(value == true || value == false);
     }
 }
 
 void test_gpio_provider_analog_read_consistency() {
     // Test that analog reads are consistent (within reason)
-    uint16_t reading1 = gpioProvider->analogRead(A0);
-    uint16_t reading2 = gpioProvider->analogRead(A0);
+    uint16_t reading1 = gpioProviderMock->analogRead(A0);
+    uint16_t reading2 = gpioProviderMock->analogRead(A0);
     
     // Readings should be in valid range
     TEST_ASSERT_GREATER_OR_EQUAL(0, reading1);

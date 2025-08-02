@@ -277,6 +277,7 @@ int main(int argc, char **argv) {
     runLightSensorTests();         // 7 tests (testing fixes)
     runOilPressureSensorTests();   // 4 tests (testing fixes)
     runOilTemperatureSensorTests();// 5 tests (testing fixes)
+    runGpioProviderTests();        // 7 tests (added for Phase 1 completion)
     
     // Manager tests (currently have interface issues - see busy.md)
     // runPreferenceManagerTests();    // 14 tests
@@ -300,6 +301,8 @@ int main(int argc, char **argv) {
 #include "unit/sensors/test_oil_pressure_sensor.cpp"
 // Testing oil temperature sensor with fixes:
 #include "unit/sensors/test_oil_temperature_sensor.cpp"
+// Adding GPIO Provider tests to complete Phase 1:
+#include "unit/providers/test_gpio_provider.cpp"
 
 // Manager tests temporarily excluded due to interface compatibility issues
 // #include "unit/managers/test_preference_manager.cpp"
