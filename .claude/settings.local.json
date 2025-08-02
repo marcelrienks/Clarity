@@ -24,7 +24,8 @@
       "Bash(python3:*)",
       "Bash(gcov:*)",
       "Bash(lcov:*)",
-      "Bash(genhtml:*)"
+      "Bash(genhtml:*)",
+      "Bash(.pio/build/test-coverage/program.exe)"
     ],
     "deny": []
   }

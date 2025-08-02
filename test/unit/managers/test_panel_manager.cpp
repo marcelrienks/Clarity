@@ -12,46 +12,43 @@ private:
 public:
     MockPanel(const std::string& name) : panelName(name) {}
     
-    void init() override { initialized = true; }
-    void load() override { loaded = true; }
-    void update() override {}
-    void unload() override { loaded = false; }
-    bool isActive() const override { return loaded; }
-    const char* getName() const override { return panelName.c_str(); }
+    void init(IGpioProvider *gpio, IDisplayProvider *display) override { 
+        initialized = true; 
+    }
     
-    // Mock-specific methods
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override { 
+        loaded = true;
+        if (callbackFunction) callbackFunction();
+    }
+    
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override {
+        if (callbackFunction) callbackFunction();
+    }
+    
+    // Mock-specific methods  
     bool isInitialized() const { return initialized; }
     bool isLoaded() const { return loaded; }
+    const char* getName() const { return panelName.c_str(); }
 };
 
-// Mock service interfaces
-class MockPreferenceService : public IPreferenceService {
-public:
-    Configs config;
-    
-    void init() override {}
-    void saveConfig() override {}
-    void loadConfig() override {}
-    void createDefaultConfig() override { config.panelName = PanelNames::OIL; }
-    Configs& getConfig() override { return config; }
-    const Configs& getConfig() const override { return config; }
-    void setConfig(const Configs& newConfig) override { config = newConfig; }
-};
+// Note: MockPreferenceService is now available via test_fixtures.h
 
+#include "test_fixtures.h"
+
+std::unique_ptr<ManagerTestFixture> fixture;
 PanelManager* panelManager = nullptr;
-MockPreferenceService* mockPrefService = nullptr;
 
 void setUp_panel_manager() {
-    mockPrefService = new MockPreferenceService();
-    mockPrefService->createDefaultConfig();
-    panelManager = new PanelManager(mockPrefService);
+    fixture = std::make_unique<ManagerTestFixture>();
+    fixture->SetUp();
+    panelManager = new PanelManager(fixture->getDisplayProvider(), fixture->getGpioProvider(), fixture->getStyleService());
 }
 
 void tearDown_panel_manager() {
     delete panelManager;
-    delete mockPrefService;
     panelManager = nullptr;
-    mockPrefService = nullptr;
+    fixture->TearDown();
+    fixture.reset();
 }
 
 void test_panel_manager_init() {
@@ -63,102 +60,84 @@ void test_panel_manager_init() {
 void test_panel_manager_construction() {
     // Test that manager can be created and destroyed
     TEST_ASSERT_NOT_NULL(panelManager);
-    TEST_ASSERT_NOT_NULL(mockPrefService);
+    TEST_ASSERT_NOT_NULL(fixture->getDisplayProvider());
 }
 
-void test_panel_manager_add_panel() {
+void test_panel_manager_create_and_load_panel() {
     panelManager->init();
     
-    // Create mock panel and add it
-    auto mockPanel = std::make_shared<MockPanel>("TestPanel");
-    panelManager->addPanel("TestPanel", mockPanel);
+    // Test creating and loading a panel by name
+    panelManager->createAndLoadPanel("OIL");
     
-    // Panel should be added successfully
-    TEST_ASSERT_TRUE(panelManager->hasPanel("TestPanel"));
+    // Panel should be loaded successfully
+    TEST_ASSERT_EQUAL_STRING("OIL", panelManager->getCurrentPanel());
 }
 
-void test_panel_manager_load_panel() {
+void test_panel_manager_load_panel_with_splash() {
     panelManager->init();
     
-    // Add a mock panel
-    auto mockPanel = std::make_shared<MockPanel>("TestPanel");
-    panelManager->addPanel("TestPanel", mockPanel);
+    // Test loading panel with splash transition
+    panelManager->createAndLoadPanelWithSplash("KEY");
     
-    // Load the panel
-    panelManager->loadPanel("TestPanel");
-    
-    // Panel should be loaded
-    TEST_ASSERT_TRUE(mockPanel->isLoaded());
+    // Should load the KEY panel
+    TEST_ASSERT_EQUAL_STRING("KEY", panelManager->getCurrentPanel());
 }
 
-void test_panel_manager_has_panel() {
+void test_panel_manager_update_panel() {
     panelManager->init();
     
-    // Initially should not have test panel
-    TEST_ASSERT_FALSE(panelManager->hasPanel("NonExistentPanel"));
+    // Load a panel first
+    panelManager->createAndLoadPanel("LOCK");
     
-    // Add panel and test
-    auto mockPanel = std::make_shared<MockPanel>("TestPanel");
-    panelManager->addPanel("TestPanel", mockPanel);
-    TEST_ASSERT_TRUE(panelManager->hasPanel("TestPanel"));
+    // Update should work without crashing
+    panelManager->updatePanel();
+    TEST_ASSERT_TRUE(true);
 }
 
-void test_panel_manager_get_active_panel() {
+void test_panel_manager_get_current_panel() {
     panelManager->init();
     
-    // Add and load a panel
-    auto mockPanel = std::make_shared<MockPanel>("ActivePanel");
-    panelManager->addPanel("ActivePanel", mockPanel);
-    panelManager->loadPanel("ActivePanel");
+    // Load a panel
+    panelManager->createAndLoadPanel("OIL");
     
-    // Should be able to get active panel name
-    const char* activePanelName = panelManager->getActivePanelName();
-    TEST_ASSERT_NOT_NULL(activePanelName);
-    TEST_ASSERT_EQUAL_STRING("ActivePanel", activePanelName);
+    // Should be able to get current panel name
+    const char* currentPanel = panelManager->getCurrentPanel();
+    TEST_ASSERT_NOT_NULL(currentPanel);
+    TEST_ASSERT_EQUAL_STRING("OIL", currentPanel);
 }
 
-void test_panel_manager_update_active_panel() {
+void test_panel_manager_ui_state() {
     panelManager->init();
     
-    // Add and load a panel
-    auto mockPanel = std::make_shared<MockPanel>("UpdatePanel");
-    panelManager->addPanel("UpdatePanel", mockPanel);
-    panelManager->loadPanel("UpdatePanel");
+    // Test setting UI state
+    panelManager->setUiState(UIState::READY);
+    TEST_ASSERT_TRUE(true);
     
-    // Update should not crash
-    panelManager->updateActivePanel();
+    panelManager->setUiState(UIState::LOADING);
     TEST_ASSERT_TRUE(true);
 }
 
 void test_panel_manager_panel_switching() {
     panelManager->init();
     
-    // Add multiple panels
-    auto panel1 = std::make_shared<MockPanel>("Panel1");
-    auto panel2 = std::make_shared<MockPanel>("Panel2");
-    panelManager->addPanel("Panel1", panel1);
-    panelManager->addPanel("Panel2", panel2);
+    // Test switching between different panels
+    panelManager->createAndLoadPanel("OIL");
+    TEST_ASSERT_EQUAL_STRING("OIL", panelManager->getCurrentPanel());
     
-    // Load first panel
-    panelManager->loadPanel("Panel1");
-    TEST_ASSERT_TRUE(panel1->isLoaded());
-    TEST_ASSERT_FALSE(panel2->isLoaded());
-    
-    // Switch to second panel
-    panelManager->loadPanel("Panel2");
-    // Note: Depending on implementation, first panel may or may not be unloaded
-    TEST_ASSERT_TRUE(panel2->isLoaded());
+    // Switch to different panel
+    panelManager->createAndLoadPanel("KEY");
+    TEST_ASSERT_EQUAL_STRING("KEY", panelManager->getCurrentPanel());
 }
 
 void runPanelManagerTests() {
     setUp_panel_manager();
     RUN_TEST(test_panel_manager_construction);
     RUN_TEST(test_panel_manager_init);
-    RUN_TEST(test_panel_manager_add_panel);
-    RUN_TEST(test_panel_manager_has_panel);
-    RUN_TEST(test_panel_manager_load_panel);
-    RUN_TEST(test_panel_manager_get_active_panel);
-    RUN_TEST(test_panel_manager_update_active_panel);
+    RUN_TEST(test_panel_manager_create_and_load_panel);
+    RUN_TEST(test_panel_manager_update_panel);
+    RUN_TEST(test_panel_manager_load_panel_with_splash);
+    RUN_TEST(test_panel_manager_get_current_panel);
+    RUN_TEST(test_panel_manager_ui_state);
     RUN_TEST(test_panel_manager_panel_switching);
     tearDown_panel_manager();
 }

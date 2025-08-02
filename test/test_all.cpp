@@ -5,6 +5,23 @@
 
 #ifdef UNIT_TESTING
 
+// Forward declarations of comprehensive test functions
+extern void runPreferenceManagerTests();
+extern void runTriggerManagerTests();
+extern void runLockSensorTests();
+extern void runKeySensorTests();
+extern void runGpioProviderTests();
+extern void runSensorLogicTests();
+extern void runLightSensorTests();
+extern void runOilPressureSensorTests();
+extern void runServiceContainerTests();
+extern void runConfigLogicTests();
+extern void runOilTemperatureSensorTests();
+extern void runTickerTests();
+extern void runPanelManagerTests();
+extern void runSimpleTickerTests();
+extern void runStyleManagerTests();
+
 // Mock millis function for timing tests
 static uint32_t mock_millis_value = 0;
 uint32_t millis() { return mock_millis_value; }
@@ -242,23 +259,36 @@ void tearDown(void) {
 int main(int argc, char **argv) {
     UNITY_BEGIN();
     
-    // Timing/Ticker Tests
+    // Basic Logic Tests (keep existing tests)
     RUN_TEST(test_simple_dynamic_delay_normal_case);
     RUN_TEST(test_simple_dynamic_delay_slow_processing);
     RUN_TEST(test_timing_calculation);
-    
-    // Sensor Logic Tests
     RUN_TEST(test_sensor_value_change_detection);
     RUN_TEST(test_adc_to_pressure_conversion);
     RUN_TEST(test_key_state_logic);
-    
-    // Configuration Tests
     RUN_TEST(test_config_set_get);
     RUN_TEST(test_config_has_config);
     RUN_TEST(test_config_default_creation);
     RUN_TEST(test_panel_name_validation);
     RUN_TEST(test_theme_validation);
     RUN_TEST(test_config_clear);
+    
+    // Comprehensive Test Suites (108 tests total) - temporarily disabled for debugging
+    // runPreferenceManagerTests();    // 14 tests
+    // runTriggerManagerTests();       // 8 tests
+    // runPanelManagerTests();         // 7 tests
+    // runStyleManagerTests();         // 9 tests
+    // runKeySensorTests();           // 16 tests
+    // runLockSensorTests();          // 10 tests
+    // runLightSensorTests();         // 7 tests
+    // runOilPressureSensorTests();   // 9 tests
+    // runOilTemperatureSensorTests(); // 9 tests
+    // runGpioProviderTests();        // 8 tests
+    // runServiceContainerTests();    // 7 tests
+    // runTickerTests();              // 6 tests
+    // runSimpleTickerTests();        // 4 tests
+    // runSensorLogicTests();         // 6 tests
+    // runConfigLogicTests();         // 8 tests
     
     return UNITY_END();
 }

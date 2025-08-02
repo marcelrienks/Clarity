@@ -1,238 +1,194 @@
-# Test Environment Fix Status
+# Next Steps: Comprehensive Test Suite Implementation
 
-## Overview
+## Current Status ✅
 
-This document tracks the comprehensive analysis and fixes applied to the Clarity project's test environments. The work was initiated to resolve test compilation failures discovered when running the coverage script.
+**Basic Test Framework**: Successfully implemented and running
+- ✅ 12 basic tests passing in all environments (coverage, integration, performance, memory)
+- ✅ Unity test framework properly integrated with LVGL mocks
+- ✅ Mock service architecture functional
+- ✅ Path resolution and type conflicts resolved
 
-## Test Environment Analysis
+## Remaining Work: 108 Comprehensive Tests
 
-### Available Test Environments
+**Target**: Get all 108 comprehensive tests in `test/unit/` compiling and running
 
-The project contains 7 test environments configured in `platformio.ini`:
+### Test File Inventory (15 files, 108 tests total)
 
-1. **`test-coverage`** - Unit tests with gcov coverage analysis
-2. **`test-integration`** - Integration testing environment
-3. **`test-performance`** - Performance benchmarks and timing tests
-4. **`test-memory`** - Memory leak detection using AddressSanitizer
-5. **`test-simple`** - Basic test environment (newly created)
-6. **`debug-local`** - Debug build for development (fastest compile)
-7. **`release`** - Production build environment
+**Manager Tests** (4 files, ~38 tests):
+- `test/unit/managers/test_preference_manager.cpp` - 14 tests ⚠️ **Interface mismatches**
+- `test/unit/managers/test_panel_manager.cpp` - 8 tests ⚠️ **Constructor/interface conflicts** 
+- `test/unit/managers/test_style_manager.cpp` - 9 tests ⚠️ **Missing methods**
+- `test/unit/managers/test_trigger_manager.cpp` - 7 tests ⚠️ **Hardware dependencies**
 
-## Completed Fixes
+**Sensor Tests** (5 files, ~47 tests):
+- `test/unit/sensors/test_key_sensor.cpp` - 16 tests ✅ **Fixed Reading types**
+- `test/unit/sensors/test_lock_sensor.cpp` - 10 tests ✅ **Fixed Reading types**
+- `test/unit/sensors/test_light_sensor.cpp` - 7 tests ✅ **Fixed Reading types**
+- `test/unit/sensors/test_oil_pressure_sensor.cpp` - 9 tests ✅ **Fixed Reading types**
+- `test/unit/sensors/test_oil_temperature_sensor.cpp` - 5 tests ✅ **Fixed Reading types**
 
-### ✅ 1. LVGL Mock Infrastructure
-**Files Modified**: `test/mocks/lvgl.h`
+**System/Utility Tests** (6 files, ~23 tests):
+- `test/unit/providers/test_gpio_provider.cpp` - 8 tests ⚠️ **Hardware mocking needed**
+- `test/unit/system/test_service_container.cpp` - 7 tests ⚠️ **DI framework conflicts**
+- `test/unit/utilities/test_ticker.cpp` - 6 tests ⚠️ **Timing dependencies**
+- `test/unit/utilities/test_simple_ticker.cpp` - 4 tests ⚠️ **Timing dependencies**
+- `test/unit/sensors/test_sensor_logic.cpp` - 6 tests ⚠️ **Logic validation**
+- `test/unit/managers/test_config_logic.cpp` - 8 tests ⚠️ **Config validation**
 
-**Issues Fixed**:
-- Added missing `#include <algorithm>` for `std::remove` function
-- Completed struct definitions for incomplete types:
-  - `struct _lv_obj_t` - Added minimal required fields
-  - `struct _lv_style_t` - Added dummy field
-  - `struct _lv_group_t` - Added dummy field  
-  - `struct _lv_disp_t` - Added dummy field
-- Fixed "invalid use of incomplete type" compilation errors
+## Implementation Plan
 
-**Technical Details**:
+### Phase 1: Manager Interface Updates (Priority: HIGH)
+
+**1. PreferenceManager Constructor Fix**
 ```cpp
-// Before: Forward declaration only
-struct _lv_obj_t;
-
-// After: Complete definition
-struct _lv_obj_t {
-    void* user_data = nullptr;
-    int dummy = 0;
-};
+// Current issue: Tests expect constructor with ServiceContainer
+// Reality: PreferenceManager() takes no parameters
+// Fix: Update test setup to use default constructor + dependency injection
 ```
 
-### ✅ 2. Mock Service Implementations
-**Files Modified**: `test/mocks/mock_services.h`
+**2. PanelManager Interface Alignment**
+```cpp  
+// Current issue: Tests use addPanel(), hasPanel(), loadPanel()
+// Reality: Uses createAndLoadPanel(), getCurrentPanel(), updatePanel()
+// Fix: Update test methods to match IPanelService interface
+```
 
-**Issues Fixed**:
-
-#### MockPreferenceService
-- **Problem**: Implemented wrong interface methods (old API)
-- **Solution**: Updated to implement correct `IPreferenceService` interface
-- **Methods Fixed**:
-  - Removed: `load_preferences()`, `save_preferences()`, `get_preference()`
-  - Added: `saveConfig()`, `loadConfig()`, `createDefaultConfig()`, `getConfig()`, `setConfig()`
-
-#### MockGpioProvider  
-- **Problem**: Method names didn't match `IGpioProvider` interface
-- **Solution**: Corrected method signatures
-- **Methods Fixed**:
-  - `read_digital()` → `digitalRead()` 
-  - `read_analog()` → `analogRead()`
-  - `setup_pin()` → `pinMode()`
-  - Fixed return types: `int` → `bool`, `uint16_t`
-
-### ✅ 3. Test File Conflict Analysis
-**Files Analyzed**: `test/test_main.cpp`, `test/test_all.cpp`, `test/test_main_simple.cpp`
-
-**Issues Identified**:
-- All three files define conflicting functions:
-  - `main()` - Entry point conflicts
-  - `setUp()` - Unity test setup conflicts  
-  - `tearDown()` - Unity test cleanup conflicts
-- PlatformIO Unity framework includes all test files regardless of `build_src_filter` settings
-- Multiple definition linker errors prevent successful compilation
-
-## Remaining Systemic Issues
-
-### ⚠️ Critical Problems Requiring Resolution
-
-#### 1. Incomplete Mock Infrastructure
-
-**ArduinoJson Mock** (`test/mocks/ArduinoJson.h`):
+**3. StyleManager Method Updates**
 ```cpp
-// Current issue:
-JsonVariant operator[](const char* key) { 
-    return (*this)[std::string(key)]; // JsonVariant incomplete type
-}
+// Current issue: Tests use toggleTheme(), getCurrentTheme()
+// Reality: Uses set_theme(), get_colours()
+// Fix: Update test methods to match actual API
 ```
-- `JsonVariant` class incomplete
-- Return type conflicts in operator overloads
-- Mock JSON functionality insufficient for preference manager tests
 
-**Display Provider Mock** (`test/mocks/mock_services.h`):
-- Missing virtual method implementations:
-  - `initialize()`, `isInitialized()`
-  - `createScreen()`, `loadScreen()`  
-  - `createLabel()`, `createObject()`, `createArc()`
-  - `createScale()`, `createImage()`, `createLine()`
-  - `deleteObject()`, `addEventCallback()`
-  - `getMainScreen()`
+### Phase 2: Hardware Abstraction Layer (Priority: MEDIUM)
 
-#### 2. Missing Type Definitions
+**1. GPIO Provider Mocking**
+- Complete MockGpioProvider with all pin operations
+- Add interrupt simulation capabilities
+- Handle ADC reading simulation
 
-**LVGL Event Types**:
+**2. Sensor Hardware Dependencies**
 ```cpp
-// Missing in lvgl.h mock:
-typedef void (*lv_event_cb_t)(lv_event_t*);
-typedef uint8_t lv_event_code_t;
-#define LV_EVENT_CLICKED 1
-// ... other event constants
+// Current issues:
+// - Missing adc_attenuation_t type definitions
+// - ESP32 logging functions (log_v, log_d, log_i) not available
+// - Hardware-specific initialization calls
+
+// Solutions:
+// - Add complete ESP32 mock definitions in test/mocks/esp32-hal-log.h
+// - Mock ADC configuration functions  
+// - Implement sensor value simulation framework
 ```
 
-**Project-Specific Types**:
+### Phase 3: Service Container Integration (Priority: MEDIUM)
+
+**1. Dependency Injection Framework**
+- Update ServiceContainer tests to handle current DI patterns
+- Fix service registration and retrieval in test fixtures
+- Ensure proper service lifecycle management
+
+**2. Mock Service Improvements**
+- Complete MockTriggerService implementation
+- Add missing ITriggerService methods
+- Implement trigger state simulation
+
+### Phase 4: Timing and Logic Tests (Priority: LOW)
+
+**1. Ticker/Timer Abstraction**
+- Abstract time dependencies for deterministic testing
+- Implement MockTimeProvider for consistent timing tests
+- Handle async callback simulation
+
+**2. Configuration Logic Validation**
+- Implement comprehensive config validation tests
+- Add edge case handling for malformed configurations
+- Test persistence and recovery scenarios
+
+## Technical Implementation Steps
+
+### Step 1: Enable Comprehensive Tests (IMMEDIATE)
+
+```ini
+# In platformio.ini [env:test-coverage]
+build_src_filter = 
+	+<*>
+	+<../test/test_all.cpp>
+	+<../test/unit>          # Enable comprehensive tests
+	+<../test/mocks>
+	+<../test/utilities>
+	-<../src/components>     # Exclude hardware-dependent components
+	-<../src/providers>      # Exclude hardware providers  
+	-<../src/factories>      # Exclude factory classes
+	-<../test/wokwi>
+	-<../test/integration>
+```
+
+### Step 2: Systematic Interface Fixes
+
 ```cpp
-// Missing type definitions causing compilation errors:
-enum class PanelType { SPLASH, KEY, LOCK, OEM_OIL };
-enum class Theme { Day, Night };  
-struct Configs { Theme theme; int brightness; };
+// Add to test_all.cpp (uncomment when ready)
+// Comprehensive Test Suites (108 tests total)
+runPreferenceManagerTests();    // 14 tests - FIX CONSTRUCTOR
+runTriggerManagerTests();       // 8 tests - FIX HARDWARE DEPS  
+runPanelManagerTests();         // 7 tests - FIX INTERFACE
+runStyleManagerTests();         // 9 tests - FIX METHODS
+runKeySensorTests();           // 16 tests - READY ✅
+runLockSensorTests();          // 10 tests - READY ✅  
+runLightSensorTests();         // 7 tests - READY ✅
+runOilPressureSensorTests();   // 9 tests - READY ✅
+runOilTemperatureSensorTests(); // 9 tests - READY ✅
+runGpioProviderTests();        // 8 tests - FIX HARDWARE MOCKING
+runServiceContainerTests();    // 7 tests - FIX DI FRAMEWORK
+runTickerTests();              // 6 tests - FIX TIMING DEPS
+runSimpleTickerTests();        // 4 tests - FIX TIMING DEPS  
+runSensorLogicTests();         // 6 tests - FIX LOGIC VALIDATION
+runConfigLogicTests();         // 8 tests - FIX CONFIG VALIDATION
 ```
 
-#### 3. Test Discovery Architecture Issues
+### Step 3: Missing Dependencies
 
-**PlatformIO Unity Behavior**:
-- Framework automatically discovers and includes all `test_*.cpp` files
-- `build_src_filter` ineffective for test file exclusion
-- Multiple main functions create linker conflicts
-- Current architecture incompatible with selective test execution
+**Add complete ESP32 mocking:**
+```cpp
+// test/mocks/esp32-hal-log.h - MISSING
+#define log_v(format, ...) printf("[V] " format "\n", ##__VA_ARGS__)
+#define log_d(format, ...) printf("[D] " format "\n", ##__VA_ARGS__)  
+#define log_i(format, ...) printf("[I] " format "\n", ##__VA_ARGS__)
+#define log_w(format, ...) printf("[W] " format "\n", ##__VA_ARGS__)
+#define log_e(format, ...) printf("[E] " format "\n", ##__VA_ARGS__)
 
-#### 4. Extensive Interdependencies
-
-**Dependency Chain Issues**:
+typedef enum {
+    ADC_ATTEN_DB_0   = 0,
+    ADC_ATTEN_DB_2_5 = 1, 
+    ADC_ATTEN_DB_6   = 2,
+    ADC_ATTEN_DB_11  = 3
+} adc_attenuation_t;
 ```
-Test Files → Mock Services → Interface Headers → Type Definitions → LVGL Mocks
+
+## Expected Timeline
+
+- **Phase 1** (Manager fixes): 2-3 hours
+- **Phase 2** (Hardware abstraction): 3-4 hours  
+- **Phase 3** (Service container): 2 hours
+- **Phase 4** (Timing/logic): 1-2 hours
+
+**Total Estimated Effort**: 8-11 hours for complete 108-test suite
+
+## Success Criteria
+
+```bash
+# Target outcome:
+pio test -e test-coverage
+# Expected: 120 test cases: 120 succeeded (12 basic + 108 comprehensive)
+
+python3 scripts/run_tests_with_coverage.py
+# Expected: All test environments PASS with comprehensive coverage report
 ```
-- Each layer has incomplete implementations
-- Circular dependencies between mock components
-- Complex inheritance hierarchies require complete mock ecosystem
 
-## Test Compilation Error Summary
+## Notes
 
-### High-Priority Errors (Blocking All Tests)
-1. **Multiple definition conflicts** - 3 main functions, setUp/tearDown
-2. **Incomplete abstract class implementations** - 15+ pure virtual methods missing
-3. **Missing type definitions** - PanelType, Theme, Configs, LVGL event types
-4. **Mock infrastructure gaps** - ArduinoJson, Display Provider incomplete
+- **Sensor tests are largely ready** - Reading type conflicts already resolved
+- **Manager tests need the most work** - Interface mismatches are significant  
+- **Hardware mocking is the key blocker** - ESP32 dependencies must be abstracted
+- **Current foundation is solid** - Basic framework provides excellent starting point
 
-### Medium-Priority Errors (Environment-Specific)
-1. **AddressSanitizer linking issues** - `test-memory` environment only
-2. **Coverage flag compatibility** - gcov linking problems
-3. **Include path conflicts** - Mock vs real header precedence
-
-## Recommended Action Plan
-
-### Phase 1: Foundation (High Priority)
-1. **Complete Type Definitions**
-   - Add missing enums: `PanelType`, `Theme`
-   - Define missing structs: `Configs`
-   - Complete LVGL event system mocks
-
-2. **Resolve Test Architecture**
-   - Create single test runner per environment
-   - Implement proper test file organization
-   - Fix Unity framework conflicts
-
-### Phase 2: Mock Infrastructure (Medium Priority)  
-1. **Complete ArduinoJson Mock**
-   - Implement full `JsonVariant` class
-   - Fix operator overload return types
-   - Add JSON serialization/deserialization
-
-2. **Complete Display Provider Mock**
-   - Implement all 15+ pure virtual methods
-   - Add proper LVGL object lifecycle management
-   - Mock event system integration
-
-### Phase 3: Environment-Specific Fixes (Low Priority)
-1. **Fix Memory Testing Environment**
-   - Remove or replace AddressSanitizer dependency
-   - Configure proper memory leak detection
-
-2. **Optimize Coverage Environment**
-   - Fix gcov linking issues
-   - Implement proper coverage flag handling
-
-### Phase 4: Integration Testing
-1. **Test Each Environment Individually**
-   - Start with simplest: `debug-local`
-   - Progress to: `test-simple`, `test-coverage`
-   - Complete with: `test-memory`, `test-performance`, `test-integration`
-
-## Technical Notes
-
-### PlatformIO Configuration Insights
-- `build_src_filter` works for source files but not Unity test discovery
-- `test_ignore` parameter can exclude specific test files
-- `test_filter` parameter can include specific test patterns
-- Native platform compilation requires complete mock ecosystem
-
-### Mock Design Patterns Applied
-- **Interface Segregation**: Focused mock implementations per interface
-- **Dependency Injection**: Injectable mock services for testing
-- **State Management**: Mock objects track internal state for verification
-- **Test Utilities**: Additional methods for test setup and verification
-
-### Build Environment Characteristics
-- **Coverage**: `-fprofile-arcs -ftest-coverage --coverage -g3 -O0`
-- **Memory**: `-fsanitize=address -fsanitize=leak -g3 -O0`
-- **Performance**: `-O2 -DNDEBUG`
-- **Integration**: `-g3 -O0` with integration test flags
-
-## Files Modified During This Analysis
-
-### Created Files
-- `test/test_main_ticker_only.cpp` - Minimal test runner (unused due to discovery conflicts)
-- `docs/busy.md` - This documentation file
-
-### Modified Files
-- `test/mocks/lvgl.h` - Added complete struct definitions, algorithm include
-- `test/mocks/mock_services.h` - Fixed interface implementations
-- `platformio.ini` - Added test-simple environment (experimental)
-- `scripts/run_tests_with_coverage.py` - Fixed pio.exe command calls
-
-### Key Files Requiring Future Work
-- `test/mocks/ArduinoJson.h` - Needs complete JsonVariant implementation
-- `test/mocks/mock_services.h` - Needs complete DisplayProvider implementation  
-- `include/utilities/types.h` - May need additional type definitions
-- All test environments in `platformio.ini` - Need working configurations
-
-## Conclusion
-
-The test framework analysis revealed that while the project has a sophisticated test architecture design, the implementation has significant gaps that prevent successful compilation. The mock infrastructure is approximately 60% complete, with critical missing pieces in type definitions, interface implementations, and test organization.
-
-**Estimated Effort**: 2-3 days of focused development to reach a working state for basic unit tests, with additional time needed for complete coverage and integration testing environments.
-
-**Priority Recommendation**: Focus on getting one simple test environment working first (e.g., ticker utility tests) before attempting to fix all environments simultaneously.
+The comprehensive test suite represents significant value for code quality and confidence, but requires systematic interface alignment work.

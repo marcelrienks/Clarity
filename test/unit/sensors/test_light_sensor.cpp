@@ -1,6 +1,6 @@
 #include <unity.h>
 #include "sensors/light_sensor.h"
-#include "../mocks/mock_gpio_provider.h"
+#include "mock_gpio_provider.h"
 #include "hardware/gpio_pins.h"
 #include "utilities/types.h"
 
@@ -31,7 +31,8 @@ void test_light_sensor_reading_conversion() {
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, testAdcValue);
     
     // Get the reading
-    double lightLevel = sensor->getReading();
+    Reading lightReading = sensor->getReading();
+    double lightLevel = std::get<double>(lightReading);
     
     // Light level should be reasonable
     TEST_ASSERT_GREATER_THAN(0.0, lightLevel);
@@ -43,12 +44,14 @@ void test_light_sensor_boundary_values() {
     
     // Test minimum value (0 ADC)
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 0);
-    double minLight = sensor->getReading();
+    Reading minLightReading = sensor->getReading();
+    double minLight = std::get<double>(minLightReading);
     TEST_ASSERT_GREATER_OR_EQUAL(0.0, minLight);
     
     // Test maximum value (4095 ADC for 12-bit)
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 4095);
-    double maxLight = sensor->getReading();
+    Reading maxLightReading = sensor->getReading();
+    double maxLight = std::get<double>(maxLightReading);
     TEST_ASSERT_GREATER_THAN(minLight, maxLight);
 }
 
@@ -64,13 +67,15 @@ void test_light_sensor_value_change_detection() {
     TEST_ASSERT_TRUE(hasChanged1);
     
     // Same value should not indicate change
-    double reading2 = sensor->getReading();
+    Reading lightReading2 = sensor->getReading();
+    double reading2 = std::get<double>(lightReading2);
     bool hasChanged2 = sensor->hasValueChanged();
     TEST_ASSERT_FALSE(hasChanged2);
     
     // Different value should indicate change
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 2000);
-    double reading3 = sensor->getReading();
+    Reading lightReading3 = sensor->getReading();
+    double reading3 = std::get<double>(lightReading3);
     bool hasChanged3 = sensor->hasValueChanged();
     TEST_ASSERT_TRUE(hasChanged3);
     TEST_ASSERT_NOT_EQUAL(reading1, reading3);
@@ -89,7 +94,8 @@ void test_light_sensor_reading_consistency() {
     
     // Multiple readings should be consistent
     double reading1 = sensor->getReading();
-    double reading2 = sensor->getReading();
+    Reading lightReading2 = sensor->getReading();
+    double reading2 = std::get<double>(lightReading2);
     
     TEST_ASSERT_EQUAL_DOUBLE(reading1, reading2);
 }
@@ -99,13 +105,16 @@ void test_light_sensor_monotonic_response() {
     
     // Test that increasing ADC values produce increasing light values
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 1000);
-    double light1 = sensor->getReading();
+    Reading light1Reading = sensor->getReading();
+    double light1 = std::get<double>(light1Reading);
     
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 2000);
-    double light2 = sensor->getReading();
+    Reading light2Reading = sensor->getReading();
+    double light2 = std::get<double>(light2Reading);
     
     mockGpio->setAnalogValue(gpio_pins::LIGHTS, 3000);
-    double light3 = sensor->getReading();
+    Reading light3Reading = sensor->getReading();
+    double light3 = std::get<double>(light3Reading);
     
     // Light values should generally increase with ADC value
     TEST_ASSERT_GREATER_THAN(light1, light2);

@@ -1,9 +1,9 @@
 #ifdef UNIT_TESTING
 
 #include <unity.h>
-#include "../../utilities/test_fixtures.h"
+#include "test_fixtures.h"
 #include "sensors/key_sensor.h"
-#include "../../mocks/mock_gpio_provider.h"
+#include "mock_gpio_provider.h"
 #include "hardware/gpio_pins.h"
 #include "utilities/types.h"
 

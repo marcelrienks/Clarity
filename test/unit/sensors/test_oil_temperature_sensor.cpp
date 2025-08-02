@@ -1,6 +1,6 @@
 #include <unity.h>
 #include "sensors/oil_temperature_sensor.h"
-#include "../mocks/mock_gpio_provider.h"
+#include "mock_gpio_provider.h"
 #include "hardware/gpio_pins.h"
 
 #ifdef UNIT_TESTING
@@ -41,7 +41,8 @@ void test_oil_temperature_sensor_reading_conversion() {
     sensor->init();
     
     // Get the reading
-    double temperature = sensor->getReading();
+    Reading tempReading = sensor->getReading();
+    double temperature = std::get<double>(tempReading);
     
     // Temperature should be reasonable (assuming Celsius)
     TEST_ASSERT_GREATER_THAN(-50.0, temperature); // Above absolute minimum
@@ -53,20 +54,23 @@ void test_oil_temperature_sensor_value_change_detection() {
     
     // Set initial value
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 1000);
-    double reading1 = sensor->getReading();
+    Reading tempReading1 = sensor->getReading();
+    double reading1 = std::get<double>(tempReading1);
     bool hasChanged1 = sensor->hasValueChanged();
     
     // First reading should indicate change (from initial state)
     TEST_ASSERT_TRUE(hasChanged1);
     
     // Same value should not indicate change
-    double reading2 = sensor->getReading();
+    Reading tempReading2 = sensor->getReading();
+    double reading2 = std::get<double>(tempReading2);
     bool hasChanged2 = sensor->hasValueChanged();
     TEST_ASSERT_FALSE(hasChanged2);
     
     // Different value should indicate change
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 2000);
-    double reading3 = sensor->getReading();
+    Reading tempReading3 = sensor->getReading();
+    double reading3 = std::get<double>(tempReading3);
     bool hasChanged3 = sensor->hasValueChanged();
     TEST_ASSERT_TRUE(hasChanged3);
     TEST_ASSERT_NOT_EQUAL(reading1, reading3);
@@ -77,11 +81,13 @@ void test_oil_temperature_sensor_boundary_values() {
     
     // Test minimum value (0 ADC)
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 0);
-    double minTemp = sensor->getReading();
+    Reading minTempReading = sensor->getReading();
+    double minTemp = std::get<double>(minTempReading);
     
     // Test maximum value (4095 ADC for 12-bit)
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 4095);
-    double maxTemp = sensor->getReading();
+    Reading maxTempReading = sensor->getReading();
+    double maxTemp = std::get<double>(maxTempReading);
     
     // Max temperature should be higher than min temperature
     TEST_ASSERT_GREATER_THAN(minTemp, maxTemp);
@@ -97,13 +103,16 @@ void test_oil_temperature_sensor_monotonic_response() {
     // Test that increasing ADC values generally produce increasing temperatures
     // (this depends on the sensor's calibration curve)
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 1000);
-    double temp1 = sensor->getReading();
+    Reading temp1Reading = sensor->getReading();
+    double temp1 = std::get<double>(temp1Reading);
     
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 2000);
-    double temp2 = sensor->getReading();
+    Reading temp2Reading = sensor->getReading();
+    double temp2 = std::get<double>(temp2Reading);
     
     mockGpio->setAnalogValue(gpio_pins::OIL_TEMPERATURE, 3000);
-    double temp3 = sensor->getReading();
+    Reading temp3Reading = sensor->getReading();
+    double temp3 = std::get<double>(temp3Reading);
     
     // Assuming linear or monotonic response (adjust based on actual calibration)
     // Note: This test may need adjustment based on the actual sensor calibration

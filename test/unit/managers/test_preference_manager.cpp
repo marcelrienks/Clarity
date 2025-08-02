@@ -1,10 +1,13 @@
 #ifdef UNIT_TESTING
 
 #include <unity.h>
-#include "../../utilities/test_fixtures.h"
+#include "test_fixtures.h"
+
+// Unity extension macros for string comparison  
+#define TEST_ASSERT_NOT_EQUAL_STRING(expected, actual) TEST_ASSERT_FALSE(strcmp(expected, actual) == 0)
 #include "managers/preference_manager.h"
 #include "utilities/types.h"
-#include "../../mocks/ArduinoJson.h"
+#include "ArduinoJson.h"
 
 std::unique_ptr<ManagerTestFixture> fixture;
 PreferenceManager* prefManager = nullptr;
@@ -12,7 +15,7 @@ PreferenceManager* prefManager = nullptr;
 void setUp_preference_manager() {
     fixture = std::make_unique<ManagerTestFixture>();
     fixture->SetUp();
-    prefManager = new PreferenceManager(fixture->getServiceContainer());
+    prefManager = new PreferenceManager();
 }
 
 void tearDown_preference_manager() {
@@ -208,7 +211,7 @@ void test_preference_manager_concurrent_access() {
 void test_preference_manager_memory_management() {
     // Test creating and destroying multiple instances
     for (int i = 0; i < 10; i++) {
-        PreferenceManager* tempManager = new PreferenceManager(fixture->getServiceContainer());
+        PreferenceManager* tempManager = new PreferenceManager();
         tempManager->init();
         tempManager->createDefaultConfig();
         delete tempManager;
