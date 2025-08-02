@@ -5,6 +5,8 @@
 
 #include <stdint.h>
 #include <cstddef>
+#include <map>
+#include <functional>
 
 // Basic Arduino constants
 #define HIGH 1
@@ -26,17 +28,136 @@ typedef enum {
     ADC_11db
 } adc_attenuation_t;
 
-// Mock Arduino functions
-inline uint32_t millis() { return 0; }
-inline void delay(uint32_t ms) {}
-inline void analogReadResolution(uint8_t bits) {}
-inline void analogSetAttenuation(adc_attenuation_t attenuation) {}
-inline int digitalRead(uint8_t pin) { return LOW; }
-inline int analogRead(uint8_t pin) { return 0; }
-inline void pinMode(uint8_t pin, uint8_t mode) {}
-
 // ESP32 return types
 typedef int esp_err_t;
 #define ESP_OK 0
+#define ESP_ERR_NOT_FOUND 0x0105
+
+// Mock hardware state management
+class MockHardwareState {
+public:
+    static MockHardwareState& instance() {
+        static MockHardwareState inst;
+        return inst;
+    }
+    
+    // GPIO state management
+    void setDigitalPin(uint8_t pin, int value) { digitalPins[pin] = value; }
+    void setAnalogPin(uint8_t pin, int value) { analogPins[pin] = value; }
+    void setPinMode(uint8_t pin, uint8_t mode) { pinModes[pin] = mode; }
+    
+    int getDigitalPin(uint8_t pin) { return digitalPins.count(pin) ? digitalPins[pin] : LOW; }
+    int getAnalogPin(uint8_t pin) { return analogPins.count(pin) ? analogPins[pin] : 0; }
+    uint8_t getPinMode(uint8_t pin) { return pinModes.count(pin) ? pinModes[pin] : INPUT; }
+    
+    // Time management
+    void setMillis(uint32_t time) { currentMillis = time; }
+    uint32_t getMillis() const { return currentMillis; }
+    void advanceTime(uint32_t ms) { currentMillis += ms; }
+    
+    // ADC configuration
+    void setAnalogResolution(uint8_t bits) { analogResolution = bits; }
+    void setAnalogAttenuation(adc_attenuation_t attenuation) { analogAtten = attenuation; }
+    uint8_t getAnalogResolution() const { return analogResolution; }
+    adc_attenuation_t getAnalogAttenuation() const { return analogAtten; }
+    
+    // Reset state for testing
+    void reset() {
+        digitalPins.clear();
+        analogPins.clear();
+        pinModes.clear();
+        currentMillis = 0;
+        analogResolution = 10;
+        analogAtten = ADC_11db;
+    }
+    
+    // Interrupt simulation
+    void registerInterrupt(uint8_t pin, std::function<void()> callback) {
+        interruptCallbacks[pin] = callback;
+    }
+    void triggerInterrupt(uint8_t pin) {
+        if (interruptCallbacks.count(pin)) {
+            interruptCallbacks[pin]();
+        }
+    }
+    
+private:
+    std::map<uint8_t, int> digitalPins;
+    std::map<uint8_t, int> analogPins;
+    std::map<uint8_t, uint8_t> pinModes;
+    std::map<uint8_t, std::function<void()>> interruptCallbacks;
+    uint32_t currentMillis = 0;
+    uint8_t analogResolution = 10;
+    adc_attenuation_t analogAtten = ADC_11db;
+};
+
+// Mock Arduino functions
+inline uint32_t millis() { 
+    return MockHardwareState::instance().getMillis(); 
+}
+
+inline void delay(uint32_t ms) { 
+    MockHardwareState::instance().advanceTime(ms); 
+}
+
+inline void analogReadResolution(uint8_t bits) { 
+    MockHardwareState::instance().setAnalogResolution(bits); 
+}
+
+inline void analogSetAttenuation(adc_attenuation_t attenuation) { 
+    MockHardwareState::instance().setAnalogAttenuation(attenuation); 
+}
+
+inline int digitalRead(uint8_t pin) { 
+    return MockHardwareState::instance().getDigitalPin(pin); 
+}
+
+inline int analogRead(uint8_t pin) { 
+    return MockHardwareState::instance().getAnalogPin(pin); 
+}
+
+inline void pinMode(uint8_t pin, uint8_t mode) { 
+    MockHardwareState::instance().setPinMode(pin, mode); 
+}
+
+inline void digitalWrite(uint8_t pin, uint8_t value) {
+    MockHardwareState::instance().setDigitalPin(pin, value);
+}
+
+// Serial mock
+class MockSerial {
+public:
+    void begin(unsigned long baud) {}
+    void print(const char* str) {}
+    void println(const char* str) {}
+    void print(int value) {}
+    void println(int value) {}
+    void print(float value) {}
+    void println(float value) {}
+    size_t write(uint8_t byte) { return 1; }
+    int available() { return 0; }
+    int read() { return -1; }
+};
+
+extern MockSerial Serial;
+
+// SPI mock
+class MockSPI {
+public:
+    void begin() {}
+    void end() {}
+    void beginTransaction(uint32_t settings) {}
+    void endTransaction() {}
+    uint8_t transfer(uint8_t data) { return data; }
+    void transfer(void* buf, size_t count) {}
+};
+
+extern MockSPI SPI;
+
+// WiFi status constants
+#define WL_CONNECTED 3
+#define WL_NO_SSID_AVAIL 1
+#define WL_CONNECT_FAILED 4
+#define WL_IDLE_STATUS 0
 
 #endif // UNIT_TESTING

@@ -1,0 +1,1 @@
+CLARITY PROJECT COVERAGE REPORT\n==================================================\n\nCoverage data found for test files\nTotal coverage files: 3\n- test_all.gcno\n- unity_config.gcno\n- unity.gcno\n

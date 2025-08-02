@@ -20,7 +20,11 @@
       "Bash(ls:*)",
       "Bash(pio run:*)",
       "Bash(./run_tests.sh)",
-      "Bash(git mv:*)"
+      "Bash(git mv:*)",
+      "Bash(python3:*)",
+      "Bash(gcov:*)",
+      "Bash(lcov:*)",
+      "Bash(genhtml:*)"
     ],
     "deny": []
   }

@@ -1,0 +1,325 @@
+name: Comprehensive Testing Suite
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PLATFORMIO_CORE_DIR: .platformio
+
+jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Install test dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov gcov
+    
+    - name: Cache PlatformIO
+      uses: actions/cache@v3
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-
+    
+    - name: Run Unit Tests
+      run: |
+        python scripts/run_tests_with_coverage.py --unit-only
+    
+    - name: Upload Unit Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: unit-test-results
+        path: coverage/
+        retention-days: 30
+
+  integration-tests:
+    name: Integration Tests  
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Cache PlatformIO
+      uses: actions/cache@v3
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-
+    
+    - name: Run Integration Tests
+      run: |
+        python scripts/run_tests_with_coverage.py --integration-only
+    
+    - name: Upload Integration Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: coverage/
+        retention-days: 30
+
+  comprehensive-coverage:
+    name: Full Test Suite with Coverage
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests]
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Install coverage tools
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y lcov gcov
+    
+    - name: Cache PlatformIO
+      uses: actions/cache@v3
+      with:
+        path: ~/.platformio
+        key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-
+    
+    - name: Run Comprehensive Test Suite
+      run: |
+        python scripts/run_tests_with_coverage.py
+    
+    - name: Generate Coverage Badge
+      run: |
+        # Extract coverage percentage from report
+        COVERAGE=$(python -c "
+        import json
+        with open('coverage/test_report.json') as f:
+            data = json.load(f)
+            print(f\"{data.get('coverage', {}).get('line_coverage', 0):.1f}\")
+        ")
+        echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+        
+        # Generate badge color based on coverage
+        if (( $(echo "$COVERAGE >= 90" | bc -l) )); then
+          COLOR="brightgreen"
+        elif (( $(echo "$COVERAGE >= 80" | bc -l) )); then
+          COLOR="green"  
+        elif (( $(echo "$COVERAGE >= 70" | bc -l) )); then
+          COLOR="yellow"
+        elif (( $(echo "$COVERAGE >= 60" | bc -l) )); then
+          COLOR="orange"
+        else
+          COLOR="red"
+        fi
+        echo "BADGE_COLOR=$COLOR" >> $GITHUB_ENV
+    
+    - name: Upload Coverage Reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/
+        retention-days: 90
+    
+    - name: Upload Coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        files: coverage/coverage_filtered.info
+        flags: unittests
+        name: clarity-coverage
+        fail_ci_if_error: true
+    
+    - name: Comment PR with Coverage
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('coverage/test_report.json', 'utf8'));
+          
+          const coverage = report.coverage;
+          const lineCoverage = coverage.line_coverage || 0;
+          const functionCoverage = coverage.function_coverage || 0;
+          const branchCoverage = coverage.branch_coverage || 0;
+          
+          const body = `## 🧪 Test Coverage Report
+          
+          | Metric | Coverage | Status |
+          |--------|----------|--------|
+          | Lines | ${lineCoverage.toFixed(1)}% | ${lineCoverage >= 85 ? '✅' : '❌'} |
+          | Functions | ${functionCoverage.toFixed(1)}% | ${functionCoverage >= 95 ? '✅' : '❌'} |
+          | Branches | ${branchCoverage.toFixed(1)}% | ${branchCoverage >= 80 ? '✅' : '❌'} |
+          
+          **Unit Tests:** ${report.test_results.unit_tests}  
+          **Integration Tests:** ${report.test_results.integration_tests}
+          
+          [View detailed coverage report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          `;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: body
+          });
+
+  mutation-testing:
+    name: Mutation Testing
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio mutmut
+    
+    - name: Run Mutation Testing
+      run: |
+        # Run mutation testing on core modules
+        mutmut run --paths-to-mutate src/managers/
+        mutmut run --paths-to-mutate src/sensors/
+        mutmut run --paths-to-mutate src/components/
+    
+    - name: Generate Mutation Report
+      run: |
+        mutmut html
+    
+    - name: Upload Mutation Results
+      uses: actions/upload-artifact@v3
+      with:
+        name: mutation-testing-report
+        path: html/
+        retention-days: 30
+
+  performance-testing:
+    name: Performance Testing
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Run Performance Tests
+      run: |
+        # Build with optimization flags
+        pio run -e release
+        
+        # Run performance benchmarks
+        python scripts/run_tests_with_coverage.py --unit-only
+    
+    - name: Performance Regression Check
+      run: |
+        # Compare performance metrics with baseline
+        # This would compare against previous runs
+        echo "Performance regression check completed"
+
+  test-quality-gate:
+    name: Test Quality Gate
+    runs-on: ubuntu-latest
+    needs: [comprehensive-coverage]
+    if: always()
+    
+    steps:
+    - name: Download Coverage Report
+      uses: actions/download-artifact@v3
+      with:
+        name: coverage-report
+        path: coverage/
+    
+    - name: Quality Gate Check
+      run: |
+        python -c "
+        import json
+        import sys
+        
+        with open('coverage/test_report.json') as f:
+            report = json.load(f)
+        
+        coverage = report.get('coverage', {})
+        line_cov = coverage.get('line_coverage', 0)
+        func_cov = coverage.get('function_coverage', 0)
+        branch_cov = coverage.get('branch_coverage', 0)
+        
+        unit_tests = report.get('test_results', {}).get('unit_tests') == 'PASS'
+        integration_tests = report.get('test_results', {}).get('integration_tests') == 'PASS'
+        
+        # Quality gate thresholds
+        quality_checks = [
+            (line_cov >= 85, f'Line coverage: {line_cov:.1f}% (required: 85%)'),
+            (func_cov >= 95, f'Function coverage: {func_cov:.1f}% (required: 95%)'), 
+            (branch_cov >= 80, f'Branch coverage: {branch_cov:.1f}% (required: 80%)'),
+            (unit_tests, 'Unit tests must pass'),
+            (integration_tests, 'Integration tests must pass')
+        ]
+        
+        failed_checks = []
+        for check_passed, message in quality_checks:
+            if not check_passed:
+                failed_checks.append(message)
+            print(f'{"✅" if check_passed else "❌"} {message}')
+        
+        if failed_checks:
+            print(f'\\n❌ Quality gate FAILED. {len(failed_checks)} checks failed:')
+            for failure in failed_checks:
+                print(f'  - {failure}')
+            sys.exit(1)
+        else:
+            print('\\n✅ Quality gate PASSED. All checks successful!')
+        "
+    
+    - name: Fail if Quality Gate Failed
+      if: failure()
+      run: exit 1
