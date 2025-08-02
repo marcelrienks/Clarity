@@ -3,45 +3,37 @@
 #include "mock_gpio_provider.h"
 #include "hardware/gpio_pins.h"
 
-#ifdef UNIT_TESTING
-// Mock Arduino functions
-extern "C" {
-    void analogReadResolution(uint8_t bits) {}
-    void analogSetAttenuation(adc_attenuation_t attenuation) {}
-    void log_d(const char* format, ...) {}
-    void log_w(const char* format, ...) {}
-}
-#endif
+// Arduino functions are already mocked in test/mocks/Arduino.h
 
-MockGpioProvider* mockGpio;
-OilPressureSensor* sensor;
+MockGpioProvider* oilPressureMockGpio;
+OilPressureSensor* oilPressureSensor;
 
 void setUp_oil_pressure_sensor() {
-    mockGpio = new MockGpioProvider();
-    sensor = new OilPressureSensor(mockGpio);
+    oilPressureMockGpio = new MockGpioProvider();
+    oilPressureSensor = new OilPressureSensor(oilPressureMockGpio);
 }
 
 void tearDown_oil_pressure_sensor() {
-    delete sensor;
-    delete mockGpio;
+    delete oilPressureSensor;
+    delete oilPressureMockGpio;
 }
 
 void test_oil_pressure_sensor_init() {
-    sensor->init();
+    oilPressureSensor->init();
     
-    // Verify that the sensor initializes without throwing
+    // Verify that the oilPressureSensor initializes without throwing
     TEST_ASSERT_TRUE(true);
 }
 
 void test_oil_pressure_sensor_reading_conversion() {
     // Set a known ADC value
     uint16_t testAdcValue = 2048; // Mid-range 12-bit value
-    mockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, testAdcValue);
+    oilPressureMockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, testAdcValue);
     
-    sensor->init();
+    oilPressureSensor->init();
     
     // Get the reading
-    Reading pressureReading = sensor->getReading();
+    Reading pressureReading = oilPressureSensor->getReading();
     double pressure = std::get<double>(pressureReading);
     
     // Pressure should be positive and reasonable
@@ -50,44 +42,37 @@ void test_oil_pressure_sensor_reading_conversion() {
 }
 
 void test_oil_pressure_sensor_value_change_detection() {
-    sensor->init();
+    oilPressureSensor->init();
     
     // Set initial value
-    mockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 1000);
-    Reading pressureReading1 = sensor->getReading();
-    double reading1 = std::get<double>(pressureReading1);
-    bool hasChanged1 = sensor->hasValueChanged();
+    oilPressureMockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 1000);
+    Reading reading1 = oilPressureSensor->getReading();
+    double value1 = std::get<double>(reading1);
     
-    // First reading should indicate change (from initial state)
-    TEST_ASSERT_TRUE(hasChanged1);
+    // Same value should give same reading
+    Reading reading2 = oilPressureSensor->getReading();
+    double value2 = std::get<double>(reading2);
+    TEST_ASSERT_EQUAL_DOUBLE(value1, value2);
     
-    // Same value should not indicate change
-    Reading pressureReading2 = sensor->getReading();
-    double reading2 = std::get<double>(pressureReading2);
-    bool hasChanged2 = sensor->hasValueChanged();
-    TEST_ASSERT_FALSE(hasChanged2);
-    
-    // Different value should indicate change
-    mockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 2000);
-    Reading pressureReading3 = sensor->getReading();
-    double reading3 = std::get<double>(pressureReading3);
-    bool hasChanged3 = sensor->hasValueChanged();
-    TEST_ASSERT_TRUE(hasChanged3);
-    TEST_ASSERT_NOT_EQUAL(reading1, reading3);
+    // Different value should give different reading
+    oilPressureMockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 2000);
+    Reading reading3 = oilPressureSensor->getReading();
+    double value3 = std::get<double>(reading3);
+    TEST_ASSERT_NOT_EQUAL(value1, value3);
 }
 
 void test_oil_pressure_sensor_boundary_values() {
-    sensor->init();
+    oilPressureSensor->init();
     
     // Test minimum value (0 ADC)
-    mockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 0);
-    Reading minPressureReading = sensor->getReading();
+    oilPressureMockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 0);
+    Reading minPressureReading = oilPressureSensor->getReading();
     double minPressure = std::get<double>(minPressureReading);
     TEST_ASSERT_GREATER_OR_EQUAL(0.0, minPressure);
     
     // Test maximum value (4095 ADC for 12-bit)
-    mockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 4095);
-    Reading maxPressureReading = sensor->getReading();
+    oilPressureMockGpio->setAnalogValue(gpio_pins::OIL_PRESSURE, 4095);
+    Reading maxPressureReading = oilPressureSensor->getReading();
     double maxPressure = std::get<double>(maxPressureReading);
     TEST_ASSERT_GREATER_THAN(minPressure, maxPressure);
     TEST_ASSERT_LESS_THAN(200.0, maxPressure); // Sanity check

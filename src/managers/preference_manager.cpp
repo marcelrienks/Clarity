@@ -61,7 +61,11 @@ void PreferenceManager::loadConfig()
     DeserializationError result = deserializeJson(doc, jsonString);
     if (result != DeserializationError::Ok)
     {
-        log_w("Error deserializing config: %s", result.c_str());
+#ifdef UNIT_TESTING
+        log_w("Error deserializing config: %s", c_str(result));
+#else
+        log_w("Error deserializing config");
+#endif
         return PreferenceManager::createDefaultConfig();
     }
 

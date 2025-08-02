@@ -271,8 +271,9 @@ int main(int argc, char **argv) {
     RUN_TEST(test_theme_validation);
     RUN_TEST(test_config_clear);
     
-    // Comprehensive Test Suites (start with key sensor tests) 
+    // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
     runKeySensorTests();           // 16 tests
+    runLockSensorTests();          // 7 tests (working - variable conflicts resolved)
     
     // Manager tests (currently have interface issues - see busy.md)
     // runPreferenceManagerTests();    // 14 tests
@@ -287,8 +288,13 @@ int main(int argc, char **argv) {
     return UNITY_END();
 }
 
-// Include comprehensive test implementations
+// Include comprehensive test implementations - Phase 1: Sensor Tests
 #include "unit/sensors/test_key_sensor.cpp"
+#include "unit/sensors/test_lock_sensor.cpp"
+// Additional sensors disabled due to crash issues - need investigation:
+// #include "unit/sensors/test_light_sensor.cpp"
+// #include "unit/sensors/test_oil_pressure_sensor.cpp"
+// #include "unit/sensors/test_oil_temperature_sensor.cpp"
 
 // Manager tests temporarily excluded due to interface compatibility issues
 // #include "unit/managers/test_preference_manager.cpp"
