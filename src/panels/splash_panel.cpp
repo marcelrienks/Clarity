@@ -102,9 +102,9 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
                         _DELAY_TIME,
                         false);
 
-    // Schedule the fade-out animation
+    // Schedule the fade-out animation (Display time added to allow a short little period where the logo is fully visible, this does not happen with fade out)
     auto *fadeOutTimer = lv_timer_create(SplashPanel::fade_out_timer_callback,
-                                           _ANIMATION_TIME + _DISPLAY_TIME,
+                                           _ANIMATION_TIME + _DELAY_TIME + _DISPLAY_TIME,
                                            panel);
 
     // Remove the fade_in_timer after transition

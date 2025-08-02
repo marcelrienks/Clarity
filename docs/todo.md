@@ -226,4 +226,6 @@ Create Wokwi-based simulations for the documented scenarios.
 
 ## 6. General
 
-* Night theme (triggered by lights) is not changing the background of the screen to fully black, only the central pivot is turning full black
+* review and remove all null checks before use, if an object is null, the application should fail, not just continue with the error
+* update scenarios, to detail what the success criteria is for something like 'oil panel load'
+It would be that both oil components are loaded, that needles animate, that scales are visible, that the correct theme is applied etc.

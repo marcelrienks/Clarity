@@ -67,6 +67,11 @@ void OemOilPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
     log_d("Initializing OEM oil panel with sensors and display components");
 
     screen_ = display->createScreen();
+    
+    // Apply current theme immediately after screen creation
+    if (styleService_) {
+        styleService_->applyThemeToScreen(screen_);
+    }
 
     oemOilPressureSensor_->init();
     currentOilPressureValue_ = -1; // Sentinel value to ensure first update
@@ -97,6 +102,13 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
     log_v("loading...");
     
     lv_screen_load(screen_);
+    
+    // Always apply current theme to the screen when loading (ensures theme is current)
+    if (styleService_) {
+        styleService_->applyThemeToScreen(screen_);
+        // Update lastTheme_ to current theme to sync with theme detection in update()
+        lastTheme_ = String(styleService_->getCurrentTheme());
+    }
 }
 
 /// @brief Update the reading on the screen
@@ -114,6 +126,11 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
         forceComponentRefresh_ = true;
         log_d("Theme changed to %s, forcing component refresh", currentTheme);
         lastTheme_ = String(currentTheme);
+        
+        // Apply the new theme to the screen background when theme changes
+        if (styleService_ && screen_) {
+            styleService_->applyThemeToScreen(screen_);
+        }
     } else {
         forceComponentRefresh_ = false;
     }

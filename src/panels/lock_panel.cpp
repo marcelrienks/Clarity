@@ -37,6 +37,11 @@ void LockPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
     log_d("Initializing lock panel with sensor and display components");
 
     screen_ = display->createScreen();
+    
+    // Apply current theme immediately after screen creation
+    if (styleService_) {
+        styleService_->applyThemeToScreen(screen_);
+    }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     lockSensor_->init();
@@ -59,6 +64,11 @@ void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio
 
     log_v("loading...");
     lv_screen_load(screen_);
+    
+    // Always apply current theme to the screen when loading (ensures theme is current)
+    if (styleService_) {
+        styleService_->applyThemeToScreen(screen_);
+    }
 }
 
 /// @brief Update the lock panel with current sensor data
