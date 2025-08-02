@@ -1,6 +1,7 @@
 #include <unity.h>
 #include "managers/style_manager.h"
 #include "utilities/types.h"
+#include <cstring>
 
 // Unity extension macros for string comparison  
 #define TEST_ASSERT_NOT_EQUAL_STRING(expected, actual) TEST_ASSERT_FALSE(strcmp(expected, actual) == 0)

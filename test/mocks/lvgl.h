@@ -291,7 +291,17 @@ inline void lv_scr_load(lv_obj_t* scr) {
 
 // Style functions
 inline void lv_style_init(lv_style_t* style) {}
+inline void lv_style_reset(lv_style_t* style) {}
 inline void lv_style_set_prop(lv_style_t* style, lv_style_prop_t prop, int32_t value) {}
+inline void lv_style_set_bg_color(lv_style_t* style, lv_color_t color) {}
+inline void lv_style_set_bg_opa(lv_style_t* style, uint8_t opa) {}
+inline void lv_style_set_text_color(lv_style_t* style, lv_color_t color) {}
+inline void lv_style_set_text_opa(lv_style_t* style, uint8_t opa) {}
+inline void lv_style_set_line_color(lv_style_t* style, lv_color_t color) {}
+inline void lv_style_set_line_width(lv_style_t* style, lv_coord_t width) {}
+inline void lv_style_set_length(lv_style_t* style, lv_coord_t length) {}
+inline void lv_style_set_arc_width(lv_style_t* style, lv_coord_t width) {}
+inline void lv_obj_invalidate(lv_obj_t* obj) {}
 
 // Color functions
 inline lv_color_t lv_color_hex(uint32_t c) { 

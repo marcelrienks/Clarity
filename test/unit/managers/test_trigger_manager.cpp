@@ -5,7 +5,11 @@
 #include "sensors/light_sensor.h"
 #include "../mocks/mock_gpio_provider.h"
 #include "utilities/types.h"
+#include "Arduino.h"
 #include <memory>
+
+// Custom macro for testing no exceptions (Unity doesn't have this)
+#define TEST_ASSERT_NO_THROW(expression) do { expression; TEST_PASS(); } while(0)
 
 #ifdef UNIT_TESTING
 // Mock Arduino functions
