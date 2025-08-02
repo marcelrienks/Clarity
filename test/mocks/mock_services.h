@@ -286,6 +286,7 @@ public:
 class MockPreferenceService : public IPreferenceService {
 private:
     Configs config;
+    std::map<std::string, std::string> preferences;
     bool loadCalled = false;
     bool saveCalled = false;
     
@@ -325,7 +326,8 @@ public:
     }
     
     void set_preference(const std::string& key, const std::string& value) {
-        // Simple key-value storage for testing
+        preferences[key] = value;
+        // Also update config for backward compatibility
         if (key == "panelName") {
             config.panelName = value;
         } else if (key == "theme") {
@@ -333,9 +335,20 @@ public:
         }
     }
     
+    std::string get_preference(const std::string& key, const std::string& defaultValue = "") {
+        auto it = preferences.find(key);
+        return (it != preferences.end()) ? it->second : defaultValue;
+    }
+    
+    void clear_all_preferences() {
+        preferences.clear();
+        config = {};
+    }
+    
     // Test utilities
     void reset() {
         config = {};
+        preferences.clear();
         loadCalled = false;
         saveCalled = false;
     }

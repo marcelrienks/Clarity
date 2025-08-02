@@ -4,6 +4,7 @@
 
 #include "../mocks/Arduino.h"
 #include "../mocks/lvgl.h"
+#include "../mocks/Preferences.h"
 #include "../mocks/mock_services.h"
 #include "../mocks/mock_gpio_provider.h"
 #include "../../include/system/service_container.h"
@@ -27,6 +28,7 @@ public:
         // Reset all mock states
         MockHardwareState::instance().reset();
         MockLVGLState::instance().reset();
+        MockPreferencesStorage::getInstance().reset();
         
         // Create mock services
         mockPanelService = std::make_unique<MockPanelService>();
@@ -129,7 +131,13 @@ public:
     }
     
     void setPreference(const std::string& key, const std::string& value) {
+        MockPreferencesStorage::getInstance().setString(key.c_str(), String(value.c_str()));
         mockPreferenceService->set_preference(key, value);
+    }
+    
+    void clearAllPreferences() {
+        MockPreferencesStorage::getInstance().clear();
+        mockPreferenceService->clear_all_preferences();
     }
     
     const char* getCurrentPanel() {

@@ -126,7 +126,7 @@ void test_preference_manager_json_deserialization() {
     prefManager->init();
     
     // Set up test data in preference service
-    prefManagerFixture->setPreference("config", "{\"panelName\":\"DeserializedPanel\"}");
+    prefManagerFixture->setPreference("config", "{\"panel_name\":\"DeserializedPanel\"}");
     
     // Load configuration
     prefManager->loadConfig();
@@ -242,6 +242,240 @@ void test_preference_manager_memory_management() {
     TEST_ASSERT_TRUE(true);
 }
 
+// Enhanced coverage tests for Phase 2
+
+void test_preference_manager_basic_save_load_verification() {
+    prefManager->init();
+    
+    // Set a specific config
+    Configs testConfig;
+    testConfig.panelName = "TestSaveLoad";
+    prefManager->setConfig(testConfig);
+    
+    // Verify it was set correctly
+    const Configs& currentConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("TestSaveLoad", currentConfig.panelName.c_str());
+    
+    // Save it
+    prefManager->saveConfig();
+    
+    // Load it back
+    prefManager->loadConfig();
+    
+    // Verify it was loaded correctly
+    const Configs& loadedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("TestSaveLoad", loadedConfig.panelName.c_str());
+}
+
+void test_preference_manager_malformed_json_handling() {
+    // Don't call init() first, set the preference and then init
+    
+    // Test with malformed JSON
+    prefManagerFixture->setPreference("config", "{\"panel_name\":\"TestPanel\",}"); // trailing comma
+    prefManager->init(); // This will call loadConfig internally
+    
+    // Should fall back to default config
+    const Configs& config = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config.panelName.c_str());
+    
+    // Test with incomplete JSON
+    prefManagerFixture->setPreference("config", "{\"panel_name\":");
+    prefManager->loadConfig();
+    const Configs& config2 = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config2.panelName.c_str());
+    
+    // Test with invalid JSON structure
+    prefManagerFixture->setPreference("config", "not_json_at_all");
+    prefManager->loadConfig();
+    const Configs& config3 = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config3.panelName.c_str());
+}
+
+void test_preference_manager_missing_json_fields() {
+    prefManager->init();
+    
+    // Test with JSON missing panel_name field
+    prefManagerFixture->setPreference("config", "{\"otherField\":\"value\"}");
+    prefManager->loadConfig();
+    
+    // Should fall back to default config
+    const Configs& config = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config.panelName.c_str());
+    
+    // Test with empty JSON object
+    prefManagerFixture->setPreference("config", "{}");
+    prefManager->loadConfig();
+    const Configs& config2 = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config2.panelName.c_str());
+    
+    // Test with null panel_name
+    prefManagerFixture->setPreference("config", "{\"panel_name\":null}");
+    prefManager->loadConfig();
+    const Configs& config3 = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config3.panelName.c_str());
+}
+
+void test_preference_manager_boundary_values() {
+    prefManager->init();
+    
+    // Test with very long panel name
+    std::string longPanelName(1000, 'A');
+    Configs longConfig;
+    longConfig.panelName = longPanelName;
+    prefManager->setConfig(longConfig);
+    prefManager->saveConfig();
+    
+    const Configs& savedLongConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(longPanelName.c_str(), savedLongConfig.panelName.c_str());
+    
+    // Test with empty panel name
+    Configs emptyConfig;
+    emptyConfig.panelName = "";
+    prefManager->setConfig(emptyConfig);
+    prefManager->saveConfig();
+    
+    const Configs& savedEmptyConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("", savedEmptyConfig.panelName.c_str());
+    
+    // Test with special characters in panel name
+    Configs specialConfig;
+    specialConfig.panelName = "Panel!@#$%^&*()_+-={}[]|\\:;\"'<>?,./~`";
+    prefManager->setConfig(specialConfig);
+    prefManager->saveConfig();
+    
+    const Configs& savedSpecialConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("Panel!@#$%^&*()_+-={}[]|\\:;\"'<>?,./~`", savedSpecialConfig.panelName.c_str());
+}
+
+void test_preference_manager_unicode_handling() {
+    prefManager->init();
+    
+    // Test with unicode characters
+    Configs unicodeConfig;
+    unicodeConfig.panelName = "Panel测试UTF8字符";
+    prefManager->setConfig(unicodeConfig);
+    prefManager->saveConfig();
+    
+    const Configs& savedUnicodeConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("Panel测试UTF8字符", savedUnicodeConfig.panelName.c_str());
+    
+    // Test load after save
+    prefManager->loadConfig();
+    const Configs& loadedUnicodeConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("Panel测试UTF8字符", loadedUnicodeConfig.panelName.c_str());
+}
+
+void test_preference_manager_json_serialization_errors() {
+    prefManager->init();
+    
+    // Test very large JSON that might cause serialization issues
+    Configs largeConfig;
+    largeConfig.panelName = std::string(10000, 'X'); // Very large string
+    prefManager->setConfig(largeConfig);
+    
+    // Should handle large configs gracefully
+    prefManager->saveConfig();
+    const Configs& savedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(largeConfig.panelName.c_str(), savedConfig.panelName.c_str());
+    
+    // Test loading large config
+    prefManager->loadConfig();
+    const Configs& loadedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(largeConfig.panelName.c_str(), loadedConfig.panelName.c_str());
+}
+
+void test_preference_manager_configuration_migration() {
+    // Set up the JSON preference before init
+    prefManagerFixture->setPreference("config", "{\"panel_name\":\"MigratedPanel\",\"oldField\":\"oldValue\",\"deprecatedSetting\":123}");
+    
+    // Initialize which will load the config
+    prefManager->init();
+    
+    const Configs& migratedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("MigratedPanel", migratedConfig.panelName.c_str());
+    
+    // Save should preserve valid fields and ignore unknown ones
+    prefManager->saveConfig();
+    prefManager->loadConfig();
+    const Configs& savedMigratedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("MigratedPanel", savedMigratedConfig.panelName.c_str());
+}
+
+void test_preference_manager_rapid_save_load_cycles() {
+    prefManager->init();
+    
+    // Test rapid save/load cycles to check for race conditions or corruption
+    for (int i = 0; i < 50; i++) {
+        Configs config;
+        config.panelName = "RapidTest" + std::to_string(i);
+        prefManager->setConfig(config);
+        prefManager->saveConfig();
+        prefManager->loadConfig();
+        
+        const Configs& verifyConfig = prefManager->getConfig();
+        TEST_ASSERT_EQUAL_STRING(("RapidTest" + std::to_string(i)).c_str(), verifyConfig.panelName.c_str());
+    }
+}
+
+void test_preference_manager_config_validation_edge_cases() {
+    prefManager->init();
+    
+    // Test with whitespace-only panel name
+    Configs whitespaceConfig;
+    whitespaceConfig.panelName = "   \t\n\r  ";
+    prefManager->setConfig(whitespaceConfig);
+    prefManager->saveConfig();
+    prefManager->loadConfig();
+    
+    const Configs& savedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("   \t\n\r  ", savedConfig.panelName.c_str());
+    
+    // Test with numeric panel name
+    Configs numericConfig;
+    numericConfig.panelName = "12345";
+    prefManager->setConfig(numericConfig);
+    prefManager->saveConfig();
+    prefManager->loadConfig();
+    
+    const Configs& numericSavedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("12345", numericSavedConfig.panelName.c_str());
+}
+
+void test_preference_manager_empty_storage_handling() {
+    prefManager->init();
+    
+    // Clear all preferences to simulate empty storage
+    prefManagerFixture->clearAllPreferences();
+    
+    // Load should create default config
+    prefManager->loadConfig();
+    const Configs& defaultConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, defaultConfig.panelName.c_str());
+    
+    // Verify save still works after empty storage
+    Configs testConfig;
+    testConfig.panelName = "AfterEmptyTest";
+    prefManager->setConfig(testConfig);
+    prefManager->saveConfig();
+    
+    const Configs& savedAfterEmpty = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("AfterEmptyTest", savedAfterEmpty.panelName.c_str());
+}
+
+void test_preference_manager_json_escape_sequences() {
+    prefManager->init();
+    
+    // Test with JSON escape sequences in panel name
+    Configs escapeConfig;
+    escapeConfig.panelName = "Panel\"with\\quotes\nand\ttabs";
+    prefManager->setConfig(escapeConfig);
+    prefManager->saveConfig();
+    prefManager->loadConfig();
+    
+    const Configs& escapedConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING("Panel\"with\\quotes\nand\ttabs", escapedConfig.panelName.c_str());
+}
+
 void runPreferenceManagerTests() {
     setUp_preference_manager();
     RUN_TEST(test_preference_manager_init);
@@ -258,6 +492,20 @@ void runPreferenceManagerTests() {
     RUN_TEST(test_preference_manager_default_config_creation);
     RUN_TEST(test_preference_manager_concurrent_access);
     RUN_TEST(test_preference_manager_memory_management);
+    
+    // Enhanced coverage tests for Phase 2
+    RUN_TEST(test_preference_manager_basic_save_load_verification);
+    RUN_TEST(test_preference_manager_malformed_json_handling);
+    RUN_TEST(test_preference_manager_missing_json_fields);
+    RUN_TEST(test_preference_manager_boundary_values);
+    RUN_TEST(test_preference_manager_unicode_handling);
+    RUN_TEST(test_preference_manager_json_serialization_errors);
+    RUN_TEST(test_preference_manager_configuration_migration);
+    RUN_TEST(test_preference_manager_rapid_save_load_cycles);
+    RUN_TEST(test_preference_manager_config_validation_edge_cases);
+    RUN_TEST(test_preference_manager_empty_storage_handling);
+    RUN_TEST(test_preference_manager_json_escape_sequences);
+    
     tearDown_preference_manager();
 }
 
