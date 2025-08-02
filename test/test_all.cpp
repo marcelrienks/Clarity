@@ -286,10 +286,10 @@ int main(int argc, char **argv) {
     // runUIFactoryTests();          // Factory tests for Phase 3 - temporarily disabled due to component dependencies
     
     // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
-    runPreferenceManagerTests();       // 14 tests - now enabled with PreferenceManager source
+    runPreferenceManagerTests();       // 25 tests - Phase 2: 14 original + 11 enhanced tests
     runTriggerManagerTests();          // 7 tests - Re-enabled for Phase 1
     runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
-    runStyleManagerTests();            // 9 tests - now enabled with StyleManager source
+    runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
     runServiceContainerTests();        // 8 tests - Re-enabled for Phase 1
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
     // runSimpleTickerTests();        // 4 tests (keeping commented)
