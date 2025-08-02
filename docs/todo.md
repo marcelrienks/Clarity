@@ -1,29 +1,147 @@
 # TODO:
-## 1. Architecture Documentation
+## 1. Test Coverage Improvement Plan
 
-Create an architecture md document in the docs directory and link it in this README under the existing **Architecture** section.
+**Status**: ✅ **95 tests implemented and passing**, ⚠️ **26.80% overall coverage** - needs improvement
 
-### Include:
-- **Patterns**
-  - MVP Relationships
-  - Layer Structure
-- **Roles and Responsibilities**
-- **Logic Flow**
-- **Dynamic Panel Switching**
-  - Based on sensor input
-- **Trigger System Interrupts**
-- **Panels**
-- **Components**
-- **Hardware Configuration**
-  - GPIO Pins
-  - Display/LCD Interface (SPI)
-  - Sensor Inputs (Digital + Analog)
+### Current Test Status
+- **95 unit tests** all passing in ~15 seconds
+- **Comprehensive mock infrastructure** for embedded dependencies
+- **Coverage reporting** with gcov integration
+- **Streamlined test environment** (`pio test -e test`)
+
+### Coverage Analysis
+
+**✅ Perfect Coverage (100%)**:
+- All sensor implementations (key, light, lock, oil pressure/temperature)
+- Ticker utility component
+- **Action**: Maintain existing high-quality coverage
+
+**⚠️ Good Coverage (77-93%)**:
+- **PreferenceManager**: 77.55% - config persistence and JSON handling
+- **StyleManager**: 93.06% - theme management and LVGL styling
+- **Action**: Enhance to 95%+ coverage
+
+**❌ Zero Coverage (0%)**:
+- **PanelManager**: Core UI management (tests exist but excluded)
+- **TriggerManager**: Event handling system (tests exist but excluded)
+- **ServiceContainer**: Dependency injection system (tests exist but excluded)
+- **Action**: Enable existing tests and fix interface issues
+
+### Implementation Phases
+
+#### **Phase 1: Enable Existing Tests (Quick Wins)**
+**Target**: 50-60% overall coverage in 1-2 days
+
+1. **Re-enable PanelManager Tests**
+   - Remove exclusion from `platformio.ini`
+   - Fix any interface mismatches
+   - Expected gain: +15-20% coverage
+
+2. **Re-enable TriggerManager Tests**  
+   - Remove exclusion from `platformio.ini`
+   - Address interface compatibility issues
+   - Expected gain: +10-15% coverage
+
+3. **Re-enable ServiceContainer Tests**
+   - Remove exclusion from `platformio.ini`
+   - Fix dependency injection interface mismatches
+   - Expected gain: +5-10% coverage
+
+#### **Phase 2: Improve Moderate Coverage (Enhancement)**
+**Target**: 70-80% overall coverage in 1 week
+
+1. **Enhance PreferenceManager Coverage (77.55% → 95%+)**
+   - Add error injection tests for NVS failures
+   - Test malformed JSON configuration handling
+   - Add boundary value tests for configuration limits
+   - Test configuration migration scenarios
+   - Expected gain: +12-15%
+
+2. **Enhance StyleManager Coverage (93.06% → 98%+)**
+   - Add tests for LVGL allocation failures
+   - Test rapid theme switching scenarios
+   - Add cleanup and memory management tests
+   - Expected gain: +5-7%
+
+#### **Phase 3: Add Missing Component Coverage**
+**Target**: 85-95% overall coverage in 2-3 weeks
+
+1. **Add Provider Tests**
+   - Include LvglDisplayProvider in build
+   - Create comprehensive provider test suites
+   - Mock additional hardware dependencies
+   - Expected gain: +10-15%
+
+2. **Add Factory Tests**
+   - Include ManagerFactory and UIFactory in build
+   - Create factory instantiation tests
+   - Test dependency injection scenarios
+   - Expected gain: +5-10%
+
+3. **Add Panel and Component Tests**
+   - Include panel implementations (Key, Lock, Splash, OemOil)
+   - Include UI components (Clarity, Key, Lock, OEM oil)
+   - Create comprehensive UI interaction tests
+   - Expected gain: +15-25%
+
+### Immediate Action Items
+
+```ini
+# Edit platformio.ini - Remove these exclusions:
+# -<../test/unit/managers/test_trigger_manager.cpp>
+# -<../test/unit/managers/test_config_logic.cpp>
+# -<../test/unit/system/test_service_container.cpp>
+```
+
+```bash
+# Run tests to identify issues
+pio test -e test -v
+
+# Generate coverage report
+pio test -e test && gcov src/*/*.gcda
+```
+
+### Success Metrics
+
+| Phase | Target Coverage | Components | Timeline |
+|-------|----------------|------------|----------|
+| **Current** | 26.80% | Working sensors + utilities | ✅ Complete |
+| **Phase 1** | 50-60% | + Manager tests enabled | 1-2 days |
+| **Phase 2** | 70-80% | + Enhanced coverage | 1 week |
+| **Phase 3** | 85-95% | + All components | 2-3 weeks |
 
 ---
 
-## 2. Scenario Documentation
+## 2. Architecture Documentation
 
-Create a scenario md document in the docs directory and link it in this README under the existing **Scenario** section.
+**Status**: ✅ **Implemented** - `docs/architecture.md` created and linked
+
+The architecture documentation has been completed with comprehensive coverage of:
+
+### Completed Sections
+- **MVP Pattern Implementation** - Detailed relationships and responsibilities
+- **Layered Architecture** - Device → Display → Panels → Components structure  
+- **Service Architecture** - Dependency injection and lifecycle management
+- **Hardware Abstraction** - GPIO, display, and sensor interfaces
+- **Dynamic Panel Switching** - Trigger-based navigation logic
+- **Configuration Management** - Persistent settings and JSON serialization
+
+### Architecture Validation
+✅ **Confirmed**: The codebase architecture excellently supports comprehensive testing through:
+- **Dependency injection** pattern enabling easy mocking
+- **Interface abstractions** decoupling hardware dependencies  
+- **Service container** managing component lifecycle
+- **MVP pattern** separating business logic from UI concerns
+
+The architecture design directly enables the high test coverage goals outlined in Section 1.
+
+---
+
+## 3. Scenario Documentation
+
+**Status**: ✅ **Implemented** - `docs/scenario.md` created and linked
+
+The scenario documentation has been completed with comprehensive test scenarios:
 
 ### Major Scenario (Full System Test)
 
@@ -49,167 +167,20 @@ Create a scenario md document in the docs directory and link it in this README u
 > → Lights trigger low  
 > → Oil panel does NOT reload, theme changes to day (white scale ticks and icon)
 
-### Individual Test Scenarios
+### Implementation Notes
 
-- App starts → Splash animates with day theme (white text)
-- App starts with pressure and temperature values set to halfway  
-  → Splash animates with day theme (white text)  
-  → Oil panel loads with day theme (white scale ticks and icon)  
-  → Oil panel needles animate
-- App starts  
-  → Splash animates with day theme (white text)  
-  → Oil panel loads with day theme  
-  → Key present trigger high → Key panel loads (green icon)  
-  → Key present trigger low → Oil panel loads
-- App starts with key present trigger high  
-  → Splash animates  
-  → Oil panel does NOT load  
-  → Key panel loads (green icon)  
-  → Key present trigger low → Oil panel loads
-- App starts  
-  → Splash animates with day theme  
-  → Oil panel loads  
-  → Key not present trigger high → Key panel loads (red icon)  
-  → Key not present trigger low → Oil panel loads
-- App starts with key not present trigger high  
-  → Splash animates  
-  → Oil panel does NOT load  
-  → Key panel loads (red icon)  
-  → Key not present trigger low → Oil panel loads
-- App starts  
-  → Splash animates  
-  → Oil panel loads  
-  → Lock trigger high → Lock panel loads  
-  → Lock trigger low → Oil panel loads
-- App starts with lock trigger high  
-  → Splash animates  
-  → Oil panel does NOT load  
-  → Lock panel loads  
-  → Lock trigger low → Oil panel loads
-- App starts  
-  → Splash animates  
-  → Oil panel loads  
-  → Lights trigger high → Theme changes to night (no reload)  
-  → Lights trigger low → Theme changes to day (no reload)
-- App starts with lights trigger high  
-  → Splash animates with night theme (red text)  
-  → Oil panel loads with night theme  
-  → Lights trigger low → Theme changes to day (no reload)
+**Scenario Test Integration**: These scenarios can be validated through:
+- **Unit tests** for individual component behavior
+- **Integration tests** for trigger sequences (Section 4)
+- **Wokwi simulations** for end-to-end validation (Section 5)
 
----
+**Success Criteria Defined**: Each scenario step includes specific validation criteria:
+- Component loading confirmation
+- Theme application verification  
+- Animation completion checking
+- State transition validation
 
-## 3. Unit Tests
-
-**Status**: ✅ Basic framework implemented (12 tests), ❌ Comprehensive coverage pending
-
-Current implementation provides basic unit testing foundation, but comprehensive testing requires significant infrastructure investment.
-
-### Current Implementation
-- **12 basic logic tests** for core algorithms
-- **Unity framework** integration with PlatformIO
-- **Basic mocks** for Arduino/ESP32 functions
-- **Test runner** with coverage reporting setup
-
-### Comprehensive Testing Requirements
-
-To achieve full code coverage for **27 source files** (~80-120 test cases):
-
-#### 1. Extensive Mock Infrastructure
-**ESP32/Arduino Ecosystem Mocks**:
-- Complete `Arduino.h` mock with all hardware functions
-- `esp32-hal-log.h` mock for logging macros
-- `Preferences.h` mock for NVS storage simulation
-- `nvs_flash.h` mock for flash operations
-- ADC/GPIO hardware simulation with state management
-
-**LVGL UI Library Mocks** (Most Complex):
-- `lv_obj_t` and UI object hierarchy
-- `lv_style_t` and styling system
-- `lv_color_t` and color management
-- Layout and positioning system (`lv_coord_t`, `lv_align_t`)
-- Event handling and timer system
-- Screen and widget lifecycle management
-
-**ArduinoJson Mocks**:
-- Complete `JsonDocument` implementation
-- Serialization/deserialization functions
-- Error handling and validation
-
-#### 2. Dedicated Test Infrastructure
-**Mock Service Implementations**:
-```cpp
-// Complete interface implementations for testing
-class MockPanelService : public IPanelService
-class MockStyleService : public IStyleService  
-class MockTriggerService : public ITriggerService
-class MockDisplayProvider : public IDisplayProvider
-```
-
-**Test Fixtures and Utilities**:
-- Sensor state simulation framework
-- GPIO pin state management
-- Configuration persistence testing
-- Memory leak detection
-- Performance benchmarking utilities
-
-**Build System Integration**:
-- Separate test-only source filtering
-- Coverage report generation (gcov/lcov)
-- CI/CD integration with test results
-- Automated regression testing
-
-#### 3. Test Categories Implementation
-**Manager Tests** (4 files, ~20 tests):
-- PreferenceManager: Config persistence, JSON handling, NVS operations
-- StyleManager: Theme management, LVGL integration, style inheritance
-- PanelManager: Panel lifecycle, switching logic, state management  
-- TriggerManager: Event handling, priority management, callback execution
-
-**Sensor Tests** (5 files, ~25 tests):
-- All sensors: GPIO interaction, value change detection, calibration
-- Analog sensors: ADC conversion, filtering, boundary conditions
-- Digital sensors: State machine logic, debouncing, error states
-
-**Component Tests** (6 files, ~30 tests):
-- UI components: LVGL integration, rendering, state updates
-- Layout management, event handling, theme application
-
-**System Tests** (8+ files, ~25 tests):
-- ServiceContainer: Dependency injection, lifecycle management
-- Providers: Hardware abstraction, interface compliance
-- Factories: Object creation, configuration injection
-
-#### 4. Advanced Testing Features
-**Hardware-in-the-Loop Testing**:
-- ESP32 simulator integration
-- Real GPIO state validation  
-- Timing-sensitive operation testing
-
-**Integration Test Framework**:
-- Full scenario execution (from point 2)
-- End-to-end workflow validation
-- Performance and memory profiling
-
-**Coverage and Quality Metrics**:
-- Line coverage: Target 85%+
-- Branch coverage: Target 80%+
-- Function coverage: Target 95%+
-- Mutation testing for test quality validation
-
-### Implementation Effort Estimate
-- **Mock Infrastructure**: 2-3 weeks full-time development
-- **Test Cases**: 3-4 weeks comprehensive test implementation  
-- **CI/CD Integration**: 1 week automation setup
-- **Documentation**: 1 week test documentation and maintenance guides
-
-### Architecture Validation
-✅ **Confirmed**: The codebase architecture excellently supports comprehensive testing through:
-- Dependency injection pattern enabling easy mocking
-- Interface abstractions decoupling hardware dependencies  
-- Service container managing component lifecycle
-- MVP pattern separating business logic from UI concerns
-
-The 12 current tests demonstrate the framework works; scaling to comprehensive coverage requires the infrastructure investment outlined above.
+The scenario documentation provides the foundation for comprehensive integration testing outlined in the coverage improvement plan.
 
 ---
 

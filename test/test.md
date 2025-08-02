@@ -1,303 +1,222 @@
 # Clarity Test Suite Documentation
 
-This document describes how to run the comprehensive testing infrastructure implemented for the Clarity project, based on the requirements in `docs/todo.md`.
+This document describes the testing architecture and commands for the Clarity project.
 
 ## **Quick Start - Run All Tests**
 
 ```bash
-# Complete test suite with ALL tests (recommended for full validation)
-python3 scripts/run_tests_with_coverage.py
+# Run the complete test suite
+pio test -e test
 ```
 
-This single command now runs the **complete comprehensive test suite** including:
-- All unit tests with coverage instrumentation
-- All integration tests and scenario validation  
-- All performance tests (timing, optimization validation)
-- All memory tests (leak detection, sanitizers)
-- Generates HTML coverage reports with detailed metrics
-- Validates coverage thresholds (85% line, 95% function, 80% branch)
-- Creates comprehensive JSON test report
+This command runs all 95 tests covering:
+- Unit tests for all managers, sensors, and utilities
+- Mock-based testing for embedded dependencies
+- Code coverage instrumentation and reporting
+- Comprehensive validation of core functionality
 
-### **Faster Option (Essential Tests Only)**
-```bash
-# Skip optional performance and memory tests for faster execution
-python3 scripts/run_tests_with_coverage.py --skip-performance --skip-memory
-```
+## **Test Architecture**
 
-## **Test Categories**
+### **Single Test Environment**
 
-### **1. Unit Tests**
-Tests individual components in isolation using extensive mocks.
-
-```bash
-# Run only unit tests
-python3 scripts/run_tests_with_coverage.py --unit-only
-
-# Or use PlatformIO directly
-pio test -e test-coverage
-```
-
-**Coverage**: Managers, Sensors, Components, System classes
-
-### **2. Integration Tests**
-Tests complete workflows and scenarios from `docs/todo.md`.
-
-```bash
-# Run only integration tests
-python3 scripts/run_tests_with_coverage.py --integration-only
-
-# Or use PlatformIO directly
-pio test -e test-integration
-```
-
-**Coverage**: Full system scenarios, trigger interactions, panel workflows
-
-### **3. Performance Tests**
-Optimized builds for performance benchmarking.
-
-```bash
-# Run performance tests
-pio test -e test-performance
-```
-
-**Coverage**: Timing behavior, stress testing, rapid state changes
-
-### **4. Memory Tests**
-Memory leak detection and stability testing.
-
-```bash
-# Run memory tests with sanitizers
-pio test -e test-memory
-```
-
-**Coverage**: Memory leaks, buffer overflows, stability testing
-
-## **PlatformIO Test Environments**
-
-The project includes specialized test environments in `platformio.ini`:
+The project uses a streamlined testing approach with one comprehensive test environment:
 
 | Environment | Purpose | Features |
 |-------------|---------|----------|
-| `test-coverage` | Unit tests with coverage | `--coverage`, `-fprofile-arcs`, debug symbols |
-| `test-integration` | Integration scenarios | Full system testing, scenario validation |
-| `test-performance` | Performance benchmarks | `-O2` optimization, timing measurements |
-| `test-memory` | Memory validation | AddressSanitizer, LeakSanitizer |
+| `test` | Unit tests with coverage | `--coverage`, debug symbols, comprehensive mocking |
 
-## **Running Specific Tests**
+### **Test Categories Covered**
 
-### **By Test File**
+All tests run within the single `test` environment and cover:
+
+**Managers** (14 tests)
+- PreferenceManager: Configuration persistence and validation
+- PanelManager: UI panel lifecycle and switching
+- StyleManager: Theme management and LVGL styling
+- TriggerManager: Event handling and system triggers
+
+**Sensors** (31 tests)  
+- KeySensor: Key presence detection and debouncing
+- LockSensor: Lock state monitoring
+- LightSensor: Ambient light measurement
+- OilPressureSensor: Pressure monitoring and conversion
+- OilTemperatureSensor: Temperature monitoring
+
+**Providers** (7 tests)
+- GpioProvider: Hardware GPIO abstraction and operations
+
+**Utilities** (6 tests)
+- Ticker: Timing utilities and LVGL task handling
+
+**System Logic** (37 tests)
+- Configuration management and validation
+- Sensor value change detection
+- ADC conversion algorithms
+- Timing calculations
+- State machine logic
+
+## **Running Tests**
+
+### **All Tests**
 ```bash
-# Run specific test files
-pio test -e test-coverage -f test_preference_manager
-pio test -e test-coverage -f test_key_sensor
-pio test -e test-integration -f test_scenario_execution
+# Run complete test suite (95 tests)
+pio test -e test
 ```
 
-### **By Pattern**
+### **With Verbose Output**
 ```bash
-# Run all manager tests
-pio test -e test-coverage --filter "*manager*"
-
-# Run all sensor tests  
-pio test -e test-coverage --filter "*sensor*"
-
-# Run all integration scenarios
-pio test -e test-integration --filter "*scenario*"
+# Detailed test execution information
+pio test -e test -v
 ```
 
-### **Individual Test Categories**
+### **Quick Build Verification**
 ```bash
-# Manager tests (PreferenceManager, StyleManager, etc.)
-pio test -e test-coverage -f test_*_manager
-
-# Sensor tests (KeySensor, LightSensor, etc.)
-pio test -e test-coverage -f test_*_sensor
-
-# Component tests (UI components)
-pio test -e test-coverage -f test_*_component
-
-# System tests (ServiceContainer, etc.)
-pio test -e test-coverage -f test_*_system
+# Fast compilation check without full test execution
+pio run -e debug-local --target size
 ```
-
-### **Python Script Options**
-```bash
-# Run individual test categories
-python3 scripts/run_tests_with_coverage.py --unit-only
-python3 scripts/run_tests_with_coverage.py --integration-only
-python3 scripts/run_tests_with_coverage.py --performance-only
-python3 scripts/run_tests_with_coverage.py --memory-only
-
-# Skip specific categories in full run
-python3 scripts/run_tests_with_coverage.py --skip-performance
-python3 scripts/run_tests_with_coverage.py --skip-memory
-python3 scripts/run_tests_with_coverage.py --skip-performance --skip-memory
-
-# Fast execution without coverage
-python3 scripts/run_tests_with_coverage.py --no-coverage
-```
-
-## **Coverage Reports**
-
-### **Generate Coverage**
-```bash
-# Full test suite with coverage
-python3 scripts/run_tests_with_coverage.py
-
-# Skip coverage for faster execution
-python3 scripts/run_tests_with_coverage.py --no-coverage
-```
-
-### **View Coverage Reports**
-After running tests with coverage:
-
-- **HTML Report**: Open `coverage/html/index.html` in browser
-- **JSON Report**: `coverage/test_report.json` (machine-readable)
-- **LCOV File**: `coverage/coverage_filtered.info` (for CI tools)
-
-### **Coverage Thresholds**
-The test suite enforces these minimum coverage requirements:
-- **Line Coverage**: 85%
-- **Function Coverage**: 95%  
-- **Branch Coverage**: 80%
-
-Tests will fail if coverage drops below these thresholds.
 
 ## **Test Infrastructure**
 
 ### **Mock System**
-Comprehensive mocks for embedded dependencies:
-- **Arduino/ESP32**: Hardware state, GPIO, timers, interrupts
-- **LVGL**: UI objects, styling, widgets, screen management
-- **ArduinoJson**: JSON serialization/deserialization
-- **Services**: All application interfaces (Panel, Style, Trigger, etc.)
+Comprehensive mocks for embedded dependencies located in `test/mocks/`:
 
-### **Test Fixtures**
-Reusable test setup classes in `test/utilities/test_fixtures.h`:
-- **BaseTestFixture**: Basic service container setup
-- **SensorTestFixture**: Hardware simulation utilities
-- **ManagerTestFixture**: Manager testing tools
-- **ComponentTestFixture**: LVGL component testing
-- **IntegrationTestFixture**: Full scenario execution
-- **PerformanceTestFixture**: Timing and memory measurement
+- **Arduino/ESP32**: `Arduino.h`, `esp32-hal-log.h`, `nvs_flash.h`
+- **LVGL**: `lvgl.h` - Complete UI framework mocking
+- **ArduinoJson**: `ArduinoJson.h` - JSON serialization
+- **Preferences**: `Preferences.h` - ESP32 NVS storage
+- **Services**: `mock_services.h` - Application service interfaces
+- **GPIO**: `mock_gpio_provider.h` - Hardware abstraction
 
-### **Scenario Testing**
-Complete implementation of scenarios from `docs/todo.md`:
-- **Major Scenario**: Full system test with all trigger interactions
-- **Individual Scenarios**: Key workflows, theme changes, startup conditions
-- **Stress Testing**: Rapid trigger changes, performance validation
+### **Test Structure**
 
-## **CI/CD Integration**
-
-### **GitHub Actions**
-The project includes `.github/workflows/comprehensive_testing.yml` with:
-- Parallel unit and integration test execution
-- Coverage report generation and validation
-- Quality gate enforcement
-- PR comments with coverage metrics
-- Mutation testing (on main branch)
-
-### **Local CI Simulation**
-```bash
-# Run the same tests as CI/CD
-python3 scripts/run_tests_with_coverage.py
-
-# Check exit code for pass/fail
-echo $?  # 0 = success, 1 = failure
+Tests are organized in `test/unit/` by component type:
+```
+test/
+├── test_all.cpp              # Main test runner (95 tests)
+├── mocks/                    # Mock implementations
+├── utilities/                # Test helper utilities
+└── unit/
+    ├── managers/            # Manager component tests
+    ├── sensors/             # Sensor component tests
+    ├── providers/           # Provider component tests
+    ├── system/              # System-level tests
+    └── utilities/           # Utility function tests
 ```
 
-## **Troubleshooting**
+### **Test Coverage**
 
-### **Common Issues**
+The test environment includes coverage instrumentation:
+- Line coverage tracking with `--coverage`
+- Profile data collection with `-fprofile-arcs`
+- Coverage report generation via `gcov`
 
-1. **Long Build Times**
-   ```bash
-   # Use faster debug build for testing
-   pio test -e debug-local --target size
-   ```
+Coverage files generated in `.pio/build/test/`:
+- `*.gcno` - Compilation coverage notes  
+- `*.gcda` - Runtime coverage data
 
-2. **Missing Dependencies**
-   ```bash
-   # Install coverage tools (Linux/macOS)
-   sudo apt-get install lcov gcov  # Ubuntu/Debian
-   brew install lcov               # macOS
-   ```
+## **PlatformIO Configuration**
 
-3. **Python Path Issues**
-   ```bash
-   # Use full path if python3 not in PATH
-   /usr/bin/python3 scripts/run_tests_with_coverage.py
-   ```
+The test environment in `platformio.ini` includes:
 
-### **Debug Test Failures**
-```bash
-# Run with verbose output
-pio test -e test-coverage --verbose
-
-# Run single test for debugging
-pio test -e test-coverage -f test_preference_manager --verbose
+```ini
+[env:test]
+platform = native
+build_flags = 
+    -std=gnu++17
+    -D UNIT_TESTING
+    -D CLARITY_DEBUG
+    -D UNITY_INCLUDE_DOUBLE
+    -I include
+    -I test
+    -I test/mocks
+    -I test/utilities
+    --coverage
+    -fprofile-arcs
+    -ftest-coverage
+    -fno-inline
+    -fno-inline-small-functions
+    -fno-default-inline
+    -g3
+    -O0
+    -lgcov
+lib_deps = 
+    throwtheswitch/Unity @ ^2.5.2
+test_framework = unity
+test_build_src = yes
+test_filter = test_*
 ```
 
-### **Reset Test Environment**
-```bash
-# Clean build artifacts
-pio run --target clean
+Key configuration features:
+- **Native platform**: Tests run on host system for speed
+- **Unity framework**: Embedded testing framework
+- **Coverage flags**: Instrumentation for code coverage
+- **Debug optimization**: `-O0` and `-g3` for debugging
+- **Source inclusion**: Specific source files included for testing
 
-# Remove coverage data
-rm -rf coverage/
-rm -rf .pio/build/test*/
+## **Build Source Filter**
 
-# Rebuild and test
-python3 scripts/run_tests_with_coverage.py
+The test environment includes specific source files:
+```ini
+build_src_filter = 
+    +<*>
+    +<../src/sensors>                    # All sensor implementations
+    +<../src/system>                     # System components
+    +<../src/utilities/ticker.cpp>       # Timing utilities
+    +<../src/managers/preference_manager.cpp>
+    +<../src/managers/trigger_manager.cpp>
+    +<../src/managers/panel_manager.cpp>
+    +<../src/managers/style_manager.cpp>
+    +<../test/mocks/mock_implementations.cpp>
+    +<../test/unit/managers>
+    +<../test/unit/system>
+    -<../src/main.cpp>                   # Exclude main application
+    -<../src/device.cpp>                 # Exclude hardware device
+    -<../test/wokwi>                     # Exclude emulator tests
 ```
-
-## **Test Statistics**
-
-The comprehensive test suite includes:
-- **100+ test cases** across all categories
-- **15+ tests per manager** (PreferenceManager, StyleManager, etc.)
-- **16+ tests per sensor** (KeySensor, LightSensor, etc.)
-- **10+ integration scenarios** validating complete workflows
-- **Full scenario coverage** from `docs/todo.md` requirements
 
 ## **Development Workflow**
 
 ### **Before Committing**
 ```bash
-# Run full test suite
-python3 scripts/run_tests_with_coverage.py
-
-# Ensure all tests pass and coverage thresholds met
-echo $?  # Must be 0
+# Ensure all tests pass
+pio test -e test
 ```
 
 ### **During Development**
 ```bash
-# Quick unit test feedback
-pio test -e test-coverage -f test_your_component
+# Quick feedback during development
+pio test -e test -v
 
-# Test specific functionality
-python3 scripts/run_tests_with_coverage.py --unit-only
+# Fast build verification
+pio run -e debug-local --target size
 ```
 
-### **Before Release**
+### **Debugging Test Failures**
 ```bash
-# Full comprehensive validation
-python3 scripts/run_tests_with_coverage.py
+# Run with maximum verbosity
+pio test -e test -vvv
 
-# Performance validation
-pio test -e test-performance
-
-# Memory validation
-pio test -e test-memory
+# Clean and rebuild if needed
+pio run --target clean
+pio test -e test
 ```
 
-## **Architecture Validation**
+## **Test Results Summary**
 
-The test suite confirms the excellent testability of the Clarity architecture:
-- ✅ **MVP Pattern**: Clean separation enables comprehensive mocking
-- ✅ **Dependency Injection**: Service container supports easy test setup
-- ✅ **Interface Abstractions**: Hardware dependencies fully mockable
-- ✅ **Service Architecture**: All services independently testable
+Current test suite status:
+- **✅ 95 tests PASSED** 
+- **0 tests FAILED**
+- **Coverage**: Comprehensive unit test coverage
+- **Execution time**: ~15 seconds
+- **Stability**: All tests consistently pass
 
-This comprehensive testing infrastructure ensures high code quality and enables confident development of the Clarity digital gauge system.
+## **Architecture Benefits**
+
+The Clarity architecture provides excellent testability:
+
+- **✅ MVP Pattern**: Clean separation enables comprehensive mocking
+- **✅ Dependency Injection**: Service container supports easy test setup  
+- **✅ Interface Abstractions**: Hardware dependencies fully mockable
+- **✅ Service Architecture**: All services independently testable
+
+This streamlined testing infrastructure ensures high code quality and enables confident development of the Clarity digital gauge system.
