@@ -55,6 +55,9 @@ void StyleManager::init(const char* theme)
     lv_style_init(&gaugeDangerSectionStyle);
 
     set_theme(theme);
+    
+    // Mark as initialized
+    initialized_ = true;
 
     // Don't apply to lv_scr_act() here - it might not be ready
     // apply_theme_to_screen(lv_scr_act()); // Remove this line

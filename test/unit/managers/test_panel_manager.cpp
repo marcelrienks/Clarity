@@ -67,20 +67,20 @@ void test_panel_manager_create_and_load_panel() {
     panelManager->init();
     
     // Test creating and loading a panel by name
-    panelManager->createAndLoadPanel("OIL");
+    panelManager->createAndLoadPanel(PanelNames::OIL);
     
     // Panel should be loaded successfully
-    TEST_ASSERT_EQUAL_STRING("OIL", panelManager->getCurrentPanel());
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, panelManager->getCurrentPanel());
 }
 
 void test_panel_manager_load_panel_with_splash() {
     panelManager->init();
     
     // Test loading panel with splash transition
-    panelManager->createAndLoadPanelWithSplash("KEY");
+    panelManager->createAndLoadPanelWithSplash(PanelNames::KEY);
     
-    // Should load the KEY panel
-    TEST_ASSERT_EQUAL_STRING("KEY", panelManager->getCurrentPanel());
+    // With mock panels and synchronous callbacks, should load target panel directly
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManager->getCurrentPanel());
 }
 
 void test_panel_manager_update_panel() {
@@ -98,12 +98,12 @@ void test_panel_manager_get_current_panel() {
     panelManager->init();
     
     // Load a panel
-    panelManager->createAndLoadPanel("OIL");
+    panelManager->createAndLoadPanel(PanelNames::OIL);
     
     // Should be able to get current panel name
     const char* currentPanel = panelManager->getCurrentPanel();
     TEST_ASSERT_NOT_NULL(currentPanel);
-    TEST_ASSERT_EQUAL_STRING("OIL", currentPanel);
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, currentPanel);
 }
 
 void test_panel_manager_ui_state() {
@@ -121,12 +121,12 @@ void test_panel_manager_panel_switching() {
     panelManager->init();
     
     // Test switching between different panels
-    panelManager->createAndLoadPanel("OIL");
-    TEST_ASSERT_EQUAL_STRING("OIL", panelManager->getCurrentPanel());
+    panelManager->createAndLoadPanel(PanelNames::OIL);
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, panelManager->getCurrentPanel());
     
     // Switch to different panel
-    panelManager->createAndLoadPanel("KEY");
-    TEST_ASSERT_EQUAL_STRING("KEY", panelManager->getCurrentPanel());
+    panelManager->createAndLoadPanel(PanelNames::KEY);
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManager->getCurrentPanel());
 }
 
 void runPanelManagerTests() {

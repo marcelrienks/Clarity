@@ -22,10 +22,21 @@ public:
 
 // Mock panel for testing
 class MockPanel : public IPanel {
+private:
+    std::string panelName;
+    
 public:
+    MockPanel(const std::string& name = "") : panelName(name) {}
+    
     void init(IGpioProvider *gpio, IDisplayProvider *display) override {}
-    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override {}
-    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override {}
+    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override {
+        if (callbackFunction) callbackFunction();
+    }
+    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override {
+        if (callbackFunction) callbackFunction();
+    }
+    
+    const std::string& getName() const { return panelName; }
 };
 
 // Mock UIFactory implementation
@@ -50,19 +61,19 @@ std::unique_ptr<IComponent> UIFactory::createOemOilTemperatureComponent(IStyleSe
 }
 
 std::unique_ptr<IPanel> UIFactory::createKeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
-    return std::make_unique<MockPanel>();
+    return std::make_unique<MockPanel>("KEY");
 }
 
 std::unique_ptr<IPanel> UIFactory::createLockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
-    return std::make_unique<MockPanel>();
+    return std::make_unique<MockPanel>("LOCK");
 }
 
 std::unique_ptr<IPanel> UIFactory::createSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
-    return std::make_unique<MockPanel>();
+    return std::make_unique<MockPanel>("SPLASH");
 }
 
 std::unique_ptr<IPanel> UIFactory::createOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) {
-    return std::make_unique<MockPanel>();
+    return std::make_unique<MockPanel>("OIL");
 }
 
 // Mock ESP32 functions implementation
