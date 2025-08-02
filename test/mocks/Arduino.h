@@ -7,6 +7,7 @@
 #include <cstddef>
 #include <map>
 #include <functional>
+#include <string>
 
 // Basic Arduino constants
 #define HIGH 1
@@ -153,6 +154,76 @@ public:
 };
 
 extern MockSPI SPI;
+
+// Arduino String class mock
+class String {
+private:
+    std::string data;
+
+public:
+    String() = default;
+    String(const char* str) : data(str ? str : "") {}
+    String(const std::string& str) : data(str) {}
+    String(int value) : data(std::to_string(value)) {}
+    String(float value) : data(std::to_string(value)) {}
+    
+    // Assignment operators
+    String& operator=(const char* str) { data = str ? str : ""; return *this; }
+    String& operator=(const std::string& str) { data = str; return *this; }
+    String& operator=(const String& str) { data = str.data; return *this; }
+    
+    // Concatenation
+    String operator+(const String& str) const { return String(data + str.data); }
+    String operator+(const char* str) const { return String(data + (str ? str : "")); }
+    String& operator+=(const String& str) { data += str.data; return *this; }
+    String& operator+=(const char* str) { data += (str ? str : ""); return *this; }
+    
+    // Comparison
+    bool operator==(const String& str) const { return data == str.data; }
+    bool operator==(const char* str) const { return data == (str ? str : ""); }
+    bool operator!=(const String& str) const { return data != str.data; }
+    bool operator!=(const char* str) const { return data != (str ? str : ""); }
+    
+    // Access
+    char operator[](unsigned int index) const { return index < data.length() ? data[index] : 0; }
+    char charAt(unsigned int index) const { return index < data.length() ? data[index] : 0; }
+    
+    // Size and capacity
+    unsigned int length() const { return data.length(); }
+    unsigned int size() const { return data.size(); }
+    bool isEmpty() const { return data.empty(); }
+    
+    // Conversion
+    const char* c_str() const { return data.c_str(); }
+    int toInt() const { try { return std::stoi(data); } catch(...) { return 0; } }
+    float toFloat() const { try { return std::stof(data); } catch(...) { return 0.0f; } }
+    
+    // String manipulation
+    void clear() { data.clear(); }
+    String substring(unsigned int beginIndex) const { 
+        return beginIndex < data.length() ? String(data.substr(beginIndex)) : String(); 
+    }
+    String substring(unsigned int beginIndex, unsigned int endIndex) const {
+        if (beginIndex >= data.length()) return String();
+        if (endIndex > data.length()) endIndex = data.length();
+        if (beginIndex >= endIndex) return String();
+        return String(data.substr(beginIndex, endIndex - beginIndex));
+    }
+    
+    // Search
+    int indexOf(char ch) const { 
+        size_t pos = data.find(ch); 
+        return pos != std::string::npos ? static_cast<int>(pos) : -1; 
+    }
+    int indexOf(const String& str) const { 
+        size_t pos = data.find(str.data); 
+        return pos != std::string::npos ? static_cast<int>(pos) : -1; 
+    }
+    
+    // Conversion to std::string for interoperability
+    operator std::string() const { return data; }
+    std::string toStdString() const { return data; }
+};
 
 // WiFi status constants
 #define WL_CONNECTED 3

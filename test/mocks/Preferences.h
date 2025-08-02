@@ -4,21 +4,7 @@
 
 #include <string>
 #include <map>
-
-// Mock Arduino String class
-class String {
-private:
-    std::string data;
-public:
-    String() = default;
-    String(const char* str) : data(str ? str : "") {}
-    String(const std::string& str) : data(str) {}
-    
-    size_t length() const { return data.length(); }
-    const char* c_str() const { return data.c_str(); }
-    String& operator=(const char* str) { data = str ? str : ""; return *this; }
-    String& operator=(const std::string& str) { data = str; return *this; }
-};
+#include "Arduino.h"  // Use String from Arduino.h instead of redefining
 
 // Mock Preferences class
 class Preferences {

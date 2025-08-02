@@ -271,26 +271,31 @@ int main(int argc, char **argv) {
     RUN_TEST(test_theme_validation);
     RUN_TEST(test_config_clear);
     
-    // Comprehensive Test Suites (108 tests total) - temporarily disabled for debugging
-    // runPreferenceManagerTests();    // 14 tests (fixing interface mismatches)
-    // runTriggerManagerTests();       // 8 tests
-    // runPanelManagerTests();         // 7 tests
-    // runStyleManagerTests();         // 9 tests
+    // Comprehensive Test Suites (start with key sensor tests) 
     runKeySensorTests();           // 16 tests
-    // runLockSensorTests();          // 10 tests
-    // runLightSensorTests();         // 7 tests
-    // runOilPressureSensorTests();   // 9 tests
-    // runOilTemperatureSensorTests(); // 9 tests
-    // runGpioProviderTests();        // 8 tests
+    
+    // Manager tests (currently have interface issues - see busy.md)
+    // runPreferenceManagerTests();    // 14 tests
+    // runTriggerManagerTests();       // 7 tests  
+    // runPanelManagerTests();         // 8 tests
+    // runStyleManagerTests();         // 9 tests
     // runServiceContainerTests();    // 7 tests
     // runTickerTests();              // 6 tests
     // runSimpleTickerTests();        // 4 tests
-    // runSensorLogicTests();         // 6 tests
     // runConfigLogicTests();         // 8 tests
     
     return UNITY_END();
 }
 
 // Include comprehensive test implementations
-// #include "unit/managers/test_preference_manager.cpp"
 #include "unit/sensors/test_key_sensor.cpp"
+
+// Manager tests temporarily excluded due to interface compatibility issues
+// #include "unit/managers/test_preference_manager.cpp"
+// #include "unit/managers/test_trigger_manager.cpp"
+// #include "unit/managers/test_panel_manager.cpp"
+// #include "unit/managers/test_style_manager.cpp"
+// #include "unit/system/test_service_container.cpp"
+// #include "unit/utilities/test_ticker.cpp"
+// #include "unit/utilities/test_simple_ticker.cpp"
+// #include "unit/managers/test_config_logic.cpp"

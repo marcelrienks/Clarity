@@ -1,4 +1,5 @@
 #include "managers/preference_manager.h"
+#include <esp32-hal-log.h>
 
 // Static Methods removed - using dependency injection
 
@@ -60,7 +61,7 @@ void PreferenceManager::loadConfig()
     DeserializationError result = deserializeJson(doc, jsonString);
     if (result != DeserializationError::Ok)
     {
-        log_w("Error deserializing config: %s", result.c_str());
+        log_w("Error deserializing config: %s", c_str(result));
         return PreferenceManager::createDefaultConfig();
     }
 

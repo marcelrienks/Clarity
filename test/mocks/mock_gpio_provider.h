@@ -43,7 +43,7 @@ public:
     
     // Missing methods used by tests
     void setPinValue(uint8_t pin, int value) {
-        if (pinModes[pin] == INPUT || pinModes[pin] == INPUT_PULLUP) {
+        if (pinModes[pin] == INPUT || pinModes[pin] == INPUT_PULLUP || pinModes[pin] == INPUT_PULLDOWN) {
             // For digital pins, convert value to boolean
             digitalValues[pin] = (value != 0);
         } else {

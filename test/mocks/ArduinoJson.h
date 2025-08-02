@@ -8,6 +8,7 @@
 #include <vector>
 #include <variant>
 #include <sstream>
+#include <cstring>
 
 // Forward declarations
 class JsonVariant;
@@ -31,7 +32,7 @@ public:
     }
     
     JsonVariant operator[](const std::string& key);
-    JsonVariant operator[](const char* key) { return (*this)[std::string(key)]; }
+    JsonVariant operator[](const char* key);
     
     bool containsKey(const std::string& key) const {
         return data.find(key) != data.end();
@@ -232,6 +233,10 @@ inline JsonVariant JsonObject::operator[](const std::string& key) {
     return JsonVariant(this, key);
 }
 
+inline JsonVariant JsonObject::operator[](const char* key) {
+    return (*this)[std::string(key)];
+}
+
 // Implementation of JsonArray::operator[]
 inline JsonVariant JsonArray::operator[](size_t index) {
     return JsonVariant(this, index);
@@ -307,6 +312,16 @@ enum class DeserializationError {
     InvalidInput,
     NoMemory
 };
+
+// Add conversion to string for error handling
+inline const char* c_str(DeserializationError error) {
+    switch (error) {
+        case DeserializationError::Ok: return "Ok";
+        case DeserializationError::InvalidInput: return "Invalid input";
+        case DeserializationError::NoMemory: return "No memory";
+        default: return "Unknown error";
+    }
+}
 
 // Mock serialization functions
 inline size_t serializeJson(const JsonDocument& doc, std::string& output) {
@@ -418,6 +433,23 @@ inline DeserializationError deserializeJson(JsonDocument& doc, const std::string
 
 inline DeserializationError deserializeJson(JsonDocument& doc, const char* input) {
     return deserializeJson(doc, std::string(input));
+}
+
+// Forward declare String class from Arduino.h
+class String;
+
+// Overload for Arduino String type
+inline DeserializationError deserializeJson(JsonDocument& doc, const String& input) {
+    // Use c_str() method to convert to const char*
+    return deserializeJson(doc, input.c_str());
+}
+
+// Overload for Arduino String output serialization
+inline size_t serializeJson(const JsonDocument& doc, String& output) {
+    std::string temp;
+    size_t result = serializeJson(doc, temp);
+    output = String(temp.c_str());
+    return result;
 }
 
 #endif // UNIT_TESTING
