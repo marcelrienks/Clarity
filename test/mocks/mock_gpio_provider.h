@@ -36,6 +36,10 @@ public:
         return pinModes.count(pin) ? pinModes[pin] : -1;
     }
     
+    void setup_pin(int pin, int mode) {
+        pinMode(pin, mode);
+    }
+    
     void reset() {
         digitalValues.clear();
         analogValues.clear();

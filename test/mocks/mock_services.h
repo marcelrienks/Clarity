@@ -214,6 +214,10 @@ public:
         mockScreen = lv_obj_create(nullptr);
     }
     
+    void init() {
+        initialize();
+    }
+    
     bool isInitialized() const override {
         return initialized;
     }
@@ -315,6 +319,20 @@ public:
         config = newConfig;
     }
     
+    // Missing methods used by tests
+    void load_preferences() {
+        loadConfig();
+    }
+    
+    void set_preference(const std::string& key, const std::string& value) {
+        // Simple key-value storage for testing
+        if (key == "panelName") {
+            config.panelName = value;
+        } else if (key == "theme") {
+            config.theme = value;
+        }
+    }
+    
     // Test utilities
     void reset() {
         config = {};
@@ -326,52 +344,6 @@ public:
     bool wasSaveCalled() const { return saveCalled; }
 };
 
-// Mock GPIO Provider
-class MockGpioProvider : public IGpioProvider {
-private:
-    std::map<uint8_t, int> pinValues;
-    std::map<uint8_t, uint8_t> pinModes;
-    std::map<uint8_t, std::function<void()>> interruptCallbacks;
-    
-public:
-    
-    bool digitalRead(int pin) override {
-        return pinValues.count(pin) ? (pinValues[pin] != 0) : false;
-    }
-    
-    uint16_t analogRead(int pin) override {
-        return pinValues.count(pin) ? static_cast<uint16_t>(pinValues[pin]) : 0;
-    }
-    
-    void pinMode(int pin, int mode) override {
-        pinModes[pin] = mode;
-    }
-    
-    // Test utilities
-    void reset() {
-        pinValues.clear();
-        pinModes.clear();
-        interruptCallbacks.clear();
-    }
-    
-    void setPinValue(uint8_t pin, int value) {
-        pinValues[pin] = value;
-    }
-    
-    void triggerInterrupt(uint8_t pin) {
-        if (interruptCallbacks.count(pin)) {
-            interruptCallbacks[pin]();
-        }
-    }
-    
-    uint8_t getPinMode(uint8_t pin) const {
-        auto it = pinModes.find(pin);
-        return it != pinModes.end() ? it->second : INPUT;
-    }
-    
-    bool hasInterrupt(uint8_t pin) const {
-        return interruptCallbacks.count(pin) > 0;
-    }
-};
+// MockGpioProvider is defined in mock_gpio_provider.h
 
 #endif // UNIT_TESTING

@@ -2,6 +2,8 @@
 #include <cstdint>
 #include <string>
 #include <map>
+#include "Arduino.h"
+#include "utilities/types.h"
 
 #ifdef UNIT_TESTING
 
@@ -23,12 +25,8 @@ extern void runSimpleTickerTests();
 extern void runStyleManagerTests();
 
 // Mock millis function for timing tests
-static uint32_t mock_millis_value = 0;
-uint32_t millis() { return mock_millis_value; }
-void delay(uint32_t ms) {}
-
 void set_mock_millis(uint32_t value) {
-    mock_millis_value = value;
+    MockHardwareState::instance().setMillis(value);
 }
 
 // Simple test implementation of dynamic delay logic
@@ -70,15 +68,15 @@ double convertAdcToPressure(uint16_t adcValue) {
 }
 
 // Test key state logic
-enum class KeyState { INACTIVE = 0, PRESENT = 1, NOT_PRESENT = 2 };
+// Using KeyState enum from types.h
 
 KeyState determineKeyState(bool keyPresent, bool keyNotPresent) {
     if (keyPresent && !keyNotPresent) {
-        return KeyState::PRESENT;
+        return KeyState::Present;
     } else if (!keyPresent && keyNotPresent) {
-        return KeyState::NOT_PRESENT;
+        return KeyState::NotPresent;
     } else {
-        return KeyState::INACTIVE;
+        return KeyState::Inactive;
     }
 }
 
@@ -147,7 +145,7 @@ void test_timing_calculation() {
     set_mock_millis(0);
     uint32_t startTime = 0;
     set_mock_millis(5);
-    uint32_t elapsed = mock_millis_value - startTime;
+    uint32_t elapsed = millis() - startTime;
     TEST_ASSERT_LESS_THAN(targetFrameTime, elapsed);
 }
 
@@ -181,16 +179,16 @@ void test_adc_to_pressure_conversion() {
 
 void test_key_state_logic() {
     KeyState state1 = determineKeyState(true, false);
-    TEST_ASSERT_EQUAL(KeyState::PRESENT, state1);
+    TEST_ASSERT_EQUAL(KeyState::Present, state1);
     
     KeyState state2 = determineKeyState(false, true);
-    TEST_ASSERT_EQUAL(KeyState::NOT_PRESENT, state2);
+    TEST_ASSERT_EQUAL(KeyState::NotPresent, state2);
     
     KeyState state3 = determineKeyState(false, false);
-    TEST_ASSERT_EQUAL(KeyState::INACTIVE, state3);
+    TEST_ASSERT_EQUAL(KeyState::Inactive, state3);
     
     KeyState state4 = determineKeyState(true, true);
-    TEST_ASSERT_EQUAL(KeyState::INACTIVE, state4);
+    TEST_ASSERT_EQUAL(KeyState::Inactive, state4);
 }
 
 // Configuration Tests
@@ -274,11 +272,11 @@ int main(int argc, char **argv) {
     RUN_TEST(test_config_clear);
     
     // Comprehensive Test Suites (108 tests total) - temporarily disabled for debugging
-    // runPreferenceManagerTests();    // 14 tests
+    // runPreferenceManagerTests();    // 14 tests (fixing interface mismatches)
     // runTriggerManagerTests();       // 8 tests
     // runPanelManagerTests();         // 7 tests
     // runStyleManagerTests();         // 9 tests
-    // runKeySensorTests();           // 16 tests
+    runKeySensorTests();           // 16 tests
     // runLockSensorTests();          // 10 tests
     // runLightSensorTests();         // 7 tests
     // runOilPressureSensorTests();   // 9 tests
@@ -292,3 +290,7 @@ int main(int argc, char **argv) {
     
     return UNITY_END();
 }
+
+// Include comprehensive test implementations
+// #include "unit/managers/test_preference_manager.cpp"
+#include "unit/sensors/test_key_sensor.cpp"

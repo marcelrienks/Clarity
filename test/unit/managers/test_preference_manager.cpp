@@ -1,6 +1,7 @@
 #ifdef UNIT_TESTING
 
 #include <unity.h>
+#include <cstring>
 #include "test_fixtures.h"
 
 // Unity extension macros for string comparison  
@@ -42,7 +43,7 @@ void test_preference_manager_get_set_config() {
     
     // Test getting config
     const Configs& originalConfig = prefManager->getConfig();
-    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL.c_str(), originalConfig.panelName.c_str());
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, originalConfig.panelName.c_str());
     
     // Test setting new config
     Configs newConfig;
