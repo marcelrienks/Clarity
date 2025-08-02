@@ -287,10 +287,10 @@ int main(int argc, char **argv) {
     
     // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
     runPreferenceManagerTests();       // 14 tests - now enabled with PreferenceManager source
-    // runTriggerManagerTests();          // 7 tests - interface mismatch issues need fixing
+    runTriggerManagerTests();          // 7 tests - Re-enabled for Phase 1
     runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
     runStyleManagerTests();            // 9 tests - now enabled with StyleManager source
-    // runServiceContainerTests();        // 8 tests - interface doesn't match implementation
+    runServiceContainerTests();        // 8 tests - Re-enabled for Phase 1
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
     // runSimpleTickerTests();        // 4 tests (keeping commented)
     // runConfigLogicTests();         // 8 tests (keeping commented)
@@ -316,11 +316,12 @@ int main(int argc, char **argv) {
 // #include "unit/factories/test_ui_factory.cpp" // Temporarily disabled due to component dependencies
 
 // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
-// #include "unit/managers/test_preference_manager.cpp"  // Missing PreferenceManager source
-// #include "unit/managers/test_trigger_manager.cpp"  // Interface conflicts - shared_ptr mismatch
-// #include "unit/managers/test_panel_manager.cpp"  // Missing PanelManager source
-// #include "unit/managers/test_style_manager.cpp"  // Missing StyleManager source
-// #include "unit/system/test_service_container.cpp"   // Interface mismatch - missing methods
+// Individual test files are compiled separately, just declare the runner functions
+// #include "unit/managers/test_preference_manager.cpp"  
+// #include "unit/managers/test_trigger_manager.cpp"  
+// #include "unit/managers/test_panel_manager.cpp"  
+// #include "unit/managers/test_style_manager.cpp"  
+// #include "unit/system/test_service_container.cpp"
 #include "unit/utilities/test_ticker.cpp"
 // #include "unit/utilities/test_simple_ticker.cpp"  // Keeping commented
 // #include "unit/managers/test_config_logic.cpp"    // Keeping commented

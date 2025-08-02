@@ -22,22 +22,22 @@ extern "C" {
 // Mock service types are now defined in mock_services.h
 #endif
 
-MockGpioProvider* mockGpio;
-MockPanelService* mockPanelService;
-MockStyleService* mockStyleService;
+static MockGpioProvider* mockGpioTrigger = nullptr;
+static MockPanelService* mockPanelService = nullptr;
+static MockStyleService* mockStyleService = nullptr;
 std::shared_ptr<KeySensor> keySensorForTriggerManager;
 std::shared_ptr<LockSensor> lockSensorForTriggerManager;
 std::shared_ptr<LightSensor> lightSensorForTriggerManager;
 TriggerManager* triggerManager;
 
 void setUp_trigger_manager() {
-    mockGpio = new MockGpioProvider();
+    mockGpioTrigger = new MockGpioProvider();
     mockPanelService = new MockPanelService();
     mockStyleService = new MockStyleService();
     
-    keySensorForTriggerManager = std::make_shared<KeySensor>(mockGpio);
-    lockSensorForTriggerManager = std::make_shared<LockSensor>(mockGpio);
-    lightSensorForTriggerManager = std::make_shared<LightSensor>(mockGpio);
+    keySensorForTriggerManager = std::make_shared<KeySensor>(mockGpioTrigger);
+    lockSensorForTriggerManager = std::make_shared<LockSensor>(mockGpioTrigger);
+    lightSensorForTriggerManager = std::make_shared<LightSensor>(mockGpioTrigger);
     
     triggerManager = new TriggerManager(keySensorForTriggerManager, lockSensorForTriggerManager, lightSensorForTriggerManager, 
                                        mockPanelService, mockStyleService);
@@ -47,7 +47,7 @@ void tearDown_trigger_manager() {
     delete triggerManager;
     delete mockStyleService;
     delete mockPanelService;
-    delete mockGpio;
+    delete mockGpioTrigger;
 }
 
 void test_trigger_manager_initialization() {
@@ -57,15 +57,15 @@ void test_trigger_manager_initialization() {
 
 void test_trigger_manager_startup_panel_override() {
     // Test with key not present - should return null (no override)
-    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, LOW);
-    mockGpio->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_PRESENT, LOW);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
     
     const char* override1 = triggerManager->getStartupPanelOverride();
     TEST_ASSERT_NULL(override1);
     
     // Test with key present - should return KEY panel
-    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
-    mockGpio->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
     
     const char* override2 = triggerManager->getStartupPanelOverride();
     TEST_ASSERT_NOT_NULL(override2);
@@ -76,14 +76,14 @@ void test_trigger_manager_key_trigger_processing() {
     triggerManager->init();
     
     // Set initial state (no key present)
-    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, LOW);
-    mockGpio->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_PRESENT, LOW);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
     
     // Process initial state
     triggerManager->processTriggerEvents();
     
     // Change to key present state
-    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
     
     // Process trigger events
     triggerManager->processTriggerEvents();
@@ -97,13 +97,13 @@ void test_trigger_manager_light_trigger_processing() {
     triggerManager->init();
     
     // Set initial state (lights off)
-    mockGpio->setAnalogValue(gpio_pins::LIGHTS, 0);
+    mockGpioTrigger->setAnalogValue(gpio_pins::LIGHTS, 0);
     
     // Process initial state
     triggerManager->processTriggerEvents();
     
     // Change to lights on state
-    mockGpio->setAnalogValue(gpio_pins::LIGHTS, 3000); // High light value
+    mockGpioTrigger->setAnalogValue(gpio_pins::LIGHTS, 3000); // High light value
     
     // Process trigger events
     triggerManager->processTriggerEvents();
@@ -120,9 +120,9 @@ void test_trigger_manager_multiple_sensors() {
     TEST_ASSERT_NO_THROW(triggerManager->processTriggerEvents());
     
     // Test with multiple sensor state changes
-    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
-    mockGpio->setDigitalValue(gpio_pins::LOCK, HIGH);
-    mockGpio->setAnalogValue(gpio_pins::LIGHTS, 2000);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
+    mockGpioTrigger->setDigitalValue(gpio_pins::LOCK, HIGH);
+    mockGpioTrigger->setAnalogValue(gpio_pins::LIGHTS, 2000);
     
     TEST_ASSERT_NO_THROW(triggerManager->processTriggerEvents());
 }
@@ -131,10 +131,10 @@ void test_trigger_manager_lock_state_changes() {
     triggerManager->init();
     
     // Test lock state changes
-    mockGpio->setDigitalValue(gpio_pins::LOCK, LOW); // Unlocked
+    mockGpioTrigger->setDigitalValue(gpio_pins::LOCK, LOW); // Unlocked
     triggerManager->processTriggerEvents();
     
-    mockGpio->setDigitalValue(gpio_pins::LOCK, HIGH); // Locked
+    mockGpioTrigger->setDigitalValue(gpio_pins::LOCK, HIGH); // Locked
     triggerManager->processTriggerEvents();
     
     // Verify no crashes and proper state handling
@@ -149,8 +149,8 @@ void test_trigger_manager_service_integration() {
     mockStyleService->reset();
     
     // Trigger key present state that should call panel service
-    mockGpio->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
-    mockGpio->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_PRESENT, HIGH);
+    mockGpioTrigger->setDigitalValue(gpio_pins::KEY_NOT_PRESENT, LOW);
     
     // Process and verify service integration works
     TEST_ASSERT_NO_THROW(triggerManager->processTriggerEvents());
