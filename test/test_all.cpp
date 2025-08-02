@@ -13,6 +13,9 @@ extern void runTriggerManagerTests();
 extern void runLockSensorTests();
 extern void runKeySensorTests();
 extern void runGpioProviderTests();
+extern void runLvglDisplayProviderTests();
+extern void runManagerFactoryTests();
+// extern void runUIFactoryTests(); // Temporarily disabled
 extern void runSensorLogicTests();
 extern void runLightSensorTests();
 extern void runOilPressureSensorTests();
@@ -278,6 +281,9 @@ int main(int argc, char **argv) {
     runOilPressureSensorTests();   // 4 tests (testing fixes)
     runOilTemperatureSensorTests();// 5 tests (testing fixes)
     runGpioProviderTests();        // 7 tests (added for Phase 1 completion)
+    runLvglDisplayProviderTests(); // Provider tests for Phase 3
+    runManagerFactoryTests();     // Factory tests for Phase 3
+    // runUIFactoryTests();          // Factory tests for Phase 3 - temporarily disabled due to component dependencies
     
     // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
     runPreferenceManagerTests();       // 14 tests - now enabled with PreferenceManager source
@@ -303,6 +309,11 @@ int main(int argc, char **argv) {
 #include "unit/sensors/test_oil_temperature_sensor.cpp"
 // Adding GPIO Provider tests to complete Phase 1:
 #include "unit/providers/test_gpio_provider.cpp"
+// Adding LVGL Display Provider tests for Phase 3:
+#include "unit/providers/test_lvgl_display_provider.cpp"
+// Adding Factory tests for Phase 3:
+#include "unit/factories/test_manager_factory.cpp"
+// #include "unit/factories/test_ui_factory.cpp" // Temporarily disabled due to component dependencies
 
 // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
 // #include "unit/managers/test_preference_manager.cpp"  // Missing PreferenceManager source
