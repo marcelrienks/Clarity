@@ -26,52 +26,58 @@ void test_light_sensor_init() {
 void test_light_sensor_reading_conversion() {
     lightSensor->init();
     
-    // Set a known ADC value
-    uint16_t testAdcValue = 2048; // Mid-range 12-bit value
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, testAdcValue);
+    // Set lights ON (digital HIGH)
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, true);
     
     // Get the reading
     Reading lightReading = lightSensor->getReading();
-    double lightLevel = std::get<double>(lightReading);
+    bool lightsOn = std::get<bool>(lightReading);
     
-    // Light level should be reasonable
-    TEST_ASSERT_GREATER_THAN(0.0, lightLevel);
-    TEST_ASSERT_LESS_THAN(5000.0, lightLevel); // Reasonable max for light lightSensor
+    // Lights should be on
+    TEST_ASSERT_TRUE(lightsOn);
+    
+    // Set lights OFF (digital LOW)
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, false);
+    Reading lightReading2 = lightSensor->getReading();
+    bool lightsOff = std::get<bool>(lightReading2);
+    
+    // Lights should be off
+    TEST_ASSERT_FALSE(lightsOff);
 }
 
 void test_light_sensor_boundary_values() {
     lightSensor->init();
     
-    // Test minimum value (0 ADC)
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 0);
-    Reading minLightReading = lightSensor->getReading();
-    double minLight = std::get<double>(minLightReading);
-    TEST_ASSERT_GREATER_OR_EQUAL(0.0, minLight);
+    // Test lights OFF state (digital LOW)
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, false);
+    Reading offReading = lightSensor->getReading();
+    bool lightsOff = std::get<bool>(offReading);
+    TEST_ASSERT_FALSE(lightsOff);
     
-    // Test maximum value (4095 ADC for 12-bit)
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 4095);
-    Reading maxLightReading = lightSensor->getReading();
-    double maxLight = std::get<double>(maxLightReading);
-    TEST_ASSERT_GREATER_THAN(minLight, maxLight);
+    // Test lights ON state (digital HIGH)
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, true);
+    Reading onReading = lightSensor->getReading();
+    bool lightsOn = std::get<bool>(onReading);
+    TEST_ASSERT_TRUE(lightsOn);
 }
 
 void test_light_sensor_value_change_detection() {
     lightSensor->init();
     
-    // Set initial value
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 1000);
+    // Set initial value (lights OFF)
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, false);
     Reading lightReading1 = lightSensor->getReading();
-    double reading1 = std::get<double>(lightReading1);
+    bool reading1 = std::get<bool>(lightReading1);
     
     // Same value should give same reading
     Reading lightReading2 = lightSensor->getReading();
-    double reading2 = std::get<double>(lightReading2);
-    TEST_ASSERT_EQUAL_DOUBLE(reading1, reading2);
+    bool reading2 = std::get<bool>(lightReading2);
+    TEST_ASSERT_EQUAL(reading1, reading2);
     
-    // Different value should give different reading
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 2000);
+    // Different value should give different reading (lights ON)
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, true);
     Reading lightReading3 = lightSensor->getReading();
-    double reading3 = std::get<double>(lightReading3);
+    bool reading3 = std::get<bool>(lightReading3);
     TEST_ASSERT_NOT_EQUAL(reading1, reading3);
 }
 
@@ -83,7 +89,7 @@ void test_light_sensor_construction() {
 void test_light_sensor_reading_consistency() {
     lightSensor->init();
     
-    // Set a known value
+    // Set a known value (lights ON)
     lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, true);
     
     // Multiple readings should be consistent
@@ -91,27 +97,29 @@ void test_light_sensor_reading_consistency() {
     Reading reading2 = lightSensor->getReading();
     
     TEST_ASSERT_EQUAL(std::get<bool>(reading1), std::get<bool>(reading2));
+    TEST_ASSERT_TRUE(std::get<bool>(reading1));
 }
 
-void test_light_sensor_monotonic_response() {
+void test_light_sensor_state_transitions() {
     lightSensor->init();
     
-    // Test that increasing ADC values produce increasing light values
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 1000);
-    Reading light1Reading = lightSensor->getReading();
-    double light1 = std::get<double>(light1Reading);
+    // Test OFF to ON transition
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, false);
+    Reading offReading = lightSensor->getReading();
+    bool lightsOff = std::get<bool>(offReading);
+    TEST_ASSERT_FALSE(lightsOff);
     
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 2000);
-    Reading light2Reading = lightSensor->getReading();
-    double light2 = std::get<double>(light2Reading);
+    // Switch to ON
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, true);
+    Reading onReading = lightSensor->getReading();
+    bool lightsOn = std::get<bool>(onReading);
+    TEST_ASSERT_TRUE(lightsOn);
     
-    lightMockGpio->setAnalogValue(gpio_pins::LIGHTS, 3000);
-    Reading light3Reading = lightSensor->getReading();
-    double light3 = std::get<double>(light3Reading);
-    
-    // Light values should generally increase with ADC value
-    TEST_ASSERT_GREATER_THAN(light1, light2);
-    TEST_ASSERT_GREATER_THAN(light2, light3);
+    // Switch back to OFF
+    lightMockGpio->setDigitalValue(gpio_pins::LIGHTS, false);
+    Reading offReading2 = lightSensor->getReading();
+    bool lightsOff2 = std::get<bool>(offReading2);
+    TEST_ASSERT_FALSE(lightsOff2);
 }
 
 void runLightSensorTests() {
@@ -122,6 +130,6 @@ void runLightSensorTests() {
     RUN_TEST(test_light_sensor_boundary_values);
     RUN_TEST(test_light_sensor_value_change_detection);
     RUN_TEST(test_light_sensor_reading_consistency);
-    RUN_TEST(test_light_sensor_monotonic_response);
+    RUN_TEST(test_light_sensor_state_transitions);
     tearDown_light_sensor();
 }
