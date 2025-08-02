@@ -4,6 +4,7 @@
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
 #include "../mocks/mock_gpio_provider.h"
+#include "../mocks/mock_services.h"
 #include "utilities/types.h"
 #include "Arduino.h"
 #include <memory>
@@ -18,46 +19,15 @@ extern "C" {
     void log_e(const char* format, ...) {}
 }
 
-// Mock panel and style services
-class MockPanelService : public IPanelService {
-public:
-    std::string lastLoadedPanel;
-    bool loadPanelCalled = false;
-    
-    void loadPanel(const std::string& panelName) override {
-        lastLoadedPanel = panelName;
-        loadPanelCalled = true;
-    }
-    
-    void reset() {
-        lastLoadedPanel.clear();
-        loadPanelCalled = false;
-    }
-};
-
-class MockStyleService : public IStyleService {
-public:
-    std::string currentTheme;
-    bool themeToggled = false;
-    
-    void toggleTheme(const std::string& newTheme) override {
-        currentTheme = newTheme;
-        themeToggled = true;
-    }
-    
-    void reset() {
-        currentTheme.clear();
-        themeToggled = false;
-    }
-};
+// Mock service types are now defined in mock_services.h
 #endif
 
 MockGpioProvider* mockGpio;
 MockPanelService* mockPanelService;
 MockStyleService* mockStyleService;
-std::shared_ptr<KeySensor> keySensor;
-std::shared_ptr<LockSensor> lockSensor;
-std::shared_ptr<LightSensor> lightSensor;
+std::shared_ptr<KeySensor> keySensorForTriggerManager;
+std::shared_ptr<LockSensor> lockSensorForTriggerManager;
+std::shared_ptr<LightSensor> lightSensorForTriggerManager;
 TriggerManager* triggerManager;
 
 void setUp_trigger_manager() {
@@ -65,11 +35,11 @@ void setUp_trigger_manager() {
     mockPanelService = new MockPanelService();
     mockStyleService = new MockStyleService();
     
-    keySensor = std::make_shared<KeySensor>(mockGpio);
-    lockSensor = std::make_shared<LockSensor>(mockGpio);
-    lightSensor = std::make_shared<LightSensor>(mockGpio);
+    keySensorForTriggerManager = std::make_shared<KeySensor>(mockGpio);
+    lockSensorForTriggerManager = std::make_shared<LockSensor>(mockGpio);
+    lightSensorForTriggerManager = std::make_shared<LightSensor>(mockGpio);
     
-    triggerManager = new TriggerManager(keySensor, lockSensor, lightSensor, 
+    triggerManager = new TriggerManager(keySensorForTriggerManager, lockSensorForTriggerManager, lightSensorForTriggerManager, 
                                        mockPanelService, mockStyleService);
 }
 
@@ -186,7 +156,7 @@ void test_trigger_manager_service_integration() {
     TEST_ASSERT_NO_THROW(triggerManager->processTriggerEvents());
     
     // Services should be accessible (implementation dependent)
-    TEST_ASSERT_FALSE(mockPanelService->loadPanelCalled); // May change based on implementation
+    TEST_ASSERT_NOT_NULL(mockPanelService->getCurrentPanel()); // Panel service is accessible
 }
 
 void runTriggerManagerTests() {

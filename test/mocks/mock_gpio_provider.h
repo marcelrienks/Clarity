@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Arduino.h"
 #include "interfaces/i_gpio_provider.h"
 #include <map>
 

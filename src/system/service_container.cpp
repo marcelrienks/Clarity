@@ -90,3 +90,16 @@ const ServiceContainer::ServiceRegistration &ServiceContainer::getRegistration(c
     
     return it->second;
 }
+
+ServiceContainer& ServiceContainer::getInstance() {
+    static ServiceContainer instance;
+    return instance;
+}
+
+bool ServiceContainer::hasServiceImpl(const std::string& name) const {
+    return testServices_.find(name) != testServices_.end();
+}
+
+void ServiceContainer::unregisterServiceImpl(const std::string& name) {
+    testServices_.erase(name);
+}
