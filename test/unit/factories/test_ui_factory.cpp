@@ -5,9 +5,9 @@
 #include <memory>
 
 // Mock services for testing
-MockDisplayProvider* mockDisplay = nullptr;
-MockGpioProvider* mockGpio = nullptr;
-MockStyleService* mockStyle = nullptr;
+static MockDisplayProvider* mockDisplayForUITest = nullptr;
+static MockGpioProvider* mockGpioForUITest = nullptr;
+static MockStyleService* mockStyleForUITest = nullptr;
 
 void setUp_ui_factory() {
     mockDisplay = new MockDisplayProvider();
