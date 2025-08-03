@@ -46,6 +46,83 @@ typedef struct {
     uint16_t full;
 } lv_color_t;
 
+// Image format constants
+#define LV_IMAGE_HEADER_MAGIC          0x19
+#define LV_COLOR_FORMAT_RGB565A8       15
+
+// Image header type
+typedef struct {
+    uint32_t magic : 8;
+    uint32_t cf : 8;
+    uint32_t w : 16;
+    uint32_t h : 16;
+} lv_image_header_t;
+
+// Image descriptor type
+typedef struct {
+    lv_image_header_t header;
+    uint32_t data_size;
+    const uint8_t * data;
+} lv_image_dsc_t;
+
+// Scale types for gauges
+typedef uint8_t lv_scale_mode_t;
+#define LV_SCALE_MODE_HORIZONTAL_TOP     0
+#define LV_SCALE_MODE_HORIZONTAL_BOTTOM  1
+#define LV_SCALE_MODE_VERTICAL_LEFT      2
+#define LV_SCALE_MODE_VERTICAL_RIGHT     3
+#define LV_SCALE_MODE_ROUND_INNER        4
+#define LV_SCALE_MODE_ROUND_OUTER        5
+
+typedef struct {
+    uint32_t min_value;
+    uint32_t max_value;
+    lv_color_t color;
+    uint8_t width;
+} lv_scale_section_t;
+
+// Timer types
+struct _lv_timer_t {
+    uint32_t period;
+    uint32_t last_run;
+    void (*timer_cb)(struct _lv_timer_t * timer);
+    void * user_data;
+    uint32_t repeat_count;
+    uint32_t paused : 1;
+};
+typedef struct _lv_timer_t lv_timer_t;
+
+// Animation types
+struct _lv_anim_t;
+typedef struct _lv_anim_t lv_anim_t;
+
+typedef void (*lv_anim_exec_xcb_t)(void * var, int32_t value);
+typedef void (*lv_anim_ready_cb_t)(lv_anim_t * a);
+
+struct _lv_anim_t {
+    void * var;
+    lv_anim_exec_xcb_t exec_cb;
+    lv_anim_ready_cb_t ready_cb;
+    int32_t start_value;
+    int32_t current_value;
+    int32_t end_value;
+    int32_t time;
+    int32_t act_time;
+    uint32_t playback_delay;
+    uint32_t playback_time;
+    uint32_t repeat_delay;
+    uint16_t repeat_cnt;
+    uint8_t early_apply : 1;
+    uint8_t playback_now : 1;
+    uint8_t run_round : 1;
+    uint8_t start_cb_called : 1;
+    uint8_t playback : 1;
+};
+
+// Memory alignment attribute
+#define LV_ATTRIBUTE_MEM_ALIGN
+#define LV_ATTRIBUTE_LARGE_CONST
+
 // Point and area types
 typedef struct {
     lv_coord_t x;
@@ -393,5 +470,90 @@ inline lv_obj_t* lv_img_create(lv_obj_t* parent) {
 }
 
 inline void lv_img_set_src(lv_obj_t* img, const void* src_img) {}
+
+// Timer functions
+inline lv_timer_t* lv_timer_create(void (*timer_cb)(lv_timer_t*), uint32_t period, void* user_data) {
+    lv_timer_t* timer = new lv_timer_t();
+    timer->timer_cb = timer_cb;
+    timer->period = period;
+    timer->user_data = user_data;
+    timer->repeat_count = UINT32_MAX; // Infinite by default
+    timer->paused = 0;
+    timer->last_run = 0;
+    return timer;
+}
+
+inline void lv_timer_del(lv_timer_t* timer) {
+    delete timer;
+}
+
+inline void lv_timer_pause(lv_timer_t* timer) {
+    if (timer) timer->paused = 1;
+}
+
+inline void lv_timer_resume(lv_timer_t* timer) {
+    if (timer) timer->paused = 0;
+}
+
+inline void lv_timer_set_repeat_count(lv_timer_t* timer, uint32_t repeat_count) {
+    if (timer) timer->repeat_count = repeat_count;
+}
+
+// Animation functions
+inline void lv_anim_init(lv_anim_t* a) {
+    if (a) {
+        a->var = nullptr;
+        a->exec_cb = nullptr;
+        a->ready_cb = nullptr;
+        a->start_value = 0;
+        a->current_value = 0;
+        a->end_value = 100;
+        a->time = 500;
+        a->act_time = 0;
+        a->playback_delay = 0;
+        a->playback_time = 0;
+        a->repeat_delay = 0;
+        a->repeat_cnt = 1;
+        a->early_apply = 0;
+        a->playback_now = 0;
+        a->run_round = 0;
+        a->start_cb_called = 0;
+        a->playback = 0;
+    }
+}
+
+inline void lv_anim_set_var(lv_anim_t* a, void* var) {
+    if (a) a->var = var;
+}
+
+inline void lv_anim_set_exec_cb(lv_anim_t* a, lv_anim_exec_xcb_t exec_cb) {
+    if (a) a->exec_cb = exec_cb;
+}
+
+inline void lv_anim_set_time(lv_anim_t* a, uint32_t duration) {
+    if (a) a->time = duration;
+}
+
+inline void lv_anim_set_ready_cb(lv_anim_t* a, lv_anim_ready_cb_t ready_cb) {
+    if (a) a->ready_cb = ready_cb;
+}
+
+inline void lv_anim_set_values(lv_anim_t* a, int32_t start, int32_t end) {
+    if (a) {
+        a->start_value = start;
+        a->end_value = end;
+    }
+}
+
+inline void lv_anim_start(lv_anim_t* a) {
+    // Mock animation start - just call ready callback if set
+    if (a && a->ready_cb) {
+        a->ready_cb(a);
+    }
+}
+
+inline bool lv_anim_del(void* var, lv_anim_exec_xcb_t exec_cb) {
+    return true; // Mock success
+}
 
 #endif // UNIT_TESTING

@@ -15,7 +15,9 @@ extern void runKeySensorTests();
 extern void runGpioProviderTests();
 extern void runLvglDisplayProviderTests();
 extern void runManagerFactoryTests();
-// extern void runUIFactoryTests(); // Temporarily disabled
+extern void runSimplifiedUIFactoryTests();
+extern void runComponentInterfaceTests();
+extern void runPanelInterfaceTests();
 extern void runSensorLogicTests();
 extern void runLightSensorTests();
 extern void runOilPressureSensorTests();
@@ -283,14 +285,16 @@ int main(int argc, char **argv) {
     runGpioProviderTests();        // 7 tests (added for Phase 1 completion)
     runLvglDisplayProviderTests(); // Provider tests for Phase 3
     runManagerFactoryTests();     // Factory tests for Phase 3
-    // runUIFactoryTests();          // Factory tests for Phase 3 - temporarily disabled due to component dependencies
+    runSimplifiedUIFactoryTests(); // Simplified UI Factory tests for Phase 3
+    runComponentInterfaceTests();   // Component interface tests for Phase 3
+    runPanelInterfaceTests();       // Panel interface tests for Phase 3
     
-    // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
+    // Manager tests - Testing one by one to isolate crash
     runPreferenceManagerTests();       // 25 tests - Phase 2: 14 original + 11 enhanced tests
-    runTriggerManagerTests();          // 7 tests - Re-enabled for Phase 1
-    runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
-    runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
-    runServiceContainerTests();        // 8 tests - Re-enabled for Phase 1
+    // runTriggerManagerTests();          // 7 tests - Re-enabled for Phase 1
+    // runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
+    // runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
+    // runServiceContainerTests();        // 8 tests - Re-enabled for Phase 1
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
     // runSimpleTickerTests();        // 4 tests (keeping commented)
     // runConfigLogicTests();         // 8 tests (keeping commented)
@@ -313,7 +317,10 @@ int main(int argc, char **argv) {
 #include "unit/providers/test_lvgl_display_provider.cpp"
 // Adding Factory tests for Phase 3:
 #include "unit/factories/test_manager_factory.cpp"
-// #include "unit/factories/test_ui_factory.cpp" // Temporarily disabled due to component dependencies
+#include "unit/factories/test_ui_factory_simplified.cpp"
+// Adding Component and Panel interface tests for Phase 3:
+#include "unit/components/test_component_interfaces.cpp"
+#include "unit/panels/test_panel_interfaces.cpp"
 
 // Manager tests - Phase 2: Manager Integration (Temporarily disabled due to linking issues)
 // Individual test files are compiled separately, just declare the runner functions
