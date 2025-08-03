@@ -87,8 +87,8 @@ public:
 };
 
 // Mock services for testing - use different names to avoid conflicts
-static MockDisplayProvider* mockDisplayPanelPanel = nullptr;
-static MockGpioProvider* mockGpioPanelPanel = nullptr;
+static MockDisplayProvider* mockDisplayPanel = nullptr;
+static MockGpioProvider* mockGpioPanel = nullptr;
 
 void setUp_panel_interfaces() {
     mockDisplayPanel = new MockDisplayProvider();
