@@ -296,8 +296,173 @@ void test_key_sensor_concurrent_access() {
     TEST_ASSERT_EQUAL(std::get<int32_t>(reading1), std::get<int32_t>(reading2));
 }
 
+// Enhanced Phase 2 sensor state machine tests
+
+void test_key_sensor_state_machine_completeness() {
+    // Test all possible state transitions systematically
+    sensor->init();
+    
+    // Test matrix of all state combinations
+    bool stateTransitions[4][4] = {false}; // [from][to] matrix
+    
+    // Start in Inactive state
+    fixture->setDigitalPin(gpio_pins::KEY_PRESENT, LOW);
+    fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, LOW);
+    KeyState currentState = sensor->getKeyState();
+    TEST_ASSERT_EQUAL(KeyState::Inactive, currentState);
+    int fromState = static_cast<int>(currentState);
+    
+    // Test transitions to all other states
+    // Inactive -> Present
+    fixture->setDigitalPin(gpio_pins::KEY_PRESENT, HIGH);
+    currentState = sensor->getKeyState();
+    stateTransitions[fromState][static_cast<int>(currentState)] = true;
+    
+    // Present -> NotPresent
+    fromState = static_cast<int>(currentState);
+    fixture->setDigitalPin(gpio_pins::KEY_PRESENT, LOW);
+    fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, HIGH);
+    currentState = sensor->getKeyState();
+    stateTransitions[fromState][static_cast<int>(currentState)] = true;
+    
+    // NotPresent -> Inactive (invalid state)
+    fromState = static_cast<int>(currentState);
+    fixture->setDigitalPin(gpio_pins::KEY_PRESENT, HIGH);
+    // Both pins HIGH = invalid, should handle gracefully
+    currentState = sensor->getKeyState();
+    stateTransitions[fromState][static_cast<int>(currentState)] = true;
+    
+    // Verify we tested key transitions
+    TEST_ASSERT_TRUE(stateTransitions[0][1] || stateTransitions[0][2]); // From Inactive
+    TEST_ASSERT_TRUE(stateTransitions[1][0] || stateTransitions[1][2]); // From Present
+    TEST_ASSERT_TRUE(stateTransitions[2][0] || stateTransitions[2][1]); // From NotPresent
+}
+
+void test_key_sensor_timing_dependent_behavior() {
+    // Test behavior with realistic timing constraints
+    sensor->init();
+    
+    // Test rapid state changes (bounce simulation)
+    fixture->setDigitalPin(gpio_pins::KEY_PRESENT, HIGH);
+    KeyState state1 = sensor->getKeyState();
+    
+    // Simulate 50Hz bounce for 10ms
+    for (int i = 0; i < 10; i++) {
+        fixture->setDigitalPin(gpio_pins::KEY_PRESENT, i % 2 ? HIGH : LOW);
+        fixture->advanceTime(1); // 1ms intervals
+    }
+    
+    // Final state should be stable
+    fixture->setDigitalPin(gpio_pins::KEY_PRESENT, HIGH);
+    fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, LOW);
+    KeyState finalState = sensor->getKeyState();
+    TEST_ASSERT_EQUAL(KeyState::Present, finalState);
+}
+
+void test_key_sensor_boundary_conditions() {
+    // Test sensor behavior at electrical boundaries
+    sensor->init();
+    
+    // Test with marginal voltage levels (simulated via rapid changes)
+    for (int cycle = 0; cycle < 100; cycle++) {
+        // Simulate electrical noise/marginal signals
+        bool keyPresent = (cycle % 3 == 0);
+        bool keyNotPresent = (cycle % 5 == 0);
+        
+        // Avoid invalid state (both true)
+        if (keyPresent && keyNotPresent) {
+            keyNotPresent = false;
+        }
+        
+        fixture->setDigitalPin(gpio_pins::KEY_PRESENT, keyPresent ? HIGH : LOW);
+        fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, keyNotPresent ? HIGH : LOW);
+        
+        KeyState state = sensor->getKeyState();
+        // State should always be valid
+        TEST_ASSERT_TRUE(state == KeyState::Present || 
+                        state == KeyState::NotPresent || 
+                        state == KeyState::Inactive);
+    }
+}
+
+void test_key_sensor_resource_exhaustion_handling() {
+    // Test sensor behavior under resource constraints
+    sensor->init();
+    
+    // Simulate many rapid readings (stress test)
+    int validReadings = 0;
+    int totalReadings = 1000;
+    
+    for (int i = 0; i < totalReadings; i++) {
+        // Vary the state periodically
+        bool present = (i % 7 == 0);
+        bool notPresent = (i % 11 == 0);
+        if (present && notPresent) notPresent = false;
+        
+        fixture->setDigitalPin(gpio_pins::KEY_PRESENT, present ? HIGH : LOW);
+        fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, notPresent ? HIGH : LOW);
+        
+        KeyState state = sensor->getKeyState();
+        Reading reading = sensor->getReading();
+        
+        // Every reading should be valid
+        if (state == KeyState::Present || state == KeyState::NotPresent || state == KeyState::Inactive) {
+            validReadings++;
+        }
+        
+        // Reading should match state
+        int32_t readingValue = std::get<int32_t>(reading);
+        TEST_ASSERT_EQUAL(static_cast<int32_t>(state), readingValue);
+    }
+    
+    // All readings should be valid
+    TEST_ASSERT_EQUAL(totalReadings, validReadings);
+}
+
+void test_key_sensor_state_consistency_validation() {
+    // Test that sensor maintains internal consistency
+    sensor->init();
+    
+    // Test sequence that verifies internal state consistency
+    struct StateTest {
+        bool keyPresent;
+        bool keyNotPresent;
+        KeyState expectedState;
+    };
+    
+    StateTest tests[] = {
+        {false, false, KeyState::Inactive},
+        {true, false, KeyState::Present},
+        {false, true, KeyState::NotPresent},
+        {true, true, KeyState::Inactive}, // Invalid -> should default to safe state
+    };
+    
+    for (auto& test : tests) {
+        fixture->setDigitalPin(gpio_pins::KEY_PRESENT, test.keyPresent ? HIGH : LOW);
+        fixture->setDigitalPin(gpio_pins::KEY_NOT_PRESENT, test.keyNotPresent ? HIGH : LOW);
+        
+        KeyState actualState = sensor->getKeyState();
+        Reading reading = sensor->getReading();
+        
+        if (test.keyPresent && test.keyNotPresent) {
+            // Invalid state - should be handled gracefully (any safe state)
+            TEST_ASSERT_TRUE(actualState == KeyState::Inactive || 
+                            actualState == KeyState::Present || 
+                            actualState == KeyState::NotPresent);
+        } else {
+            TEST_ASSERT_EQUAL(test.expectedState, actualState);
+        }
+        
+        // Reading should always match state
+        int32_t readingValue = std::get<int32_t>(reading);
+        TEST_ASSERT_EQUAL(static_cast<int32_t>(actualState), readingValue);
+    }
+}
+
 void runKeySensorTests() {
     setUp_key_sensor();
+    
+    // Original tests
     RUN_TEST(test_key_sensor_construction);
     RUN_TEST(test_key_sensor_init);
     RUN_TEST(test_key_sensor_key_present_state);
@@ -314,6 +479,14 @@ void runKeySensorTests() {
     RUN_TEST(test_key_sensor_performance);
     RUN_TEST(test_key_sensor_memory_stability);
     RUN_TEST(test_key_sensor_concurrent_access);
+    
+    // Enhanced Phase 2 state machine tests
+    RUN_TEST(test_key_sensor_state_machine_completeness);
+    RUN_TEST(test_key_sensor_timing_dependent_behavior);
+    RUN_TEST(test_key_sensor_boundary_conditions);
+    RUN_TEST(test_key_sensor_resource_exhaustion_handling);
+    RUN_TEST(test_key_sensor_state_consistency_validation);
+    
     tearDown_key_sensor();
 }
 

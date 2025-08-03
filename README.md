@@ -9,6 +9,8 @@ After I had built this architecture, the project then became a test bed for usin
 ## Todo:
 [Items to do](docs/todo.md)
 
+* review and remove historical comments that only state what was done during refactoring or changes
+
 ## Architecture:
 
 [Architecture Documentation](docs/architecture.md)

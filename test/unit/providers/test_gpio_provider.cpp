@@ -12,10 +12,7 @@ void tearDown_gpio_provider() {
     gpioProviderMock = nullptr;
 }
 
-void test_gpio_provider_construction() {
-    // Test that provider can be created and destroyed
-    TEST_ASSERT_NOT_NULL(gpioProviderMock);
-}
+// REMOVED: Pointless constructor test - just checks new works
 
 void test_gpio_provider_digital_operations() {
     // Test pinMode call doesn't crash
@@ -34,14 +31,7 @@ void test_gpio_provider_analog_operations() {
     TEST_ASSERT_LESS_OR_EQUAL(4095, value); // ESP32 12-bit ADC
 }
 
-void test_gpio_provider_pin_mode_settings() {
-    // Test various pin modes don't crash
-    gpioProviderMock->pinMode(2, INPUT);
-    gpioProviderMock->pinMode(3, OUTPUT);
-    gpioProviderMock->pinMode(4, INPUT_PULLUP);
-    gpioProviderMock->pinMode(5, INPUT_PULLDOWN);
-    TEST_ASSERT_TRUE(true);
-}
+// REMOVED: Pointless test - just calls pinMode and asserts true
 
 void test_gpio_provider_interface_compliance() {
     // Test that MockGpioProvider implements IGpioProvider interface correctly
@@ -82,10 +72,8 @@ void test_gpio_provider_analog_read_consistency() {
 
 void runGpioProviderTests() {
     setUp_gpio_provider();
-    RUN_TEST(test_gpio_provider_construction);
     RUN_TEST(test_gpio_provider_digital_operations);
     RUN_TEST(test_gpio_provider_analog_operations);
-    RUN_TEST(test_gpio_provider_pin_mode_settings);
     RUN_TEST(test_gpio_provider_interface_compliance);
     RUN_TEST(test_gpio_provider_multiple_pins);
     RUN_TEST(test_gpio_provider_analog_read_consistency);

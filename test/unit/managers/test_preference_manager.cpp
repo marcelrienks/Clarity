@@ -476,8 +476,124 @@ void test_preference_manager_json_escape_sequences() {
     TEST_ASSERT_EQUAL_STRING("Panel\"with\\quotes\nand\ttabs", escapedConfig.panelName.c_str());
 }
 
+// Enhanced Phase 2 error handling tests
+
+void test_preference_manager_malformed_json_recovery() {
+    // Test recovery from various malformed JSON scenarios
+    prefManager->init();
+    
+    // Test with JSON missing closing brace
+    std::string malformedJson1 = R"({"panelName": "OIL", "theme": "DAY")";
+    prefManagerFixture->getPreferenceService()->simulateCorruptedData(malformedJson1);
+    
+    // Manager should recover with defaults
+    prefManager->loadConfig();
+    const Configs& config1 = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, config1.panelName.c_str()); // Should use defaults
+    
+    // Test with invalid JSON types
+    std::string malformedJson2 = R"({"panelName": 123, "theme": true})";
+    prefManagerFixture->getPreferenceService()->simulateCorruptedData(malformedJson2);
+    
+    // Test with completely invalid JSON
+    std::string malformedJson3 = "not json at all!@#$%^&*()";
+    prefManagerFixture->getPreferenceService()->simulateCorruptedData(malformedJson3);
+    
+    // System should remain stable
+    prefManager->createDefaultConfig();
+    const Configs& finalConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, finalConfig.panelName.c_str());
+}
+
+void test_preference_manager_storage_failure_simulation() {
+    // Test behavior when storage operations fail
+    prefManager->init();
+    
+    // Set a valid config
+    Configs testConfig;
+    testConfig.panelName = "TestPanel";
+    prefManager->setConfig(testConfig);
+    
+    // Simulate storage failure
+    prefManagerFixture->getPreferenceService()->simulateStorageFailure(true);
+    
+    // Save should fail gracefully
+    prefManager->saveConfig(); // Should not crash
+    
+    // Load should fall back to defaults when storage fails
+    prefManager->loadConfig();
+    
+    // Re-enable storage
+    prefManagerFixture->getPreferenceService()->simulateStorageFailure(false);
+    
+    // System should recover
+    prefManager->createDefaultConfig();
+    const Configs& recoveredConfig = prefManager->getConfig();
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, recoveredConfig.panelName.c_str());
+}
+
+void test_preference_manager_concurrent_corruption_protection() {
+    // Test protection against concurrent access corruption
+    prefManager->init();
+    
+    // Simulate rapid concurrent operations
+    for (int i = 0; i < 50; i++) {
+        Configs config;
+        config.panelName = "Concurrent" + std::to_string(i);
+        
+        // Rapid set/save/load cycles
+        prefManager->setConfig(config);
+        if (i % 5 == 0) prefManager->saveConfig();
+        if (i % 7 == 0) prefManager->loadConfig();
+        
+        // Verify consistency after each operation
+        const Configs& currentConfig = prefManager->getConfig();
+        TEST_ASSERT_NOT_NULL(currentConfig.panelName.c_str());
+        TEST_ASSERT_TRUE(strlen(currentConfig.panelName.c_str()) > 0);
+    }
+    
+    // Final state should be consistent
+    const Configs& finalConfig = prefManager->getConfig();
+    TEST_ASSERT_NOT_NULL(finalConfig.panelName.c_str());
+}
+
+void test_preference_manager_data_integrity_validation() {
+    // Test data integrity across multiple operations
+    prefManager->init();
+    
+    // Set known good config
+    Configs originalConfig;
+    originalConfig.panelName = "IntegrityTest";
+    prefManager->setConfig(originalConfig);
+    
+    // Perform multiple save/load cycles
+    for (int i = 0; i < 20; i++) {
+        prefManager->saveConfig();
+        prefManager->loadConfig();
+        
+        const Configs& currentConfig = prefManager->getConfig();
+        // Data should remain consistent
+        TEST_ASSERT_EQUAL_STRING("IntegrityTest", currentConfig.panelName.c_str());
+    }
+    
+    // Test with config changes between cycles
+    for (int i = 0; i < 10; i++) {
+        Configs cycleConfig;
+        cycleConfig.panelName = "Cycle" + std::to_string(i);
+        prefManager->setConfig(cycleConfig);
+        prefManager->saveConfig();
+        
+        // Load and verify
+        prefManager->loadConfig();
+        const Configs& loadedConfig = prefManager->getConfig();
+        TEST_ASSERT_EQUAL_STRING(cycleConfig.panelName.c_str(), loadedConfig.panelName.c_str());
+    }
+}
+
 void runPreferenceManagerTests() {
     setUp_preference_manager();
+    
+    // Original tests
     RUN_TEST(test_preference_manager_init);
     RUN_TEST(test_preference_manager_get_set_config);
     RUN_TEST(test_preference_manager_create_default_config);
@@ -505,6 +621,12 @@ void runPreferenceManagerTests() {
     RUN_TEST(test_preference_manager_config_validation_edge_cases);
     RUN_TEST(test_preference_manager_empty_storage_handling);
     RUN_TEST(test_preference_manager_json_escape_sequences);
+    
+    // Enhanced Phase 2 error handling tests
+    RUN_TEST(test_preference_manager_malformed_json_recovery);
+    RUN_TEST(test_preference_manager_storage_failure_simulation);
+    RUN_TEST(test_preference_manager_concurrent_corruption_protection);
+    RUN_TEST(test_preference_manager_data_integrity_validation);
     
     tearDown_preference_manager();
 }

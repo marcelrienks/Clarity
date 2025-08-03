@@ -49,76 +49,13 @@ bool isValidTheme(const std::string& theme) {
 
 #endif
 
-void test_config_set_get() {
-    ConfigManager manager;
-    
-    // Test setting and getting config
-    manager.setConfig("testKey", "testValue");
-    std::string value = manager.getConfig("testKey");
-    TEST_ASSERT_EQUAL_STRING("testValue", value.c_str());
-    
-    // Test default value for missing key
-    std::string defaultValue = manager.getConfig("missingKey", "default");
-    TEST_ASSERT_EQUAL_STRING("default", defaultValue.c_str());
-}
+// REMOVED: Duplicate of test in test_all.cpp
 
-void test_config_has_config() {
-    ConfigManager manager;
-    
-    // Test key doesn't exist initially
-    TEST_ASSERT_FALSE(manager.hasConfig("testKey"));
-    
-    // Test key exists after setting
-    manager.setConfig("testKey", "value");
-    TEST_ASSERT_TRUE(manager.hasConfig("testKey"));
-}
+// REMOVED: Duplicate of test in test_all.cpp
 
-void test_config_default_creation() {
-    ConfigManager manager;
-    
-    // Create default config
-    manager.createDefaultConfig();
-    
-    // Verify default values
-    TEST_ASSERT_EQUAL_STRING("OIL", manager.getConfig("panelName").c_str());
-    TEST_ASSERT_EQUAL_STRING("DAY", manager.getConfig("theme").c_str());
-    TEST_ASSERT_EQUAL(2, manager.getConfigCount());
-}
-
-void test_panel_name_validation() {
-    TEST_ASSERT_TRUE(isValidPanelName("OIL"));
-    TEST_ASSERT_TRUE(isValidPanelName("KEY"));
-    TEST_ASSERT_TRUE(isValidPanelName("LOCK"));
-    TEST_ASSERT_FALSE(isValidPanelName("INVALID"));
-    TEST_ASSERT_FALSE(isValidPanelName(""));
-}
-
-void test_theme_validation() {
-    TEST_ASSERT_TRUE(isValidTheme("DAY"));
-    TEST_ASSERT_TRUE(isValidTheme("NIGHT"));
-    TEST_ASSERT_FALSE(isValidTheme("INVALID"));
-    TEST_ASSERT_FALSE(isValidTheme(""));
-}
-
-void test_config_clear() {
-    ConfigManager manager;
-    
-    // Add some config
-    manager.setConfig("key1", "value1");
-    manager.setConfig("key2", "value2");
-    TEST_ASSERT_EQUAL(2, manager.getConfigCount());
-    
-    // Clear config
-    manager.clearConfig();
-    TEST_ASSERT_EQUAL(0, manager.getConfigCount());
-    TEST_ASSERT_FALSE(manager.hasConfig("key1"));
-}
+// REMOVED: All these tests are duplicated in test_all.cpp
 
 void runConfigLogicTests() {
-    RUN_TEST(test_config_set_get);
-    RUN_TEST(test_config_has_config);
-    RUN_TEST(test_config_default_creation);
-    RUN_TEST(test_panel_name_validation);
-    RUN_TEST(test_theme_validation);
-    RUN_TEST(test_config_clear);
+    // REMOVED: All tests duplicated in test_all.cpp - this runner is now empty
+    // Consider removing this entire file as it provides no unique value
 }

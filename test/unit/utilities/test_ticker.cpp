@@ -21,11 +21,7 @@ void test_ticker_dynamic_delay_various_inputs() {
     TEST_ASSERT_TRUE(true);
 }
 
-void test_ticker_lv_tasks() {
-    // Test that handleLvTasks runs without crashing
-    Ticker::handleLvTasks();
-    TEST_ASSERT_TRUE(true);
-}
+// REMOVED: Pointless test - calls empty method and asserts true
 
 void test_ticker_multiple_calls() {
     // Test multiple calls don't crash
@@ -36,12 +32,7 @@ void test_ticker_multiple_calls() {
     TEST_ASSERT_TRUE(true);
 }
 
-void test_ticker_static_methods_accessible() {
-    // Test that static methods are accessible
-    Ticker::handleDynamicDelay(50);
-    Ticker::handleLvTasks();
-    TEST_ASSERT_TRUE(true);
-}
+// REMOVED: Pointless test - just calls static methods and asserts true
 
 void test_ticker_timing_consistency() {
     // Test that timing calculations are consistent
@@ -58,8 +49,6 @@ void test_ticker_timing_consistency() {
 void runTickerTests() {
     RUN_TEST(test_ticker_dynamic_delay_normal_case);
     RUN_TEST(test_ticker_dynamic_delay_various_inputs);
-    RUN_TEST(test_ticker_lv_tasks);
     RUN_TEST(test_ticker_multiple_calls);
-    RUN_TEST(test_ticker_static_methods_accessible);
     RUN_TEST(test_ticker_timing_consistency);
 }

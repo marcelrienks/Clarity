@@ -440,9 +440,196 @@ void test_scenario_performance_stress() {
     TEST_ASSERT_TRUE(result);
 }
 
+// Enhanced Phase 2 scenarios for better edge case coverage
+
+void test_scenario_power_cycle_recovery() {
+    // Test system recovery after simulated power cycle
+    fixture->clearScenario();
+    
+    fixture->addScenarioStep("System running with custom config",
+        [&]() {
+            fixture->setTheme(Theme::NIGHT);
+            fixture->getPanelService()->show_panel(PanelType::KEY);
+            fixture->triggerKeyPresent(true);
+        },
+        [&]() {
+            return fixture->verifyPanelShown(PanelType::KEY) && 
+                   fixture->verifyTheme(Theme::NIGHT);
+        });
+    
+    fixture->addScenarioStep("Simulate power cycle - reset all state",
+        [&]() {
+            fixture->simulatePowerCycle();
+        },
+        [&]() {
+            return fixture->verifySystemReset();
+        });
+    
+    fixture->addScenarioStep("System restarts and recovers preferences",
+        [&]() {
+            fixture->initializeSystem();
+        },
+        [&]() {
+            return fixture->verifyPanelShown(PanelType::SPLASH) &&
+                   fixture->verifyTheme(Theme::DAY); // Should restore defaults
+        });
+    
+    bool result = fixture->executeScenario();
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_scenario_memory_pressure_handling() {
+    // Test behavior under simulated memory pressure
+    fixture->clearScenario();
+    
+    fixture->addScenarioStep("Create memory pressure",
+        [&]() {
+            fixture->simulateMemoryPressure(80); // 80% memory usage
+        },
+        [&]() {
+            return fixture->verifyMemoryUsage() < 90; // Should not exceed 90%
+        });
+    
+    fixture->addScenarioStep("System continues to function under pressure",
+        [&]() {
+            fixture->getPanelService()->show_panel(PanelType::OEM_OIL);
+            fixture->triggerLights(true);
+        },
+        [&]() {
+            return fixture->verifyPanelShown(PanelType::OEM_OIL) &&
+                   fixture->verifyTheme(Theme::NIGHT);
+        });
+    
+    fixture->addScenarioStep("Memory pressure relieved",
+        [&]() {
+            fixture->simulateMemoryPressure(30); // Release pressure
+        },
+        [&]() {
+            return fixture->verifyMemoryUsage() < 50;
+        });
+    
+    bool result = fixture->executeScenario();
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_scenario_invalid_state_recovery() {
+    // Test recovery from invalid hardware states
+    fixture->clearScenario();
+    
+    fixture->addScenarioStep("Start in valid state",
+        [&]() {
+            fixture->getPanelService()->show_panel(PanelType::KEY);
+            fixture->triggerKeyPresent(true);
+        },
+        [&]() {
+            return fixture->verifyPanelShown(PanelType::KEY);
+        });
+    
+    fixture->addScenarioStep("Force invalid key state (both present and not present)",
+        [&]() {
+            fixture->triggerKeyPresent(true);
+            fixture->triggerKeyNotPresent(true); // Invalid state
+        },
+        [&]() {
+            // System should handle gracefully - either stay on KEY or go to safe state
+            PanelType currentPanel = fixture->getPanelService()->get_current_panel();
+            return currentPanel == PanelType::KEY || 
+                   currentPanel == PanelType::OEM_OIL ||
+                   currentPanel == PanelType::SPLASH;
+        });
+    
+    fixture->addScenarioStep("Return to valid state",
+        [&]() {
+            fixture->triggerKeyNotPresent(false);
+        },
+        [&]() {
+            return fixture->verifyTriggerState(TriggerType::KEY_PRESENT, true) &&
+                   fixture->verifyTriggerState(TriggerType::KEY_NOT_PRESENT, false);
+        });
+    
+    bool result = fixture->executeScenario();
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_scenario_concurrent_trigger_bursts() {
+    // Test handling of rapid concurrent trigger changes
+    fixture->clearScenario();
+    
+    fixture->addScenarioStep("Burst of concurrent triggers",
+        [&]() {
+            for (int i = 0; i < 20; i++) {
+                // Simulate realistic scenarios where multiple triggers change simultaneously
+                if (i % 4 == 0) {
+                    // Car startup: Key present + lights off + lock off
+                    fixture->triggerKeyPresent(true);
+                    fixture->triggerKeyNotPresent(false);
+                    fixture->triggerLights(false);
+                    fixture->triggerLock(false);
+                } else if (i % 4 == 1) {
+                    // Driving: lights on (night)
+                    fixture->triggerLights(true);
+                } else if (i % 4 == 2) {
+                    // Parking: lock on
+                    fixture->triggerLock(true);
+                } else {
+                    // Leaving car: key removed
+                    fixture->triggerKeyPresent(false);
+                    fixture->triggerKeyNotPresent(true);
+                }
+                fixture->waitForTime(5); // 5ms between bursts
+            }
+        },
+        [&]() {
+            // Final state should be consistent
+            return fixture->verifyTriggerState(TriggerType::KEY_NOT_PRESENT, true) &&
+                   fixture->verifyPanelShown(PanelType::KEY);
+        });
+    
+    bool result = fixture->executeScenario();
+    TEST_ASSERT_TRUE(result);
+}
+
+void test_scenario_theme_persistence_stress() {
+    // Test theme persistence under various state changes
+    fixture->clearScenario();
+    
+    fixture->addScenarioStep("Start with day theme",
+        [&]() {
+            fixture->setTheme(Theme::DAY);
+            fixture->getPanelService()->show_panel(PanelType::OEM_OIL);
+        },
+        [&]() {
+            return fixture->verifyTheme(Theme::DAY);
+        });
+    
+    fixture->addScenarioStep("Rapid theme switching with panel changes",
+        [&]() {
+            for (int i = 0; i < 50; i++) {
+                Theme theme = (i % 2 == 0) ? Theme::NIGHT : Theme::DAY;
+                fixture->setTheme(theme);
+                
+                // Change panels during theme switching
+                if (i % 5 == 0) fixture->getPanelService()->show_panel(PanelType::KEY);
+                else if (i % 5 == 1) fixture->getPanelService()->show_panel(PanelType::LOCK);
+                else if (i % 5 == 2) fixture->getPanelService()->show_panel(PanelType::OEM_OIL);
+                else if (i % 5 == 3) fixture->getPanelService()->show_panel(PanelType::SPLASH);
+                
+                fixture->waitForTime(2); // 2ms between changes
+            }
+        },
+        [&]() {
+            // Final theme should be DAY (last iteration with i=49, 49%2==1)
+            return fixture->verifyTheme(Theme::DAY);
+        });
+    
+    bool result = fixture->executeScenario();
+    TEST_ASSERT_TRUE(result);
+}
+
 void runScenarioExecutionTests() {
     setUp_scenario_execution();
     
+    // Original tests
     RUN_TEST(test_major_scenario_full_system);
     RUN_TEST(test_scenario_app_start_splash);
     RUN_TEST(test_scenario_oil_panel_basic);
@@ -453,6 +640,13 @@ void runScenarioExecutionTests() {
     RUN_TEST(test_scenario_startup_with_active_triggers);
     RUN_TEST(test_scenario_complex_trigger_interactions);
     RUN_TEST(test_scenario_performance_stress);
+    
+    // Enhanced Phase 2 scenarios
+    RUN_TEST(test_scenario_power_cycle_recovery);
+    RUN_TEST(test_scenario_memory_pressure_handling);
+    RUN_TEST(test_scenario_invalid_state_recovery);
+    RUN_TEST(test_scenario_concurrent_trigger_bursts);
+    RUN_TEST(test_scenario_theme_persistence_stress);
     
     tearDown_scenario_execution();
 }
