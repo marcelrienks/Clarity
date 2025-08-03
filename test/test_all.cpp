@@ -8,6 +8,10 @@
 
 #ifdef UNIT_TESTING
 
+// Direct includes for reliable test integration (moved before main for scope)
+#include "unit/managers/test_trigger_manager.cpp"  // TriggerManager integration (7 tests)
+#include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)
+
 // Forward declarations of comprehensive test functions
 extern void runPreferenceManagerTests();
 extern void runTriggerManagerTests();
@@ -387,6 +391,29 @@ int main(int argc, char **argv) {
     RUN_TEST(test_key_state_logic_performance_benchmark);
     RUN_TEST(test_config_operations_performance_benchmark);
     
+    // TriggerManager tests - Moved early in execution to ensure reliable integration
+    setUp_trigger_manager();
+    RUN_TEST(test_trigger_manager_initialization);
+    RUN_TEST(test_trigger_manager_startup_panel_override);
+    RUN_TEST(test_trigger_manager_key_trigger_processing);
+    RUN_TEST(test_trigger_manager_light_trigger_processing);
+    RUN_TEST(test_trigger_manager_multiple_sensors);
+    RUN_TEST(test_trigger_manager_lock_state_changes);
+    RUN_TEST(test_trigger_manager_service_integration);
+    tearDown_trigger_manager();
+    
+    // ServiceContainer tests - Moved early in execution to ensure reliable integration
+    setUp_service_container();
+    RUN_TEST(test_service_container_construction);
+    RUN_TEST(test_service_container_singleton_instance);
+    RUN_TEST(test_service_container_register_service);
+    RUN_TEST(test_service_container_get_service);
+    RUN_TEST(test_service_container_has_service);
+    RUN_TEST(test_service_container_unregister_service);
+    RUN_TEST(test_service_container_multiple_services);
+    RUN_TEST(test_service_container_service_replacement);
+    tearDown_service_container();
+    
     // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
     printf("[DEBUG] About to run sensor tests...\n");
     fflush(stdout);
@@ -412,18 +439,10 @@ int main(int argc, char **argv) {
     printf("[DEBUG] Completed runPreferenceManagerTests.\n");
     fflush(stdout);
     
-    printf("[DEBUG] About to call runTriggerManagerTests...\n");
-    fflush(stdout);
-    runTriggerManagerTests();          // 7 tests - Re-enabled after fixing log function conflicts
-    printf("[DEBUG] Completed runTriggerManagerTests.\n");
-    fflush(stdout);
+    // TriggerManager and ServiceContainer tests moved to early execution section above
+    
     // runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
     // runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
-    // printf("[DEBUG] About to call runServiceContainerTests...\n");
-    // fflush(stdout);
-    // runServiceContainerTests();        // 8 tests - DISABLED temporarily to verify TriggerManager success
-    // printf("[DEBUG] Completed runServiceContainerTests.\n");
-    // fflush(stdout);
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
     // runSimpleTickerTests();        // 4 tests (keeping commented)
     // runConfigLogicTests();         // REMOVED: All tests duplicated in test_all.cpp
@@ -449,6 +468,4 @@ int main(int argc, char **argv) {
 // Note: Some test files use PlatformIO build_src_filter, others use direct includes
 // Direct includes appear more reliable for function discovery
 #include "unit/utilities/test_ticker.cpp"
-// Phase 2: Direct includes for reliable test integration (following TickerTests pattern)
-#include "unit/managers/test_trigger_manager.cpp"  // Re-enabled after fixing log function conflicts
-#include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)
+// Phase 2: Direct includes moved to top of file for proper scoping
