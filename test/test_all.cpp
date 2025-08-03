@@ -402,10 +402,10 @@ int main(int argc, char **argv) {
     
     // Manager tests - Testing one by one to isolate crash
     runPreferenceManagerTests();       // 25 tests - Phase 2: 14 original + 11 enhanced tests
-    // runTriggerManagerTests();          // 7 tests - Re-enabled for Phase 1
+    runTriggerManagerTests();          // 7 tests - Re-enabled using direct include approach
     // runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
     // runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
-    // runServiceContainerTests();        // 8 tests - Re-enabled for Phase 1
+    // runServiceContainerTests();        // 8 tests - TEMPORARILY DISABLED for debugging
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
     // runSimpleTickerTests();        // 4 tests (keeping commented)
     // runConfigLogicTests();         // REMOVED: All tests duplicated in test_all.cpp
@@ -428,6 +428,9 @@ int main(int argc, char **argv) {
 #include "unit/providers/test_lvgl_display_provider.cpp"
 // Adding Factory tests for Phase 3:
 #include "unit/factories/test_manager_factory.cpp"
-// Note: Other test files are now included via PlatformIO build_src_filter instead of direct includes
-// This avoids symbol redefinition conflicts while ensuring all tests run
+// Phase 2: Direct includes for reliable test integration (following TickerTests pattern)
+#include "unit/managers/test_trigger_manager.cpp"
+
+// Note: Some test files use PlatformIO build_src_filter, others use direct includes
+// Direct includes appear more reliable for function discovery
 #include "unit/utilities/test_ticker.cpp"
