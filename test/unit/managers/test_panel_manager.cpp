@@ -35,98 +35,98 @@ public:
 
 #include "test_fixtures.h"
 
-std::unique_ptr<ManagerTestFixture> panelManagerFixture;
-PanelManager* panelManager = nullptr;
+static std::unique_ptr<ManagerTestFixture> panelManagerFixtureForTest;
+static PanelManager* panelManagerForTest = nullptr;
 
 void setUp_panel_manager() {
-    panelManagerFixture = std::make_unique<ManagerTestFixture>();
-    panelManagerFixture->SetUp();
-    panelManager = new PanelManager(panelManagerFixture->getDisplayProvider(), panelManagerFixture->getGpioProvider(), panelManagerFixture->getStyleService());
+    panelManagerFixtureForTest = std::make_unique<ManagerTestFixture>();
+    panelManagerFixtureForTest->SetUp();
+    panelManagerForTest = new PanelManager(panelManagerFixtureForTest->getDisplayProvider(), panelManagerFixtureForTest->getGpioProvider(), panelManagerFixtureForTest->getStyleService());
 }
 
 void tearDown_panel_manager() {
-    delete panelManager;
-    panelManager = nullptr;
-    panelManagerFixture->TearDown();
-    panelManagerFixture.reset();
+    delete panelManagerForTest;
+    panelManagerForTest = nullptr;
+    panelManagerFixtureForTest->TearDown();
+    panelManagerFixtureForTest.reset();
 }
 
 void test_panel_manager_init() {
     // Test initialization doesn't crash
-    panelManager->init();
+    panelManagerForTest->init();
     TEST_ASSERT_TRUE(true);
 }
 
 void test_panel_manager_construction() {
     // Test that manager can be created and destroyed
-    TEST_ASSERT_NOT_NULL(panelManager);
-    TEST_ASSERT_NOT_NULL(panelManagerFixture->getDisplayProvider());
+    TEST_ASSERT_NOT_NULL(panelManagerForTest);
+    TEST_ASSERT_NOT_NULL(panelManagerFixtureForTest->getDisplayProvider());
 }
 
 void test_panel_manager_create_and_load_panel() {
-    panelManager->init();
+    panelManagerForTest->init();
     
     // Test creating and loading a panel by name
-    panelManager->createAndLoadPanel(PanelNames::OIL);
+    panelManagerForTest->createAndLoadPanel(PanelNames::OIL);
     
     // Panel should be loaded successfully
-    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, panelManager->getCurrentPanel());
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, panelManagerForTest->getCurrentPanel());
 }
 
 void test_panel_manager_load_panel_with_splash() {
-    panelManager->init();
+    panelManagerForTest->init();
     
     // Test loading panel with splash transition
-    panelManager->createAndLoadPanelWithSplash(PanelNames::KEY);
+    panelManagerForTest->createAndLoadPanelWithSplash(PanelNames::KEY);
     
     // With mock panels and synchronous callbacks, should load target panel directly
-    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManager->getCurrentPanel());
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManagerForTest->getCurrentPanel());
 }
 
 void test_panel_manager_update_panel() {
-    panelManager->init();
+    panelManagerForTest->init();
     
     // Load a panel first
-    panelManager->createAndLoadPanel("LOCK");
+    panelManagerForTest->createAndLoadPanel("LOCK");
     
     // Update should work without crashing
-    panelManager->updatePanel();
+    panelManagerForTest->updatePanel();
     TEST_ASSERT_TRUE(true);
 }
 
 void test_panel_manager_get_current_panel() {
-    panelManager->init();
+    panelManagerForTest->init();
     
     // Load a panel
-    panelManager->createAndLoadPanel(PanelNames::OIL);
+    panelManagerForTest->createAndLoadPanel(PanelNames::OIL);
     
     // Should be able to get current panel name
-    const char* currentPanel = panelManager->getCurrentPanel();
+    const char* currentPanel = panelManagerForTest->getCurrentPanel();
     TEST_ASSERT_NOT_NULL(currentPanel);
     TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, currentPanel);
 }
 
 void test_panel_manager_ui_state() {
-    panelManager->init();
+    panelManagerForTest->init();
     
     // Test setting UI state
-    panelManager->setUiState(UIState::IDLE);
+    panelManagerForTest->setUiState(UIState::IDLE);
     TEST_ASSERT_TRUE(true);
     
-    panelManager->setUiState(UIState::LOADING);
+    panelManagerForTest->setUiState(UIState::LOADING);
     TEST_ASSERT_TRUE(true);
 }
 
 void test_panel_manager_panel_switching() {
-    panelManager->init();
+    panelManagerForTest->init();
     
     // Test switching between different panels
-    panelManager->createAndLoadPanel(PanelNames::OIL);
-    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, panelManager->getCurrentPanel());
+    panelManagerForTest->createAndLoadPanel(PanelNames::OIL);
+    TEST_ASSERT_EQUAL_STRING(PanelNames::OIL, panelManagerForTest->getCurrentPanel());
     
     // Switch to different panel
-    panelManager->createAndLoadPanel(PanelNames::KEY);
-    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManager->getCurrentPanel());
+    panelManagerForTest->createAndLoadPanel(PanelNames::KEY);
+    TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManagerForTest->getCurrentPanel());
 }
 
 void runPanelManagerTests() {

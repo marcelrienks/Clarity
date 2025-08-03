@@ -13,6 +13,7 @@
 #include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)
 #include "unit/managers/test_style_manager.cpp"    // StyleManager integration (14 tests)
 #include "unit/utilities/test_simple_ticker.cpp"   // SimpleTickerTests integration (3 tests)
+#include "unit/managers/test_panel_manager.cpp"    // PanelManagerTests integration (8 tests)
 
 // Forward declarations of comprehensive test functions
 extern void runPreferenceManagerTests();
@@ -438,6 +439,18 @@ int main(int argc, char **argv) {
     RUN_TEST(test_simple_ticker_dynamic_delay_normal_case);
     RUN_TEST(test_simple_ticker_dynamic_delay_slow_processing);
     RUN_TEST(test_simple_ticker_timing_calculation);
+    
+    // PanelManagerTests - Added for complete manager coverage (8 tests)
+    setUp_panel_manager();
+    RUN_TEST(test_panel_manager_construction);
+    RUN_TEST(test_panel_manager_init);
+    RUN_TEST(test_panel_manager_create_and_load_panel);
+    RUN_TEST(test_panel_manager_update_panel);
+    RUN_TEST(test_panel_manager_load_panel_with_splash);
+    RUN_TEST(test_panel_manager_get_current_panel);
+    RUN_TEST(test_panel_manager_ui_state);
+    RUN_TEST(test_panel_manager_panel_switching);
+    tearDown_panel_manager();
     
     // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
     printf("[DEBUG] About to run sensor tests...\n");
