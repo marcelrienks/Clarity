@@ -8,23 +8,23 @@
 // Unity extension macros for string comparison  
 #define TEST_ASSERT_NOT_EQUAL_STRING(expected, actual) TEST_ASSERT_FALSE(strcmp(expected, actual) == 0)
 
-StyleManager* styleManager = nullptr;
+static StyleManager* styleManagerForTest = nullptr;
 
 void setUp_style_manager() {
-    styleManager = new StyleManager();
+    styleManagerForTest = new StyleManager();
 }
 
 void tearDown_style_manager() {
-    delete styleManager;
-    styleManager = nullptr;
+    delete styleManagerForTest;
+    styleManagerForTest = nullptr;
 }
 
 // REMOVED: Pointless constructor test - just checks new works
 
 void test_style_manager_init() {
     // Test initialization with day theme
-    styleManager->init(Themes::DAY);
-    TEST_ASSERT_TRUE(styleManager->isInitialized());
+    styleManagerForTest->init(Themes::DAY);
+    TEST_ASSERT_TRUE(styleManagerForTest->isInitialized());
     
     // Test initialization with night theme
     StyleManager nightManager;
@@ -35,15 +35,15 @@ void test_style_manager_init() {
 // REMOVED: Pointless test - just calls method and asserts true
 
 void test_style_manager_theme_switching() {
-    styleManager->init(Themes::DAY);
+    styleManagerForTest->init(Themes::DAY);
     
     // Get initial theme
-    const char* initialTheme = styleManager->getCurrentTheme();
+    const char* initialTheme = styleManagerForTest->getCurrentTheme();
     TEST_ASSERT_EQUAL_STRING(Themes::DAY, initialTheme);
     
     // Switch theme
-    styleManager->setTheme(Themes::NIGHT);
-    const char* newTheme = styleManager->getCurrentTheme();
+    styleManagerForTest->setTheme(Themes::NIGHT);
+    const char* newTheme = styleManagerForTest->getCurrentTheme();
     TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, newTheme);
     
     // Verify theme changed
@@ -76,18 +76,18 @@ void test_style_manager_day_night_differences() {
 // Enhanced coverage tests for Phase 2
 
 void test_style_manager_rapid_theme_switching() {
-    styleManager->init(Themes::DAY);
+    styleManagerForTest->init(Themes::DAY);
     
     // Test rapid theme switching for state consistency
     for (int i = 0; i < 20; i++) {
         const char* theme = (i % 2 == 0) ? Themes::DAY : Themes::NIGHT;
-        styleManager->setTheme(theme);
-        TEST_ASSERT_EQUAL_STRING(theme, styleManager->getCurrentTheme());
+        styleManagerForTest->setTheme(theme);
+        TEST_ASSERT_EQUAL_STRING(theme, styleManagerForTest->getCurrentTheme());
     }
     
     // Verify final state is consistent
-    styleManager->setTheme(Themes::DAY);
-    TEST_ASSERT_EQUAL_STRING(Themes::DAY, styleManager->getCurrentTheme());
+    styleManagerForTest->setTheme(Themes::DAY);
+    TEST_ASSERT_EQUAL_STRING(Themes::DAY, styleManagerForTest->getCurrentTheme());
 }
 
 void test_style_manager_memory_management() {
@@ -109,150 +109,150 @@ void test_style_manager_memory_management() {
 }
 
 void test_style_manager_style_consistency() {
-    styleManager->init(Themes::DAY);
-    styleManager->initializeStyles();
+    styleManagerForTest->init(Themes::DAY);
+    styleManagerForTest->initializeStyles();
     
     // Get styles and verify they remain consistent across multiple calls
-    lv_style_t& bgStyle1 = styleManager->getBackgroundStyle();
-    lv_style_t& bgStyle2 = styleManager->getBackgroundStyle();
+    lv_style_t& bgStyle1 = styleManagerForTest->getBackgroundStyle();
+    lv_style_t& bgStyle2 = styleManagerForTest->getBackgroundStyle();
     
     // Should return the same style reference
     TEST_ASSERT_EQUAL_PTR(&bgStyle1, &bgStyle2);
     
     // Test with different styles
-    lv_style_t& textStyle = styleManager->getTextStyle();
-    lv_style_t& gaugeStyle = styleManager->getGaugeNormalStyle();
+    lv_style_t& textStyle = styleManagerForTest->getTextStyle();
+    lv_style_t& gaugeStyle = styleManagerForTest->getGaugeNormalStyle();
     
     // Different styles should have different addresses
     TEST_ASSERT_NOT_EQUAL(&textStyle, &gaugeStyle);
 }
 
 void test_style_manager_theme_persistence() {
-    styleManager->init(Themes::DAY);
+    styleManagerForTest->init(Themes::DAY);
     
     // Set theme and verify persistence across operations
-    styleManager->setTheme(Themes::NIGHT);
-    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManager->getCurrentTheme());
+    styleManagerForTest->setTheme(Themes::NIGHT);
+    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManagerForTest->getCurrentTheme());
     
     // Initialize styles - theme should persist
-    styleManager->initializeStyles();
-    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManager->getCurrentTheme());
+    styleManagerForTest->initializeStyles();
+    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManagerForTest->getCurrentTheme());
     
     // Get colors - theme should still persist
-    const ThemeColors& colors = styleManager->getThemeColors();
-    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManager->getCurrentTheme());
+    const ThemeColors& colors = styleManagerForTest->getThemeColors();
+    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManagerForTest->getCurrentTheme());
 }
 
 void test_style_manager_invalid_theme_handling() {
-    styleManager->init(Themes::DAY);
+    styleManagerForTest->init(Themes::DAY);
     
     // Test with nullptr theme (should handle gracefully)
-    styleManager->setTheme(nullptr);
+    styleManagerForTest->setTheme(nullptr);
     // Should not crash and maintain a valid state
-    const char* currentTheme = styleManager->getCurrentTheme();
+    const char* currentTheme = styleManagerForTest->getCurrentTheme();
     TEST_ASSERT_NOT_NULL(currentTheme);
     
     // Test with empty string theme
-    styleManager->setTheme("");
-    currentTheme = styleManager->getCurrentTheme();
+    styleManagerForTest->setTheme("");
+    currentTheme = styleManagerForTest->getCurrentTheme();
     TEST_ASSERT_NOT_NULL(currentTheme);
     
     // Test with invalid theme name
-    styleManager->setTheme("INVALID_THEME");
-    currentTheme = styleManager->getCurrentTheme();
+    styleManagerForTest->setTheme("INVALID_THEME");
+    currentTheme = styleManagerForTest->getCurrentTheme();
     TEST_ASSERT_NOT_NULL(currentTheme);
 }
 
 void test_style_manager_initialization_edge_cases() {
     // Test multiple initialization calls
-    styleManager->init(Themes::DAY);
-    TEST_ASSERT_TRUE(styleManager->isInitialized());
+    styleManagerForTest->init(Themes::DAY);
+    TEST_ASSERT_TRUE(styleManagerForTest->isInitialized());
     
     // Initialize again with different theme
-    styleManager->init(Themes::NIGHT);
-    TEST_ASSERT_TRUE(styleManager->isInitialized());
-    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManager->getCurrentTheme());
+    styleManagerForTest->init(Themes::NIGHT);
+    TEST_ASSERT_TRUE(styleManagerForTest->isInitialized());
+    TEST_ASSERT_EQUAL_STRING(Themes::NIGHT, styleManagerForTest->getCurrentTheme());
     
     // Initialize multiple times with same theme
-    styleManager->init(Themes::NIGHT);
-    styleManager->init(Themes::NIGHT);
-    TEST_ASSERT_TRUE(styleManager->isInitialized());
+    styleManagerForTest->init(Themes::NIGHT);
+    styleManagerForTest->init(Themes::NIGHT);
+    TEST_ASSERT_TRUE(styleManagerForTest->isInitialized());
 }
 
 void test_style_manager_style_initialization_robustness() {
-    styleManager->init(Themes::DAY);
+    styleManagerForTest->init(Themes::DAY);
     
     // Test multiple style initialization calls
-    styleManager->initializeStyles();
-    styleManager->initializeStyles();
-    styleManager->initializeStyles();
+    styleManagerForTest->initializeStyles();
+    styleManagerForTest->initializeStyles();
+    styleManagerForTest->initializeStyles();
     
     // Should still work correctly
-    lv_style_t& bgStyle = styleManager->getBackgroundStyle();
+    lv_style_t& bgStyle = styleManagerForTest->getBackgroundStyle();
     TEST_ASSERT_NOT_NULL(&bgStyle);
 }
 
 void test_style_manager_concurrent_access_simulation() {
-    styleManager->init(Themes::DAY);
-    styleManager->initializeStyles();
+    styleManagerForTest->init(Themes::DAY);
+    styleManagerForTest->initializeStyles();
     
     // Simulate concurrent access patterns
     for (int i = 0; i < 50; i++) {
         // Rapid style access
-        styleManager->getBackgroundStyle();
-        styleManager->getTextStyle();
-        styleManager->getCurrentTheme();
-        styleManager->getThemeColors();
+        styleManagerForTest->getBackgroundStyle();
+        styleManagerForTest->getTextStyle();
+        styleManagerForTest->getCurrentTheme();
+        styleManagerForTest->getThemeColors();
         
         // Theme switching
         if (i % 10 == 0) {
             const char* theme = (i % 20 == 0) ? Themes::DAY : Themes::NIGHT;
-            styleManager->setTheme(theme);
+            styleManagerForTest->setTheme(theme);
         }
     }
     
     // Verify final state is consistent
-    const char* finalTheme = styleManager->getCurrentTheme();
+    const char* finalTheme = styleManagerForTest->getCurrentTheme();
     TEST_ASSERT_NOT_NULL(finalTheme);
 }
 
 void test_style_manager_cleanup_and_resource_management() {
-    styleManager->init(Themes::DAY);
-    styleManager->initializeStyles();
+    styleManagerForTest->init(Themes::DAY);
+    styleManagerForTest->initializeStyles();
     
     // Access all styles to ensure they're created
-    styleManager->getBackgroundStyle();
-    styleManager->getTextStyle();
-    styleManager->getGaugeNormalStyle();
-    styleManager->getGaugeWarningStyle();
-    styleManager->getGaugeDangerStyle();
-    styleManager->getGaugeIndicatorStyle();
-    styleManager->getGaugeItemsStyle();
-    styleManager->getGaugeMainStyle();
+    styleManagerForTest->getBackgroundStyle();
+    styleManagerForTest->getTextStyle();
+    styleManagerForTest->getGaugeNormalStyle();
+    styleManagerForTest->getGaugeWarningStyle();
+    styleManagerForTest->getGaugeDangerStyle();
+    styleManagerForTest->getGaugeIndicatorStyle();
+    styleManagerForTest->getGaugeItemsStyle();
+    styleManagerForTest->getGaugeMainStyle();
     
     // Test theme switching after all styles are created
-    styleManager->setTheme(Themes::NIGHT);
+    styleManagerForTest->setTheme(Themes::NIGHT);
     
     // Verify we can still access styles after theme change
-    styleManager->getBackgroundStyle();
-    styleManager->getTextStyle();
+    styleManagerForTest->getBackgroundStyle();
+    styleManagerForTest->getTextStyle();
     
     TEST_ASSERT_TRUE(true); // If we get here without crashes, cleanup is working
 }
 
 void test_style_manager_apply_theme_edge_cases() {
-    styleManager->init(Themes::DAY);
+    styleManagerForTest->init(Themes::DAY);
     
     // Test applying theme before style initialization
-    styleManager->applyThemeToScreen(nullptr);
+    styleManagerForTest->applyThemeToScreen(nullptr);
     
     // Initialize styles then apply theme
-    styleManager->initializeStyles();
-    styleManager->applyThemeToScreen(nullptr);
+    styleManagerForTest->initializeStyles();
+    styleManagerForTest->applyThemeToScreen(nullptr);
     
     // Switch theme and apply again
-    styleManager->setTheme(Themes::NIGHT);
-    styleManager->applyThemeToScreen(nullptr);
+    styleManagerForTest->setTheme(Themes::NIGHT);
+    styleManagerForTest->applyThemeToScreen(nullptr);
     
     TEST_ASSERT_TRUE(true); // No crashes = success
 }

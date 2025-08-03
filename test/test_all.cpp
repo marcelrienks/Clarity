@@ -11,6 +11,7 @@
 // Direct includes for reliable test integration (moved before main for scope)
 #include "unit/managers/test_trigger_manager.cpp"  // TriggerManager integration (7 tests)
 #include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)
+#include "unit/managers/test_style_manager.cpp"    // StyleManager integration (20 tests)
 
 // Forward declarations of comprehensive test functions
 extern void runPreferenceManagerTests();
@@ -413,6 +414,24 @@ int main(int argc, char **argv) {
     RUN_TEST(test_service_container_multiple_services);
     RUN_TEST(test_service_container_service_replacement);
     tearDown_service_container();
+    
+    // StyleManager tests - Added for comprehensive manager coverage (14 tests)
+    setUp_style_manager();
+    RUN_TEST(test_style_manager_init);
+    RUN_TEST(test_style_manager_theme_switching);
+    RUN_TEST(test_style_manager_day_night_differences);
+    RUN_TEST(test_style_manager_rapid_theme_switching);
+    RUN_TEST(test_style_manager_theme_persistence);
+    RUN_TEST(test_style_manager_invalid_theme_handling);
+    RUN_TEST(test_style_manager_initialization_edge_cases);
+    RUN_TEST(test_style_manager_memory_management);
+    RUN_TEST(test_style_manager_style_consistency);
+    RUN_TEST(test_style_manager_style_initialization_robustness);
+    RUN_TEST(test_style_manager_concurrent_access_simulation);
+    RUN_TEST(test_style_manager_cleanup_and_resource_management);
+    RUN_TEST(test_style_manager_apply_theme_edge_cases);
+    RUN_TEST(test_style_manager_state_transitions);
+    tearDown_style_manager();
     
     // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
     printf("[DEBUG] About to run sensor tests...\n");
