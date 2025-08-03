@@ -388,6 +388,8 @@ int main(int argc, char **argv) {
     RUN_TEST(test_config_operations_performance_benchmark);
     
     // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
+    printf("[DEBUG] About to run sensor tests...\n");
+    fflush(stdout);
     runKeySensorTests();           // 16 tests
     runLockSensorTests();          // 7 tests (working - variable conflicts resolved)
     runLightSensorTests();         // 7 tests (testing fixes)
@@ -400,9 +402,21 @@ int main(int argc, char **argv) {
     // runStandaloneComponentTests();   // Standalone Component interface tests for Phase 3 - deferred due to mock conflicts
     // runStandalonePanelTests();       // Standalone Panel interface tests for Phase 3 - deferred due to mock conflicts
     
+    printf("[DEBUG] Completed sensor tests, starting manager tests...\n");
+    fflush(stdout);
+    
     // Manager tests - Testing one by one to isolate crash
+    printf("[DEBUG] About to call runPreferenceManagerTests...\n");
+    fflush(stdout);
     runPreferenceManagerTests();       // 25 tests - Phase 2: 14 original + 11 enhanced tests
-    runTriggerManagerTests();          // 7 tests - Re-enabled using direct include approach
+    printf("[DEBUG] Completed runPreferenceManagerTests.\n");
+    fflush(stdout);
+    
+    printf("[DEBUG] About to call runTriggerManagerTests...\n");
+    fflush(stdout);
+    runTriggerManagerTests();          // 7 tests - Re-enabled after fixing log function conflicts
+    printf("[DEBUG] Completed runTriggerManagerTests.\n");
+    fflush(stdout);
     // runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
     // runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
     // runServiceContainerTests();        // 8 tests - TEMPORARILY DISABLED for debugging
@@ -428,9 +442,8 @@ int main(int argc, char **argv) {
 #include "unit/providers/test_lvgl_display_provider.cpp"
 // Adding Factory tests for Phase 3:
 #include "unit/factories/test_manager_factory.cpp"
-// Phase 2: Direct includes for reliable test integration (following TickerTests pattern)
-#include "unit/managers/test_trigger_manager.cpp"
-
 // Note: Some test files use PlatformIO build_src_filter, others use direct includes
 // Direct includes appear more reliable for function discovery
 #include "unit/utilities/test_ticker.cpp"
+// Phase 2: Direct includes for reliable test integration (following TickerTests pattern)
+#include "unit/managers/test_trigger_manager.cpp"  // Re-enabled after fixing log function conflicts

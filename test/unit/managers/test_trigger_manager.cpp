@@ -12,15 +12,8 @@
 // Custom macro for testing no exceptions (Unity doesn't have this)
 #define TEST_ASSERT_NO_THROW(expression) do { expression; TEST_PASS(); } while(0)
 
-#ifdef UNIT_TESTING
-// Mock Arduino functions
-extern "C" {
-    void log_d(const char* format, ...) {}
-    void log_e(const char* format, ...) {}
-}
-
 // Mock service types are now defined in mock_services.h
-#endif
+// Note: log_d and log_e are handled by esp32-hal-log.h mock as macros
 
 static MockGpioProvider* mockGpioTrigger = nullptr;
 static MockPanelService* mockPanelService = nullptr;
