@@ -2,8 +2,7 @@
 
 // Unity Configuration for Clarity Tests
 
-// Enable double precision tests
-#define UNITY_INCLUDE_DOUBLE
+// Note: UNITY_INCLUDE_DOUBLE is defined in platformio.ini build_flags
 
 // Enable memory comparison tests  
 #define UNITY_SUPPORT_TEST_CASES

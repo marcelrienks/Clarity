@@ -1,9 +1,10 @@
 #include <unity.h>
 #include "utilities/ticker.h"
+#include "utilities/test_common.h"
 
 #ifdef UNIT_TESTING
 // Note: Using Arduino.h mock functions for timing
-// set_mock_millis is defined in test_all.cpp to avoid conflicts
+// set_mock_millis is now defined in test_common.h
 #endif
 
 void test_ticker_dynamic_delay_normal_case() {

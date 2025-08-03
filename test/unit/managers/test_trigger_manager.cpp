@@ -3,8 +3,8 @@
 #include "sensors/key_sensor.h"
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
-#include "../mocks/mock_gpio_provider.h"
-#include "../mocks/mock_services.h"
+#include "mock_gpio_provider.h"
+#include "mock_services.h"
 #include "utilities/types.h"
 #include "Arduino.h"
 #include <memory>

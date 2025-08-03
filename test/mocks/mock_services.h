@@ -289,6 +289,7 @@ private:
     std::map<std::string, std::string> preferences;
     bool loadCalled = false;
     bool saveCalled = false;
+    bool storageFailureSimulated = false;
     
 public:
     void init() override {}
@@ -345,12 +346,23 @@ public:
         config = {};
     }
     
+    // Missing methods for test scenarios
+    void simulateCorruptedData(const std::string& corruptedJson) {
+        // Simulate loading corrupted data - should trigger recovery
+        preferences["corrupted"] = corruptedJson;
+    }
+    
+    void simulateStorageFailure(bool enabled) {
+        storageFailureSimulated = enabled;
+    }
+    
     // Test utilities
     void reset() {
         config = {};
         preferences.clear();
         loadCalled = false;
         saveCalled = false;
+        storageFailureSimulated = false;
     }
     
     bool wasLoadCalled() const { return loadCalled; }

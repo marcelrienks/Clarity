@@ -2,11 +2,11 @@
 
 #ifdef UNIT_TESTING
 
-#include "../mocks/Arduino.h"
-#include "../mocks/lvgl.h"
-#include "../mocks/Preferences.h"
-#include "../mocks/mock_services.h"
-#include "../mocks/mock_gpio_provider.h"
+#include "Arduino.h"
+#include "lvgl.h"
+#include "Preferences.h"
+#include "mock_services.h"
+#include "mock_gpio_provider.h"
 #include "../../include/system/service_container.h"
 #include "../../include/utilities/types.h"
 #include <memory>

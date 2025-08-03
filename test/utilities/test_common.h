@@ -6,6 +6,23 @@
 #include <cstring>
 #include <string>
 #include <memory>
+#include <vector>
+#include "Arduino.h"
+
+// Mock timing functions for tests
+inline void set_mock_millis(uint32_t value) {
+    MockHardwareState::instance().setMillis(value);
+}
+
+inline void handleDynamicDelay(uint32_t startTime) {
+    uint32_t elapsedTime = millis() - startTime;
+    uint32_t targetFrameTime = 16;
+    if (elapsedTime < targetFrameTime) {
+        delay(targetFrameTime - elapsedTime);
+    } else {
+        delay(1);
+    }
+}
 
 // Common test utilities for the Clarity ESP32 project
 
