@@ -419,7 +419,11 @@ int main(int argc, char **argv) {
     fflush(stdout);
     // runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
     // runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
-    // runServiceContainerTests();        // 8 tests - TEMPORARILY DISABLED for debugging
+    // printf("[DEBUG] About to call runServiceContainerTests...\n");
+    // fflush(stdout);
+    // runServiceContainerTests();        // 8 tests - DISABLED temporarily to verify TriggerManager success
+    // printf("[DEBUG] Completed runServiceContainerTests.\n");
+    // fflush(stdout);
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
     // runSimpleTickerTests();        // 4 tests (keeping commented)
     // runConfigLogicTests();         // REMOVED: All tests duplicated in test_all.cpp
@@ -447,3 +451,4 @@ int main(int argc, char **argv) {
 #include "unit/utilities/test_ticker.cpp"
 // Phase 2: Direct includes for reliable test integration (following TickerTests pattern)
 #include "unit/managers/test_trigger_manager.cpp"  // Re-enabled after fixing log function conflicts
+#include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)

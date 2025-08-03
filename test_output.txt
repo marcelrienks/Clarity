@@ -1,0 +1,83 @@
+Verbosity level can be increased via `-v, -vv, or -vvv` option
+Collected 1 tests
+
+Processing * in test environment
+--------------------------------------------------------------------------------
+Building...
+Testing...
+test\test_all.cpp:373: test_timing_calculation	[PASSED]
+test\test_all.cpp:374: test_sensor_value_change_detection	[PASSED]
+test\test_all.cpp:375: test_adc_to_pressure_conversion	[PASSED]
+test\test_all.cpp:376: test_key_state_logic	[PASSED]
+test\test_all.cpp:377: test_config_set_get	[PASSED]
+test\test_all.cpp:378: test_config_has_config	[PASSED]
+test\test_all.cpp:379: test_config_default_creation	[PASSED]
+test\test_all.cpp:380: test_panel_name_validation	[PASSED]
+test\test_all.cpp:381: test_theme_validation	[PASSED]
+test\test_all.cpp:382: test_config_clear	[PASSED]
+test\test_all.cpp:385: test_adc_conversion_performance_benchmark	[PASSED]
+test\test_all.cpp:386: test_sensor_state_change_detection_performance	[PASSED]
+test\test_all.cpp:387: test_key_state_logic_performance_benchmark	[PASSED]
+test\test_all.cpp:388: test_config_operations_performance_benchmark	[PASSED]
+test\test_all.cpp:466: test_key_sensor_construction	[PASSED]
+test\test_all.cpp:467: test_key_sensor_init	[PASSED]
+test\test_all.cpp:468: test_key_sensor_key_present_state	[PASSED]
+test\test_all.cpp:469: test_key_sensor_key_not_present_state	[PASSED]
+test\test_all.cpp:470: test_key_sensor_inactive_state	[PASSED]
+test\test_all.cpp:471: test_key_sensor_invalid_state	[PASSED]
+test\test_all.cpp:472: test_key_sensor_value_change_detection	[PASSED]
+test\test_all.cpp:473: test_key_sensor_reading_consistency	[PASSED]
+test\test_all.cpp:474: test_key_sensor_timing_behavior	[PASSED]
+test\test_all.cpp:475: test_key_sensor_debouncing	[PASSED]
+test\test_all.cpp:476: test_key_sensor_state_transitions	[PASSED]
+test\test_all.cpp:478: test_key_sensor_error_conditions	[PASSED]
+test\test_all.cpp:479: test_key_sensor_performance	[PASSED]
+test\test_all.cpp:480: test_key_sensor_memory_stability	[PASSED]
+test\test_all.cpp:481: test_key_sensor_concurrent_access	[PASSED]
+test\test_all.cpp:484: test_key_sensor_state_machine_completeness	[PASSED]
+test\test_all.cpp:485: test_key_sensor_timing_dependent_behavior	[PASSED]
+test\test_all.cpp:486: test_key_sensor_boundary_conditions	[PASSED]
+test\test_all.cpp:487: test_key_sensor_resource_exhaustion_handling	[PASSED]
+test\test_all.cpp:488: test_key_sensor_state_consistency_validation	[PASSED]
+test\test_all.cpp:116: test_lock_sensor_construction	[PASSED]
+test\test_all.cpp:117: test_lock_sensor_init	[PASSED]
+test\test_all.cpp:118: test_lock_sensor_locked_state	[PASSED]
+test\test_all.cpp:119: test_lock_sensor_unlocked_state	[PASSED]
+test\test_all.cpp:120: test_lock_sensor_value_change_detection	[PASSED]
+test\test_all.cpp:121: test_lock_sensor_reading_consistency	[PASSED]
+test\test_all.cpp:122: test_lock_sensor_state_transitions	[PASSED]
+test\test_all.cpp:123: test_lock_sensor_boolean_logic	[PASSED]
+test\test_all.cpp:127: test_light_sensor_construction	[PASSED]
+test\test_all.cpp:128: test_light_sensor_init	[PASSED]
+test\test_all.cpp:129: test_light_sensor_reading_conversion	[PASSED]
+test\test_all.cpp:130: test_light_sensor_boundary_values	[PASSED]
+test\test_all.cpp:131: test_light_sensor_value_change_detection	[PASSED]
+test\test_all.cpp:132: test_light_sensor_reading_consistency	[PASSED]
+test\test_all.cpp:133: test_light_sensor_state_transitions	[PASSED]
+test\test_all.cpp:90: test_oil_pressure_sensor_init	[PASSED]
+test\test_all.cpp:91: test_oil_pressure_sensor_reading_conversion	[PASSED]
+test\test_all.cpp:92: test_oil_pressure_sensor_value_change_detection	[PASSED]
+test\test_all.cpp:93: test_oil_pressure_sensor_boundary_values	[PASSED]
+test\test_all.cpp:96: test_oil_temperature_sensor_construction	[PASSED]
+test\test_all.cpp:97: test_oil_temperature_sensor_init	[PASSED]
+test\test_all.cpp:98: test_oil_temperature_sensor_reading_conversion	[PASSED]
+test\test_all.cpp:99: test_oil_temperature_sensor_value_change_detection	[PASSED]
+test\test_all.cpp:100: test_oil_temperature_sensor_boundary_values	[PASSED]
+test\test_all.cpp:75: test_gpio_provider_digital_operations	[PASSED]
+test\test_all.cpp:76: test_gpio_provider_analog_operations	[PASSED]
+test\test_all.cpp:77: test_gpio_provider_interface_compliance	[PASSED]
+test\test_all.cpp:78: test_gpio_provider_multiple_pins	[PASSED]
+test\test_all.cpp:79: test_gpio_provider_analog_read_consistency	[PASSED]
+test\test_all.cpp:237: test_lvgl_display_provider_construction	[PASSED]
+test\test_all.cpp:238: test_lvgl_display_provider_initialization	[PASSED]
+test\test_all.cpp:239: test_lvgl_display_provider_get_main_screen	[PASSED]
+test\test_all.cpp:240: test_lvgl_display_provider_create_screen	[PASSED]
+test\test_all.cpp:241: test_lvgl_display_provider_load_screen	[PASSED]
+Program errored with 3221226356 code
+--------------------- test:* [ERRORED] Took 13.19 seconds ---------------------
+
+=================================== SUMMARY ===================================
+Environment    Test    Status    Duration
+-------------  ------  --------  ------------
+test           *       ERRORED   00:00:13.188
+================= 69 test cases: 68 succeeded in 00:00:13.188 =================

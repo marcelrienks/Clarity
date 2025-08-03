@@ -2,23 +2,23 @@
 #include "system/service_container.h"
 #include "utilities/types.h"
 
-ServiceContainer* container = nullptr;
+static ServiceContainer* serviceContainerForTest = nullptr;
 
-void setUp_service_container() {
-    container = new ServiceContainer();
+void setUp_service_serviceContainerForTest() {
+    serviceContainerForTest = new ServiceContainer();
 }
 
-void tearDown_service_container() {
-    delete container;
-    container = nullptr;
+void tearDown_service_serviceContainerForTest() {
+    delete serviceContainerForTest;
+    serviceContainerForTest = nullptr;
 }
 
-void test_service_container_construction() {
-    // Test that container can be created and destroyed
-    TEST_ASSERT_NOT_NULL(container);
+void test_service_serviceContainerForTest_construction() {
+    // Test that serviceContainerForTest can be created and destroyed
+    TEST_ASSERT_NOT_NULL(serviceContainerForTest);
 }
 
-void test_service_container_singleton_instance() {
+void test_service_serviceContainerForTest_singleton_instance() {
     // Test getting singleton instance
     ServiceContainer& instance1 = ServiceContainer::getInstance();
     ServiceContainer& instance2 = ServiceContainer::getInstance();
@@ -27,7 +27,7 @@ void test_service_container_singleton_instance() {
     TEST_ASSERT_EQUAL_PTR(&instance1, &instance2);
 }
 
-void test_service_container_register_service() {
+void test_service_serviceContainerForTest_register_service() {
     ServiceContainer& instance = ServiceContainer::getInstance();
     
     // Create a mock service
@@ -40,7 +40,7 @@ void test_service_container_register_service() {
     TEST_ASSERT_TRUE(instance.hasService("TestService"));
 }
 
-void test_service_container_get_service() {
+void test_service_serviceContainerForTest_get_service() {
     ServiceContainer& instance = ServiceContainer::getInstance();
     
     // Create and register a mock service
@@ -53,7 +53,7 @@ void test_service_container_get_service() {
     TEST_ASSERT_EQUAL(123, *retrievedService);
 }
 
-void test_service_container_has_service() {
+void test_service_serviceContainerForTest_has_service() {
     ServiceContainer& instance = ServiceContainer::getInstance();
     
     // Initially should not have service
@@ -67,7 +67,7 @@ void test_service_container_has_service() {
     TEST_ASSERT_TRUE(instance.hasService("HasTestService"));
 }
 
-void test_service_container_unregister_service() {
+void test_service_serviceContainerForTest_unregister_service() {
     ServiceContainer& instance = ServiceContainer::getInstance();
     
     // Register service
@@ -80,7 +80,7 @@ void test_service_container_unregister_service() {
     TEST_ASSERT_FALSE(instance.hasService("UnregisterTest"));
 }
 
-void test_service_container_multiple_services() {
+void test_service_serviceContainerForTest_multiple_services() {
     ServiceContainer& instance = ServiceContainer::getInstance();
     
     // Register multiple services of different types
@@ -107,7 +107,7 @@ void test_service_container_multiple_services() {
     TEST_ASSERT_EQUAL_DOUBLE(2.71, *retrievedDouble);
 }
 
-void test_service_container_service_replacement() {
+void test_service_serviceContainerForTest_service_replacement() {
     ServiceContainer& instance = ServiceContainer::getInstance();
     
     // Register initial service
@@ -126,14 +126,14 @@ void test_service_container_service_replacement() {
 }
 
 void runServiceContainerTests() {
-    setUp_service_container();
-    RUN_TEST(test_service_container_construction);
-    RUN_TEST(test_service_container_singleton_instance);
-    RUN_TEST(test_service_container_register_service);
-    RUN_TEST(test_service_container_get_service);
-    RUN_TEST(test_service_container_has_service);
-    RUN_TEST(test_service_container_unregister_service);
-    RUN_TEST(test_service_container_multiple_services);
-    RUN_TEST(test_service_container_service_replacement);
-    tearDown_service_container();
+    setUp_service_serviceContainerForTest();
+    RUN_TEST(test_service_serviceContainerForTest_construction);
+    RUN_TEST(test_service_serviceContainerForTest_singleton_instance);
+    RUN_TEST(test_service_serviceContainerForTest_register_service);
+    RUN_TEST(test_service_serviceContainerForTest_get_service);
+    RUN_TEST(test_service_serviceContainerForTest_has_service);
+    RUN_TEST(test_service_serviceContainerForTest_unregister_service);
+    RUN_TEST(test_service_serviceContainerForTest_multiple_services);
+    RUN_TEST(test_service_serviceContainerForTest_service_replacement);
+    tearDown_service_serviceContainerForTest();
 }
