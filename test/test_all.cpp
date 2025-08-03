@@ -11,7 +11,8 @@
 // Direct includes for reliable test integration (moved before main for scope)
 #include "unit/managers/test_trigger_manager.cpp"  // TriggerManager integration (7 tests)
 #include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)
-#include "unit/managers/test_style_manager.cpp"    // StyleManager integration (20 tests)
+#include "unit/managers/test_style_manager.cpp"    // StyleManager integration (14 tests)
+#include "unit/utilities/test_simple_ticker.cpp"   // SimpleTickerTests integration (3 tests)
 
 // Forward declarations of comprehensive test functions
 extern void runPreferenceManagerTests();
@@ -432,6 +433,11 @@ int main(int argc, char **argv) {
     RUN_TEST(test_style_manager_apply_theme_edge_cases);
     RUN_TEST(test_style_manager_state_transitions);
     tearDown_style_manager();
+    
+    // SimpleTickerTests - Added to reach 100+ test milestone (3 tests)
+    RUN_TEST(test_simple_ticker_dynamic_delay_normal_case);
+    RUN_TEST(test_simple_ticker_dynamic_delay_slow_processing);
+    RUN_TEST(test_simple_ticker_timing_calculation);
     
     // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
     printf("[DEBUG] About to run sensor tests...\n");

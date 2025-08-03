@@ -57,12 +57,12 @@ void test_simple_ticker_timing_calculation() {
     set_mock_millis(0);
     startTime = 0;
     set_mock_millis(25);
-    elapsed = mock_millis_value - startTime;
+    elapsed = millis() - startTime;
     TEST_ASSERT_GREATER_THAN(targetFrameTime, elapsed);
 }
 
 void runSimpleTickerTests() {
-    RUN_TEST(test_simple_dynamic_delay_normal_case);
-    RUN_TEST(test_simple_dynamic_delay_slow_processing);
-    RUN_TEST(test_timing_calculation);
+    RUN_TEST(test_simple_ticker_dynamic_delay_normal_case);
+    RUN_TEST(test_simple_ticker_dynamic_delay_slow_processing);
+    RUN_TEST(test_simple_ticker_timing_calculation);
 }
