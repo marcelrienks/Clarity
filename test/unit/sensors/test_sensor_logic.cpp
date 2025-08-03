@@ -4,7 +4,7 @@
 #ifdef UNIT_TESTING
 
 // Test sensor value change detection logic
-class TestSensor {
+class SensorLogicTestSensor {
 private:
     int32_t currentReading_ = 0;
     int32_t previousReading_ = -1;
@@ -48,8 +48,8 @@ KeyState determineKeyState(bool keyPresent, bool keyNotPresent) {
 
 #endif
 
-void test_sensor_value_change_detection() {
-    TestSensor sensor;
+void test_sensor_logic_value_change_detection() {
+    SensorLogicTestSensor sensor;
     
     // Set initial value
     sensor.setReading(100);
@@ -67,7 +67,7 @@ void test_sensor_value_change_detection() {
     TEST_ASSERT_TRUE(hasChanged3);
 }
 
-void test_adc_to_pressure_conversion() {
+void test_sensor_logic_adc_to_pressure_conversion() {
     // Test known conversion points
     double pressure1 = convertAdcToPressure(0);
     TEST_ASSERT_EQUAL_DOUBLE(0.0, pressure1);
@@ -80,7 +80,7 @@ void test_adc_to_pressure_conversion() {
     TEST_ASSERT_GREATER_THAN(pressure2, pressure3);
 }
 
-void test_key_state_logic() {
+void test_sensor_logic_key_state_logic() {
     // Test key present
     KeyState state1 = determineKeyState(true, false);
     TEST_ASSERT_EQUAL(KeyState::PRESENT, state1);
@@ -99,7 +99,7 @@ void test_key_state_logic() {
 }
 
 void runSensorLogicTests() {
-    RUN_TEST(test_sensor_value_change_detection);
-    RUN_TEST(test_adc_to_pressure_conversion);
-    RUN_TEST(test_key_state_logic);
+    RUN_TEST(test_sensor_logic_value_change_detection);
+    RUN_TEST(test_sensor_logic_adc_to_pressure_conversion);
+    RUN_TEST(test_sensor_logic_key_state_logic);
 }

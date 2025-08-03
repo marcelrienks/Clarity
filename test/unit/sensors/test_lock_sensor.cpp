@@ -4,8 +4,8 @@
 #include "hardware/gpio_pins.h"
 #include "utilities/types.h"
 
-MockGpioProvider* lockMockGpio;
-LockSensor* lockSensor;
+static MockGpioProvider* lockMockGpio;
+static LockSensor* lockSensor;
 
 void setUp_lock_sensor() {
     lockMockGpio = new MockGpioProvider();

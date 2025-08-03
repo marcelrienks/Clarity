@@ -4,8 +4,8 @@
 #include "hardware/gpio_pins.h"
 #include "utilities/types.h"
 
-MockGpioProvider* lightMockGpio;
-LightSensor* lightSensor;
+static MockGpioProvider* lightMockGpio;
+static LightSensor* lightSensor;
 
 void setUp_light_sensor() {
     lightMockGpio = new MockGpioProvider();

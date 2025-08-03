@@ -1,19 +1,14 @@
 #include <unity.h>
 #include <cstdint>
+#include "utilities/test_common.h"
 
 #ifdef UNIT_TESTING
 
-// Mock millis function
-static uint32_t mock_millis_value = 0;
-uint32_t millis() { return mock_millis_value; }
-void delay(uint32_t ms) {}
+// Use common mock implementations from test_common.h
+// All timing functions are now centralized
 
-void set_mock_millis(uint32_t value) {
-    mock_millis_value = value;
-}
-
-// Simple test implementation of dynamic delay logic
-void handleDynamicDelay(uint32_t startTime) {
+// Simple test implementation of dynamic delay logic specific to simple ticker
+void simple_ticker_handleDynamicDelay(uint32_t startTime) {
     uint32_t elapsedTime = millis() - startTime;
     uint32_t targetFrameTime = 16;
     if (elapsedTime < targetFrameTime)
@@ -24,7 +19,7 @@ void handleDynamicDelay(uint32_t startTime) {
 
 #endif
 
-void test_simple_dynamic_delay_normal_case() {
+void test_simple_ticker_dynamic_delay_normal_case() {
     set_mock_millis(0);
     uint32_t startTime = 0;
     
@@ -32,11 +27,11 @@ void test_simple_dynamic_delay_normal_case() {
     set_mock_millis(10);
     
     // This should complete without issues
-    handleDynamicDelay(startTime);
+    simple_ticker_handleDynamicDelay(startTime);
     TEST_ASSERT_TRUE(true);
 }
 
-void test_simple_dynamic_delay_slow_processing() {
+void test_simple_ticker_dynamic_delay_slow_processing() {
     set_mock_millis(0);
     uint32_t startTime = 0;
     
@@ -44,18 +39,18 @@ void test_simple_dynamic_delay_slow_processing() {
     set_mock_millis(20);
     
     // This should handle the slow processing case
-    handleDynamicDelay(startTime);
+    simple_ticker_handleDynamicDelay(startTime);
     TEST_ASSERT_TRUE(true);
 }
 
-void test_timing_calculation() {
+void test_simple_ticker_timing_calculation() {
     uint32_t targetFrameTime = 16;
     
     // Fast processing
     set_mock_millis(0);
     uint32_t startTime = 0;
     set_mock_millis(5);
-    uint32_t elapsed = mock_millis_value - startTime;
+    uint32_t elapsed = millis() - startTime;
     TEST_ASSERT_LESS_THAN(targetFrameTime, elapsed);
     
     // Slow processing

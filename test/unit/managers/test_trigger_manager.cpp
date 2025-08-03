@@ -28,7 +28,7 @@ static MockStyleService* mockStyleService = nullptr;
 std::shared_ptr<KeySensor> keySensorForTriggerManager;
 std::shared_ptr<LockSensor> lockSensorForTriggerManager;
 std::shared_ptr<LightSensor> lightSensorForTriggerManager;
-TriggerManager* triggerManager;
+static TriggerManager* triggerManager;
 
 void setUp_trigger_manager() {
     mockGpioTrigger = new MockGpioProvider();

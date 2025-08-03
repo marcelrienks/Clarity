@@ -6,8 +6,8 @@
 // Arduino functions are already mocked in test/mocks/Arduino.h
 extern void set_mock_millis(uint32_t value);
 
-MockGpioProvider* oilTempMockGpio;
-OilTemperatureSensor* oilTempSensor;
+static MockGpioProvider* oilTempMockGpio;
+static OilTemperatureSensor* oilTempSensor;
 
 void setUp_oil_temperature_sensor() {
     oilTempMockGpio = new MockGpioProvider();

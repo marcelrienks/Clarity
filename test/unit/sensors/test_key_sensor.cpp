@@ -7,8 +7,8 @@
 #include "hardware/gpio_pins.h"
 #include "utilities/types.h"
 
-std::unique_ptr<SensorTestFixture> fixture;
-KeySensor* sensor;
+static std::unique_ptr<SensorTestFixture> fixture;
+static KeySensor* sensor;
 
 void setUp_key_sensor() {
     fixture = std::make_unique<SensorTestFixture>();
