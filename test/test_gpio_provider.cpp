@@ -3,11 +3,11 @@
 
 MockGpioProvider* gpioProviderMock = nullptr;
 
-void setUp_gpio_provider() {
+void setUp(void) {
     gpioProviderMock = new MockGpioProvider();
 }
 
-void tearDown_gpio_provider() {
+void tearDown(void) {
     delete gpioProviderMock;
     gpioProviderMock = nullptr;
 }
@@ -70,12 +70,14 @@ void test_gpio_provider_analog_read_consistency() {
     TEST_ASSERT_LESS_OR_EQUAL(4095, reading2);
 }
 
-void runGpioProviderTests() {
-    setUp_gpio_provider();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_gpio_provider_digital_operations);
     RUN_TEST(test_gpio_provider_analog_operations);
     RUN_TEST(test_gpio_provider_interface_compliance);
     RUN_TEST(test_gpio_provider_multiple_pins);
     RUN_TEST(test_gpio_provider_analog_read_consistency);
-    tearDown_gpio_provider();
+    
+    return UNITY_END();
 }

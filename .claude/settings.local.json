@@ -33,7 +33,15 @@
       "Bash(clear)",
       "Bash(/dev/null)",
       "Bash(timeout 45s pio test -e test)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(ln:*)",
+      "Bash(for f in test_*.cpp)",
+      "Bash(do if [ \"$f\" != \"test_ticker_simple.cpp\" ])",
+      "Bash(then mv \"$f\" \"disabled_$f\")",
+      "Bash(fi)",
+      "Bash(done)",
+      "Bash(for f in disabled_*.cpp)",
+      "Bash(do mv \"$f\" \"$f#disabled_\")"
     ],
     "deny": []
   }

@@ -13,13 +13,13 @@
 std::unique_ptr<ManagerTestFixture> prefManagerFixture;
 PreferenceManager* prefManager = nullptr;
 
-void setUp_preference_manager() {
+void setUp(void) {
     prefManagerFixture = std::make_unique<ManagerTestFixture>();
     prefManagerFixture->SetUp();
     prefManager = new PreferenceManager();
 }
 
-void tearDown_preference_manager() {
+void tearDown(void) {
     delete prefManager;
     prefManager = nullptr;
     prefManagerFixture->TearDown();
@@ -594,8 +594,8 @@ void test_preference_manager_data_integrity_validation() {
     }
 }
 
-void runPreferenceManagerTests() {
-    setUp_preference_manager();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
     
     // Original tests
     RUN_TEST(test_preference_manager_init);
@@ -632,7 +632,7 @@ void runPreferenceManagerTests() {
     RUN_TEST(test_preference_manager_concurrent_corruption_protection);
     RUN_TEST(test_preference_manager_data_integrity_validation);
     
-    tearDown_preference_manager();
+    return UNITY_END();
 }
 
 #endif

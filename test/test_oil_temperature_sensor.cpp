@@ -9,12 +9,12 @@ extern void set_mock_millis(uint32_t value);
 static MockGpioProvider* oilTempMockGpio;
 static OilTemperatureSensor* oilTempSensor;
 
-void setUp_oil_temperature_sensor() {
+void setUp(void) {
     oilTempMockGpio = new MockGpioProvider();
     oilTempSensor = new OilTemperatureSensor(oilTempMockGpio);
 }
 
-void tearDown_oil_temperature_sensor() {
+void tearDown(void) {
     delete oilTempSensor;
     delete oilTempMockGpio;
 }
@@ -91,12 +91,14 @@ void test_oil_temperature_sensor_construction() {
     TEST_ASSERT_NOT_NULL(oilTempSensor);
 }
 
-void runOilTemperatureSensorTests() {
-    setUp_oil_temperature_sensor();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_oil_temperature_sensor_construction);
     RUN_TEST(test_oil_temperature_sensor_init);
     RUN_TEST(test_oil_temperature_sensor_reading_conversion);
     RUN_TEST(test_oil_temperature_sensor_value_change_detection);
     RUN_TEST(test_oil_temperature_sensor_boundary_values);
-    tearDown_oil_temperature_sensor();
+    
+    return UNITY_END();
 }

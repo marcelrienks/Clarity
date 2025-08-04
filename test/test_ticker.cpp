@@ -47,9 +47,22 @@ void test_ticker_timing_consistency() {
     TEST_ASSERT_TRUE(true);
 }
 
-void runTickerTests() {
+void setUp(void) {
+    // Reset mock values before each test
+    set_mock_millis(0);
+}
+
+void tearDown(void) {
+    // Cleanup after each test
+}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_ticker_dynamic_delay_normal_case);
     RUN_TEST(test_ticker_dynamic_delay_various_inputs);
     RUN_TEST(test_ticker_multiple_calls);
     RUN_TEST(test_ticker_timing_consistency);
+    
+    return UNITY_END();
 }

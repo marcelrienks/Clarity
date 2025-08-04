@@ -12,13 +12,13 @@
 // Use global mock services to prevent redefinition conflicts
 static MockPanelService* mockPanel = nullptr;
 
-void setUp_manager_factory() {
+void setUp(void) {
     initGlobalMocks();
     mockPanel = new MockPanelService();
     mockPanel->init();
 }
 
-void tearDown_manager_factory() {
+void tearDown(void) {
     delete mockPanel;
     mockPanel = nullptr;
     // Global mocks will be cleaned up by the global cleanup
@@ -201,8 +201,9 @@ void test_manager_factory_memory_management() {
     TEST_ASSERT_TRUE(true); // Test passed if no memory leaks/crashes
 }
 
-void runManagerFactoryTests() {
-    setUp_manager_factory();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_manager_factory_create_panel_manager_valid);
     RUN_TEST(test_manager_factory_create_panel_manager_null_display);
     RUN_TEST(test_manager_factory_create_panel_manager_null_gpio);
@@ -219,5 +220,6 @@ void runManagerFactoryTests() {
     RUN_TEST(test_manager_factory_dependency_injection);
     RUN_TEST(test_manager_factory_error_handling);
     RUN_TEST(test_manager_factory_memory_management);
-    tearDown_manager_factory();
+    
+    return UNITY_END();
 }

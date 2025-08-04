@@ -9,12 +9,12 @@ extern void set_mock_millis(uint32_t value);
 static MockGpioProvider* oilPressureMockGpio;
 static OilPressureSensor* oilPressureSensor;
 
-void setUp_oil_pressure_sensor() {
+void setUp(void) {
     oilPressureMockGpio = new MockGpioProvider();
     oilPressureSensor = new OilPressureSensor(oilPressureMockGpio);
 }
 
-void tearDown_oil_pressure_sensor() {
+void tearDown(void) {
     delete oilPressureSensor;
     delete oilPressureMockGpio;
 }
@@ -85,11 +85,13 @@ void test_oil_pressure_sensor_boundary_values() {
     TEST_ASSERT_LESS_OR_EQUAL(10, maxPressure); // Should be exactly 10 Bar at max ADC
 }
 
-void runOilPressureSensorTests() {
-    setUp_oil_pressure_sensor();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_oil_pressure_sensor_init);
     RUN_TEST(test_oil_pressure_sensor_reading_conversion);
     RUN_TEST(test_oil_pressure_sensor_value_change_detection);
     RUN_TEST(test_oil_pressure_sensor_boundary_values);
-    tearDown_oil_pressure_sensor();
+    
+    return UNITY_END();
 }

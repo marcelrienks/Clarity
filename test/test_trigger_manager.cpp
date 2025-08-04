@@ -23,7 +23,7 @@ std::shared_ptr<LockSensor> lockSensorForTriggerManager;
 std::shared_ptr<LightSensor> lightSensorForTriggerManager;
 static TriggerManager* triggerManager;
 
-void setUp_trigger_manager() {
+void setUp(void) {
     mockGpioTrigger = new MockGpioProvider();
     mockPanelService = new MockPanelService();
     mockStyleService = new MockStyleService();
@@ -36,7 +36,7 @@ void setUp_trigger_manager() {
                                        mockPanelService, mockStyleService);
 }
 
-void tearDown_trigger_manager() {
+void tearDown(void) {
     delete triggerManager;
     delete mockStyleService;
     delete mockPanelService;
@@ -152,8 +152,9 @@ void test_trigger_manager_service_integration() {
     TEST_ASSERT_NOT_NULL(mockPanelService->getCurrentPanel()); // Panel service is accessible
 }
 
-void runTriggerManagerTests() {
-    setUp_trigger_manager();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_trigger_manager_initialization);
     RUN_TEST(test_trigger_manager_startup_panel_override);
     RUN_TEST(test_trigger_manager_key_trigger_processing);
@@ -161,5 +162,6 @@ void runTriggerManagerTests() {
     RUN_TEST(test_trigger_manager_multiple_sensors);
     RUN_TEST(test_trigger_manager_lock_state_changes);
     RUN_TEST(test_trigger_manager_service_integration);
-    tearDown_trigger_manager();
+    
+    return UNITY_END();
 }

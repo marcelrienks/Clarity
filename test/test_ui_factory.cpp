@@ -5,11 +5,11 @@
 #include <memory>
 
 // Mock services for testing
-static MockDisplayProvider* mockDisplayUIUI = nullptr;
-static MockGpioProvider* mockGpioUIUI = nullptr;
-static MockStyleService* mockStyleUIUI = nullptr;
+static MockDisplayProvider* mockDisplayUI = nullptr;
+static MockGpioProvider* mockGpioUI = nullptr;
+static MockStyleService* mockStyleUI = nullptr;
 
-void setUp_ui_factory() {
+void setUp(void) {
     mockDisplayUI = new MockDisplayProvider();
     mockGpioUI = new MockGpioProvider();
     mockStyleUI = new MockStyleService();
@@ -18,7 +18,7 @@ void setUp_ui_factory() {
     mockStyleUI->initializeStyles();
 }
 
-void tearDown_ui_factory() {
+void tearDown(void) {
     delete mockDisplayUI;
     delete mockGpioUI;
     delete mockStyleUI;
@@ -226,8 +226,9 @@ void test_ui_factory_interface_compliance() {
     TEST_ASSERT_NOT_NULL(panelInterface);
 }
 
-void runUIFactoryTests() {
-    setUp_ui_factory();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_ui_factory_create_key_component);
     RUN_TEST(test_ui_factory_create_lock_component);
     RUN_TEST(test_ui_factory_create_clarity_component);
@@ -246,5 +247,6 @@ void runUIFactoryTests() {
     RUN_TEST(test_ui_factory_all_panels_creation);
     RUN_TEST(test_ui_factory_memory_management);
     RUN_TEST(test_ui_factory_interface_compliance);
-    tearDown_ui_factory();
+    
+    return UNITY_END();
 }

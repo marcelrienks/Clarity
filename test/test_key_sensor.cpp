@@ -10,17 +10,6 @@
 static std::unique_ptr<SensorTestFixture> fixture;
 static KeySensor* sensor;
 
-void setUp_key_sensor() {
-    fixture = std::make_unique<SensorTestFixture>();
-    fixture->SetUp();
-    sensor = new KeySensor(fixture->getGpioProvider());
-}
-
-void tearDown_key_sensor() {
-    delete sensor;
-    fixture->TearDown();
-    fixture.reset();
-}
 
 void test_key_sensor_init() {
     sensor->init();
@@ -459,8 +448,20 @@ void test_key_sensor_state_consistency_validation() {
     }
 }
 
-void runKeySensorTests() {
-    setUp_key_sensor();
+void setUp(void) {
+    fixture = std::make_unique<SensorTestFixture>();
+    fixture->SetUp();
+    sensor = new KeySensor(fixture->getGpioProvider());
+}
+
+void tearDown(void) {
+    delete sensor;
+    fixture->TearDown();
+    fixture.reset();
+}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
     
     // Original tests
     RUN_TEST(test_key_sensor_construction);
@@ -487,7 +488,7 @@ void runKeySensorTests() {
     RUN_TEST(test_key_sensor_resource_exhaustion_handling);
     RUN_TEST(test_key_sensor_state_consistency_validation);
     
-    tearDown_key_sensor();
+    return UNITY_END();
 }
 
 #endif

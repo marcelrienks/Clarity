@@ -6,13 +6,13 @@
 LvglDisplayProvider* displayProvider = nullptr;
 lv_obj_t* testMainScreen = nullptr;
 
-void setUp_lvgl_display_provider() {
+void setUp(void) {
     // Create a test main screen object
     testMainScreen = lv_obj_create(nullptr);
     displayProvider = new LvglDisplayProvider(testMainScreen);
 }
 
-void tearDown_lvgl_display_provider() {
+void tearDown(void) {
     delete displayProvider;
     displayProvider = nullptr;
     if (testMainScreen) {
@@ -232,8 +232,9 @@ void test_lvgl_display_provider_constructor_with_null() {
     delete nullProvider;
 }
 
-void runLvglDisplayProviderTests() {
-    setUp_lvgl_display_provider();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_lvgl_display_provider_construction);
     RUN_TEST(test_lvgl_display_provider_initialization);
     RUN_TEST(test_lvgl_display_provider_get_main_screen);
@@ -250,8 +251,9 @@ void runLvglDisplayProviderTests() {
     RUN_TEST(test_lvgl_display_provider_add_event_callback);
     RUN_TEST(test_lvgl_display_provider_interface_compliance);
     RUN_TEST(test_lvgl_display_provider_multiple_objects);
-    tearDown_lvgl_display_provider();
     
     // Test constructor with null separately
     RUN_TEST(test_lvgl_display_provider_constructor_with_null);
+    
+    return UNITY_END();
 }

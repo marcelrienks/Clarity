@@ -7,12 +7,12 @@
 static MockGpioProvider* lockMockGpio;
 static LockSensor* lockSensor;
 
-void setUp_lock_sensor() {
+void setUp(void) {
     lockMockGpio = new MockGpioProvider();
     lockSensor = new LockSensor(lockMockGpio);
 }
 
-void tearDown_lock_sensor() {
+void tearDown(void) {
     delete lockSensor;
     delete lockMockGpio;
 }
@@ -111,8 +111,9 @@ void test_lock_sensor_boolean_logic() {
     TEST_ASSERT_TRUE(std::get<bool>(trueReading));
 }
 
-void runLockSensorTests() {
-    setUp_lock_sensor();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_lock_sensor_construction);
     RUN_TEST(test_lock_sensor_init);
     RUN_TEST(test_lock_sensor_locked_state);
@@ -121,5 +122,6 @@ void runLockSensorTests() {
     RUN_TEST(test_lock_sensor_reading_consistency);
     RUN_TEST(test_lock_sensor_state_transitions);
     RUN_TEST(test_lock_sensor_boolean_logic);
-    tearDown_lock_sensor();
+    
+    return UNITY_END();
 }

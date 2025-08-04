@@ -82,107 +82,107 @@ public:
 };
 
 // Mock services for testing - use different names to avoid conflicts
-static MockDisplayProvider* mockDisplayUI = nullptr;
-static MockGpioProvider* mockGpioUI = nullptr;
-static MockStyleService* mockStyleUI = nullptr;
+static MockDisplayProvider* mockDisplaySimplified = nullptr;
+static MockGpioProvider* mockGpioSimplified = nullptr;
+static MockStyleService* mockStyleSimplified = nullptr;
 
-void setUp_ui_factory_simplified() {
-    mockDisplayUI = new MockDisplayProvider();
-    mockGpioUI = new MockGpioProvider();
-    mockStyleUI = new MockStyleService();
+void setUp(void) {
+    mockDisplaySimplified = new MockDisplayProvider();
+    mockGpioSimplified = new MockGpioProvider();
+    mockStyleSimplified = new MockStyleService();
     
-    mockDisplayUI->initialize();
-    mockStyleUI->initializeStyles();
+    mockDisplaySimplified->initialize();
+    mockStyleSimplified->initializeStyles();
 }
 
-void tearDown_ui_factory_simplified() {
-    delete mockDisplayUI;
-    delete mockGpioUI;
-    delete mockStyleUI;
+void tearDown(void) {
+    delete mockDisplaySimplified;
+    delete mockGpioSimplified;
+    delete mockStyleSimplified;
     
-    mockDisplayUI = nullptr;
-    mockGpioUI = nullptr;
-    mockStyleUI = nullptr;
+    mockDisplaySimplified = nullptr;
+    mockGpioSimplified = nullptr;
+    mockStyleSimplified = nullptr;
 }
 
 void test_simplified_ui_factory_create_key_component() {
     // Test creating KeyComponent with factory pattern
-    auto component = SimplifiedUIFactory::createKeyComponent(mockStyleUI);
+    auto component = SimplifiedUIFactory::createKeyComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(component.get());
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, component->style_service_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, component->style_service_);
 }
 
 void test_simplified_ui_factory_create_lock_component() {
     // Test creating LockComponent with factory pattern
-    auto component = SimplifiedUIFactory::createLockComponent(mockStyleUI);
+    auto component = SimplifiedUIFactory::createLockComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(component.get());
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, component->style_service_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, component->style_service_);
 }
 
 void test_simplified_ui_factory_create_clarity_component() {
     // Test creating ClarityComponent with factory pattern
-    auto component = SimplifiedUIFactory::createClarityComponent(mockStyleUI);
+    auto component = SimplifiedUIFactory::createClarityComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(component.get());
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, component->style_service_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, component->style_service_);
 }
 
 void test_simplified_ui_factory_create_oem_oil_pressure_component() {
     // Test creating OemOilPressureComponent with factory pattern
-    auto component = SimplifiedUIFactory::createOemOilPressureComponent(mockStyleUI);
+    auto component = SimplifiedUIFactory::createOemOilPressureComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(component.get());
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, component->style_service_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, component->style_service_);
 }
 
 void test_simplified_ui_factory_create_oem_oil_temperature_component() {
     // Test creating OemOilTemperatureComponent with factory pattern
-    auto component = SimplifiedUIFactory::createOemOilTemperatureComponent(mockStyleUI);
+    auto component = SimplifiedUIFactory::createOemOilTemperatureComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(component.get());
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, component->style_service_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, component->style_service_);
 }
 
 void test_simplified_ui_factory_create_key_panel() {
     // Test creating KeyPanel with factory pattern
-    auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(panel.get());
-    TEST_ASSERT_EQUAL_PTR(mockGpioUI, panel->gpio_);
-    TEST_ASSERT_EQUAL_PTR(mockDisplayUI, panel->display_);
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, panel->style_);
+    TEST_ASSERT_EQUAL_PTR(mockGpioSimplified, panel->gpio_);
+    TEST_ASSERT_EQUAL_PTR(mockDisplaySimplified, panel->display_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, panel->style_);
 }
 
 void test_simplified_ui_factory_create_lock_panel() {
     // Test creating LockPanel with factory pattern
-    auto panel = SimplifiedUIFactory::createLockPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto panel = SimplifiedUIFactory::createLockPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(panel.get());
-    TEST_ASSERT_EQUAL_PTR(mockGpioUI, panel->gpio_);
-    TEST_ASSERT_EQUAL_PTR(mockDisplayUI, panel->display_);
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, panel->style_);
+    TEST_ASSERT_EQUAL_PTR(mockGpioSimplified, panel->gpio_);
+    TEST_ASSERT_EQUAL_PTR(mockDisplaySimplified, panel->display_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, panel->style_);
 }
 
 void test_simplified_ui_factory_create_splash_panel() {
     // Test creating SplashPanel with factory pattern
-    auto panel = SimplifiedUIFactory::createSplashPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto panel = SimplifiedUIFactory::createSplashPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(panel.get());
-    TEST_ASSERT_EQUAL_PTR(mockGpioUI, panel->gpio_);
-    TEST_ASSERT_EQUAL_PTR(mockDisplayUI, panel->display_);
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, panel->style_);
+    TEST_ASSERT_EQUAL_PTR(mockGpioSimplified, panel->gpio_);
+    TEST_ASSERT_EQUAL_PTR(mockDisplaySimplified, panel->display_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, panel->style_);
 }
 
 void test_simplified_ui_factory_create_oem_oil_panel() {
     // Test creating OemOilPanel with factory pattern
-    auto panel = SimplifiedUIFactory::createOemOilPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto panel = SimplifiedUIFactory::createOemOilPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(panel.get());
-    TEST_ASSERT_EQUAL_PTR(mockGpioUI, panel->gpio_);
-    TEST_ASSERT_EQUAL_PTR(mockDisplayUI, panel->display_);
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, panel->style_);
+    TEST_ASSERT_EQUAL_PTR(mockGpioSimplified, panel->gpio_);
+    TEST_ASSERT_EQUAL_PTR(mockDisplaySimplified, panel->display_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, panel->style_);
 }
 
 void test_simplified_ui_factory_component_null_style() {
@@ -198,7 +198,7 @@ void test_simplified_ui_factory_component_null_style() {
 void test_simplified_ui_factory_panel_null_dependencies() {
     // Test panel creation with null GPIO provider
     try {
-        auto panel = SimplifiedUIFactory::createKeyPanel(nullptr, mockDisplayUI, mockStyleUI);
+        auto panel = SimplifiedUIFactory::createKeyPanel(nullptr, mockDisplaySimplified, mockStyleSimplified);
         TEST_FAIL_MESSAGE("Expected exception for null GPIO provider");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IGpioProvider") != std::string::npos);
@@ -206,7 +206,7 @@ void test_simplified_ui_factory_panel_null_dependencies() {
     
     // Test panel creation with null display provider
     try {
-        auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioUI, nullptr, mockStyleUI);
+        auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioSimplified, nullptr, mockStyleSimplified);
         TEST_FAIL_MESSAGE("Expected exception for null display provider");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IDisplayProvider") != std::string::npos);
@@ -214,7 +214,7 @@ void test_simplified_ui_factory_panel_null_dependencies() {
     
     // Test panel creation with null style service
     try {
-        auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioUI, mockDisplayUI, nullptr);
+        auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioSimplified, mockDisplaySimplified, nullptr);
         TEST_FAIL_MESSAGE("Expected exception for null style service");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IStyleService") != std::string::npos);
@@ -223,16 +223,16 @@ void test_simplified_ui_factory_panel_null_dependencies() {
 
 void test_simplified_ui_factory_multiple_instances() {
     // Test creating multiple instances of same component type
-    auto component1 = SimplifiedUIFactory::createKeyComponent(mockStyleUI);
-    auto component2 = SimplifiedUIFactory::createKeyComponent(mockStyleUI);
+    auto component1 = SimplifiedUIFactory::createKeyComponent(mockStyleSimplified);
+    auto component2 = SimplifiedUIFactory::createKeyComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(component1.get());
     TEST_ASSERT_NOT_NULL(component2.get());
     TEST_ASSERT_NOT_EQUAL(component1.get(), component2.get());
     
     // Test creating multiple instances of same panel type
-    auto panel1 = SimplifiedUIFactory::createSplashPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
-    auto panel2 = SimplifiedUIFactory::createSplashPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto panel1 = SimplifiedUIFactory::createSplashPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
+    auto panel2 = SimplifiedUIFactory::createSplashPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(panel1.get());
     TEST_ASSERT_NOT_NULL(panel2.get());
@@ -241,11 +241,11 @@ void test_simplified_ui_factory_multiple_instances() {
 
 void test_simplified_ui_factory_all_components_creation() {
     // Test creating all component types to ensure factory methods work
-    auto keyComp = SimplifiedUIFactory::createKeyComponent(mockStyleUI);
-    auto lockComp = SimplifiedUIFactory::createLockComponent(mockStyleUI);
-    auto clarityComp = SimplifiedUIFactory::createClarityComponent(mockStyleUI);
-    auto pressureComp = SimplifiedUIFactory::createOemOilPressureComponent(mockStyleUI);
-    auto tempComp = SimplifiedUIFactory::createOemOilTemperatureComponent(mockStyleUI);
+    auto keyComp = SimplifiedUIFactory::createKeyComponent(mockStyleSimplified);
+    auto lockComp = SimplifiedUIFactory::createLockComponent(mockStyleSimplified);
+    auto clarityComp = SimplifiedUIFactory::createClarityComponent(mockStyleSimplified);
+    auto pressureComp = SimplifiedUIFactory::createOemOilPressureComponent(mockStyleSimplified);
+    auto tempComp = SimplifiedUIFactory::createOemOilTemperatureComponent(mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(keyComp.get());
     TEST_ASSERT_NOT_NULL(lockComp.get());
@@ -262,10 +262,10 @@ void test_simplified_ui_factory_all_components_creation() {
 
 void test_simplified_ui_factory_all_panels_creation() {
     // Test creating all panel types to ensure factory methods work
-    auto keyPanel = SimplifiedUIFactory::createKeyPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
-    auto lockPanel = SimplifiedUIFactory::createLockPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
-    auto splashPanel = SimplifiedUIFactory::createSplashPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
-    auto oilPanel = SimplifiedUIFactory::createOemOilPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto keyPanel = SimplifiedUIFactory::createKeyPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
+    auto lockPanel = SimplifiedUIFactory::createLockPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
+    auto splashPanel = SimplifiedUIFactory::createSplashPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
+    auto oilPanel = SimplifiedUIFactory::createOemOilPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     
     TEST_ASSERT_NOT_NULL(keyPanel.get());
     TEST_ASSERT_NOT_NULL(lockPanel.get());
@@ -281,8 +281,8 @@ void test_simplified_ui_factory_all_panels_creation() {
 void test_simplified_ui_factory_memory_management() {
     // Test that objects are properly destroyed when going out of scope
     {
-        auto component = SimplifiedUIFactory::createKeyComponent(mockStyleUI);
-        auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+        auto component = SimplifiedUIFactory::createKeyComponent(mockStyleSimplified);
+        auto panel = SimplifiedUIFactory::createKeyPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
         TEST_ASSERT_NOT_NULL(component.get());
         TEST_ASSERT_NOT_NULL(panel.get());
         // Objects should be destroyed automatically when leaving scope
@@ -290,8 +290,8 @@ void test_simplified_ui_factory_memory_management() {
     
     // Test multiple creations and destructions
     for (int i = 0; i < 5; i++) {
-        auto component = SimplifiedUIFactory::createClarityComponent(mockStyleUI);
-        auto panel = SimplifiedUIFactory::createSplashPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+        auto component = SimplifiedUIFactory::createClarityComponent(mockStyleSimplified);
+        auto panel = SimplifiedUIFactory::createSplashPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
         TEST_ASSERT_NOT_NULL(component.get());
         TEST_ASSERT_NOT_NULL(panel.get());
     }
@@ -301,20 +301,21 @@ void test_simplified_ui_factory_memory_management() {
 
 void test_simplified_ui_factory_dependency_injection() {
     // Test that components receive style service dependency correctly
-    auto component = SimplifiedUIFactory::createClarityComponent(mockStyleUI);
+    auto component = SimplifiedUIFactory::createClarityComponent(mockStyleSimplified);
     TEST_ASSERT_NOT_NULL(component.get());
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, component->style_service_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, component->style_service_);
     
     // Test that panels receive all required dependencies correctly
-    auto panel = SimplifiedUIFactory::createOemOilPanel(mockGpioUI, mockDisplayUI, mockStyleUI);
+    auto panel = SimplifiedUIFactory::createOemOilPanel(mockGpioSimplified, mockDisplaySimplified, mockStyleSimplified);
     TEST_ASSERT_NOT_NULL(panel.get());
-    TEST_ASSERT_EQUAL_PTR(mockGpioUI, panel->gpio_);
-    TEST_ASSERT_EQUAL_PTR(mockDisplayUI, panel->display_);
-    TEST_ASSERT_EQUAL_PTR(mockStyleUI, panel->style_);
+    TEST_ASSERT_EQUAL_PTR(mockGpioSimplified, panel->gpio_);
+    TEST_ASSERT_EQUAL_PTR(mockDisplaySimplified, panel->display_);
+    TEST_ASSERT_EQUAL_PTR(mockStyleSimplified, panel->style_);
 }
 
-void runSimplifiedUIFactoryTests() {
-    setUp_ui_factory_simplified();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_simplified_ui_factory_create_key_component);
     RUN_TEST(test_simplified_ui_factory_create_lock_component);
     RUN_TEST(test_simplified_ui_factory_create_clarity_component);
@@ -331,5 +332,6 @@ void runSimplifiedUIFactoryTests() {
     RUN_TEST(test_simplified_ui_factory_all_panels_creation);
     RUN_TEST(test_simplified_ui_factory_memory_management);
     RUN_TEST(test_simplified_ui_factory_dependency_injection);
-    tearDown_ui_factory_simplified();
+    
+    return UNITY_END();
 }

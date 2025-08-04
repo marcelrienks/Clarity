@@ -167,10 +167,22 @@ void test_standalone_component_lifecycle() {
     delete standalone_style;
 }
 
-void runStandaloneComponentTests() {
+void setUp(void) {
+    // No setup needed
+}
+
+void tearDown(void) {
+    // No teardown needed
+}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_standalone_component_construction);
     RUN_TEST(test_standalone_component_render);
     RUN_TEST(test_standalone_component_refresh);
     RUN_TEST(test_standalone_component_set_value);
     RUN_TEST(test_standalone_component_lifecycle);
+    
+    return UNITY_END();
 }

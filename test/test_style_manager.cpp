@@ -10,11 +10,11 @@
 
 static StyleManager* styleManagerForTest = nullptr;
 
-void setUp_style_manager() {
+void setUp(void) {
     styleManagerForTest = new StyleManager();
 }
 
-void tearDown_style_manager() {
+void tearDown(void) {
     delete styleManagerForTest;
     styleManagerForTest = nullptr;
 }
@@ -285,8 +285,9 @@ void test_style_manager_state_transitions() {
     TEST_ASSERT_TRUE(true);
 }
 
-void runStyleManagerTests() {
-    setUp_style_manager();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_style_manager_init);
     RUN_TEST(test_style_manager_theme_switching);
     RUN_TEST(test_style_manager_day_night_differences);
@@ -304,7 +305,7 @@ void runStyleManagerTests() {
     RUN_TEST(test_style_manager_apply_theme_edge_cases);
     RUN_TEST(test_style_manager_state_transitions);
     
-    tearDown_style_manager();
+    return UNITY_END();
 }
 
 #endif

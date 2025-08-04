@@ -4,11 +4,11 @@
 
 static ServiceContainer* serviceContainerForTest = nullptr;
 
-void setUp_service_container() {
+void setUp(void) {
     serviceContainerForTest = new ServiceContainer();
 }
 
-void tearDown_service_container() {
+void tearDown(void) {
     delete serviceContainerForTest;
     serviceContainerForTest = nullptr;
 }
@@ -125,8 +125,9 @@ void test_service_container_service_replacement() {
     TEST_ASSERT_EQUAL(200, *retrieved2);
 }
 
-void runServiceContainerTests() {
-    setUp_service_container();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_service_container_construction);
     RUN_TEST(test_service_container_singleton_instance);
     RUN_TEST(test_service_container_register_service);
@@ -135,5 +136,6 @@ void runServiceContainerTests() {
     RUN_TEST(test_service_container_unregister_service);
     RUN_TEST(test_service_container_multiple_services);
     RUN_TEST(test_service_container_service_replacement);
-    tearDown_service_container();
+    
+    return UNITY_END();
 }

@@ -7,12 +7,12 @@
 static MockGpioProvider* lightMockGpio;
 static LightSensor* lightSensor;
 
-void setUp_light_sensor() {
+void setUp(void) {
     lightMockGpio = new MockGpioProvider();
     lightSensor = new LightSensor(lightMockGpio);
 }
 
-void tearDown_light_sensor() {
+void tearDown(void) {
     delete lightSensor;
     delete lightMockGpio;
 }
@@ -122,8 +122,9 @@ void test_light_sensor_state_transitions() {
     TEST_ASSERT_FALSE(lightsOff2);
 }
 
-void runLightSensorTests() {
-    setUp_light_sensor();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_light_sensor_construction);
     RUN_TEST(test_light_sensor_init);
     RUN_TEST(test_light_sensor_reading_conversion);
@@ -131,5 +132,6 @@ void runLightSensorTests() {
     RUN_TEST(test_light_sensor_value_change_detection);
     RUN_TEST(test_light_sensor_reading_consistency);
     RUN_TEST(test_light_sensor_state_transitions);
-    tearDown_light_sensor();
+    
+    return UNITY_END();
 }

@@ -38,13 +38,13 @@ public:
 static std::unique_ptr<ManagerTestFixture> panelManagerFixtureForTest;
 static PanelManager* panelManagerForTest = nullptr;
 
-void setUp_panel_manager() {
+void setUp(void) {
     panelManagerFixtureForTest = std::make_unique<ManagerTestFixture>();
     panelManagerFixtureForTest->SetUp();
     panelManagerForTest = new PanelManager(panelManagerFixtureForTest->getDisplayProvider(), panelManagerFixtureForTest->getGpioProvider(), panelManagerFixtureForTest->getStyleService());
 }
 
-void tearDown_panel_manager() {
+void tearDown(void) {
     delete panelManagerForTest;
     panelManagerForTest = nullptr;
     panelManagerFixtureForTest->TearDown();
@@ -129,8 +129,9 @@ void test_panel_manager_panel_switching() {
     TEST_ASSERT_EQUAL_STRING(PanelNames::KEY, panelManagerForTest->getCurrentPanel());
 }
 
-void runPanelManagerTests() {
-    setUp_panel_manager();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_panel_manager_construction);
     RUN_TEST(test_panel_manager_init);
     RUN_TEST(test_panel_manager_create_and_load_panel);
@@ -139,5 +140,6 @@ void runPanelManagerTests() {
     RUN_TEST(test_panel_manager_get_current_panel);
     RUN_TEST(test_panel_manager_ui_state);
     RUN_TEST(test_panel_manager_panel_switching);
-    tearDown_panel_manager();
+    
+    return UNITY_END();
 }

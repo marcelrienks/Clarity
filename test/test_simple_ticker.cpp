@@ -61,8 +61,20 @@ void test_simple_ticker_timing_calculation() {
     TEST_ASSERT_GREATER_THAN(targetFrameTime, elapsed);
 }
 
-void runSimpleTickerTests() {
+void setUp(void) {
+    // No setup needed
+}
+
+void tearDown(void) {
+    // No teardown needed
+}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_simple_ticker_dynamic_delay_normal_case);
     RUN_TEST(test_simple_ticker_dynamic_delay_slow_processing);
     RUN_TEST(test_simple_ticker_timing_calculation);
+    
+    return UNITY_END();
 }

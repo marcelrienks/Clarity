@@ -90,14 +90,14 @@ public:
 static MockDisplayProvider* mockDisplayPanel = nullptr;
 static MockGpioProvider* mockGpioPanel = nullptr;
 
-void setUp_panel_interfaces() {
+void setUp(void) {
     mockDisplayPanel = new MockDisplayProvider();
     mockGpioPanel = new MockGpioProvider();
     
     mockDisplayPanel->initialize();
 }
 
-void tearDown_panel_interfaces() {
+void tearDown(void) {
     delete mockDisplayPanel;
     delete mockGpioPanel;
     
@@ -419,8 +419,9 @@ void test_panel_interface_callback_exception_safety() {
     TEST_ASSERT_TRUE(panel->callback_executed);
 }
 
-void runPanelInterfaceTests() {
-    setUp_panel_interfaces();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_panel_interface_construction);
     RUN_TEST(test_panel_interface_init_method);
     RUN_TEST(test_panel_interface_load_method);
@@ -437,5 +438,6 @@ void runPanelInterfaceTests() {
     RUN_TEST(test_panel_interface_memory_management);
     RUN_TEST(test_panel_interface_polymorphism);
     RUN_TEST(test_panel_interface_callback_exception_safety);
-    tearDown_panel_interfaces();
+    
+    return UNITY_END();
 }

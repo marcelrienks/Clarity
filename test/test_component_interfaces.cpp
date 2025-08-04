@@ -72,7 +72,7 @@ public:
 static MockDisplayProvider* mockDisplayComp = nullptr;
 static MockStyleService* mockStyleComp = nullptr;
 
-void setUp_component_interfaces() {
+void setUp(void) {
     mockDisplayComp = new MockDisplayProvider();
     mockStyleComp = new MockStyleService();
     
@@ -80,7 +80,7 @@ void setUp_component_interfaces() {
     mockStyleComp->initializeStyles();
 }
 
-void tearDown_component_interfaces() {
+void tearDown(void) {
     delete mockDisplayComp;
     delete mockStyleComp;
     
@@ -313,8 +313,9 @@ void test_component_interface_style_service_integration() {
     TEST_ASSERT_NOT_NULL(component->style_service_);
 }
 
-void runComponentInterfaceTests() {
-    setUp_component_interfaces();
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_component_interface_construction);
     RUN_TEST(test_component_interface_render_method);
     RUN_TEST(test_component_interface_render_null_screen);
@@ -328,5 +329,6 @@ void runComponentInterfaceTests() {
     RUN_TEST(test_component_interface_memory_management);
     RUN_TEST(test_component_interface_polymorphism);
     RUN_TEST(test_component_interface_style_service_integration);
-    tearDown_component_interfaces();
+    
+    return UNITY_END();
 }

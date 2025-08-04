@@ -240,11 +240,23 @@ void test_standalone_panel_complete_lifecycle() {
     delete standalone_panel_gpio;
 }
 
-void runStandalonePanelTests() {
+void setUp(void) {
+    // No setup needed
+}
+
+void tearDown(void) {
+    // No teardown needed
+}
+
+int main(int argc, char **argv) {
+    UNITY_BEGIN();
+    
     RUN_TEST(test_standalone_panel_construction);
     RUN_TEST(test_standalone_panel_init);
     RUN_TEST(test_standalone_panel_load);
     RUN_TEST(test_standalone_panel_update);
     RUN_TEST(test_standalone_panel_show);
     RUN_TEST(test_standalone_panel_complete_lifecycle);
+    
+    return UNITY_END();
 }
