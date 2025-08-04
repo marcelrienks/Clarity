@@ -1,7 +1,7 @@
 #include <unity.h>
 #include "factories/ui_factory.h"
-#include "mock_services.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_services.h"
+#include "mocks/mock_gpio_provider.h"
 #include <memory>
 
 // Mock services for testing

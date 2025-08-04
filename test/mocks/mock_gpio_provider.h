@@ -10,6 +10,7 @@ private:
     std::map<int, uint16_t> analogValues;
     std::map<int, int> pinModes;
     std::map<int, bool> interrupts;
+    std::map<int, void (*)()> interruptCallbacks;
 
 public:
     // IGpioProvider interface - matches actual interface
@@ -23,6 +24,20 @@ public:
     
     uint16_t analogRead(int pin) override {
         return analogValues.count(pin) ? analogValues[pin] : 0;
+    }
+
+    void attachInterrupt(int pin, void (*callback)(), int mode) override {
+        interrupts[pin] = true;
+        interruptCallbacks[pin] = callback;
+    }
+
+    void detachInterrupt(int pin) override {
+        interrupts[pin] = false;
+        interruptCallbacks.erase(pin);
+    }
+
+    bool hasInterrupt(int pin) override {
+        return interrupts.count(pin) && interrupts[pin];
     }
 
     // Mock-specific methods for test setup
@@ -54,11 +69,9 @@ public:
     }
     
     void triggerInterrupt(uint8_t pin) {
-        interrupts[pin] = true;
-    }
-    
-    bool hasInterrupt(uint8_t pin) {
-        return interrupts.count(pin) && interrupts[pin];
+        if (interruptCallbacks.count(pin) && interruptCallbacks[pin]) {
+            interruptCallbacks[pin](); // Call the interrupt callback
+        }
     }
     
     void reset() {
@@ -66,5 +79,6 @@ public:
         analogValues.clear();
         pinModes.clear();
         interrupts.clear();
+        interruptCallbacks.clear();
     }
 };

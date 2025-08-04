@@ -4,8 +4,8 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/preference_manager.h"
-#include "mock_services.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_services.h"
+#include "mocks/mock_gpio_provider.h"
 #include <memory>
 
 // Mock services for testing - static to avoid conflicts

@@ -32,7 +32,8 @@
       "Bash(python:*)",
       "Bash(clear)",
       "Bash(/dev/null)",
-      "Bash(timeout 45s pio test -e test)"
+      "Bash(timeout 45s pio test -e test)",
+      "Bash(echo:*)"
     ],
     "deny": []
   }

@@ -3,8 +3,8 @@
 #include <stdexcept>
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"
-#include "mock_services.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_services.h"
+#include "mocks/mock_gpio_provider.h"
 #include "utilities/types.h"
 
 // Simple standalone mock component implementation for interface testing

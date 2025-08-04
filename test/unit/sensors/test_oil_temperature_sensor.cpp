@@ -1,6 +1,6 @@
 #include <unity.h>
 #include "sensors/oil_temperature_sensor.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_gpio_provider.h"
 #include "hardware/gpio_pins.h"
 
 // Arduino functions are already mocked in test/mocks/Arduino.h

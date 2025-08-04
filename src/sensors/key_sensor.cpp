@@ -20,6 +20,10 @@ void KeySensor::init()
 
     gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
     gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
+    
+    // Attach interrupts for immediate state change detection
+    gpioProvider_->attachInterrupt(gpio_pins::KEY_PRESENT, nullptr, CHANGE);
+    gpioProvider_->attachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, CHANGE);
 }
 
 /// @brief Get the current key reading

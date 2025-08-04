@@ -1,15 +1,15 @@
 #include <unity.h>
 #include <memory>
 #include <stdexcept>
-#include "mock_services.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_services.h"
+#include "mocks/mock_gpio_provider.h"
 
 // Mock component interfaces - testing factory patterns only
-class MockComponent {
+class SimplifiedMockComponent {
 public:
-    MockComponent(void* style_service) : style_service_(style_service) {}
+    SimplifiedMockComponent(void* style_service) : style_service_(style_service) {}
     void* style_service_;
-    virtual ~MockComponent() = default;
+    virtual ~SimplifiedMockComponent() = default;
 };
 
 class SimplifiedMockPanel {
@@ -26,29 +26,29 @@ public:
 class SimplifiedUIFactory {
 public:
     // Component factory methods - return mock components for testing
-    static std::unique_ptr<MockComponent> createKeyComponent(void* style_service) {
+    static std::unique_ptr<SimplifiedMockComponent> createKeyComponent(void* style_service) {
         if (!style_service) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockComponent>(style_service);
+        return std::make_unique<SimplifiedMockComponent>(style_service);
     }
     
-    static std::unique_ptr<MockComponent> createLockComponent(void* style_service) {
+    static std::unique_ptr<SimplifiedMockComponent> createLockComponent(void* style_service) {
         if (!style_service) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockComponent>(style_service);
+        return std::make_unique<SimplifiedMockComponent>(style_service);
     }
     
-    static std::unique_ptr<MockComponent> createClarityComponent(void* style_service) {
+    static std::unique_ptr<SimplifiedMockComponent> createClarityComponent(void* style_service) {
         if (!style_service) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockComponent>(style_service);
+        return std::make_unique<SimplifiedMockComponent>(style_service);
     }
     
-    static std::unique_ptr<MockComponent> createOemOilPressureComponent(void* style_service) {
+    static std::unique_ptr<SimplifiedMockComponent> createOemOilPressureComponent(void* style_service) {
         if (!style_service) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockComponent>(style_service);
+        return std::make_unique<SimplifiedMockComponent>(style_service);
     }
     
-    static std::unique_ptr<MockComponent> createOemOilTemperatureComponent(void* style_service) {
+    static std::unique_ptr<SimplifiedMockComponent> createOemOilTemperatureComponent(void* style_service) {
         if (!style_service) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockComponent>(style_service);
+        return std::make_unique<SimplifiedMockComponent>(style_service);
     }
     
     // Panel factory methods - return mock panels for testing

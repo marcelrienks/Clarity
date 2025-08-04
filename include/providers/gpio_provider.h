@@ -2,6 +2,7 @@
 
 #include "interfaces/i_gpio_provider.h"
 #include <Arduino.h>
+#include <map>
 
 /**
  * @class GpioProvider
@@ -20,6 +21,7 @@
  * - Digital I/O: Read/write digital pin states
  * - Analog input: 12-bit ADC readings from analog pins
  * - Pin configuration: Mode setting (INPUT, OUTPUT, INPUT_PULLUP)
+ * - Interrupt handling: Attach/detach interrupts with callback functions
  * 
  * @pin_constraints:
  * - GPIO 36 & 39: ADC input only (no pull-up/pull-down)
@@ -37,6 +39,9 @@
  */
 class GpioProvider : public IGpioProvider
 {
+private:
+    std::map<int, bool> attachedInterrupts;
+
 public:
     /// @brief Read digital value from a GPIO pin
     /// @param pin GPIO pin number
@@ -52,4 +57,19 @@ public:
     /// @param pin GPIO pin number
     /// @param mode Pin mode (INPUT, OUTPUT, INPUT_PULLUP, etc.)
     void pinMode(int pin, int mode) override;
+
+    /// @brief Attach interrupt to a GPIO pin
+    /// @param pin GPIO pin number
+    /// @param callback Interrupt callback function
+    /// @param mode Interrupt trigger mode (RISING, FALLING, CHANGE)
+    void attachInterrupt(int pin, void (*callback)(), int mode) override;
+
+    /// @brief Detach interrupt from a GPIO pin
+    /// @param pin GPIO pin number
+    void detachInterrupt(int pin) override;
+
+    /// @brief Check if pin has an interrupt attached
+    /// @param pin GPIO pin number
+    /// @return true if interrupt is attached, false otherwise
+    bool hasInterrupt(int pin) override;
 };

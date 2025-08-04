@@ -1,6 +1,6 @@
 #include <unity.h>
 #include "sensors/lock_sensor.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_gpio_provider.h"
 #include "hardware/gpio_pins.h"
 #include "utilities/types.h"
 

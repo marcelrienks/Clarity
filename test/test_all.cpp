@@ -17,7 +17,6 @@
 
 // Forward declarations of comprehensive test functions
 extern void runPreferenceManagerTests();
-extern void runTriggerManagerTests();
 extern void runLockSensorTests();
 extern void runKeySensorTests();
 extern void runGpioProviderTests();
@@ -31,7 +30,6 @@ extern void runComponentInterfaceTests();
 extern void runPanelInterfaceTests();
 extern void runLightSensorTests();
 extern void runOilPressureSensorTests();
-extern void runServiceContainerTests();
 extern void runOilTemperatureSensorTests();
 extern void runTickerTests();
 extern void runPanelManagerTests();
@@ -123,8 +121,6 @@ bool isValidPanelName(const std::string& panelName) {
 bool isValidTheme(const std::string& theme) {
     return theme == "DAY" || theme == "NIGHT";
 }
-
-#endif
 
 // Ticker/Timing Tests
 // REMOVED: Redundant timing tests - covered by ticker tests
@@ -606,3 +602,5 @@ int main(int argc, char **argv) {
 #include "unit/components/test_component_interfaces.cpp"
 #include "unit/panels/test_panel_interfaces.cpp"
 #include "unit/factories/test_ui_factory.cpp"
+
+#endif // UNIT_TESTING

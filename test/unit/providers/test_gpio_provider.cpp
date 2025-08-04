@@ -1,5 +1,5 @@
 #include <unity.h>
-#include "mock_gpio_provider.h"
+#include "mocks/mock_gpio_provider.h"
 
 MockGpioProvider* gpioProviderMock = nullptr;
 

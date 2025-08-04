@@ -18,6 +18,11 @@
 #define INPUT_PULLUP      0x2
 #define INPUT_PULLDOWN    0x3
 
+// Interrupt trigger modes
+#define RISING   0x1
+#define FALLING  0x2
+#define CHANGE   0x3
+
 // ADC pin constants
 #define A0  0
 
@@ -74,7 +79,11 @@ public:
     
     // Interrupt simulation
     void registerInterrupt(uint8_t pin, std::function<void()> callback) {
-        interruptCallbacks[pin] = callback;
+        if (callback) {
+            interruptCallbacks[pin] = callback;
+        } else {
+            interruptCallbacks.erase(pin);
+        }
     }
     void triggerInterrupt(uint8_t pin) {
         if (interruptCallbacks.count(pin)) {
@@ -123,6 +132,19 @@ inline void pinMode(uint8_t pin, uint8_t mode) {
 
 inline void digitalWrite(uint8_t pin, uint8_t value) {
     MockHardwareState::instance().setDigitalPin(pin, value);
+}
+
+// Mock interrupt functions
+inline int digitalPinToInterrupt(int pin) {
+    return pin; // In mock, interrupt number equals pin number
+}
+
+inline void attachInterrupt(int interrupt, void (*callback)(), int mode) {
+    MockHardwareState::instance().registerInterrupt(interrupt, callback);
+}
+
+inline void detachInterrupt(int interrupt) {
+    MockHardwareState::instance().registerInterrupt(interrupt, nullptr);
 }
 
 // Serial mock

@@ -18,6 +18,7 @@
  * - Digital I/O: Read digital pin states (HIGH/LOW)
  * - Analog input: Read ADC values from analog pins
  * - Pin configuration: Set pin modes (INPUT, OUTPUT, INPUT_PULLUP)
+ * - Interrupt handling: Attach/detach interrupts and check interrupt status
  * 
  * @implementation_notes:
  * - Real hardware: GpioProvider using Arduino framework
@@ -50,4 +51,19 @@ public:
     /// @param pin GPIO pin number
     /// @param mode Pin mode (INPUT, OUTPUT, INPUT_PULLUP, etc.)
     virtual void pinMode(int pin, int mode) = 0;
+
+    /// @brief Attach interrupt to a GPIO pin
+    /// @param pin GPIO pin number
+    /// @param callback Interrupt callback function
+    /// @param mode Interrupt trigger mode (RISING, FALLING, CHANGE)
+    virtual void attachInterrupt(int pin, void (*callback)(), int mode) = 0;
+
+    /// @brief Detach interrupt from a GPIO pin
+    /// @param pin GPIO pin number
+    virtual void detachInterrupt(int pin) = 0;
+
+    /// @brief Check if pin has an interrupt attached
+    /// @param pin GPIO pin number
+    /// @return true if interrupt is attached, false otherwise
+    virtual bool hasInterrupt(int pin) = 0;
 };

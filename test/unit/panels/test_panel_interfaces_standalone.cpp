@@ -4,8 +4,8 @@
 #include <stdexcept>
 #include "interfaces/i_panel.h"
 #include "interfaces/i_style_service.h"
-#include "mock_services.h"
-#include "mock_gpio_provider.h"
+#include "mocks/mock_services.h"
+#include "mocks/mock_gpio_provider.h"
 
 // Simple standalone mock panel implementation for interface testing
 class StandaloneTestPanel : public IPanel {

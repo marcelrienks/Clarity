@@ -75,6 +75,7 @@ test\test_all.cpp:473: test_key_sensor_reading_consistency	[PASSED]
 test\test_all.cpp:474: test_key_sensor_timing_behavior	[PASSED]
 test\test_all.cpp:475: test_key_sensor_debouncing	[PASSED]
 test\test_all.cpp:476: test_key_sensor_state_transitions	[PASSED]
+test\test_all.cpp:477: test_key_sensor_interrupt_handling	[PASSED]
 test\test_all.cpp:478: test_key_sensor_error_conditions	[PASSED]
 test\test_all.cpp:479: test_key_sensor_performance	[PASSED]
 test\test_all.cpp:480: test_key_sensor_memory_stability	[PASSED]
@@ -122,13 +123,11 @@ test\test_all.cpp:242: test_lvgl_display_provider_create_label	[PASSED]
 test\test_all.cpp:243: test_lvgl_display_provider_create_object	[PASSED]
 test\test_all.cpp:244: test_lvgl_display_provider_create_arc	[PASSED]
 test\test_all.cpp:245: test_lvgl_display_provider_create_scale	[PASSED]
-test\test_all.cpp:246: test_lvgl_display_provider_create_image	[PASSED]
-test\test_all.cpp:247: test_lvgl_display_provider_create_line	[PASSED]
 Program errored with 3221226356 code
 
----------------------- test:* [ERRORED] Took 4.83 seconds ----------------------
+---------------------- test:* [ERRORED] Took 4.97 seconds ----------------------
 =================================== SUMMARY ===================================
 Environment    Test    Status    Duration
 -------------  ------  --------  ------------
-test           *       ERRORED   00:00:04.827
-================ 120 test cases: 119 succeeded in 00:00:04.827 ================
+test           *       ERRORED   00:00:04.973
+================ 119 test cases: 118 succeeded in 00:00:04.973 ================
