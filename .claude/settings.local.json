@@ -44,7 +44,10 @@
       "Bash(do mv \"$f\" \"$f#disabled_\")",
       "Bash(true)",
       "Bash(./run_tests.bat)",
-      "Bash(powershell.exe:*)"
+      "Bash(powershell.exe:*)",
+      "WebFetch(domain:docs.platformio.org)",
+      "WebFetch(domain:docs.platformio.org)",
+      "WebFetch(domain:piolabs.com)"
     ],
     "deny": []
   }
