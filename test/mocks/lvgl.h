@@ -40,6 +40,9 @@ typedef uint8_t lv_dir_t;
 typedef uint8_t lv_part_t;
 typedef uint8_t lv_state_t;
 typedef uint32_t lv_style_prop_t;
+typedef uint8_t lv_style_selector_t;
+typedef uint8_t lv_text_align_t;
+typedef uint8_t lv_opa_t;
 
 // Mock color type
 typedef struct {
@@ -554,6 +557,51 @@ inline void lv_anim_start(lv_anim_t* a) {
 
 inline bool lv_anim_del(void* var, lv_anim_exec_xcb_t exec_cb) {
     return true; // Mock success
+}
+
+// Mock font support
+typedef struct {
+    int dummy;
+} lv_font_t;
+
+// Mock font instances
+extern const lv_font_t lv_font_montserrat_20;
+extern const lv_font_t lv_font_montserrat_16;
+extern const lv_font_t lv_font_montserrat_14;
+
+// Font and text style functions
+inline void lv_obj_set_style_text_font(lv_obj_t* obj, const lv_font_t* font, lv_style_selector_t selector) {
+    // Mock implementation - just store a reference
+    (void)obj; (void)font; (void)selector;
+}
+
+inline void lv_obj_set_style_text_color(lv_obj_t* obj, lv_color_t color, lv_style_selector_t selector) {
+    (void)obj; (void)color; (void)selector;
+}
+
+inline void lv_obj_set_style_text_align(lv_obj_t* obj, lv_text_align_t align, lv_style_selector_t selector) {
+    (void)obj; (void)align; (void)selector;
+}
+
+// Additional commonly used LVGL functions for components
+inline void lv_obj_set_style_bg_color(lv_obj_t* obj, lv_color_t color, lv_style_selector_t selector) {
+    (void)obj; (void)color; (void)selector;
+}
+
+inline void lv_obj_set_style_bg_opa(lv_obj_t* obj, lv_opa_t opa, lv_style_selector_t selector) {
+    (void)obj; (void)opa; (void)selector;
+}
+
+inline void lv_obj_set_style_border_width(lv_obj_t* obj, lv_coord_t width, lv_style_selector_t selector) {
+    (void)obj; (void)width; (void)selector;
+}
+
+inline void lv_obj_set_style_radius(lv_obj_t* obj, lv_coord_t radius, lv_style_selector_t selector) {
+    (void)obj; (void)radius; (void)selector;
+}
+
+inline void lv_obj_set_style_pad_all(lv_obj_t* obj, lv_coord_t pad, lv_style_selector_t selector) {
+    (void)obj; (void)pad; (void)selector;
 }
 
 #endif // UNIT_TESTING

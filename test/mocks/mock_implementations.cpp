@@ -87,4 +87,37 @@ extern "C" {
     }
 }
 
+// Mock LVGL font definitions
+#include "lvgl.h"
+const lv_font_t lv_font_montserrat_20 = {0};
+const lv_font_t lv_font_montserrat_16 = {0};
+const lv_font_t lv_font_montserrat_14 = {0};
+
+// Global mock service instances to prevent redefinition conflicts
+#include "mock_globals.h"
+#include "mock_services.h"
+#include "mock_gpio_provider.h"
+
+MockDisplayProvider* g_mockDisplay = nullptr;
+MockGpioProvider* g_mockGpio = nullptr; 
+MockStyleService* g_mockStyle = nullptr;
+
+void initGlobalMocks() {
+    if (!g_mockDisplay) g_mockDisplay = new MockDisplayProvider();
+    if (!g_mockGpio) g_mockGpio = new MockGpioProvider();
+    if (!g_mockStyle) g_mockStyle = new MockStyleService();
+    
+    if (g_mockDisplay) g_mockDisplay->initialize();
+    if (g_mockStyle) g_mockStyle->initializeStyles();
+}
+
+void cleanupGlobalMocks() {
+    delete g_mockDisplay;
+    delete g_mockGpio;
+    delete g_mockStyle;
+    g_mockDisplay = nullptr;
+    g_mockGpio = nullptr;
+    g_mockStyle = nullptr;
+}
+
 #endif // UNIT_TESTING

@@ -6,40 +6,27 @@
 #include "managers/preference_manager.h"
 #include "mocks/mock_services.h"
 #include "mocks/mock_gpio_provider.h"
+#include "mock_globals.h"
 #include <memory>
 
-// Mock services for testing - static to avoid conflicts
-static MockDisplayProvider* mockDisplay = nullptr;
-static MockGpioProvider* mockGpio = nullptr;
-static MockStyleService* mockStyle = nullptr;
+// Use global mock services to prevent redefinition conflicts
 static MockPanelService* mockPanel = nullptr;
 
 void setUp_manager_factory() {
-    mockDisplay = new MockDisplayProvider();
-    mockGpio = new MockGpioProvider();
-    mockStyle = new MockStyleService();
+    initGlobalMocks();
     mockPanel = new MockPanelService();
-    
-    mockDisplay->initialize();
-    mockStyle->initializeStyles();
     mockPanel->init();
 }
 
 void tearDown_manager_factory() {
-    delete mockDisplay;
-    delete mockGpio;
-    delete mockStyle;
     delete mockPanel;
-    
-    mockDisplay = nullptr;
-    mockGpio = nullptr;
-    mockStyle = nullptr;
     mockPanel = nullptr;
+    // Global mocks will be cleaned up by the global cleanup
 }
 
 void test_manager_factory_create_panel_manager_valid() {
     // Test creating PanelManager with valid dependencies
-    auto manager = ManagerFactory::createPanelManager(mockDisplay, mockGpio, mockStyle);
+    auto manager = ManagerFactory::createPanelManager(g_mockDisplay, g_mockGpio, g_mockStyle);
     
     TEST_ASSERT_NOT_NULL(manager.get());
     TEST_ASSERT_TRUE(manager != nullptr);
@@ -48,7 +35,7 @@ void test_manager_factory_create_panel_manager_valid() {
 void test_manager_factory_create_panel_manager_null_display() {
     // Test creating PanelManager with null display provider
     try {
-        auto manager = ManagerFactory::createPanelManager(nullptr, mockGpio, mockStyle);
+        auto manager = ManagerFactory::createPanelManager(nullptr, g_mockGpio, g_mockStyle);
         TEST_FAIL_MESSAGE("Expected exception for null display provider");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IDisplayProvider") != std::string::npos);
@@ -58,7 +45,7 @@ void test_manager_factory_create_panel_manager_null_display() {
 void test_manager_factory_create_panel_manager_null_gpio() {
     // Test creating PanelManager with null GPIO provider
     try {
-        auto manager = ManagerFactory::createPanelManager(mockDisplay, nullptr, mockStyle);
+        auto manager = ManagerFactory::createPanelManager(g_mockDisplay, nullptr, g_mockStyle);
         TEST_FAIL_MESSAGE("Expected exception for null GPIO provider");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IGpioProvider") != std::string::npos);
@@ -68,7 +55,7 @@ void test_manager_factory_create_panel_manager_null_gpio() {
 void test_manager_factory_create_panel_manager_null_style() {
     // Test creating PanelManager with null style service
     try {
-        auto manager = ManagerFactory::createPanelManager(mockDisplay, mockGpio, nullptr);
+        auto manager = ManagerFactory::createPanelManager(g_mockDisplay, g_mockGpio, nullptr);
         TEST_FAIL_MESSAGE("Expected exception for null style service");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IStyleService") != std::string::npos);
@@ -93,7 +80,7 @@ void test_manager_factory_create_style_manager_with_theme() {
 
 void test_manager_factory_create_trigger_manager_valid() {
     // Test creating TriggerManager with valid dependencies
-    auto manager = ManagerFactory::createTriggerManager(mockGpio, mockPanel, mockStyle);
+    auto manager = ManagerFactory::createTriggerManager(g_mockGpio, mockPanel, g_mockStyle);
     
     TEST_ASSERT_NOT_NULL(manager.get());
     TEST_ASSERT_TRUE(manager != nullptr);
@@ -102,7 +89,7 @@ void test_manager_factory_create_trigger_manager_valid() {
 void test_manager_factory_create_trigger_manager_null_gpio() {
     // Test creating TriggerManager with null GPIO provider
     try {
-        auto manager = ManagerFactory::createTriggerManager(nullptr, mockPanel, mockStyle);
+        auto manager = ManagerFactory::createTriggerManager(nullptr, mockPanel, g_mockStyle);
         TEST_FAIL_MESSAGE("Expected exception for null GPIO provider");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IGpioProvider") != std::string::npos);
@@ -112,7 +99,7 @@ void test_manager_factory_create_trigger_manager_null_gpio() {
 void test_manager_factory_create_trigger_manager_null_panel() {
     // Test creating TriggerManager with null panel service
     try {
-        auto manager = ManagerFactory::createTriggerManager(mockGpio, nullptr, mockStyle);
+        auto manager = ManagerFactory::createTriggerManager(g_mockGpio, nullptr, g_mockStyle);
         TEST_FAIL_MESSAGE("Expected exception for null panel service");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IPanelService") != std::string::npos);
@@ -122,7 +109,7 @@ void test_manager_factory_create_trigger_manager_null_panel() {
 void test_manager_factory_create_trigger_manager_null_style() {
     // Test creating TriggerManager with null style service
     try {
-        auto manager = ManagerFactory::createTriggerManager(mockGpio, mockPanel, nullptr);
+        auto manager = ManagerFactory::createTriggerManager(g_mockGpio, mockPanel, nullptr);
         TEST_FAIL_MESSAGE("Expected exception for null style service");
     } catch (const std::invalid_argument& e) {
         TEST_ASSERT_TRUE(std::string(e.what()).find("IStyleService") != std::string::npos);
@@ -164,7 +151,7 @@ void test_manager_factory_unique_ownership() {
 
 void test_manager_factory_dependency_injection() {
     // Test that dependencies are properly injected
-    auto panelManager = ManagerFactory::createPanelManager(mockDisplay, mockGpio, mockStyle);
+    auto panelManager = ManagerFactory::createPanelManager(g_mockDisplay, g_mockGpio, g_mockStyle);
     
     // Manager should be properly initialized and functional
     TEST_ASSERT_NOT_NULL(panelManager.get());

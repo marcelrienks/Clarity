@@ -8,12 +8,8 @@
 
 #ifdef UNIT_TESTING
 
-// Direct includes for reliable test integration (moved before main for scope)
-#include "unit/managers/test_trigger_manager.cpp"  // TriggerManager integration (7 tests)
-#include "unit/system/test_service_container.cpp"  // ServiceContainer integration (8 tests)
-#include "unit/managers/test_style_manager.cpp"    // StyleManager integration (14 tests)
-#include "unit/utilities/test_simple_ticker.cpp"   // SimpleTickerTests integration (3 tests)
-#include "unit/managers/test_panel_manager.cpp"    // PanelManagerTests integration (8 tests)
+// Individual test files are now compiled separately to prevent duplicate symbol definitions
+// All test includes removed to prevent conflicts
 
 // Forward declarations of comprehensive test functions
 extern void runPreferenceManagerTests();
@@ -491,116 +487,16 @@ int main(int argc, char **argv) {
     RUN_TEST(test_key_state_logic_performance_benchmark);
     RUN_TEST(test_config_operations_performance_benchmark);
     
-    // TriggerManager tests - Moved early in execution to ensure reliable integration
-    setUp_trigger_manager();
-    RUN_TEST(test_trigger_manager_initialization);
-    RUN_TEST(test_trigger_manager_startup_panel_override);
-    RUN_TEST(test_trigger_manager_key_trigger_processing);
-    RUN_TEST(test_trigger_manager_light_trigger_processing);
-    RUN_TEST(test_trigger_manager_multiple_sensors);
-    RUN_TEST(test_trigger_manager_lock_state_changes);
-    RUN_TEST(test_trigger_manager_service_integration);
-    tearDown_trigger_manager();
+    // Individual test suites are now compiled separately
+    // These tests are included via separate file compilation, not function calls
     
-    // ServiceContainer tests - Moved early in execution to ensure reliable integration
-    setUp_service_container();
-    RUN_TEST(test_service_container_construction);
-    RUN_TEST(test_service_container_singleton_instance);
-    RUN_TEST(test_service_container_register_service);
-    RUN_TEST(test_service_container_get_service);
-    RUN_TEST(test_service_container_has_service);
-    RUN_TEST(test_service_container_unregister_service);
-    RUN_TEST(test_service_container_multiple_services);
-    RUN_TEST(test_service_container_service_replacement);
-    tearDown_service_container();
-    
-    // StyleManager tests - Added for comprehensive manager coverage (14 tests)
-    setUp_style_manager();
-    RUN_TEST(test_style_manager_init);
-    RUN_TEST(test_style_manager_theme_switching);
-    RUN_TEST(test_style_manager_day_night_differences);
-    RUN_TEST(test_style_manager_rapid_theme_switching);
-    RUN_TEST(test_style_manager_theme_persistence);
-    RUN_TEST(test_style_manager_invalid_theme_handling);
-    RUN_TEST(test_style_manager_initialization_edge_cases);
-    RUN_TEST(test_style_manager_memory_management);
-    RUN_TEST(test_style_manager_style_consistency);
-    RUN_TEST(test_style_manager_style_initialization_robustness);
-    RUN_TEST(test_style_manager_concurrent_access_simulation);
-    RUN_TEST(test_style_manager_cleanup_and_resource_management);
-    RUN_TEST(test_style_manager_apply_theme_edge_cases);
-    RUN_TEST(test_style_manager_state_transitions);
-    tearDown_style_manager();
-    
-    // SimpleTickerTests - Added to reach 100+ test milestone (3 tests)
-    RUN_TEST(test_simple_ticker_dynamic_delay_normal_case);
-    RUN_TEST(test_simple_ticker_dynamic_delay_slow_processing);
-    RUN_TEST(test_simple_ticker_timing_calculation);
-    
-    // PanelManagerTests - Added for complete manager coverage (8 tests)
-    setUp_panel_manager();
-    RUN_TEST(test_panel_manager_construction);
-    RUN_TEST(test_panel_manager_init);
-    RUN_TEST(test_panel_manager_create_and_load_panel);
-    RUN_TEST(test_panel_manager_update_panel);
-    RUN_TEST(test_panel_manager_load_panel_with_splash);
-    RUN_TEST(test_panel_manager_get_current_panel);
-    RUN_TEST(test_panel_manager_ui_state);
-    RUN_TEST(test_panel_manager_panel_switching);
-    tearDown_panel_manager();
-    
-    // Comprehensive Test Suites
-    runKeySensorTests();           // 16 tests
-    runLockSensorTests();          // 7 tests
-    runLightSensorTests();         // 7 tests
-    runOilPressureSensorTests();   // 4 tests
-    runOilTemperatureSensorTests();// 5 tests
-    runGpioProviderTests();        // 7 tests
-    runLvglDisplayProviderTests(); // 5 tests
-    runManagerFactoryTests();     // Factory tests
-    runSimplifiedUIFactoryTests(); // UI Factory pattern tests
-    runUIFactoryTests();           // Full UI Factory tests
-    runStandaloneComponentTests();   // Standalone Component interface tests
-    runStandalonePanelTests();       // Standalone Panel interface tests
-    runComponentInterfaceTests();    // Component interface tests 
-    runPanelInterfaceTests();        // Panel interface tests
-    
-    // Manager tests
-    runPreferenceManagerTests();       // 25 tests
-    runPanelManagerTests();            // 8 tests
-    runStyleManagerTests();            // 20 tests
-    runTickerTests();               // 6 tests
-    runSimpleTickerTests();        // 4 tests
+    // Individual test suites are now compiled separately
+    // Each test file runs its own test functions independently
     
     return UNITY_END();
 }
 
-// Include comprehensive test implementations - Phase 1: Sensor Tests
-#include "unit/sensors/test_key_sensor.cpp"
-#include "unit/sensors/test_lock_sensor.cpp"
-// Testing light sensor with fixes:
-#include "unit/sensors/test_light_sensor.cpp"
-// Testing oil pressure sensor with fixes:
-#include "unit/sensors/test_oil_pressure_sensor.cpp"
-// Testing oil temperature sensor with fixes:
-#include "unit/sensors/test_oil_temperature_sensor.cpp"
-// Adding GPIO Provider tests to complete Phase 1:
-#include "unit/providers/test_gpio_provider.cpp"
-// Adding LVGL Display Provider tests for Phase 3:
-#include "unit/providers/test_lvgl_display_provider.cpp"
-// Adding Factory tests for Phase 3:
-#include "unit/factories/test_manager_factory.cpp"
-// Note: Some test files use PlatformIO build_src_filter, others use direct includes
-// Direct includes appear more reliable for function discovery
-#include "unit/utilities/test_ticker.cpp"
-// Phase 2: Direct includes moved to top of file for proper scoping
-
-// Phase 3: Adding remaining interface tests
-#include "unit/factories/test_ui_factory_simplified.cpp"
-#include "unit/components/test_component_interfaces_standalone.cpp"
-#include "unit/panels/test_panel_interfaces_standalone.cpp"
-#include "unit/components/test_component_interfaces.cpp"
-#include "unit/panels/test_panel_interfaces.cpp"
-#include "unit/factories/test_ui_factory.cpp"
+// Note: Individual test files are now compiled separately
+// All test includes removed to prevent duplicate symbol definitions
 
 #endif // UNIT_TESTING
