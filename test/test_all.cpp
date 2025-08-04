@@ -24,8 +24,11 @@ extern void runGpioProviderTests();
 extern void runLvglDisplayProviderTests();
 extern void runManagerFactoryTests();
 extern void runSimplifiedUIFactoryTests();
+extern void runUIFactoryTests();
 extern void runStandaloneComponentTests();
 extern void runStandalonePanelTests();
+extern void runComponentInterfaceTests();
+extern void runPanelInterfaceTests();
 extern void runSensorLogicTests();
 extern void runLightSensorTests();
 extern void runOilPressureSensorTests();
@@ -460,12 +463,16 @@ int main(int argc, char **argv) {
     runLightSensorTests();         // 7 tests (testing fixes)
     runOilPressureSensorTests();   // 4 tests (testing fixes)
     runOilTemperatureSensorTests();// 5 tests (testing fixes)
+    // runSensorLogicTests();         // Sensor logic tests - REMOVED: Duplicate functions
     runGpioProviderTests();        // 7 tests (added for Phase 1 completion)
     runLvglDisplayProviderTests(); // Provider tests for Phase 3
     runManagerFactoryTests();     // Factory tests for Phase 3
-    // runSimplifiedUIFactoryTests(); // REMOVED: Redundant with regular UI Factory tests
-    // runStandaloneComponentTests();   // Standalone Component interface tests for Phase 3 - deferred due to mock conflicts
-    // runStandalonePanelTests();       // Standalone Panel interface tests for Phase 3 - deferred due to mock conflicts
+    runSimplifiedUIFactoryTests(); // UI Factory pattern tests
+    runUIFactoryTests();           // Full UI Factory tests
+    runStandaloneComponentTests();   // Standalone Component interface tests
+    runStandalonePanelTests();       // Standalone Panel interface tests
+    runComponentInterfaceTests();    // Component interface tests 
+    runPanelInterfaceTests();        // Panel interface tests
     
     printf("[DEBUG] Completed sensor tests, starting manager tests...\n");
     fflush(stdout);
@@ -479,11 +486,11 @@ int main(int argc, char **argv) {
     
     // TriggerManager and ServiceContainer tests moved to early execution section above
     
-    // runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
-    // runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
+    runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
+    runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
     runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
-    // runSimpleTickerTests();        // 4 tests (keeping commented)
-    // runConfigLogicTests();         // REMOVED: All tests duplicated in test_all.cpp
+    runSimpleTickerTests();        // 4 tests - SimpleTickerTests integration
+    // runConfigLogicTests();         // Config logic tests - REMOVED: All tests duplicated in test_all.cpp
     
     return UNITY_END();
 }
@@ -507,3 +514,13 @@ int main(int argc, char **argv) {
 // Direct includes appear more reliable for function discovery
 #include "unit/utilities/test_ticker.cpp"
 // Phase 2: Direct includes moved to top of file for proper scoping
+
+// Phase 3: Adding remaining interface tests
+#include "unit/factories/test_ui_factory_simplified.cpp"
+#include "unit/components/test_component_interfaces_standalone.cpp"
+#include "unit/panels/test_panel_interfaces_standalone.cpp"
+#include "unit/components/test_component_interfaces.cpp"
+#include "unit/panels/test_panel_interfaces.cpp"
+#include "unit/factories/test_ui_factory.cpp"
+// #include "unit/sensors/test_sensor_logic.cpp" // REMOVED: Duplicate functions
+// #include "unit/managers/test_config_logic.cpp" // REMOVED: All tests duplicated in test_all.cpp

@@ -12,14 +12,14 @@ public:
     virtual ~MockComponent() = default;
 };
 
-class MockPanel {
+class SimplifiedMockPanel {
 public:
-    MockPanel(void* gpio, void* display, void* style) 
+    SimplifiedMockPanel(void* gpio, void* display, void* style) 
         : gpio_(gpio), display_(display), style_(style) {}
     void* gpio_;
     void* display_;
     void* style_;
-    virtual ~MockPanel() = default;
+    virtual ~SimplifiedMockPanel() = default;
 };
 
 // Simplified UIFactory for testing - tests factory patterns without implementations
@@ -52,32 +52,32 @@ public:
     }
     
     // Panel factory methods - return mock panels for testing
-    static std::unique_ptr<MockPanel> createKeyPanel(void* gpio, void* display, void* style) {
+    static std::unique_ptr<SimplifiedMockPanel> createKeyPanel(void* gpio, void* display, void* style) {
         if (!gpio) throw std::invalid_argument("IGpioProvider cannot be null");
         if (!display) throw std::invalid_argument("IDisplayProvider cannot be null");
         if (!style) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockPanel>(gpio, display, style);
+        return std::make_unique<SimplifiedMockPanel>(gpio, display, style);
     }
     
-    static std::unique_ptr<MockPanel> createLockPanel(void* gpio, void* display, void* style) {
+    static std::unique_ptr<SimplifiedMockPanel> createLockPanel(void* gpio, void* display, void* style) {
         if (!gpio) throw std::invalid_argument("IGpioProvider cannot be null");
         if (!display) throw std::invalid_argument("IDisplayProvider cannot be null");
         if (!style) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockPanel>(gpio, display, style);
+        return std::make_unique<SimplifiedMockPanel>(gpio, display, style);
     }
     
-    static std::unique_ptr<MockPanel> createSplashPanel(void* gpio, void* display, void* style) {
+    static std::unique_ptr<SimplifiedMockPanel> createSplashPanel(void* gpio, void* display, void* style) {
         if (!gpio) throw std::invalid_argument("IGpioProvider cannot be null");
         if (!display) throw std::invalid_argument("IDisplayProvider cannot be null");
         if (!style) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockPanel>(gpio, display, style);
+        return std::make_unique<SimplifiedMockPanel>(gpio, display, style);
     }
     
-    static std::unique_ptr<MockPanel> createOemOilPanel(void* gpio, void* display, void* style) {
+    static std::unique_ptr<SimplifiedMockPanel> createOemOilPanel(void* gpio, void* display, void* style) {
         if (!gpio) throw std::invalid_argument("IGpioProvider cannot be null");
         if (!display) throw std::invalid_argument("IDisplayProvider cannot be null");
         if (!style) throw std::invalid_argument("IStyleService cannot be null");
-        return std::make_unique<MockPanel>(gpio, display, style);
+        return std::make_unique<SimplifiedMockPanel>(gpio, display, style);
     }
 };
 
