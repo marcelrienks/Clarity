@@ -41,7 +41,10 @@
       "Bash(fi)",
       "Bash(done)",
       "Bash(for f in disabled_*.cpp)",
-      "Bash(do mv \"$f\" \"$f#disabled_\")"
+      "Bash(do mv \"$f\" \"$f#disabled_\")",
+      "Bash(true)",
+      "Bash(./run_tests.bat)",
+      "Bash(powershell.exe:*)"
     ],
     "deny": []
   }
