@@ -1,1 +1,0 @@
-CLARITY PROJECT COVERAGE REPORT\n==================================================\n\nCoverage data found for test files\nTotal coverage files: 4\n- test_all.gcno\n- test_main_simple.gcno\n- test_main_ticker_only.gcno\n- unity.gcno\n
