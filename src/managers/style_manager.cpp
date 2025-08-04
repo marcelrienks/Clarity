@@ -86,6 +86,12 @@ void StyleManager::ResetStyles()
 /// @param theme the theme to be applied
 void StyleManager::set_theme(const char* theme)
 {
+    // Handle invalid theme gracefully
+    if (!theme || strlen(theme) == 0) {
+        log_d("Invalid theme provided, keeping current theme: %s", THEME);
+        return;
+    }
+    
     log_d("Switching application theme to: %s", theme);
 
     // Update current theme

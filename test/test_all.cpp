@@ -29,11 +29,9 @@ extern void runStandaloneComponentTests();
 extern void runStandalonePanelTests();
 extern void runComponentInterfaceTests();
 extern void runPanelInterfaceTests();
-extern void runSensorLogicTests();
 extern void runLightSensorTests();
 extern void runOilPressureSensorTests();
 extern void runServiceContainerTests();
-extern void runConfigLogicTests();
 extern void runOilTemperatureSensorTests();
 extern void runTickerTests();
 extern void runPanelManagerTests();
@@ -367,6 +365,99 @@ void test_config_clear() {
     TEST_ASSERT_FALSE(manager.hasConfig("key1"));
 }
 
+// Additional stress and edge case tests
+void test_sensor_rapid_state_changes() {
+    TestSensor sensor;
+    int changeCount = 0;
+    
+    // Initial state
+    sensor.setReading(-1);
+    sensor.hasValueChanged(); // Reset change detection
+    
+    // Rapid state changes
+    for (int i = 0; i < 1000; i++) {
+        sensor.setReading(i % 2); // Alternate between 0 and 1
+        if (sensor.hasValueChanged()) {
+            changeCount++;
+        }
+    }
+    
+    // With alternating pattern, TestSensor should detect all 1000 changes
+    // Since each setReading() changes the value from previous
+    TEST_ASSERT_GREATER_THAN(900, changeCount); // Should detect almost all changes
+    TEST_ASSERT_LESS_OR_EQUAL(1000, changeCount); // But not more than possible
+}
+
+void test_config_large_dataset_performance() {
+    ConfigManager manager;
+    uint32_t startTime = millis();
+    
+    // Large dataset operations
+    for (int i = 0; i < 100; i++) {
+        std::string key = "largekey_" + std::to_string(i);
+        std::string value = "largevalue_" + std::to_string(i) + "_with_lots_of_extra_data_to_make_it_realistic";
+        manager.setConfig(key, value);
+    }
+    
+    uint32_t endTime = millis();
+    uint32_t totalTime = endTime - startTime;
+    
+    // Should handle 100 large configs quickly
+    TEST_ASSERT_LESS_THAN(1000, totalTime); // Less than 1 second
+    TEST_ASSERT_EQUAL(100, manager.getConfigCount());
+    
+    // Verify all values are accessible
+    for (int i = 0; i < 100; i++) {
+        std::string key = "largekey_" + std::to_string(i);
+        TEST_ASSERT_TRUE(manager.hasConfig(key));
+    }
+}
+
+void test_adc_conversion_boundary_values() {
+    // Test boundary values for ADC conversion
+    double pressure_min = convertAdcToPressure(0);
+    double pressure_max = convertAdcToPressure(4095);
+    double pressure_mid = convertAdcToPressure(2048);
+    
+    TEST_ASSERT_EQUAL_DOUBLE(0.0, pressure_min);
+    TEST_ASSERT_GREATER_THAN(90.0, pressure_max); // Should be around 99
+    TEST_ASSERT_LESS_THAN(110.0, pressure_max);
+    TEST_ASSERT_GREATER_THAN(45.0, pressure_mid); // Around 49.5
+    TEST_ASSERT_LESS_THAN(55.0, pressure_mid);
+}
+
+void test_key_state_edge_cases() {
+    // Test all possible combinations
+    KeyState state1 = determineKeyState(true, true);   // Invalid combination
+    KeyState state2 = determineKeyState(false, false); // Invalid combination
+    KeyState state3 = determineKeyState(true, false);  // Present
+    KeyState state4 = determineKeyState(false, true);  // Not present
+    
+    TEST_ASSERT_EQUAL(KeyState::Inactive, state1);
+    TEST_ASSERT_EQUAL(KeyState::Inactive, state2);
+    TEST_ASSERT_EQUAL(KeyState::Present, state3);
+    TEST_ASSERT_EQUAL(KeyState::NotPresent, state4);
+}
+
+void test_memory_usage_stability() {
+    // Test that repeated operations don't cause memory leaks
+    ConfigManager manager;
+    
+    // Create and destroy configs repeatedly
+    for (int cycle = 0; cycle < 10; cycle++) {
+        for (int i = 0; i < 50; i++) {
+            std::string key = "temp_" + std::to_string(i);
+            manager.setConfig(key, "temporary_value");
+        }
+        TEST_ASSERT_EQUAL(50, manager.getConfigCount());
+        manager.clearConfig();
+        TEST_ASSERT_EQUAL(0, manager.getConfigCount());
+    }
+    
+    // Final state should be clean
+    TEST_ASSERT_EQUAL(0, manager.getConfigCount());
+}
+
 void setUp(void) {
     // Reset mock values
     set_mock_millis(0);
@@ -390,6 +481,13 @@ int main(int argc, char **argv) {
     RUN_TEST(test_panel_name_validation);
     RUN_TEST(test_theme_validation);
     RUN_TEST(test_config_clear);
+    
+    // Additional stress and edge case tests
+    RUN_TEST(test_sensor_rapid_state_changes);
+    RUN_TEST(test_config_large_dataset_performance);
+    RUN_TEST(test_adc_conversion_boundary_values);
+    RUN_TEST(test_key_state_edge_cases);
+    RUN_TEST(test_memory_usage_stability);
     
     // Enhanced Phase 2 performance benchmarks
     RUN_TEST(test_adc_conversion_performance_benchmark);
@@ -455,18 +553,15 @@ int main(int argc, char **argv) {
     RUN_TEST(test_panel_manager_panel_switching);
     tearDown_panel_manager();
     
-    // Comprehensive Test Suites - Phase 1: Sensor Tests (target: 55 tests total)
-    printf("[DEBUG] About to run sensor tests...\n");
-    fflush(stdout);
+    // Comprehensive Test Suites
     runKeySensorTests();           // 16 tests
-    runLockSensorTests();          // 7 tests (working - variable conflicts resolved)
-    runLightSensorTests();         // 7 tests (testing fixes)
-    runOilPressureSensorTests();   // 4 tests (testing fixes)
-    runOilTemperatureSensorTests();// 5 tests (testing fixes)
-    // runSensorLogicTests();         // Sensor logic tests - REMOVED: Duplicate functions
-    runGpioProviderTests();        // 7 tests (added for Phase 1 completion)
-    runLvglDisplayProviderTests(); // Provider tests for Phase 3
-    runManagerFactoryTests();     // Factory tests for Phase 3
+    runLockSensorTests();          // 7 tests
+    runLightSensorTests();         // 7 tests
+    runOilPressureSensorTests();   // 4 tests
+    runOilTemperatureSensorTests();// 5 tests
+    runGpioProviderTests();        // 7 tests
+    runLvglDisplayProviderTests(); // 5 tests
+    runManagerFactoryTests();     // Factory tests
     runSimplifiedUIFactoryTests(); // UI Factory pattern tests
     runUIFactoryTests();           // Full UI Factory tests
     runStandaloneComponentTests();   // Standalone Component interface tests
@@ -474,23 +569,12 @@ int main(int argc, char **argv) {
     runComponentInterfaceTests();    // Component interface tests 
     runPanelInterfaceTests();        // Panel interface tests
     
-    printf("[DEBUG] Completed sensor tests, starting manager tests...\n");
-    fflush(stdout);
-    
-    // Manager tests - Testing one by one to isolate crash
-    printf("[DEBUG] About to call runPreferenceManagerTests...\n");
-    fflush(stdout);
-    runPreferenceManagerTests();       // 25 tests - Phase 2: 14 original + 11 enhanced tests
-    printf("[DEBUG] Completed runPreferenceManagerTests.\n");
-    fflush(stdout);
-    
-    // TriggerManager and ServiceContainer tests moved to early execution section above
-    
-    runPanelManagerTests();            // 8 tests - now enabled with PanelManager source and mock UIFactory
-    runStyleManagerTests();            // 20 tests - Phase 2: 9 original + 11 enhanced tests
-    runTickerTests();               // 6 tests - ✅ SHOULD WORK (static methods only)
-    runSimpleTickerTests();        // 4 tests - SimpleTickerTests integration
-    // runConfigLogicTests();         // Config logic tests - REMOVED: All tests duplicated in test_all.cpp
+    // Manager tests
+    runPreferenceManagerTests();       // 25 tests
+    runPanelManagerTests();            // 8 tests
+    runStyleManagerTests();            // 20 tests
+    runTickerTests();               // 6 tests
+    runSimpleTickerTests();        // 4 tests
     
     return UNITY_END();
 }
@@ -522,5 +606,3 @@ int main(int argc, char **argv) {
 #include "unit/components/test_component_interfaces.cpp"
 #include "unit/panels/test_panel_interfaces.cpp"
 #include "unit/factories/test_ui_factory.cpp"
-// #include "unit/sensors/test_sensor_logic.cpp" // REMOVED: Duplicate functions
-// #include "unit/managers/test_config_logic.cpp" // REMOVED: All tests duplicated in test_all.cpp

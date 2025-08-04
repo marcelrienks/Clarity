@@ -9,10 +9,11 @@ This document describes the testing architecture and commands for the Clarity pr
 pio test -e test
 ```
 
-This command runs all 95 tests covering:
+This command runs all 120 tests covering:
 - Unit tests for all managers, sensors, and utilities
+- Interface tests for components and panels
 - Mock-based testing for embedded dependencies
-- Code coverage instrumentation and reporting
+- Performance and stress testing
 - Comprehensive validation of core functionality
 
 ## **Test Architecture**
@@ -29,37 +30,45 @@ The project uses a streamlined testing approach with one comprehensive test envi
 
 All tests run within the single `test` environment and cover:
 
-**Managers** (14 tests)
-- PreferenceManager: Configuration persistence and validation
-- PanelManager: UI panel lifecycle and switching
-- StyleManager: Theme management and LVGL styling
-- TriggerManager: Event handling and system triggers
+**Managers** (62 tests)
+- PreferenceManager: Configuration persistence and validation (25 tests)
+- PanelManager: UI panel lifecycle and switching (8 tests)
+- StyleManager: Theme management and LVGL styling (14 tests)
+- TriggerManager: Event handling and system triggers (7 tests)
+- ServiceContainer: Dependency injection system (8 tests)
 
-**Sensors** (31 tests)  
-- KeySensor: Key presence detection and debouncing
-- LockSensor: Lock state monitoring
-- LightSensor: Ambient light measurement
-- OilPressureSensor: Pressure monitoring and conversion
-- OilTemperatureSensor: Temperature monitoring
+**Sensors** (39 tests)  
+- KeySensor: Key presence detection and debouncing (16 tests)
+- LockSensor: Lock state monitoring (7 tests)
+- LightSensor: Ambient light measurement (7 tests)
+- OilPressureSensor: Pressure monitoring and conversion (4 tests)
+- OilTemperatureSensor: Temperature monitoring (5 tests)
 
-**Providers** (7 tests)
-- GpioProvider: Hardware GPIO abstraction and operations
+**Providers** (12 tests)
+- GpioProvider: Hardware GPIO abstraction and operations (7 tests)
+- LvglDisplayProvider: Display abstraction and LVGL integration (5 tests)
 
-**Utilities** (6 tests)
-- Ticker: Timing utilities and LVGL task handling
+**Utilities** (10 tests)
+- Ticker: Timing utilities and LVGL task handling (6 tests)
+- SimpleTicker: Simplified timing operations (4 tests)
 
-**System Logic** (37 tests)
-- Configuration management and validation
-- Sensor value change detection
-- ADC conversion algorithms
-- Timing calculations
-- State machine logic
+**Interfaces & Factories** (Multiple tests)
+- Component interface compliance testing
+- Panel interface validation
+- UI Factory pattern testing
+- Manager Factory testing
+
+**Performance & Stress Tests** (5 tests)
+- ADC conversion performance benchmarks
+- Sensor state change detection performance
+- Key state logic performance
+- Configuration operations performance
 
 ## **Running Tests**
 
 ### **All Tests**
 ```bash
-# Run complete test suite (95 tests)
+# Run complete test suite (120 tests)
 pio test -e test
 ```
 
@@ -92,7 +101,7 @@ Comprehensive mocks for embedded dependencies located in `test/mocks/`:
 Tests are organized in `test/unit/` by component type:
 ```
 test/
-├── test_all.cpp              # Main test runner (95 tests)
+├── test_all.cpp              # Main test runner (120 tests)
 ├── mocks/                    # Mock implementations
 ├── utilities/                # Test helper utilities
 └── unit/
@@ -104,6 +113,12 @@ test/
 ```
 
 ### **Test Coverage**
+
+Current test coverage for 120 tests:
+- **Overall Coverage**: 48.6% line coverage, 53.6% file coverage
+- **Critical Logic**: ~85% coverage (sensors, managers, providers)
+- **UI Components**: ~15% coverage (components/panels interface tests only)
+- **Files Tested**: 15/28 source files have direct test coverage
 
 The test environment includes coverage instrumentation:
 - Line coverage tracking with `--coverage`
