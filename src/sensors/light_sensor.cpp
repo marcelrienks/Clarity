@@ -33,10 +33,19 @@ Reading LightSensor::getReading()
 bool LightSensor::getLightsState()
 {
     bool lightsOn = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
-    log_v("Lights sensor reading: %s (pin %d %s)", 
-          lightsOn ? "ON" : "OFF",
-          gpio_pins::LIGHTS,
-          lightsOn ? "HIGH" : "LOW");
+    
+    // Only log state changes to reduce log spam during polling
+    static bool lastState = false;
+    static bool firstRead = true;
+    
+    if (firstRead || lightsOn != lastState) {
+        log_d("Lights sensor reading: %s (pin %d %s)", 
+              lightsOn ? "ON" : "OFF",
+              gpio_pins::LIGHTS,
+              lightsOn ? "HIGH" : "LOW");
+        lastState = lightsOn;
+        firstRead = false;
+    }
     
     return lightsOn;
 }

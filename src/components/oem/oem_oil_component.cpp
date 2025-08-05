@@ -101,7 +101,6 @@ OemOilComponent::~OemOilComponent()
 /// @param location The location parameters for positioning the component.
 void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
-    log_d("...");
 
     if (!screen) {
         return;
@@ -126,14 +125,13 @@ void OemOilComponent::render(lv_obj_t *screen, const ComponentLocation &location
     CreateLabels();
     CreateNeedle();
 
-    log_d("rendered load");
+    // Component rendering complete
 }
 
 /// @brief Updates the rendered oil component.
 /// @param reading The Reading value to update the component with.
 void OemOilComponent::refresh(const Reading& reading)
 {
-    log_d("...");
 
     int32_t value = std::get<int32_t>(reading);
     const ThemeColors &colours = styleService_->getThemeColors();
@@ -183,7 +181,7 @@ void OemOilComponent::refresh(const Reading& reading)
     // Update pivot styling based on current theme
     UpdatePivotStyling();
 
-    log_d("rendered update");
+    // Component update complete
 }
 
 /// @brief Sets the value of the oil component.

@@ -114,7 +114,6 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
 /// @brief Update the reading on the screen
 void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
-    log_d("Updating OEM oil panel readings and checking for changes");
 
     callbackFunction_ = callbackFunction;
 
@@ -135,7 +134,7 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
         forceComponentRefresh_ = false;
     }
 
-    log_v("updating...");
+    // Update sensor readings and components
     OemOilPanel::UpdateOilPressure();
     OemOilPanel::UpdateOilTemperature();
     
@@ -144,7 +143,6 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
     
     // If no animations were started, call completion callback immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_) {
-        log_d("No animations running, calling completion callback immediately");
         callbackFunction_();
     }
 }
@@ -154,7 +152,6 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
 /// @brief Update the oil pressure reading on the screen
 void OemOilPanel::UpdateOilPressure()
 {
-    log_d("...");
 
     // Skip update if pressure animation is already running
     if (isPressureAnimationRunning_) {
@@ -193,14 +190,13 @@ void OemOilPanel::UpdateOilPressure()
     lv_anim_set_completed_cb(&pressureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
     isPressureAnimationRunning_ = true;
-    log_d("animating...");
+    // Start pressure gauge animation
     lv_anim_start(&pressureAnimation_);
 }
 
 /// @brief Update the oil temperature reading on the screen
 void OemOilPanel::UpdateOilTemperature()
 {
-    log_d("...");
 
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_) {
@@ -239,7 +235,7 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_set_completed_cb(&temperatureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
     isTemperatureAnimationRunning_ = true;
-    log_d("animating...");
+    // Start temperature gauge animation
     lv_anim_start(&temperatureAnimation_);
 }
 
@@ -249,7 +245,6 @@ void OemOilPanel::UpdateOilTemperature()
 /// @param event LVGL event that was used to call this
 void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("...");
 
     if (!event) {
         return;
@@ -267,7 +262,6 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
 /// @param animation the object that was animated
 void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 {
-    log_d("...");
 
     if (animation == nullptr || animation->var == nullptr) {
         log_w("Animation or animation->var is null, skipping completion callback");
@@ -299,7 +293,6 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 /// @param value the next value in a sequence to create a smooth transition
 void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 {
-    log_d("...");
 
     lv_anim_t *animation = lv_anim_get(target, ExecutePressureAnimationCallback); // get the animation
     if (animation == nullptr || animation->var == nullptr) {
@@ -318,7 +311,6 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 /// @param value the next value in a sequence to create a smooth transition
 void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t value)
 {
-    log_d("...");
 
     lv_anim_t *animation = lv_anim_get(target, ExecuteTemperatureAnimationCallback); // get the animation
     if (animation == nullptr || animation->var == nullptr) {

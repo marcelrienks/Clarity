@@ -48,12 +48,10 @@ Reading OilPressureSensor::getReading()
         // Pressure mapping: 0V = 0 Bar, 3.3V = 10 Bar
         int32_t newValue = (adcValue * PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
         
-        log_v("ADC: %d, Pressure: %d Bar", adcValue, newValue);
-        
         // Only update if value actually changed (avoid redundant updates)
         if (newValue != currentReading_) {
             currentReading_ = newValue;
-            log_i("Pressure reading changed to %d Bar", currentReading_);
+            log_i("Pressure reading changed to %d Bar (ADC: %d)", currentReading_, adcValue);
 
         }
     }

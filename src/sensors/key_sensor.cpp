@@ -15,8 +15,12 @@ KeySensor::KeySensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
 void KeySensor::init()
 {
     // Configure both GPIO pins for digital input (safe to call multiple times)
-    log_d("Initializing key sensor on GPIO %d (key present) and GPIO %d (key not present)",
-          gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    static bool initialized = false;
+    if (!initialized) {
+        log_d("Initializing key sensor on GPIO %d (key present) and GPIO %d (key not present)",
+              gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+        initialized = true;
+    }
 
     gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
     gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);

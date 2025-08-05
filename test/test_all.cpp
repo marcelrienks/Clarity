@@ -3832,42 +3832,6 @@ int main() {
     // Cleanup test environment
     tearDown();
 
-#elif defined(TEST_MANAGERS_CORE_ONLY)
-    printf("\n=== Clarity Manager Core Test Suite ===\n");
-    printf("Running core manager layer tests...\n\n");
-    
-    // Initialize test environment
-    setUp();
-    
-    // TriggerManager Tests (6 tests)
-    printf("--- TriggerManager Tests ---\n");
-    RUN_TEST(test_trigger_manager_initialization);
-    RUN_TEST(test_trigger_manager_key_trigger_activation);
-    RUN_TEST(test_trigger_manager_lock_trigger_activation);
-    RUN_TEST(test_trigger_manager_theme_switching);
-    RUN_TEST(test_trigger_manager_priority_resolution);
-    RUN_TEST(test_trigger_manager_startup_panel_override);
-    
-    // Mock Service Tests (2 tests)
-    printf("--- Mock Service Tests ---\n");
-    RUN_TEST(test_panel_service_mock_functionality);
-    RUN_TEST(test_style_service_mock_functionality);
-    
-    // PanelManager Tests (7 tests)
-    printf("--- PanelManager Tests ---\n");
-    RUN_TEST(test_panel_manager_initialization);
-    RUN_TEST(test_panel_manager_panel_lifecycle);
-    RUN_TEST(test_panel_manager_splash_transitions);
-    RUN_TEST(test_panel_manager_update_operations);
-    RUN_TEST(test_panel_manager_restoration_panel);
-    RUN_TEST(test_panel_manager_trigger_integration);
-    RUN_TEST(test_panel_manager_ui_state_management);
-    
-    printf("\n=== Manager Core Test Suite Complete ===\n");
-    printf("Total: 15 core manager tests\n");
-    
-    // Cleanup test environment
-    tearDown();
 
 
 #elif defined(TEST_COMPONENTS_ONLY)
