@@ -57,7 +57,7 @@ public:
     void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
     // Static Data Members
-    static constexpr int32_t _animation_duration = 1000;
+    static constexpr int32_t _animation_duration = 750;
 
 private:
     // Core Functionality Methods

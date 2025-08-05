@@ -3,6 +3,7 @@
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
 #include "hardware/gpio_pins.h"
+#include <esp32-hal-log.h>
 #include <algorithm>
 
 // Define the trigger mappings array

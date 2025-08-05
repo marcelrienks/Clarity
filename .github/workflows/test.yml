@@ -6,85 +6,59 @@ on:
   pull_request:
     branches: [ main ]
 
-jobs:
+permissions:
+  contents: read
 
-  unit-tests:
+jobs:
+  test:
     runs-on: ubuntu-latest
-    name: Unit Tests
+    name: Run Tests (100 tests)
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Cache PlatformIO dependencies
+      - name: Cache PlatformIO
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.platformio/.cache
-            ~/.platformio/penv
-          key: ${{ runner.os }}-pio-test-${{ hashFiles('**/platformio.ini') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-test-
+          path: ~/.platformio
+          key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+          restore-keys: ${{ runner.os }}-pio-
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install PlatformIO Core
+      - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      - name: Run unit tests
-        run: pio test -e test --verbose
+      - name: Run Tests
+        run: pio test -e test-all --verbose
 
-      - name: Upload test results
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: test-results
-          path: |
-            .pio/test/
-            test_report.xml
-
-  build-verification:
+  build:
     runs-on: ubuntu-latest
     name: Build Verification
-    strategy:
-      matrix:
-        env: [release]
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Cache PlatformIO dependencies
+      - name: Cache PlatformIO
         uses: actions/cache@v4
         with:
-          path: |
-            ~/.platformio/.cache
-            ~/.platformio/penv
-          key: ${{ runner.os }}-pio-${{ matrix.env }}-${{ hashFiles('**/platformio.ini') }}
-          restore-keys: |
-            ${{ runner.os }}-pio-${{ matrix.env }}-
+          path: ~/.platformio
+          key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
+          restore-keys: ${{ runner.os }}-pio-
 
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.11'
 
-      - name: Install PlatformIO Core
+      - name: Install PlatformIO
         run: pip install --upgrade platformio
 
-      - name: Build ${{ matrix.env }}
-        run: pio run -e ${{ matrix.env }}
+      - name: Build Release
+        run: pio run -e release
 
-      - name: Check program size
-        run: pio run -e ${{ matrix.env }} --target size
-
-      - name: Upload firmware artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: firmware-${{ matrix.env }}
-          path: |
-            .pio/build/${{ matrix.env }}/*.bin
-            .pio/build/${{ matrix.env }}/*.elf
+      - name: Check Program Size
+        run: pio run -e release --target size

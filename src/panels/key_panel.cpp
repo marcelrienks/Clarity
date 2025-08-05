@@ -36,6 +36,11 @@ void KeyPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
     }
 
     screen_ = display->createScreen();
+    
+    // Apply current theme immediately after screen creation
+    if (styleService_) {
+        styleService_->applyThemeToScreen(screen_);
+    }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Initialize sensor and get current key state
@@ -64,6 +69,11 @@ void KeyPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio,
 
     log_v("loading...");
     lv_screen_load(screen_);
+    
+    // Always apply current theme to the screen when loading (ensures theme is current)
+    if (styleService_) {
+        styleService_->applyThemeToScreen(screen_);
+    }
 }
 
 /// @brief Update the key panel with current sensor data

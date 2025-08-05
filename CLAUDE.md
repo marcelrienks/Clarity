@@ -79,3 +79,8 @@ Target hardware: 240x240 round GC9A01 display
 ## Development Notes
 
 - Local testing is done via a tool called wokwi to emulate a display, but it can only offer a square display rather than the round display that this application is intended for. And a limitation of that display is it renders the image inverted horizontally
+
+## Testing Limitations
+
+- There seems to be some type of limitation with PlatformIO where build filters are not taken into account with unity tests and they will always try to link multiple test files together.
+- There is an issue with PlatformIO and Unity where test files within nested directories are not found and only tests in the root test directory are run

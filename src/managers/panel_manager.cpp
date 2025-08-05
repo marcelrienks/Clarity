@@ -1,6 +1,7 @@
 #include "managers/panel_manager.h"
 #include "utilities/ticker.h"
 #include <esp32-hal-log.h>
+#include <cstring>
 
 // Core Functionality Methods
 

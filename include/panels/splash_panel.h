@@ -48,9 +48,9 @@ public:
 private:
     // Private Data Members
     // Panel specific constants
-    static constexpr const int _ANIMATION_TIME = 2000;
-    static constexpr const int _DELAY_TIME = 200;
-    static constexpr const int _DISPLAY_TIME = 850;
+    static constexpr const int _ANIMATION_TIME = 900;
+    static constexpr const int _DELAY_TIME = 100;
+    static constexpr const int _DISPLAY_TIME = 600;
 
     // Dependencies
     IGpioProvider *gpioProvider_;

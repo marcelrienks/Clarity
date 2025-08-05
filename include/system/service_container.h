@@ -104,6 +104,9 @@ private:
     /// Map of service type to registration information
     std::unordered_map<std::string, ServiceRegistration> services_;
     
+    /// Map for test-style shared_ptr services
+    std::unordered_map<std::string, std::shared_ptr<void>> testServices_;
+    
 public:
     ServiceContainer() = default;
     virtual ~ServiceContainer() = default;
@@ -113,6 +116,9 @@ public:
     ServiceContainer &operator=(const ServiceContainer &) = delete;
     ServiceContainer(ServiceContainer &&) = delete;
     ServiceContainer &operator=(ServiceContainer &&) = delete;
+    
+    // Static singleton instance method
+    static ServiceContainer& getInstance();
     
     // Public interface implementation
     void clear();
@@ -135,6 +141,25 @@ public:
         registerSingletonImpl(typeId, 
                              [factory]() -> void * { return factory().release(); },
                              [](void *ptr) { delete static_cast<T *>(ptr); });
+    }
+    
+    // Methods expected by tests
+    template<typename T>
+    void registerService(const std::string& name, std::shared_ptr<T> service) {
+        registerServiceImpl(name, service);
+    }
+    
+    template<typename T>
+    std::shared_ptr<T> getService(const std::string& name) {
+        return getServiceImpl<T>(name);
+    }
+    
+    bool hasService(const std::string& name) const {
+        return hasServiceImpl(name);
+    }
+    
+    void unregisterService(const std::string& name) {
+        unregisterServiceImpl(name);
     }
 
 private:
@@ -160,6 +185,16 @@ protected:
     void *createImpl(const char *typeId);
     
     bool isRegisteredImpl(const char *typeId) const;
+    
+    // Implementation methods for test interface
+    template<typename T>
+    void registerServiceImpl(const std::string& name, std::shared_ptr<T> service);
+    
+    template<typename T>
+    std::shared_ptr<T> getServiceImpl(const std::string& name);
+    
+    bool hasServiceImpl(const std::string& name) const;
+    void unregisterServiceImpl(const std::string& name);
 
 private:
     /**
@@ -196,3 +231,18 @@ template<> constexpr const char *ServiceContainer::getTypeId<IStyleService>() { 
 template<> constexpr const char *ServiceContainer::getTypeId<IPreferenceService>() { return "IPreferenceService"; }
 template<> constexpr const char *ServiceContainer::getTypeId<IPanelService>() { return "IPanelService"; }
 template<> constexpr const char *ServiceContainer::getTypeId<ITriggerService>() { return "ITriggerService"; }
+
+// Template implementations for test interface
+template<typename T>
+void ServiceContainer::registerServiceImpl(const std::string& name, std::shared_ptr<T> service) {
+    testServices_[name] = std::static_pointer_cast<void>(service);
+}
+
+template<typename T>
+std::shared_ptr<T> ServiceContainer::getServiceImpl(const std::string& name) {
+    auto it = testServices_.find(name);
+    if (it != testServices_.end()) {
+        return std::static_pointer_cast<T>(it->second);
+    }
+    return nullptr;
+}
