@@ -1,0 +1,498 @@
+/**
+ * @file test_lock_sensor.cpp
+ * @brief Comprehensive unit tests for LockSensor class
+ * 
+ * @details Tests all aspects of lock sensor functionality including:
+ * - Initialization and GPIO configuration
+ * - Digital input reading (engaged/disengaged states)
+ * - Boolean output verification
+ * - Pin mode configuration
+ * - State change detection
+ * - Edge cases and error handling
+ * 
+ * Success Criteria:
+ * - 100% test pass rate
+ * - All lock states covered (engaged/disengaged)
+ * - GPIO configuration properly tested
+ * - Performance requirements met
+ * - Hardware abstraction validated
+ */
+
+#include "unity.h"
+#include "unity_config.h"
+#include "sensors/lock_sensor.h"
+#include "mocks/mock_gpio_provider.h"
+#include "utilities/test_helpers.h"
+#include "hardware/gpio_pins.h"
+#include <memory>
+#include <thread>
+#include <chrono>
+
+// Test fixture globals
+static std::unique_ptr<MockGpioProvider> mockGpio;
+static std::unique_ptr<LockSensor> sensor;
+
+void setUp(void) {
+    // Create fresh mock and sensor for each test
+    mockGpio = TestHelpers::createMockGpioProvider();
+    sensor = std::make_unique<LockSensor>(mockGpio.get());
+}
+
+void tearDown(void) {
+    // Clean up after each test
+    sensor.reset();
+    mockGpio.reset();
+}
+
+// ============================================================================
+// INITIALIZATION TESTS
+// ============================================================================
+
+void test_lock_sensor_initialization() {
+    // Given: Fresh sensor and mock
+    // When: Sensor is initialized
+    sensor->init();
+    
+    // Then: GPIO pin should be configured properly
+    TEST_ASSERT_TRUE(mockGpio->wasPinModeSet(gpio_pins::LOCK));
+    
+    // Verify pin mode is set to INPUT_PULLDOWN
+    TEST_ASSERT_EQUAL_INT(INPUT_PULLDOWN, mockGpio->getPinMode(gpio_pins::LOCK));
+    
+    // Sensor should be ready to provide readings
+    Reading reading = sensor->getReading();
+    TEST_ASSERT_FALSE(std::holds_alternative<std::monostate>(reading));
+    TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading));
+}
+
+void test_lock_sensor_constructor() {
+    // Given: Valid GPIO provider
+    // When: Sensor is constructed
+    LockSensor testSensor(mockGpio.get());
+    
+    // Then: Construction succeeds without throwing
+    TEST_ASSERT_NOT_NULL(&testSensor);
+}
+
+void test_lock_sensor_pin_mode_configuration() {
+    // Given: Fresh sensor
+    // When: Sensor is initialized
+    sensor->init();
+    
+    // Then: Lock pin should be configured as INPUT_PULLDOWN
+    TEST_ASSERT_EQUAL_INT(INPUT_PULLDOWN, mockGpio->getPinMode(gpio_pins::LOCK));
+    
+    // Verify pinMode was actually called
+    TEST_ASSERT_TRUE(mockGpio->wasPinModeSet(gpio_pins::LOCK));
+}
+
+// ============================================================================
+// LOCK STATE TESTS
+// ============================================================================
+
+void test_lock_sensor_lock_engaged_state() {
+    // Given: Lock pin HIGH (lock engaged)
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
+    sensor->init();
+    
+    // When: Reading is obtained
+    Reading reading = sensor->getReading();
+    
+    // Then: Should return true (lock engaged)
+    TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading));
+    TestHelpers::assertReadingBool(reading, true);
+}
+
+void test_lock_sensor_lock_disengaged_state() {
+    // Given: Lock pin LOW (lock disengaged)
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
+    sensor->init();
+    
+    // When: Reading is obtained
+    Reading reading = sensor->getReading();
+    
+    // Then: Should return false (lock disengaged)
+    TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading));
+    TestHelpers::assertReadingBool(reading, false);
+}
+
+// ============================================================================
+// STATE TRANSITION TESTS
+// ============================================================================
+
+void test_lock_sensor_state_transition_disengaged_to_engaged() {
+    // Given: Initial state is lock disengaged
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
+    sensor->init();
+    Reading initialReading = sensor->getReading();
+    TestHelpers::assertReadingBool(initialReading, false);
+    
+    // When: Lock becomes engaged
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
+    Reading newReading = sensor->getReading();
+    
+    // Then: Reading should change to engaged
+    TestHelpers::assertReadingBool(newReading, true);
+    TEST_ASSERT_NOT_EQUAL(std::get<bool>(initialReading), std::get<bool>(newReading));
+}
+
+void test_lock_sensor_state_transition_engaged_to_disengaged() {
+    // Given: Initial state is lock engaged
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
+    sensor->init();
+    Reading initialReading = sensor->getReading();
+    TestHelpers::assertReadingBool(initialReading, true);
+    
+    // When: Lock becomes disengaged
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
+    Reading newReading = sensor->getReading();
+    
+    // Then: Reading should change to disengaged
+    TestHelpers::assertReadingBool(newReading, false);
+    TEST_ASSERT_NOT_EQUAL(std::get<bool>(initialReading), std::get<bool>(newReading));
+}
+
+void test_lock_sensor_rapid_state_changes() {
+    // Test rapid state changes to verify stability
+    sensor->init();
+    
+    // Simulate rapid lock/unlock cycles
+    std::vector<bool> testStates = {false, true, false, true, false, true, true, false};
+    
+    for (bool lockState : testStates) {
+        TestHelpers::configureMockForLockSensor(mockGpio.get(), lockState);
+        Reading reading = sensor->getReading();
+        
+        // Each reading should correctly reflect the current state
+        TestHelpers::assertReadingBool(reading, lockState);
+    }
+}
+
+// ============================================================================
+// GPIO PIN VALIDATION TESTS
+// ============================================================================
+
+void test_lock_sensor_gpio_pin_usage() {
+    // Given: Initialized sensor
+    sensor->init();
+    
+    // When: Reading is obtained
+    sensor->getReading();
+    
+    // Then: Should have read from lock pin
+    TEST_ASSERT_TRUE(mockGpio->getDigitalReadCount(gpio_pins::LOCK) > 0);
+    
+    // Should not have read from other pins
+    TEST_ASSERT_EQUAL_INT(0, mockGpio->getDigitalReadCount(gpio_pins::KEY_PRESENT));
+    TEST_ASSERT_EQUAL_INT(0, mockGpio->getDigitalReadCount(gpio_pins::KEY_NOT_PRESENT));
+    TEST_ASSERT_EQUAL_INT(0, mockGpio->getDigitalReadCount(gpio_pins::LIGHTS));
+    TEST_ASSERT_EQUAL_INT(0, mockGpio->getAnalogReadCount(gpio_pins::OIL_PRESSURE));
+    TEST_ASSERT_EQUAL_INT(0, mockGpio->getAnalogReadCount(gpio_pins::OIL_TEMPERATURE));
+}
+
+void test_lock_sensor_correct_pin_number() {
+    // Verify sensor uses the correct GPIO pin number
+    sensor->init();
+    sensor->getReading();
+    
+    // Should have accessed the LOCK pin specifically
+    TEST_ASSERT_TRUE(mockGpio->getDigitalReadCount(gpio_pins::LOCK) > 0);
+    
+    // Verify the pin number is as expected (from gpio_pins.h: LOCK = 27)
+    TEST_ASSERT_EQUAL_INT(27, gpio_pins::LOCK);
+}
+
+// ============================================================================
+// READING CONSISTENCY TESTS
+// ============================================================================
+
+void test_lock_sensor_multiple_readings_same_state() {
+    // Test that multiple readings with same pin state return consistent results
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
+    sensor->init();
+    
+    // Take multiple readings
+    std::vector<Reading> readings;
+    for (int i = 0; i < 5; i++) {
+        readings.push_back(sensor->getReading());
+    }
+    
+    // All should be identical
+    for (size_t i = 1; i < readings.size(); i++) {
+        TEST_ASSERT_EQUAL(std::get<bool>(readings[0]), std::get<bool>(readings[i]));
+    }
+    
+    // All should be true (engaged)
+    for (const auto& reading : readings) {
+        TestHelpers::assertReadingBool(reading, true);
+    }
+}
+
+void test_lock_sensor_reading_reflects_current_pin_state() {
+    // Verify reading always reflects current pin state
+    sensor->init();
+    
+    // Test alternating states
+    for (int i = 0; i < 10; i++) {
+        bool expectedState = (i % 2 == 0);
+        TestHelpers::configureMockForLockSensor(mockGpio.get(), expectedState);
+        
+        Reading reading = sensor->getReading();
+        TestHelpers::assertReadingBool(reading, expectedState);
+    }
+}
+
+// ============================================================================
+// BOUNDARY AND EDGE CASE TESTS
+// ============================================================================
+
+void test_lock_sensor_pin_state_boundary_values() {
+    // Test explicit HIGH state
+    mockGpio->setDigitalReading(gpio_pins::LOCK, true);
+    sensor->init();
+    Reading highReading = sensor->getReading();
+    TestHelpers::assertReadingBool(highReading, true);
+    
+    // Test explicit LOW state
+    mockGpio->setDigitalReading(gpio_pins::LOCK, false);
+    Reading lowReading = sensor->getReading();
+    TestHelpers::assertReadingBool(lowReading, false);
+}
+
+void test_lock_sensor_multiple_initialization() {
+    // Test that multiple init() calls don't cause issues
+    sensor->init();
+    Reading reading1 = sensor->getReading();
+    
+    sensor->init(); // Second initialization  
+    Reading reading2 = sensor->getReading();
+    
+    // Should still work correctly
+    TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading1));
+    TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading2));
+    
+    // Results should be consistent
+    TEST_ASSERT_EQUAL(std::get<bool>(reading1), std::get<bool>(reading2));
+}
+
+void test_lock_sensor_initialization_without_prior_pin_setup() {
+    // Test initialization on fresh mock (no prior pin configuration)
+    auto freshMock = TestHelpers::createMockGpioProvider();
+    LockSensor freshSensor(freshMock.get());
+    
+    // Should initialize successfully
+    freshSensor.init();
+    Reading reading = freshSensor.getReading();
+    
+    // Should provide valid boolean reading
+    TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading));
+}
+
+// ============================================================================
+// PERFORMANCE TESTS
+// ============================================================================
+
+void test_lock_sensor_performance_reading_speed() {
+    // Given: Initialized sensor
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
+    sensor->init();
+    
+    // When: Multiple rapid readings are taken
+    auto start = std::chrono::steady_clock::now();
+    
+    for (int i = 0; i < 100; i++) {
+        Reading reading = sensor->getReading();
+        TEST_ASSERT_TRUE(std::holds_alternative<bool>(reading));
+    }
+    
+    auto end = std::chrono::steady_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::microseconds>(end - start);
+    
+    // Then: Should complete quickly (< 1ms total for 100 reads)
+    TEST_ASSERT_TRUE(duration.count() < 1000); // Less than 1ms
+}
+
+void test_lock_sensor_gpio_read_efficiency() {
+    // Test that each getReading() call results in exactly one GPIO read
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
+    sensor->init();
+    
+    int initialReadCount = mockGpio->getDigitalReadCount(gpio_pins::LOCK);
+    
+    // Make 5 reading calls
+    for (int i = 0; i < 5; i++) {
+        sensor->getReading();
+    }
+    
+    int finalReadCount = mockGpio->getDigitalReadCount(gpio_pins::LOCK);
+    
+    // Should have made exactly 5 additional reads
+    TEST_ASSERT_EQUAL_INT(5, finalReadCount - initialReadCount);
+}
+
+void test_lock_sensor_memory_usage() {
+    // Verify no memory leaks during operation
+    TEST_ASSERT_NO_MEMORY_LEAK();
+    
+    // Create and destroy multiple sensors
+    for (int i = 0; i < 10; i++) {
+        auto testMock = TestHelpers::createMockGpioProvider();
+        LockSensor testSensor(testMock.get());
+        testSensor.init();
+        testSensor.getReading();
+    }
+    
+    TEST_ASSERT_NO_MEMORY_LEAK();
+}
+
+// ============================================================================
+// INTEGRATION TESTS
+// ============================================================================
+
+void test_lock_sensor_realistic_scenario() {
+    // Simulate realistic lock usage scenario
+    sensor->init();
+    
+    // Initial state: Lock disengaged (vehicle unlocked)
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
+    Reading unlockedReading = sensor->getReading();
+    TestHelpers::assertReadingBool(unlockedReading, false);
+    
+    // Driver engages central locking
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
+    Reading lockedReading = sensor->getReading();
+    TestHelpers::assertReadingBool(lockedReading, true);
+    
+    // Driver unlocks vehicle
+    TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
+    Reading unlockedAgainReading = sensor->getReading();
+    TestHelpers::assertReadingBool(unlockedAgainReading, false);
+    
+    // Verify state transitions occurred
+    TEST_ASSERT_NOT_EQUAL(std::get<bool>(unlockedReading), std::get<bool>(lockedReading));
+    TEST_ASSERT_EQUAL(std::get<bool>(unlockedReading), std::get<bool>(unlockedAgainReading));
+}
+
+void test_lock_sensor_automotive_lock_cycles() {
+    // Test typical automotive lock/unlock cycles
+    sensor->init();
+    
+    // Simulate multiple lock/unlock cycles as might occur during normal use
+    std::vector<bool> lockCycle = {
+        false, // Start unlocked
+        true,  // Lock when leaving vehicle
+        false, // Unlock when returning
+        true,  // Lock again when leaving
+        true,  // Lock remains engaged
+        false, // Unlock for passenger
+        false, // Remains unlocked
+        true   // Lock for security
+    };
+    
+    for (size_t i = 0; i < lockCycle.size(); i++) {
+        TestHelpers::configureMockForLockSensor(mockGpio.get(), lockCycle[i]);
+        Reading reading = sensor->getReading();
+        
+        TestHelpers::assertReadingBool(reading, lockCycle[i]);
+        
+        // Log the state for debugging if needed
+        bool isLocked = std::get<bool>(reading);
+        // printf("Cycle %zu: Lock %s\n", i, isLocked ? "ENGAGED" : "DISENGAGED");
+    }
+}
+
+void test_lock_sensor_debouncing_simulation() {
+    // Test behavior during potential bouncing (although this sensor doesn't implement debouncing)
+    sensor->init();
+    
+    // Simulate bouncing signal
+    std::vector<bool> bouncingSignal = {false, true, false, true, true, true, false, false};
+    
+    for (bool state : bouncingSignal) {
+        TestHelpers::configureMockForLockSensor(mockGpio.get(), state);
+        Reading reading = sensor->getReading();
+        
+        // Should immediately reflect current pin state (no debouncing)
+        TestHelpers::assertReadingBool(reading, state);
+    }
+}
+
+// ============================================================================
+// ERROR HANDLING TESTS
+// ============================================================================
+
+void test_lock_sensor_gpio_provider_interaction() {
+    // Test interaction with GPIO provider is correct
+    sensor->init();
+    
+    // Verify correct method calls are made
+    sensor->getReading();
+    
+    // Should have called digitalRead on lock pin
+    TEST_ASSERT_TRUE(mockGpio->getDigitalReadCount(gpio_pins::LOCK) > 0);
+    
+    // Should have called pinMode during init
+    TEST_ASSERT_TRUE(mockGpio->wasPinModeSet(gpio_pins::LOCK));
+    
+    // Should not have called analog functions
+    TEST_ASSERT_EQUAL_INT(0, mockGpio->getAnalogReadCount(gpio_pins::LOCK));
+}
+
+void test_lock_sensor_pin_mode_persistence() {
+    // Test that pin mode remains configured after multiple readings
+    sensor->init();
+    
+    // Take several readings
+    for (int i = 0; i < 5; i++) {
+        sensor->getReading();
+        
+        // Pin mode should remain INPUT_PULLDOWN
+        TEST_ASSERT_EQUAL_INT(INPUT_PULLDOWN, mockGpio->getPinMode(gpio_pins::LOCK));
+    }
+}
+
+// ============================================================================
+// TEST RUNNER SETUP
+// ============================================================================
+
+void runLockSensorTests() {
+    RUN_TEST(test_lock_sensor_initialization);
+    RUN_TEST(test_lock_sensor_constructor);
+    RUN_TEST(test_lock_sensor_pin_mode_configuration);
+    
+    RUN_TEST(test_lock_sensor_lock_engaged_state);
+    RUN_TEST(test_lock_sensor_lock_disengaged_state);
+    
+    RUN_TEST(test_lock_sensor_state_transition_disengaged_to_engaged);
+    RUN_TEST(test_lock_sensor_state_transition_engaged_to_disengaged);
+    RUN_TEST(test_lock_sensor_rapid_state_changes);
+    
+    RUN_TEST(test_lock_sensor_gpio_pin_usage);
+    RUN_TEST(test_lock_sensor_correct_pin_number);
+    
+    RUN_TEST(test_lock_sensor_multiple_readings_same_state);
+    RUN_TEST(test_lock_sensor_reading_reflects_current_pin_state);
+    
+    RUN_TEST(test_lock_sensor_pin_state_boundary_values);
+    RUN_TEST(test_lock_sensor_multiple_initialization);
+    RUN_TEST(test_lock_sensor_initialization_without_prior_pin_setup);
+    
+    RUN_TEST(test_lock_sensor_performance_reading_speed);
+    RUN_TEST(test_lock_sensor_gpio_read_efficiency);
+    RUN_TEST(test_lock_sensor_memory_usage);
+    
+    RUN_TEST(test_lock_sensor_realistic_scenario);
+    RUN_TEST(test_lock_sensor_automotive_lock_cycles);
+    RUN_TEST(test_lock_sensor_debouncing_simulation);
+    
+    RUN_TEST(test_lock_sensor_gpio_provider_interaction);
+    RUN_TEST(test_lock_sensor_pin_mode_persistence);
+}
+
+#ifdef UNITY_MAIN
+int main() {
+    UNITY_BEGIN();
+    runLockSensorTests();
+    return UNITY_END();
+}
+#endif
