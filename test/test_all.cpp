@@ -3962,13 +3962,12 @@ void test_main_application_integration_flow(void) {
 int main() {
     UNITY_BEGIN();
     
-    printf("\n=== Clarity Complete Test Suite (Phase 1 & 2) ===\n");
-    printf("Running all sensor tests and manager tests...\n\n");
+#ifdef TEST_SENSORS_ONLY
+    printf("\n=== Clarity Sensor Test Suite ===\n");
+    printf("Running sensor layer tests...\n\n");
     
-    // Phase 1: Enhanced Sensor Tests
-    printf("--- Phase 1: Core & Enhanced Sensor Tests ---\n");
-    
-    // Oil Pressure Sensor Tests
+    // Phase 1: Sensor Tests (21 tests)
+    printf("--- Oil Pressure Sensor Tests ---\n");
     RUN_TEST(test_oil_pressure_sensor_initialization);
     RUN_TEST(test_oil_pressure_sensor_constructor);
     RUN_TEST(test_oil_pressure_sensor_adc_mapping_minimum);
@@ -3976,33 +3975,38 @@ int main() {
     RUN_TEST(test_oil_pressure_sensor_adc_mapping_boundary_conditions);
     RUN_TEST(test_oil_pressure_sensor_delta_updates_comprehensive);
     
-    // Oil Temperature Sensor Tests
+    printf("--- Oil Temperature Sensor Tests ---\n");
     RUN_TEST(test_oil_temperature_sensor_initialization);
     RUN_TEST(test_oil_temperature_sensor_adc_mapping_minimum);
     RUN_TEST(test_oil_temperature_sensor_adc_mapping_maximum);
     RUN_TEST(test_oil_temperature_sensor_delta_updates);
     RUN_TEST(test_oil_temperature_sensor_comprehensive_mapping);
     
-    // Key Sensor Tests
+    printf("--- Key Sensor Tests ---\n");
     RUN_TEST(test_key_sensor_initialization_comprehensive);
     RUN_TEST(test_key_sensor_state_combinations);
     RUN_TEST(test_key_sensor_present_state);
     RUN_TEST(test_key_sensor_absent_state);
     
-    // Lock Sensor Tests
+    printf("--- Lock Sensor Tests ---\n");
     RUN_TEST(test_lock_sensor_initialization);
     RUN_TEST(test_lock_sensor_locked_state);
     RUN_TEST(test_lock_sensor_unlocked_state);
     
-    // Light Sensor Tests
+    printf("--- Light Sensor Tests ---\n");
     RUN_TEST(test_light_sensor_initialization);
     RUN_TEST(test_light_sensor_day_mode);
     RUN_TEST(test_light_sensor_night_mode);
     
-    // Phase 2: Manager Layer Tests
-    printf("\n--- Phase 2: Manager Layer Tests ---\n");
+    printf("\n=== Sensor Test Suite Complete ===\n");
+    printf("Total: 21 sensor tests\n");
+
+#elif defined(TEST_MANAGERS_CORE_ONLY)
+    printf("\n=== Clarity Manager Core Test Suite ===\n");
+    printf("Running core manager layer tests...\n\n");
     
-    // TriggerManager Tests
+    // TriggerManager Tests (6 tests)
+    printf("--- TriggerManager Tests ---\n");
     RUN_TEST(test_trigger_manager_initialization);
     RUN_TEST(test_trigger_manager_key_trigger_activation);
     RUN_TEST(test_trigger_manager_lock_trigger_activation);
@@ -4010,14 +4014,13 @@ int main() {
     RUN_TEST(test_trigger_manager_priority_resolution);
     RUN_TEST(test_trigger_manager_startup_panel_override);
     
-    // Mock Service Tests
+    // Mock Service Tests (2 tests)
+    printf("--- Mock Service Tests ---\n");
     RUN_TEST(test_panel_service_mock_functionality);
     RUN_TEST(test_style_service_mock_functionality);
     
-    // Real Manager Tests
-    printf("\n--- Phase 2: Real Manager Implementation Tests ---\n");
-    
-    // PanelManager Tests
+    // PanelManager Tests (7 tests)
+    printf("--- PanelManager Tests ---\n");
     RUN_TEST(test_panel_manager_initialization);
     RUN_TEST(test_panel_manager_panel_lifecycle);
     RUN_TEST(test_panel_manager_splash_transitions);
@@ -4026,14 +4029,23 @@ int main() {
     RUN_TEST(test_panel_manager_trigger_integration);
     RUN_TEST(test_panel_manager_ui_state_management);
     
-    // StyleManager Tests
+    printf("\n=== Manager Core Test Suite Complete ===\n");
+    printf("Total: 15 core manager tests\n");
+
+#elif defined(TEST_MANAGERS_EXTENDED_ONLY)
+    printf("\n=== Clarity Manager Extended Test Suite ===\n");
+    printf("Running extended manager layer tests...\n\n");
+    
+    // StyleManager Tests (5 tests)
+    printf("--- StyleManager Tests ---\n");
     RUN_TEST(test_style_manager_initialization);
     RUN_TEST(test_style_manager_theme_switching);
     RUN_TEST(test_style_manager_theme_application);
     RUN_TEST(test_style_manager_style_getters);
     RUN_TEST(test_style_manager_theme_persistence);
     
-    // PreferenceManager Tests
+    // PreferenceManager Tests (8 tests)
+    printf("--- PreferenceManager Tests ---\n");
     RUN_TEST(test_preference_manager_initialization);
     RUN_TEST(test_preference_manager_default_config_creation);
     RUN_TEST(test_preference_manager_string_operations);
@@ -4043,8 +4055,15 @@ int main() {
     RUN_TEST(test_preference_manager_corruption_recovery);
     RUN_TEST(test_preference_manager_clear_operations);
     
+    printf("\n=== Manager Extended Test Suite Complete ===\n");
+    printf("Total: 13 extended manager tests\n");
+
+#elif defined(TEST_COMPONENTS_ONLY)
+    printf("\n=== Clarity Component Test Suite ===\n");
+    printf("Running component layer tests...\n\n");
+    
     // Phase 3: Component Layer Tests
-    printf("\n--- Phase 3: Component Layer Tests ---\n");
+    printf("--- Phase 3: Component Layer Tests ---\n");
     
     // OEM Oil Component Tests
     RUN_TEST(test_oem_oil_pressure_component_initialization);
@@ -4080,13 +4099,18 @@ int main() {
     RUN_TEST(test_component_data_flow_integration);
     RUN_TEST(test_component_theme_coordination);
     
-    // ====================================================================
-    // PHASE 4: INTEGRATION & SCENARIO TESTS
-    // ====================================================================
+    printf("\n=== Component Test Suite Complete ===\n");
+    printf("Total: 23 component tests\n");
+
+#elif defined(TEST_INTEGRATION_ONLY)
+    printf("\n=== Clarity Integration Test Suite ===\n");
+    printf("Running integration & scenario tests...\n\n");
     
-    printf("\n=== Phase 4: Integration & Scenario Tests ===\n");
+    // Phase 4: Integration & Scenario Tests
+    printf("--- Phase 4: Integration & Scenario Tests ---\n");
     
     // 4.1 Scenario-Based Integration Tests
+    printf("--- Scenario-Based Integration Tests ---\n");
     RUN_TEST(test_major_scenario_complete_system);
     RUN_TEST(test_startup_scenario_default);
     RUN_TEST(test_startup_scenario_with_oil_data);
@@ -4101,6 +4125,7 @@ int main() {
     RUN_TEST(test_theme_change_scenario_startup);
     
     // 4.2 System Integration Tests
+    printf("--- System Integration Tests ---\n");
     RUN_TEST(test_service_container_dependency_injection);
     RUN_TEST(test_service_container_lifecycle_management);
     RUN_TEST(test_service_container_cross_service_communication);
@@ -4110,11 +4135,15 @@ int main() {
     RUN_TEST(test_system_state_persistence);
     RUN_TEST(test_system_performance_under_load);
     
-    // ====================================================================
-    // PHASE 5: INFRASTRUCTURE TESTS (Nice-to-Have Coverage)
-    // ====================================================================
+    printf("\n=== Integration Test Suite Complete ===\n");
+    printf("Total: 20 integration tests\n");
+
+#elif defined(TEST_INFRASTRUCTURE_ONLY)  
+    printf("\n=== Clarity Infrastructure Test Suite ===\n");
+    printf("Running infrastructure & low-level tests...\n\n");
     
-    printf("\n=== Phase 5: Infrastructure & Low-Level Tests ===\n");
+    // Phase 5: Infrastructure Tests (Nice-to-Have Coverage) 
+    printf("--- Phase 5: Infrastructure & Low-Level Tests ---\n");
     
     // 5.1 Device Layer Tests
     printf("--- Device Layer Tests ---\n");
@@ -4149,13 +4178,22 @@ int main() {
     RUN_TEST(test_main_application_error_resilience);
     RUN_TEST(test_main_application_integration_flow);
     
-    printf("\n=== Complete Test Suite Finished ===\n");
-    printf("Phase 1: Complete core sensor tests (17) + enhanced patterns (4) = 21 tests\n");
-    printf("Phase 2: Complete manager layer tests (TriggerManager + Real Managers) = 28 tests\n");
-    printf("Phase 3: Complete component layer tests (UI Logic) = 23 tests\n");
-    printf("Phase 4: Complete integration & scenario tests = 20 tests\n");
-    printf("Phase 5: Infrastructure & low-level tests = 21 tests\n");
+    printf("\n=== Infrastructure Test Suite Complete ===\n");
+    printf("Total: 21 infrastructure tests\n");
+
+#else
+    // Default: Run all tests (for backward compatibility)
+    printf("\n=== Clarity Complete Test Suite ===\n");
+    printf("Running ALL tests - this may exceed Unity's 37-test limit!\n\n");
+    printf("Use specific test environments instead:\n");
+    printf("  pio test -e test-sensors           (21 tests)\n");
+    printf("  pio test -e test-managers-core     (15 tests)\n");
+    printf("  pio test -e test-managers-extended (13 tests)\n"); 
+    printf("  pio test -e test-components        (23 tests)\n");
+    printf("  pio test -e test-integration       (20 tests)\n");
+    printf("  pio test -e test-infrastructure    (21 tests)\n");
     printf("Total: 113 comprehensive tests covering ALL system layers\n");
+#endif
     
     return UNITY_END();
 }

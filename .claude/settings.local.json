@@ -47,7 +47,9 @@
       "Bash(powershell.exe:*)",
       "WebFetch(domain:docs.platformio.org)",
       "WebFetch(domain:docs.platformio.org)",
-      "WebFetch(domain:piolabs.com)"
+      "WebFetch(domain:piolabs.com)",
+      "Bash(./run_all_tests.sh)",
+      "Bash(bash:*)"
     ],
     "deny": []
   }

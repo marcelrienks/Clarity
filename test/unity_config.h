@@ -6,6 +6,10 @@
 // Unity Framework Configuration for Clarity Testing
 // This file configures Unity testing framework for ESP32 and native environments
 
+// ============================================================================
+// STANDARD UNITY CONFIGURATION  
+// ============================================================================
+
 // Enable floating point support for sensor value testing
 #ifndef UNITY_INCLUDE_DOUBLE
 #define UNITY_INCLUDE_DOUBLE
@@ -15,11 +19,11 @@
 // Enable 64-bit integer support for timestamp testing
 #define UNITY_INCLUDE_64
 
-// Configure test output format
-#define UNITY_OUTPUT_CHAR(a) putchar(a)
+// Configure test output format with improved buffering
+#define UNITY_OUTPUT_CHAR(a) do { putchar(a); fflush(stdout); } while(0)
 #define UNITY_OUTPUT_FLUSH() fflush(stdout)
 
-// Test timeout configuration (prevent infinite loops)
+// Test lifecycle configuration
 #define UNITY_OUTPUT_START() printf("Starting Unity Tests...\n")
 #define UNITY_OUTPUT_COMPLETE() printf("Unity Tests Complete.\n")
 
