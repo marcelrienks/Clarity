@@ -1,0 +1,45 @@
+🚗 Clarity Automotive Gauge - Wokwi Integration Tests
+==================================================
+[0;34m📦 Building firmware...[0m
+Processing debug-local (platform: espressif32; board: nodemcu-32s; framework: arduino)
+--------------------------------------------------------------------------------
+Verbose mode can be enabled via `-v, --verbose` option
+CONFIGURATION: https://docs.platformio.org/page/boards/espressif32/nodemcu-32s.html
+PLATFORM: Espressif 32 (6.12.0) > NodeMCU-32S
+HARDWARE: ESP32 240MHz, 320KB RAM, 4MB Flash
+DEBUG: Current (cmsis-dap) External (cmsis-dap, esp-bridge, esp-prog, iot-bus-jtag, jlink, minimodule, olimex-arm-usb-ocd, olimex-arm-usb-ocd-h, olimex-arm-usb-tiny-h, olimex-jtag-tiny, tumpa)
+PACKAGES: 
+ - framework-arduinoespressif32 @ 3.20017.241212+sha.dcc1105b 
+ - tool-esptoolpy @ 2.40900.0 (4.9.0) 
+ - toolchain-xtensa-esp32 @ 8.4.0+2021r2-patch5
+LDF: Library Dependency Finder -> https://bit.ly/configure-pio-ldf
+LDF Modes: Finder ~ chain, Compatibility ~ soft
+Found 36 compatible libraries
+Scanning dependencies...
+Dependency Graph
+|-- lvgl @ 9.3.0
+|-- LovyanGFX @ 1.2.7
+|-- ArduinoJson @ 7.4.2
+|-- Preferences @ 2.0.0
+Building in debug mode
+Retrieving maximum program size .pio\build\debug-local\firmware.elf
+Checking size .pio\build\debug-local\firmware.elf
+Advanced Memory Usage is available via "PlatformIO Home > Project Inspect"
+RAM:   [=         ]   7.5% (used 24732 bytes from 327680 bytes)
+Flash: [======    ]  55.6% (used 1166861 bytes from 2097152 bytes)
+========================= [SUCCESS] Took 50.98 seconds =========================
+
+Environment    Status    Duration
+-------------  --------  ------------
+debug-local    SUCCESS   00:00:50.979
+========================= 1 succeeded in 00:00:50.979 =========================
+[0;32m✅ Firmware build successful[0m
+
+[0;34m🧪 Running 10 integration test scenarios...[0m
+
+[1;33m🔧 Running: Basic System Startup[0m
+   Directory: test/wokwi/basic_startup
+[0;32m   ✅ PASSED[0m (27s)
+
+[1;33m🔧 Running: Oil Panel Sensor Testing[0m
+   Directory: test/wokwi/oil_panel_sensors

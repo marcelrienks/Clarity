@@ -3,7 +3,7 @@
 # Wokwi Automated Test Runner for Clarity Automotive Gauge System
 # This script runs all integration test scenarios using Wokwi CLI
 
-set -e  # Exit on any error
+# Note: No 'set -e' to allow script to continue if individual tests fail
 
 echo "🚗 Clarity Automotive Gauge - Wokwi Integration Tests"
 echo "=================================================="
@@ -69,10 +69,11 @@ echo "=======================================" >> test_results/test_summary.txt
 
 # Run each test scenario  
 for scenario_info in "${test_scenarios[@]}"; do
-    # Split scenario info (save/restore IFS to avoid affecting the loop)
-    OLD_IFS="$IFS"
-    IFS=':' read -r scenario_dir scenario_name expect_text <<< "$scenario_info"
-    IFS="$OLD_IFS"
+    # Split scenario info using parameter expansion (more reliable)
+    scenario_dir="${scenario_info%%:*}"
+    temp="${scenario_info#*:}"
+    scenario_name="${temp%%:*}"
+    expect_text="${temp#*:}"
     
     echo -e "${YELLOW}🔧 Running: $scenario_name${NC}"
     echo "   Directory: test/wokwi/$scenario_dir"
@@ -100,7 +101,7 @@ for scenario_info in "${test_scenarios[@]}"; do
         ((passed_tests++))
         
         # Move any screenshots to results directory from test directory
-        if ls test/wokwi/$scenario_dir/*.png 1> /dev/null 2>&1; then
+        if compgen -G "test/wokwi/$scenario_dir/*.png" > /dev/null; then
             mv test/wokwi/$scenario_dir/*.png test_results/$scenario_dir/
         fi
         
@@ -113,8 +114,8 @@ for scenario_info in "${test_scenarios[@]}"; do
         failed_test_names+=("$scenario_name")
         ((failed_tests++))
         
-        # Capture failure screenshots if any
-        if ls test/wokwi/$scenario_dir/*.png 1> /dev/null 2>&1; then
+        # Capture failure screenshots if any  
+        if compgen -G "test/wokwi/$scenario_dir/*.png" > /dev/null; then
             mv test/wokwi/$scenario_dir/*.png test_results/$scenario_dir/
         fi
     fi

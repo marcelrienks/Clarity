@@ -81,7 +81,9 @@
       "Bash(./run_tests_clean.sh)",
       "Bash(diff:*)",
       "Bash(tree:*)",
-      "Bash(./run_wokwi_tests.sh:*)"
+      "Bash(./run_wokwi_tests.sh:*)",
+      "Bash(./debug_wokwi_loop.sh:*)",
+      "Bash(cat:*)"
     ],
     "deny": []
   }
