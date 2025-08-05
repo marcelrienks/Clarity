@@ -6,6 +6,11 @@ on:
   pull_request:
     branches: [ main ]
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
 env:
   PLATFORMIO_CORE_DIR: .platformio
 
@@ -55,7 +60,7 @@ jobs:
       if: always()
       with:
         name: main-test-results
-        path: .pio/build/test/
+        path: .pio/build/test-all/
         retention-days: 30
 
   modular-test-environments:
@@ -142,7 +147,7 @@ jobs:
       if: always()
       with:
         name: integration-test-results
-        path: coverage/
+        path: .pio/build/test-all/
         retention-days: 30
 
   comprehensive-coverage:
@@ -194,8 +199,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: coverage-report
-        path: .pio/build/test/
+        path: .pio/build/test-all/
         retention-days: 90
+      continue-on-error: true
     
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v3
@@ -208,28 +214,33 @@ jobs:
     - name: Comment PR with Coverage
       if: github.event_name == 'pull_request'
       uses: actions/github-script@v6
+      continue-on-error: true
       with:
         script: |
-          const body = `## 🧪 Test Coverage Report
-          
-          | Metric | Coverage | Status |
-          |--------|----------|--------|
-          | Lines | 85.0% | ✅ |
-          | Functions | 95.0% | ✅ |
-          | Branches | 80.0% | ✅ |
-          
-          **Unit Tests:** PASS  
-          **Integration Tests:** PASS
-          
-          [View detailed test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
-          `;
-          
-          github.rest.issues.createComment({
-            issue_number: context.issue.number,
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            body: body
-          });
+          try {
+            const body = `## 🧪 Test Coverage Report
+            
+            | Metric | Coverage | Status |
+            |--------|----------|--------|
+            | Lines | 85.0% | ✅ |
+            | Functions | 95.0% | ✅ |
+            | Branches | 80.0% | ✅ |
+            
+            **Unit Tests:** PASS  
+            **Integration Tests:** PASS
+            
+            [View detailed test results](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+            `;
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+          } catch (error) {
+            console.log('Failed to post PR comment:', error.message);
+          }
 
   mutation-testing:
     name: Mutation Testing
@@ -311,6 +322,7 @@ jobs:
       with:
         name: coverage-report
         path: test-results/
+      continue-on-error: true
     
     - name: Quality Gate Check
       run: |
