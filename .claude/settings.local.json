@@ -49,7 +49,8 @@
       "WebFetch(domain:docs.platformio.org)",
       "WebFetch(domain:piolabs.com)",
       "Bash(./run_all_tests.sh)",
-      "Bash(bash:*)"
+      "Bash(bash:*)",
+      "Bash(./run_all_tests.bat)"
     ],
     "deny": []
   }
