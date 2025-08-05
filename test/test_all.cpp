@@ -3869,29 +3869,6 @@ int main() {
     // Cleanup test environment
     tearDown();
 
-#elif defined(TEST_MANAGERS_EXTENDED_ONLY)
-    printf("\n=== Clarity Manager Extended Test Suite ===\n");
-    printf("Running extended manager layer tests...\n\n");
-    
-    // Initialize test environment
-    setUp();
-    
-    // Extended Manager Tests (13 tests)
-    printf("--- Style Manager Tests ---\n");
-    // Style manager tests would go here when implemented
-    
-    printf("--- Preference Manager Tests ---\n");
-    // Preference manager tests would go here when implemented
-    
-    printf("--- Additional Manager Integration Tests ---\n");
-    // Additional integration tests would go here when implemented
-    
-    printf("\n=== Manager Extended Test Suite Complete ===\n");
-    printf("Total: 13 extended manager tests\n");
-    printf("Note: Extended manager tests not yet implemented\n");
-    
-    // Cleanup test environment
-    tearDown();
 
 #elif defined(TEST_COMPONENTS_ONLY)
     printf("\n=== Clarity Component Test Suite ===\n");
@@ -4036,7 +4013,7 @@ int main() {
 
 #elif defined(TEST_ALL_SUITES)
     printf("\n=== Clarity Complete Test Suite (All Tests) ===\n");
-    printf("Running ALL 113 tests across all layers...\n\n");
+    printf("Running ALL 100 tests across all layers...\n\n");
     
     // Initialize test environment
     setUp();
@@ -4154,7 +4131,7 @@ int main() {
     RUN_TEST(test_main_application_integration_flow);
     
     printf("\n=== Complete Test Suite Finished ===\n");
-    printf("Total: 100 tests executed (13 extended manager tests not yet implemented)\n");
+    printf("Total: 100 tests executed\n");
     
     // Cleanup test environment
     tearDown();
@@ -4166,11 +4143,10 @@ int main() {
     printf("Use specific test environments instead:\n");
     printf("  pio test -e test-sensors           (21 tests)\n");
     printf("  pio test -e test-managers-core     (15 tests)\n");
-    printf("  pio test -e test-managers-extended (13 tests)\n"); 
     printf("  pio test -e test-components        (23 tests)\n");
     printf("  pio test -e test-integration       (20 tests)\n");
     printf("  pio test -e test-infrastructure    (21 tests)\n");
-    printf("Total: 113 comprehensive tests covering ALL system layers\n");
+    printf("Total: 100 comprehensive tests covering ALL system layers\n");
 #endif
     
     return UNITY_END();
