@@ -1,0 +1,56 @@
+version: 1
+name: "Night Theme Startup Test"
+description: "Verify system startup with night theme active from boot"
+timeout: 60000
+
+# This test requires DIP Switch #4 to be ON before simulation starts
+# to activate lights trigger and enable night theme from boot
+
+steps:
+  - name: "System boot with night theme"
+    wait: 2000
+    
+  - name: "Verify night theme initialization"
+    expect_text: "Night"
+    timeout: 3000
+    
+  - name: "Splash screen with night theme"
+    screenshot: "night_splash_screen.png"
+    delay: 1000
+    
+  - name: "Wait for oil panel with night theme"
+    wait: 4000
+    
+  - name: "Verify oil panel night styling"
+    expect_text: "Oil panel"
+    timeout: 2000
+    
+  - name: "Capture night theme oil panel"
+    screenshot: "night_theme_oil_panel.png"
+    delay: 2000
+    
+  - name: "Verify consistent night theme"
+    expect_text: "theme"
+    timeout: 1000
+    optional: true
+
+# Expected behavior:
+# 1. Splash text should be RED (night theme)
+# 2. Oil icons and scale ticks should be RED
+# 3. Night theme applied from first UI render
+# 4. No theme switching during startup
+
+expected_startup_sequence:
+  - "[DEBUG] Trigger lights_state initialized to ACTIVE"
+  - "[DEBUG] Initializing style manager with theme: Night"
+  - "[DEBUG] Switching application theme to: Night"
+
+expect_patterns:
+  - "Night"
+  - "lights_state"
+  - "ACTIVE"
+
+fail_patterns:
+  - "[ERROR]"
+  - "white" # Should not see white theme colors
+  - "Day" # Should not initialize with day theme

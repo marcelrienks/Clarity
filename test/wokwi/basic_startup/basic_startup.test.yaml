@@ -1,0 +1,32 @@
+version: 1
+name: "Basic System Startup Test"
+description: "Verify oil panel loads with default sensor readings and splash screen sequence"
+timeout: 60000
+
+steps:
+  - name: "System boot and initialization"
+    wait: 2000
+    
+  - name: "Wait for splash screen completion"
+    expect_text: "Loading splash panel"
+    timeout: 5000
+    
+  - name: "Verify sensor readings initialization"
+    expect_text: "Updating pressure"
+    timeout: 3000
+    
+  - name: "Capture final startup state"
+    screenshot: "basic_startup_complete.png"
+    delay: 1000
+
+# Expected serial output patterns
+expect_patterns:
+  - "[I][splash_panel.cpp:51] load(): Loading splash panel"
+  - "[I][oem_oil_panel.cpp:178] UpdateOilPressure(): Updating pressure"
+  - "[I][oem_oil_panel.cpp:223] UpdateOilTemperature(): Updating temperature"
+
+# Failure conditions
+fail_patterns:
+  - "[E]"
+  - "Exception"
+  - "Guru Meditation"

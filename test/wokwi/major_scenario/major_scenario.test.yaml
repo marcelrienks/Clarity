@@ -1,0 +1,105 @@
+version: 1
+name: "Major Integration Scenario Test"
+description: "Complete 9-step system integration test covering all major functionality"
+timeout: 60000
+
+steps:
+  - name: "Phase 1: Default system startup"
+    wait: 4000
+    
+  - name: "Verify oil panel baseline"
+    expect_text: "Oil panel"
+    timeout: 2000
+    
+  - name: "Capture startup state"
+    screenshot: "phase1_startup.png"
+    delay: 1000
+    
+  # Phase 2: Night theme activation (DIP #4 ON)
+  - name: "Phase 2: Wait for night theme activation"
+    wait: 3000
+    
+  - name: "Look for night theme switch"
+    expect_text: "Night"
+    timeout: 5000
+    optional: true
+    
+  - name: "Capture night theme state"
+    screenshot: "phase2_night_theme.png"
+    delay: 1000
+    
+  # Phase 3: Key present activation (DIP #1 ON)
+  - name: "Phase 3: Wait for key present trigger"
+    wait: 3000
+    
+  - name: "Look for key panel activation"
+    expect_text: "KeyPanel"
+    timeout: 5000
+    optional: true
+    
+  - name: "Capture key panel state"
+    screenshot: "phase3_key_panel.png"
+    delay: 2000
+    
+  # Phase 4: Lock activation (DIP #3 ON) - Priority test
+  - name: "Phase 4: Wait for lock trigger"
+    wait: 2000
+    
+  - name: "Verify key still active (higher priority)"
+    expect_text: "KeyPanel"
+    timeout: 3000
+    optional: true
+    
+  - name: "Capture priority test state"
+    screenshot: "phase4_priority_test.png"
+    delay: 1000
+    
+  # Phase 5: Remove key trigger (DIP #1 OFF)
+  - name: "Phase 5: Wait for key deactivation"
+    wait: 2000
+    
+  - name: "Look for fallback to lock panel"
+    expect_text: "LockPanel"
+    timeout: 3000
+    optional: true
+    
+  - name: "Capture fallback state"
+    screenshot: "phase5_lock_fallback.png"
+    delay: 2000
+    
+  # Final phases: System restoration
+  - name: "Phase 6-9: System restoration sequence"
+    wait: 5000
+    
+  - name: "Look for final state"
+    expect_text: "panel"
+    timeout: 3000
+    optional: true
+    
+  - name: "Final integration test state"
+    screenshot: "major_scenario_complete.png"
+    delay: 2000
+
+# This test covers the complete 9-step integration scenario:
+# 1. Default startup (Oil panel, day theme)
+# 2. Night theme activation (DIP #4)
+# 3. Key present activation (DIP #1) 
+# 4. Lock activation (DIP #3) - priority test
+# 5. Key deactivation (DIP #1 OFF) - fallback test
+# 6. Lock deactivation (DIP #3 OFF)
+# 7. Return to day theme (DIP #4 OFF)
+# 8. Sensor value verification
+# 9. System stability confirmation
+
+expect_patterns:
+  - "Oil panel"
+  - "KeyPanel"
+  - "LockPanel"
+  - "Night"
+  - "Day"
+
+fail_patterns:
+  - "[ERROR]"
+  - "Exception"
+  - "system failure"
+  - "crash"

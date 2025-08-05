@@ -62,7 +62,23 @@
       "Bash(C:Usersmarcelr.platformiopython311python.exe -m pip install intelhex)",
       "Bash(\"/mnt/c/Users/marcelr/.platformio/python311/python.exe\" -m pip install intelhex)",
       "Bash(pio system:*)",
-      "Bash(\"/mnt/c/Users/marcelr/.platformio/penv/Scripts/python.exe\" -m pip install intelhex)"
+      "Bash(\"/mnt/c/Users/marcelr/.platformio/penv/Scripts/python.exe\" -m pip install intelhex)",
+      "WebFetch(domain:docs.wokwi.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(dos2unix:*)",
+      "Bash(./test/wokwi/run_automated_tests.sh:*)",
+      "Bash(wokwi-cli:*)",
+      "Bash(for dir in */)",
+      "Bash(do [ -d \"$dir\" ])",
+      "Bash(WOKWI_CLI_TOKEN=\"test\" wokwi-cli . --timeout 5000)",
+      "Bash(WOKWI_CLI_TOKEN=\"test\" wokwi-cli basic_startup --timeout 5000)",
+      "Bash(WOKWI_CLI_TOKEN=\"test\" wokwi-cli test/wokwi/basic_startup --elf .pio/build/debug-local/firmware.elf --diagram-file diagram.json --timeout 5000)",
+      "Bash(timeout 30 wokwi-cli:*)",
+      "Bash(timeout:*)",
+      "Bash(for file in test/wokwi/*/*.test.yaml)",
+      "Bash(do sed -i '$!N; /^\\(.*\\)\\n\\1$/!P; D' \"$file\")",
+      "Bash(./test_simple.sh:*)",
+      "Bash(./run_tests_clean.sh)"
     ],
     "deny": []
   }

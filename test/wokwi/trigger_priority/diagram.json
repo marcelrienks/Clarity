@@ -5,8 +5,8 @@
   "parts": [
     { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -38.4, "left": -206.36, "attrs": {} },
     { "type": "wokwi-ili9341", "id": "lcd1", "top": -37.6, "left": -86.7, "attrs": {} },
-    { "type": "wokwi-potentiometer", "id": "pot1", "top": 75.5, "left": -307.4, "attrs": {"value": 256} },
-    { "type": "wokwi-potentiometer", "id": "pot2", "top": 171.5, "left": -307.4, "attrs": {"value": 384} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 75.5, "left": -307.4, "attrs": {"value": "256"} },
+    { "type": "wokwi-potentiometer", "id": "pot2", "top": 171.5, "left": -307.4, "attrs": {"value": "384"} },
     { "type": "wokwi-dip-switch-8", "id": "sw1", "top": -3.3, "left": -315.3, "attrs": {"value": "00000000"} }
   ],
   "connections": [

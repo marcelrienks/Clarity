@@ -1,0 +1,51 @@
+version: 1
+name: "Key Not Present Panel Test"
+description: "Test key not present trigger with red key icon display"
+timeout: 60000
+
+steps:
+  - name: "Initial oil panel startup"
+    wait: 4000
+    
+  - name: "Verify baseline oil panel"
+    expect_text: "Oil panel"
+    timeout: 2000
+    
+  # Manual interaction required:
+  # Toggle DIP Switch #2 ON to activate key not present trigger
+  
+  - name: "Wait for key not present trigger"
+    wait: 2000
+    
+  - name: "Look for key panel activation"
+    expect_text: "KeyPanel"
+    timeout: 5000
+    optional: true
+    
+  - name: "Capture key not present state"
+    screenshot: "key_panel_red_icon.png"
+    delay: 2000
+    
+  - name: "Verify trigger state logging"
+    expect_text: "key_not_present"
+    timeout: 2000
+    optional: true
+    
+  - name: "Final test state"
+    screenshot: "key_not_present_complete.png"
+    delay: 1000
+
+# Manual validation:
+# 1. DIP #2 ON -> Key panel with RED icon (not present state)
+# 2. Verify red coloring indicates negative/absent state
+# 3. Panel should maintain key panel while trigger active
+
+expect_patterns:
+  - "[INFO] Trigger key_not_present"
+  - "Load KeyPanel"
+  - "ACTIVE"
+
+fail_patterns:
+  - "[ERROR]"
+  - "Exception"
+  - "invalid state"

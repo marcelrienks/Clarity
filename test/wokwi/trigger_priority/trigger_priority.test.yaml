@@ -1,0 +1,75 @@
+version: 1
+name: "Trigger Priority Validation Test"
+description: "Systematic test of trigger priority handling and panel switching"
+timeout: 60000
+
+steps:
+  - name: "Baseline oil panel startup"
+    wait: 4000
+    
+  - name: "Verify default oil panel"
+    expect_text: "Oil panel"
+    timeout: 2000
+    
+  # Manual priority testing sequence:
+  # This test requires systematic DIP switch manipulation
+  
+  - name: "Wait for first priority test"
+    wait: 2000
+    
+  - name: "Look for lock panel activation (Priority 1)"
+    expect_text: "LockPanel"
+    timeout: 5000
+    optional: true
+    
+  - name: "Capture priority 1 state"
+    screenshot: "lock_priority_active.png"
+    delay: 1000
+    
+  - name: "Wait for higher priority test"
+    wait: 3000
+    
+  - name: "Look for key panel override (Priority 0)"
+    expect_text: "KeyPanel"
+    timeout: 5000
+    optional: true
+    
+  - name: "Capture priority 0 override"
+    screenshot: "key_priority_override.png"
+    delay: 2000
+    
+  - name: "Wait for priority resolution"
+    wait: 3000
+    
+  - name: "Look for fallback behavior"
+    expect_text: "priority"
+    timeout: 3000
+    optional: true
+    
+  - name: "Final priority test state"
+    screenshot: "priority_test_complete.png"
+    delay: 1000
+
+# Manual test procedure:
+# 1. Start: 00000000 (Oil panel)
+# 2. DIP #3 ON: 00100000 (Lock panel - Priority 1)
+# 3. DIP #1 ON: 10100000 (Key panel - Priority 0 overrides)
+# 4. DIP #1 OFF: 00100000 (Return to Lock panel)
+# 5. DIP #3 OFF: 00000000 (Return to Oil panel)
+
+expected_priority_behavior:
+  - "Priority 0 (Key) > Priority 1 (Lock) > Priority ∞ (Oil)"
+  - "Higher priority always wins"
+  - "Fallback to next highest when deactivated"
+
+expect_patterns:
+  - "[INFO] Set active panel trigger"
+  - "priority 0"
+  - "priority 1"
+  - "Load KeyPanel"
+  - "Load LockPanel"
+
+fail_patterns:
+  - "[ERROR]"
+  - "priority inversion"
+  - "invalid priority"

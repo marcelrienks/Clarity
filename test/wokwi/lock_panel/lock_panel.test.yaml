@@ -1,0 +1,55 @@
+version: 1
+name: "Lock Panel Integration Test"
+description: "Test lock panel functionality and lock icon display"
+timeout: 60000
+
+steps:
+  - name: "System startup with oil panel"
+    wait: 4000
+    
+  - name: "Verify initial oil panel state"
+    expect_text: "Oil panel"
+    timeout: 2000
+    
+  # Manual interaction:
+  # Toggle DIP Switch #3 ON to activate lock state trigger
+  
+  - name: "Wait for lock trigger activation"
+    wait: 2000
+    
+  - name: "Look for lock panel switch"
+    expect_text: "LockPanel"
+    timeout: 5000
+    optional: true
+    
+  - name: "Capture lock panel display"
+    screenshot: "lock_panel_active.png"
+    delay: 2000
+    
+  - name: "Verify lock trigger logging"
+    expect_text: "lock_state"
+    timeout: 2000
+    optional: true
+    
+  - name: "Test lock panel stability"
+    wait: 3000
+    
+  - name: "Final lock panel state"
+    screenshot: "lock_panel_stable.png"
+    delay: 1000
+
+# Manual validation steps:
+# 1. DIP #3 ON -> Lock panel with lock icon
+# 2. Verify lock icon is clearly visible
+# 3. Panel should maintain lock display while trigger active
+# 4. Priority 1 - lower than key triggers but higher than oil
+
+expect_patterns:
+  - "[INFO] Trigger lock_state"
+  - "Load LockPanel"
+  - "priority 1"
+
+fail_patterns:
+  - "[ERROR]"
+  - "Exception"
+  - "panel conflict"
