@@ -6,47 +6,50 @@ An ESP32 project, using platformio, which builds a custom digital gauge for moni
 _**Note:** If all you want is an ESP32 project for displaying one or two screens that do one job, this project is sincerely over complicated for your purposes. This was a test bed for implementing the usual design patterns of OOP, and trying to see if I could make an MVP pattern work in an embedded project. This now allows for multiple screens, with multiple (reusable) components, and warning triggers.  
 After I had built this architecture, the project then became a test bed for using AI agents, meaning it's far more featured and "properly" architected with extensive unit and integration testing than anyone would actually ever need. But hey, it does work._
 
-## Todo:
-[Items to do](docs/todo.md)
+## Documentation
 
-* review and remove historical comments that only state what was done during refactoring or changes
-
-## Architecture:
-
+### Architecture
 [Architecture Documentation](docs/architecture.md)
 
-## Scenarios:
+Comprehensive overview of the MVP (Model-View-Presenter) pattern implementation, system layers, component relationships, and hardware abstraction. Covers the Device → Display → Panels → Components architecture with detailed explanations of roles, responsibilities, and service patterns.
 
-[Scenario Documentation](docs/scenario.md)
+### Testing  
+[Testing Documentation](docs/test.md)
 
-## Testing
+Complete testing guide covering Unity framework integration, PlatformIO limitations, test environment configuration, and detailed commands for running different test suites. Includes workarounds for single-file testing constraints and mock system architecture.
 
-This project includes comprehensive unit tests for core logic and components.
+This project includes comprehensive unit tests for core logic and components. See [Testing Documentation](docs/test.md) for complete details on PlatformIO/Unity limitations and advanced testing features.
 
-### Running Tests
+#### Quick Test Commands
 
 Execute all unit tests:
 ```bash
-pio.exe test -e test
+pio.exe test -e test-all
 ```
 
-### Test Coverage
+Execute specific test suites:
+```bash
+pio.exe test -e test-sensors       # Sensor tests only
+pio.exe test -e test-managers-core # Manager tests only  
+pio.exe test -e test-components    # Component tests only
+```
+
+#### Test Coverage
 
 The test suite covers:
 - **Timing/Ticker Logic** - Frame timing calculations and dynamic delay handling
 - **Sensor Logic** - Value change detection, ADC conversions, key state determination  
 - **Configuration Management** - Settings persistence, validation, and default creation
 
-### Test Results
+#### Scenarios
+[Scenario Documentation](docs/scenario.md)
 
-Tests run on the native platform (not requiring ESP32 hardware) and provide fast feedback on core functionality:
-```
-12 test cases: 12 succeeded in 00:00:08.063
-```
+Usage scenarios and operational workflows for the automotive gauge system.
 
-### Test Implementation
+### Development Tasks
+[Todo Items](docs/todo.md)
 
-Tests are implemented using the Unity testing framework and focus on business logic without ESP32/LVGL dependencies. See `/test/test_all.cpp` for the complete test implementation.
+Current development tasks and improvement backlog.
 
 ## Main Libraries:
 * Arduino

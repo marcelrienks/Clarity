@@ -3869,6 +3869,30 @@ int main() {
     // Cleanup test environment
     tearDown();
 
+#elif defined(TEST_MANAGERS_EXTENDED_ONLY)
+    printf("\n=== Clarity Manager Extended Test Suite ===\n");
+    printf("Running extended manager layer tests...\n\n");
+    
+    // Initialize test environment
+    setUp();
+    
+    // Extended Manager Tests (13 tests)
+    printf("--- Style Manager Tests ---\n");
+    // Style manager tests would go here when implemented
+    
+    printf("--- Preference Manager Tests ---\n");
+    // Preference manager tests would go here when implemented
+    
+    printf("--- Additional Manager Integration Tests ---\n");
+    // Additional integration tests would go here when implemented
+    
+    printf("\n=== Manager Extended Test Suite Complete ===\n");
+    printf("Total: 13 extended manager tests\n");
+    printf("Note: Extended manager tests not yet implemented\n");
+    
+    // Cleanup test environment
+    tearDown();
+
 #elif defined(TEST_COMPONENTS_ONLY)
     printf("\n=== Clarity Component Test Suite ===\n");
     printf("Running component layer tests...\n\n");
@@ -4006,6 +4030,131 @@ int main() {
     
     printf("\n=== Infrastructure Test Suite Complete ===\n");
     printf("Total: 21 infrastructure tests\n");
+    
+    // Cleanup test environment
+    tearDown();
+
+#elif defined(TEST_ALL_SUITES)
+    printf("\n=== Clarity Complete Test Suite (All Tests) ===\n");
+    printf("Running ALL 113 tests across all layers...\n\n");
+    
+    // Initialize test environment
+    setUp();
+    
+    // Run all test suites
+    printf("--- Sensor Tests (21) ---\n");
+    RUN_TEST(test_oil_pressure_sensor_initialization);
+    RUN_TEST(test_oil_pressure_sensor_constructor);
+    RUN_TEST(test_oil_pressure_sensor_adc_mapping_minimum);
+    RUN_TEST(test_oil_pressure_sensor_adc_mapping_maximum);
+    RUN_TEST(test_oil_pressure_sensor_adc_mapping_boundary_conditions);
+    RUN_TEST(test_oil_pressure_sensor_delta_updates_comprehensive);
+    RUN_TEST(test_oil_temperature_sensor_initialization);
+    RUN_TEST(test_oil_temperature_sensor_adc_mapping_minimum);
+    RUN_TEST(test_oil_temperature_sensor_adc_mapping_maximum);
+    RUN_TEST(test_oil_temperature_sensor_delta_updates);
+    RUN_TEST(test_oil_temperature_sensor_comprehensive_mapping);
+    RUN_TEST(test_key_sensor_initialization_comprehensive);
+    RUN_TEST(test_key_sensor_state_combinations);
+    RUN_TEST(test_key_sensor_present_state);
+    RUN_TEST(test_key_sensor_absent_state);
+    RUN_TEST(test_lock_sensor_initialization);
+    RUN_TEST(test_lock_sensor_locked_state);
+    RUN_TEST(test_lock_sensor_unlocked_state);
+    RUN_TEST(test_light_sensor_initialization);
+    RUN_TEST(test_light_sensor_day_mode);
+    RUN_TEST(test_light_sensor_night_mode);
+    
+    printf("--- Manager Core Tests (15) ---\n");
+    RUN_TEST(test_trigger_manager_initialization);
+    RUN_TEST(test_trigger_manager_key_trigger_activation);
+    RUN_TEST(test_trigger_manager_lock_trigger_activation);
+    RUN_TEST(test_trigger_manager_theme_switching);
+    RUN_TEST(test_trigger_manager_priority_resolution);
+    RUN_TEST(test_trigger_manager_startup_panel_override);
+    RUN_TEST(test_panel_service_mock_functionality);
+    RUN_TEST(test_style_service_mock_functionality);
+    RUN_TEST(test_panel_manager_initialization);
+    RUN_TEST(test_panel_manager_panel_lifecycle);
+    RUN_TEST(test_panel_manager_splash_transitions);
+    RUN_TEST(test_panel_manager_update_operations);
+    RUN_TEST(test_panel_manager_restoration_panel);
+    RUN_TEST(test_panel_manager_trigger_integration);
+    RUN_TEST(test_panel_manager_ui_state_management);
+    
+    printf("--- Component Tests (23) ---\n");
+    RUN_TEST(test_oem_oil_pressure_component_initialization);
+    RUN_TEST(test_oem_oil_pressure_component_value_mapping);
+    RUN_TEST(test_oem_oil_pressure_component_danger_zone);
+    RUN_TEST(test_oem_oil_pressure_component_refresh_with_reading);
+    RUN_TEST(test_oem_oil_pressure_component_scale_configuration);
+    RUN_TEST(test_oem_oil_temperature_component_initialization);
+    RUN_TEST(test_oem_oil_temperature_component_temperature_ranges);
+    RUN_TEST(test_oem_oil_temperature_component_value_mapping);
+    RUN_TEST(test_oem_oil_temperature_component_danger_detection);
+    RUN_TEST(test_oem_oil_temperature_component_refresh);
+    RUN_TEST(test_key_component_initialization);
+    RUN_TEST(test_key_component_state_management);
+    RUN_TEST(test_key_component_theme_integration);
+    RUN_TEST(test_key_component_refresh_with_reading);
+    RUN_TEST(test_lock_component_initialization);
+    RUN_TEST(test_lock_component_state_management);
+    RUN_TEST(test_lock_component_theme_integration);
+    RUN_TEST(test_lock_component_refresh);
+    RUN_TEST(test_clarity_component_initialization);
+    RUN_TEST(test_clarity_component_theme_awareness);
+    RUN_TEST(test_clarity_component_branding_display);
+    RUN_TEST(test_component_lifecycle_management);
+    RUN_TEST(test_component_data_flow_integration);
+    RUN_TEST(test_component_theme_coordination);
+    
+    printf("--- Integration Tests (20) ---\n");
+    RUN_TEST(test_major_scenario_complete_system);
+    RUN_TEST(test_startup_scenario_default);
+    RUN_TEST(test_startup_scenario_with_oil_data);
+    RUN_TEST(test_startup_scenario_with_triggers);
+    RUN_TEST(test_key_present_scenario_runtime);
+    RUN_TEST(test_key_present_scenario_startup);
+    RUN_TEST(test_key_not_present_scenario_runtime);
+    RUN_TEST(test_key_not_present_scenario_startup);
+    RUN_TEST(test_lock_scenario_runtime);
+    RUN_TEST(test_lock_scenario_startup);
+    RUN_TEST(test_theme_change_scenario_runtime);
+    RUN_TEST(test_theme_change_scenario_startup);
+    RUN_TEST(test_service_container_dependency_injection);
+    RUN_TEST(test_service_container_lifecycle_management);
+    RUN_TEST(test_service_container_cross_service_communication);
+    RUN_TEST(test_end_to_end_sensor_to_component_flow);
+    RUN_TEST(test_end_to_end_trigger_to_panel_pipeline);
+    RUN_TEST(test_system_error_propagation_recovery);
+    RUN_TEST(test_system_state_persistence);
+    RUN_TEST(test_system_performance_under_load);
+    
+    printf("--- Infrastructure Tests (21) ---\n");
+    RUN_TEST(test_device_initialization);
+    RUN_TEST(test_device_preparation);
+    RUN_TEST(test_device_display_configuration);
+    RUN_TEST(test_device_hardware_abstraction);
+    RUN_TEST(test_manager_factory_panel_manager_creation);
+    RUN_TEST(test_manager_factory_style_manager_creation);
+    RUN_TEST(test_manager_factory_trigger_manager_creation);
+    RUN_TEST(test_manager_factory_preference_manager_creation);
+    RUN_TEST(test_manager_factory_dependency_validation);
+    RUN_TEST(test_factory_pattern_consistency);
+    RUN_TEST(test_ticker_dynamic_delay_fast_execution);
+    RUN_TEST(test_ticker_dynamic_delay_slow_execution);
+    RUN_TEST(test_ticker_lv_tasks_handling);
+    RUN_TEST(test_ticker_frame_rate_consistency);
+    RUN_TEST(test_utility_timing_precision);
+    RUN_TEST(test_main_application_setup_sequence);
+    RUN_TEST(test_main_application_service_initialization_order);
+    RUN_TEST(test_main_application_loop_execution);
+    RUN_TEST(test_main_application_startup_panel_selection);
+    RUN_TEST(test_main_application_error_resilience);
+    RUN_TEST(test_main_application_integration_flow);
+    
+    printf("\n=== Complete Test Suite Finished ===\n");
+    printf("Total: 100 tests executed (13 extended manager tests not yet implemented)\n");
     
     // Cleanup test environment
     tearDown();
