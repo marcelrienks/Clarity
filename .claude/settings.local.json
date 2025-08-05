@@ -53,7 +53,16 @@
       "Bash(./run_all_tests.bat)",
       "Bash(pio.exe lib uninstall:*)",
       "Bash(pio.exe pkg uninstall:*)",
-      "Bash(pio.exe pkg update:*)"
+      "Bash(pio.exe pkg update:*)",
+      "Bash(pio.exe system:*)",
+      "Bash(pio.exe platform show:*)",
+      "Bash(pio.exe platform install:*)",
+      "Bash(pip install:*)",
+      "Bash(pio.exe pkg install:*)",
+      "Bash(C:Usersmarcelr.platformiopython311python.exe -m pip install intelhex)",
+      "Bash(\"/mnt/c/Users/marcelr/.platformio/python311/python.exe\" -m pip install intelhex)",
+      "Bash(pio system:*)",
+      "Bash(\"/mnt/c/Users/marcelr/.platformio/penv/Scripts/python.exe\" -m pip install intelhex)"
     ],
     "deny": []
   }
