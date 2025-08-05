@@ -3,3 +3,11 @@ version = 1
 gdbServerPort = 3333
 firmware = '../../.pio/build/debug-local/firmware.bin'
 elf = '../../.pio/build/debug-local/firmware.elf'
+
+# This configuration is shared by all test scenarios:
+# - basic_startup: Basic system startup and oil panel loading
+# - oil_panel_sensors: Oil panel with sensor data and animations  
+# - theme_switching: Day/night theme switching tests
+# - key_present: Key present trigger and green icon tests
+# - key_not_present: Key not present trigger and red icon tests
+# - major_scenario: Complete system integration test
