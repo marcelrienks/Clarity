@@ -50,7 +50,10 @@
       "WebFetch(domain:piolabs.com)",
       "Bash(./run_all_tests.sh)",
       "Bash(bash:*)",
-      "Bash(./run_all_tests.bat)"
+      "Bash(./run_all_tests.bat)",
+      "Bash(pio.exe lib uninstall:*)",
+      "Bash(pio.exe pkg uninstall:*)",
+      "Bash(pio.exe pkg update:*)"
     ],
     "deny": []
   }
