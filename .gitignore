@@ -6,3 +6,8 @@
 .DS_Store
 prefs.txt
 **/convert.py
+
+# Test results and CLI tools
+test_results/
+wokwi-cli
+wokwi-cli.exe

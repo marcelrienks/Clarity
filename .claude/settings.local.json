@@ -78,7 +78,10 @@
       "Bash(for file in test/wokwi/*/*.test.yaml)",
       "Bash(do sed -i '$!N; /^\\(.*\\)\\n\\1$/!P; D' \"$file\")",
       "Bash(./test_simple.sh:*)",
-      "Bash(./run_tests_clean.sh)"
+      "Bash(./run_tests_clean.sh)",
+      "Bash(diff:*)",
+      "Bash(tree:*)",
+      "Bash(./run_wokwi_tests.sh:*)"
     ],
     "deny": []
   }
