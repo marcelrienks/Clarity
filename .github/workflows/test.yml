@@ -35,7 +35,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Run unit tests
-        run: pio test -e test --verbose
+        run: pio test -e test-all --verbose
 
       - name: Upload test results
         uses: actions/upload-artifact@v4

@@ -42,7 +42,7 @@ jobs:
     
     - name: Run Main Test Suite
       run: |
-        pio test -e test
+        pio test -e test-all
     
     - name: Verify Expected Pass Rate
       run: |
@@ -135,7 +135,7 @@ jobs:
     - name: Run Integration Tests
       run: |
         echo "Integration tests would run here - using main test suite as placeholder"
-        pio test -e test
+        pio test -e test-all
     
     - name: Upload Integration Test Results
       uses: actions/upload-artifact@v4
@@ -179,7 +179,7 @@ jobs:
     - name: Run Comprehensive Test Suite  
       run: |
         # Run main test suite (57/58 tests expected)
-        pio test -e test
+        pio test -e test-all
         
         # Basic coverage would be generated here if lcov/gcov setup was complete
         echo "Coverage script not found, using basic test execution"
@@ -291,7 +291,7 @@ jobs:
         pio run -e release
         
         # Run basic performance tests
-        pio test -e test
+        pio test -e test-all
     
     - name: Performance Regression Check
       run: |
