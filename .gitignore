@@ -11,3 +11,4 @@ prefs.txt
 test_results/
 wokwi-cli
 wokwi-cli.exe
+*.log

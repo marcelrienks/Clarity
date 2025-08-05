@@ -2,24 +2,29 @@ name: Wokwi Integration Tests
 
 on:
   push:
-    branches: [ main, develop, test ]
+    branches: [ main, develop ]
     paths:
       - 'src/**'
       - 'include/**'
       - 'test/wokwi/**'
       - 'platformio.ini'
+      - 'run_wokwi_tests.sh'
   pull_request:
     branches: [ main ]
     paths:
       - 'src/**'
       - 'include/**'
       - 'test/wokwi/**'
-      - 'platformio.ini'
+      - 'platformio.ini' 
+      - 'run_wokwi_tests.sh'
   workflow_dispatch:  # Allow manual triggering
 
+permissions:
+  contents: read
+
 jobs:
-  build:
-    name: Build Firmware
+  wokwi-integration-tests:
+    name: Wokwi Integration Tests (10 scenarios)
     runs-on: ubuntu-latest
     
     steps:
@@ -29,82 +34,17 @@ jobs:
     - name: Cache PlatformIO
       uses: actions/cache@v4
       with:
-        path: |
-          ~/.cache/pip
-          ~/.platformio
+        path: ~/.platformio
         key: ${{ runner.os }}-pio-${{ hashFiles('**/platformio.ini') }}
-        restore-keys: |
-          ${{ runner.os }}-pio-
-          
+        restore-keys: ${{ runner.os }}-pio-
+        
     - name: Setup Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.x'
+        python-version: '3.11'
         
     - name: Install PlatformIO
-      run: |
-        python -m pip install --upgrade pip
-        pip install platformio
-        
-    - name: Build firmware
-      run: pio run -e debug-local
-      
-    - name: Upload firmware artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: firmware
-        path: .pio/build/debug-local/firmware.elf
-        retention-days: 1
-
-  wokwi-tests:
-    name: Wokwi Tests
-    needs: build
-    runs-on: ubuntu-latest
-    
-    strategy:
-      fail-fast: false  # Continue running other tests even if one fails
-      matrix:
-        test-scenario:
-          - name: basic_startup
-            description: "Basic System Startup"
-            timeout: 15000
-          - name: oil_panel_sensors
-            description: "Oil Panel Sensor Testing"
-            timeout: 20000
-          - name: theme_switching
-            description: "Day/Night Theme Switching"
-            timeout: 25000
-          - name: key_present
-            description: "Key Present Panel Switch"
-            timeout: 20000
-          - name: key_not_present
-            description: "Key Not Present Panel"
-            timeout: 20000
-          - name: lock_panel
-            description: "Lock Panel Integration"
-            timeout: 20000
-          - name: night_startup
-            description: "Night Theme Startup"
-            timeout: 15000
-          - name: trigger_priority
-            description: "Trigger Priority Validation"
-            timeout: 30000
-          - name: major_scenario
-            description: "Major Integration Scenario"
-            timeout: 60000
-          - name: performance_stress
-            description: "Performance Stress Testing"
-            timeout: 45000
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download firmware artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: firmware
-        path: .pio/build/debug-local/
+      run: pip install --upgrade platformio
         
     - name: Install Wokwi CLI
       run: |
@@ -116,121 +56,38 @@ jobs:
         which wokwi-cli
         wokwi-cli --version || echo "Version command not available"
         
-    - name: Run Wokwi test - ${{ matrix.test-scenario.description }}
+    - name: Run All Wokwi Integration Tests
       env:
         WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
       run: |
-        echo "Running test: ${{ matrix.test-scenario.description }}"
-        echo "Timeout: ${{ matrix.test-scenario.timeout }}ms"
-        wokwi-cli test/wokwi/${{ matrix.test-scenario.name }} \
-          --elf .pio/build/debug-local/firmware.elf \
-          --diagram-file diagram.json \
-          --timeout ${{ matrix.test-scenario.timeout }}
+        chmod +x run_wokwi_tests.sh
+        ./run_wokwi_tests.sh
       
-    - name: Upload test screenshots
+    - name: Upload Test Results
       uses: actions/upload-artifact@v4
       if: always()
       with:
-        name: screenshots-${{ matrix.test-scenario.name }}
-        path: test/wokwi/${{ matrix.test-scenario.name }}/*.png
+        name: wokwi-test-results
+        path: test_results/
         retention-days: 30
-        if-no-files-found: ignore
         
-    - name: Upload test logs
+    - name: Upload Test Summary
       uses: actions/upload-artifact@v4
-      if: failure()
+      if: always()
       with:
-        name: logs-${{ matrix.test-scenario.name }}
-        path: test/wokwi/${{ matrix.test-scenario.name }}/simulation.log
-        retention-days: 30
-        if-no-files-found: ignore
-
-  test-summary:
-    name: Test Summary
-    needs: wokwi-tests
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-      
-    - name: Download all artifacts
-      uses: actions/download-artifact@v4
-      with:
-        path: test-artifacts
-      
-    - name: Generate test report
-      run: |
-        echo "# 🚗 Clarity Wokwi Integration Test Results" > test_report.md
-        echo "" >> test_report.md
-        echo "**Test Execution Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> test_report.md
-        echo "**Commit:** ${{ github.sha }}" >> test_report.md
-        echo "**Branch:** ${{ github.ref_name }}" >> test_report.md
-        echo "" >> test_report.md
-        
-        # Count artifacts
-        screenshot_count=$(find test-artifacts -name "screenshots-*" -type d | wc -l)
-        log_count=$(find test-artifacts -name "logs-*" -type d | wc -l)
-        
-        echo "## 📊 Test Statistics" >> test_report.md
-        echo "" >> test_report.md
-        echo "- **Screenshots captured:** $screenshot_count" >> test_report.md
-        echo "- **Failed tests with logs:** $log_count" >> test_report.md
-        echo "- **Total test scenarios:** 10" >> test_report.md
-        echo "- **Success rate:** $(( (10 - log_count) * 100 / 10 ))%" >> test_report.md
-        echo "" >> test_report.md
-        
-        if [ $log_count -gt 0 ]; then
-          echo "## ❌ Failed Tests" >> test_report.md
-          echo "" >> test_report.md
-          find test-artifacts -name "logs-*" -type d | sed 's/test-artifacts\/logs-/- /' >> test_report.md
-          echo "" >> test_report.md
-          echo "Check the artifacts section for detailed logs and screenshots." >> test_report.md
-        else
-          echo "## ✅ All Tests Passed!" >> test_report.md
-          echo "" >> test_report.md
-          echo "All Wokwi integration tests completed successfully." >> test_report.md
-        fi
-        
-        echo "" >> test_report.md
-        echo "## 🔍 Available Artifacts" >> test_report.md
-        echo "" >> test_report.md
-        echo "- Test screenshots for visual verification" >> test_report.md
-        echo "- Simulation logs for failed tests" >> test_report.md
-        echo "- Firmware binary used for testing" >> test_report.md
-        
-    - name: Upload test report
-      uses: actions/upload-artifact@v4
-      with:
-        name: test-report
-        path: test_report.md
+        name: wokwi-test-summary
+        path: test_results/test_summary.txt
         retention-days: 90
         
-    - name: Comment PR with results
-      uses: actions/github-script@v7
-      if: github.event_name == 'pull_request'
-      with:
-        script: |
-          const fs = require('fs');
-          try {
-            const report = fs.readFileSync('test_report.md', 'utf8');
-            await github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: report
-            });
-          } catch (error) {
-            console.log('Could not post comment:', error);
-          }
-          
-    - name: Set job status
+    - name: Display Test Results
+      if: always()
       run: |
-        log_count=$(find test-artifacts -name "logs-*" -type d | wc -l)
-        if [ $log_count -gt 0 ]; then
-          echo "Some tests failed"
-          exit 1
+        echo "## 🚗 Wokwi Integration Test Results"
+        echo ""
+        if [ -f test_results/test_summary.txt ]; then
+          cat test_results/test_summary.txt
         else
-          echo "All tests passed"
+          echo "No test summary found"
         fi
+        echo ""
+        echo "📂 Test artifacts uploaded for detailed analysis"
