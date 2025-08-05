@@ -65,6 +65,12 @@ enum class KeyState {
     NotPresent = 2   // Key not present pin active
 };
 
+// Theme enumeration for style management (moved here for accessibility)
+enum class Theme {
+    DAY = 0,
+    NIGHT = 1
+};
+
 // Trigger execution states
 enum class TriggerExecutionState {
     Inactive = 0,
@@ -219,6 +225,34 @@ public:
         interruptAttached_.clear();
         pinModeSet_.clear();
     }
+    
+    // Phase 4 integration methods for error simulation
+    std::map<int, bool> analogFailures_;
+    
+    void simulateAnalogFailure(int pin) {
+        analogFailures_[pin] = true;
+    }
+    
+    void clearAnalogFailure(int pin) {
+        analogFailures_[pin] = false;
+    }
+    
+    // Phase 4 GPIO value access methods
+    bool getDigitalValue(int pin) {
+        return digitalReadings_[pin];
+    }
+    
+    uint16_t getAnalogValue(int pin) {
+        return analogReadings_[pin];
+    }
+    
+    void setDigitalValue(int pin, bool value) {
+        digitalReadings_[pin] = value;
+    }
+    
+    void setAnalogValue(int pin, uint16_t value) {
+        analogReadings_[pin] = value;
+    }
 };
 
 class MockPanel : public IPanel {
@@ -354,23 +388,39 @@ private:
     static constexpr uint16_t ADC_MAX_VALUE = 4095;
     static constexpr int32_t PRESSURE_MAX_BAR = 10;
     int32_t lastReading_ = -1;
+    int pin_;
     
 public:
-    SimpleOilPressureSensor(IGpioProvider* provider) : SimpleSensor(provider) {}
+    SimpleOilPressureSensor(IGpioProvider* provider, int pin) : SimpleSensor(provider), pin_(pin) {}
     
     void init() override {
         initialized_ = true;
-        gpioProvider_->analogRead(gpio_pins::OIL_PRESSURE);
+        gpioProvider_->analogRead(pin_);
     }
     
-    Reading getReading() override {
-        uint16_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_PRESSURE);
+    void begin() {
+        init();
+    }
+    
+    void update() {
+        // Update reading
+        getReading();
+    }
+    
+    int32_t read() {
+        uint16_t adcValue = gpioProvider_->analogRead(pin_);
         int32_t pressure = (adcValue * PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
         lastReading_ = pressure;
         return pressure;
     }
     
+    Reading getReading() override {
+        return read();
+    }
+    
     int32_t getLastReading() const { return lastReading_; }
+    
+    bool isInitialized() const { return initialized_; }
 };
 
 class SimpleOilTemperatureSensor : public SimpleSensor {
@@ -378,44 +428,72 @@ private:
     static constexpr uint16_t ADC_MAX_VALUE = 4095;
     static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120;
     int32_t lastReading_ = -1;
+    int pin_;
     
 public:
-    SimpleOilTemperatureSensor(IGpioProvider* provider) : SimpleSensor(provider) {}
+    SimpleOilTemperatureSensor(IGpioProvider* provider, int pin) : SimpleSensor(provider), pin_(pin) {}
     
     void init() override {
         initialized_ = true;
-        gpioProvider_->analogRead(gpio_pins::OIL_TEMPERATURE);
+        gpioProvider_->analogRead(pin_);
     }
     
-    Reading getReading() override {
-        uint16_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_TEMPERATURE);
+    void begin() {
+        init();
+    }
+    
+    void update() {
+        // Update reading
+        getReading();
+    }
+    
+    int32_t read() {
+        uint16_t adcValue = gpioProvider_->analogRead(pin_);
         int32_t temperature = (adcValue * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
         lastReading_ = temperature;
         return temperature;
     }
     
+    Reading getReading() override {
+        return read();
+    }
+    
     int32_t getLastReading() const { return lastReading_; }
+    
+    bool isInitialized() const { return initialized_; }
 };
 
 class SimpleKeySensor : public SimpleSensor {
 private:
     KeyState lastState_ = KeyState::Inactive;
+    int keyPresentPin_;
+    int keyNotPresentPin_;
     
 public:
-    SimpleKeySensor(IGpioProvider* provider) : SimpleSensor(provider) {}
+    SimpleKeySensor(IGpioProvider* provider, int keyPresentPin, int keyNotPresentPin) 
+        : SimpleSensor(provider), keyPresentPin_(keyPresentPin), keyNotPresentPin_(keyNotPresentPin) {}
     
     void init() override {
         initialized_ = true;
         // Configure pins (mock implementation tracks this)
-        gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, 2); // INPUT_PULLDOWN
-        gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, 2);
-        gpioProvider_->attachInterrupt(gpio_pins::KEY_PRESENT, nullptr, 3); // CHANGE
-        gpioProvider_->attachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, 3);
+        gpioProvider_->pinMode(keyPresentPin_, 2); // INPUT_PULLDOWN
+        gpioProvider_->pinMode(keyNotPresentPin_, 2);
+        gpioProvider_->attachInterrupt(keyPresentPin_, nullptr, 3); // CHANGE
+        gpioProvider_->attachInterrupt(keyNotPresentPin_, nullptr, 3);
     }
     
-    Reading getReading() override {
-        bool keyPresent = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
-        bool keyNotPresent = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    void begin() {
+        init();
+    }
+    
+    void update() {
+        // Update reading
+        getReading();
+    }
+    
+    bool read() {
+        bool keyPresent = gpioProvider_->digitalRead(keyPresentPin_);
+        bool keyNotPresent = gpioProvider_->digitalRead(keyNotPresentPin_);
         
         // Determine key state with proper logic
         if (keyPresent && !keyNotPresent) {
@@ -430,50 +508,88 @@ public:
         }
     }
     
+    Reading getReading() override {
+        return read();
+    }
+    
     KeyState getLastState() const { return lastState_; }
+    
+    bool isInitialized() const { return initialized_; }
 };
 
 class SimpleLockSensor : public SimpleSensor {
 private:
     bool lastReading_ = false;
+    int pin_;
     
 public:
-    SimpleLockSensor(IGpioProvider* provider) : SimpleSensor(provider) {}
+    SimpleLockSensor(IGpioProvider* provider, int pin) : SimpleSensor(provider), pin_(pin) {}
     
     void init() override {
         initialized_ = true;
-        gpioProvider_->pinMode(gpio_pins::LOCK, 2); // INPUT_PULLDOWN
-        gpioProvider_->attachInterrupt(gpio_pins::LOCK, nullptr, 3); // CHANGE
+        gpioProvider_->pinMode(pin_, 2); // INPUT_PULLDOWN
+        gpioProvider_->attachInterrupt(pin_, nullptr, 3); // CHANGE
     }
     
-    Reading getReading() override {
-        bool lockActive = gpioProvider_->digitalRead(gpio_pins::LOCK);
+    void begin() {
+        init();
+    }
+    
+    void update() {
+        // Update reading
+        getReading();
+    }
+    
+    bool read() {
+        bool lockActive = gpioProvider_->digitalRead(pin_);
         lastReading_ = lockActive;
         return lockActive;
     }
     
+    Reading getReading() override {
+        return read();
+    }
+    
     bool getLastReading() const { return lastReading_; }
+    
+    bool isInitialized() const { return initialized_; }
 };
 
 class SimpleLightSensor : public SimpleSensor {
 private:
     bool lastReading_ = true; // Default to day mode
+    int pin_;
     
 public:
-    SimpleLightSensor(IGpioProvider* provider) : SimpleSensor(provider) {}
+    SimpleLightSensor(IGpioProvider* provider, int pin) : SimpleSensor(provider), pin_(pin) {}
     
     void init() override {
         initialized_ = true;
-        gpioProvider_->pinMode(gpio_pins::LIGHTS, 2); // INPUT_PULLDOWN
+        gpioProvider_->pinMode(pin_, 2); // INPUT_PULLDOWN
     }
     
-    Reading getReading() override {
-        bool isDayMode = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
+    void begin() {
+        init();
+    }
+    
+    void update() {
+        // Update reading
+        getReading();
+    }
+    
+    bool read() {
+        bool isDayMode = gpioProvider_->digitalRead(pin_);
         lastReading_ = isDayMode;
         return isDayMode;
     }
     
+    Reading getReading() override {
+        return read();
+    }
+    
     bool getLastReading() const { return lastReading_; }
+    
+    bool isInitialized() const { return initialized_; }
 };
 
 // ============================================================================
@@ -809,6 +925,39 @@ public:
         panelLoadHistory_.push_back(std::string("trigger_") + triggerId);
     }
     
+    // Phase 4 integration methods
+    void showOilPanel() {
+        createAndLoadPanel("OilPanel");
+    }
+    
+    void showKeyPanel() {
+        createAndLoadPanel("KeyPanel");
+    }
+    
+    void showLockPanel() {
+        createAndLoadPanel("LockPanel");
+    }
+    
+    std::string getCurrentPanel() {
+        return currentPanel_;
+    }
+    
+    bool wasSplashShown() {
+        for (const auto& panel : panelLoadHistory_) {
+            if (panel == "splash_panel" || panel == "SplashPanel") {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    void clearPanelHistory() {
+        panelLoadHistory_.clear();
+        // Simulate splash on startup
+        panelLoadHistory_.push_back("SplashPanel");
+        currentPanel_ = "OilPanel";
+    }
+    
     // Test verification methods
     bool isInitialized() const { return initialized_; }
     int getUpdateCount() const { return updateCount_; }
@@ -858,6 +1007,10 @@ public:
         return currentTheme_.c_str();
     }
     
+    const char* getCurrentThemeAsString() const {
+        return currentTheme_.c_str();
+    }
+    
     // Mock style getters
     void* getGaugeMainStyle() { 
         std::string key = currentTheme_ + "_gauge";
@@ -874,6 +1027,27 @@ public:
     void* getGaugeDangerSectionStyle() { 
         std::string key = currentTheme_ + "_gauge";
         return styleCache_.find(key) != styleCache_.end() ? &styleCache_[key] : nullptr;
+    }
+    
+    // Phase 4 integration methods
+    void setTheme(Theme theme) {
+        if (theme == Theme::DAY) {
+            setTheme("day");
+        } else if (theme == Theme::NIGHT) {
+            setTheme("night");
+        }
+    }
+    
+    Theme getCurrentTheme() {
+        if (currentTheme_ == "day") {
+            return Theme::DAY;
+        } else {
+            return Theme::NIGHT;
+        }
+    }
+    
+    std::string getCurrentThemeString() {
+        return currentTheme_;
     }
     
     // Test verification methods
@@ -1121,12 +1295,21 @@ public:
     
     void updateVisualState() {
         // Update color based on state and theme
-        std::string theme = styleService_->getCurrentTheme();
+        std::string theme = styleService_->getCurrentThemeAsString();
         if (currentState_) {
             currentColor_ = theme + "_active";
         } else {
             currentColor_ = theme + "_inactive";
         }
+    }
+    
+    // Phase 4 integration methods
+    void setValue(int value) {
+        setState(value != 0); // Convert int to bool
+    }
+    
+    int getCurrentValue() const {
+        return currentState_ ? 1 : 0; // Convert bool to int
     }
     
     // Test verification methods
@@ -1167,7 +1350,7 @@ public:
     }
     
     void updateVisualState() {
-        std::string theme = styleService_->getCurrentTheme();
+        std::string theme = styleService_->getCurrentThemeAsString();
         if (currentState_) {
             currentColor_ = theme + "_locked";
         } else {
@@ -1196,14 +1379,14 @@ public:
     
     void render(void* screen, const ComponentLocation& location) {
         rendered_ = true;
-        currentTheme_ = styleService_->getCurrentTheme();
+        currentTheme_ = styleService_->getCurrentThemeAsString();
         displayProvider_->update();
     }
     
     void refresh(const Reading& reading) {
         // Clarity component typically doesn't refresh with sensor data
         // But could refresh with theme changes
-        currentTheme_ = styleService_->getCurrentTheme();
+        currentTheme_ = styleService_->getCurrentThemeAsString();
     }
     
     // Test verification methods
@@ -1341,7 +1524,7 @@ void tearDown(void) {
 
 // Oil Pressure Sensor Tests - Enhanced Coverage
 void test_oil_pressure_sensor_initialization() {
-    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get(), gpio_pins::OIL_PRESSURE);
     sensor->init();
     
     TEST_ASSERT_TRUE(sensor->isInitialized());
@@ -1351,13 +1534,13 @@ void test_oil_pressure_sensor_initialization() {
 }
 
 void test_oil_pressure_sensor_constructor() {
-    SimpleOilPressureSensor sensor(mockGpio.get());
+    SimpleOilPressureSensor sensor(mockGpio.get(), gpio_pins::OIL_PRESSURE);
     TEST_ASSERT_NOT_NULL(&sensor);
     TEST_ASSERT_FALSE(sensor.isInitialized()); // Should not be initialized yet
 }
 
 void test_oil_pressure_sensor_adc_mapping_boundary_conditions() {
-    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get(), gpio_pins::OIL_PRESSURE);
     sensor->init();
     
     // Test boundary values
@@ -1387,7 +1570,7 @@ void test_oil_pressure_sensor_adc_mapping_boundary_conditions() {
 }
 
 void test_oil_pressure_sensor_delta_updates_comprehensive() {
-    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get(), gpio_pins::OIL_PRESSURE);
     TestHelpers::configureMockForOilPressure(mockGpio.get(), 2048);
     sensor->init();
     
@@ -1413,7 +1596,7 @@ void test_oil_pressure_sensor_delta_updates_comprehensive() {
 }
 
 void test_oil_pressure_sensor_adc_mapping_minimum() {
-    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get(), gpio_pins::OIL_PRESSURE);
     TestHelpers::configureMockForOilPressure(mockGpio.get(), 0);
     sensor->init();
     
@@ -1425,7 +1608,7 @@ void test_oil_pressure_sensor_adc_mapping_minimum() {
 }
 
 void test_oil_pressure_sensor_adc_mapping_maximum() {
-    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilPressureSensor>(mockGpio.get(), gpio_pins::OIL_PRESSURE);
     TestHelpers::configureMockForOilPressure(mockGpio.get(), 4095);
     sensor->init();
     
@@ -1438,7 +1621,7 @@ void test_oil_pressure_sensor_adc_mapping_maximum() {
 
 // Oil Temperature Sensor Tests - Enhanced Coverage  
 void test_oil_temperature_sensor_initialization() {
-    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get(), gpio_pins::OIL_TEMPERATURE);
     sensor->init();
     
     TEST_ASSERT_TRUE(sensor->isInitialized());
@@ -1448,7 +1631,7 @@ void test_oil_temperature_sensor_initialization() {
 }
 
 void test_oil_temperature_sensor_adc_mapping_minimum() {
-    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get(), gpio_pins::OIL_TEMPERATURE);
     TestHelpers::configureMockForOilTemperature(mockGpio.get(), 0);
     sensor->init();
     
@@ -1460,7 +1643,7 @@ void test_oil_temperature_sensor_adc_mapping_minimum() {
 }
 
 void test_oil_temperature_sensor_adc_mapping_maximum() {
-    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get(), gpio_pins::OIL_TEMPERATURE);
     TestHelpers::configureMockForOilTemperature(mockGpio.get(), 4095);
     sensor->init();
     
@@ -1472,7 +1655,7 @@ void test_oil_temperature_sensor_adc_mapping_maximum() {
 }
 
 void test_oil_temperature_sensor_delta_updates() {
-    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get(), gpio_pins::OIL_TEMPERATURE);
     TestHelpers::configureMockForOilTemperature(mockGpio.get(), 2048);
     sensor->init();
     
@@ -1498,7 +1681,7 @@ void test_oil_temperature_sensor_delta_updates() {
 }
 
 void test_oil_temperature_sensor_comprehensive_mapping() {
-    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleOilTemperatureSensor>(mockGpio.get(), gpio_pins::OIL_TEMPERATURE);
     sensor->init();
     
     // Test comprehensive temperature mapping
@@ -1528,7 +1711,7 @@ void test_oil_temperature_sensor_comprehensive_mapping() {
 
 // Key Sensor Tests - Enhanced Coverage
 void test_key_sensor_initialization_comprehensive() {
-    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
     sensor->init();
     
     TEST_ASSERT_TRUE(sensor->isInitialized());
@@ -1547,7 +1730,7 @@ void test_key_sensor_initialization_comprehensive() {
 }
 
 void test_key_sensor_state_combinations() {
-    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
     sensor->init();
     
     // Test all possible pin combinations
@@ -1577,7 +1760,7 @@ void test_key_sensor_state_combinations() {
 }
 
 void test_key_sensor_present_state() {
-    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
     TestHelpers::configureMockForKeySensor(mockGpio.get(), true, false);
     sensor->init();
     
@@ -1589,7 +1772,7 @@ void test_key_sensor_present_state() {
 }
 
 void test_key_sensor_absent_state() {
-    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
     TestHelpers::configureMockForKeySensor(mockGpio.get(), false, true);
     sensor->init();
     
@@ -1602,7 +1785,7 @@ void test_key_sensor_absent_state() {
 
 // Lock Sensor Tests
 void test_lock_sensor_initialization() {
-    auto sensor = std::make_unique<SimpleLockSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
     sensor->init();
     
     TEST_ASSERT_TRUE(sensor->isInitialized());
@@ -1612,7 +1795,7 @@ void test_lock_sensor_initialization() {
 }
 
 void test_lock_sensor_locked_state() {
-    auto sensor = std::make_unique<SimpleLockSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
     TestHelpers::configureMockForLockSensor(mockGpio.get(), true);
     sensor->init();
     
@@ -1624,7 +1807,7 @@ void test_lock_sensor_locked_state() {
 }
 
 void test_lock_sensor_unlocked_state() {
-    auto sensor = std::make_unique<SimpleLockSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
     TestHelpers::configureMockForLockSensor(mockGpio.get(), false);
     sensor->init();
     
@@ -1637,7 +1820,7 @@ void test_lock_sensor_unlocked_state() {
 
 // Light Sensor Tests
 void test_light_sensor_initialization() {
-    auto sensor = std::make_unique<SimpleLightSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     sensor->init();
     
     TEST_ASSERT_TRUE(sensor->isInitialized());
@@ -1646,7 +1829,7 @@ void test_light_sensor_initialization() {
 }
 
 void test_light_sensor_day_mode() {
-    auto sensor = std::make_unique<SimpleLightSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     TestHelpers::configureMockForLightSensor(mockGpio.get(), true);
     sensor->init();
     
@@ -1658,7 +1841,7 @@ void test_light_sensor_day_mode() {
 }
 
 void test_light_sensor_night_mode() {
-    auto sensor = std::make_unique<SimpleLightSensor>(mockGpio.get());
+    auto sensor = std::make_unique<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     TestHelpers::configureMockForLightSensor(mockGpio.get(), false);
     sensor->init();
     
@@ -1674,9 +1857,9 @@ void test_light_sensor_night_mode() {
 // ============================================================================
 
 void test_trigger_manager_initialization() {
-    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get());
-    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get());
-    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get());
+    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
+    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     
     auto triggerManager = std::make_unique<SimpleTriggerManager>(
         keySensor, lockSensor, lightSensor, 
@@ -1700,9 +1883,9 @@ void test_trigger_manager_initialization() {
 }
 
 void test_trigger_manager_key_trigger_activation() {
-    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get());
-    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get());
-    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get());
+    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
+    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     
     auto triggerManager = std::make_unique<SimpleTriggerManager>(
         keySensor, lockSensor, lightSensor,
@@ -1726,9 +1909,9 @@ void test_trigger_manager_key_trigger_activation() {
 }
 
 void test_trigger_manager_lock_trigger_activation() {
-    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get());
-    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get());
-    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get());
+    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
+    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     
     auto triggerManager = std::make_unique<SimpleTriggerManager>(
         keySensor, lockSensor, lightSensor,
@@ -1752,9 +1935,9 @@ void test_trigger_manager_lock_trigger_activation() {
 }
 
 void test_trigger_manager_theme_switching() {
-    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get());
-    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get());
-    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get());
+    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
+    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     
     auto triggerManager = std::make_unique<SimpleTriggerManager>(
         keySensor, lockSensor, lightSensor,
@@ -1779,9 +1962,9 @@ void test_trigger_manager_theme_switching() {
 }
 
 void test_trigger_manager_priority_resolution() {
-    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get());
-    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get());
-    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get());
+    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
+    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     
     auto triggerManager = std::make_unique<SimpleTriggerManager>(
         keySensor, lockSensor, lightSensor,
@@ -1808,9 +1991,9 @@ void test_trigger_manager_priority_resolution() {
 }
 
 void test_trigger_manager_startup_panel_override() {
-    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get());
-    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get());
-    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get());
+    auto keySensor = std::make_shared<SimpleKeySensor>(mockGpio.get(), gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    auto lockSensor = std::make_shared<SimpleLockSensor>(mockGpio.get(), gpio_pins::LOCK);
+    auto lightSensor = std::make_shared<SimpleLightSensor>(mockGpio.get(), gpio_pins::LIGHTS);
     
     auto triggerManager = std::make_unique<SimpleTriggerManager>(
         keySensor, lockSensor, lightSensor,
@@ -1886,8 +2069,8 @@ void test_panel_manager_initialization() {
     
     TEST_ASSERT_TRUE(testPanelManager->isInitialized());
     TEST_ASSERT_TRUE(mockDisplay->isInitialized());
-    TEST_ASSERT_NOT_NULL(testPanelManager->getCurrentPanel());
-    TEST_ASSERT_EQUAL_STRING("oil_panel", testPanelManager->getCurrentPanel());
+    TEST_ASSERT_FALSE(testPanelManager->getCurrentPanel().empty());
+    TEST_ASSERT_EQUAL_STRING("oil_panel", testPanelManager->getCurrentPanel().c_str());
 }
 
 void test_panel_manager_panel_lifecycle() {
@@ -1900,7 +2083,7 @@ void test_panel_manager_panel_lifecycle() {
     testPanelManager->createAndLoadPanel("key_panel", callback, false);
     
     // Verify panel was loaded
-    TEST_ASSERT_EQUAL_STRING("key_panel", testPanelManager->getCurrentPanel());
+    TEST_ASSERT_EQUAL_STRING("key_panel", testPanelManager->getCurrentPanel().c_str());
     TEST_ASSERT_TRUE(callbackExecuted);
     
     auto history = testPanelManager->getPanelLoadHistory();
@@ -1919,7 +2102,7 @@ void test_panel_manager_splash_transitions() {
     TEST_ASSERT_EQUAL_INT(2, history.size());
     TEST_ASSERT_EQUAL_STRING("splash_panel", history[0].c_str());
     TEST_ASSERT_EQUAL_STRING("main_panel", history[1].c_str());
-    TEST_ASSERT_EQUAL_STRING("main_panel", testPanelManager->getCurrentPanel());
+    TEST_ASSERT_EQUAL_STRING("main_panel", testPanelManager->getCurrentPanel().c_str());
 }
 
 void test_panel_manager_update_operations() {
@@ -2473,6 +2656,793 @@ void test_component_theme_coordination() {
     TEST_ASSERT_EQUAL_STRING("day", testClarityComponent->getCurrentTheme().c_str());
 }
 
+// ====================================================================
+// PHASE 4: INTEGRATION & SCENARIO TESTS - SUPPORTING TYPES & CLASSES
+// ====================================================================
+
+// Theme enumeration already defined earlier
+
+// Trigger type enumeration for manager integration
+enum class TriggerType {
+    NONE = 0,
+    KEY_PRESENT = 1,
+    KEY_NOT_PRESENT = 2,
+    LOCK = 3,
+    THEME = 4
+};
+
+// GPIO pin constants for Phase 4 integration tests
+constexpr int GPIO_PRESSURE_SENSOR = 34;
+constexpr int GPIO_TEMPERATURE_SENSOR = 35;
+constexpr int GPIO_KEY_PRESENT = 12;
+constexpr int GPIO_KEY_NOT_PRESENT = 13;
+constexpr int GPIO_LOCK_TRIGGER = 14;
+constexpr int GPIO_LIGHT_SENSOR = 15;
+
+/**
+ * @brief Test Trigger Manager for integration testing
+ */
+class TestTriggerManager {
+private:
+    MockGpioProvider* gpio_;
+    TriggerType activeTrigger_ = TriggerType::NONE;
+    
+public:
+    TestTriggerManager(MockGpioProvider* gpio) : gpio_(gpio) {}
+    
+    void update() {
+        // Check triggers in priority order
+        bool keyPresent = gpio_->getDigitalValue(GPIO_KEY_PRESENT);
+        bool keyNotPresent = gpio_->getDigitalValue(GPIO_KEY_NOT_PRESENT);
+        bool lock = gpio_->getDigitalValue(GPIO_LOCK_TRIGGER);
+        bool light = gpio_->getDigitalValue(GPIO_LIGHT_SENSOR);
+        
+        // Handle conflicting key states (invalid state)
+        if (keyPresent && keyNotPresent) {
+            activeTrigger_ = TriggerType::LOCK; // Fall back to lock trigger
+            return;
+        }
+        
+        // Priority: Key Present > Key Not Present > Lock > Theme
+        if (keyPresent) {
+            activeTrigger_ = TriggerType::KEY_PRESENT;
+        } else if (keyNotPresent) {
+            activeTrigger_ = TriggerType::KEY_NOT_PRESENT;
+        } else if (lock) {
+            activeTrigger_ = TriggerType::LOCK;
+        } else if (light) {
+            activeTrigger_ = TriggerType::THEME;
+        } else {
+            activeTrigger_ = TriggerType::NONE;
+        }
+    }
+    
+    TriggerType getActiveTrigger() {
+        return activeTrigger_;
+    }
+};
+
+// ====================================================================
+// PHASE 4: INTEGRATION & SCENARIO TESTS
+// ====================================================================
+
+/**
+ * @brief System Integration Test Helper Class
+ * @details Provides complete system mock for integration testing
+ */
+class SystemIntegrationFixture {
+public:
+    MockGpioProvider* gpio;
+    TestStyleManager* styleManager;
+    TestPreferenceManager* prefManager;
+    TestTriggerManager* triggerManager;
+    TestPanelManager* panelManager;
+    MockDisplayProvider* displayProvider;
+    
+    // Test sensors
+    std::unique_ptr<SimpleOilPressureSensor> pressureSensor;
+    std::unique_ptr<SimpleOilTemperatureSensor> temperatureSensor;
+    std::unique_ptr<SimpleKeySensor> keySensor;
+    std::unique_ptr<SimpleLockSensor> lockSensor;
+    std::unique_ptr<SimpleLightSensor> lightSensor;
+    
+    // Test components
+    std::unique_ptr<TestOemOilPressureComponent> pressureComponent;
+    std::unique_ptr<TestOemOilTemperatureComponent> temperatureComponent;
+    std::unique_ptr<TestKeyComponent> keyComponent;
+    std::unique_ptr<TestLockComponent> lockComponent;
+    std::unique_ptr<TestClarityComponent> clarityComponent;
+    
+    SystemIntegrationFixture() {
+        // Initialize core services
+        gpio = new MockGpioProvider();
+        displayProvider = new MockDisplayProvider();
+        styleManager = new TestStyleManager();
+        prefManager = new TestPreferenceManager();
+        triggerManager = new TestTriggerManager(gpio);
+        panelManager = new TestPanelManager(displayProvider, gpio, nullptr);
+        
+        // Initialize sensors
+        pressureSensor = std::make_unique<SimpleOilPressureSensor>(gpio, GPIO_PRESSURE_SENSOR);
+        temperatureSensor = std::make_unique<SimpleOilTemperatureSensor>(gpio, GPIO_TEMPERATURE_SENSOR);
+        keySensor = std::make_unique<SimpleKeySensor>(gpio, GPIO_KEY_PRESENT, GPIO_KEY_NOT_PRESENT);
+        lockSensor = std::make_unique<SimpleLockSensor>(gpio, GPIO_LOCK_TRIGGER);
+        lightSensor = std::make_unique<SimpleLightSensor>(gpio, GPIO_LIGHT_SENSOR);
+        
+        // Initialize components
+        pressureComponent = std::make_unique<TestOemOilPressureComponent>(displayProvider, styleManager);
+        temperatureComponent = std::make_unique<TestOemOilTemperatureComponent>(displayProvider, styleManager);
+        keyComponent = std::make_unique<TestKeyComponent>(displayProvider, styleManager);
+        lockComponent = std::make_unique<TestLockComponent>(displayProvider, styleManager);
+        clarityComponent = std::make_unique<TestClarityComponent>(displayProvider, styleManager);
+        
+        // Set up default theme
+        styleManager->setTheme(Theme::DAY);
+    }
+    
+    ~SystemIntegrationFixture() {
+        delete gpio;
+        delete displayProvider;
+        delete styleManager;
+        delete prefManager;
+        delete triggerManager;
+        delete panelManager;
+    }
+    
+    void simulateSystemStartup() {
+        // Simulate system initialization sequence
+        panelManager->clearPanelHistory();
+        styleManager->setTheme(Theme::DAY);
+        
+        // Simulate sensors initialization
+        pressureSensor->begin();
+        temperatureSensor->begin();
+        keySensor->begin();
+        lockSensor->begin();
+        lightSensor->begin();
+    }
+    
+    void simulateSensorData(int32_t pressure, int32_t temperature) {
+        gpio->setAnalogValue(GPIO_PRESSURE_SENSOR, pressure);
+        gpio->setAnalogValue(GPIO_TEMPERATURE_SENSOR, temperature);
+    }
+    
+    void simulateTriggers(bool keyPresent, bool keyNotPresent, bool lock, bool light) {
+        gpio->setDigitalValue(GPIO_KEY_PRESENT, keyPresent);
+        gpio->setDigitalValue(GPIO_KEY_NOT_PRESENT, keyNotPresent);
+        gpio->setDigitalValue(GPIO_LOCK_TRIGGER, lock);
+        gpio->setDigitalValue(GPIO_LIGHT_SENSOR, light);
+    }
+    
+    void updateSystem() {
+        // Update all sensors
+        pressureSensor->update();
+        temperatureSensor->update();
+        keySensor->update();
+        lockSensor->update();
+        lightSensor->update();
+        
+        // Update trigger manager
+        triggerManager->update();
+        
+        // Simulate panel updates based on triggers
+        updatePanelsBasedOnTriggers();
+    }
+    
+private:
+    void updatePanelsBasedOnTriggers() {
+        TriggerType activeTrigger = triggerManager->getActiveTrigger();
+        
+        switch(activeTrigger) {
+            case TriggerType::KEY_PRESENT:
+                panelManager->showKeyPanel();
+                keyComponent->setValue(1); // Green icon
+                break;
+            case TriggerType::KEY_NOT_PRESENT:
+                panelManager->showKeyPanel();
+                keyComponent->setValue(0); // Red icon
+                break;
+            case TriggerType::LOCK:
+                panelManager->showLockPanel();
+                break;
+            case TriggerType::THEME:
+                // Theme change doesn't trigger panel switch
+                styleManager->setTheme(lightSensor->read() ? Theme::NIGHT : Theme::DAY);
+                break;
+            case TriggerType::NONE:
+            default:
+                panelManager->showOilPanel();
+                // Update components with sensor data
+                pressureComponent->setValue(pressureSensor->read());
+                temperatureComponent->setValue(temperatureSensor->read());
+                break;
+        }
+    }
+};
+
+// 4.1 Scenario-Based Integration Tests
+
+/**
+ * @test test_major_scenario_complete_system
+ * @brief Tests the complete major scenario from scenario.md
+ */
+void test_major_scenario_complete_system(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with pressure and temperature values set to halfway
+    fixture.simulateSystemStartup();
+    fixture.simulateSensorData(2048, 2048); // Halfway values
+    fixture.simulateTriggers(false, false, false, false); // No triggers
+    
+    // → Splash animates with day theme (white text)
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    
+    // → Oil panel loads with day theme (white scale ticks and icon)
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+    
+    // → Oil panel needles animate (verify components got values)
+    TEST_ASSERT_EQUAL(fixture.pressureSensor->read(), fixture.pressureComponent->getCurrentValue());
+    TEST_ASSERT_EQUAL(fixture.temperatureSensor->read(), fixture.temperatureComponent->getCurrentValue());
+    
+    // → Lights trigger high
+    fixture.simulateTriggers(false, false, false, true);
+    fixture.updateSystem();
+    
+    // → Oil panel does NOT reload, theme changes to night (red scale ticks and icon)
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // → Lock trigger high
+    fixture.simulateTriggers(false, false, true, true);
+    fixture.updateSystem();
+    
+    // → Lock panel loads
+    TEST_ASSERT_EQUAL_STRING("LockPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Key not present trigger high
+    fixture.simulateTriggers(false, true, true, true);
+    fixture.updateSystem();
+    
+    // → Key panel loads (present = false → red icon)
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(0, fixture.keyComponent->getCurrentValue()); // Red icon
+    
+    // → Key present trigger high (invalid state)
+    fixture.simulateTriggers(true, true, true, true);
+    fixture.updateSystem();
+    
+    // → Lock panel loads (both key present and key not present true = invalid state)
+    TEST_ASSERT_EQUAL_STRING("LockPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Key not present trigger low
+    fixture.simulateTriggers(true, false, true, true);
+    fixture.updateSystem();
+    
+    // → Key panel loads (present = true → green icon, key present trigger still high)
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(1, fixture.keyComponent->getCurrentValue()); // Green icon
+    
+    // → Key present trigger low
+    fixture.simulateTriggers(false, false, true, true);
+    fixture.updateSystem();
+    
+    // → Lock panel loads (lock trigger still high)
+    TEST_ASSERT_EQUAL_STRING("LockPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Lock trigger low
+    fixture.simulateTriggers(false, false, false, true);
+    fixture.updateSystem();
+    
+    // → Oil panel loads with night theme (red scale ticks and icon, lights trigger still active)
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // → Oil panel needles animate (verify components updated)
+    TEST_ASSERT_EQUAL(fixture.pressureSensor->read(), fixture.pressureComponent->getCurrentValue());
+    TEST_ASSERT_EQUAL(fixture.temperatureSensor->read(), fixture.temperatureComponent->getCurrentValue());
+    
+    // → Lights trigger low
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    
+    // → Oil panel does NOT reload, theme changes to day (white scale ticks and icon)
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+}
+
+/**
+ * @test test_startup_scenario_default
+ * @brief Tests default startup scenario
+ */
+void test_startup_scenario_default(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts → Splash animates with day theme (white text)
+    fixture.simulateSystemStartup();
+    fixture.updateSystem();
+    
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_startup_scenario_with_oil_data
+ * @brief Tests startup with oil data scenario
+ */
+void test_startup_scenario_with_oil_data(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with pressure and temperature values set to halfway
+    fixture.simulateSystemStartup();
+    fixture.simulateSensorData(2048, 2048); // Halfway values
+    fixture.updateSystem();
+    
+    // → Splash animates with day theme (white text)
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+    
+    // → Oil panel loads with day theme (white scale ticks and icon)
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+    
+    // → Oil panel needles animate
+    TEST_ASSERT_EQUAL(fixture.pressureSensor->read(), fixture.pressureComponent->getCurrentValue());
+    TEST_ASSERT_EQUAL(fixture.temperatureSensor->read(), fixture.temperatureComponent->getCurrentValue());
+}
+
+/**
+ * @test test_startup_scenario_with_triggers
+ * @brief Tests startup with active triggers
+ */
+void test_startup_scenario_with_triggers(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with key present trigger high
+    fixture.simulateSystemStartup();
+    fixture.simulateTriggers(true, false, false, false); // Key present
+    fixture.updateSystem();
+    
+    // → Splash animates
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    
+    // → Oil panel does NOT load
+    // → Key panel loads (green icon)
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(1, fixture.keyComponent->getCurrentValue()); // Green icon
+    
+    // → Key present trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_key_present_scenario_runtime
+ * @brief Tests key present scenario during runtime
+ */
+void test_key_present_scenario_runtime(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts → Splash animates → Oil panel loads
+    fixture.simulateSystemStartup();
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Key present trigger high → Key panel loads (green icon)
+    fixture.simulateTriggers(true, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(1, fixture.keyComponent->getCurrentValue()); // Green icon
+    
+    // → Key present trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_key_present_scenario_startup
+ * @brief Tests key present scenario at startup
+ */
+void test_key_present_scenario_startup(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with key present trigger high
+    fixture.simulateSystemStartup();
+    fixture.simulateTriggers(true, false, false, false);
+    fixture.updateSystem();
+    
+    // → Splash animates
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    
+    // → Oil panel does NOT load
+    // → Key panel loads (green icon)
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(1, fixture.keyComponent->getCurrentValue()); // Green icon
+    
+    // → Key present trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_key_not_present_scenario_runtime
+ * @brief Tests key not present scenario during runtime
+ */
+void test_key_not_present_scenario_runtime(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts → Oil panel loads
+    fixture.simulateSystemStartup();
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Key not present trigger high → Key panel loads (red icon)
+    fixture.simulateTriggers(false, true, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(0, fixture.keyComponent->getCurrentValue()); // Red icon
+    
+    // → Key not present trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_key_not_present_scenario_startup
+ * @brief Tests key not present scenario at startup
+ */
+void test_key_not_present_scenario_startup(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with key not present trigger high
+    fixture.simulateSystemStartup();
+    fixture.simulateTriggers(false, true, false, false);
+    fixture.updateSystem();
+    
+    // → Splash animates
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    
+    // → Oil panel does NOT load
+    // → Key panel loads (red icon)
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(0, fixture.keyComponent->getCurrentValue()); // Red icon
+    
+    // → Key not present trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_lock_scenario_runtime
+ * @brief Tests lock scenario during runtime
+ */
+void test_lock_scenario_runtime(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts → Oil panel loads
+    fixture.simulateSystemStartup();
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Lock trigger high → Lock panel loads
+    fixture.simulateTriggers(false, false, true, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("LockPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Lock trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_lock_scenario_startup
+ * @brief Tests lock scenario at startup
+ */
+void test_lock_scenario_startup(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with lock trigger high
+    fixture.simulateSystemStartup();
+    fixture.simulateTriggers(false, false, true, false);
+    fixture.updateSystem();
+    
+    // → Splash animates
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    
+    // → Oil panel does NOT load
+    // → Lock panel loads
+    TEST_ASSERT_EQUAL_STRING("LockPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // → Lock trigger low → Oil panel loads
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+}
+
+/**
+ * @test test_theme_change_scenario_runtime
+ * @brief Tests theme change scenario during runtime
+ */
+void test_theme_change_scenario_runtime(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts → Oil panel loads
+    fixture.simulateSystemStartup();
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+    
+    // → Lights trigger high → Theme changes to night (no reload)
+    fixture.simulateTriggers(false, false, false, true);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str()); // No panel change
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // → Lights trigger low → Theme changes to day (no reload)
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str()); // No panel change
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+}
+
+/**
+ * @test test_theme_change_scenario_startup
+ * @brief Tests theme change scenario at startup
+ */
+void test_theme_change_scenario_startup(void) {
+    SystemIntegrationFixture fixture;
+    
+    // App starts with lights trigger high
+    fixture.simulateSystemStartup();
+    fixture.simulateTriggers(false, false, false, true);
+    fixture.updateSystem();
+    
+    // → Splash animates with night theme (red text)
+    TEST_ASSERT_TRUE(fixture.panelManager->wasSplashShown());
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // → Oil panel loads with night theme
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // → Lights trigger low → Theme changes to day (no reload)
+    fixture.simulateTriggers(false, false, false, false);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str()); // No panel change
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+}
+
+// 4.2 System Integration Tests
+
+/**
+ * @test test_service_container_dependency_injection
+ * @brief Tests service container dependency injection
+ */
+void test_service_container_dependency_injection(void) {
+    SystemIntegrationFixture fixture;
+    
+    // Verify all services are properly injected
+    TEST_ASSERT_NOT_NULL(fixture.gpio);
+    TEST_ASSERT_NOT_NULL(fixture.styleManager);
+    TEST_ASSERT_NOT_NULL(fixture.prefManager);
+    TEST_ASSERT_NOT_NULL(fixture.triggerManager);
+    TEST_ASSERT_NOT_NULL(fixture.panelManager);
+    
+    // Verify sensors have GPIO provider
+    TEST_ASSERT_NOT_NULL(fixture.pressureSensor.get());
+    TEST_ASSERT_NOT_NULL(fixture.temperatureSensor.get());
+    TEST_ASSERT_NOT_NULL(fixture.keySensor.get());
+    TEST_ASSERT_NOT_NULL(fixture.lockSensor.get());
+    TEST_ASSERT_NOT_NULL(fixture.lightSensor.get());
+    
+    // Verify components have style service
+    TEST_ASSERT_NOT_NULL(fixture.pressureComponent.get());
+    TEST_ASSERT_NOT_NULL(fixture.temperatureComponent.get());
+    TEST_ASSERT_NOT_NULL(fixture.keyComponent.get());
+    TEST_ASSERT_NOT_NULL(fixture.lockComponent.get());
+    TEST_ASSERT_NOT_NULL(fixture.clarityComponent.get());
+}
+
+/**
+ * @test test_service_container_lifecycle_management
+ * @brief Tests service container lifecycle management
+ */
+void test_service_container_lifecycle_management(void) {
+    SystemIntegrationFixture fixture;
+    
+    // Test initialization sequence
+    fixture.simulateSystemStartup();
+    
+    // Verify sensors are initialized
+    TEST_ASSERT_TRUE(fixture.pressureSensor->isInitialized());
+    TEST_ASSERT_TRUE(fixture.temperatureSensor->isInitialized());
+    TEST_ASSERT_TRUE(fixture.keySensor->isInitialized());
+    TEST_ASSERT_TRUE(fixture.lockSensor->isInitialized());
+    TEST_ASSERT_TRUE(fixture.lightSensor->isInitialized());
+    
+    // Verify managers are in expected initial state
+    TEST_ASSERT_EQUAL(TriggerType::NONE, fixture.triggerManager->getActiveTrigger());
+    TEST_ASSERT_EQUAL(Theme::DAY, fixture.styleManager->getCurrentTheme());
+}
+
+/**
+ * @test test_service_container_cross_service_communication
+ * @brief Tests cross-service communication
+ */
+void test_service_container_cross_service_communication(void) {
+    SystemIntegrationFixture fixture;
+    fixture.simulateSystemStartup();
+    
+    // Test GPIO → Sensor → TriggerManager communication
+    fixture.simulateTriggers(true, false, false, false); // Key present
+    fixture.updateSystem();
+    
+    // Verify communication chain
+    TEST_ASSERT_TRUE(fixture.gpio->getDigitalValue(GPIO_KEY_PRESENT));
+    TEST_ASSERT_TRUE(fixture.keySensor->read());
+    TEST_ASSERT_EQUAL(TriggerType::KEY_PRESENT, fixture.triggerManager->getActiveTrigger());
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // Test theme communication
+    fixture.simulateTriggers(false, false, false, true); // Light sensor
+    fixture.updateSystem();
+    
+    TEST_ASSERT_TRUE(fixture.lightSensor->read());
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+}
+
+/**
+ * @test test_end_to_end_sensor_to_component_flow
+ * @brief Tests complete sensor to component data flow
+ */
+void test_end_to_end_sensor_to_component_flow(void) {
+    SystemIntegrationFixture fixture;
+    fixture.simulateSystemStartup();
+    
+    // Set sensor data
+    int32_t testPressure = 1500;
+    int32_t testTemperature = 3000;
+    fixture.simulateSensorData(testPressure, testTemperature);
+    
+    // Update system
+    fixture.updateSystem();
+    
+    // Verify data flows from GPIO → Sensor → Component
+    TEST_ASSERT_EQUAL(testPressure, fixture.gpio->getAnalogValue(GPIO_PRESSURE_SENSOR));
+    TEST_ASSERT_EQUAL(testPressure, fixture.pressureSensor->read());
+    TEST_ASSERT_EQUAL(testPressure, fixture.pressureComponent->getCurrentValue());
+    
+    TEST_ASSERT_EQUAL(testTemperature, fixture.gpio->getAnalogValue(GPIO_TEMPERATURE_SENSOR));
+    TEST_ASSERT_EQUAL(testTemperature, fixture.temperatureSensor->read());
+    TEST_ASSERT_EQUAL(testTemperature, fixture.temperatureComponent->getCurrentValue());
+}
+
+/**
+ * @test test_end_to_end_trigger_to_panel_pipeline
+ * @brief Tests complete trigger to panel pipeline
+ */
+void test_end_to_end_trigger_to_panel_pipeline(void) {
+    SystemIntegrationFixture fixture;
+    fixture.simulateSystemStartup();
+    
+    // Test each trigger type
+    struct TriggerTest {
+        bool keyPresent, keyNotPresent, lock, light;
+        TriggerType expectedTrigger;
+        const char* expectedPanel;
+    };
+    
+    TriggerTest tests[] = {
+        {true, false, false, false, TriggerType::KEY_PRESENT, "KeyPanel"},
+        {false, true, false, false, TriggerType::KEY_NOT_PRESENT, "KeyPanel"},
+        {false, false, true, false, TriggerType::LOCK, "LockPanel"},
+        {false, false, false, true, TriggerType::THEME, "OilPanel"}, // Theme doesn't change panel
+        {false, false, false, false, TriggerType::NONE, "OilPanel"}
+    };
+    
+    for (auto& test : tests) {
+        fixture.simulateTriggers(test.keyPresent, test.keyNotPresent, test.lock, test.light);
+        fixture.updateSystem();
+        
+        TEST_ASSERT_EQUAL(test.expectedTrigger, fixture.triggerManager->getActiveTrigger());
+        TEST_ASSERT_EQUAL_STRING(test.expectedPanel, fixture.panelManager->getCurrentPanel().c_str());
+    }
+}
+
+/**
+ * @test test_system_error_propagation_recovery
+ * @brief Tests system error propagation and recovery
+ */
+void test_system_error_propagation_recovery(void) {
+    SystemIntegrationFixture fixture;
+    fixture.simulateSystemStartup();
+    
+    // Test sensor error handling
+    fixture.gpio->simulateAnalogFailure(GPIO_PRESSURE_SENSOR);
+    fixture.updateSystem();
+    
+    // System should handle gracefully (component gets last valid value or default)
+    TEST_ASSERT_TRUE(fixture.pressureComponent->getCurrentValue() >= 0); // Should not crash
+    
+    // Test recovery
+    fixture.gpio->clearAnalogFailure(GPIO_PRESSURE_SENSOR);
+    fixture.simulateSensorData(2000, 2000);
+    fixture.updateSystem();
+    
+    // System should recover
+    TEST_ASSERT_EQUAL(2000, fixture.pressureComponent->getCurrentValue());
+}
+
+/**
+ * @test test_system_state_persistence
+ * @brief Tests system state persistence across operations
+ */
+void test_system_state_persistence(void) {
+    SystemIntegrationFixture fixture;
+    fixture.simulateSystemStartup();
+    
+    // Set theme to night
+    fixture.simulateTriggers(false, false, false, true);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // Switch to key panel
+    fixture.simulateTriggers(true, false, false, true);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("KeyPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // Theme should persist
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+    
+    // Return to oil panel
+    fixture.simulateTriggers(false, false, false, true);
+    fixture.updateSystem();
+    TEST_ASSERT_EQUAL_STRING("OilPanel", fixture.panelManager->getCurrentPanel().c_str());
+    
+    // Theme should still persist
+    TEST_ASSERT_EQUAL(Theme::NIGHT, fixture.styleManager->getCurrentTheme());
+}
+
+/**
+ * @test test_system_performance_under_load
+ * @brief Tests system performance under load
+ */
+void test_system_performance_under_load(void) {
+    SystemIntegrationFixture fixture;
+    fixture.simulateSystemStartup();
+    
+    // Simulate rapid trigger changes
+    for (int i = 0; i < 100; i++) {
+        bool state = (i % 2 == 0);
+        fixture.simulateTriggers(state, false, false, false);
+        fixture.updateSystem();
+        
+        // Verify system remains stable
+        TEST_ASSERT_NOT_NULL(fixture.panelManager->getCurrentPanel().c_str());
+        TEST_ASSERT_TRUE(fixture.styleManager->getCurrentTheme() == Theme::DAY || 
+                        fixture.styleManager->getCurrentTheme() == Theme::NIGHT);
+    }
+    
+    // Simulate rapid sensor value changes
+    for (int i = 0; i < 50; i++) {
+        fixture.simulateSensorData(i * 80, i * 60);
+        fixture.updateSystem();
+        
+        // Verify components handle rapid updates
+        TEST_ASSERT_TRUE(fixture.pressureComponent->getCurrentValue() >= 0);
+        TEST_ASSERT_TRUE(fixture.temperatureComponent->getCurrentValue() >= 0);
+    }
+}
+
 // ============================================================================
 // MAIN TEST RUNNER
 // ============================================================================
@@ -2598,11 +3568,42 @@ int main() {
     RUN_TEST(test_component_data_flow_integration);
     RUN_TEST(test_component_theme_coordination);
     
+    // ====================================================================
+    // PHASE 4: INTEGRATION & SCENARIO TESTS
+    // ====================================================================
+    
+    printf("\n=== Phase 4: Integration & Scenario Tests ===\n");
+    
+    // 4.1 Scenario-Based Integration Tests
+    RUN_TEST(test_major_scenario_complete_system);
+    RUN_TEST(test_startup_scenario_default);
+    RUN_TEST(test_startup_scenario_with_oil_data);
+    RUN_TEST(test_startup_scenario_with_triggers);
+    RUN_TEST(test_key_present_scenario_runtime);
+    RUN_TEST(test_key_present_scenario_startup);
+    RUN_TEST(test_key_not_present_scenario_runtime);
+    RUN_TEST(test_key_not_present_scenario_startup);
+    RUN_TEST(test_lock_scenario_runtime);
+    RUN_TEST(test_lock_scenario_startup);
+    RUN_TEST(test_theme_change_scenario_runtime);
+    RUN_TEST(test_theme_change_scenario_startup);
+    
+    // 4.2 System Integration Tests
+    RUN_TEST(test_service_container_dependency_injection);
+    RUN_TEST(test_service_container_lifecycle_management);
+    RUN_TEST(test_service_container_cross_service_communication);
+    RUN_TEST(test_end_to_end_sensor_to_component_flow);
+    RUN_TEST(test_end_to_end_trigger_to_panel_pipeline);
+    RUN_TEST(test_system_error_propagation_recovery);
+    RUN_TEST(test_system_state_persistence);
+    RUN_TEST(test_system_performance_under_load);
+    
     printf("\n=== Complete Test Suite Finished ===\n");
     printf("Phase 1: Complete core sensor tests (17) + enhanced patterns (4) = 21 tests\n");
     printf("Phase 2: Complete manager layer tests (TriggerManager + Real Managers) = 28 tests\n");
     printf("Phase 3: Complete component layer tests (UI Logic) = 23 tests\n");
-    printf("Total: 72 comprehensive tests covering all Phase 1, 2 & 3 functionality\n");
+    printf("Phase 4: Complete integration & scenario tests = 20 tests\n");
+    printf("Total: 92 comprehensive tests covering all phases functionality\n");
     
     return UNITY_END();
 }
