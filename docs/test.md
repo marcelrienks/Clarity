@@ -39,70 +39,57 @@ PlatformIO has an additional limitation where test files within nested directori
 
 **Workaround**: All test code is consolidated in the root `/test/` directory with a single test file approach.
 
-## Test Environments
+## Test Environment
 
-The project defines multiple test environments to work around the single-file limitation:
+The project uses a single test environment that runs the complete test suite:
 
-### Available Test Environments
+### Available Test Environment
 
-1. **test-all**: Runs complete test suite
-2. **test-sensors**: Runs only sensor-related tests
-3. **test-managers-core**: Runs core manager tests
-4. **test-components**: Runs component tests
-5. **test-integration**: Runs integration tests
-6. **test-infrastructure**: Runs infrastructure tests
+1. **test-all**: Runs complete test suite (100 tests)
 
 ### Environment Configuration
 
-Each test environment uses compilation conditionals to include only relevant test code:
+The test environment runs all 100 tests using compilation conditionals:
 
 ```ini
-[env:test-sensors]
+[env:test-all]
 platform = native
 build_flags = 
-    -D TEST_SENSORS_ONLY
+    -D TEST_ALL_SUITES
     -D UNITY_INCLUDE_DOUBLE
+    -D UNIT_TESTING
+    -D CLARITY_DEBUG
     -I include
     -I test
     -I test/mocks
     -I test/utilities
     -D LVGL_MOCK
+    -g3
+    -O0
+lib_deps = 
+    throwtheswitch/Unity @ ^2.6.0
+test_framework = unity
+test_filter = test_all
 ```
 
 ## Running Tests
 
 ### Execute All Tests
 ```bash
-pio.exe test -e test-all
-```
-
-### Execute Specific Test Suites
-```bash
-# Sensor tests only
-pio.exe test -e test-sensors
-
-# Manager tests only  
-pio.exe test -e test-managers-core
-
-# Component tests only
-pio.exe test -e test-components
-
-# Integration tests only
-pio.exe test -e test-integration
-
-# Infrastructure tests only
-pio.exe test -e test-infrastructure
+pio test -e test-all
 ```
 
 ### Execute Tests with Verbose Output
 ```bash
-pio.exe test -e test-all --verbose
+pio test -e test-all --verbose
 ```
 
-### Execute Tests with Specific Filter
-```bash
-pio.exe test -e test-all --filter="test_sensor*"
-```
+All 100 tests run as a single comprehensive suite covering:
+- **Sensor Tests (21)**: Oil pressure/temperature, key state, lock state, light sensors
+- **Manager Tests (15)**: Trigger manager, panel manager, service mocks
+- **Component Tests (23)**: OEM oil components, UI components, branding components
+- **Integration Tests (20)**: End-to-end scenarios, system integration
+- **Infrastructure Tests (21)**: Device layer, factories, utilities, main application
 
 ## Test Structure
 
@@ -168,8 +155,18 @@ The test suite includes comprehensive mocks for embedded dependencies:
 Typical test execution output:
 ```
 Running test-all...
-12 test cases: 12 succeeded in 00:00:08.063
-Memory usage: 85% of 32KB
+=== Clarity Complete Test Suite (All Tests) ===
+Running ALL 100 tests across all layers...
+
+--- Sensor Tests (21) ---
+--- Manager Core Tests (15) ---
+--- Component Tests (23) ---
+--- Integration Tests (20) ---
+--- Infrastructure Tests (21) ---
+
+=== Complete Test Suite Finished ===
+Total: 100 tests executed
+100 Tests 0 Failures 0 Ignored
 ```
 
 ## Debugging Tests
@@ -185,10 +182,7 @@ Test environments include debug flags for troubleshooting:
 
 ### Running Individual Tests
 
-To debug specific test functions, use Unity's test runner with filters:
-```bash
-pio.exe test -e test-all --filter="RUN_TEST(test_sensor_oil_pressure)"
-```
+Tests are run as a complete suite. Individual test debugging can be done by temporarily modifying the `test_all.cpp` file to comment out unwanted test sections or by examining the detailed test output.
 
 ### Memory Debugging
 
@@ -201,10 +195,14 @@ Tests run with memory debugging enabled to catch allocation issues:
 
 Tests are integrated with GitHub Actions for automated validation:
 
-- **Trigger**: Every pull request and push to main
-- **Matrix**: Cross-platform testing (Linux, Windows, macOS)
-- **Coverage**: All test environments executed
-- **Reporting**: Test results and coverage reports
+- **Trigger**: Every pull request and push to main/develop branches
+- **Platform**: Ubuntu latest
+- **Test Execution**: Complete 100-test suite
+- **Build Verification**: Release firmware build and size check
+
+The CI workflow runs two jobs in parallel:
+1. **Test Job**: Executes all 100 tests with verbose output
+2. **Build Job**: Verifies release firmware compilation and reports program size
 
 See `.github/workflows/test.yml` for CI configuration details.
 
@@ -213,15 +211,15 @@ See `.github/workflows/test.yml` for CI configuration details.
 ### Guidelines for New Test Code
 
 1. **Add to test_all.cpp**: All test code must be in the single test file
-2. **Use Compilation Conditionals**: Wrap tests in appropriate `#ifdef` blocks
+2. **Use TEST_ALL_SUITES**: Tests run under the `#ifdef TEST_ALL_SUITES` compilation block
 3. **Follow Naming Convention**: Use `test_<component>_<functionality>` format
 4. **Include Setup/Teardown**: Use Unity's `setUp()` and `tearDown()` functions
 5. **Mock Dependencies**: Use existing mocks or extend them for new hardware dependencies
+6. **Add to RUN_TEST**: Include the new test in the appropriate section's `RUN_TEST()` calls
 
 ### Example Test Addition
 
 ```cpp
-#ifdef TEST_SENSORS_ONLY
 void test_new_sensor_functionality() {
     // Setup
     setUp();
@@ -232,7 +230,14 @@ void test_new_sensor_functionality() {
     // Teardown
     tearDown();
 }
-#endif
+
+// Add to the appropriate section in main():
+#elif defined(TEST_ALL_SUITES)
+    // ... existing tests ...
+    printf("--- Sensor Tests (21) ---\n");
+    RUN_TEST(test_oil_pressure_sensor_initialization);
+    // ... other sensor tests ...
+    RUN_TEST(test_new_sensor_functionality);  // Add here
 ```
 
 This testing approach ensures comprehensive coverage while working within PlatformIO's constraints, providing fast feedback on core functionality without requiring ESP32 hardware.
