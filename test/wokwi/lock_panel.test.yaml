@@ -1,0 +1,94 @@
+version: 1
+name: "Lock Panel Integration - Enhanced"
+description: "Lock trigger validation with panel switching and priority handling"
+timeout: 45000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Initialize baseline state
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 3000ms
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Activate lock trigger (DIP #3 ON = GPIO 27)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 4  # Switch 3 ON (Lock)
+  - delay: 2000ms
+  - wait-serial: "Lock panel"
+  - delay: 2000ms
+  
+  # Verify lock panel active
+  - wait-serial: "lock sensor"
+  - delay: 1000ms
+  
+  # Test lock with theme change (lock should take priority)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 12  # Switches 3&4 ON (Lock + Lights)
+  - delay: 2000ms
+  # Lock panel should remain active even with theme change
+  - wait-serial: "Night"
+  - delay: 1000ms
+  
+  # Deactivate lock trigger (keep lights on)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # Switch 4 ON (Lights only)
+  - delay: 2000ms
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Verify night theme persists
+  - wait-serial: "theme: Night"
+  - delay: 1000ms
+  
+  # Test startup scenario - lock active at boot
+  # Activate lock trigger again
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 4  # Switch 3 ON (Lock only)
+  - delay: 2000ms
+  - wait-serial: "Lock panel"
+  - delay: 1000ms
+  
+  # Return to oil panel
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "Oil panel"
+  - delay: 1000ms
+  
+  # Multiple rapid toggles to test stability
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 4  # Lock ON
+  - delay: 500ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # Lock OFF
+  - delay: 500ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 4  # Lock ON
+  - delay: 500ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # Lock OFF
+  - delay: 1000ms

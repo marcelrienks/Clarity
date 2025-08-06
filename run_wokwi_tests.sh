@@ -3,7 +3,7 @@
 # Enhanced Wokwi Test Runner with Comprehensive Validation
 # Uses YAML scenario files for detailed testing where available
 
-echo "🚗 Clarity Automotive Gauge - Enhanced Wokwi Integration Tests"
+echo "🚗 Clarity Automotive Gauge - Complete Wokwi Integration Tests"
 echo "============================================================="
 
 # Check if WOKWI_CLI_TOKEN is set
@@ -30,12 +30,16 @@ fi
 echo "✅ Firmware build successful"
 echo ""
 
-# Enhanced test scenarios with YAML automation where available
+# Complete test scenarios with YAML automation
 test_scenarios=(
     "basic_startup:Basic System Startup:basic_startup.test.yaml:Oil panel"
     "oil_panel_sensors:Oil Panel Sensor Testing:oil_panel_sensors.test.yaml:Updating pressure"
     "theme_switching:Day/Night Theme Switching:theme_switching.test.yaml:Switching application theme"
+    "night_startup:Night Theme Startup:night_startup.test.yaml:theme: Night"
     "key_present:Key Present Panel Switch:key_present.test.yaml:Key panel"
+    "key_not_present:Key Not Present Panel Switch:key_not_present.test.yaml:present = false"
+    "lock_panel:Lock Panel Integration:lock_panel.test.yaml:Lock panel"
+    "startup_triggers:Startup Triggers Validation:startup_triggers.test.yaml:present = true"
     "trigger_priority:Trigger Priority Validation:trigger_priority.test.yaml:initialized to INACTIVE"
     "major_scenario:Major Integration Scenario:major_scenario.test.yaml:Oil panel"
 )
@@ -46,13 +50,13 @@ passed_tests=0
 failed_tests=0
 failed_test_names=()
 
-echo "🧪 Running $total_tests enhanced integration test scenarios..."
+echo "🧪 Running $total_tests comprehensive integration test scenarios..."
 echo ""
 
 # Create results directory
 mkdir -p test_results
-echo "Enhanced Test Execution Report - $(date)" > test_results/test_summary.txt
-echo "===============================================" >> test_results/test_summary.txt
+echo "Complete Test Execution Report - $(date)" > test_results/test_summary.txt
+echo "=============================================" >> test_results/test_summary.txt
 
 # Run each test scenario
 for scenario_info in "${test_scenarios[@]}"; do
@@ -126,7 +130,7 @@ echo ""
 
 # Add summary to results file
 echo "" >> test_results/test_summary.txt
-echo "ENHANCED SUMMARY:" >> test_results/test_summary.txt
+echo "COMPLETE SUMMARY:" >> test_results/test_summary.txt
 echo "=================" >> test_results/test_summary.txt
 echo "Total Tests: $total_tests" >> test_results/test_summary.txt
 echo "Passed: $passed_tests" >> test_results/test_summary.txt
@@ -148,7 +152,7 @@ if [ $failed_tests -gt 0 ]; then
     echo "🚫 Some tests failed. Please review the results."
     exit 1
 else
-    echo "🎉 All enhanced tests passed successfully!"
+    echo "🎉 All comprehensive tests passed successfully!"
     echo ""
     echo "📂 Test artifacts saved to: test_results/"
     echo "📸 Screenshots and logs available for review"

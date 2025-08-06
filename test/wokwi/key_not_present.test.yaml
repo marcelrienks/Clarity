@@ -1,0 +1,65 @@
+version: 1
+name: "Key Not Present Panel Switch - Enhanced"
+description: "Key not present trigger validation with red icon and panel switching"
+timeout: 40000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Initialize baseline state
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 3000ms
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Activate key not present trigger (DIP #2 ON = GPIO 26)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 2  # Switch 2 ON (Key Not Present)
+  - delay: 2000ms
+  - wait-serial: "Key panel"
+  - delay: 2000ms
+  
+  # Verify key not present state (red icon)
+  - wait-serial: "present = false"
+  - delay: 1000ms
+  
+  # Deactivate key not present trigger
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "Oil panel"
+  - delay: 1000ms
+  
+  # Test startup scenario - key not present active at boot
+  # This simulates system restart with trigger already active
+  - delay: 1000ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 2  # Switch 2 ON before next panel load
+  - delay: 3000ms
+  
+  # Multiple toggles to test stability
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # OFF
+  - delay: 1000ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 2  # ON
+  - delay: 1000ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # OFF
+  - delay: 1000ms

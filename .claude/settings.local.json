@@ -89,7 +89,9 @@
       "Bash(for dir in test/wokwi/*/)",
       "Bash(do echo \"=== $dir ===\")",
       "Bash(./run_unity_tests.sh:*)",
-      "Bash(cmd.exe /c run_unity_tests.bat)"
+      "Bash(cmd.exe /c run_unity_tests.bat)",
+      "Bash(for file in *.test.yaml)",
+      "Bash(do echo \"=== $file ===\")"
     ],
     "deny": []
   }

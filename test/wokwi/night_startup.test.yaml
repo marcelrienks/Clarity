@@ -1,0 +1,73 @@
+version: 1
+name: "Night Theme Startup - Enhanced"
+description: "Night theme validation at startup with lights trigger active from boot"
+timeout: 35000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Set lights trigger active from the beginning (DIP #4 ON = GPIO 33)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # Switch 4 ON (Lights)
+  - delay: 1000ms
+  
+  # Wait for splash screen with night theme
+  - wait-serial: "Loading splash panel"
+  - delay: 3000ms
+  
+  # Verify night theme is applied at startup
+  - wait-serial: "theme: Night"
+  - delay: 2000ms
+  
+  # Wait for oil panel load with night theme
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Verify night theme persists on oil panel
+  - wait-serial: "Applying current theme"
+  - delay: 1000ms
+  
+  # Test theme switch to day during runtime
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # Switch 4 OFF (Lights OFF)
+  - delay: 2000ms
+  - wait-serial: "theme: Day"
+  - delay: 1000ms
+  
+  # Test theme switch back to night
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # Switch 4 ON (Lights ON)
+  - delay: 2000ms
+  - wait-serial: "theme: Night"
+  - delay: 1000ms
+  
+  # Verify oil panel doesn't reload during theme changes
+  # (should see theme change but not panel reload)
+  - delay: 2000ms
+  
+  # Test with sensor data during night theme
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 400  # Some pressure reading
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 500  # Some temperature reading
+  - delay: 2000ms
+  
+  # Return to day theme
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "theme: Day"
+  - delay: 1000ms

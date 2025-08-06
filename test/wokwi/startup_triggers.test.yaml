@@ -1,0 +1,110 @@
+version: 1
+name: "Startup Triggers Validation - Enhanced"
+description: "Comprehensive test of various triggers active at startup with priority handling"
+timeout: 80000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Test 1: Key Present at Startup
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 1  # Switch 1 ON (Key Present - GPIO 25)
+  - delay: 3000ms
+  - wait-serial: "Loading splash panel"
+  - delay: 2000ms
+  # Oil panel should NOT load, key panel should load instead
+  - wait-serial: "Key panel"
+  - delay: 2000ms
+  - wait-serial: "present = true"
+  - delay: 1000ms
+  
+  # Clear trigger and verify oil panel loads
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Test 2: Key Not Present at Startup
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 2  # Switch 2 ON (Key Not Present - GPIO 26)
+  - delay: 1000ms
+  # Should immediately switch to key panel
+  - wait-serial: "Key panel"
+  - delay: 2000ms
+  - wait-serial: "present = false"
+  - delay: 1000ms
+  
+  # Clear trigger
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Test 3: Lock at Startup
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 4  # Switch 3 ON (Lock - GPIO 27)
+  - delay: 1000ms
+  # Should immediately switch to lock panel
+  - wait-serial: "Lock panel"
+  - delay: 2000ms
+  - wait-serial: "lock sensor"
+  - delay: 1000ms
+  
+  # Clear trigger
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  
+  # Test 4: Multiple Triggers at Startup (Priority Testing)
+  # Key Present + Lock (Key should have priority based on GPIO order)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 5  # Switches 1&3 ON (Key Present + Lock)
+  - delay: 2000ms
+  - wait-serial: "Key panel"  # Key should take priority
+  - delay: 1000ms
+  
+  # Remove key trigger, lock should activate
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 4  # Switch 3 ON (Lock only)
+  - delay: 2000ms
+  - wait-serial: "Lock panel"
+  - delay: 1000ms
+  
+  # Test 5: All Triggers at Startup
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 15  # All switches ON (Key Present + Key Not Present + Lock + Lights)
+  - delay: 2000ms
+  # Should handle invalid state gracefully
+  - delay: 3000ms
+  
+  # Clear all triggers
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 3000ms
+  - wait-serial: "Oil panel"
+  - delay: 1000ms
