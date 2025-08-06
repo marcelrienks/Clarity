@@ -22,14 +22,18 @@ steps:
       value: 0  # Minimum temperature
   - delay: 1000ms
   
+  # Wait for day theme initialization (happens early in startup)
+  - wait-serial: "Switching application theme to: Day"
+  - delay: 1000ms
+  
   # Wait for splash screen
-  - wait-serial: "Loading splash panel"
+  - wait-serial: "Loading splash panel with fade-in animation"
+  - delay: 4000ms
+  
+  # Wait for splash completion callback
+  - wait-serial: "Splash screen animation completed, transitioning to panel: OemOilPanel"
   - delay: 2000ms
   
   # Wait for oil panel transition
-  - wait-serial: "OEM oil panel"
-  - delay: 2000ms
-  
-  # Verify day theme
-  - wait-serial: "theme: Day"
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 1000ms

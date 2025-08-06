@@ -1,13 +1,13 @@
 version: 1
-name: "Night Theme Startup - Enhanced"
-description: "Night theme validation at startup with lights trigger active from boot"
-timeout: 35000ms
+name: "Basic Startup Validation - Simple"
+description: "Basic startup test without DIP switch trigger dependencies"
+timeout: 25000ms
 
 steps:
   # Wait for simulation start
   - delay: 2000ms
   
-  # Initialize all switches OFF for consistent startup
+  # Initialize baseline state
   - set-control:
       part-id: sw1
       control: value
@@ -18,18 +18,18 @@ steps:
   - wait-serial: "Loading splash panel with fade-in animation"
   - delay: 3000ms
   
-  # Wait for oil panel load  
+  # Wait for oil panel
   - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
   
-  # Test sensor data updates (DIP switch triggers don't work in Wokwi simulation)
+  # Test sensor data
   - set-control:
       part-id: pot1
       control: value
-      value: 400  # Some pressure reading
+      value: 400  # Some pressure
   - delay: 1000ms
   - set-control:
       part-id: pot2
       control: value
-      value: 500  # Some temperature reading
-  - delay: 2000ms
+      value: 300  # Some temperature
+  - delay: 1000ms

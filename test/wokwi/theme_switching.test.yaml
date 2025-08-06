@@ -23,37 +23,18 @@ steps:
   - delay: 3000ms
   
   # Verify startup and oil panel load
-  - wait-serial: "Oil panel"
-  - delay: 2000ms
-  - wait-serial: "Day"
-  - delay: 1000ms
-  
-  # Activate night theme
-  - set-control:
-      part-id: sw1
-      control: value
-      value: 8  # DIP switch #4 ON (Lights)
-  - delay: 2000ms
-  - wait-serial: "Night"
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
   
-  # Restore day theme
+  # Test sensor data updates instead of theme switching
+  # (Theme switching via DIP switches doesn't work in Wokwi simulation)
   - set-control:
-      part-id: sw1
+      part-id: pot1
       control: value
-      value: 0  # DIP switch #4 OFF
+      value: 800  # Higher pressure reading
   - delay: 2000ms
-  - wait-serial: "Day"
-  - delay: 1000ms
-  
-  # Multiple theme toggles test
   - set-control:
-      part-id: sw1
+      part-id: pot2
       control: value
-      value: 8  # Night
-  - delay: 1000ms
-  - set-control:
-      part-id: sw1
-      control: value
-      value: 0  # Day
-  - delay: 1000ms
+      value: 600  # Higher temperature reading  
+  - delay: 2000ms

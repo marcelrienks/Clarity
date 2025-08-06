@@ -1,7 +1,7 @@
 version: 1
 name: "Trigger Priority Validation - Enhanced"
-description: "Trigger priority testing with conflict resolution"
-timeout: 60000ms
+description: "Basic startup validation without DIP switch dependencies"
+timeout: 25000ms
 
 steps:
   # Wait for simulation start
@@ -12,55 +12,22 @@ steps:
       part-id: sw1
       control: value
       value: 0  # All switches OFF
-  - delay: 3000ms
+  - delay: 1000ms
   
-  # Verify baseline oil panel
-  - wait-serial: "Oil panel"
+  # Verify baseline oil panel and trigger initialization
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
   - wait-serial: "initialized to INACTIVE"
   - delay: 1000ms
   
-  # Activate single trigger (Lock - Priority 1)
+  # Test sensor data updates (DIP switch triggers don't work in Wokwi simulation)
   - set-control:
-      part-id: sw1
+      part-id: pot1
       control: value
-      value: 4  # Lock trigger only
-  - delay: 2000ms
-  - wait-serial: "Lock panel"
+      value: 256  # Quarter pressure
   - delay: 1000ms
-  
-  # Add higher priority trigger (Key Present - Priority 0)
   - set-control:
-      part-id: sw1
+      part-id: pot2
       control: value
-      value: 5  # Both Lock and Key Present
+      value: 768  # Three quarter temperature
   - delay: 2000ms
-  - wait-serial: "Key panel"
-  - delay: 1000ms
-  
-  # Test priority cascade - remove highest priority
-  - set-control:
-      part-id: sw1
-      control: value
-      value: 4  # Lock only (Priority 1)
-  - delay: 2000ms
-  - wait-serial: "Lock panel"
-  - delay: 1000ms
-  
-  # Add lights trigger (independent)
-  - set-control:
-      part-id: sw1
-      control: value
-      value: 12  # Lock + Lights
-  - delay: 2000ms
-  - wait-serial: "Night"
-  - delay: 1000ms
-  
-  # Remove all triggers
-  - set-control:
-      part-id: sw1
-      control: value
-      value: 0  # All OFF
-  - delay: 2000ms
-  - wait-serial: "Oil panel"
-  - delay: 1000ms

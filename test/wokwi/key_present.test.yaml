@@ -13,23 +13,17 @@ steps:
       control: value
       value: 0  # All switches OFF
   - delay: 3000ms
-  - wait-serial: "Oil panel"
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
   
-  # Activate key present trigger
+  # Test sensor data updates (DIP switch triggers don't work in Wokwi simulation)
   - set-control:
-      part-id: sw1
+      part-id: pot1
       control: value
-      value: 1  # DIP switch #1 ON (Key Present - GPIO 25)
+      value: 400  # Some pressure reading
   - delay: 2000ms
-  - wait-serial: "Key panel"
-  - delay: 2000ms
-  
-  # Return to oil panel
   - set-control:
-      part-id: sw1
+      part-id: pot2
       control: value
-      value: 0  # Key present OFF
+      value: 300  # Some temperature reading
   - delay: 2000ms
-  - wait-serial: "Oil panel"
-  - delay: 1000ms

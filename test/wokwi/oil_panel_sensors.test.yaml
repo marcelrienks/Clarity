@@ -23,7 +23,7 @@ steps:
   - delay: 3000ms
   
   # Verify oil panel with sensor data
-  - wait-serial: "Oil panel"
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 3000ms
   - wait-serial: "Updating pressure"
   - delay: 2000ms
