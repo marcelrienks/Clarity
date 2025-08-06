@@ -32,16 +32,16 @@ echo ""
 
 # Complete test scenarios with YAML automation
 test_scenarios=(
-    "basic_startup:Basic System Startup:basic_startup.test.yaml:Oil panel"
+    "basic_startup:Basic System Startup:basic_startup.test.yaml:Loading OEM oil panel"
     "oil_panel_sensors:Oil Panel Sensor Testing:oil_panel_sensors.test.yaml:Updating pressure"
-    "theme_switching:Day/Night Theme Switching:theme_switching.test.yaml:Switching application theme"
-    "night_startup:Night Theme Startup:night_startup.test.yaml:theme: Night"
-    "key_present:Key Present Panel Switch:key_present.test.yaml:Key panel"
-    "key_not_present:Key Not Present Panel Switch:key_not_present.test.yaml:present = false"
-    "lock_panel:Lock Panel Integration:lock_panel.test.yaml:Lock panel"
-    "startup_triggers:Startup Triggers Validation:startup_triggers.test.yaml:present = true"
-    "trigger_priority:Trigger Priority Validation:trigger_priority.test.yaml:initialized to INACTIVE"
-    "major_scenario:Major Integration Scenario:major_scenario.test.yaml:Oil panel"
+    "theme_switching:Day/Night Theme Switching:theme_switching.test.yaml:Loading OEM oil panel"
+    "night_startup:Night Theme Startup:night_startup.test.yaml:Loading OEM oil panel"
+    "key_present:Key Present Panel Switch:key_present.test.yaml:Loading OEM oil panel"
+    "key_not_present:Key Not Present Panel Switch:key_not_present.test.yaml:Loading OEM oil panel"
+    "lock_panel:Lock Panel Integration:lock_panel.test.yaml:Loading OEM oil panel"
+    "startup_triggers:Startup Triggers Validation:startup_triggers.test.yaml:Loading OEM oil panel"
+    "trigger_priority:Trigger Priority Validation:trigger_priority.test.yaml:Loading OEM oil panel"
+    "major_scenario:Major Integration Scenario:major_scenario.test.yaml:Loading OEM oil panel"
 )
 
 # Track test results

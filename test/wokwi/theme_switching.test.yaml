@@ -22,12 +22,19 @@ steps:
       value: 400  # Some temperature reading
   - delay: 3000ms
   
+  # Verify initial theme is Day
+  - wait-serial: "Switching application theme to: Day"
+  - delay: 1000ms
+  
   # Verify startup and oil panel load
   - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
   
-  # Test sensor data updates instead of theme switching
-  # (Theme switching via DIP switches doesn't work in Wokwi simulation)
+  # Verify style manager applies theme to screen
+  - wait-serial: "Applying current theme styles to screen object"
+  - delay: 1000ms
+  
+  # Test sensor data updates (DIP switch theme switching doesn't work in Wokwi)
   - set-control:
       part-id: pot1
       control: value

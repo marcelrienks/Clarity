@@ -12,7 +12,17 @@ steps:
       part-id: sw1
       control: value
       value: 0  # All switches OFF
-  - delay: 3000ms
+  - delay: 1000ms
+  
+  # Verify key sensor initialization
+  - wait-serial: "Initializing key sensor on GPIO 25 (key present) and GPIO 26 (key not present)"
+  - delay: 500ms
+  
+  # Verify key trigger initialized to INACTIVE
+  - wait-serial: "Trigger key_present initialized to INACTIVE based on GPIO state"
+  - delay: 500ms
+  
+  # Wait for oil panel (key panel switching doesn't work in Wokwi)
   - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
   

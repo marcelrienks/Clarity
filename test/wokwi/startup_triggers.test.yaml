@@ -14,6 +14,20 @@ steps:
       value: 0  # All switches OFF
   - delay: 1000ms
   
+  # Verify trigger system initialization
+  - wait-serial: "Initializing sensor-based trigger system"
+  - delay: 500ms
+  
+  # Verify all triggers are initialized to INACTIVE
+  - wait-serial: "Trigger key_present initialized to INACTIVE based on GPIO state"
+  - delay: 200ms
+  - wait-serial: "Trigger key_not_present initialized to INACTIVE based on GPIO state"
+  - delay: 200ms
+  - wait-serial: "Trigger lock_state initialized to INACTIVE based on GPIO state"
+  - delay: 200ms
+  - wait-serial: "Trigger lights_state initialized to INACTIVE based on GPIO state"
+  - delay: 500ms
+  
   - wait-serial: "Loading splash panel with fade-in animation"
   - delay: 3000ms
   

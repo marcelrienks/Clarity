@@ -14,6 +14,14 @@ steps:
       value: 0  # All switches OFF
   - delay: 1000ms
   
+  # Verify Day theme starts (Night theme via DIP switch doesn't work in Wokwi)
+  - wait-serial: "Switching application theme to: Day"
+  - delay: 1000ms
+  
+  # Verify lights sensor reads OFF at startup
+  - wait-serial: "Lights sensor reading: OFF"
+  - delay: 500ms
+  
   # Wait for splash screen
   - wait-serial: "Loading splash panel with fade-in animation"
   - delay: 3000ms

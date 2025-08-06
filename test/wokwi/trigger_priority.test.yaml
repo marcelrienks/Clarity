@@ -1,7 +1,7 @@
 version: 1
 name: "Trigger Priority Validation - Enhanced"
 description: "Basic startup validation without DIP switch dependencies"
-timeout: 25000ms
+timeout: 45000ms
 
 steps:
   # Wait for simulation start
@@ -14,11 +14,17 @@ steps:
       value: 0  # All switches OFF
   - delay: 1000ms
   
-  # Verify baseline oil panel and trigger initialization
+  # Verify trigger initialization during startup
+  - wait-serial: "Trigger key_present initialized to INACTIVE based on GPIO state"
+  - delay: 1000ms
+  
+  # Wait for splash screen
+  - wait-serial: "Loading splash panel with fade-in animation"
+  - delay: 5000ms  # Allow time for splash animation
+  
+  # Verify baseline oil panel
   - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
   - delay: 2000ms
-  - wait-serial: "initialized to INACTIVE"
-  - delay: 1000ms
   
   # Test sensor data updates (DIP switch triggers don't work in Wokwi simulation)
   - set-control:
