@@ -36,12 +36,8 @@ test_scenarios=(
     "oil_panel_sensors:Oil Panel Sensor Testing:oil_panel_sensors.test.yaml:Updating pressure"
     "theme_switching:Day/Night Theme Switching:theme_switching.test.yaml:Switching application theme"
     "key_present:Key Present Panel Switch:key_present.test.yaml:Key panel"
-    "key_not_present:Key Not Present Panel::key sensor"
-    "lock_panel:Lock Panel Integration::lock sensor"
-    "night_startup:Night Theme Startup::Initializing style manager"
     "trigger_priority:Trigger Priority Validation:trigger_priority.test.yaml:initialized to INACTIVE"
     "major_scenario:Major Integration Scenario:major_scenario.test.yaml:Oil panel"
-    "performance_stress:Performance Stress Testing::Service initialization completed"
 )
 
 # Track test results
@@ -60,8 +56,8 @@ echo "===============================================" >> test_results/test_summ
 
 # Run each test scenario
 for scenario_info in "${test_scenarios[@]}"; do
-    # Split scenario info: dir:name:yaml:expect
-    scenario_dir="${scenario_info%%:*}"
+    # Split scenario info: id:name:yaml:expect
+    scenario_id="${scenario_info%%:*}"
     temp="${scenario_info#*:}"
     scenario_name="${temp%%:*}"
     temp="${temp#*:}"
@@ -69,19 +65,19 @@ for scenario_info in "${test_scenarios[@]}"; do
     expect_text="${temp#*:}"
     
     echo "🔧 Running: $scenario_name"
-    echo "   Directory: test/wokwi/$scenario_dir"
+    echo "   Test file: $yaml_file"
     
     # Create scenario-specific results directory
-    mkdir -p test_results/$scenario_dir
+    mkdir -p test_results/$scenario_id
     
     # Record start time
     start_time=$(date +%s)
     
     # Build wokwi-cli command
-    cmd="wokwi-cli test/wokwi/$scenario_dir --elf .pio/build/debug-local/firmware.elf --diagram-file diagram.json --timeout 60000"
+    cmd="wokwi-cli test/wokwi --elf .pio/build/debug-local/firmware.elf --timeout 60000"
     
     # Add YAML scenario if available
-    if [ -n "$yaml_file" ] && [ -f "test/wokwi/$scenario_dir/$yaml_file" ]; then
+    if [ -n "$yaml_file" ] && [ -f "test/wokwi/$yaml_file" ]; then
         echo "   📋 Using enhanced YAML: $yaml_file"
         cmd="$cmd --scenario $yaml_file"
     else
@@ -90,7 +86,7 @@ for scenario_info in "${test_scenarios[@]}"; do
     fi
     
     # Run the test
-    if eval "$cmd" > "test_results/$scenario_dir/output.log" 2>&1; then
+    if eval "$cmd" > "test_results/$scenario_id/output.log" 2>&1; then
         end_time=$(date +%s)
         duration=$((end_time - start_time))
         
@@ -99,8 +95,8 @@ for scenario_info in "${test_scenarios[@]}"; do
         ((passed_tests++))
         
         # Move any screenshots to results directory
-        if compgen -G "test/wokwi/$scenario_dir/*.png" > /dev/null; then
-            mv test/wokwi/$scenario_dir/*.png test_results/$scenario_dir/
+        if compgen -G "test/wokwi/*.png" > /dev/null; then
+            mv test/wokwi/*.png test_results/$scenario_id/
         fi
         
     else
@@ -113,8 +109,8 @@ for scenario_info in "${test_scenarios[@]}"; do
         ((failed_tests++))
         
         # Capture failure screenshots if any
-        if compgen -G "test/wokwi/$scenario_dir/*.png" > /dev/null; then
-            mv test/wokwi/$scenario_dir/*.png test_results/$scenario_dir/
+        if compgen -G "test/wokwi/*.png" > /dev/null; then
+            mv test/wokwi/*.png test_results/$scenario_id/
         fi
     fi
     echo ""

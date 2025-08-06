@@ -1,5 +1,5 @@
 /**
- * @file test_all.cpp
+ * @file unity_tests.cpp
  * @brief Comprehensive test suite for Clarity automotive gauge system
  * 
  * @details Complete test coverage for sensors, managers, components, integration,

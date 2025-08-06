@@ -84,7 +84,11 @@
       "Bash(./run_wokwi_tests.sh:*)",
       "Bash(./debug_wokwi_loop.sh:*)",
       "Bash(cat:*)",
-      "Bash(./run_wokwi_tests_enhanced.sh:*)"
+      "Bash(./run_wokwi_tests_enhanced.sh:*)",
+      "Bash(git ls-tree:*)",
+      "Bash(for dir in test/wokwi/*/)",
+      "Bash(do echo \"=== $dir ===\")",
+      "Bash(./run_unity_tests.sh:*)"
     ],
     "deny": []
   }

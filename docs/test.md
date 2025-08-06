@@ -24,7 +24,7 @@ Both testing approaches work together to ensure code quality and system reliabil
 
 Due to a limitation with PlatformIO and Unity integration, the testing framework cannot properly handle multiple separate test files when using build filters. This creates linking conflicts where multiple test files try to link together, causing compilation failures.
 
-**Workaround Implemented**: All tests are consolidated into a single `test_all.cpp` file with compilation conditionals to enable different test suites:
+**Workaround Implemented**: All tests are consolidated into a single `unity_tests.cpp` file with compilation conditionals to enable different test suites:
 
 ```cpp
 #ifdef TEST_SENSORS_ONLY
@@ -102,7 +102,7 @@ All 100 tests run as a single comprehensive suite covering:
 
 ### Test Organization
 
-Tests are organized by functional areas within the single `test_all.cpp` file:
+Tests are organized by functional areas within the single `unity_tests.cpp` file:
 
 - **Sensor Tests**: Input validation, ADC conversion, state detection
 - **Manager Tests**: Configuration, panel switching, style management
@@ -189,7 +189,7 @@ Test environments include debug flags for troubleshooting:
 
 ### Running Individual Tests
 
-Tests are run as a complete suite. Individual test debugging can be done by temporarily modifying the `test_all.cpp` file to comment out unwanted test sections or by examining the detailed test output.
+Tests are run as a complete suite. Individual test debugging can be done by temporarily modifying the `unity_tests.cpp` file to comment out unwanted test sections or by examining the detailed test output.
 
 ### Memory Debugging
 
@@ -217,7 +217,7 @@ See `.github/workflows/test.yml` for CI configuration details.
 
 ### Guidelines for New Test Code
 
-1. **Add to test_all.cpp**: All test code must be in the single test file
+1. **Add to unity_tests.cpp**: All test code must be in the single test file
 2. **Use TEST_ALL_SUITES**: Tests run under the `#ifdef TEST_ALL_SUITES` compilation block
 3. **Follow Naming Convention**: Use `test_<component>_<functionality>` format
 4. **Include Setup/Teardown**: Use Unity's `setUp()` and `tearDown()` functions
