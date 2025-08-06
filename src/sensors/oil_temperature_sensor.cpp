@@ -48,12 +48,10 @@ Reading OilTemperatureSensor::getReading()
         // Temperature mapping: 0V = 0°C, 3.3V = 120°C
         int32_t newValue = (adcValue * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
         
-        log_v("ADC: %d, Temperature: %d°C", adcValue, newValue);
-        
         // Only update if value actually changed (avoid redundant updates)
         if (newValue != currentReading_) {
             currentReading_ = newValue;
-            log_i("Temperature reading changed to %d°C", currentReading_);
+            log_i("Temperature reading changed to %d°C (ADC: %d)", currentReading_, adcValue);
 
         }
     }

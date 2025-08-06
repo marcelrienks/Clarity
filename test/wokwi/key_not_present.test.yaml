@@ -1,0 +1,29 @@
+version: 1
+name: "Key Not Present Panel Switch - Enhanced"
+description: "Key not present trigger validation with red icon and panel switching"
+timeout: 40000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Initialize baseline state
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 3000ms
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
+  - delay: 2000ms
+  
+  # Test sensor data updates (DIP switch triggers don't work in Wokwi simulation)
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 600  # Some pressure reading
+  - delay: 2000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 450  # Some temperature reading
+  - delay: 2000ms

@@ -1,4 +1,5 @@
-[![Test Clarity Gauge System](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml)
+[![Unity Tests](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml)
+[![Wokwi Integration Tests](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-tests.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-tests.yml)
 
 # Clarity
 An ESP32 project, using platformio, which builds a custom digital gauge for monitoring and displaying your engines key parameters, on various screen configurations and combinations of components and sensors.

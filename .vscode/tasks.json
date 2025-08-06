@@ -44,11 +44,27 @@
             "detail": "Runs Unity unit tests only (fast)"
         },
         {
-            "label": "Integration Tests Only",
+            "label": "Wokwi Integration Tests",
             "type": "shell",
-            "command": "${workspaceFolder}/test/wokwi-cli.exe",
-            "args": ["test", "--scenario", "wokwi/test_scenarios.yaml", "--timeout", "120000"],
+            "command": "${workspaceFolder}/test/wokwi/run_automated_tests.sh",
             "group": "test",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "focus": true,
+                "panel": "new",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [],
+            "detail": "Runs all Wokwi integration tests with automated reporting (requires WOKWI_CLI_TOKEN)"
+        },
+        {
+            "label": "Build for Wokwi Testing",
+            "type": "shell",
+            "command": "pio",
+            "args": ["run", "-e", "debug-local"],
+            "group": "build",
             "presentation": {
                 "echo": true,
                 "reveal": "always",
@@ -57,8 +73,8 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "problemMatcher": [],
-            "detail": "Runs Wokwi integration tests only (requires WOKWI_CLI_TOKEN)"
+            "problemMatcher": ["$platformio"],
+            "detail": "Fast build for Wokwi testing (debug-local environment)"
         },
         {
             "label": "Build All Environments",

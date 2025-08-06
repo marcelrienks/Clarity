@@ -36,6 +36,12 @@ const char *TriggerManager::getStartupPanelOverride() const {
 
 void TriggerManager::init()
 {
+    // Prevent double initialization
+    if (initialized_) {
+        log_d("TriggerManager already initialized, skipping...");
+        return;
+    }
+    
     log_d("Initializing sensor-based trigger system...");
 
     // Initialize sensors (they handle their own GPIO setup)
@@ -45,6 +51,8 @@ void TriggerManager::init()
     
     // Read current sensor states and initialize triggers
     InitializeTriggersFromSensors();
+    
+    initialized_ = true;
 }
 
 void TriggerManager::processTriggerEvents()

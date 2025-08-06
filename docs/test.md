@@ -2,242 +2,161 @@
 
 ## Overview
 
-The Clarity project includes comprehensive unit tests for core logic, sensors, managers, components, and integration testing. The test suite uses Unity testing framework and runs on the native platform without requiring ESP32 hardware.
+Clarity uses two complementary testing approaches:
 
-## Testing Framework
+1. **Unity Tests**: Fast unit tests for core logic (101 tests)
+2. **Wokwi Tests**: Hardware simulation integration tests (10 scenarios)
 
-- **Framework**: Unity Testing Framework v2.6.0
-- **Platform**: Native (cross-platform testing without ESP32 hardware)
-- **Mocking**: Custom LVGL and hardware mocks for embedded abstractions
-- **Test Runner**: PlatformIO with Unity integration
+---
 
-## PlatformIO and Unity Limitations
+## Unity Unit Tests
 
-### Single Test File Constraint
-
-Due to a limitation with PlatformIO and Unity integration, the testing framework cannot properly handle multiple separate test files when using build filters. This creates linking conflicts where multiple test files try to link together, causing compilation failures.
-
-**Workaround Implemented**: All tests are consolidated into a single `test_all.cpp` file with compilation conditionals to enable different test suites:
-
-```cpp
-#ifdef TEST_SENSORS_ONLY
-    // Only sensor tests compile
-#endif
-
-#ifdef TEST_MANAGERS_CORE_ONLY  
-    // Only core manager tests compile
-#endif
-
-#ifdef TEST_COMPONENTS_ONLY
-    // Only component tests compile
-#endif
-```
-
-### Nested Directory Limitation
-
-PlatformIO has an additional limitation where test files within nested directories are not automatically discovered and only tests in the root test directory are executed.
-
-**Workaround**: All test code is consolidated in the root `/test/` directory with a single test file approach.
-
-## Test Environment
-
-The project uses a single test environment that runs the complete test suite:
-
-### Available Test Environment
-
-1. **test-all**: Runs complete test suite (100 tests)
-
-### Environment Configuration
-
-The test environment runs all 100 tests using compilation conditionals:
-
-```ini
-[env:test-all]
-platform = native
-build_flags = 
-    -D TEST_ALL_SUITES
-    -D UNITY_INCLUDE_DOUBLE
-    -D UNIT_TESTING
-    -D CLARITY_DEBUG
-    -I include
-    -I test
-    -I test/mocks
-    -I test/utilities
-    -D LVGL_MOCK
-    -g3
-    -O0
-lib_deps = 
-    throwtheswitch/Unity @ ^2.6.0
-test_framework = unity
-test_filter = test_all
-```
-
-## Running Tests
-
-### Execute All Tests
+### Quick Start
 ```bash
+# Run all Unity tests
+./run_unity_tests.sh
+# or
+./run_unity_tests.bat
+
+# Individual command
 pio test -e test-all
 ```
 
-### Execute Tests with Verbose Output
+### Architecture
+- **Framework**: Unity v2.6.0 
+- **File**: `test/unity_tests.cpp` (single consolidated file)
+- **Platform**: Native (no ESP32 hardware required)
+- **Mocking**: Custom LVGL and hardware mocks
+
+### Test Coverage (101 Tests)
+- **Sensor Tests** (21): Oil pressure, temperature, key, lock, light sensors
+- **Manager Tests** (15): Panel, trigger, style, preference managers  
+- **Component Tests** (24): UI components, gauges, indicators
+- **Integration Tests** (20): End-to-end scenarios, service container
+- **Infrastructure Tests** (21): Device, factories, utilities, main app
+
+### Key Features
+- **Fast Execution**: ~2 seconds for all 101 tests
+- **Mocked Dependencies**: No hardware requirements
+- **Comprehensive Coverage**: All core logic paths tested
+- **Cross-Platform**: Runs on Windows, Linux, macOS
+
+---
+
+## Wokwi Integration Tests
+
+### Quick Start  
 ```bash
-pio test -e test-all --verbose
+# Run all Wokwi integration tests
+./run_wokwi_tests.sh
+
+# Individual test
+wokwi-cli test/wokwi --elf .pio/build/debug-local/firmware.elf --scenario <test-file.yaml>
 ```
 
-All 100 tests run as a single comprehensive suite covering:
-- **Sensor Tests (21)**: Oil pressure/temperature, key state, lock state, light sensors
-- **Manager Tests (15)**: Trigger manager, panel manager, service mocks
-- **Component Tests (23)**: OEM oil components, UI components, branding components
-- **Integration Tests (20)**: End-to-end scenarios, system integration
-- **Infrastructure Tests (21)**: Device layer, factories, utilities, main application
+### Prerequisites
+- `WOKWI_CLI_TOKEN` environment variable
+- `wokwi-cli` installed
+- Firmware built (`pio run -e debug-local`)
 
-## Test Structure
+### Test Scenarios (10 Comprehensive Tests)
 
-### Test Organization
+| Test | Description | Coverage |
+|------|-------------|----------|
+| `basic_startup` | System boot and splash screen | Default startup flow |
+| `oil_panel_sensors` | Sensor data and gauge animations | Real-time sensor updates |
+| `theme_switching` | Day/night theme changes | Theme persistence |
+| `night_startup` | Boot with night theme active | Startup theme handling |
+| `key_present` | Key present trigger scenarios | Panel switching logic |
+| `key_not_present` | Key not present trigger scenarios | Red icon validation |
+| `lock_panel` | Lock trigger scenarios | Lock panel integration |
+| `startup_triggers` | Multiple triggers at startup | Priority resolution |
+| `trigger_priority` | Trigger conflict resolution | Priority handling |
+| `major_scenario` | Complete 9-step system test | Full integration flow |
 
-Tests are organized by functional areas within the single `test_all.cpp` file:
+### Hardware Simulation
+- **Platform**: Wokwi ESP32 simulator
+- **Board**: NodeMCU-32S with 1.28" round display (GC9A01)
+- **Controls**: DIP switches, potentiometers for trigger/sensor simulation
+- **Output**: Serial logs, display screenshots, timing validation
 
-- **Sensor Tests**: Input validation, ADC conversion, state detection
-- **Manager Tests**: Configuration, panel switching, style management
-- **Component Tests**: UI rendering, data binding, visual updates
-- **Integration Tests**: End-to-end workflows, service interactions
-- **Infrastructure Tests**: Service container, factories, utilities
+### Test Configuration
+- **Location**: `test/wokwi/`
+- **Global Config**: Single `diagram.json` and `wokwi.toml` for all tests
+- **Test Files**: Individual YAML scenario files
+- **Results**: Saved to `test_results/` directory
 
-### Mock System
+---
 
-The test suite includes comprehensive mocks for embedded dependencies:
+## GPIO Pin Mapping (for Wokwi Tests)
 
-#### Hardware Mocks
-- `mock_gpio_provider.h/cpp`: GPIO operations without hardware
-- `arduino_mock.h`: Arduino framework functions
-- `esp32-hal-log.h`: ESP32 logging system
+| Component | GPIO | DIP Switch | Purpose |
+|-----------|------|------------|---------|
+| Key Present | 25 | #1 | Green key icon |
+| Key Not Present | 26 | #2 | Red key icon |  
+| Lock | 27 | #3 | Lock panel trigger |
+| Lights | 33 | #4 | Day/night theme |
+| Oil Pressure | 34 (VP) | pot1 | Analog pressure sensor |
+| Oil Temperature | 35 (VN) | pot2 | Analog temperature sensor |
 
-#### Display System Mocks  
-- `lvgl_mock.h`: LVGL graphics library
-- `mock_display_provider.h`: Display abstraction layer
+---
 
-#### Test Utilities
-- `test_helpers.h/cpp`: Common test utilities and fixtures
-- `unity_config.h`: Unity framework configuration
+## Test Development
 
-## Test Coverage
+### Adding Unity Tests
+1. Add test functions to `test/unity_tests.cpp`
+2. Use Unity macros: `TEST_ASSERT_EQUAL()`, `TEST_ASSERT_TRUE()`, etc.
+3. Include setup/teardown as needed
+4. Run tests to verify
 
-### Core Areas Tested
+### Adding Wokwi Tests  
+1. Create new `.test.yaml` file in `test/wokwi/`
+2. Define test steps with `set-control`, `wait-serial`, `delay`
+3. Add test to `run_wokwi_tests.sh` scenarios array
+4. Test with individual wokwi-cli command first
 
-1. **Timing/Ticker Logic**
-   - Frame timing calculations
-   - Dynamic delay handling
-   - Performance optimization
-
-2. **Sensor Logic**
-   - Value change detection
-   - ADC conversions and scaling
-   - Key state determination
-   - Oil pressure/temperature monitoring
-
-3. **Configuration Management**
-   - Settings persistence
-   - Validation and defaults
-   - Preference loading/saving
-
-4. **Panel Management**
-   - Panel lifecycle (init → load → update)
-   - Panel switching logic
-   - Trigger-based transitions
-
-5. **Component Rendering**
-   - UI element creation and updates
-   - Theme switching
-   - Visual state management
-
-### Test Results Format
-
-Typical test execution output:
+### Test File Structure
 ```
-Running test-all...
-=== Clarity Complete Test Suite (All Tests) ===
-Running ALL 100 tests across all layers...
-
---- Sensor Tests (21) ---
---- Manager Core Tests (15) ---
---- Component Tests (23) ---
---- Integration Tests (20) ---
---- Infrastructure Tests (21) ---
-
-=== Complete Test Suite Finished ===
-Total: 100 tests executed
-100 Tests 0 Failures 0 Ignored
+test/
+├── unity_tests.cpp           # All Unity tests
+├── mocks/                    # Hardware/LVGL mocks
+├── utilities/                # Test helpers
+└── wokwi/                    # Wokwi integration tests
+    ├── diagram.json          # Hardware configuration
+    ├── wokwi.toml           # Simulation settings
+    └── *.test.yaml          # Test scenarios
 ```
 
-## Debugging Tests
-
-### Debug Build Flags
-
-Test environments include debug flags for troubleshooting:
-```
--g3          # Maximum debug information
--O0          # No optimization for debugging
--D CLARITY_DEBUG  # Enable application debug output
-```
-
-### Running Individual Tests
-
-Tests are run as a complete suite. Individual test debugging can be done by temporarily modifying the `test_all.cpp` file to comment out unwanted test sections or by examining the detailed test output.
-
-### Memory Debugging
-
-Tests run with memory debugging enabled to catch allocation issues:
-```
--D UNITY_INCLUDE_DOUBLE  # Enable floating point assertions
-```
+---
 
 ## Continuous Integration
 
-Tests are integrated with GitHub Actions for automated validation:
+### Local Development
+1. Run Unity tests for code changes: `./run_unity_tests.sh`
+2. Run Wokwi tests for integration validation: `./run_wokwi_tests.sh`  
+3. Both test suites should pass before committing
 
-- **Trigger**: Every pull request and push to main/develop branches
-- **Platform**: Ubuntu latest
-- **Test Execution**: Complete 100-test suite
-- **Build Verification**: Release firmware build and size check
+### Automated Testing
+- Unity tests run in CI without hardware dependencies
+- Wokwi tests require token and may run in specialized CI environments
+- Build verification happens before any test execution
 
-The CI workflow runs two jobs in parallel:
-1. **Test Job**: Executes all 100 tests with verbose output
-2. **Build Job**: Verifies release firmware compilation and reports program size
+---
 
-See `.github/workflows/test.yml` for CI configuration details.
+## Troubleshooting
 
-## Adding New Tests
+### Unity Tests
+- **Build fails**: Check Unity framework installation and test environment
+- **Tests fail**: Review mock implementations and test logic
+- **Slow execution**: Tests should complete in ~2 seconds
 
-### Guidelines for New Test Code
+### Wokwi Tests  
+- **Token error**: Ensure `WOKWI_CLI_TOKEN` is set correctly
+- **CLI not found**: Install wokwi-cli: `curl -L https://wokwi.com/ci/install.sh | sh`
+- **Timeout issues**: Increase timeout values in YAML files
+- **Firmware build fails**: Run `pio run -e debug-local` first
 
-1. **Add to test_all.cpp**: All test code must be in the single test file
-2. **Use TEST_ALL_SUITES**: Tests run under the `#ifdef TEST_ALL_SUITES` compilation block
-3. **Follow Naming Convention**: Use `test_<component>_<functionality>` format
-4. **Include Setup/Teardown**: Use Unity's `setUp()` and `tearDown()` functions
-5. **Mock Dependencies**: Use existing mocks or extend them for new hardware dependencies
-6. **Add to RUN_TEST**: Include the new test in the appropriate section's `RUN_TEST()` calls
-
-### Example Test Addition
-
-```cpp
-void test_new_sensor_functionality() {
-    // Setup
-    setUp();
-    
-    // Test logic
-    TEST_ASSERT_EQUAL(expected_value, actual_value);
-    
-    // Teardown
-    tearDown();
-}
-
-// Add to the appropriate section in main():
-#elif defined(TEST_ALL_SUITES)
-    // ... existing tests ...
-    printf("--- Sensor Tests (21) ---\n");
-    RUN_TEST(test_oil_pressure_sensor_initialization);
-    // ... other sensor tests ...
-    RUN_TEST(test_new_sensor_functionality);  // Add here
-```
-
-This testing approach ensures comprehensive coverage while working within PlatformIO's constraints, providing fast feedback on core functionality without requiring ESP32 hardware.
+### Common Issues
+- **Path problems**: Always run scripts from project root directory
+- **Permission errors**: Ensure scripts are executable: `chmod +x *.sh`
+- **Missing files**: Verify all test files exist and are properly referenced

@@ -1,0 +1,70 @@
+version: 1
+name: "Startup Triggers Validation - Enhanced"
+description: "Basic startup validation without DIP switch dependencies"
+timeout: 25000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Initialize baseline state (DIP switch triggers don't work in Wokwi simulation)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 1000ms
+  
+  # Verify trigger system initialization
+  - wait-serial: "Initializing sensor-based trigger system"
+  - delay: 500ms
+  
+  # Verify all triggers are initialized to INACTIVE
+  - wait-serial: "Trigger key_present initialized to INACTIVE based on GPIO state"
+  - delay: 200ms
+  - wait-serial: "Trigger key_not_present initialized to INACTIVE based on GPIO state"
+  - delay: 200ms
+  - wait-serial: "Trigger lock_state initialized to INACTIVE based on GPIO state"
+  - delay: 200ms
+  - wait-serial: "Trigger lights_state initialized to INACTIVE based on GPIO state"
+  - delay: 500ms
+  
+  - wait-serial: "Loading splash panel with fade-in animation"
+  - delay: 3000ms
+  
+  # Wait for oil panel load
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
+  - delay: 2000ms
+  
+  # Test various sensor data values
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 100  # Low pressure
+  - delay: 1000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 200  # Low temperature
+  - delay: 1000ms
+  
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 800  # High pressure
+  - delay: 1000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 900  # High temperature
+  - delay: 1000ms
+  
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 500  # Medium pressure
+  - delay: 1000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 400  # Medium temperature
+  - delay: 1000ms

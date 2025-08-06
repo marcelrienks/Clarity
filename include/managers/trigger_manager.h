@@ -71,4 +71,5 @@ private:
     Trigger *activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
     Trigger *activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
     const char *startupPanelOverride_ = nullptr;
+    bool initialized_ = false;  // Prevent double initialization
 };

@@ -1,0 +1,39 @@
+version: 1
+name: "Basic System Startup - Enhanced"
+description: "Comprehensive startup sequence validation with splash screen and oil panel transition"
+timeout: 30000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Initialize clean state
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All DIP switches OFF
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 0  # Minimum pressure
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 0  # Minimum temperature
+  - delay: 1000ms
+  
+  # Wait for day theme initialization (happens early in startup)
+  - wait-serial: "Switching application theme to: Day"
+  - delay: 1000ms
+  
+  # Wait for splash screen
+  - wait-serial: "Loading splash panel with fade-in animation"
+  - delay: 4000ms
+  
+  # Wait for splash completion callback
+  - wait-serial: "Splash screen animation completed, transitioning to panel: OemOilPanel"
+  - delay: 2000ms
+  
+  # Wait for oil panel transition
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
+  - delay: 1000ms

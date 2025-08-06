@@ -70,12 +70,8 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
     // LVGL 9.3 has a bug that does allow setting a reverse scale 120-0, but it cannot animate the needle using that.
     // This method is used to map the value from the original scale (0-120) to the normal scale (120-0).
     
-    log_d("original value is %i", value);
-    
     // Map from [0,120] to [120,0] reverse the scale
     int32_t mappedValue = OemOilTemperatureComponent::get_scale_max() - value;
-    
-    log_d("mapped value is %i", mappedValue);
     
     return mappedValue;
 }

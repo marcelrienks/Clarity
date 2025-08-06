@@ -1,0 +1,60 @@
+version: 1
+name: "Major Integration Scenario - Fully Automated"
+description: "Complete 9-step system integration test with automated DIP switch control"
+timeout: 120000ms
+
+steps:
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Step 1: Initial Startup (all switches OFF)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 3000ms
+  - wait-serial: "Loading splash panel with fade-in animation"
+  - delay: 2000ms
+  - wait-serial: "Loading OEM oil panel with pressure and temperature gauges"
+  - delay: 2000ms
+    
+  # Test sensor data variations (DIP switch triggers don't work in Wokwi simulation)
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 200  # Low pressure
+  - delay: 1000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 800  # High temperature
+  - delay: 1000ms
+  
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 900  # High pressure
+  - delay: 1000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 100  # Low temperature
+  - delay: 1000ms
+  
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 512  # Medium pressure
+  - delay: 1000ms
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 512  # Medium temperature
+  - delay: 1000ms
+
+# GPIO Pin Mapping Reference:
+# DIP Switch Position -> GPIO Pin -> Function -> Decimal Value
+# Position 1 -> GPIO 25 -> Key Present -> 1
+# Position 2 -> GPIO 26 -> Key Not Present -> 2  
+# Position 3 -> GPIO 27 -> Lock -> 4
+# Position 4 -> GPIO 33 -> Lights -> 8

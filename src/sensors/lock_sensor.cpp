@@ -14,7 +14,11 @@ LockSensor::LockSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider
 /// @brief Initialize the lock sensor hardware
 void LockSensor::init()
 {
-    log_d("Initializing lock sensor on GPIO %d", gpio_pins::LOCK);
+    static bool initialized = false;
+    if (!initialized) {
+        log_d("Initializing lock sensor on GPIO %d", gpio_pins::LOCK);
+        initialized = true;
+    }
     gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
 }
 
@@ -23,10 +27,19 @@ void LockSensor::init()
 Reading LockSensor::getReading()
 {
     bool isLockEngaged = gpioProvider_->digitalRead(gpio_pins::LOCK);
-    log_d("Lock sensor reading: %s (pin %d %s)", 
-          isLockEngaged ? "engaged" : "disengaged",
-          gpio_pins::LOCK,
-          isLockEngaged ? "HIGH" : "LOW");
+    
+    // Only log state changes to reduce log spam during polling
+    static bool lastState = false;
+    static bool firstRead = true;
+    
+    if (firstRead || isLockEngaged != lastState) {
+        log_d("Lock sensor reading: %s (pin %d %s)", 
+              isLockEngaged ? "engaged" : "disengaged",
+              gpio_pins::LOCK,
+              isLockEngaged ? "HIGH" : "LOW");
+        lastState = isLockEngaged;
+        firstRead = false;
+    }
     
     return Reading{isLockEngaged};
 }
