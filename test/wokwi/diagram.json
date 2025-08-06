@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "author": "Marcel Rienks",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -38.4, "left": -206.36, "attrs": {} },
+    { "type": "wokwi-ili9341", "id": "lcd1", "top": -37.6, "left": -86.7, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot1", "top": 75.5, "left": -307.4, "attrs": {} },
+    { "type": "wokwi-potentiometer", "id": "pot2", "top": 171.5, "left": -307.4, "attrs": {} },
+    { "type": "wokwi-dip-switch-8", "id": "sw1", "top": -3.3, "left": -315.3, "attrs": {} }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "lcd1:VCC", "esp:3V3", "purple", [ "v19.2", "h-182.4", "v-278.4" ] ],
+    [ "lcd1:GND", "esp:GND.2", "white", [ "v28.8", "h-67.2", "v-288" ] ],
+    [ "lcd1:RST", "esp:4", "#8f4814", [ "v48", "h-86.4", "v-192" ] ],
+    [ "lcd1:CS", "esp:22", "gold", [ "v38.4", "h-76.8", "v-278.4" ] ],
+    [ "lcd1:D/C", "esp:16", "blue", [ "v57.6", "h-96", "v-211.2" ] ],
+    [ "lcd1:MOSI", "esp:23", "green", [ "v67.2", "h-105.61", "v-316.8" ] ],
+    [ "lcd1:SCK", "esp:18", "orange", [ "v76.8", "h-115.21", "v-259.2" ] ],
+    [ "lcd1:LED", "esp:3V3", "gray", [ "v96", "h-249.61", "v-355.2" ] ],
+    [ "pot1:SIG", "esp:VP", "green", [ "v19.2", "h47.6", "v-144" ] ],
+    [ "pot2:SIG", "esp:VN", "green", [ "v19.2", "h47.6", "v-240" ] ],
+    [ "pot1:GND", "esp:GND.1", "black", [ "v19.2", "h57.6", "v-38.4" ] ],
+    [ "pot2:GND", "esp:GND.1", "black", [ "v19.2", "h57.6", "v-144" ] ],
+    [ "sw1:1a", "esp:25", "white", [ "v19.2", "h86.4", "v19.2" ] ],
+    [ "sw1:2a", "esp:26", "white", [ "v19.2", "h76.8", "v28.8" ] ],
+    [ "sw1:3a", "esp:27", "white", [ "v19.2", "h67.2", "v38.4" ] ],
+    [ "pot1:VCC", "esp:3V3", "red", [ "v19.2", "h37.6", "v-172.8" ] ],
+    [ "pot2:VCC", "esp:3V3", "red", [ "v19.2", "h37.6", "v-268.8" ] ],
+    [ "esp:3V3", "sw1:1b", "red", [ "h0" ] ],
+    [ "esp:3V3", "sw1:2b", "red", [ "h0" ] ],
+    [ "esp:3V3", "sw1:3b", "red", [ "h0" ] ],
+    [ "sw1:4a", "esp:33", "white", [ "v19.2", "h57.6", "v-9.6" ] ],
+    [ "sw1:4b", "esp:3V3", "red", [ "v0" ] ]
+  ],
+  "dependencies": {}
+}
