@@ -25,6 +25,6 @@ void LvTools::resetScreen(lv_obj_t *screen, IStyleService *styleService)
     
     // Apply the current theme's background style using dependency injection
     if (styleService) {
-        styleService->applyThemeToScreen(screen);
+        styleService->ApplyThemeToScreen(screen);
     }
 }

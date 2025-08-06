@@ -46,30 +46,30 @@ public:
     /// @brief Read digital value from a GPIO pin
     /// @param pin GPIO pin number
     /// @return true if pin is HIGH, false if LOW
-    bool digitalRead(int pin) override;
+    bool DigitalRead(int pin) override;
 
     /// @brief Read analog value from an ADC pin
     /// @param pin ADC pin number
     /// @return ADC reading (0-4095 for 12-bit ADC)
-    uint16_t analogRead(int pin) override;
+    uint16_t AnalogRead(int pin) override;
 
     /// @brief Configure pin mode
     /// @param pin GPIO pin number
     /// @param mode Pin mode (INPUT, OUTPUT, INPUT_PULLUP, etc.)
-    void pinMode(int pin, int mode) override;
+    void PinMode(int pin, int mode) override;
 
     /// @brief Attach interrupt to a GPIO pin
     /// @param pin GPIO pin number
     /// @param callback Interrupt callback function
     /// @param mode Interrupt trigger mode (RISING, FALLING, CHANGE)
-    void attachInterrupt(int pin, void (*callback)(), int mode) override;
+    void AttachInterrupt(int pin, void (*callback)(), int mode) override;
 
     /// @brief Detach interrupt from a GPIO pin
     /// @param pin GPIO pin number
-    void detachInterrupt(int pin) override;
+    void DetachInterrupt(int pin) override;
 
     /// @brief Check if pin has an interrupt attached
     /// @param pin GPIO pin number
     /// @return true if interrupt is attached, false otherwise
-    bool hasInterrupt(int pin) override;
+    bool HasInterrupt(int pin) override;
 };

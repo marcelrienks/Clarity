@@ -32,24 +32,24 @@ LockPanel::~LockPanel()
 // Core Functionality Methods
 
 /// @brief Initialize the lock panel and its components
-void LockPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
+void LockPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing lock panel with sensor and display components");
 
-    screen_ = display->createScreen();
+    screen_ = display->CreateScreen();
     
     // Apply current theme immediately after screen creation
     if (styleService_) {
-        styleService_->applyThemeToScreen(screen_);
+        styleService_->ApplyThemeToScreen(screen_);
     }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    lockSensor_->init();
+    lockSensor_->Init();
     isLockEngaged_ = false;
 }
 
 /// @brief Load the lock panel UI components
-void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void LockPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Loading lock panel with current lock state display");
     callbackFunction_ = callbackFunction;
@@ -58,8 +58,8 @@ void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio
     lockComponent_ = UIFactory::createLockComponent(styleService_);
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
-    lockComponent_->render(screen_, centerLocation_, display);
-    lockComponent_->refresh(Reading{isLockEngaged_});
+    lockComponent_->Render(screen_, centerLocation_, display);
+    lockComponent_->Refresh(Reading{isLockEngaged_});
     lv_obj_add_event_cb(screen_, LockPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -67,12 +67,12 @@ void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio
     
     // Always apply current theme to the screen when loading (ensures theme is current)
     if (styleService_) {
-        styleService_->applyThemeToScreen(screen_);
+        styleService_->ApplyThemeToScreen(screen_);
     }
 }
 
 /// @brief Update the lock panel with current sensor data
-void LockPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void LockPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     callbackFunction();
 }

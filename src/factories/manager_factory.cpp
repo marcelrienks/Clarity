@@ -27,7 +27,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
     
     // Create PanelManager with direct dependencies - no factory needed
     auto manager = std::make_unique<PanelManager>(display, gpio, styleService);
-    manager->init();
+    manager->Init();
     
     return manager;
 }
@@ -62,7 +62,7 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
     auto lightSensor = std::make_shared<LightSensor>(gpio);
     
     auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, panelService, styleService);
-    manager->init();
+    manager->Init();
     
     return manager;
 }
@@ -72,7 +72,7 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     log_d("Creating PreferenceManager");
     
     auto manager = std::make_unique<PreferenceManager>();
-    manager->init();
+    manager->Init();
     
     return manager;
 }

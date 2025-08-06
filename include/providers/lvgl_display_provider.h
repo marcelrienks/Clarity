@@ -52,62 +52,62 @@ public:
     explicit LvglDisplayProvider(lv_obj_t *mainScreen);
 
     /// @brief Initialize the display provider
-    void initialize() override;
+    void Initialize() override;
 
     /// @brief Check if the display provider is initialized
     /// @return True if initialized, false otherwise
-    bool isInitialized() const override;
+    bool IsInitialized() const override;
 
     /// @brief Create a new screen object
     /// @return Pointer to the created screen object
-    lv_obj_t *createScreen() override;
+    lv_obj_t *CreateScreen() override;
 
     /// @brief Load a screen and make it active
     /// @param screen Screen object to load
-    void loadScreen(lv_obj_t *screen) override;
+    void LoadScreen(lv_obj_t *screen) override;
 
     /// @brief Create a label object
     /// @param parent Parent object (screen or container)
     /// @return Pointer to the created label object
-    lv_obj_t *createLabel(lv_obj_t *parent) override;
+    lv_obj_t *CreateLabel(lv_obj_t *parent) override;
 
     /// @brief Create a generic object/container
     /// @param parent Parent object (screen or container)
     /// @return Pointer to the created object
-    lv_obj_t *createObject(lv_obj_t *parent) override;
+    lv_obj_t *CreateObject(lv_obj_t *parent) override;
 
     /// @brief Create an arc (gauge) object
     /// @param parent Parent object (screen or container)
     /// @return Pointer to the created arc object
-    lv_obj_t *createArc(lv_obj_t *parent) override;
+    lv_obj_t *CreateArc(lv_obj_t *parent) override;
 
     /// @brief Create a scale object
     /// @param parent Parent object (screen or container)
     /// @return Pointer to the created scale object
-    lv_obj_t *createScale(lv_obj_t *parent) override;
+    lv_obj_t *CreateScale(lv_obj_t *parent) override;
 
     /// @brief Create an image object
     /// @param parent Parent object (screen or container)
     /// @return Pointer to the created image object
-    lv_obj_t *createImage(lv_obj_t *parent) override;
+    lv_obj_t *CreateImage(lv_obj_t *parent) override;
 
     /// @brief Create a line object
     /// @param parent Parent object (screen or container)
     /// @return Pointer to the created line object
-    lv_obj_t *createLine(lv_obj_t *parent) override;
+    lv_obj_t *CreateLine(lv_obj_t *parent) override;
 
     /// @brief Delete an object and its children
     /// @param obj Object to delete
-    void deleteObject(lv_obj_t *obj) override;
+    void DeleteObject(lv_obj_t *obj) override;
 
     /// @brief Add event callback to an object
     /// @param obj Target object
     /// @param callback Callback function
     /// @param event_code Event code to listen for
     /// @param user_data User data to pass to callback
-    void addEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code, void *user_data) override;
+    void AddEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code, void *user_data) override;
 
     /// @brief Get the main screen object
     /// @return Pointer to the main screen
-    lv_obj_t *getMainScreen() override;
+    lv_obj_t *GetMainScreen() override;
 };

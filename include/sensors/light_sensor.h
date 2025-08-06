@@ -39,12 +39,12 @@ public:
     LightSensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
-    void init() override;
-    Reading getReading() override;
+    void Init() override;
+    Reading GetReading() override;
     
     /// @brief Get current lights state directly (for triggers)
     /// @return true if lights are on, false if lights are off
-    bool getLightsState();
+    bool GetLightsState();
 
 private:
     IGpioProvider *gpioProvider_;

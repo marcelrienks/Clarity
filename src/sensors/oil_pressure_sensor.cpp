@@ -15,7 +15,7 @@ OilPressureSensor::OilPressureSensor(IGpioProvider* gpioProvider) : gpioProvider
 // Core Functionality Methods
 
 /// @brief Initialize the oil pressure sensor hardware
-void OilPressureSensor::init()
+void OilPressureSensor::Init()
 {
     // Configure GPIO pin for analog input
     log_d("Initializing oil pressure sensor ADC configuration");
@@ -25,13 +25,13 @@ void OilPressureSensor::init()
     analogSetAttenuation(ADC_11db); // 0-3.3V range
     
     // Take initial reading
-    int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_PRESSURE);
-    OilPressureSensor::getReading(); // Read initial pressure value
+    int32_t adcValue = gpioProvider_->AnalogRead(gpio_pins::OIL_PRESSURE);
+    OilPressureSensor::GetReading(); // Read initial pressure value
 }
 
 /// @brief Get the current oil pressure reading with time-based sampling
 /// @return Current pressure reading in Bar
-Reading OilPressureSensor::getReading()
+Reading OilPressureSensor::GetReading()
 {
     unsigned long currentTime = millis();
     
@@ -41,7 +41,7 @@ Reading OilPressureSensor::getReading()
         previousReading_ = currentReading_; // Store current before reading new
         
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
-        int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_PRESSURE);
+        int32_t adcValue = gpioProvider_->AnalogRead(gpio_pins::OIL_PRESSURE);
         
         // Convert ADC value to pressure using voltage divider calculation
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V

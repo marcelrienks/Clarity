@@ -55,14 +55,13 @@ OemOilComponent::~OemOilComponent()
 void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
 
-    if (!screen) {
+    if (!screen || !display) {
+        log_e("OemOilComponent requires screen and display provider");
         return;
     }
     
-    // Ignore display provider parameter - use direct LVGL calls like original implementation
-
-    // Create the scale
-    scale_ = lv_scale_create(screen);
+    // Create the scale using display provider
+    scale_ = display->CreateScale(screen);
     if (!scale_) {
         return;
     }

@@ -39,8 +39,12 @@ void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, 
 {
     log_d("Rendering lock component icon at specified location");
 
-    // Note: LVGL doesn't have image creation in IDisplayProvider yet, keeping direct call
-    lockIcon_ = lv_image_create(screen);
+    if (!display) {
+        log_e("LockComponent requires display provider");
+        return;
+    }
+    
+    lockIcon_ = display->CreateImage(screen);
     lv_image_set_src(lockIcon_, &lock_alt_solid);
 
     // Apply location settings

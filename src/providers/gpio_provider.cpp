@@ -1,33 +1,33 @@
 #include "providers/gpio_provider.h"
 
-bool GpioProvider::digitalRead(int pin)
+bool GpioProvider::DigitalRead(int pin)
 {
     return ::digitalRead(pin);
 }
 
-uint16_t GpioProvider::analogRead(int pin)
+uint16_t GpioProvider::AnalogRead(int pin)
 {
     return ::analogRead(pin);
 }
 
-void GpioProvider::pinMode(int pin, int mode)
+void GpioProvider::PinMode(int pin, int mode)
 {
     ::pinMode(pin, mode);
 }
 
-void GpioProvider::attachInterrupt(int pin, void (*callback)(), int mode)
+void GpioProvider::AttachInterrupt(int pin, void (*callback)(), int mode)
 {
     ::attachInterrupt(digitalPinToInterrupt(pin), callback, mode);
     attachedInterrupts[pin] = true;
 }
 
-void GpioProvider::detachInterrupt(int pin)
+void GpioProvider::DetachInterrupt(int pin)
 {
     ::detachInterrupt(digitalPinToInterrupt(pin));
     attachedInterrupts[pin] = false;
 }
 
-bool GpioProvider::hasInterrupt(int pin)
+bool GpioProvider::HasInterrupt(int pin)
 {
     return attachedInterrupts.count(pin) && attachedInterrupts[pin];
 }

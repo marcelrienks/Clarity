@@ -52,8 +52,8 @@ public:
     OilTemperatureSensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
-    void init() override;
-    Reading getReading() override;
+    void Init() override;
+    Reading GetReading() override;
 
 private:
     // Private Data Members

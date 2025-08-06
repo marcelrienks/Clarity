@@ -6,22 +6,22 @@ LvglDisplayProvider::LvglDisplayProvider(lv_obj_t *mainScreen)
 {
 }
 
-void LvglDisplayProvider::initialize() {
+void LvglDisplayProvider::Initialize() {
     if (!initialized_) {
         initialized_ = true;
     }
 }
 
-bool LvglDisplayProvider::isInitialized() const {
+bool LvglDisplayProvider::IsInitialized() const {
     return initialized_;
 }
 
-lv_obj_t *LvglDisplayProvider::createScreen()
+lv_obj_t *LvglDisplayProvider::CreateScreen()
 {
     return lv_obj_create(nullptr);
 }
 
-void LvglDisplayProvider::loadScreen(lv_obj_t *screen)
+void LvglDisplayProvider::LoadScreen(lv_obj_t *screen)
 {
 #ifdef UNIT_TESTING
     lv_scr_load(screen);
@@ -30,22 +30,22 @@ void LvglDisplayProvider::loadScreen(lv_obj_t *screen)
 #endif
 }
 
-lv_obj_t *LvglDisplayProvider::createLabel(lv_obj_t *parent)
+lv_obj_t *LvglDisplayProvider::CreateLabel(lv_obj_t *parent)
 {
     return lv_label_create(parent);
 }
 
-lv_obj_t *LvglDisplayProvider::createObject(lv_obj_t *parent)
+lv_obj_t *LvglDisplayProvider::CreateObject(lv_obj_t *parent)
 {
     return lv_obj_create(parent);
 }
 
-lv_obj_t *LvglDisplayProvider::createArc(lv_obj_t *parent)
+lv_obj_t *LvglDisplayProvider::CreateArc(lv_obj_t *parent)
 {
     return lv_arc_create(parent);
 }
 
-lv_obj_t *LvglDisplayProvider::createScale(lv_obj_t *parent)
+lv_obj_t *LvglDisplayProvider::CreateScale(lv_obj_t *parent)
 {
 #ifdef UNIT_TESTING
     return lv_arc_create(parent); // Use arc as substitute in tests
@@ -54,7 +54,7 @@ lv_obj_t *LvglDisplayProvider::createScale(lv_obj_t *parent)
 #endif
 }
 
-lv_obj_t *LvglDisplayProvider::createImage(lv_obj_t *parent)
+lv_obj_t *LvglDisplayProvider::CreateImage(lv_obj_t *parent)
 {
 #ifdef UNIT_TESTING
     return lv_img_create(parent); // Use available img_create function
@@ -63,7 +63,7 @@ lv_obj_t *LvglDisplayProvider::createImage(lv_obj_t *parent)
 #endif
 }
 
-lv_obj_t *LvglDisplayProvider::createLine(lv_obj_t *parent)
+lv_obj_t *LvglDisplayProvider::CreateLine(lv_obj_t *parent)
 {
 #ifdef UNIT_TESTING
     return lv_obj_create(parent); // Use generic object for line in tests
@@ -72,7 +72,7 @@ lv_obj_t *LvglDisplayProvider::createLine(lv_obj_t *parent)
 #endif
 }
 
-void LvglDisplayProvider::deleteObject(lv_obj_t *obj)
+void LvglDisplayProvider::DeleteObject(lv_obj_t *obj)
 {
     if (obj != nullptr) {
 #ifdef UNIT_TESTING
@@ -83,12 +83,12 @@ void LvglDisplayProvider::deleteObject(lv_obj_t *obj)
     }
 }
 
-void LvglDisplayProvider::addEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code, void *user_data)
+void LvglDisplayProvider::AddEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code, void *user_data)
 {
     lv_obj_add_event_cb(obj, callback, event_code, user_data);
 }
 
-lv_obj_t *LvglDisplayProvider::getMainScreen()
+lv_obj_t *LvglDisplayProvider::GetMainScreen()
 {
     return mainScreen_;
 }

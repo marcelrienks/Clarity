@@ -44,8 +44,12 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
 {
     log_d("Rendering key component icon at specified location");
 
-    // Note: LVGL doesn't have image creation in IDisplayProvider yet, keeping direct call
-    keyIcon_ = lv_image_create(screen);
+    if (!display) {
+        log_e("KeyComponent requires display provider");
+        return;
+    }
+    
+    keyIcon_ = display->CreateImage(screen);
     lv_image_set_src(keyIcon_, &key_solid);
 
     // Apply location settings
