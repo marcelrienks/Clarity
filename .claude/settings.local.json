@@ -92,7 +92,8 @@
       "Bash(cmd.exe /c run_unity_tests.bat)",
       "Bash(for file in *.test.yaml)",
       "Bash(do echo \"=== $file ===\")",
-      "WebFetch(domain:google.github.io)"
+      "WebFetch(domain:google.github.io)",
+      "Bash(git config:*)"
     ],
     "deny": []
   }
