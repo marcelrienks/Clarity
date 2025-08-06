@@ -88,7 +88,8 @@
       "Bash(git ls-tree:*)",
       "Bash(for dir in test/wokwi/*/)",
       "Bash(do echo \"=== $dir ===\")",
-      "Bash(./run_unity_tests.sh:*)"
+      "Bash(./run_unity_tests.sh:*)",
+      "Bash(cmd.exe /c run_unity_tests.bat)"
     ],
     "deny": []
   }
