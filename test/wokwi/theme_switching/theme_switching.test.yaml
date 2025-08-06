@@ -1,47 +1,59 @@
 version: 1
-name: "Day/Night Theme Switching Test"
-description: "Automated day/night theme switching verification without panel reload"
-timeout: 60000
+name: "Day/Night Theme Switching - Enhanced"
+description: "Theme switching validation without panel reload"
+timeout: 45000ms
 
 steps:
-  - name: "Day theme startup verification"
-    wait: 4000
-    
-  - name: "Confirm day theme active"
-    expect_text: "Day"
-    timeout: 2000
-    
-  - name: "Capture day theme state"
-    screenshot: "day_theme_active.png"
-    delay: 1000
-    
-  # Note: In wokwi, pin state changes need to be done manually
-  # This test documents the expected behavior when DIP switch #4 is toggled
+  # Wait for simulation start
+  - delay: 2000ms
   
-  - name: "Wait for potential theme change trigger"
-    wait: 3000
-    
-  - name: "Look for theme switch indication"
-    expect_text: "theme"
-    timeout: 5000
-    optional: true
-    
-  - name: "Capture final theme state"
-    screenshot: "theme_test_complete.png"
-    delay: 2000
-
-# Manual test validation points:
-# 1. Toggle DIP #4 ON -> Should see "Night" theme switch
-# 2. UI elements change from white to red
-# 3. No panel reload occurs
-# 4. Toggle DIP #4 OFF -> Should return to "Day" theme
-
-expect_patterns:
-  - "[DEBUG] Switching application theme"
-  - "Day"
-
-# Theme switching should not cause panel reloads
-fail_patterns:
-  - "[ERROR]"
-  - "panel reload"
-  - "Exception"
+  # Initialize with sensor data and day theme
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All DIP switches OFF (day theme)
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 300  # Some pressure reading
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 400  # Some temperature reading
+  - delay: 3000ms
+  
+  # Verify startup and oil panel load
+  - wait-serial: "Oil panel"
+  - delay: 2000ms
+  - wait-serial: "Day"
+  - delay: 1000ms
+  
+  # Activate night theme
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # DIP switch #4 ON (Lights)
+  - delay: 2000ms
+  - wait-serial: "Night"
+  - delay: 2000ms
+  
+  # Restore day theme
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # DIP switch #4 OFF
+  - delay: 2000ms
+  - wait-serial: "Day"
+  - delay: 1000ms
+  
+  # Multiple theme toggles test
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # Night
+  - delay: 1000ms
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # Day
+  - delay: 1000ms

@@ -83,7 +83,8 @@
       "Bash(tree:*)",
       "Bash(./run_wokwi_tests.sh:*)",
       "Bash(./debug_wokwi_loop.sh:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(./run_wokwi_tests_enhanced.sh:*)"
     ],
     "deny": []
   }

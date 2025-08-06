@@ -1,105 +1,98 @@
 version: 1
-name: "Major Integration Scenario Test"
-description: "Complete 9-step system integration test covering all major functionality"
-timeout: 60000
+name: "Major Integration Scenario - Fully Automated"
+description: "Complete 9-step system integration test with automated DIP switch control"
+timeout: 120000ms
 
 steps:
-  - name: "Phase 1: Default system startup"
-    wait: 4000
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Step 1: Initial Startup (all switches OFF)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 3000ms
+  - wait-serial: "Loading splash panel"
+  - delay: 2000ms
+  - wait-serial: "OEM oil panel"
+  - delay: 2000ms
     
-  - name: "Verify oil panel baseline"
-    expect_text: "Oil panel"
-    timeout: 2000
+  # Step 2: Night Theme Activation (DIP #4 ON = Lights)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # Switch 4 ON (Lights - GPIO 33)
+  - delay: 2000ms
+  - wait-serial: "theme: Night"
+  - delay: 1000ms
     
-  - name: "Capture startup state"
-    screenshot: "phase1_startup.png"
-    delay: 1000
+  # Step 3: Lock Panel Activation (DIP #3 ON = Lock)  
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 12  # Switches 3,4 ON (Lock + Lights)
+  - delay: 2000ms
+  - wait-serial: "Lock panel"
+  - delay: 1000ms
     
-  # Phase 2: Night theme activation (DIP #4 ON)
-  - name: "Phase 2: Wait for night theme activation"
-    wait: 3000
+  # Step 4: Key Not Present (DIP #2 ON = Key Not Present)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 14  # Switches 2,3,4 ON
+  - delay: 2000ms
+  - wait-serial: "Key panel"
+  - delay: 1000ms
     
-  - name: "Look for night theme switch"
-    expect_text: "Night"
-    timeout: 5000
-    optional: true
+  # Step 5: Invalid Key State (DIP #1 ON = Key Present + Key Not Present)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 15  # Switches 1,2,3,4 ON (conflict)
+  - delay: 2000ms
+  - wait-serial: "Lock panel"
+  - delay: 1000ms
     
-  - name: "Capture night theme state"
-    screenshot: "phase2_night_theme.png"
-    delay: 1000
+  # Step 6: Key Present State (DIP #2 OFF, #1 remains ON)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 13  # Switches 1,3,4 ON (Key Present + Lock + Lights)
+  - delay: 2000ms
+  - wait-serial: "Key panel"
+  - delay: 1000ms
     
-  # Phase 3: Key present activation (DIP #1 ON)
-  - name: "Phase 3: Wait for key present trigger"
-    wait: 3000
+  # Step 7: Return to Lock (DIP #1 OFF)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 12  # Switches 3,4 ON (Lock + Lights)
+  - delay: 2000ms
+  - wait-serial: "Lock panel"
+  - delay: 1000ms
     
-  - name: "Look for key panel activation"
-    expect_text: "KeyPanel"
-    timeout: 5000
-    optional: true
+  # Step 8: Return to Oil Panel (DIP #3 OFF)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 8  # Switch 4 ON (Lights only)
+  - delay: 2000ms
+  - wait-serial: "OEM oil panel"
+  - delay: 1000ms
     
-  - name: "Capture key panel state"
-    screenshot: "phase3_key_panel.png"
-    delay: 2000
-    
-  # Phase 4: Lock activation (DIP #3 ON) - Priority test
-  - name: "Phase 4: Wait for lock trigger"
-    wait: 2000
-    
-  - name: "Verify key still active (higher priority)"
-    expect_text: "KeyPanel"
-    timeout: 3000
-    optional: true
-    
-  - name: "Capture priority test state"
-    screenshot: "phase4_priority_test.png"
-    delay: 1000
-    
-  # Phase 5: Remove key trigger (DIP #1 OFF)
-  - name: "Phase 5: Wait for key deactivation"
-    wait: 2000
-    
-  - name: "Look for fallback to lock panel"
-    expect_text: "LockPanel"
-    timeout: 3000
-    optional: true
-    
-  - name: "Capture fallback state"
-    screenshot: "phase5_lock_fallback.png"
-    delay: 2000
-    
-  # Final phases: System restoration
-  - name: "Phase 6-9: System restoration sequence"
-    wait: 5000
-    
-  - name: "Look for final state"
-    expect_text: "panel"
-    timeout: 3000
-    optional: true
-    
-  - name: "Final integration test state"
-    screenshot: "major_scenario_complete.png"
-    delay: 2000
+  # Step 9: Day Theme Restoration (All switches OFF)
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - delay: 2000ms
+  - wait-serial: "theme: Day"
+  - delay: 1000ms
 
-# This test covers the complete 9-step integration scenario:
-# 1. Default startup (Oil panel, day theme)
-# 2. Night theme activation (DIP #4)
-# 3. Key present activation (DIP #1) 
-# 4. Lock activation (DIP #3) - priority test
-# 5. Key deactivation (DIP #1 OFF) - fallback test
-# 6. Lock deactivation (DIP #3 OFF)
-# 7. Return to day theme (DIP #4 OFF)
-# 8. Sensor value verification
-# 9. System stability confirmation
-
-expect_patterns:
-  - "Oil panel"
-  - "KeyPanel"
-  - "LockPanel"
-  - "Night"
-  - "Day"
-
-fail_patterns:
-  - "[ERROR]"
-  - "Exception"
-  - "system failure"
-  - "crash"
+# GPIO Pin Mapping Reference:
+# DIP Switch Position -> GPIO Pin -> Function -> Decimal Value
+# Position 1 -> GPIO 25 -> Key Present -> 1
+# Position 2 -> GPIO 26 -> Key Not Present -> 2  
+# Position 3 -> GPIO 27 -> Lock -> 4
+# Position 4 -> GPIO 33 -> Lights -> 8

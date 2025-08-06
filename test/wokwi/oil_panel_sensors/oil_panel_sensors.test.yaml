@@ -1,39 +1,62 @@
 version: 1
-name: "Oil Panel Sensor Response Test"
-description: "Test dynamic sensor value changes and gauge needle animations"
-timeout: 60000
+name: "Oil Panel Sensor Testing - Enhanced"
+description: "Sensor data validation with gauge needle animations and real-time updates"
+timeout: 60000ms
 
 steps:
-  - name: "Initial system startup"
-    wait: 4000
-    
-  - name: "Verify initial gauge readings"
-    expect_text: "Bar"
-    timeout: 2000
-    
-  - name: "Wait for sensor value stabilization"
-    expect_text: "Temperature reading changed"
-    timeout: 5000
-    
-  - name: "Verify pressure sensor active"
-    expect_text: "Pressure reading"
-    timeout: 2000
-    
-  - name: "Capture gauge positions"
-    screenshot: "gauges_with_sensor_data.png"
-    delay: 2000
-
-# This test validates real-time sensor response
-# Potentiometer changes during simulation should be reflected
-# in gauge needle positions and serial output
-
-expect_patterns:
-  - "[INFO] Pressure reading changed"
-  - "[INFO] Temperature reading changed"
-  - "Bar"
-  - "°C"
-
-fail_patterns:
-  - "[ERROR]"
-  - "stuck"
-  - "timeout"
+  # Wait for simulation start
+  - delay: 2000ms
+  
+  # Initialize with sensor data
+  - set-control:
+      part-id: sw1
+      control: value
+      value: 0  # All switches OFF
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 512  # Halfway pressure (~5 Bar)
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 512  # Halfway temperature (~60°C)
+  - delay: 3000ms
+  
+  # Verify oil panel with sensor data
+  - wait-serial: "Oil panel"
+  - delay: 3000ms
+  - wait-serial: "Updating pressure"
+  - delay: 2000ms
+  
+  # Test minimum values
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 0  # Minimum pressure
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 0  # Minimum temperature
+  - delay: 3000ms
+  
+  # Test maximum values
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 1023  # Maximum pressure (~10 Bar)
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 1023  # Maximum temperature (~120°C)
+  - delay: 3000ms
+  
+  # Return to baseline
+  - set-control:
+      part-id: pot1
+      control: value
+      value: 512  # Halfway
+  - set-control:
+      part-id: pot2
+      control: value
+      value: 512  # Halfway
+  - delay: 2000ms
