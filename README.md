@@ -10,6 +10,7 @@ After I had built this architecture, the project then became a test bed for usin
 ## Documentation
 
 - [Architecture](docs/architecture.md) - MVP pattern and system design
+- [Hardware](docs/hardware.md) - Hardware setup and configuration
 - [Testing](docs/test.md) - Unit and integration test guide  
 - [Scenarios](docs/scenario.md) - Usage workflows
 - [Todo](docs/todo.md) - Development tasks
