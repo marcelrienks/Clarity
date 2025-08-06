@@ -17,7 +17,7 @@ KeyComponent::~KeyComponent()
 }
 
 // Core Functionality Methods
-void KeyComponent::refresh(const Reading& reading)
+void KeyComponent::Refresh(const Reading& reading)
 {
     log_d("Refreshing key component display with new state");
     
@@ -26,11 +26,11 @@ void KeyComponent::refresh(const Reading& reading)
     
     if (key_state == KeyState::Present)
     {
-        colour = styleService_->getThemeColors().keyPresent;
+        colour = styleService_->GetThemeColors().keyPresent;
     }
     else // KeyState::NotPresent or KeyState::Inactive
     {
-        colour = styleService_->getThemeColors().keyNotPresent;
+        colour = styleService_->GetThemeColors().keyNotPresent;
     }
 
     lv_obj_set_style_image_recolor(keyIcon_, colour, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -40,7 +40,7 @@ void KeyComponent::refresh(const Reading& reading)
 /// @brief This method initializes the key present icon with location parameters
 /// @param screen The screen object to render the component on.
 /// @param location The location parameters for positioning the component.
-void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
+void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
     log_d("Rendering key component icon at specified location");
 

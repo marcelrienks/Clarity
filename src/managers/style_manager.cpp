@@ -10,18 +10,18 @@ StyleManager::~StyleManager()
 
 // Core Functionality Methods
 
-void StyleManager::initializeStyles()
+void StyleManager::InitializeStyles()
 {
     if (!initialized_) {
         log_d("Initializing style manager styles");
-        init(THEME);
+        Init(THEME);
         initialized_ = true;
     }
 }
 
 /// @brief Apply the current theme to a specific screen
 /// @param screen the screen to which the theme will be applied
-void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
+void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
     log_d("Applying current theme styles to screen object");
 
@@ -36,7 +36,7 @@ void StyleManager::apply_theme_to_screen(lv_obj_t *screen)
 
 /// @brief Initialises the styles for the application
 /// @param theme the theme to be applied
-void StyleManager::init(const char* theme)
+void StyleManager::Init(const char* theme)
 {
     log_d("Initializing style manager with theme: %s", theme);
 
@@ -54,7 +54,7 @@ void StyleManager::init(const char* theme)
     lv_style_init(&gaugeMainStyle);
     lv_style_init(&gaugeDangerSectionStyle);
 
-    set_theme(theme);
+    SetTheme(theme);
     
     // Mark as initialized
     initialized_ = true;
@@ -84,7 +84,7 @@ void StyleManager::ResetStyles()
 
 /// @brief Apply a specified theme to the styles
 /// @param theme the theme to be applied
-void StyleManager::set_theme(const char* theme)
+void StyleManager::SetTheme(const char* theme)
 {
     // Handle invalid theme gracefully
     if (!theme || strlen(theme) == 0) {
@@ -98,7 +98,7 @@ void StyleManager::set_theme(const char* theme)
     this->THEME = theme;
 
     // Select the current theme colors
-    ThemeColors colours = get_colours(theme);
+    ThemeColors colours = GetColours(theme);
 
     // Background style
     lv_style_set_bg_color(&backgroundStyle, colours.background);
@@ -134,7 +134,7 @@ void StyleManager::set_theme(const char* theme)
     // Apply the updated theme to the current screen
     lv_obj_t *current_screen = lv_scr_act();
     if (current_screen != nullptr) {
-        apply_theme_to_screen(current_screen);
+        ApplyThemeToScreen(current_screen);
         // Force LVGL to refresh the display
         lv_obj_invalidate(current_screen);
     }
@@ -144,7 +144,7 @@ void StyleManager::set_theme(const char* theme)
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
-const ThemeColors &StyleManager::get_colours(const char* theme) const
+const ThemeColors &StyleManager::GetColours(const char* theme) const
 {
     return (theme && strcmp(theme, Themes::NIGHT) == 0) ? nightThemeColours_ : dayThemeColours_;
 }

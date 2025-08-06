@@ -27,22 +27,22 @@ public:
     /**
      * @brief Initialize the preference service and load existing configuration
      */
-    virtual void init() = 0;
+    virtual void Init() = 0;
 
     /**
      * @brief Save current configuration to persistent storage
      */
-    virtual void saveConfig() = 0;
+    virtual void SaveConfig() = 0;
 
     /**
      * @brief Load configuration from persistent storage
      */
-    virtual void loadConfig() = 0;
+    virtual void LoadConfig() = 0;
 
     /**
      * @brief Create default configuration if none exists
      */
-    virtual void createDefaultConfig() = 0;
+    virtual void CreateDefaultConfig() = 0;
 
     // Configuration Access Methods
     
@@ -50,17 +50,17 @@ public:
      * @brief Get the current configuration object
      * @return Reference to current configuration settings
      */
-    virtual Configs& getConfig() = 0;
+    virtual Configs& GetConfig() = 0;
 
     /**
      * @brief Get the current configuration object (read-only)
      * @return Const reference to current configuration settings
      */
-    virtual const Configs& getConfig() const = 0;
+    virtual const Configs& GetConfig() const = 0;
 
     /**
      * @brief Update the configuration object
      * @param config New configuration settings to apply
      */
-    virtual void setConfig(const Configs& config) = 0;
+    virtual void SetConfig(const Configs& config) = 0;
 };

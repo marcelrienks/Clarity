@@ -80,3 +80,21 @@ Light sensor triggers theme changes (no panel switch).
 ## Service Architecture
 
 Dependency injection via service container enables loose coupling and testability.
+
+## Coding Standards
+
+The project follows a consistent coding format based on Google C++ Style Guide with project-specific preferences:
+
+### Naming Conventions
+- **Classes**: `PascalCase` (e.g., `PanelManager`, `StyleManager`)
+- **Functions/Methods**: `PascalCase` for public methods (e.g., `SetTheme()`, `ApplyThemeToScreen()`)
+- **Variables**: `snake_case` with trailing underscore for members (e.g., `panel_manager_`, `gpio_provider_`)
+- **Constants**: `ALL_CAPS` (e.g., `NIGHT`, `DAY`, `OIL`) - project preference over kCamelCase
+- **Files**: `snake_case.h/.cpp` (e.g., `panel_manager.h`, `style_manager.cpp`)
+- **Interfaces**: Prefixed with `I` (e.g., `IComponent`, `IPanel`, `ISensor`)
+
+### Code Organization
+- **Headers**: Comprehensive Doxygen-style documentation blocks
+- **Includes**: System includes before project includes
+- **Namespaces**: `snake_case` (e.g., `gpio_pins`)
+- **Enums**: `PascalCase` with descriptive values

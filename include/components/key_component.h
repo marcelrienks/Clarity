@@ -34,8 +34,8 @@ public:
     virtual ~KeyComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
-    void refresh(const Reading& reading) override;
+    void Render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
+    void Refresh(const Reading& reading) override;
 
 protected:
     // Protected Data Members
@@ -44,5 +44,5 @@ protected:
 
 private:
     // Core Functionality Methods
-    void CreateIcon();
+    void create_icon();
 };

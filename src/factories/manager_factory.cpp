@@ -37,7 +37,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
     log_d("Creating StyleManager with theme: %s", theme ? theme : "default");
     
     auto manager = std::make_unique<StyleManager>();
-    manager->init(theme ? theme : Themes::NIGHT);
+    manager->Init(theme ? theme : Themes::NIGHT);
     
     return manager;
 }
