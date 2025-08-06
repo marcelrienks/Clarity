@@ -47,7 +47,13 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Run Unity Unit Tests
-        run: pio test -e test-all --verbose
+        run: |
+          echo "🧪 Running Unity Unit Tests..."
+          if ! pio test -e test-all --verbose; then
+            echo "❌ Unity tests failed - blocking merge"
+            exit 1
+          fi
+          echo "✅ All Unity tests passed"
 
   build-verification:
     runs-on: ubuntu-latest
@@ -73,13 +79,27 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build Release Firmware
-        run: pio run -e release
+        run: |
+          echo "🔨 Building release firmware..."
+          if ! pio run -e release; then
+            echo "❌ Release build failed - blocking merge"
+            exit 1
+          fi
+          echo "✅ Release build successful"
 
       - name: Check Program Size
-        run: pio run -e release --target size
+        run: |
+          echo "📏 Checking program size..."
+          pio run -e release --target size
 
       - name: Build Debug Firmware
-        run: pio run -e debug-local
+        run: |
+          echo "🔧 Building debug firmware..."
+          if ! pio run -e debug-local; then
+            echo "❌ Debug build failed - blocking merge"
+            exit 1
+          fi
+          echo "✅ Debug build successful"
 
       - name: Upload Debug Firmware Artifact
         uses: actions/upload-artifact@v4
