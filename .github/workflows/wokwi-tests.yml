@@ -1,16 +1,9 @@
 name: Wokwi Integration Tests
 
 on:
-  push:
-    branches: [ main, develop ]
-    paths:
-      - 'src/**'
-      - 'include/**'
-      - 'test/wokwi/**'
-      - 'platformio.ini'
-      - 'run_wokwi_tests.sh'
+  # Only run Wokwi tests on pull requests to conserve API usage
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'src/**'
       - 'include/**'

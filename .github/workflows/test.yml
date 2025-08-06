@@ -2,7 +2,7 @@ name: Unity Unit Tests
 
 on:
   push:
-    branches: [ main, develop ]
+    # Run on every commit to any branch
     paths:
       - 'src/**'
       - 'include/**'
@@ -10,7 +10,7 @@ on:
       - 'platformio.ini'
       - '!test/wokwi/**'  # Exclude wokwi tests
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
     paths:
       - 'src/**'
       - 'include/**'
