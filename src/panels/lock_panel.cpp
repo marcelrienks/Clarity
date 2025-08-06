@@ -74,7 +74,6 @@ void LockPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio
 /// @brief Update the lock panel with current sensor data
 void LockPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
-    // Immediately call the completion callback so that lock/unlock logic is processed
     callbackFunction();
 }
 

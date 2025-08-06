@@ -10,7 +10,6 @@ KeyComponent::KeyComponent(IStyleService* styleService)
 
 KeyComponent::~KeyComponent()
 {
-    // Clean up LVGL objects
     if (keyIcon_)
     {
         lv_obj_del(keyIcon_);
@@ -45,7 +44,6 @@ void KeyComponent::render(lv_obj_t *screen, const ComponentLocation &location, I
 {
     log_d("Rendering key component icon at specified location");
 
-    // Create the key icon
     // Note: LVGL doesn't have image creation in IDisplayProvider yet, keeping direct call
     keyIcon_ = lv_image_create(screen);
     lv_image_set_src(keyIcon_, &key_solid);

@@ -30,66 +30,19 @@ OemOilComponent::OemOilComponent(IStyleService* styleService)
 
 OemOilComponent::~OemOilComponent()
 {
-    // Clean up LVGL objects
-    if (needleLine_)
-    {
-        lv_obj_del(needleLine_);
-    }
-
-    if (needleMiddle_)
-    {
-        lv_obj_del(needleMiddle_);
-    }
-
-    if (needleBase_)
-    {
-        lv_obj_del(needleBase_);
-    }
-
-    if (needleHighlightLine_)
-    {
-        lv_obj_del(needleHighlightLine_);
-    }
-
-    if (needleHighlightMiddle_)
-    {
-        lv_obj_del(needleHighlightMiddle_);
-    }
-
-    if (needleHighlightBase_)
-    {
-        lv_obj_del(needleHighlightBase_);
-    }
-
-    if (scale_)
-    {
-        lv_obj_del(scale_);
-    }
-
-    if (oilIcon_)
-    {
-        lv_obj_del(oilIcon_);
-    }
-
-    if (lowLabel_)
-    {
-        lv_obj_del(lowLabel_);
-    }
-
-    if (highLabel_)
-    {
-        lv_obj_del(highLabel_);
-    }
-
-    if (pivotCircle_)
-    {
-        lv_obj_del(pivotCircle_);
-    }
-
-    if (pivotHighlight_)
-    {
-        lv_obj_del(pivotHighlight_);
-    }
+    // Cleanup LVGL objects
+    if (needleLine_) lv_obj_del(needleLine_);
+    if (needleMiddle_) lv_obj_del(needleMiddle_);
+    if (needleBase_) lv_obj_del(needleBase_);
+    if (needleHighlightLine_) lv_obj_del(needleHighlightLine_);
+    if (needleHighlightMiddle_) lv_obj_del(needleHighlightMiddle_);
+    if (needleHighlightBase_) lv_obj_del(needleHighlightBase_);
+    if (scale_) lv_obj_del(scale_);
+    if (oilIcon_) lv_obj_del(oilIcon_);
+    if (lowLabel_) lv_obj_del(lowLabel_);
+    if (highLabel_) lv_obj_del(highLabel_);
+    if (pivotCircle_) lv_obj_del(pivotCircle_);
+    if (pivotHighlight_) lv_obj_del(pivotHighlight_);
 
     // No style cleanup needed - styles are managed by StyleManager
 }

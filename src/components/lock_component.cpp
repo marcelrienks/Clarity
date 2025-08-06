@@ -10,7 +10,6 @@ LockComponent::LockComponent(IStyleService* styleService)
 
 LockComponent::~LockComponent()
 {
-    // Clean up LVGL objects
     if (lockIcon_)
     {
         lv_obj_del(lockIcon_);
@@ -40,7 +39,6 @@ void LockComponent::render(lv_obj_t *screen, const ComponentLocation &location, 
 {
     log_d("Rendering lock component icon at specified location");
 
-    // Create the lock icon
     // Note: LVGL doesn't have image creation in IDisplayProvider yet, keeping direct call
     lockIcon_ = lv_image_create(screen);
     lv_image_set_src(lockIcon_, &lock_alt_solid);

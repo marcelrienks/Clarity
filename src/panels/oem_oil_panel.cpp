@@ -10,7 +10,6 @@ OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleS
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)) 
 {
-    // Components will be created during load() method
 }
 
 OemOilPanel::~OemOilPanel()

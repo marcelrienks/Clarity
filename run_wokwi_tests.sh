@@ -121,7 +121,7 @@ for scenario_info in "${test_scenarios[@]}"; do
 done
 
 echo "============================================================="
-echo "📊 Enhanced Test Execution Summary"
+echo "📊 Test Execution Summary"
 echo "============================================================="
 echo "Total Tests: $total_tests"
 echo "Passed: $passed_tests ✅"

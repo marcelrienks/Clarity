@@ -66,7 +66,6 @@ void SplashPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
 /// @brief Update the reading on the screen
 void SplashPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
-    // Immediately call the completion callback so that lock/unlock logic is processed
     callbackFunction();
 }
 

@@ -23,7 +23,6 @@ std::unique_ptr<TriggerManager> triggerManager;
 void initializeServices() {
     log_d("Starting service initialization...");
     
-    // Create services in dependency order
     log_d("Creating Device...");
     device = std::make_unique<Device>();
     
@@ -62,15 +61,12 @@ void setup()
 {
     log_d("Starting Clarity application setup - using direct service instantiation");
 
-    // Initialize all services
     initializeServices();
 
-    // Initialize hardware
     log_d("Preparing device...");
     device->prepare();
     Ticker::handleLvTasks();
     
-    // Initialize application
     log_d("Initializing Clarity application");
     
     // Initialize trigger service after all dependencies are resolved
