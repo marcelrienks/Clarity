@@ -4,28 +4,58 @@
 
 Two testing approaches:
 1. **Unity Tests**: Unit tests for core logic (101 tests, ~2 seconds)
-2. **Wokwi Tests**: Hardware simulation integration tests (10 scenarios)
+2. **Wokwi Tests**: Hardware simulation integration tests (11 scenarios)
 
 ## Unity Tests
 
+### Quick Start
+
 ```bash
-./run_unity_tests.sh    # Linux/Mac
-run_unity_tests.bat     # Windows
+# Run all tests (101 tests)
+./run_unity_tests.sh        # Linux/Mac
+run_unity_tests.bat         # Windows
+
+# Or using PlatformIO directly
+pio test -e test-all
 ```
 
-### Coverage (101 tests)
-- Sensors (21)
-- Managers (15)  
-- Components (24)
-- Integration (20)
-- Infrastructure (21)
+### Run Individual Test Suites
+
+```bash
+# Sensor Tests (21 tests)
+pio test -e test-sensors
+
+# Manager Tests (15 tests)  
+pio test -e test-managers
+
+# Component Tests (24 tests)
+pio test -e test-components
+
+# Integration Tests (20 tests)
+pio test -e test-integration
+
+# Infrastructure Tests (21 tests)
+pio test -e test-infrastructure
+```
+
+### Test Coverage (101 tests total)
+- **Sensors (21)**: Oil pressure/temperature, key, lock, light sensors
+- **Managers (15)**: Panel manager, trigger manager, style/preference services
+- **Components (24)**: OEM oil gauges, key/lock indicators, Clarity branding
+- **Integration (20)**: Scenario tests, system integration, end-to-end flows
+- **Infrastructure (21)**: Device layer, factories, utilities, main app startup
 
 Single file: `test/unity_tests.cpp` with hardware mocks.
 
 ## Wokwi Integration Tests
 
 ```bash
-./run_wokwi_tests.sh    # Requires WOKWI_CLI_TOKEN
+# Run all tests
+./run_wokwi_tests.sh        # Linux/Mac
+./run_wokwi_tests.bat       # Windows
+
+# Run the basic startup test:
+wokwi-cli test/wokwi --elf .pio/build/debug-local/firmware.elf --timeout 60000 --scenario basic_startup.test.yaml
 ```
 
 ### Test Scenarios
@@ -40,6 +70,8 @@ Single file: `test/unity_tests.cpp` with hardware mocks.
 | `lock_panel` | Lock trigger |
 | `trigger_priority` | Conflict resolution |
 | `major_scenario` | Full integration |
+| `startup_triggers_simple` | Simple trigger test |
+| `night_startup` | Night theme on boot |
 
 ### GPIO Mapping
 

@@ -40,6 +40,7 @@ test_scenarios=(
     "key_not_present:Key Not Present Panel Switch:key_not_present.test.yaml:Loading OEM oil panel"
     "lock_panel:Lock Panel Integration:lock_panel.test.yaml:Loading OEM oil panel"
     "startup_triggers:Startup Triggers Validation:startup_triggers.test.yaml:Loading OEM oil panel"
+    "startup_triggers_simple:Simple Startup Triggers:startup_triggers_simple.test.yaml:Loading OEM oil panel"
     "trigger_priority:Trigger Priority Validation:trigger_priority.test.yaml:Loading OEM oil panel"
     "major_scenario:Major Integration Scenario:major_scenario.test.yaml:Loading OEM oil panel"
 )
