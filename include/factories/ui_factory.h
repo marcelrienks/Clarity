@@ -55,10 +55,12 @@ public:
     static std::unique_ptr<IComponent> createClarityComponent(IStyleService* styleService);
     static std::unique_ptr<IComponent> createOemOilPressureComponent(IStyleService* styleService);
     static std::unique_ptr<IComponent> createOemOilTemperatureComponent(IStyleService* styleService);
+    static std::unique_ptr<IComponent> createErrorListComponent(IStyleService* styleService);
     
     // Panel creation methods
     static std::unique_ptr<IPanel> createKeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     static std::unique_ptr<IPanel> createLockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     static std::unique_ptr<IPanel> createSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     static std::unique_ptr<IPanel> createOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    static std::unique_ptr<IPanel> createErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
 };

@@ -9,6 +9,7 @@
 #include "sensors/key_sensor.h"
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
+#include "sensors/debug_error_sensor.h"
 #include <vector>
 #include <functional>
 #include <memory>
@@ -36,7 +37,8 @@ public:
 
     // Constructors and Destructors
     TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
-                   std::shared_ptr<LightSensor> lightSensor, IPanelService *panelService, IStyleService *styleService);
+                   std::shared_ptr<LightSensor> lightSensor, std::shared_ptr<DebugErrorSensor> debugErrorSensor,
+                   IPanelService *panelService, IStyleService *styleService);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
     ~TriggerManager() = default;
@@ -53,6 +55,7 @@ private:
     void InitializeTriggersFromSensors();
     GpioState ReadAllSensorStates();
     void CheckSensorChanges();
+    void CheckErrorTrigger();
     void CheckTriggerChange(const char *triggerId, bool currentPinState);
     void InitializeTrigger(const char *triggerId, bool currentPinState);
     Trigger *FindTriggerMapping(const char *triggerId);
@@ -63,6 +66,7 @@ private:
     std::shared_ptr<KeySensor> keySensor_;
     std::shared_ptr<LockSensor> lockSensor_;
     std::shared_ptr<LightSensor> lightSensor_;
+    std::shared_ptr<DebugErrorSensor> debugErrorSensor_;
     IPanelService *panelService_ = nullptr;
     IStyleService *styleService_ = nullptr;
     

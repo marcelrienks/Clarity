@@ -7,6 +7,7 @@
 #include "sensors/key_sensor.h"
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
+#include "sensors/debug_error_sensor.h"
 #include <esp32-hal-log.h>
 
 // Factory Methods
@@ -60,8 +61,9 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
     auto keySensor = std::make_shared<KeySensor>(gpio);
     auto lockSensor = std::make_shared<LockSensor>(gpio);
     auto lightSensor = std::make_shared<LightSensor>(gpio);
+    auto debugErrorSensor = std::make_shared<DebugErrorSensor>(gpio);
     
-    auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, panelService, styleService);
+    auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, debugErrorSensor, panelService, styleService);
     manager->Init();
     
     return manager;

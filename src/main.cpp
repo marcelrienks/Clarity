@@ -4,6 +4,7 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
+#include "managers/error_manager.h"
 #include "factories/manager_factory.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
@@ -54,8 +55,13 @@ void initializeServices() {
         styleManager.get()
     );
     
+    log_d("Initializing ErrorManager...");
+    // ErrorManager is a singleton, just initialize it
+    ErrorManager::Instance();
+    
     log_d("Service initialization completed successfully");
 }
+
 
 void setup()
 {

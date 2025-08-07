@@ -71,6 +71,7 @@ struct Themes
 {
     static constexpr const char* NIGHT = "Night"; ///< Dark theme with red accents (default)
     static constexpr const char* DAY = "Day";     ///< Light theme with white accents
+    static constexpr const char* ERROR = "Error"; ///< Error-specific theme with high contrast for alerts
 };
 
 /// @enum OilSensorTypes
@@ -122,6 +123,7 @@ struct PanelNames
     static constexpr const char* OIL = "OemOilPanel";    ///< Oil monitoring dashboard
     static constexpr const char* KEY = "KeyPanel";       ///< Key status panel
     static constexpr const char* LOCK = "LockPanel";     ///< Lock status panel
+    static constexpr const char* ERROR = "ErrorPanel";   ///< Error display panel
 };
 
 /// @struct TriggerNames
@@ -250,6 +252,7 @@ constexpr const char *TRIGGER_KEY_PRESENT = "key_present";
 constexpr const char *TRIGGER_KEY_NOT_PRESENT = "key_not_present";
 constexpr const char *TRIGGER_LOCK_STATE = "lock_state";
 constexpr const char *TRIGGER_LIGHTS_STATE = "lights_state";
+constexpr const char *TRIGGER_ERROR_OCCURRED = "error_occurred";
 
 /// @brief Consolidated GPIO state structure for single-read pattern
 struct GpioState {
@@ -268,6 +271,24 @@ struct Trigger {
     const char *restoreTarget;
     TriggerPriority priority;
     TriggerExecutionState currentState = TriggerExecutionState::INIT;
+};
+
+/// @enum ErrorLevel
+/// @brief Severity levels for application errors
+enum class ErrorLevel { 
+    WARNING,   ///< Non-critical issues that don't affect core functionality
+    ERROR,     ///< Significant issues that may impact features
+    CRITICAL   ///< Critical issues requiring immediate attention
+};
+
+/// @struct ErrorInfo
+/// @brief Complete error information structure
+struct ErrorInfo {
+    ErrorLevel level;           ///< Severity level of the error
+    const char* source;         ///< Component/manager that reported the error
+    std::string message;        ///< Human-readable error description
+    unsigned long timestamp;    ///< millis() timestamp when error occurred
+    bool acknowledged;          ///< Whether user has acknowledged the error
 };
 
 // Theme color definitions

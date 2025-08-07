@@ -135,6 +135,19 @@ private:
         .keyPresent = lv_color_hex(0x006400),    // Deep green for key present
         .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
     };
+    ThemeColors errorThemeColours_ = {
+        .background = lv_color_hex(0x000000),    // Black background for high contrast
+        .text = lv_color_hex(0xFFFFFF),          // White text for maximum readability
+        .primary = lv_color_hex(0xFF0000),       // Bright red for error emphasis
+        .gaugeNormal = lv_color_hex(0xFFFFFF),   // White for general elements
+        .gaugeWarning = lv_color_hex(0xFFFF00),  // Yellow for warnings
+        .gaugeDanger = lv_color_hex(0xFF0000),   // Red for critical errors
+        .gaugeTicks = lv_color_hex(0xFFFFFF),    // White tick marks
+        .needleNormal = lv_color_hex(0xFFFFFF),  // White needles
+        .needleDanger = lv_color_hex(0xFF0000),  // Red for danger
+        .keyPresent = lv_color_hex(0xFFFFFF),    // White (not used in error panel)
+        .keyNotPresent = lv_color_hex(0xFFFFFF)  // White (not used in error panel)
+    };
 
 private:
     bool initialized_ = false;

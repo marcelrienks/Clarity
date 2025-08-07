@@ -2,6 +2,7 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
+#include "managers/error_manager.h"
 #include "hardware/gpio_pins.h"
 #include <esp32-hal-log.h>
 #include <algorithm>
@@ -11,15 +12,18 @@ Trigger TriggerManager::triggers_[] = {
     {TRIGGER_KEY_PRESENT, gpio_pins::KEY_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
     {TRIGGER_KEY_NOT_PRESENT, gpio_pins::KEY_NOT_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
     {TRIGGER_LOCK_STATE, gpio_pins::LOCK, TriggerActionType::LoadPanel, PanelNames::LOCK, PanelNames::OIL, TriggerPriority::IMPORTANT},
-    {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL}
+    {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL},
+    {TRIGGER_ERROR_OCCURRED, -1, TriggerActionType::LoadPanel, PanelNames::ERROR, PanelNames::OIL, TriggerPriority::CRITICAL}
 };
 
 TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
-                               std::shared_ptr<LightSensor> lightSensor, IPanelService *panelService, IStyleService *styleService)
-    : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), panelService_(panelService), styleService_(styleService)
+                               std::shared_ptr<LightSensor> lightSensor, std::shared_ptr<DebugErrorSensor> debugErrorSensor,
+                               IPanelService *panelService, IStyleService *styleService)
+    : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), debugErrorSensor_(debugErrorSensor),
+      panelService_(panelService), styleService_(styleService)
 {
-    if (!keySensor || !lockSensor || !lightSensor || !panelService || !styleService) {
-        log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, panelService, and styleService");
+    if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor || !panelService || !styleService) {
+        log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, debugErrorSensor, panelService, and styleService");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
         log_d("Creating TriggerManager with injected sensor and service dependencies");
@@ -48,6 +52,7 @@ void TriggerManager::Init()
     keySensor_->Init();
     lockSensor_->Init();
     lightSensor_->Init();
+    debugErrorSensor_->Init();
     
     // Read current sensor states and initialize triggers
     InitializeTriggersFromSensors();
@@ -59,6 +64,14 @@ void TriggerManager::ProcessTriggerEvents()
 {
     // Sensor-based polling - check for state changes
     CheckSensorChanges();
+    
+    // Check for error conditions
+    CheckErrorTrigger();
+    
+    // Check debug error sensor (it handles error generation internally)
+    #ifdef CLARITY_DEBUG
+    debugErrorSensor_->GetReading(); // This will trigger errors on rising edge
+    #endif
 }
 
 GpioState TriggerManager::ReadAllSensorStates()
@@ -91,6 +104,15 @@ void TriggerManager::CheckSensorChanges()
     CheckTriggerChange(TRIGGER_KEY_NOT_PRESENT, currentState.keyNotPresent);
     CheckTriggerChange(TRIGGER_LOCK_STATE, currentState.lockState);
     CheckTriggerChange(TRIGGER_LIGHTS_STATE, currentState.lightsState);
+}
+
+void TriggerManager::CheckErrorTrigger()
+{
+    bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
+    log_d("CheckErrorTrigger: shouldShowErrorPanel=%s, errors=%d", 
+          shouldShowErrorPanel ? "true" : "false", 
+          ErrorManager::Instance().GetErrorQueue().size());
+    CheckTriggerChange(TRIGGER_ERROR_OCCURRED, shouldShowErrorPanel);
 }
 
 void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinState)
@@ -190,6 +212,9 @@ void TriggerManager::InitializeTriggersFromSensors()
     InitializeTrigger(TRIGGER_KEY_NOT_PRESENT, currentState.keyNotPresent);
     InitializeTrigger(TRIGGER_LOCK_STATE, currentState.lockState);
     InitializeTrigger(TRIGGER_LIGHTS_STATE, currentState.lightsState);
+    
+    // Initialize error trigger based on current error state
+    InitializeTrigger(TRIGGER_ERROR_OCCURRED, ErrorManager::Instance().ShouldTriggerErrorPanel());
     
     // Apply initial actions from active triggers
     if (activeThemeTrigger_) {
