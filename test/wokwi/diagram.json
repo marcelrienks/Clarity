@@ -32,7 +32,7 @@
     [ "esp:3V3", "sw1:1b", "red", [ "h0" ] ],
     [ "esp:3V3", "sw1:2b", "red", [ "h0" ] ],
     [ "esp:3V3", "sw1:3b", "red", [ "h0" ] ],
-    [ "sw1:4a", "esp:33", "white", [ "v19.2", "h57.6", "v-9.6" ] ],
+    [ "sw1:4a", "esp:32", "white", [ "v19.2", "h57.6", "v-9.6" ] ],
     [ "sw1:4b", "esp:3V3", "red", [ "v0" ] ]
   ],
   "dependencies": {}
