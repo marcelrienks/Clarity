@@ -2,6 +2,7 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
+#include "managers/error_manager.h"
 #include "hardware/gpio_pins.h"
 #include <esp32-hal-log.h>
 #include <algorithm>
@@ -11,7 +12,8 @@ Trigger TriggerManager::triggers_[] = {
     {TRIGGER_KEY_PRESENT, gpio_pins::KEY_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
     {TRIGGER_KEY_NOT_PRESENT, gpio_pins::KEY_NOT_PRESENT, TriggerActionType::LoadPanel, PanelNames::KEY, PanelNames::OIL, TriggerPriority::CRITICAL},
     {TRIGGER_LOCK_STATE, gpio_pins::LOCK, TriggerActionType::LoadPanel, PanelNames::LOCK, PanelNames::OIL, TriggerPriority::IMPORTANT},
-    {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL}
+    {TRIGGER_LIGHTS_STATE, gpio_pins::LIGHTS, TriggerActionType::ToggleTheme, Themes::NIGHT, Themes::DAY, TriggerPriority::NORMAL},
+    {TRIGGER_ERROR_OCCURRED, -1, TriggerActionType::LoadPanel, PanelNames::ERROR, PanelNames::OIL, TriggerPriority::CRITICAL}
 };
 
 TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
@@ -59,6 +61,9 @@ void TriggerManager::ProcessTriggerEvents()
 {
     // Sensor-based polling - check for state changes
     CheckSensorChanges();
+    
+    // Check for error conditions
+    CheckErrorTrigger();
 }
 
 GpioState TriggerManager::ReadAllSensorStates()
@@ -91,6 +96,12 @@ void TriggerManager::CheckSensorChanges()
     CheckTriggerChange(TRIGGER_KEY_NOT_PRESENT, currentState.keyNotPresent);
     CheckTriggerChange(TRIGGER_LOCK_STATE, currentState.lockState);
     CheckTriggerChange(TRIGGER_LIGHTS_STATE, currentState.lightsState);
+}
+
+void TriggerManager::CheckErrorTrigger()
+{
+    bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
+    CheckTriggerChange(TRIGGER_ERROR_OCCURRED, shouldShowErrorPanel);
 }
 
 void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinState)

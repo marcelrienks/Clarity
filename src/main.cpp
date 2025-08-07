@@ -4,6 +4,7 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
+#include "managers/error_manager.h"
 #include "factories/manager_factory.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
@@ -54,7 +55,43 @@ void initializeServices() {
         styleManager.get()
     );
     
+    log_d("Initializing ErrorManager...");
+    // ErrorManager is a singleton, just initialize it
+    ErrorManager::Instance();
+    
     log_d("Service initialization completed successfully");
+}
+
+// Test function to demonstrate error handling
+void testErrorHandling() {
+    static unsigned long lastTestTime = 0;
+    static int testCounter = 0;
+    
+    // Run test every 30 seconds
+    if (millis() - lastTestTime > 30000) {
+        lastTestTime = millis();
+        testCounter++;
+        
+        switch (testCounter) {
+            case 1:
+                ErrorManager::Instance().ReportWarning("TestSystem", "This is a test warning message");
+                log_d("Generated test warning");
+                break;
+            case 2:
+                ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "TestSystem", 
+                    "This is a test error message");
+                log_d("Generated test error");
+                break;
+            case 3:
+                ErrorManager::Instance().ReportCriticalError("TestSystem", 
+                    "This is a test critical error");
+                log_d("Generated test critical error");
+                break;
+            default:
+                testCounter = 0; // Reset counter
+                break;
+        }
+    }
 }
 
 void setup()
@@ -96,5 +133,10 @@ void loop()
     panelManager->UpdatePanel();
     Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
+    
+    // Test error handling system
+    #ifdef CLARITY_DEBUG
+    testErrorHandling();
+    #endif
 }
 

@@ -1,4 +1,5 @@
 #include "sensors/oil_pressure_sensor.h"
+#include "managers/error_manager.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -42,6 +43,13 @@ Reading OilPressureSensor::GetReading()
         
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
         int32_t adcValue = gpioProvider_->AnalogRead(gpio_pins::OIL_PRESSURE);
+        
+        // Check for invalid ADC readings
+        if (adcValue < 0 || adcValue > ADC_MAX_VALUE) {
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OilPressureSensor", 
+                "ADC reading out of range: " + std::to_string(adcValue));
+            return std::monostate{}; // Return invalid reading
+        }
         
         // Convert ADC value to pressure using voltage divider calculation
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V

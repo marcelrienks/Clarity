@@ -1,4 +1,5 @@
 #include "managers/panel_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/ticker.h"
 #include <esp32-hal-log.h>
 #include <cstring>
@@ -37,6 +38,8 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
 {
     if (!display || !gpio || !styleService) {
         log_e("PanelManager requires all dependencies: display, gpio, and styleService");
+        ErrorManager::Instance().ReportCriticalError("PanelManager", 
+            "Missing required dependencies - display, gpio, or styleService is null");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
         log_d("Creating PanelManager with injected dependencies");
@@ -73,8 +76,12 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
         uniquePanel = UIFactory::createSplashPanel(gpioProvider_, displayProvider_, styleService_);
     } else if (strcmp(panelName, PanelNames::OIL) == 0) {
         uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
+        uniquePanel = UIFactory::createErrorPanel(gpioProvider_, displayProvider_, styleService_);
     } else {
         log_e("Unknown panel type: %s", panelName);
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager", 
+            std::string("Unknown panel type: ") + panelName);
         return nullptr;
     }
     
