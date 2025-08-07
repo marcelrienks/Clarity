@@ -17,11 +17,13 @@ Trigger TriggerManager::triggers_[] = {
 };
 
 TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
-                               std::shared_ptr<LightSensor> lightSensor, IPanelService *panelService, IStyleService *styleService)
-    : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), panelService_(panelService), styleService_(styleService)
+                               std::shared_ptr<LightSensor> lightSensor, std::shared_ptr<DebugErrorSensor> debugErrorSensor,
+                               IPanelService *panelService, IStyleService *styleService)
+    : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), debugErrorSensor_(debugErrorSensor),
+      panelService_(panelService), styleService_(styleService)
 {
-    if (!keySensor || !lockSensor || !lightSensor || !panelService || !styleService) {
-        log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, panelService, and styleService");
+    if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor || !panelService || !styleService) {
+        log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, debugErrorSensor, panelService, and styleService");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
         log_d("Creating TriggerManager with injected sensor and service dependencies");
@@ -50,6 +52,7 @@ void TriggerManager::Init()
     keySensor_->Init();
     lockSensor_->Init();
     lightSensor_->Init();
+    debugErrorSensor_->Init();
     
     // Read current sensor states and initialize triggers
     InitializeTriggersFromSensors();
@@ -64,6 +67,11 @@ void TriggerManager::ProcessTriggerEvents()
     
     // Check for error conditions
     CheckErrorTrigger();
+    
+    // Check debug error sensor (it handles error generation internally)
+    #ifdef CLARITY_DEBUG
+    debugErrorSensor_->GetReading(); // This will trigger errors on rising edge
+    #endif
 }
 
 GpioState TriggerManager::ReadAllSensorStates()

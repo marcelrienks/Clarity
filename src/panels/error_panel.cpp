@@ -6,7 +6,7 @@
 // Constructors and Destructors
 ErrorPanel::ErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) 
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      screen_(nullptr), panelLoaded_(false)
+      screen_(nullptr), panelLoaded_(false), previousTheme_(nullptr)
 {
     log_d("Creating ErrorPanel");
     // Component will be created during load() method
@@ -25,6 +25,12 @@ ErrorPanel::~ErrorPanel()
     
     // Reset error panel active flag when panel is destroyed
     ErrorManager::Instance().SetErrorPanelActive(false);
+    
+    // Restore previous theme if one was stored
+    if (styleService_ && previousTheme_) {
+        log_d("Restoring previous theme: %s", previousTheme_);
+        styleService_->SetTheme(previousTheme_);
+    }
 }
 
 // Core Functionality Methods
@@ -40,8 +46,11 @@ void ErrorPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 
     screen_ = display->CreateScreen();
     
-    // Apply current theme immediately after screen creation
+    // Store current theme before switching to ERROR theme
     if (styleService_) {
+        previousTheme_ = styleService_->GetCurrentTheme();
+        log_d("Storing previous theme: %s", previousTheme_);
+        styleService_->SetTheme(Themes::ERROR);
         styleService_->ApplyThemeToScreen(screen_);
     }
     
@@ -75,8 +84,9 @@ void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpi
     log_v("loading error panel...");
     lv_screen_load(screen_);
     
-    // Always apply current theme to the screen when loading
+    // Ensure ERROR theme is applied when panel is loaded
     if (styleService_) {
+        styleService_->SetTheme(Themes::ERROR);
         styleService_->ApplyThemeToScreen(screen_);
     }
     

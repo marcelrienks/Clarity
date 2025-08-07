@@ -39,6 +39,9 @@ void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &locat
     lv_obj_set_style_radius(errorContainer_, 120, 0); // Make it circular (half of 240)
     lv_obj_set_style_border_width(errorContainer_, 2, 0); // 2px colored border from edge
     
+    // Ensure container has transparent background for error panel's dark theme
+    lv_obj_set_style_bg_opa(errorContainer_, LV_OPA_TRANSP, 0);
+    
     // Create the internal UI structure for single error display
     CreateSingleErrorUI(errorContainer_);
     
@@ -98,7 +101,7 @@ void ErrorListComponent::CreateSingleErrorUI(lv_obj_t* parent)
     errorCountLabel_ = lv_label_create(parent);
     lv_obj_align(errorCountLabel_, LV_ALIGN_TOP_MID, 0, 8); // Near top with minimal margin
     lv_obj_set_style_text_font(errorCountLabel_, &lv_font_montserrat_12, 0);
-    lv_obj_set_style_text_color(errorCountLabel_, lv_color_white(), 0);
+    lv_obj_set_style_text_color(errorCountLabel_, lv_color_white(), 0); // Always white for dark background
     lv_label_set_text(errorCountLabel_, "1/1");
     
     // Create main content area using most of the 220x220 available space
@@ -138,7 +141,7 @@ void ErrorListComponent::CreateSingleErrorUI(lv_obj_t* parent)
     lv_obj_align(navigationIndicator_, LV_ALIGN_BOTTOM_MID, 0, -8);
     lv_obj_set_style_text_font(navigationIndicator_, &lv_font_montserrat_10, 0);
     lv_obj_set_style_text_color(navigationIndicator_, lv_color_white(), 0);
-    lv_label_set_text(navigationIndicator_, "Press button to cycle");
+    lv_label_set_text(navigationIndicator_, "Loading...");
 }
 
 void ErrorListComponent::DisplayCurrentError()
@@ -178,11 +181,11 @@ void ErrorListComponent::DisplayCurrentError()
     
     // Update navigation indicator based on button press count
     if (buttonPressCount_ >= currentErrors_.size()) {
-        lv_label_set_text(navigationIndicator_, "All errors viewed - press to clear & exit");
+        lv_label_set_text(navigationIndicator_, "Press to exit");
     } else if (currentErrors_.size() > 1) {
-        lv_label_set_text(navigationIndicator_, "Press button to cycle through errors");
+        lv_label_set_text(navigationIndicator_, "Press for next");
     } else {
-        lv_label_set_text(navigationIndicator_, "Single error - press button to clear & exit");
+        lv_label_set_text(navigationIndicator_, "Press to exit");
     }
     
     log_d("Displaying error %zu/%zu: [%s] %s", 

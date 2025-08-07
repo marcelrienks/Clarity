@@ -71,6 +71,7 @@ struct Themes
 {
     static constexpr const char* NIGHT = "Night"; ///< Dark theme with red accents (default)
     static constexpr const char* DAY = "Day";     ///< Light theme with white accents
+    static constexpr const char* ERROR = "Error"; ///< Error-specific theme with high contrast for alerts
 };
 
 /// @enum OilSensorTypes

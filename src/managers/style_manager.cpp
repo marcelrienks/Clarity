@@ -146,5 +146,13 @@ void StyleManager::SetTheme(const char* theme)
 /// @return the colour scheme for the specified theme
 const ThemeColors &StyleManager::GetColours(const char* theme) const
 {
-    return (theme && strcmp(theme, Themes::NIGHT) == 0) ? nightThemeColours_ : dayThemeColours_;
+    if (!theme) return dayThemeColours_;
+    
+    if (strcmp(theme, Themes::NIGHT) == 0) {
+        return nightThemeColours_;
+    } else if (strcmp(theme, Themes::ERROR) == 0) {
+        return errorThemeColours_;
+    } else {
+        return dayThemeColours_;
+    }
 }

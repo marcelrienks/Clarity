@@ -63,4 +63,5 @@ private:
     ComponentLocation centerLocation_;              // Component positioning
     bool panelLoaded_;                              // Track panel load state
     std::vector<ErrorInfo> currentErrors_;          // Cache of current error state
+    const char* previousTheme_;                     // Store previous theme to restore on exit
 };
