@@ -5,6 +5,7 @@
 #include "managers/trigger_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/error_manager.h"
+#include "managers/input_manager.h"
 #include "factories/manager_factory.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
@@ -19,6 +20,7 @@ std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
 std::unique_ptr<TriggerManager> triggerManager;
+std::unique_ptr<InputManager> inputManager;
 
 
 void initializeServices() {
@@ -54,6 +56,9 @@ void initializeServices() {
         panelManager.get(),
         styleManager.get()
     );
+    
+    log_d("Creating InputManager...");
+    inputManager = ManagerFactory::createInputManager(gpioProvider.get());
     
     log_d("Initializing ErrorManager...");
     // ErrorManager is a singleton, just initialize it
@@ -98,6 +103,9 @@ void loop()
 {
     // Process trigger events directly
     triggerManager->ProcessTriggerEvents();
+    
+    // Process input events directly
+    inputManager->ProcessInputEvents();
     
     panelManager->UpdatePanel();
     Ticker::handleLvTasks();

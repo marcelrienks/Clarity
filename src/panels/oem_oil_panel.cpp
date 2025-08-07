@@ -154,7 +154,6 @@ void OemOilPanel::UpdateOilPressure()
 
     // Skip update if pressure animation is already running
     if (isPressureAnimationRunning_) {
-        log_d("Pressure animation running, skipping update");
         return;
     }
 
@@ -199,7 +198,6 @@ void OemOilPanel::UpdateOilTemperature()
 
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_) {
-        log_d("Temperature animation running, skipping update");
         return;
     }
 

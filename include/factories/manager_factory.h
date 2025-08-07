@@ -13,6 +13,7 @@ class PanelManager;
 class StyleManager;
 class TriggerManager;
 class PreferenceManager;
+class InputManager;
 
 /**
  * @class ManagerFactory
@@ -67,6 +68,11 @@ public:
     /// @brief Create PreferenceManager (no dependencies currently)
     /// @return Unique pointer to configured PreferenceManager instance
     static std::unique_ptr<PreferenceManager> createPreferenceManager();
+    
+    /// @brief Create InputManager with injected sensor dependencies
+    /// @param gpio GPIO provider for creating InputButtonSensor
+    /// @return Unique pointer to configured InputManager instance
+    static std::unique_ptr<InputManager> createInputManager(IGpioProvider* gpio);
 
 private:
     // Private constructor to prevent instantiation

@@ -109,9 +109,6 @@ void TriggerManager::CheckSensorChanges()
 void TriggerManager::CheckErrorTrigger()
 {
     bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
-    log_d("CheckErrorTrigger: shouldShowErrorPanel=%s, errors=%d", 
-          shouldShowErrorPanel ? "true" : "false", 
-          ErrorManager::Instance().GetErrorQueue().size());
     CheckTriggerChange(TRIGGER_ERROR_OCCURRED, shouldShowErrorPanel);
 }
 

@@ -42,4 +42,7 @@ namespace gpio_pins
     
     /// @brief Debug error trigger pin (for development only)
     constexpr int DEBUG_ERROR = 33;
+
+    /// @brief Input button pin for single button navigation
+    constexpr int INPUT_BUTTON = 34;
 }

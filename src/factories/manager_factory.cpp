@@ -8,6 +8,8 @@
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
 #include "sensors/debug_error_sensor.h"
+#include "sensors/input_button_sensor.h"
+#include "managers/input_manager.h"
 #include <esp32-hal-log.h>
 
 // Factory Methods
@@ -45,7 +47,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
 
 std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider *gpio, IPanelService *panelService, IStyleService *styleService)
 {
-    log_d("Creating TriggerManager with injected sensor dependencies");
+    log_i("Creating TriggerManager with sensors");
     
     if (!gpio) {
         throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IGpioProvider");
@@ -74,6 +76,23 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     log_d("Creating PreferenceManager");
     
     auto manager = std::make_unique<PreferenceManager>();
+    manager->Init();
+    
+    return manager;
+}
+
+std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* gpio)
+{
+    log_i("Creating InputManager");
+    
+    if (!gpio) {
+        throw std::invalid_argument("ManagerFactory::createInputManager requires valid IGpioProvider");
+    }
+    
+    // Create InputButtonSensor that InputManager needs
+    auto inputButtonSensor = std::make_shared<InputButtonSensor>(gpio);
+    
+    auto manager = std::make_unique<InputManager>(inputButtonSensor);
     manager->Init();
     
     return manager;
