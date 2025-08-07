@@ -31,14 +31,14 @@ public:
     /**
      * @brief Initialize the trigger service and setup GPIO pins
      */
-    virtual void init() = 0;
+    virtual void Init() = 0;
 
     /**
      * @brief Process trigger events by polling GPIO states and detecting changes
      * @details This method should be called regularly (typically in main loop)
      * to detect GPIO state changes and execute appropriate trigger actions
      */
-    virtual void processTriggerEvents() = 0;
+    virtual void ProcessTriggerEvents() = 0;
 
     /**
      * @brief Add a new trigger with associated sensor and callback
@@ -46,21 +46,21 @@ public:
      * @param sensor Sensor to monitor for trigger conditions
      * @param callback Function to call when trigger fires
      */
-    virtual void addTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) = 0;
+    virtual void AddTrigger(const std::string& triggerName, ISensor* sensor, std::function<void()> callback) = 0;
 
     /**
      * @brief Check if a trigger exists with the given name
      * @param triggerName Name of the trigger to check
      * @return true if trigger exists, false otherwise
      */
-    virtual bool hasTrigger(const std::string& triggerName) const = 0;
+    virtual bool HasTrigger(const std::string& triggerName) const = 0;
 
     /**
      * @brief Execute a specific trigger action
      * @param mapping Pointer to trigger mapping configuration
      * @param state Execution state for the trigger
      */
-    virtual void executeTriggerAction(Trigger* mapping, TriggerExecutionState state) = 0;
+    virtual void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state) = 0;
 
     // Startup Configuration Methods
     
@@ -70,5 +70,5 @@ public:
      * @details Called during application startup to determine if active triggers
      * require loading a specific panel instead of the default configuration panel
      */
-    virtual const char* getStartupPanelOverride() const = 0;
+    virtual const char* GetStartupPanelOverride() const = 0;
 };

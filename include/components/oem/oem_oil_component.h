@@ -51,9 +51,9 @@ public:
     virtual ~OemOilComponent();
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
-    void refresh(const Reading& reading) override;
-    void setValue(int32_t value) override;
+    void Render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
+    void Refresh(const Reading& reading) override;
+    void SetValue(int32_t value) override;
 
 protected:
     // Protected Data Members
@@ -95,9 +95,9 @@ protected:
 
 private:
     // Private Methods
-    void CreateIcon();
-    void CreateLabels();
-    void CreateNeedle();
-    void CreateScale(int32_t rotation);
-    void UpdatePivotStyling();
+    void create_icon();
+    void create_labels();
+    void create_needle();
+    void create_scale(int32_t rotation);
+    void update_pivot_styling();
 };

@@ -43,10 +43,10 @@
  * - gauge_danger_section_style: Danger zone highlighting
  *
  * @style_lifecycle:
- * 1. init(): Initialize with default theme
- * 2. set_theme(): Change theme and refresh all styles
- * 3. apply_theme_to_screen(): Apply theme to specific screens
- * 4. get_*_style(): Accessor methods for components
+ * 1. Init(): Initialize with default theme
+ * 2. SetTheme(): Change theme and refresh all styles
+ * 3. ApplyThemeToScreen(): Apply theme to specific screens
+ * 4. Get*Style(): Accessor methods for components
  *
  * @memory_efficiency:
  * - Shared style objects prevent duplication
@@ -67,30 +67,25 @@ public:
     StyleManager& operator=(const StyleManager&) = delete;
 
     // Core Functionality Methods (IStyleService implementation)
-    void initializeStyles() override;
-    void init(const char *theme) override;
-    void set_theme(const char *theme);
-    void apply_theme_to_screen(lv_obj_t *screen);
+    void InitializeStyles() override;
+    void Init(const char *theme) override;
+    void SetTheme(const char *theme) override;
+    void ApplyThemeToScreen(lv_obj_t *screen) override;
 
     // Accessor Methods  
-    const ThemeColors &get_colours(const char *theme) const;
-    
-    // IStyleService Interface Implementation (delegate to existing methods)
-    // Note: We already have init() method, so no need to add override
-    void applyThemeToScreen(lv_obj_t* screen) override { apply_theme_to_screen(screen); }
-    void setTheme(const char* theme) override { set_theme(theme); }
-    lv_style_t& getBackgroundStyle() override { return backgroundStyle; }
-    lv_style_t& getTextStyle() override { return textStyle; }
-    lv_style_t& getGaugeNormalStyle() override { return gaugeNormalStyle; }
-    lv_style_t& getGaugeWarningStyle() override { return gaugeWarningStyle; }
-    lv_style_t& getGaugeDangerStyle() override { return gaugeDangerStyle; }
-    lv_style_t& getGaugeIndicatorStyle() override { return gaugeIndicatorStyle; }
-    lv_style_t& getGaugeItemsStyle() override { return gaugeItemsStyle; }
-    lv_style_t& getGaugeMainStyle() override { return gaugeMainStyle; }
-    lv_style_t& getGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
-    const char* getCurrentTheme() const override { return THEME; }
-    const ThemeColors& getThemeColors() const override { return get_colours(THEME); }
-    bool isInitialized() const override { return initialized_; }
+    const ThemeColors &GetColours(const char *theme) const;
+    lv_style_t& GetBackgroundStyle() override { return backgroundStyle; }
+    lv_style_t& GetTextStyle() override { return textStyle; }
+    lv_style_t& GetGaugeNormalStyle() override { return gaugeNormalStyle; }
+    lv_style_t& GetGaugeWarningStyle() override { return gaugeWarningStyle; }
+    lv_style_t& GetGaugeDangerStyle() override { return gaugeDangerStyle; }
+    lv_style_t& GetGaugeIndicatorStyle() override { return gaugeIndicatorStyle; }
+    lv_style_t& GetGaugeItemsStyle() override { return gaugeItemsStyle; }
+    lv_style_t& GetGaugeMainStyle() override { return gaugeMainStyle; }
+    lv_style_t& GetGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
+    const char* GetCurrentTheme() const override { return THEME; }
+    const ThemeColors& GetThemeColors() const override { return GetColours(THEME); }
+    bool IsInitialized() const override { return initialized_; }
     
     // Public Data Members - Theme State
     const char *THEME = Themes::NIGHT;

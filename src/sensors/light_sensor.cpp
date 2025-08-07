@@ -12,27 +12,27 @@ LightSensor::LightSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvid
 // Core Functionality Methods
 
 /// @brief Initialize the lights sensor hardware
-void LightSensor::init()
+void LightSensor::Init()
 {
     // Configure GPIO pin for digital input (safe to call multiple times)
     log_d("Initializing lights sensor on GPIO %d", gpio_pins::LIGHTS);
 
-    gpioProvider_->pinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
+    gpioProvider_->PinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
 }
 
 /// @brief Get the current lights reading
 /// @return Boolean indicating lights state (true=on, false=off)
-Reading LightSensor::getReading()
+Reading LightSensor::GetReading()
 {
-    bool lightsOn = getLightsState();
+    bool lightsOn = GetLightsState();
     return Reading{lightsOn};
 }
 
 /// @brief Get current lights state directly (for triggers)
 /// @return true if lights are on, false if lights are off
-bool LightSensor::getLightsState()
+bool LightSensor::GetLightsState()
 {
-    bool lightsOn = gpioProvider_->digitalRead(gpio_pins::LIGHTS);
+    bool lightsOn = gpioProvider_->DigitalRead(gpio_pins::LIGHTS);
     
     // Only log state changes to reduce log spam during polling
     static bool lastState = false;

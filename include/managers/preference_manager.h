@@ -50,13 +50,13 @@ public:
     // Static Methods removed - using dependency injection
 
     // IPreferenceService interface implementation
-    void init() override;
-    void saveConfig() override;
-    void loadConfig() override;
-    void createDefaultConfig() override;
-    Configs& getConfig() override;
-    const Configs& getConfig() const override;
-    void setConfig(const Configs& config) override;
+    void Init() override;
+    void SaveConfig() override;
+    void LoadConfig() override;
+    void CreateDefaultConfig() override;
+    Configs& GetConfig() override;
+    const Configs& GetConfig() const override;
+    void SetConfig(const Configs& config) override;
 
     // Public Data Members
     inline static Configs config;

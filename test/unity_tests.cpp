@@ -3832,7 +3832,36 @@ int main() {
     // Cleanup test environment
     tearDown();
 
-
+#elif defined(TEST_MANAGERS_ONLY)
+    printf("\n=== Clarity Manager Test Suite ===\n");
+    printf("Running manager layer tests...\n\n");
+    
+    // Initialize test environment
+    setUp();
+    
+    // Manager Tests (15 tests)
+    printf("--- Manager Core Tests ---\n");
+    RUN_TEST(test_trigger_manager_initialization);
+    RUN_TEST(test_trigger_manager_key_trigger_activation);
+    RUN_TEST(test_trigger_manager_lock_trigger_activation);
+    RUN_TEST(test_trigger_manager_theme_switching);
+    RUN_TEST(test_trigger_manager_priority_resolution);
+    RUN_TEST(test_trigger_manager_startup_panel_override);
+    RUN_TEST(test_panel_service_mock_functionality);
+    RUN_TEST(test_style_service_mock_functionality);
+    RUN_TEST(test_panel_manager_initialization);
+    RUN_TEST(test_panel_manager_panel_lifecycle);
+    RUN_TEST(test_panel_manager_splash_transitions);
+    RUN_TEST(test_panel_manager_update_operations);
+    RUN_TEST(test_panel_manager_restoration_panel);
+    RUN_TEST(test_panel_manager_trigger_integration);
+    RUN_TEST(test_panel_manager_ui_state_management);
+    
+    printf("\n=== Manager Test Suite Complete ===\n");
+    printf("Total: 15 manager tests\n");
+    
+    // Cleanup test environment
+    tearDown();
 
 #elif defined(TEST_COMPONENTS_ONLY)
     printf("\n=== Clarity Component Test Suite ===\n");
@@ -3977,12 +4006,12 @@ int main() {
 
 #elif defined(TEST_ALL_SUITES)
     printf("\n=== Clarity Complete Test Suite (All Tests) ===\n");
-    printf("Running ALL 100 tests across all layers...\n\n");
+    printf("Running ALL 101 tests across all layers...\n\n");
     
     // Initialize test environment
     setUp();
     
-    // Run all test suites
+    // Run all test suites - include each test only once
     printf("--- Sensor Tests (21) ---\n");
     RUN_TEST(test_oil_pressure_sensor_initialization);
     RUN_TEST(test_oil_pressure_sensor_constructor);
@@ -4023,7 +4052,7 @@ int main() {
     RUN_TEST(test_panel_manager_trigger_integration);
     RUN_TEST(test_panel_manager_ui_state_management);
     
-    printf("--- Component Tests (23) ---\n");
+    printf("--- Component Tests (24) ---\n");
     RUN_TEST(test_oem_oil_pressure_component_initialization);
     RUN_TEST(test_oem_oil_pressure_component_value_mapping);
     RUN_TEST(test_oem_oil_pressure_component_danger_zone);
@@ -4095,22 +4124,23 @@ int main() {
     RUN_TEST(test_main_application_integration_flow);
     
     printf("\n=== Complete Test Suite Finished ===\n");
-    printf("Total: 100 tests executed\n");
+    printf("Total: 101 tests executed\n");
     
     // Cleanup test environment
     tearDown();
 
 #else
-    // Default: Run all tests (for backward compatibility)
-    printf("\n=== Clarity Complete Test Suite ===\n");
-    printf("Running ALL tests - this may exceed Unity's 37-test limit!\n\n");
-    printf("Use specific test environments instead:\n");
+    // Default: No tests selected
+    printf("\n=== Clarity Test Suite ===\n");
+    printf("No test configuration specified!\n\n");
+    printf("Available test configurations:\n");
     printf("  pio test -e test-sensors           (21 tests)\n");
-    printf("  pio test -e test-managers-core     (15 tests)\n");
-    printf("  pio test -e test-components        (23 tests)\n");
+    printf("  pio test -e test-managers          (15 tests)\n");
+    printf("  pio test -e test-components        (24 tests)\n");
     printf("  pio test -e test-integration       (20 tests)\n");
     printf("  pio test -e test-infrastructure    (21 tests)\n");
-    printf("Total: 100 comprehensive tests covering ALL system layers\n");
+    printf("  pio test -e test-all               (101 tests) - All tests\n");
+    printf("\nTotal: 21 + 15 + 24 + 20 + 21 = 101 tests\n");
 #endif
     
     return UNITY_END();

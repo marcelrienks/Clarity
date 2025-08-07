@@ -39,12 +39,12 @@ public:
     KeySensor(IGpioProvider *gpioProvider);
 
     // Core Functionality Methods
-    void init() override;
-    Reading getReading() override;
+    void Init() override;
+    Reading GetReading() override;
     
     /// @brief Get current key state directly (for panels)
     /// @return Current KeyState based on GPIO readings
-    KeyState getKeyState();
+    KeyState GetKeyState();
 
 private:
     IGpioProvider *gpioProvider_;

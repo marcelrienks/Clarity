@@ -42,9 +42,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::LOCK;
-    void init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
 
 private:
     // Static Methods

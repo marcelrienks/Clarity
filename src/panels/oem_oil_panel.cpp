@@ -10,7 +10,6 @@ OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleS
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)) 
 {
-    // Components will be created during load() method
 }
 
 OemOilPanel::~OemOilPanel()
@@ -62,27 +61,27 @@ OemOilPanel::~OemOilPanel()
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
-void OemOilPanel::init(IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Initializing OEM oil panel with sensors and display components");
 
-    screen_ = display->createScreen();
+    screen_ = display->CreateScreen();
     
     // Apply current theme immediately after screen creation
     if (styleService_) {
-        styleService_->applyThemeToScreen(screen_);
+        styleService_->ApplyThemeToScreen(screen_);
     }
 
-    oemOilPressureSensor_->init();
+    oemOilPressureSensor_->Init();
     currentOilPressureValue_ = -1; // Sentinel value to ensure first update
 
-    oemOilTemperatureSensor_->init();
+    oemOilTemperatureSensor_->Init();
     currentOilTemperatureValue_ = -1; // Sentinel value to ensure first update
 }
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
-void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
@@ -95,8 +94,8 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    oemOilPressureComponent_->render(screen_, pressureLocation, display);
-    oemOilTemperatureComponent_->render(screen_, temperatureLocation, display);
+    oemOilPressureComponent_->Render(screen_, pressureLocation, display);
+    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, display);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -105,14 +104,14 @@ void OemOilPanel::load(std::function<void()> callbackFunction, IGpioProvider* gp
     
     // Always apply current theme to the screen when loading (ensures theme is current)
     if (styleService_) {
-        styleService_->applyThemeToScreen(screen_);
+        styleService_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
-        lastTheme_ = String(styleService_->getCurrentTheme());
+        lastTheme_ = String(styleService_->GetCurrentTheme());
     }
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
 {
 
     callbackFunction_ = callbackFunction;
@@ -120,7 +119,7 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
     auto *styleService = styleService_;
-    const char *currentTheme = styleService ? styleService->getCurrentTheme() : "";
+    const char *currentTheme = styleService ? styleService->GetCurrentTheme() : "";
     if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme)) {
         forceComponentRefresh_ = true;
         log_d("Theme changed to %s, forcing component refresh", currentTheme);
@@ -128,7 +127,7 @@ void OemOilPanel::update(std::function<void()> callbackFunction, IGpioProvider* 
         
         // Apply the new theme to the screen background when theme changes
         if (styleService_ && screen_) {
-            styleService_->applyThemeToScreen(screen_);
+            styleService_->ApplyThemeToScreen(screen_);
         }
     } else {
         forceComponentRefresh_ = false;
@@ -160,13 +159,13 @@ void OemOilPanel::UpdateOilPressure()
     }
 
     // Use delta-based updates for better performance
-    auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->getReading());
+    auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
     
     // Handle forced refresh (theme changes) even when values unchanged
     if (value == currentOilPressureValue_ && forceComponentRefresh_) {
         log_d("Pressure value unchanged (%d) but forced refresh required - updating colors only", value);
-        oemOilPressureComponent_->refresh(Reading{value});
+        oemOilPressureComponent_->Refresh(Reading{value});
         return; // No animation needed since value didn't change
     }
     
@@ -176,7 +175,7 @@ void OemOilPanel::UpdateOilPressure()
     }
     
     log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
-    oemOilPressureComponent_->refresh(Reading{value});
+    oemOilPressureComponent_->Refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&pressureAnimation_);
@@ -205,13 +204,13 @@ void OemOilPanel::UpdateOilTemperature()
     }
 
     // Use delta-based updates for better performance
-    auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->getReading());
+    auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
     auto value = MapTemperatureValue(sensorValue);
     
     // Handle forced refresh (theme changes) even when values unchanged
     if (value == currentOilTemperatureValue_ && forceComponentRefresh_) {
         log_d("Temperature value unchanged (%d) but forced refresh required - updating colors only", value);
-        oemOilTemperatureComponent_->refresh(Reading{value});
+        oemOilTemperatureComponent_->Refresh(Reading{value});
         return; // No animation needed since value didn't change
     }
     
@@ -221,7 +220,7 @@ void OemOilPanel::UpdateOilTemperature()
     }
     
     log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);
-    oemOilTemperatureComponent_->refresh(Reading{value});
+    oemOilTemperatureComponent_->Refresh(Reading{value});
 
     // Setup animation
     lv_anim_init(&temperatureAnimation_);
@@ -302,7 +301,7 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
     
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                    // use the animation to get the var which is this instance
     if (thisInstance->oemOilPressureComponent_) {
-        thisInstance->oemOilPressureComponent_.get()->setValue(value);
+        thisInstance->oemOilPressureComponent_.get()->SetValue(value);
     }
 }
 
@@ -320,7 +319,7 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
     
     auto thisInstance = static_cast<OemOilPanel *>(animation->var);                       // use the animation to get the var which is this instance
     if (thisInstance->oemOilTemperatureComponent_) {
-        thisInstance->oemOilTemperatureComponent_.get()->setValue(value);
+        thisInstance->oemOilTemperatureComponent_.get()->SetValue(value);
     }
 }
 

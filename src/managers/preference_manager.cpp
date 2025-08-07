@@ -6,7 +6,7 @@
 // Core Functionality Methods
 
 /// @brief Initialises the preference manager to handle application preferences_
-void PreferenceManager::init()
+void PreferenceManager::Init()
 {
     log_d("Initializing preference manager and loading configuration from NVS");
 
@@ -29,24 +29,24 @@ void PreferenceManager::init()
     else
         log_i("Preferences initialized successfully");
 
-    loadConfig();
+    LoadConfig();
 }
 
 /// @brief Create and save a list of default panels
 /// @return true if the save was successful
-void PreferenceManager::createDefaultConfig()
+void PreferenceManager::CreateDefaultConfig()
 {
     log_d("Creating default configuration with OEM oil panel as default");
 
     config.panelName = PanelNames::OIL;
 
-    PreferenceManager::saveConfig();
-    PreferenceManager::loadConfig();
+    PreferenceManager::SaveConfig();
+    PreferenceManager::LoadConfig();
 }
 
 /// @brief Load the configuration from preferences_
 /// @return true if the load was successful, false otherwise
-void PreferenceManager::loadConfig()
+void PreferenceManager::LoadConfig()
 {
     log_d("Loading application configuration from NVS preferences");
 
@@ -54,7 +54,7 @@ void PreferenceManager::loadConfig()
     if (jsonString.length() == 0)
     {
         log_w("No config found, creating default");
-        return PreferenceManager::createDefaultConfig();
+        return PreferenceManager::CreateDefaultConfig();
     }
 
     JsonDocument doc;
@@ -66,13 +66,13 @@ void PreferenceManager::loadConfig()
 #else
         log_w("Error deserializing config");
 #endif
-        return PreferenceManager::createDefaultConfig();
+        return PreferenceManager::CreateDefaultConfig();
     }
 
     if (doc[JsonDocNames::PANEL_NAME].isNull())
     {
         log_w("Error reading config");
-        return PreferenceManager::createDefaultConfig();
+        return PreferenceManager::CreateDefaultConfig();
     }
 
     config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
@@ -80,7 +80,7 @@ void PreferenceManager::loadConfig()
 
 /// @brief Save the current configuration to preferences_
 /// @return true if the save was successful, false otherwise
-void PreferenceManager::saveConfig()
+void PreferenceManager::SaveConfig()
 {
     log_d("Saving current configuration to NVS preferences");
 
@@ -102,21 +102,21 @@ void PreferenceManager::saveConfig()
 
 /// @brief Get the current configuration object
 /// @return Reference to current configuration settings
-Configs& PreferenceManager::getConfig()
+Configs& PreferenceManager::GetConfig()
 {
     return config;
 }
 
 /// @brief Get the current configuration object (read-only)
 /// @return Const reference to current configuration settings
-const Configs& PreferenceManager::getConfig() const
+const Configs& PreferenceManager::GetConfig() const
 {
     return config;
 }
 
 /// @brief Update the configuration object
 /// @param newConfig New configuration settings to apply
-void PreferenceManager::setConfig(const Configs& newConfig)
+void PreferenceManager::SetConfig(const Configs& newConfig)
 {
     config = newConfig;
 }

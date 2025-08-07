@@ -32,7 +32,7 @@ class TriggerManager : public ITriggerService
 {
 public:
     // Startup panel override method
-    const char *getStartupPanelOverride() const override;
+    const char *GetStartupPanelOverride() const override;
 
     // Constructors and Destructors
     TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
@@ -42,12 +42,12 @@ public:
     ~TriggerManager() = default;
 
     // ITriggerService Interface Implementation
-    void init() override;
-    void processTriggerEvents() override;
+    void Init() override;
+    void ProcessTriggerEvents() override;
 
     // Trigger Management
-    void addTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) override;
-    bool hasTrigger(const std::string& triggerName) const override;
+    void AddTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) override;
+    bool HasTrigger(const std::string& triggerName) const override;
 
 private:
     void InitializeTriggersFromSensors();
@@ -57,7 +57,7 @@ private:
     void InitializeTrigger(const char *triggerId, bool currentPinState);
     Trigger *FindTriggerMapping(const char *triggerId);
     void UpdateActiveTriggersSimple(Trigger *mapping, TriggerExecutionState newState);
-    void executeTriggerAction(Trigger *mapping, TriggerExecutionState state);
+    void ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state) override;
 
     // Sensor and service dependencies
     std::shared_ptr<KeySensor> keySensor_;

@@ -64,27 +64,27 @@ public:
 
     // Core Functionality Methods (IPanelService implementation)
     /// @brief Initialize the panel service and register available panels
-    void init() override;
+    void Init() override;
     
     
     
     /// @brief Set current UI state for synchronization
     /// @param state Current UI processing state
-    void setUiState(UIState state) override;
+    void SetUiState(UIState state) override;
     
     
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panelName Name of the panel to create and load
     /// @param completionCallback Optional callback function to execute when loading is complete
     /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void createAndLoadPanel(const char *panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false) override;
+    void CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false) override;
     
     /// @brief Load a panel after first showing a splash screen transition
     /// @param panelName Name of the target panel to load after splash
-    void createAndLoadPanelWithSplash(const char *panelName) override;
+    void CreateAndLoadPanelWithSplash(const char *panelName) override;
     
     /// @brief Update the currently active panel (called from main loop)
-    void updatePanel() override;
+    void UpdatePanel() override;
     
     
 
@@ -92,16 +92,16 @@ public:
     // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
     /// @return Current panel identifier string
-    const char *getCurrentPanel() const override;
+    const char *GetCurrentPanel() const override;
     
     /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
     /// @return Restoration panel identifier string
-    const char *getRestorationPanel() const override;
+    const char *GetRestorationPanel() const override;
     
     // Trigger Integration Methods (IPanelService implementation)
     /// @brief Callback executed when trigger-driven panel loading is complete
     /// @param triggerId ID of the trigger that initiated the panel switch
-    void triggerPanelSwitchCallback(const char *triggerId) override;
+    void TriggerPanelSwitchCallback(const char *triggerId) override;
 
 private:
 

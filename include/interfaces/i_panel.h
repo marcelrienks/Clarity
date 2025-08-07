@@ -55,24 +55,24 @@ public:
     /// @brief Initialize the panel and its components
     /// @param gpio GPIO provider for hardware access
     /// @param display Display provider for UI operations
-    virtual void init(IGpioProvider *gpio, IDisplayProvider *display) = 0;
+    virtual void Init(IGpioProvider *gpio, IDisplayProvider *display) = 0;
 
     /// @brief Load the panel with asynchronous completion callback
     /// @param callbackFunction Function to call when loading is complete
     /// @param gpio GPIO provider for hardware access
     /// @param display Display provider for UI operations
-    virtual void load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) = 0;
+    virtual void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) = 0;
 
     /// @brief Update the panel data with asynchronous completion callback
     /// @param callbackFunction Function to call when update is complete
     /// @param gpio GPIO provider for hardware access
     /// @param display Display provider for UI operations
-    virtual void update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) = 0;
+    virtual void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) = 0;
 
     /// @brief Show the panel in the display
-    virtual void show() {
+    virtual void Show() {
         if (screen_) {
-            display_->loadScreen(screen_);
+            display_->LoadScreen(screen_);
         }
     }
 

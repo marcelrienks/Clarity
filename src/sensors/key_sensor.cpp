@@ -12,7 +12,7 @@ KeySensor::KeySensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
 // Core Functionality Methods
 
 /// @brief Initialize the key sensor hardware
-void KeySensor::init()
+void KeySensor::Init()
 {
     // Configure both GPIO pins for digital input (safe to call multiple times)
     static bool initialized = false;
@@ -22,17 +22,17 @@ void KeySensor::init()
         initialized = true;
     }
 
-    gpioProvider_->pinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
-    gpioProvider_->pinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
+    gpioProvider_->PinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
+    gpioProvider_->PinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
     
     // Attach interrupts for immediate state change detection
-    gpioProvider_->attachInterrupt(gpio_pins::KEY_PRESENT, nullptr, CHANGE);
-    gpioProvider_->attachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, CHANGE);
+    gpioProvider_->AttachInterrupt(gpio_pins::KEY_PRESENT, nullptr, CHANGE);
+    gpioProvider_->AttachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, CHANGE);
 }
 
 /// @brief Get the current key reading
 /// @return KeyState indicating present, not present, or inactive
-Reading KeySensor::getReading()
+Reading KeySensor::GetReading()
 {
     KeyState state = readKeyState();
     return static_cast<int32_t>(state);
@@ -40,7 +40,7 @@ Reading KeySensor::getReading()
 
 /// @brief Get current key state directly (for panels)
 /// @return Current KeyState based on GPIO readings
-KeyState KeySensor::getKeyState()
+KeyState KeySensor::GetKeyState()
 {
     return readKeyState();
 }
@@ -49,8 +49,8 @@ KeyState KeySensor::getKeyState()
 /// @return KeyState based on GPIO pin readings
 KeyState KeySensor::readKeyState()
 {
-    bool pin25High = gpioProvider_->digitalRead(gpio_pins::KEY_PRESENT);
-    bool pin26High = gpioProvider_->digitalRead(gpio_pins::KEY_NOT_PRESENT);
+    bool pin25High = gpioProvider_->DigitalRead(gpio_pins::KEY_PRESENT);
+    bool pin26High = gpioProvider_->DigitalRead(gpio_pins::KEY_NOT_PRESENT);
     
     if (pin25High && pin26High) {
         return KeyState::Inactive; // Both pins HIGH - invalid state

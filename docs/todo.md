@@ -1,8 +1,3 @@
-* Compare enhanced wokwi to standard, should the standard be replaced
-* Create a bat wokwi runner
-* simplify wokwi structure
-    * delete readme files
-    * can we use root diagram
-    * if so put all wokwi tests in wokwi directory
-* confirm 2 seperate actions in github, one foe unity, one for wokwi
-    * create two seperate badges for readme file
+* check if we can build proper error handling, with an error panel
+    * Else remove all null/empty checks and error handling.      
+If something is not set, the application must error, it cannot continue past that issue

@@ -23,7 +23,6 @@ std::unique_ptr<TriggerManager> triggerManager;
 void initializeServices() {
     log_d("Starting service initialization...");
     
-    // Create services in dependency order
     log_d("Creating Device...");
     device = std::make_unique<Device>();
     
@@ -35,11 +34,11 @@ void initializeServices() {
     
     log_d("Creating StyleManager...");
     styleManager = std::make_unique<StyleManager>();
-    styleManager->init(Themes::DAY);
+    styleManager->Init(Themes::DAY);
     
     log_d("Creating PreferenceManager...");
     preferenceManager = std::make_unique<PreferenceManager>();
-    preferenceManager->init();
+    preferenceManager->Init();
     
     log_d("Creating PanelManager...");
     panelManager = std::make_unique<PanelManager>(
@@ -62,31 +61,28 @@ void setup()
 {
     log_d("Starting Clarity application setup - using direct service instantiation");
 
-    // Initialize all services
     initializeServices();
 
-    // Initialize hardware
     log_d("Preparing device...");
     device->prepare();
     Ticker::handleLvTasks();
     
-    // Initialize application
     log_d("Initializing Clarity application");
     
     // Initialize trigger service after all dependencies are resolved
-    triggerManager->init();
+    triggerManager->Init();
 
     Ticker::handleLvTasks();
 
     // Check if startup triggers require a specific panel, otherwise use config default
-    const char* startupPanel = triggerManager->getStartupPanelOverride();
+    const char* startupPanel = triggerManager->GetStartupPanelOverride();
     if (startupPanel) {
         log_i("Using startup panel override: %s", startupPanel);
-        panelManager->createAndLoadPanelWithSplash(startupPanel);
+        panelManager->CreateAndLoadPanelWithSplash(startupPanel);
     } else {
-        auto config = preferenceManager->getConfig();
+        auto config = preferenceManager->GetConfig();
         log_i("Using config default panel: %s", config.panelName.c_str());
-        panelManager->createAndLoadPanelWithSplash(config.panelName.c_str());
+        panelManager->CreateAndLoadPanelWithSplash(config.panelName.c_str());
     }
     
     Ticker::handleLvTasks();
@@ -95,9 +91,9 @@ void setup()
 void loop()
 {
     // Process trigger events directly
-    triggerManager->processTriggerEvents();
+    triggerManager->ProcessTriggerEvents();
     
-    panelManager->updatePanel();
+    panelManager->UpdatePanel();
     Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
 }

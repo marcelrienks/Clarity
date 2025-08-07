@@ -34,7 +34,7 @@ public:
     /**
      * @brief Initialize the panel service and register available panels
      */
-    virtual void init() = 0;
+    virtual void Init() = 0;
 
     /**
      * @brief Create and load a panel by name with optional completion callback
@@ -42,7 +42,7 @@ public:
      * @param completionCallback Optional callback function to execute when loading is complete
      * @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
      */
-    virtual void createAndLoadPanel(const char* panelName, 
+    virtual void CreateAndLoadPanel(const char* panelName, 
                                    std::function<void()> completionCallback = nullptr,
                                    bool isTriggerDriven = false) = 0;
 
@@ -50,12 +50,12 @@ public:
      * @brief Load a panel after first showing a splash screen transition
      * @param panelName Name of the target panel to load after splash
      */
-    virtual void createAndLoadPanelWithSplash(const char* panelName) = 0;
+    virtual void CreateAndLoadPanelWithSplash(const char* panelName) = 0;
 
     /**
      * @brief Update the currently active panel (called from main loop)
      */
-    virtual void updatePanel() = 0;
+    virtual void UpdatePanel() = 0;
 
     // State Management Methods
     
@@ -63,19 +63,19 @@ public:
      * @brief Set current UI state for synchronization
      * @param state Current UI processing state
      */
-    virtual void setUiState(UIState state) = 0;
+    virtual void SetUiState(UIState state) = 0;
 
     /**
      * @brief Get the current panel name
      * @return Current panel identifier string
      */
-    virtual const char* getCurrentPanel() const = 0;
+    virtual const char* GetCurrentPanel() const = 0;
 
     /**
      * @brief Get the restoration panel name (panel to restore when triggers are inactive)
      * @return Restoration panel identifier string
      */
-    virtual const char* getRestorationPanel() const = 0;
+    virtual const char* GetRestorationPanel() const = 0;
 
     // Trigger Integration Methods
     
@@ -83,5 +83,5 @@ public:
      * @brief Callback executed when trigger-driven panel loading is complete
      * @param triggerId ID of the trigger that initiated the panel switch
      */
-    virtual void triggerPanelSwitchCallback(const char* triggerId) = 0;
+    virtual void TriggerPanelSwitchCallback(const char* triggerId) = 0;
 };

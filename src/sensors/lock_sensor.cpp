@@ -12,21 +12,21 @@ LockSensor::LockSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider
 // Core Functionality Methods
 
 /// @brief Initialize the lock sensor hardware
-void LockSensor::init()
+void LockSensor::Init()
 {
     static bool initialized = false;
     if (!initialized) {
         log_d("Initializing lock sensor on GPIO %d", gpio_pins::LOCK);
         initialized = true;
     }
-    gpioProvider_->pinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
+    gpioProvider_->PinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
 }
 
 /// @brief Get the current lock status reading
 /// @return Current lock status (true if engaged, false if disengaged)
-Reading LockSensor::getReading()
+Reading LockSensor::GetReading()
 {
-    bool isLockEngaged = gpioProvider_->digitalRead(gpio_pins::LOCK);
+    bool isLockEngaged = gpioProvider_->DigitalRead(gpio_pins::LOCK);
     
     // Only log state changes to reduce log spam during polling
     static bool lastState = false;

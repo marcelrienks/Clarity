@@ -4,6 +4,12 @@ echo "==========================================================================
 echo "                    Clarity Comprehensive Test Suite Runner"
 echo "================================================================================"
 echo "This script runs the complete Unity test suite (101 tests)"
+echo "You can also run individual test suites:"
+echo "  pio test -e test-sensors           (21 tests)"
+echo "  pio test -e test-managers          (15 tests)"
+echo "  pio test -e test-components        (24 tests)"
+echo "  pio test -e test-integration       (20 tests)"
+echo "  pio test -e test-infrastructure    (21 tests)"
 echo "================================================================================"
 echo
 

@@ -32,7 +32,7 @@ public:
     virtual ~ClarityComponent() = default;
 
     // Core Functionality Methods
-    void render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
+    void Render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
 
 private:
     IStyleService *styleService_;

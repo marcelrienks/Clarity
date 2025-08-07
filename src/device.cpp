@@ -74,7 +74,6 @@ void Device::prepare()
 {
     log_i("init...");
 
-    // Initialise screen
     init();
     initDMA();
     startWrite();
@@ -93,7 +92,6 @@ void Device::prepare()
     lv_init();
     log_i("Display configuration...");
 
-    // setup screen
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     lv_display_set_user_data(display, this);

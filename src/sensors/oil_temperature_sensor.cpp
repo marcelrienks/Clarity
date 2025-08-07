@@ -15,7 +15,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider* gpioProvider) : gpioPr
 // Core Functionality Methods
 
 /// @brief Initialize the oil temperature sensor hardware
-void OilTemperatureSensor::init()
+void OilTemperatureSensor::Init()
 {
     // Configure GPIO pin for analog input
     log_d("Initializing oil temperature sensor ADC configuration");
@@ -25,13 +25,13 @@ void OilTemperatureSensor::init()
     analogSetAttenuation(ADC_11db); // 0-3.3V range
     
     // Take initial reading
-    int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_TEMPERATURE);
-    OilTemperatureSensor::getReading(); // Read initial temperature value
+    int32_t adcValue = gpioProvider_->AnalogRead(gpio_pins::OIL_TEMPERATURE);
+    OilTemperatureSensor::GetReading(); // Read initial temperature value
 }
 
 /// @brief Get the current oil temperature reading with time-based sampling
 /// @return Current temperature reading in Celsius
-Reading OilTemperatureSensor::getReading()
+Reading OilTemperatureSensor::GetReading()
 {
     unsigned long currentTime = millis();
     
@@ -41,7 +41,7 @@ Reading OilTemperatureSensor::getReading()
         previousReading_ = currentReading_; // Store current before reading new
         
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
-        int32_t adcValue = gpioProvider_->analogRead(gpio_pins::OIL_TEMPERATURE);
+        int32_t adcValue = gpioProvider_->AnalogRead(gpio_pins::OIL_TEMPERATURE);
         
         // Convert ADC value to temperature using voltage divider calculation
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V
