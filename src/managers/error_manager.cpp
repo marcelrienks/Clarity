@@ -80,8 +80,14 @@ bool ErrorManager::ShouldTriggerErrorPanel() const {
     // Process auto-dismiss first (const_cast for this internal operation)
     const_cast<ErrorManager*>(this)->ProcessAutoDismiss();
     
-    // Trigger error panel if we have unacknowledged errors and panel not already active
-    return HasPendingErrors() && !errorPanelActive_;
+    // Always trigger if we have pending errors - let the trigger system handle the logic
+    // of whether to actually switch panels
+    bool shouldTrigger = HasPendingErrors();
+    log_d("ShouldTriggerErrorPanel: %s (errors=%d, panelActive=%s)", 
+          shouldTrigger ? "true" : "false", 
+          errorQueue_.size(), 
+          errorPanelActive_ ? "true" : "false");
+    return shouldTrigger;
 }
 
 void ErrorManager::SetErrorPanelActive(bool active) {

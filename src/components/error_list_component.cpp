@@ -4,16 +4,18 @@
 
 // Constructors and Destructors
 ErrorListComponent::ErrorListComponent(IStyleService* styleService) 
-    : styleService_(styleService), errorContainer_(nullptr), errorList_(nullptr), 
-      errorCountLabel_(nullptr), clearButton_(nullptr)
+    : styleService_(styleService), errorContainer_(nullptr), errorContentArea_(nullptr), 
+      errorCountLabel_(nullptr), errorLevelLabel_(nullptr), errorSourceLabel_(nullptr),
+      errorMessageLabel_(nullptr), navigationIndicator_(nullptr), currentErrorIndex_(0),
+      buttonPressCount_(0)
 {
-    log_d("Creating ErrorListComponent");
+    log_d("Creating ErrorListComponent for single error display");
 }
 
 ErrorListComponent::~ErrorListComponent()
 {
     // LVGL objects are managed by the parent screen, no manual deletion needed
-    log_d("Destroying ErrorListComponent");
+    log_d("Destroying ErrorListComponent single error display");
 }
 
 // Core Functionality Methods
@@ -26,19 +28,19 @@ void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &locat
         return;
     }
     
-    // Create main container as the root component
+    // Create main container using full 240x240 screen size
     errorContainer_ = lv_obj_create(screen);
-    lv_obj_set_size(errorContainer_, 220, 220); // Fit within 240x240 display
+    lv_obj_set_size(errorContainer_, 240, 240); // Full screen size
     
     // Apply location settings to the container
     lv_obj_align(errorContainer_, location.align, location.x_offset, location.y_offset);
     
-    // Apply styling
-    lv_obj_set_style_radius(errorContainer_, 10, 0);
-    lv_obj_set_style_border_width(errorContainer_, 2, 0);
+    // Apply circular styling with 2px colored border from screen edge
+    lv_obj_set_style_radius(errorContainer_, 120, 0); // Make it circular (half of 240)
+    lv_obj_set_style_border_width(errorContainer_, 2, 0); // 2px colored border from edge
     
-    // Create the internal UI structure
-    CreateErrorListUI(errorContainer_);
+    // Create the internal UI structure for single error display
+    CreateSingleErrorUI(errorContainer_);
     
     // Initial update with current errors
     UpdateErrorDisplay();
@@ -46,10 +48,10 @@ void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &locat
 
 void ErrorListComponent::Refresh(const Reading& reading)
 {
-    log_d("Refreshing error list component with new error data");
+    log_d("Refreshing single error display with new error data");
     
-    // For error list, we'll update directly from ErrorManager rather than using Reading
-    // This allows us to get the complete error queue information
+    // For single error display, we'll update directly from ErrorManager rather than using Reading
+    // This allows us to get the complete error queue information and maintain current position
     UpdateErrorDisplay();
 }
 
@@ -63,109 +65,169 @@ void ErrorListComponent::UpdateErrorDisplay()
 
 void ErrorListComponent::UpdateErrorDisplay(const std::vector<ErrorInfo>& errors)
 {
-    log_d("Updating error display with %d errors", errors.size());
+    log_d("Updating single error display with %d errors", errors.size());
     
     // Store current error state
     currentErrors_ = errors;
     
-    if (!errorCountLabel_ || !errorList_) {
-        log_w("Error list UI not initialized yet");
-        return;
+    // Reset button press counter when new errors arrive
+    buttonPressCount_ = 0;
+    
+    // Ensure current index is valid
+    if (currentErrorIndex_ >= currentErrors_.size()) {
+        currentErrorIndex_ = 0;
     }
     
-    // Update error count label
-    char countText[32];
-    snprintf(countText, sizeof(countText), "Errors: %d", currentErrors_.size());
-    lv_label_set_text(errorCountLabel_, countText);
+    // Display the current error
+    DisplayCurrentError();
     
-    // Clear existing list items
-    lv_obj_clean(errorList_);
-    
-    // Add error entries
-    for (size_t i = 0; i < currentErrors_.size(); i++) {
-        CreateErrorEntry(errorList_, currentErrors_[i], i);
-    }
-    
-    // Update container border color based on highest error level
-    if (!currentErrors_.empty()) {
-        ErrorLevel highestLevel = ErrorLevel::WARNING;
-        for (const auto& error : currentErrors_) {
-            if (!error.acknowledged) {
-                if (error.level == ErrorLevel::CRITICAL) {
-                    highestLevel = ErrorLevel::CRITICAL;
-                    break;
-                }
-                if (error.level == ErrorLevel::ERROR && highestLevel == ErrorLevel::WARNING) {
-                    highestLevel = ErrorLevel::ERROR;
-                }
-            }
-        }
-        
-        lv_color_t borderColor = GetErrorColor(highestLevel);
+    // Update container border color based on current error level
+    if (!currentErrors_.empty() && currentErrorIndex_ < currentErrors_.size()) {
+        ErrorLevel currentLevel = currentErrors_[currentErrorIndex_].level;
+        lv_color_t borderColor = GetErrorColor(currentLevel);
         lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
     }
 }
 
 // Internal Methods
-void ErrorListComponent::CreateErrorListUI(lv_obj_t* parent)
+void ErrorListComponent::CreateSingleErrorUI(lv_obj_t* parent)
 {
-    log_d("Creating error list UI structure");
+    log_d("Creating single error UI structure optimized for full screen display");
     
-    // Create error count label at top
+    // Create error position indicator at top
     errorCountLabel_ = lv_label_create(parent);
-    lv_obj_align(errorCountLabel_, LV_ALIGN_TOP_MID, 0, 5);
-    lv_obj_set_style_text_font(errorCountLabel_, &lv_font_montserrat_14, 0);
-    lv_label_set_text(errorCountLabel_, "Errors: 0");
+    lv_obj_align(errorCountLabel_, LV_ALIGN_TOP_MID, 0, 8); // Near top with minimal margin
+    lv_obj_set_style_text_font(errorCountLabel_, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(errorCountLabel_, lv_color_white(), 0);
+    lv_label_set_text(errorCountLabel_, "1/1");
     
-    // Create scrollable error list
-    errorList_ = lv_list_create(parent);
-    lv_obj_set_size(errorList_, 200, 150);
-    lv_obj_align(errorList_, LV_ALIGN_TOP_MID, 0, 35);
-    lv_obj_set_style_radius(errorList_, 5, 0);
+    // Create main content area using most of the 220x220 available space
+    errorContentArea_ = lv_obj_create(parent);
+    lv_obj_set_size(errorContentArea_, 200, 180); // Large content area
+    lv_obj_align(errorContentArea_, LV_ALIGN_CENTER, 0, 10); // Slightly down from center
+    lv_obj_set_style_bg_opa(errorContentArea_, LV_OPA_0, 0); // Transparent background
+    lv_obj_set_style_border_width(errorContentArea_, 0, 0); // No border
+    lv_obj_set_style_pad_all(errorContentArea_, 5, 0); // Minimal padding
     
-    // Create clear all button at bottom
-    clearButton_ = lv_button_create(parent);
-    lv_obj_set_size(clearButton_, 100, 25);
-    lv_obj_align(clearButton_, LV_ALIGN_BOTTOM_MID, 0, -5);
-    lv_obj_add_event_cb(clearButton_, ErrorListComponent::ClearAllErrorsCallback, LV_EVENT_CLICKED, this);
+    // Create large error level indicator
+    errorLevelLabel_ = lv_label_create(errorContentArea_);
+    lv_obj_align(errorLevelLabel_, LV_ALIGN_TOP_MID, 0, 5);
+    lv_obj_set_style_text_font(errorLevelLabel_, &lv_font_montserrat_24, 0); // Large font
+    lv_obj_set_style_text_color(errorLevelLabel_, lv_color_white(), 0);
+    lv_label_set_text(errorLevelLabel_, "ERROR");
     
-    lv_obj_t* buttonLabel = lv_label_create(clearButton_);
-    lv_label_set_text(buttonLabel, "Clear All");
-    lv_obj_center(buttonLabel);
-    lv_obj_set_style_text_font(buttonLabel, &lv_font_montserrat_10, 0);
+    // Create error source label
+    errorSourceLabel_ = lv_label_create(errorContentArea_);
+    lv_obj_align(errorSourceLabel_, LV_ALIGN_TOP_MID, 0, 45);
+    lv_obj_set_style_text_font(errorSourceLabel_, &lv_font_montserrat_14, 0);
+    lv_obj_set_style_text_color(errorSourceLabel_, lv_color_white(), 0);
+    lv_label_set_text(errorSourceLabel_, "System");
+    
+    // Create error message display with maximum available space
+    errorMessageLabel_ = lv_label_create(errorContentArea_);
+    lv_obj_set_size(errorMessageLabel_, 180, 100); // Large message area
+    lv_obj_align(errorMessageLabel_, LV_ALIGN_CENTER, 0, 25);
+    lv_obj_set_style_text_font(errorMessageLabel_, &lv_font_montserrat_12, 0);
+    lv_obj_set_style_text_color(errorMessageLabel_, lv_color_white(), 0);
+    lv_obj_set_style_text_align(errorMessageLabel_, LV_TEXT_ALIGN_CENTER, 0);
+    lv_label_set_long_mode(errorMessageLabel_, LV_LABEL_LONG_WRAP); // Multi-line text
+    lv_label_set_text(errorMessageLabel_, "No errors");
+    
+    // Create navigation indicator at bottom
+    navigationIndicator_ = lv_label_create(parent);
+    lv_obj_align(navigationIndicator_, LV_ALIGN_BOTTOM_MID, 0, -8);
+    lv_obj_set_style_text_font(navigationIndicator_, &lv_font_montserrat_10, 0);
+    lv_obj_set_style_text_color(navigationIndicator_, lv_color_white(), 0);
+    lv_label_set_text(navigationIndicator_, "Press button to cycle");
 }
 
-void ErrorListComponent::CreateErrorEntry(lv_obj_t* parent, const ErrorInfo& error, size_t index)
+void ErrorListComponent::DisplayCurrentError()
 {
-    // Create list item button
-    lv_obj_t* errorItem = lv_list_add_button(parent, nullptr, "");
-    lv_obj_set_style_bg_color(errorItem, GetErrorColor(error.level), 0);
-    lv_obj_set_style_bg_opa(errorItem, LV_OPA_30, 0);
-    
-    // Add click event for acknowledgment
-    lv_obj_add_event_cb(errorItem, ErrorListComponent::ErrorAcknowledgeCallback, LV_EVENT_CLICKED, 
-                       reinterpret_cast<void*>(index));
-    
-    // Create error text content
-    char errorText[128];
-    const char* levelText = GetErrorLevelText(error.level);
-    
-    // Format: [LEVEL] Source: Message
-    snprintf(errorText, sizeof(errorText), "[%s] %s:\n%s", 
-             levelText, error.source, error.message.c_str());
-    
-    lv_obj_t* textLabel = lv_label_create(errorItem);
-    lv_label_set_text(textLabel, errorText);
-    lv_obj_set_style_text_font(textLabel, &lv_font_montserrat_10, 0);
-    lv_label_set_long_mode(textLabel, LV_LABEL_LONG_WRAP);
-    lv_obj_set_width(textLabel, 170);
-    
-    // Add acknowledged indicator if needed
-    if (error.acknowledged) {
-        lv_obj_set_style_bg_opa(errorItem, LV_OPA_10, 0);
-        lv_obj_set_style_text_opa(textLabel, LV_OPA_50, 0);
+    if (currentErrors_.empty()) {
+        // No errors to display
+        lv_label_set_text(errorCountLabel_, "0/0");
+        lv_label_set_text(errorLevelLabel_, "NO ERRORS");
+        lv_label_set_text(errorSourceLabel_, "");
+        lv_label_set_text(errorMessageLabel_, "All systems operational");
+        lv_label_set_text(navigationIndicator_, "");
+        return;
     }
+    
+    if (currentErrorIndex_ >= currentErrors_.size()) {
+        currentErrorIndex_ = 0; // Reset if out of bounds
+    }
+    
+    const ErrorInfo& currentError = currentErrors_[currentErrorIndex_];
+    
+    // Update position indicator
+    char positionText[16];
+    snprintf(positionText, sizeof(positionText), "%zu/%zu", 
+             currentErrorIndex_ + 1, currentErrors_.size());
+    lv_label_set_text(errorCountLabel_, positionText);
+    
+    // Update error level with color
+    const char* levelText = GetErrorLevelText(currentError.level);
+    lv_label_set_text(errorLevelLabel_, levelText);
+    lv_obj_set_style_text_color(errorLevelLabel_, GetErrorColor(currentError.level), 0);
+    
+    // Update source
+    lv_label_set_text(errorSourceLabel_, currentError.source);
+    
+    // Update message - can display full message now with wrapping
+    lv_label_set_text(errorMessageLabel_, currentError.message.c_str());
+    
+    // Update navigation indicator based on button press count
+    if (buttonPressCount_ >= currentErrors_.size()) {
+        lv_label_set_text(navigationIndicator_, "All errors viewed - press to clear & exit");
+    } else if (currentErrors_.size() > 1) {
+        lv_label_set_text(navigationIndicator_, "Press button to cycle through errors");
+    } else {
+        lv_label_set_text(navigationIndicator_, "Single error - press button to clear & exit");
+    }
+    
+    log_d("Displaying error %zu/%zu: [%s] %s", 
+          currentErrorIndex_ + 1, currentErrors_.size(), 
+          levelText, currentError.source);
 }
+
+void ErrorListComponent::CycleToNextError()
+{
+    if (currentErrors_.empty()) return;
+    
+    // Increment button press count
+    buttonPressCount_++;
+    
+    // If we've shown all errors, clear and trigger restore
+    if (buttonPressCount_ > currentErrors_.size()) {
+        log_d("All errors shown - clearing errors and triggering restore");
+        ErrorManager::Instance().ClearAllErrors();
+        ErrorManager::Instance().SetErrorPanelActive(false);
+        // The trigger system will handle restoring to the appropriate panel
+        return;
+    }
+    
+    // Move to next error (only if we haven't shown all yet)
+    if (buttonPressCount_ <= currentErrors_.size()) {
+        currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+        DisplayCurrentError();
+        
+        // Update border color for new current error
+        lv_color_t borderColor = GetErrorColor(currentErrors_[currentErrorIndex_].level);
+        lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
+    }
+    
+    log_d("Button press %zu/%zu, showing error %zu/%zu", 
+          buttonPressCount_, currentErrors_.size() + 1,
+          currentErrorIndex_ + 1, currentErrors_.size());
+}
+
+void ErrorListComponent::HandleCycleButtonPress()
+{
+    // Public interface method to be called from GPIO button handling
+    log_d("GPIO button press detected - cycling to next error");
+    CycleToNextError();
+}
+
 
 // Helper Methods
 lv_color_t ErrorListComponent::GetErrorColor(ErrorLevel level)
@@ -174,11 +236,11 @@ lv_color_t ErrorListComponent::GetErrorColor(ErrorLevel level)
         case ErrorLevel::CRITICAL:
             return lv_color_hex(0xFF0000); // Red
         case ErrorLevel::ERROR:
-            return lv_color_hex(0xFF8C00); // Orange
+            return lv_color_hex(0xFFFF00); // Yellow
         case ErrorLevel::WARNING:
-            return lv_color_hex(0xFFD700); // Yellow
+            return lv_color_hex(0xFFFFFF); // White
         default:
-            return lv_color_hex(0xFFD700); // Default to yellow
+            return lv_color_hex(0xFFFFFF); // Default to white
     }
 }
 

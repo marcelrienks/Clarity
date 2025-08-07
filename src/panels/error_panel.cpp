@@ -22,6 +22,9 @@ ErrorPanel::~ErrorPanel()
     {
         errorListComponent_.reset();
     }
+    
+    // Reset error panel active flag when panel is destroyed
+    ErrorManager::Instance().SetErrorPanelActive(false);
 }
 
 // Core Functionality Methods

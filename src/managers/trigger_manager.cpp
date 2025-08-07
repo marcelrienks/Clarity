@@ -101,6 +101,9 @@ void TriggerManager::CheckSensorChanges()
 void TriggerManager::CheckErrorTrigger()
 {
     bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
+    log_d("CheckErrorTrigger: shouldShowErrorPanel=%s, errors=%d", 
+          shouldShowErrorPanel ? "true" : "false", 
+          ErrorManager::Instance().GetErrorQueue().size());
     CheckTriggerChange(TRIGGER_ERROR_OCCURRED, shouldShowErrorPanel);
 }
 
@@ -201,6 +204,9 @@ void TriggerManager::InitializeTriggersFromSensors()
     InitializeTrigger(TRIGGER_KEY_NOT_PRESENT, currentState.keyNotPresent);
     InitializeTrigger(TRIGGER_LOCK_STATE, currentState.lockState);
     InitializeTrigger(TRIGGER_LIGHTS_STATE, currentState.lightsState);
+    
+    // Initialize error trigger based on current error state
+    InitializeTrigger(TRIGGER_ERROR_OCCURRED, ErrorManager::Instance().ShouldTriggerErrorPanel());
     
     // Apply initial actions from active triggers
     if (activeThemeTrigger_) {

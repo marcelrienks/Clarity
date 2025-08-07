@@ -62,37 +62,6 @@ void initializeServices() {
     log_d("Service initialization completed successfully");
 }
 
-// Test function to demonstrate error handling
-void testErrorHandling() {
-    static unsigned long lastTestTime = 0;
-    static int testCounter = 0;
-    
-    // Run test every 30 seconds
-    if (millis() - lastTestTime > 30000) {
-        lastTestTime = millis();
-        testCounter++;
-        
-        switch (testCounter) {
-            case 1:
-                ErrorManager::Instance().ReportWarning("TestSystem", "This is a test warning message");
-                log_d("Generated test warning");
-                break;
-            case 2:
-                ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "TestSystem", 
-                    "This is a test error message");
-                log_d("Generated test error");
-                break;
-            case 3:
-                ErrorManager::Instance().ReportCriticalError("TestSystem", 
-                    "This is a test critical error");
-                log_d("Generated test critical error");
-                break;
-            default:
-                testCounter = 0; // Reset counter
-                break;
-        }
-    }
-}
 
 void setup()
 {
@@ -134,9 +103,75 @@ void loop()
     Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
     
-    // Test error handling system
+    // TEMPORARY: Test error handling with automatic error clearing
     #ifdef CLARITY_DEBUG
-    testErrorHandling();
+    static unsigned long lastTestTime = 0;
+    static unsigned long lastClearTime = 0;
+    static int testCounter = 0;
+    static bool systemStable = false;
+    static bool errorGenerated = false;
+    
+    // Wait for system to be stable (10 seconds after startup)
+    if (!systemStable && millis() > 10000) {
+        systemStable = true;
+        log_d("System stable - error testing enabled");
+    }
+    
+    if (systemStable) {
+        // Generate new error every 7.5 seconds (reduced by half)
+        if (millis() - lastTestTime > 7500) {
+            lastTestTime = millis();
+            lastClearTime = millis(); // Reset clear timer
+            testCounter++;
+            errorGenerated = true;
+            
+            switch (testCounter % 7) {
+                case 1:
+                    ErrorManager::Instance().ReportWarning("TestSystem", "Sample warning for testing error panel");
+                    log_d("Generated test warning");
+                    break;
+                case 2:
+                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "TestSystem", 
+                        "Sample error for testing error panel");
+                    log_d("Generated test error");
+                    break;
+                case 3:
+                    ErrorManager::Instance().ReportCriticalError("TestSystem", 
+                        "Sample critical error for testing");
+                    log_d("Generated test critical error");
+                    break;
+                case 4:
+                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "SensorSystem", 
+                        "Sensor communication timeout detected");
+                    log_d("Generated sensor error");
+                    break;
+                case 5:
+                    ErrorManager::Instance().ReportWarning("DisplaySystem", 
+                        "Display refresh rate below optimal threshold");
+                    log_d("Generated display warning");
+                    break;
+                case 6:
+                    ErrorManager::Instance().ReportCriticalError("PowerSystem", 
+                        "Battery voltage critically low - system shutdown imminent");
+                    log_d("Generated power critical error");
+                    break;
+                case 0:
+                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "NetworkSystem", 
+                        "Connection to remote monitoring service failed");
+                    log_d("Generated network error");
+                    break;
+            }
+        }
+        
+        // Clear errors after 5 seconds to allow new error types to show (reduced by half)
+        if (errorGenerated && millis() - lastClearTime > 5000) {
+            if (ErrorManager::Instance().HasPendingErrors()) {
+                log_d("Auto-clearing errors after 5s to allow next error type");
+                ErrorManager::Instance().ClearAllErrors();
+                errorGenerated = false;
+            }
+        }
+    }
     #endif
 }
 
