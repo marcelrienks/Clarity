@@ -21,14 +21,14 @@ After I had built this architecture, the project then became a test bed for usin
 # Build
 pio.exe run -e debug-local
 
-# Test
-pio.exe test -e test-all          # All 101 tests
-pio.exe test -e test-sensors      # Sensor tests
-pio.exe test -e test-components   # Component tests
+# Unity tests
+pio.exe test -e test-all        # All tests through PlatformIO
+./run_unity_tests.sh            # Linux/Mac runner
+run_unity_tests.bat             # Windows runner
 
 # Wokwi Integration Tests
-./run_wokwi_tests.sh              # Linux/Mac
-run_wokwi_tests.bat               # Windows
+./run_wokwi_tests.sh            # Linux/Mac runner
+run_wokwi_tests.bat             # Windows runner
 ```
 
 ## Main Libraries:
