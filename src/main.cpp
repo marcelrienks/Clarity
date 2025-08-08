@@ -80,6 +80,9 @@ void setup()
     device->prepare();
     Ticker::handleLvTasks();
     
+    log_d("Initializing styles after LVGL is ready...");
+    styleManager->InitializeStyles();
+    
     log_d("Initializing Clarity application");
     
     // Initialize trigger service after all dependencies are resolved

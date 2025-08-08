@@ -1,109 +1,31 @@
-# Project Context
+BREAKTHROUGH! The crash is still happening even without component rendering! This proves that the issue is NOT in the component Render calls or how we're using displayProvider_.
 
-## Current Status
-- **Branch**: input
-- **Last Commit**: 7117e46 ph1
-- **Modified Files**: 21 files changed
-- **Build Status**: ❌ Experiencing heap corruption crashes during runtime
+  The crash is happening during component creation itself. We can see:
+  - Component creation happens: [5494] TESTING: Component rendering disabled, but creation enabled
+  - Then crash during lv_screen_load(): [5504] loading...
 
-## Project Overview
-Clarity is an ESP32-based digital gauge system for automotive engine monitoring, built with PlatformIO using LVGL for UI and LovyanGFX for display drivers. Designed for a 1.28" round display (GC9A01 driver) on a NodeMCU-32S development board.
+  This means the UIFactory::create...() calls are corrupting memory.
 
-## Recent Activity
-```
-7117e46 ph1
-1bcf01d planned
-f05807f testing
-c18b883 Merge pull request #40 from marcelrienks/error
-03995e8 update
-```
+  Since this works in the main branch but fails in our branch, and we know the issue isn't in:
+  - ❌ Component rendering
+  - ❌ Display provider usage
+  - ❌ StyleManager
+  - ❌ Screen creation
+  - ❌ Sensor initialization
 
-## Current Implementation Status
+  The issue must be in how components are created - specifically how the styleService is being passed to the UIFactory methods.
 
-### Phase 1: ✅ Complete
-- **InputManager**: GPIO 34 button with debouncing and timing logic (50ms-500ms short, >500ms long)
-- **IInputService Interface**: Contract for panel input handling
-- **Hardware Setup**: Button sensor integration with existing GPIO provider system
-- **Architecture**: Clean separation with dependency injection
+  In our changes, we store styleService_ as a member and pass it to:
+  UIFactory::createOemOilPressureComponent(styleService_);
+  UIFactory::createOemOilTemperatureComponent(styleService_);
 
-### Phase 2: ❌ Blocked by Heap Corruption
-- **Multiple Inheritance Issue**: `class Panel : public IPanel, public IInputService` causing memory corruption
-- **Symptom**: "CORRUPT HEAP: Bad head at 0x3ffb3ae8. Expected 0xabba1234 got 0x00000000"
-- **Impact**: Application crashes during panel loading, corrupted panel names in logs
-- **Root Cause**: Vtable/memory layout conflicts with multiple inheritance on ESP32
+  Let me check if there's an issue with the styleService lifetime or validity. The styleService is created in main.cpp and passed to panels, but maybe there's a dependency ordering issue.
 
-### Current Modified Files
-```
- M include/interfaces/i_panel.h          # Added GetInputService() method
- M include/panels/*.h                    # Removed duplicate screen_ members
- M src/panels/*.cpp                      # Fixed constructor issues  
- M include/managers/panel_manager.h      # Added InputManager integration
- M src/managers/panel_manager.cpp        # Input service registration logic
- M src/main.cpp                          # InputManager initialization
-?? include/handlers/                     # Composition-based input handlers (new approach)
-?? include/panels/config_panel.h         # New placeholder config panel
-```
+  Looking at the memory addresses:
+  - screen: 0x3ffb3aac
+  - backgroundStyle: 0x3ffb841c
+  - Crash at: 0x3ffb3e5c and 0x3ffb3dfc
 
-## Architecture Summary
-- **Device Layer**: Hardware abstraction (`device.h/cpp`)
-- **Display Layer**: LVGL integration with LovyanGFX drivers  
-- **Panel Layer**: Screen management with MVP pattern (`panels/`)
-- **Component Layer**: UI elements and gauges (`components/`)
-- **Sensor Layer**: ADC data acquisition (`sensors/`)
-- **Manager Layer**: Coordination (Panel, Style, Trigger, Input)
+  The crash addresses are between the screen and backgroundStyle addresses, suggesting memory corruption in the heap area between these objects.
 
-## Critical Issues
-
-### 1. Heap Corruption (Priority: Critical)
-- **Problem**: Multiple inheritance causing memory corruption
-- **Attempted Fixes**: 
-  - Removed duplicate screen_ member shadowing
-  - Tried composition approach with input handlers
-  - Disabled input service registration temporarily
-- **Status**: Still crashing, needs architectural redesign
-
-### 2. Input System Integration
-- **Goal**: Single button navigation (short/long press) for each panel
-- **Planned Behaviors**:
-  - OilPanel: Short=none, Long=config
-  - SplashPanel: Short=skip animation, Long=config  
-  - ErrorPanel: Short=cycle errors, Long=clear all
-  - ConfigPanel: Short=next option, Long=select
-- **Current Status**: Architecture complete but integration blocked
-
-## Next Steps Available
-
-### Immediate (Fix Critical Issues)
-1. **Simplify Input Integration**: Remove multiple inheritance, use delegation pattern
-2. **Stabilize Base Application**: Get panels working without input first
-3. **Alternative Architecture**: Event-based input handling instead of interface inheritance
-
-### Short Term  
-1. **Complete Phase 2**: Implement panel input behaviors with stable approach
-2. **Add Config Panel**: Phase 3 basic menu with grey styling
-3. **Test Hardware**: Verify GPIO 34 button works with physical device
-
-### Medium Term
-1. **Full Config Implementation**: Phase 4 with persistent settings
-2. **Panel Switching**: Complete TriggerManager integration for config panel
-3. **Error Recovery**: Graceful handling of input system failures
-
-## Development Commands
-- **Build**: `pio.exe run -e debug-local` (fastest for testing)
-- **Size Check**: `pio.exe run --target size`  
-- **Upload**: `pio.exe run --target upload`
-- **Clean Build**: `pio.exe run -e release`
-
-## Recommended Immediate Action
-1. **Revert to stable state**: Remove multiple inheritance from all panels
-2. **Implement event delegation**: InputManager posts events, panels subscribe
-3. **Test basic functionality**: Ensure splash → oil panel works without crashes
-4. **Iterative approach**: Add input handling panel by panel once base is stable
-
-## Technical Debt
-- Multiple inheritance approach causing instability
-- Duplicate screen_ member removal may have missed dependencies
-- Need comprehensive testing of panel lifecycle without input system
-- Input system architecture needs redesign for ESP32 constraints
-
-*Generated: $(date)*
+  This points to UIFactory component creation allocating memory that corrupts adjacent heap blocks.

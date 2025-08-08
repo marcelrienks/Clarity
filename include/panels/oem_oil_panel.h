@@ -95,7 +95,7 @@ private:
     IStyleService *styleService_;
 
     // Instance Data Members - UI Objects
-    lv_obj_t *screen_; // All panels should always have their own screens
+    // screen_ is inherited from IPanel base class
 
     // Instance Data Members - Components and Sensors
     std::shared_ptr<IComponent> oemOilPressureComponent_;

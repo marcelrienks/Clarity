@@ -3,10 +3,12 @@
 #include <cstring>
 
 // Constructors and Destructors
-StyleManager::StyleManager(const char* theme) : THEME(theme)
+StyleManager::StyleManager(const char* theme) : THEME(theme), initialized_(false)
 {
     log_d("Creating StyleManager with theme: %s", theme);
     
+    // Initialize styles but don't apply theme colors yet
+    // Theme will be applied when InitializeStyles() is called after LVGL is ready
     lv_style_init(&backgroundStyle);
     lv_style_init(&textStyle);
     lv_style_init(&gaugeNormalStyle);
@@ -19,10 +21,7 @@ StyleManager::StyleManager(const char* theme) : THEME(theme)
     lv_style_init(&gaugeMainStyle);
     lv_style_init(&gaugeDangerSectionStyle);
 
-    SetTheme(theme);
-    
-    // Mark as initialized
-    initialized_ = true;
+    log_d("StyleManager created, theme will be applied when LVGL is ready");
 }
 
 StyleManager::~StyleManager()
@@ -34,15 +33,20 @@ StyleManager::~StyleManager()
 
 void StyleManager::InitializeStyles()
 {
-    // Styles already initialized in constructor
-    log_d("StyleManager styles already initialized in constructor");
+    if (!initialized_) {
+        log_d("Applying theme colors now that LVGL is ready: %s", THEME.c_str());
+        SetTheme(THEME.c_str());
+        initialized_ = true;
+    } else {
+        log_d("StyleManager styles already initialized");
+    }
 }
 
 /// @brief Apply the current theme to a specific screen
 /// @param screen the screen to which the theme will be applied
 void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
-    log_d("Applying current theme styles to screen object");
+    log_d("Applying current theme styles to screen object - screen: %p, backgroundStyle: %p", screen, &backgroundStyle);
 
     // Only apply the background style to screens
     // Other styles should be applied to specific components that need them
@@ -81,7 +85,7 @@ void StyleManager::SetTheme(const char* theme)
 {
     // Handle invalid theme gracefully
     if (!theme || strlen(theme) == 0) {
-        log_d("Invalid theme provided, keeping current theme: %s", THEME);
+        log_d("Invalid theme provided, keeping current theme: %s", THEME.c_str());
         return;
     }
     

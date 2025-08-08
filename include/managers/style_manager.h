@@ -5,6 +5,7 @@
 
 #include <lvgl.h>
 #include <memory>
+#include <string>
 
 #define MAIN_DEFAULT LV_PART_MAIN | LV_STATE_DEFAULT
 #define ITEMS_DEFAULT LV_PART_ITEMS | LV_STATE_DEFAULT
@@ -82,12 +83,12 @@ public:
     lv_style_t& GetGaugeItemsStyle() override { return gaugeItemsStyle; }
     lv_style_t& GetGaugeMainStyle() override { return gaugeMainStyle; }
     lv_style_t& GetGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
-    const char* GetCurrentTheme() const override { return THEME; }
-    const ThemeColors& GetThemeColors() const override { return GetColours(THEME); }
+    const char* GetCurrentTheme() const override { return THEME.c_str(); }
+    const ThemeColors& GetThemeColors() const override { return GetColours(THEME.c_str()); }
     bool IsInitialized() const override { return initialized_; }
     
     // Public Data Members - Theme State
-    const char *THEME = Themes::NIGHT;
+    std::string THEME = Themes::NIGHT;
 
     // Core Style Objects
     lv_style_t backgroundStyle;    // Style for backgrounds

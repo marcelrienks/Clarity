@@ -7,14 +7,20 @@
 
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
-      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
+      // TEMPORARILY: Initialize shared_ptrs to nullptr explicitly
+      oemOilPressureSensor_(nullptr),
+      oemOilTemperatureSensor_(nullptr),
+      oemOilPressureComponent_(nullptr),
+      oemOilTemperatureComponent_(nullptr),
       currentOilPressureValue_(-1),
       currentOilTemperatureValue_(-1),
       lastTheme_("")
 {
-    // Initialize screen_ to nullptr - will be created in Init()
-    screen_ = nullptr;
+    // screen_ is inherited from IPanel and already initialized to nullptr
+    
+    // Initialize LVGL animation structures to prevent undefined behavior
+    lv_anim_init(&pressureAnimation_);
+    lv_anim_init(&temperatureAnimation_);
 }
 
 OemOilPanel::~OemOilPanel()
@@ -77,10 +83,11 @@ void OemOilPanel::Init()
         styleService_->ApplyThemeToScreen(screen_);
     }
 
-    oemOilPressureSensor_->Init();
+    // TEMPORARILY DISABLE: Test if sensor Init causes corruption
+    // oemOilPressureSensor_->Init();
     currentOilPressureValue_ = -1; // Sentinel value to ensure first update
 
-    oemOilTemperatureSensor_->Init();
+    // oemOilTemperatureSensor_->Init();
     currentOilTemperatureValue_ = -1; // Sentinel value to ensure first update
 }
 
@@ -91,24 +98,27 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
 
-    // Create components directly using UIFactory
-    oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
-    oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
+    // TEMPORARILY DISABLE: Test if component creation causes corruption
+    // oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
+    // oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
+    log_d("TESTING: Component creation completely disabled");
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
-    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+    // TEMPORARILY DISABLE: Test if Render calls cause corruption
+    // oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
+    // oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+    log_d("TESTING: Component rendering disabled, but creation enabled");
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
     
     lv_screen_load(screen_);
     
-    // Always apply current theme to the screen when loading (ensures theme is current)
-    if (styleService_) {
+    // TEMPORARILY DISABLE SECOND CALL: Always apply current theme to the screen when loading (ensures theme is current)
+    if (false && styleService_) {
         styleService_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
         lastTheme_ = String(styleService_->GetCurrentTheme());
@@ -162,6 +172,12 @@ void OemOilPanel::UpdateOilPressure()
         return;
     }
 
+    // TEMPORARILY DISABLE: Test if null sensor access causes corruption
+    if (!oemOilPressureSensor_) {
+        log_d("TESTING: Pressure sensor is null, skipping update");
+        return;
+    }
+
     // Use delta-based updates for better performance
     auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
@@ -203,6 +219,12 @@ void OemOilPanel::UpdateOilTemperature()
 
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_) {
+        return;
+    }
+
+    // TEMPORARILY DISABLE: Test if null sensor access causes corruption
+    if (!oemOilTemperatureSensor_) {
+        log_d("TESTING: Temperature sensor is null, skipping update");
         return;
     }
 

@@ -1,3 +1,4 @@
+* Ensure that all tests now inject using constructor, and not methods
 * Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interupts, and Input Event handling.  
 Also highlight the normal flow of panel loading, and the ability to show error messages, change configs, and handle button inputs which force an action for each panel
 * because of error panels, ensure that there are proper null and empty checks throughout the code
