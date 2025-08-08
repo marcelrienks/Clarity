@@ -50,9 +50,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::CONFIG;
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init(IGpioProvider *gpio) override;
+    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio) override;
+    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio) override;
     
     // IInputService Interface Implementation
     void OnShortPress() override;
@@ -91,4 +91,7 @@ private:
     lv_obj_t *menuContainer_ = nullptr;
     std::vector<lv_obj_t*> menuLabels_;
     lv_obj_t *hintLabel_ = nullptr;
+    
+    // Callback function
+    std::function<void()> callbackFunction_;
 };

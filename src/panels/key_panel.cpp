@@ -26,16 +26,16 @@ KeyPanel::~KeyPanel()
 
 // Core Functionality Methods
 /// @brief Initialize the key panel and its components
-void KeyPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void KeyPanel::Init(IGpioProvider* gpio)
 {
     log_d("Initializing key panel and reading current GPIO key state");
 
-    if (!display || !gpio) {
+    if (!displayProvider_ || !gpio) {
         log_e("KeyPanel requires display and gpio providers");
         return;
     }
 
-    screen_ = display->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
     
     // Apply current theme immediately after screen creation
     if (styleService_) {
@@ -49,7 +49,7 @@ void KeyPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 }
 
 /// @brief Load the key panel UI components
-void KeyPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void KeyPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     log_d("Loading key panel with current key state display");
     callbackFunction_ = callbackFunction;
@@ -58,11 +58,11 @@ void KeyPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio,
     keyComponent_ = UIFactory::createKeyComponent(styleService_);
 
     // Render the component
-    if (!display) {
+    if (!displayProvider_) {
         log_e("KeyPanel load requires display provider");
         return;
     }
-    keyComponent_->Render(screen_, centerLocation_, display);
+    keyComponent_->Render(screen_, centerLocation_, displayProvider_);
     keyComponent_->Refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     
     lv_obj_add_event_cb(screen_, KeyPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
@@ -77,7 +77,7 @@ void KeyPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio,
 }
 
 /// @brief Update the key panel with current sensor data
-void KeyPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void KeyPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     if (!gpio) {
         log_e("KeyPanel update requires gpio provider");

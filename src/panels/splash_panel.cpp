@@ -41,21 +41,21 @@ SplashPanel::~SplashPanel()
 
 /// @brief Initialize the screen with component
 /// Creates blank screens for animation transitions
-void SplashPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void SplashPanel::Init(IGpioProvider* gpio)
 {
     log_d("Initializing splash panel screen and animation components");
-    if (!display) {
+    if (!displayProvider_) {
         log_e("SplashPanel requires display provider");
         return;
     }
 
-    blankScreen_ = display->CreateScreen();
-    screen_ = display->CreateScreen();
+    blankScreen_ = displayProvider_->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
 }
 
 /// @brief Show the screen
 /// @param callbackFunction the function to call when the splash screen is complete
-void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     log_i("Loading splash panel with fade-in animation");
 
@@ -68,7 +68,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Render the component
-    component_->Render(screen_, splashLocation, display);
+    component_->Render(screen_, splashLocation, displayProvider_);
     
     // Store timer reference and reset skip flag
     animationSkipped_ = false;
@@ -76,7 +76,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void SplashPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     callbackFunction();
 }

@@ -36,16 +36,16 @@ ErrorPanel::~ErrorPanel()
 
 // Core Functionality Methods
 /// @brief Initialize the error panel and its UI structure
-void ErrorPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void ErrorPanel::Init(IGpioProvider* gpio)
 {
     log_d("Initializing error panel");
 
-    if (!display || !gpio) {
+    if (!displayProvider_ || !gpio) {
         log_e("ErrorPanel requires display and gpio providers");
         return;
     }
 
-    screen_ = display->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
     
     // Store current theme before switching to ERROR theme
     if (styleService_) {
@@ -62,7 +62,7 @@ void ErrorPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 }
 
 /// @brief Load the error panel UI components
-void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     log_d("Loading error panel with current errors");
 
@@ -70,11 +70,11 @@ void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpi
     errorListComponent_ = UIFactory::createErrorListComponent(styleService_);
 
     // Render the component
-    if (!display) {
+    if (!displayProvider_) {
         log_e("ErrorPanel load requires display provider");
         return;
     }
-    errorListComponent_->Render(screen_, centerLocation_, display);
+    errorListComponent_->Render(screen_, centerLocation_, displayProvider_);
     
     // Get current errors and refresh component
     std::vector<ErrorInfo> currentErrors = ErrorManager::Instance().GetErrorQueue();
@@ -96,7 +96,7 @@ void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpi
 }
 
 /// @brief Update the error panel with current error data
-void ErrorPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void ErrorPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();

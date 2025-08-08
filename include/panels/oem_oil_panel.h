@@ -53,9 +53,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::OIL;
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init(IGpioProvider *gpio) override;
+    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio) override;
+    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio) override;
     
     // IInputService Interface Implementation
     void OnShortPress() override;

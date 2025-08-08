@@ -34,20 +34,20 @@ ConfigPanel::~ConfigPanel()
 
 // Core Functionality Methods
 
-void ConfigPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void ConfigPanel::Init(IGpioProvider* gpio)
 {
     log_d("Initializing ConfigPanel");
     
-    if (!display)
+    if (!displayProvider_)
     {
         log_e("ConfigPanel requires display provider");
         return;
     }
     
-    screen_ = display->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
 }
 
-void ConfigPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void ConfigPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     log_i("Loading ConfigPanel");
     
@@ -66,7 +66,7 @@ void ConfigPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
     lv_obj_add_event_cb(screen_, ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 }
 
-void ConfigPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void ConfigPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     // Config panel is static, no regular updates needed
     callbackFunction();

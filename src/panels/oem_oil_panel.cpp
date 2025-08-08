@@ -66,11 +66,11 @@ OemOilPanel::~OemOilPanel()
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
-void OemOilPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Init(IGpioProvider* gpio)
 {
     log_d("Initializing OEM oil panel with sensors and display components");
 
-    screen_ = display->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
     
     // Apply current theme immediately after screen creation
     if (styleService_) {
@@ -86,7 +86,7 @@ void OemOilPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
-void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
@@ -99,8 +99,8 @@ void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    oemOilPressureComponent_->Render(screen_, pressureLocation, display);
-    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, display);
+    oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
+    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
@@ -116,7 +116,7 @@ void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
 {
 
     callbackFunction_ = callbackFunction;
