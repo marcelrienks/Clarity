@@ -6,17 +6,16 @@
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      // TEMPORARILY: Initialize shared_ptrs to nullptr explicitly
-      oemOilPressureSensor_(nullptr),
-      oemOilTemperatureSensor_(nullptr),
-      oemOilPressureComponent_(nullptr),
-      oemOilTemperatureComponent_(nullptr),
+    : IPanel(), // Explicitly call base constructor first
+      gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+      oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
+      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
       currentOilPressureValue_(-1),
       currentOilTemperatureValue_(-1),
       lastTheme_("")
 {
-    // screen_ is inherited from IPanel and already initialized to nullptr
+    // Explicitly initialize inherited screen_ member
+    screen_ = nullptr;
     
     // Initialize LVGL animation structures to prevent undefined behavior
     lv_anim_init(&pressureAnimation_);
@@ -83,11 +82,10 @@ void OemOilPanel::Init()
         styleService_->ApplyThemeToScreen(screen_);
     }
 
-    // TEMPORARILY DISABLE: Test if sensor Init causes corruption
-    // oemOilPressureSensor_->Init();
+    oemOilPressureSensor_->Init();
     currentOilPressureValue_ = -1; // Sentinel value to ensure first update
 
-    // oemOilTemperatureSensor_->Init();
+    oemOilTemperatureSensor_->Init();
     currentOilTemperatureValue_ = -1; // Sentinel value to ensure first update
 }
 
@@ -98,27 +96,37 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
 
-    // TEMPORARILY DISABLE: Test if component creation causes corruption
-    // oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
-    // oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
-    log_d("TESTING: Component creation completely disabled");
+    // Check StyleManager initialization before creating components
+    if (styleService_ && styleService_->IsInitialized()) {
+        log_d("Creating components with properly initialized StyleManager");
+        oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
+        oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
+    } else {
+        log_w("StyleService not properly initialized, skipping component creation");
+        log_d("styleService_ pointer: %p", styleService_);
+        if (styleService_) {
+            log_d("StyleManager initialized: %s", styleService_->IsInitialized() ? "true" : "false");
+        }
+    }
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    // TEMPORARILY DISABLE: Test if Render calls cause corruption
-    // oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
-    // oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
-    log_d("TESTING: Component rendering disabled, but creation enabled");
+    if (oemOilPressureComponent_) {
+        oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
+    }
+    if (oemOilTemperatureComponent_) {
+        oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+    }
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
     
     lv_screen_load(screen_);
     
-    // TEMPORARILY DISABLE SECOND CALL: Always apply current theme to the screen when loading (ensures theme is current)
-    if (false && styleService_) {
+    // Always apply current theme to the screen when loading (ensures theme is current)
+    if (styleService_) {
         styleService_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
         lastTheme_ = String(styleService_->GetCurrentTheme());
@@ -172,9 +180,9 @@ void OemOilPanel::UpdateOilPressure()
         return;
     }
 
-    // TEMPORARILY DISABLE: Test if null sensor access causes corruption
+    // Safety check for sensor availability
     if (!oemOilPressureSensor_) {
-        log_d("TESTING: Pressure sensor is null, skipping update");
+        log_w("Pressure sensor is null, skipping update");
         return;
     }
 
@@ -222,9 +230,9 @@ void OemOilPanel::UpdateOilTemperature()
         return;
     }
 
-    // TEMPORARILY DISABLE: Test if null sensor access causes corruption
+    // Safety check for sensor availability
     if (!oemOilTemperatureSensor_) {
-        log_d("TESTING: Temperature sensor is null, skipping update");
+        log_w("Temperature sensor is null, skipping update");
         return;
     }
 

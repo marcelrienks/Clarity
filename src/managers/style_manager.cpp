@@ -5,23 +5,7 @@
 // Constructors and Destructors
 StyleManager::StyleManager(const char* theme) : THEME(theme), initialized_(false)
 {
-    log_d("Creating StyleManager with theme: %s", theme);
-    
-    // Initialize styles but don't apply theme colors yet
-    // Theme will be applied when InitializeStyles() is called after LVGL is ready
-    lv_style_init(&backgroundStyle);
-    lv_style_init(&textStyle);
-    lv_style_init(&gaugeNormalStyle);
-    lv_style_init(&gaugeWarningStyle);
-    lv_style_init(&gaugeDangerStyle);
-    
-    // Initialize shared gauge component styles
-    lv_style_init(&gaugeIndicatorStyle);
-    lv_style_init(&gaugeItemsStyle);
-    lv_style_init(&gaugeMainStyle);
-    lv_style_init(&gaugeDangerSectionStyle);
-
-    log_d("StyleManager created, theme will be applied when LVGL is ready");
+    log_d("Creating StyleManager with theme: %s (LVGL styles will be initialized later)", theme);
 }
 
 StyleManager::~StyleManager()
@@ -34,9 +18,26 @@ StyleManager::~StyleManager()
 void StyleManager::InitializeStyles()
 {
     if (!initialized_) {
-        log_d("Applying theme colors now that LVGL is ready: %s", THEME.c_str());
+        log_d("Initializing LVGL styles now that LVGL is ready: %s", THEME.c_str());
+        
+        // Initialize LVGL style objects (must be done after LVGL init)
+        lv_style_init(&backgroundStyle);
+        lv_style_init(&textStyle);
+        lv_style_init(&gaugeNormalStyle);
+        lv_style_init(&gaugeWarningStyle);
+        lv_style_init(&gaugeDangerStyle);
+        
+        // Initialize shared gauge component styles
+        lv_style_init(&gaugeIndicatorStyle);
+        lv_style_init(&gaugeItemsStyle);
+        lv_style_init(&gaugeMainStyle);
+        lv_style_init(&gaugeDangerSectionStyle);
+        
+        // Apply theme colors after style objects are initialized
         SetTheme(THEME.c_str());
         initialized_ = true;
+        
+        log_d("StyleManager styles initialized successfully");
     } else {
         log_d("StyleManager styles already initialized");
     }
