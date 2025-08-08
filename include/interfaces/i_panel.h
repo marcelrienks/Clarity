@@ -56,18 +56,18 @@ public:
 
     // Core Interface Methods
     /// @brief Initialize the panel and its components
-    /// @param gpio GPIO provider for hardware access
-    virtual void Init(IGpioProvider *gpio) = 0;
+    /// Uses stored providers injected via constructor
+    virtual void Init() = 0;
 
     /// @brief Load the panel with asynchronous completion callback
     /// @param callbackFunction Function to call when loading is complete
-    /// @param gpio GPIO provider for hardware access
-    virtual void Load(std::function<void()> callbackFunction, IGpioProvider *gpio) = 0;
+    /// Uses stored providers injected via constructor
+    virtual void Load(std::function<void()> callbackFunction) = 0;
 
     /// @brief Update the panel data with asynchronous completion callback
     /// @param callbackFunction Function to call when update is complete
-    /// @param gpio GPIO provider for hardware access
-    virtual void Update(std::function<void()> callbackFunction, IGpioProvider *gpio) = 0;
+    /// Uses stored providers injected via constructor
+    virtual void Update(std::function<void()> callbackFunction) = 0;
 
     /// @brief Get the input service interface if this panel supports input
     /// @return Pointer to IInputService or nullptr if not supported

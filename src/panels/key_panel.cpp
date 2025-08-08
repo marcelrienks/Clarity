@@ -26,11 +26,11 @@ KeyPanel::~KeyPanel()
 
 // Core Functionality Methods
 /// @brief Initialize the key panel and its components
-void KeyPanel::Init(IGpioProvider* gpio)
+void KeyPanel::Init()
 {
     log_d("Initializing key panel and reading current GPIO key state");
 
-    if (!displayProvider_ || !gpio) {
+    if (!displayProvider_ || !gpioProvider_) {
         log_e("KeyPanel requires display and gpio providers");
         return;
     }
@@ -49,7 +49,7 @@ void KeyPanel::Init(IGpioProvider* gpio)
 }
 
 /// @brief Load the key panel UI components
-void KeyPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void KeyPanel::Load(std::function<void()> callbackFunction)
 {
     log_d("Loading key panel with current key state display");
     callbackFunction_ = callbackFunction;
@@ -77,9 +77,9 @@ void KeyPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
 }
 
 /// @brief Update the key panel with current sensor data
-void KeyPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void KeyPanel::Update(std::function<void()> callbackFunction)
 {
-    if (!gpio) {
+    if (!gpioProvider_) {
         log_e("KeyPanel update requires gpio provider");
         return;
     }

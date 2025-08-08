@@ -32,7 +32,7 @@ LockPanel::~LockPanel()
 // Core Functionality Methods
 
 /// @brief Initialize the lock panel and its components
-void LockPanel::Init(IGpioProvider* gpio)
+void LockPanel::Init()
 {
     log_d("Initializing lock panel with sensor and display components");
 
@@ -49,7 +49,7 @@ void LockPanel::Init(IGpioProvider* gpio)
 }
 
 /// @brief Load the lock panel UI components
-void LockPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void LockPanel::Load(std::function<void()> callbackFunction)
 {
     log_d("Loading lock panel with current lock state display");
     callbackFunction_ = callbackFunction;
@@ -72,7 +72,7 @@ void LockPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio
 }
 
 /// @brief Update the lock panel with current sensor data
-void LockPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void LockPanel::Update(std::function<void()> callbackFunction)
 {
     callbackFunction();
 }

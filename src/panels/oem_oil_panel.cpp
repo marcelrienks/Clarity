@@ -66,7 +66,7 @@ OemOilPanel::~OemOilPanel()
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
-void OemOilPanel::Init(IGpioProvider* gpio)
+void OemOilPanel::Init()
 {
     log_d("Initializing OEM oil panel with sensors and display components");
 
@@ -86,7 +86,7 @@ void OemOilPanel::Init(IGpioProvider* gpio)
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
-void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void OemOilPanel::Load(std::function<void()> callbackFunction)
 {
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
@@ -116,7 +116,7 @@ void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void OemOilPanel::Update(std::function<void()> callbackFunction)
 {
 
     callbackFunction_ = callbackFunction;

@@ -41,7 +41,7 @@ SplashPanel::~SplashPanel()
 
 /// @brief Initialize the screen with component
 /// Creates blank screens for animation transitions
-void SplashPanel::Init(IGpioProvider* gpio)
+void SplashPanel::Init()
 {
     log_d("Initializing splash panel screen and animation components");
     if (!displayProvider_) {
@@ -55,7 +55,7 @@ void SplashPanel::Init(IGpioProvider* gpio)
 
 /// @brief Show the screen
 /// @param callbackFunction the function to call when the splash screen is complete
-void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void SplashPanel::Load(std::function<void()> callbackFunction)
 {
     log_i("Loading splash panel with fade-in animation");
 
@@ -76,7 +76,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void SplashPanel::Update(std::function<void()> callbackFunction)
 {
     callbackFunction();
 }

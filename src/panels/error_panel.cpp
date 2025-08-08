@@ -36,11 +36,11 @@ ErrorPanel::~ErrorPanel()
 
 // Core Functionality Methods
 /// @brief Initialize the error panel and its UI structure
-void ErrorPanel::Init(IGpioProvider* gpio)
+void ErrorPanel::Init()
 {
     log_d("Initializing error panel");
 
-    if (!displayProvider_ || !gpio) {
+    if (!displayProvider_ || !gpioProvider_) {
         log_e("ErrorPanel requires display and gpio providers");
         return;
     }
@@ -62,7 +62,7 @@ void ErrorPanel::Init(IGpioProvider* gpio)
 }
 
 /// @brief Load the error panel UI components
-void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void ErrorPanel::Load(std::function<void()> callbackFunction)
 {
     log_d("Loading error panel with current errors");
 
@@ -96,7 +96,7 @@ void ErrorPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpi
 }
 
 /// @brief Update the error panel with current error data
-void ErrorPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio)
+void ErrorPanel::Update(std::function<void()> callbackFunction)
 {
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();

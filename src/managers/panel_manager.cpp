@@ -154,7 +154,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 
     panel_ = CreatePanel(panelName);
     if (panel_) {
-        panel_->Init(gpioProvider_);
+        panel_->Init();
 
         // Make a copy of the panel name to avoid pointer issues
         strncpy(currentPanelBuffer, panelName, sizeof(currentPanelBuffer) - 1);
@@ -180,7 +180,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
         */
 
         SetUiState(UIState::LOADING);
-        panel_->Load(completionCallback, gpioProvider_);
+        panel_->Load(completionCallback);
         Ticker::handleLvTasks();
     }
 }
@@ -202,7 +202,7 @@ void PanelManager::UpdatePanel()
     if (panel_) {
         SetUiState(UIState::UPDATING);
         panel_->Update([this]()
-                       { this->PanelManager::PanelCompletionCallback(); }, gpioProvider_);
+                       { this->PanelManager::PanelCompletionCallback(); });
         Ticker::handleLvTasks();
     }
 }

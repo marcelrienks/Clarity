@@ -42,9 +42,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::SPLASH;
-    void Init(IGpioProvider *gpio) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio) override;
+    void Init() override;
+    void Load(std::function<void()> callbackFunction) override;
+    void Update(std::function<void()> callbackFunction) override;
     
     // IInputService Interface Implementation
     void OnShortPress() override;
