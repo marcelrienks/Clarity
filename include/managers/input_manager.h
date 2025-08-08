@@ -56,13 +56,6 @@ public:
      * @param panelName Name of the panel for action lookup
      */
     void SetInputService(IInputService* service, const char* panelName);
-    
-    /**
-     * @brief Request navigation to another panel
-     * @param targetPanel Name of the panel to navigate to
-     * @details Called by panels when they need to trigger navigation
-     */
-    void RequestPanelSwitch(const char* targetPanel);
 
     /**
      * @brief Remove current input service

@@ -49,6 +49,8 @@ void InputManager::Init(IPanelService* panelService)
     lastButtonState_ = IsButtonPressed();
     buttonState_ = ButtonState::IDLE;
     
+    log_i("Initial button state: %s", lastButtonState_ ? "PRESSED" : "RELEASED");
+    
     // Register input actions
     RegisterInputActions();
     
@@ -142,6 +144,8 @@ void InputManager::HandleButtonPress()
 {
     unsigned long currentTime = GetCurrentTime();
     
+    log_d("Button press detected at %lu ms", currentTime);
+    
     buttonState_ = ButtonState::DEBOUNCE;
     debounceStartTime_ = currentTime;
 }
@@ -221,15 +225,4 @@ void InputManager::RegisterInputActions()
     // ConfigPanel: Short=next option, Long=select
     shortPressActions_[PanelNames::CONFIG] = {nullptr, false}; // Handled internally by panel
     longPressActions_[PanelNames::CONFIG] = {nullptr, false};  // Handled internally by panel
-}
-
-void InputManager::RequestPanelSwitch(const char* targetPanel)
-{
-    if (!targetPanel || !panelService_) {
-        log_e("Invalid panel switch request");
-        return;
-    }
-    
-    log_i("Panel switch requested to: %s", targetPanel);
-    panelService_->CreateAndLoadPanel(targetPanel);
 }

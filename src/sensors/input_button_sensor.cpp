@@ -21,8 +21,11 @@ void InputButtonSensor::Init()
 {
     // Initialize input button sensor on GPIO 34
 
-    // Configure GPIO 34 as input (no pull-up/down needed - button provides 3.3V)
-    gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT);
+    // Configure GPIO 34 as input with pull-down resistor
+    // Button connects to 3.3V when pressed, so we need pull-down to ensure LOW when not pressed
+    gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT_PULLDOWN);
+    
+    log_d("InputButtonSensor initialized on GPIO %d with pull-down", gpio_pins::INPUT_BUTTON);
 }
 
 Reading InputButtonSensor::GetReading()

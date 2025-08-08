@@ -8,8 +8,13 @@
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
-      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio))
+      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
+      currentOilPressureValue_(-1),
+      currentOilTemperatureValue_(-1),
+      lastTheme_("")
 {
+    // Initialize screen_ to nullptr - will be created in Init()
+    screen_ = nullptr;
 }
 
 OemOilPanel::~OemOilPanel()
@@ -234,6 +239,19 @@ void OemOilPanel::UpdateOilTemperature()
     isTemperatureAnimationRunning_ = true;
     // Start temperature gauge animation
     lv_anim_start(&temperatureAnimation_);
+}
+
+// IInputService Interface Implementation
+void OemOilPanel::OnShortPress()
+{
+    // Short press: No action for oil panel
+    log_d("OemOilPanel: Short press - no action");
+}
+
+void OemOilPanel::OnLongPress()
+{
+    // Long press: Handled by InputManager action system
+    log_d("OemOilPanel: Long press - handled by InputManager");
 }
 
 // Static Callback Methods
