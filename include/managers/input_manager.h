@@ -25,7 +25,7 @@ class InputManager
 {
 public:
     // Constructors and Destructors
-    explicit InputManager(std::shared_ptr<InputButtonSensor> buttonSensor);
+    InputManager(std::shared_ptr<InputButtonSensor> buttonSensor, IPanelService* panelService);
     
     /**
      * @brief Register input actions for panels
@@ -40,9 +40,9 @@ public:
     
     /**
      * @brief Initialize GPIO pin and input detection
-     * @param panelService Service for panel switching requests
+     * Uses panelService injected via constructor
      */
-    void Init(IPanelService* panelService);
+    void Init();
 
     /**
      * @brief Process button input events (call regularly from main loop)

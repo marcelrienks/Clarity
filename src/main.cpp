@@ -36,8 +36,7 @@ void initializeServices() {
     displayProvider = std::make_unique<LvglDisplayProvider>(device->screen);
     
     log_d("Creating StyleManager...");
-    styleManager = std::make_unique<StyleManager>();
-    styleManager->Init(Themes::DAY);
+    styleManager = ManagerFactory::createStyleManager(Themes::DAY);
     
     log_d("Creating PreferenceManager...");
     preferenceManager = std::make_unique<PreferenceManager>();

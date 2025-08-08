@@ -37,11 +37,6 @@ public:
      */
     virtual bool IsInitialized() const = 0;
 
-    /**
-     * @brief Initialize the style service with a specific theme
-     * @param theme Theme identifier (e.g., "DAY", "NIGHT")
-     */
-    virtual void Init(const char* theme) = 0;
 
     /**
      * @brief Apply the current theme to a screen object

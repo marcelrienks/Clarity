@@ -3,6 +3,28 @@
 #include <cstring>
 
 // Constructors and Destructors
+StyleManager::StyleManager(const char* theme) : THEME(theme)
+{
+    log_d("Creating StyleManager with theme: %s", theme);
+    
+    lv_style_init(&backgroundStyle);
+    lv_style_init(&textStyle);
+    lv_style_init(&gaugeNormalStyle);
+    lv_style_init(&gaugeWarningStyle);
+    lv_style_init(&gaugeDangerStyle);
+    
+    // Initialize shared gauge component styles
+    lv_style_init(&gaugeIndicatorStyle);
+    lv_style_init(&gaugeItemsStyle);
+    lv_style_init(&gaugeMainStyle);
+    lv_style_init(&gaugeDangerSectionStyle);
+
+    SetTheme(theme);
+    
+    // Mark as initialized
+    initialized_ = true;
+}
+
 StyleManager::~StyleManager()
 {
     ResetStyles();
@@ -12,11 +34,8 @@ StyleManager::~StyleManager()
 
 void StyleManager::InitializeStyles()
 {
-    if (!initialized_) {
-        log_d("Initializing style manager styles");
-        Init(THEME);
-        initialized_ = true;
-    }
+    // Styles already initialized in constructor
+    log_d("StyleManager styles already initialized in constructor");
 }
 
 /// @brief Apply the current theme to a specific screen
@@ -36,32 +55,6 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 
 /// @brief Initialises the styles for the application
 /// @param theme the theme to be applied
-void StyleManager::Init(const char* theme)
-{
-    log_d("Initializing style manager with theme: %s", theme);
-
-    this->THEME = theme;
-
-    lv_style_init(&backgroundStyle);
-    lv_style_init(&textStyle);
-    lv_style_init(&gaugeNormalStyle);
-    lv_style_init(&gaugeWarningStyle);
-    lv_style_init(&gaugeDangerStyle);
-    
-    // Initialize shared gauge component styles
-    lv_style_init(&gaugeIndicatorStyle);
-    lv_style_init(&gaugeItemsStyle);
-    lv_style_init(&gaugeMainStyle);
-    lv_style_init(&gaugeDangerSectionStyle);
-
-    SetTheme(theme);
-    
-    // Mark as initialized
-    initialized_ = true;
-
-    // Don't apply to lv_scr_act() here - it might not be ready
-    // apply_theme_to_screen(lv_scr_act()); // Remove this line
-}
 
 /// @brief Reset all styles to their default state
 void StyleManager::ResetStyles()

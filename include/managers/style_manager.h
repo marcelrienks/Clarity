@@ -61,14 +61,13 @@ class StyleManager : public IStyleService
 {
 public:
     // Constructors and Destructors
-    StyleManager() {}
+    explicit StyleManager(const char* theme);
     ~StyleManager();
     StyleManager(const StyleManager&) = delete;
     StyleManager& operator=(const StyleManager&) = delete;
 
     // Core Functionality Methods (IStyleService implementation)
     void InitializeStyles() override;
-    void Init(const char *theme) override;
     void SetTheme(const char *theme) override;
     void ApplyThemeToScreen(lv_obj_t *screen) override;
 

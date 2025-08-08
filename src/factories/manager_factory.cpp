@@ -39,8 +39,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
 {
     log_d("Creating StyleManager with theme: %s", theme ? theme : "default");
     
-    auto manager = std::make_unique<StyleManager>();
-    manager->Init(theme ? theme : Themes::NIGHT);
+    auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::NIGHT);
     
     return manager;
 }
@@ -96,8 +95,8 @@ std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* 
     // Create InputButtonSensor that InputManager needs
     auto inputButtonSensor = std::make_shared<InputButtonSensor>(gpio);
     
-    auto manager = std::make_unique<InputManager>(inputButtonSensor);
-    manager->Init(panelService);
+    auto manager = std::make_unique<InputManager>(inputButtonSensor, panelService);
+    manager->Init();
     
     return manager;
 }

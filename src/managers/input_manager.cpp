@@ -11,10 +11,10 @@
 #define log_e(...)
 #endif
 
-InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor)
+InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor, IPanelService* panelService)
     : buttonSensor_(buttonSensor)
+    , panelService_(panelService)
     , currentService_(nullptr)
-    , panelService_(nullptr)
     , buttonState_(ButtonState::IDLE)
     , pressStartTime_(0)
     , debounceStartTime_(0)
@@ -23,7 +23,7 @@ InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor)
 {
 }
 
-void InputManager::Init(IPanelService* panelService)
+void InputManager::Init()
 {
     if (initialized_) {
         log_w("InputManager already initialized");
@@ -35,12 +35,10 @@ void InputManager::Init(IPanelService* panelService)
         return;
     }
     
-    if (!panelService) {
-        log_e("Panel service is null");
+    if (!panelService_) {
+        log_e("Panel service is null (should be injected via constructor)");
         return;
     }
-
-    panelService_ = panelService;
     
     // Initialize the button sensor
     buttonSensor_->Init();
