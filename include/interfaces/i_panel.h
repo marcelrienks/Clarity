@@ -10,6 +10,9 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 
+// Forward declaration
+class IInputService;
+
 /**
  * @interface IPanel
  * @brief Base interface for all screen panels in the Clarity system
@@ -75,6 +78,10 @@ public:
             display_->LoadScreen(screen_);
         }
     }
+    
+    /// @brief Get the input service interface if this panel supports input
+    /// @return Pointer to IInputService or nullptr if not supported
+    virtual IInputService* GetInputService() { return nullptr; }
 
 protected:
     lv_obj_t *screen_ = nullptr;

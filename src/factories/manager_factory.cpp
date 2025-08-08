@@ -81,7 +81,7 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     return manager;
 }
 
-std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* gpio)
+std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* gpio, IPanelService* panelService)
 {
     log_i("Creating InputManager");
     
@@ -89,11 +89,15 @@ std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* 
         throw std::invalid_argument("ManagerFactory::createInputManager requires valid IGpioProvider");
     }
     
+    if (!panelService) {
+        throw std::invalid_argument("ManagerFactory::createInputManager requires valid IPanelService");
+    }
+    
     // Create InputButtonSensor that InputManager needs
     auto inputButtonSensor = std::make_shared<InputButtonSensor>(gpio);
     
     auto manager = std::make_unique<InputManager>(inputButtonSensor);
-    manager->Init();
+    manager->Init(panelService);
     
     return manager;
 }

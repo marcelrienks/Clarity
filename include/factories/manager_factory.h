@@ -71,8 +71,9 @@ public:
     
     /// @brief Create InputManager with injected sensor dependencies
     /// @param gpio GPIO provider for creating InputButtonSensor
+    /// @param panelService Panel service for triggering panel switches
     /// @return Unique pointer to configured InputManager instance
-    static std::unique_ptr<InputManager> createInputManager(IGpioProvider* gpio);
+    static std::unique_ptr<InputManager> createInputManager(IGpioProvider* gpio, IPanelService* panelService);
 
 private:
     // Private constructor to prevent instantiation

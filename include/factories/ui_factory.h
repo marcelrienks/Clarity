@@ -63,4 +63,5 @@ public:
     static std::unique_ptr<IPanel> createSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     static std::unique_ptr<IPanel> createOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     static std::unique_ptr<IPanel> createErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    static std::unique_ptr<IPanel> createConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
 };

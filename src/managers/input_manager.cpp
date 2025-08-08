@@ -1,4 +1,5 @@
 #include "managers/input_manager.h"
+#include "utilities/types.h"
 #include <Arduino.h>
 
 #ifdef CLARITY_DEBUG
@@ -13,6 +14,7 @@
 InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor)
     : buttonSensor_(buttonSensor)
     , currentService_(nullptr)
+    , panelService_(nullptr)
     , buttonState_(ButtonState::IDLE)
     , pressStartTime_(0)
     , debounceStartTime_(0)
@@ -21,7 +23,7 @@ InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor)
 {
 }
 
-void InputManager::Init()
+void InputManager::Init(IPanelService* panelService)
 {
     if (initialized_) {
         log_w("InputManager already initialized");
@@ -32,13 +34,23 @@ void InputManager::Init()
         log_e("Button sensor is null");
         return;
     }
+    
+    if (!panelService) {
+        log_e("Panel service is null");
+        return;
+    }
 
+    panelService_ = panelService;
+    
     // Initialize the button sensor
     buttonSensor_->Init();
     
     // Initialize state
     lastButtonState_ = IsButtonPressed();
     buttonState_ = ButtonState::IDLE;
+    
+    // Register input actions
+    RegisterInputActions();
     
     initialized_ = true;
     log_i("InputManager initialized");
@@ -81,10 +93,20 @@ void InputManager::ProcessInputEvents()
         case ButtonState::PRESSED:
             // Check for long press threshold
             if (currentTime - pressStartTime_ >= LONG_PRESS_THRESHOLD_MS) {
-                if (currentService_) {
-                    log_i("Long press detected");
+                log_i("Long press detected");
+                
+                // Check for panel switch action first
+                auto it = longPressActions_.find(currentPanelName_);
+                if (it != longPressActions_.end() && it->second.enabled && it->second.targetPanel) {
+                    log_i("Long press triggers panel switch to: %s", it->second.targetPanel);
+                    if (panelService_) {
+                        panelService_->CreateAndLoadPanel(it->second.targetPanel);
+                    }
+                } else if (currentService_) {
+                    // No panel switch action, delegate to panel's handler
                     currentService_->OnLongPress();
                 }
+                
                 buttonState_ = ButtonState::LONG_PRESS_SENT;
             }
             
@@ -103,10 +125,11 @@ void InputManager::ProcessInputEvents()
     }
 }
 
-void InputManager::SetInputService(IInputService* service)
+void InputManager::SetInputService(IInputService* service, const char* panelName)
 {
     currentService_ = service;
-    log_d("Input service set: %p", service);
+    currentPanelName_ = panelName ? panelName : "";
+    log_d("Input service set for panel %s: %p", panelName, service);
 }
 
 void InputManager::ClearInputService()
@@ -132,8 +155,17 @@ void InputManager::HandleButtonRelease()
         unsigned long pressDuration = currentTime - pressStartTime_;
         
         if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS) {
-            if (currentService_) {
-                log_i("Short press detected");
+            log_i("Short press detected");
+            
+            // Check for panel switch action first
+            auto it = shortPressActions_.find(currentPanelName_);
+            if (it != shortPressActions_.end() && it->second.enabled && it->second.targetPanel) {
+                log_i("Short press triggers panel switch to: %s", it->second.targetPanel);
+                if (panelService_) {
+                    panelService_->CreateAndLoadPanel(it->second.targetPanel);
+                }
+            } else if (currentService_) {
+                // No panel switch action, delegate to panel's handler
                 currentService_->OnShortPress();
             }
         }
@@ -166,4 +198,38 @@ unsigned long InputManager::GetCurrentTime() const
 {
     // Use millis() equivalent - this will need to be mocked for testing
     return millis();
+}
+
+void InputManager::RegisterInputActions()
+{
+    log_d("Registering input actions for panels");
+    
+    // Configure input actions based on input.md specification
+    
+    // OilPanel: Short=none, Long=config
+    shortPressActions_[PanelNames::OIL] = {nullptr, false};
+    longPressActions_[PanelNames::OIL] = {PanelNames::CONFIG, true};
+    
+    // SplashPanel: Short=skip animation, Long=config
+    shortPressActions_[PanelNames::SPLASH] = {nullptr, false};  // Handled internally by panel
+    longPressActions_[PanelNames::SPLASH] = {PanelNames::CONFIG, true};
+    
+    // ErrorPanel: Short=cycle errors, Long=clear all
+    shortPressActions_[PanelNames::ERROR] = {nullptr, false};  // Handled internally by panel
+    longPressActions_[PanelNames::ERROR] = {nullptr, false};   // Handled internally by panel
+    
+    // ConfigPanel: Short=next option, Long=select
+    shortPressActions_[PanelNames::CONFIG] = {nullptr, false}; // Handled internally by panel
+    longPressActions_[PanelNames::CONFIG] = {nullptr, false};  // Handled internally by panel
+}
+
+void InputManager::RequestPanelSwitch(const char* targetPanel)
+{
+    if (!targetPanel || !panelService_) {
+        log_e("Invalid panel switch request");
+        return;
+    }
+    
+    log_i("Panel switch requested to: %s", targetPanel);
+    panelService_->CreateAndLoadPanel(targetPanel);
 }

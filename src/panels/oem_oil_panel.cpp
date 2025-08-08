@@ -8,7 +8,7 @@
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
-      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)) 
+      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio))
 {
 }
 
@@ -351,3 +351,9 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     
     return sensorValue;
 }
+
+// IPanel override to provide input service via composition - temporarily disabled
+// IInputService* OemOilPanel::GetInputService()
+// {
+//     return inputHandler_.get();
+// }

@@ -1,8 +1,12 @@
 #pragma once
 
 #include "interfaces/i_input_service.h"
+#include "interfaces/i_panel_service.h"
 #include "sensors/input_button_sensor.h"
+#include "utilities/types.h"
 #include <memory>
+#include <unordered_map>
+#include <string>
 
 /**
  * @class InputManager
@@ -22,6 +26,12 @@ class InputManager
 public:
     // Constructors and Destructors
     explicit InputManager(std::shared_ptr<InputButtonSensor> buttonSensor);
+    
+    /**
+     * @brief Register input actions for panels
+     * @details Must be called after Init() to configure panel-specific actions
+     */
+    void RegisterInputActions();
     InputManager(const InputManager&) = delete;
     InputManager& operator=(const InputManager&) = delete;
     ~InputManager() = default;
@@ -30,8 +40,9 @@ public:
     
     /**
      * @brief Initialize GPIO pin and input detection
+     * @param panelService Service for panel switching requests
      */
-    void Init();
+    void Init(IPanelService* panelService);
 
     /**
      * @brief Process button input events (call regularly from main loop)
@@ -42,8 +53,16 @@ public:
     /**
      * @brief Register a panel as the current input service
      * @param service Pointer to panel implementing IInputService
+     * @param panelName Name of the panel for action lookup
      */
-    void SetInputService(IInputService* service);
+    void SetInputService(IInputService* service, const char* panelName);
+    
+    /**
+     * @brief Request navigation to another panel
+     * @param targetPanel Name of the panel to navigate to
+     * @details Called by panels when they need to trigger navigation
+     */
+    void RequestPanelSwitch(const char* targetPanel);
 
     /**
      * @brief Remove current input service
@@ -72,9 +91,20 @@ private:
     bool IsButtonPressed() const;
     unsigned long GetCurrentTime() const;
 
+    // Input action structure
+    struct InputAction {
+        const char* targetPanel;  // Panel to load
+        bool enabled;            // Whether action is enabled
+    };
+    
     // Dependencies
     std::shared_ptr<InputButtonSensor> buttonSensor_;
     IInputService* currentService_;
+    IPanelService* panelService_;
+    
+    // Action mappings (panel name -> action)
+    std::unordered_map<std::string, InputAction> shortPressActions_;
+    std::unordered_map<std::string, InputAction> longPressActions_;
 
     // State tracking
     ButtonState buttonState_;
@@ -82,4 +112,5 @@ private:
     unsigned long debounceStartTime_;
     bool lastButtonState_;
     bool initialized_;
+    std::string currentPanelName_;
 };

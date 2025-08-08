@@ -55,6 +55,9 @@ public:
     void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
     void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
     void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    
+    // IPanel override - no input service needed
+    IInputService* GetInputService() override { return nullptr; }
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;
@@ -87,7 +90,7 @@ private:
     IStyleService *styleService_;
 
     // Instance Data Members - UI Objects
-    lv_obj_t *screen_; // All panels should always have their own screens
+    // screen_ is inherited from IPanel base class
 
     // Instance Data Members - Components and Sensors
     std::shared_ptr<IComponent> oemOilPressureComponent_;
@@ -106,4 +109,5 @@ private:
     // Instance Data Members - Animation Objects
     lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)
     lv_anim_t temperatureAnimation_;
+    
 };

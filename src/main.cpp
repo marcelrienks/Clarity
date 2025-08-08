@@ -58,7 +58,10 @@ void initializeServices() {
     );
     
     log_d("Creating InputManager...");
-    inputManager = ManagerFactory::createInputManager(gpioProvider.get());
+    inputManager = ManagerFactory::createInputManager(gpioProvider.get(), panelManager.get());
+    
+    log_d("Connecting InputManager to PanelManager...");
+    panelManager->SetInputManager(inputManager.get());
     
     log_d("Initializing ErrorManager...");
     // ErrorManager is a singleton, just initialize it

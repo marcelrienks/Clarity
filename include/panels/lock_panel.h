@@ -54,7 +54,7 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
-    lv_obj_t *screen_; // All panels should always have their own screens
+    // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> lockComponent_;
     std::shared_ptr<LockSensor> lockSensor_;
     ComponentLocation centerLocation_;

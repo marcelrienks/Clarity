@@ -1,5 +1,7 @@
 #include "managers/panel_manager.h"
 #include "managers/error_manager.h"
+#include "managers/input_manager.h"
+#include "interfaces/i_input_service.h"
 #include "utilities/ticker.h"
 #include <esp32-hal-log.h>
 #include <cstring>
@@ -78,6 +80,8 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
         uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
     } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
         uniquePanel = UIFactory::createErrorPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::CONFIG) == 0) {
+        uniquePanel = UIFactory::createConfigPanel(gpioProvider_, displayProvider_, styleService_);
     } else {
         log_e("Unknown panel type: %s", panelName);
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager", 
@@ -135,6 +139,13 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     if (panel_)
     {
         log_d("Cleaning up existing panel before creating new one");
+        
+        // Unregister input service if current panel implements it
+        if (inputManager_)
+        {
+            inputManager_->ClearInputService();
+        }
+        
         panel_.reset();
     }
 
@@ -146,6 +157,21 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
         strncpy(currentPanelBuffer, panelName, sizeof(currentPanelBuffer) - 1);
         currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';
         currentPanel = currentPanelBuffer;
+        
+        // Register input service if panel implements it (using composition approach)
+        if (inputManager_)
+        {
+            IInputService* inputService = panel_->GetInputService();
+            if (inputService)
+            {
+                log_i("Panel %s implements IInputService, registering for input", panelName);
+                inputManager_->SetInputService(inputService, panelName);
+            }
+            else
+            {
+                log_d("Panel %s does not implement IInputService", panelName);
+            }
+        }
 
         SetUiState(UIState::LOADING);
         panel_->Load(completionCallback, gpioProvider_, displayProvider_);
@@ -198,5 +224,11 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
     SetUiState(UIState::IDLE);
     // No need to clear triggers - GPIO state manages trigger active/inactive status
+}
+
+/// @brief Set the InputManager for panel input handling
+void PanelManager::SetInputManager(InputManager* inputManager)
+{
+    inputManager_ = inputManager;
 }
 
