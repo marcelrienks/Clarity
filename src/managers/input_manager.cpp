@@ -1,4 +1,5 @@
 #include "managers/input_manager.h"
+#include "actions/input_actions.h"
 #include "utilities/types.h"
 #include <Arduino.h>
 
@@ -95,7 +96,7 @@ void InputManager::ProcessInputEvents()
             if (currentTime - pressStartTime_ >= LONG_PRESS_THRESHOLD_MS) {
                 log_i("Long press detected");
                 
-                // Check for panel switch action first
+                // Check for legacy panel switch action first (backward compatibility)
                 auto it = longPressActions_.find(currentPanelName_);
                 if (it != longPressActions_.end() && it->second.enabled && it->second.targetPanel) {
                     log_i("Long press triggers panel switch to: %s", it->second.targetPanel);
@@ -103,13 +104,19 @@ void InputManager::ProcessInputEvents()
                         panelService_->CreateAndLoadPanel(it->second.targetPanel);
                     }
                 } else if (currentService_) {
-                    // Check if panel can process input immediately
-                    if (currentService_->CanProcessInput()) {
-                        currentService_->OnLongPress();
-                    } else {
-                        // Store the input for later processing
-                        pendingInput_ = {PendingInput::LONG_PRESS, currentTime};
-                        log_d("Long press stored for later processing");
+                    // Get action from current panel
+                    auto action = currentService_->GetLongPressAction();
+                    if (action) {
+                        // Check if panel can process action immediately
+                        if (currentService_->CanProcessInput() && action->CanExecute()) {
+                            log_d("Executing long press action immediately: %s", action->GetDescription());
+                            action->Execute();
+                        } else {
+                            // Store the action for later processing (overwrites any pending short press)
+                            pendingAction_.action = std::move(action);
+                            pendingAction_.timestamp = currentTime;
+                            log_d("Long press action queued for later: %s", pendingAction_.action->GetDescription());
+                        }
                     }
                 }
                 
@@ -165,7 +172,7 @@ void InputManager::HandleButtonRelease()
         if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS) {
             log_i("Short press detected");
             
-            // Check for panel switch action first
+            // Check for legacy panel switch action first (backward compatibility)
             auto it = shortPressActions_.find(currentPanelName_);
             if (it != shortPressActions_.end() && it->second.enabled && it->second.targetPanel) {
                 log_i("Short press triggers panel switch to: %s", it->second.targetPanel);
@@ -173,13 +180,19 @@ void InputManager::HandleButtonRelease()
                     panelService_->CreateAndLoadPanel(it->second.targetPanel);
                 }
             } else if (currentService_) {
-                // Check if panel can process input immediately
-                if (currentService_->CanProcessInput()) {
-                    currentService_->OnShortPress();
-                } else {
-                    // Store the input for later processing
-                    pendingInput_ = {PendingInput::SHORT_PRESS, currentTime};
-                    log_d("Short press stored for later processing");
+                // Get action from current panel
+                auto action = currentService_->GetShortPressAction();
+                if (action) {
+                    // Check if panel can process action immediately
+                    if (currentService_->CanProcessInput() && action->CanExecute()) {
+                        log_d("Executing short press action immediately: %s", action->GetDescription());
+                        action->Execute();
+                    } else {
+                        // Store the action for later processing
+                        pendingAction_.action = std::move(action);
+                        pendingAction_.timestamp = currentTime;
+                        log_d("Short press action queued for later: %s", pendingAction_.action->GetDescription());
+                    }
                 }
             }
         }
@@ -214,32 +227,72 @@ unsigned long InputManager::GetCurrentTime() const
     return millis();
 }
 
+// IInterrupt Interface Implementation
+
+void InputManager::CheckInterrupts()
+{
+    if (!initialized_) {
+        return;
+    }
+    
+    // Process button input events
+    ProcessInputEvents();
+    
+    // Process any pending actions
+    ProcessPendingActions();
+}
+
+bool InputManager::HasPendingInterrupts() const
+{
+    if (!initialized_) {
+        return false;
+    }
+    
+    // Check if button state has changed or if we have pending actions
+    bool currentButtonState = IsButtonPressed();
+    bool buttonStateChanged = (currentButtonState != lastButtonState_);
+    bool hasPendingAction = pendingAction_.HasAction();
+    bool inActiveState = (buttonState_ != ButtonState::IDLE);
+    
+    return buttonStateChanged || hasPendingAction || inActiveState;
+}
+
+// Action Processing Methods
+
+void InputManager::ProcessPendingActions()
+{
+    if (!pendingAction_.HasAction()) {
+        return;
+    }
+    
+    unsigned long currentTime = GetCurrentTime();
+    
+    // Check if pending action has expired
+    if (currentTime - pendingAction_.timestamp > INPUT_TIMEOUT_MS) {
+        log_d("Pending action expired, discarding: %s", pendingAction_.action->GetDescription());
+        pendingAction_.Clear();
+        return;
+    }
+    
+    // Check if current service can now process the action
+    if (currentService_ && currentService_->CanProcessInput()) {
+        log_d("Executing queued action: %s", pendingAction_.action->GetDescription());
+        
+        if (pendingAction_.action->CanExecute()) {
+            pendingAction_.action->Execute();
+        }
+        
+        // Clear the pending action after processing
+        pendingAction_.Clear();
+    }
+}
+
+// Legacy Methods (for backward compatibility)
+
 void InputManager::ProcessPendingInputs()
 {
-    if (pendingInput_.type != PendingInput::NONE) {
-        unsigned long currentTime = GetCurrentTime();
-        
-        // Check if pending input has expired
-        if (currentTime - pendingInput_.timestamp > INPUT_TIMEOUT_MS) {
-            log_d("Pending input expired, discarding");
-            pendingInput_.type = PendingInput::NONE;
-            return;
-        }
-        
-        // Check if current service can now process the input
-        if (currentService_ && currentService_->CanProcessInput()) {
-            log_d("Processing queued input");
-            
-            if (pendingInput_.type == PendingInput::SHORT_PRESS) {
-                currentService_->OnShortPress();
-            } else if (pendingInput_.type == PendingInput::LONG_PRESS) {
-                currentService_->OnLongPress();
-            }
-            
-            // Clear the pending input after processing
-            pendingInput_.type = PendingInput::NONE;
-        }
-    }
+    // Redirect to new action-based method
+    ProcessPendingActions();
 }
 
 void InputManager::RegisterInputActions()

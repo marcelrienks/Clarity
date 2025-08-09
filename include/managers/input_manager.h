@@ -1,7 +1,9 @@
 #pragma once
 
+#include "interfaces/i_interrupt.h"
 #include "interfaces/i_input_service.h"
 #include "interfaces/i_panel_service.h"
+#include "interfaces/i_input_action.h"
 #include "sensors/input_button_sensor.h"
 #include "utilities/types.h"
 #include <memory>
@@ -10,18 +12,20 @@
 
 /**
  * @class InputManager
- * @brief Centralized button input management with debouncing and timing logic
+ * @brief Centralized button input management with action-based workflow
  * 
  * @details This class handles GPIO 34 button input detection, debouncing, and 
- * timing logic to distinguish between short and long presses. It provides a
- * clean interface for panels to register as input handlers.
+ * timing logic to distinguish between short and long presses. It uses an
+ * action-based approach where panels provide action objects that InputManager
+ * executes when appropriate, supporting queuing during animations.
  * 
- * @architecture Separate from trigger system - dedicated to button input
+ * @architecture Implements IInterrupt for unified interrupt handling
  * @gpio_pin GPIO 34 with rising edge detection (3.3V pull-up)
  * @timing Short press: 50ms-500ms, Long press: >500ms, Max: 3000ms
  * @debouncing 50ms debounce window to prevent false triggers
+ * @priority 50 (lower than triggers, higher than background tasks)
  */
-class InputManager
+class InputManager : public IInterrupt
 {
 public:
     // Constructors and Destructors
@@ -44,15 +48,41 @@ public:
      */
     void Init();
 
+    // IInterrupt Interface Implementation
+    
+    /**
+     * @brief Check for pending interrupts and process them (IInterrupt interface)
+     * @details Called by InterruptManager during idle time
+     */
+    void CheckInterrupts() override;
+
+    /**
+     * @brief Check if there are pending input interrupts (IInterrupt interface)
+     * @details Quick check without processing for optimization
+     * @return true if input events are pending
+     */
+    bool HasPendingInterrupts() const override;
+
+    /**
+     * @brief Get interrupt priority level (IInterrupt interface)
+     * @details Input priority is 50 (lower than triggers=100)
+     * @return Priority value of 50
+     */
+    int GetPriority() const override { return 50; }
+
+    // Legacy Methods (for backward compatibility during transition)
+    
     /**
      * @brief Process button input events (call regularly from main loop)
      * @details Handles debouncing, timing, and event generation
+     * @deprecated Use CheckInterrupts() via InterruptManager instead
      */
     void ProcessInputEvents();
 
     /**
      * @brief Process any pending input events that were queued
      * @details Should be called after ProcessInputEvents() in main loop
+     * @deprecated Integrated into CheckInterrupts() method
      */
     void ProcessPendingInputs();
 
@@ -85,10 +115,16 @@ private:
     static constexpr unsigned long MAX_PRESS_TIME_MS = 3000;
     static constexpr unsigned long INPUT_TIMEOUT_MS = 3000;
 
-    // Pending input structure
-    struct PendingInput {
-        enum Type { NONE, SHORT_PRESS, LONG_PRESS } type = NONE;
+    // Pending action structure  
+    struct PendingAction {
+        std::unique_ptr<IInputAction> action = nullptr;
         unsigned long timestamp = 0;
+        
+        bool HasAction() const { return action != nullptr; }
+        void Clear() { 
+            action.reset(); 
+            timestamp = 0; 
+        }
     };
 
     // Input processing methods
@@ -122,5 +158,5 @@ private:
     bool lastButtonState_;
     bool initialized_;
     std::string currentPanelName_;
-    PendingInput pendingInput_;
+    PendingAction pendingAction_;
 };

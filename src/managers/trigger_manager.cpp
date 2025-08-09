@@ -307,3 +307,28 @@ bool TriggerManager::HasTrigger(const std::string& triggerName) const {
     }
     return false;
 }
+
+// IInterrupt Interface Implementation
+
+void TriggerManager::CheckInterrupts()
+{
+    // Redirect to existing trigger processing method
+    ProcessTriggerEvents();
+}
+
+bool TriggerManager::HasPendingInterrupts() const
+{
+    if (!initialized_) {
+        return false;
+    }
+    
+    // Check if any sensor states have changed since last check
+    // This provides a quick optimization without processing all triggers
+    
+    bool keyChanged = keySensor_ && (keySensor_->GetReading().data.boolValue != lastKeyState_);
+    bool lockChanged = lockSensor_ && (lockSensor_->GetReading().data.boolValue != lastLockState_);
+    bool lightChanged = lightSensor_ && (lightSensor_->GetReading().data.boolValue != lastLightState_);
+    bool errorChanged = debugErrorSensor_ && debugErrorSensor_->GetReading().data.boolValue;
+    
+    return keyChanged || lockChanged || lightChanged || errorChanged;
+}
