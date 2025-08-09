@@ -21,7 +21,7 @@
  * 
  * @architecture Implements IInterrupt for unified interrupt handling
  * @gpio_pin GPIO 34 with rising edge detection (3.3V pull-up)
- * @timing Short press: 50ms-500ms, Long press: >500ms, Max: 3000ms
+ * @timing Short press: 50ms-1000ms, Long press: 1000ms-3000ms, Timeout: >3000ms
  * @debouncing 50ms debounce window to prevent false triggers
  * @priority 50 (lower than triggers, higher than background tasks)
  */
@@ -104,8 +104,9 @@ private:
     // Timing constants (milliseconds)
     static constexpr unsigned long DEBOUNCE_TIME_MS = 50;
     static constexpr unsigned long SHORT_PRESS_MIN_MS = 50;
-    static constexpr unsigned long LONG_PRESS_THRESHOLD_MS = 500;
-    static constexpr unsigned long MAX_PRESS_TIME_MS = 3000;
+    static constexpr unsigned long LONG_PRESS_THRESHOLD_MS = 1000;  // 1 second
+    static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;       // 3 seconds
+    static constexpr unsigned long MAX_PRESS_TIME_MS = 3100;      // Slightly above 3s for timeout
     static constexpr unsigned long INPUT_TIMEOUT_MS = 3000;
 
     // Pending action structure  

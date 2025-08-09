@@ -87,8 +87,10 @@ void InputManager::ProcessInputEvents()
             break;
 
         case ButtonState::PRESSED:
-            // Check for long press threshold
-            if (currentTime - pressStartTime_ >= LONG_PRESS_THRESHOLD_MS) {
+        {
+            // Check for long press threshold (1-3 seconds)
+            unsigned long pressDuration = currentTime - pressStartTime_;
+            if (pressDuration >= LONG_PRESS_THRESHOLD_MS && pressDuration <= LONG_PRESS_MAX_MS && buttonState_ != ButtonState::LONG_PRESS_SENT) {
                 log_i("Long press detected");
                 
                 if (currentService_) {
@@ -121,6 +123,7 @@ void InputManager::ProcessInputEvents()
             // Check for timeout
             CheckPressTimeout();
             break;
+        }
 
         case ButtonState::LONG_PRESS_SENT:
             CheckPressTimeout();
@@ -170,7 +173,11 @@ void InputManager::HandleButtonRelease()
         // Calculate press duration
         unsigned long pressDuration = currentTime - pressStartTime_;
         
-        if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS) {
+        if (pressDuration > LONG_PRESS_MAX_MS) {
+            // Press was too long (>3 seconds), ignore it
+            log_w("Button press too long (%lu ms), ignoring", pressDuration);
+        }
+        else if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS) {
             log_i("Short press detected");
             
             if (currentService_) {
@@ -193,6 +200,31 @@ void InputManager::HandleButtonRelease()
                         pendingAction_.action = std::move(action);
                         pendingAction_.timestamp = currentTime;
                         log_d("Short press action queued for later: %s", pendingAction_.action->GetDescription());
+                    }
+                }
+            }
+        }
+        else if (pressDuration >= LONG_PRESS_THRESHOLD_MS && pressDuration <= LONG_PRESS_MAX_MS) {
+            // This is a long press that completed without being sent during press hold
+            log_i("Long press detected on release");
+            
+            if (currentService_) {
+                auto action = currentService_->GetLongPressAction();
+                if (action) {
+                    if (currentService_->CanProcessInput() && action->CanExecute()) {
+                        log_d("Executing long press action on release: %s", action->GetDescription());
+                        action->Execute();
+                        
+                        // Check if this is a SimplePanelSwitchAction that needs callback handling
+                        if (strcmp(action->GetActionType(), "SimplePanelSwitchAction") == 0 && panelSwitchCallback_) {
+                            auto simplePanelSwitchAction = static_cast<SimplePanelSwitchAction*>(action.get());
+                            log_d("Handling SimplePanelSwitchAction via callback (long press on release)");
+                            panelSwitchCallback_(simplePanelSwitchAction->GetTargetPanel());
+                        }
+                    } else {
+                        pendingAction_.action = std::move(action);
+                        pendingAction_.timestamp = currentTime;
+                        log_d("Long press action queued for later: %s", pendingAction_.action->GetDescription());
                     }
                 }
             }
