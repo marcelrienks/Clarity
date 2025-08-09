@@ -51,6 +51,12 @@ public:
     void ProcessInputEvents();
 
     /**
+     * @brief Process any pending input events that were queued
+     * @details Should be called after ProcessInputEvents() in main loop
+     */
+    void ProcessPendingInputs();
+
+    /**
      * @brief Register a panel as the current input service
      * @param service Pointer to panel implementing IInputService
      * @param panelName Name of the panel for action lookup
@@ -77,6 +83,13 @@ private:
     static constexpr unsigned long SHORT_PRESS_MIN_MS = 50;
     static constexpr unsigned long LONG_PRESS_THRESHOLD_MS = 500;
     static constexpr unsigned long MAX_PRESS_TIME_MS = 3000;
+    static constexpr unsigned long INPUT_TIMEOUT_MS = 3000;
+
+    // Pending input structure
+    struct PendingInput {
+        enum Type { NONE, SHORT_PRESS, LONG_PRESS } type = NONE;
+        unsigned long timestamp = 0;
+    };
 
     // Input processing methods
     void HandleButtonPress();
@@ -109,4 +122,5 @@ private:
     bool lastButtonState_;
     bool initialized_;
     std::string currentPanelName_;
+    PendingInput pendingInput_;
 };

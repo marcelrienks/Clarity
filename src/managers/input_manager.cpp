@@ -103,8 +103,14 @@ void InputManager::ProcessInputEvents()
                         panelService_->CreateAndLoadPanel(it->second.targetPanel);
                     }
                 } else if (currentService_) {
-                    // No panel switch action, process immediately
-                    currentService_->OnLongPress();
+                    // Check if panel can process input immediately
+                    if (currentService_->CanProcessInput()) {
+                        currentService_->OnLongPress();
+                    } else {
+                        // Store the input for later processing
+                        pendingInput_ = {PendingInput::LONG_PRESS, currentTime};
+                        log_d("Long press stored for later processing");
+                    }
                 }
                 
                 buttonState_ = ButtonState::LONG_PRESS_SENT;
@@ -167,8 +173,14 @@ void InputManager::HandleButtonRelease()
                     panelService_->CreateAndLoadPanel(it->second.targetPanel);
                 }
             } else if (currentService_) {
-                // No panel switch action, process immediately
-                currentService_->OnShortPress();
+                // Check if panel can process input immediately
+                if (currentService_->CanProcessInput()) {
+                    currentService_->OnShortPress();
+                } else {
+                    // Store the input for later processing
+                    pendingInput_ = {PendingInput::SHORT_PRESS, currentTime};
+                    log_d("Short press stored for later processing");
+                }
             }
         }
     }
@@ -200,6 +212,34 @@ unsigned long InputManager::GetCurrentTime() const
 {
     // Use millis() equivalent - this will need to be mocked for testing
     return millis();
+}
+
+void InputManager::ProcessPendingInputs()
+{
+    if (pendingInput_.type != PendingInput::NONE) {
+        unsigned long currentTime = GetCurrentTime();
+        
+        // Check if pending input has expired
+        if (currentTime - pendingInput_.timestamp > INPUT_TIMEOUT_MS) {
+            log_d("Pending input expired, discarding");
+            pendingInput_.type = PendingInput::NONE;
+            return;
+        }
+        
+        // Check if current service can now process the input
+        if (currentService_ && currentService_->CanProcessInput()) {
+            log_d("Processing queued input");
+            
+            if (pendingInput_.type == PendingInput::SHORT_PRESS) {
+                currentService_->OnShortPress();
+            } else if (pendingInput_.type == PendingInput::LONG_PRESS) {
+                currentService_->OnLongPress();
+            }
+            
+            // Clear the pending input after processing
+            pendingInput_.type = PendingInput::NONE;
+        }
+    }
 }
 
 void InputManager::RegisterInputActions()

@@ -194,3 +194,9 @@ void ErrorPanel::OnLongPress()
         // In a future update, this could trigger a panel change
     }
 }
+
+bool ErrorPanel::CanProcessInput() const
+{
+    // ErrorPanel can always process input (no animations that block input)
+    return true;
+}

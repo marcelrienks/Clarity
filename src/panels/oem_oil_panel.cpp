@@ -278,6 +278,12 @@ void OemOilPanel::OnLongPress()
     log_d("OemOilPanel: Long press - handled by InputManager");
 }
 
+bool OemOilPanel::CanProcessInput() const
+{
+    // OemOilPanel can always process input (no animations that block input)
+    return true;
+}
+
 // Static Callback Methods
 
 /// @brief The callback to be run once show panel has completed

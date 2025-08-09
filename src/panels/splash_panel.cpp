@@ -151,3 +151,9 @@ void SplashPanel::OnLongPress()
     // No animation interruption allowed - input will be queued for when splash completes
     log_d("SplashPanel: Input received during animation - will be processed after completion");
 }
+
+bool SplashPanel::CanProcessInput() const
+{
+    // SplashPanel never processes input directly - always queue for after animation
+    return false;
+}

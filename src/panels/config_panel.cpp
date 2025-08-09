@@ -184,3 +184,9 @@ void ConfigPanel::OnLongPress()
     
     ExecuteCurrentOption();
 }
+
+bool ConfigPanel::CanProcessInput() const
+{
+    // ConfigPanel can always process input (no animations that block input)
+    return true;
+}

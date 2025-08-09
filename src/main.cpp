@@ -112,6 +112,9 @@ void loop()
     // Process input events directly
     inputManager->ProcessInputEvents();
     
+    // Process any pending input events that were queued
+    inputManager->ProcessPendingInputs();
+    
     panelManager->UpdatePanel();
     Ticker::handleLvTasks();
     

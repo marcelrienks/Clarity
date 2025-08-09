@@ -54,6 +54,7 @@ public:
     // IInputService Interface Implementation
     void OnShortPress() override;
     void OnLongPress() override;
+    bool CanProcessInput() const override;
     
     // IPanel override to provide input service
     IInputService* GetInputService() override { return this; }
