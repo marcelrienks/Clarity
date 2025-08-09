@@ -115,8 +115,6 @@ void loop()
     panelManager->UpdatePanel();
     Ticker::handleLvTasks();
     
-    inputManager->ProcessInputEvents();
-    
     Ticker::handleDynamicDelay(millis());
 }
 
