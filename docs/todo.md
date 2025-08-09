@@ -1,5 +1,7 @@
+* Consolidate panel switching mechanism between PanelManager, and InputManager  
+If possible they should use a similar mechanism in the form of a simplePanelSwitchAction
 * Expand on the idea of interrupts, where we have two types, triggers and input
-    * I think I forgot that triggers do not use queues anymore, they just check current state. If so that means input will not be able to work like that
+    * I think I forgot that triggers do not use queues any more, they just check current state. If so that means input will not be able to work like that
         * If so think through input, and how best it can be built with the idea of letting main loop check for input during idle, and actioning
 * Ensure that in between animation of splash and oil panel needle, that interrupts are checked
 * remove all comments based on changes made, so remove temp, test simplified

@@ -32,6 +32,31 @@ const char* PanelSwitchAction::GetDescription() const
     return description_;
 }
 
+// SimplePanelSwitchAction Implementation
+
+SimplePanelSwitchAction::SimplePanelSwitchAction(const char* targetPanel, std::function<void(const char*)> onExecute)
+    : targetPanel_(targetPanel), onExecute_(onExecute)
+{
+}
+
+void SimplePanelSwitchAction::Execute()
+{
+    if (onExecute_) {
+        log_i("Executing simple panel switch callback for: %s", targetPanel_);
+        onExecute_(targetPanel_);
+    } else {
+        log_i("Simple panel switch requested (no callback): %s", targetPanel_);
+        // The action execution will be handled by the InputManager
+    }
+}
+
+const char* SimplePanelSwitchAction::GetDescription() const
+{
+    snprintf(description_, sizeof(description_), "Switch to panel: %s", 
+             targetPanel_ ? targetPanel_ : "unknown");
+    return description_;
+}
+
 // SkipAnimationAction Implementation
 
 SkipAnimationAction::SkipAnimationAction(std::function<void()> skipCallback)

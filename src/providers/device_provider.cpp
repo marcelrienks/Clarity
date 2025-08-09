@@ -1,10 +1,10 @@
-#include "device.h"
+#include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
 
 // Constructors and Destructors
-/// @brief Device constructor, initialises the device and sets the bus, panel and light configurations
-Device::Device()
+/// @brief DeviceProvider constructor, initialises the device and sets the bus, panel and light configurations
+DeviceProvider::DeviceProvider()
 {
     {
         auto cfg = busInstance_.config();
@@ -70,7 +70,7 @@ Device::Device()
 
 // Core Functionality Methods
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
-void Device::prepare()
+void DeviceProvider::prepare()
 {
     log_i("init...");
 
@@ -95,7 +95,7 @@ void Device::prepare()
     lv_display_t *display = lv_display_create(SCREEN_WIDTH, SCREEN_HEIGHT);
     lv_display_set_color_format(display, LV_COLOR_FORMAT_RGB565);
     lv_display_set_user_data(display, this);
-    lv_display_set_flush_cb(display, Device::display_flush_callback);
+    lv_display_set_flush_cb(display, DeviceProvider::display_flush_callback);
     lv_display_set_buffers(display, lvBuffer_[0], lvBuffer_[1], LV_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
     
     // Create main screen for display provider
@@ -108,9 +108,9 @@ void Device::prepare()
 /// @param display LVGL display object
 /// @param area Screen area to flush
 /// @param data Pixel data buffer to display
-void Device::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
+void DeviceProvider::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
-    Device *deviceInstance = (Device *)lv_display_get_user_data(display);
+    DeviceProvider *deviceInstance = (DeviceProvider *)lv_display_get_user_data(display);
 
     uint32_t width = lv_area_get_width(area);
     uint32_t height = lv_area_get_height(area);

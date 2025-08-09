@@ -38,4 +38,11 @@ public:
      * @return true if action can execute now, false to defer
      */
     virtual bool CanExecute() const { return true; }
+    
+    /**
+     * @brief Get the type identifier for this action
+     * @details Used to identify action types without RTTI/dynamic_cast
+     * @return String identifier for the action type
+     */
+    virtual const char* GetActionType() const = 0;
 };

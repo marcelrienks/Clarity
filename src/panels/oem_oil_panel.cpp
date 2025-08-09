@@ -2,6 +2,7 @@
 #include "factories/ui_factory.h"
 #include "utilities/lv_tools.h"
 #include "managers/style_manager.h"
+#include "actions/input_actions.h"
 
 // Constructors and Destructors
 
@@ -265,17 +266,21 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_start(&temperatureAnimation_);
 }
 
-// IInputService Interface Implementation
-void OemOilPanel::OnShortPress()
+std::unique_ptr<IInputAction> OemOilPanel::GetShortPressAction()
 {
     // Short press: No action for oil panel
-    log_d("OemOilPanel: Short press - no action");
+    log_d("OemOilPanel: Short press action requested - returning NoAction");
+    return std::make_unique<NoAction>();
 }
 
-void OemOilPanel::OnLongPress()
+std::unique_ptr<IInputAction> OemOilPanel::GetLongPressAction()
 {
-    // Long press: Handled by InputManager action system
-    log_d("OemOilPanel: Long press - handled by InputManager");
+    // Long press: Switch to CONFIG panel
+    return std::make_unique<SimplePanelSwitchAction>(PanelNames::CONFIG,
+        [](const char* panelName) {
+            log_i("OemOilPanel: Long press - switching to CONFIG panel");
+        }
+    );
 }
 
 bool OemOilPanel::CanProcessInput() const
@@ -302,6 +307,7 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
     
     thisInstance->callbackFunction_();
 }
+
 
 /// @brief Callback when animation has completed. aka update complete
 /// @param animation the object that was animated

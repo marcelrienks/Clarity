@@ -39,9 +39,9 @@ pio.exe run -e release        # Optimized release build with inverted colors
 
 The codebase follows an MVP (Model-View-Presenter) pattern with a layered architecture:
 
-**Device → Display → Panels → Components**
+**DeviceProvider → Display → Panels → Components**
 
-- **Device** (`device.h/cpp`): Hardware abstraction layer managing the display and LVGL integration
+- **DeviceProvider** (`providers/device_provider.h/cpp`): Hardware abstraction layer managing the display and LVGL integration
 - **Panels** (`panels/`): Presenters that coordinate between sensors and components, managing screen layouts
 - **Components** (`components/`): Views that render UI elements (gauges, indicators, etc.)
 - **Sensors** (`sensors/`): Models that handle data acquisition from hardware inputs
@@ -73,7 +73,7 @@ Key build flags:
 
 Target hardware: 240x240 round GC9A01 display
 - SPI interface on SPI2_HOST
-- Hardware pins defined in `device.h`
+- Hardware pins defined in `device_provider.h`
 - LVGL buffer sized for 60-line dual buffering
 
 ## Development Notes

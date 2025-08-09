@@ -59,7 +59,7 @@ class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, InputManager *inputManager);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -106,9 +106,6 @@ public:
     /// @param triggerId ID of the trigger that initiated the panel switch
     void TriggerPanelSwitchCallback(const char *triggerId) override;
     
-    /// @brief Set the InputManager for panel input handling
-    /// @param inputManager Pointer to the InputManager instance
-    void SetInputManager(InputManager* inputManager);
 
 private:
 

@@ -28,10 +28,10 @@
 #define BUZZER -1
 
 /**
- * @class Device
- * @brief Hardware abstraction layer for ESP32 with GC9A01 display
+ * @class DeviceProvider
+ * @brief Hardware abstraction provider for ESP32 with GC9A01 display
  * 
- * @details This class provides the concrete implementation of the IDevice interface,
+ * @details This class provides the concrete implementation of the display provider interface,
  * managing the physical display hardware and LVGL integration. It handles the SPI communication
  * with the GC9A01 display controller and provides display buffer management.
  * 
@@ -47,13 +47,13 @@
  * @context This is the main hardware interface that all panels and components
  * render to. The display is 240x240 pixels with a round form factor.
  */
-class Device : public lgfx::LGFX_Device
+class DeviceProvider : public lgfx::LGFX_Device
 {
 public:
     // Constructors and Destructors
-    Device();
-    Device(const Device &) = delete;
-    Device &operator=(const Device &) = delete;
+    DeviceProvider();
+    DeviceProvider(const DeviceProvider &) = delete;
+    DeviceProvider &operator=(const DeviceProvider &) = delete;
 
     // Core Functionality Methods
     void prepare();

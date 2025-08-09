@@ -29,7 +29,6 @@
 #include <lvgl.h>
 
 // Project Includes
-#include "system/service_container.h"
 #include "utilities/ticker.h"
 
 // Function declarations

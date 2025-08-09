@@ -322,13 +322,12 @@ bool TriggerManager::HasPendingInterrupts() const
         return false;
     }
     
-    // Check if any sensor states have changed since last check
-    // This provides a quick optimization without processing all triggers
+    // For now, we'll do a simple check that's always conservative
+    // In a real implementation, we might track previous states
+    // But since TriggerManager processing is lightweight, we can afford to check always
     
-    bool keyChanged = keySensor_ && (keySensor_->GetReading().data.boolValue != lastKeyState_);
-    bool lockChanged = lockSensor_ && (lockSensor_->GetReading().data.boolValue != lastLockState_);
-    bool lightChanged = lightSensor_ && (lightSensor_->GetReading().data.boolValue != lastLightState_);
-    bool errorChanged = debugErrorSensor_ && debugErrorSensor_->GetReading().data.boolValue;
-    
-    return keyChanged || lockChanged || lightChanged || errorChanged;
+    // Always return true if we have sensors - this ensures triggers are always checked
+    // This is not the most optimized approach, but it's safe and correct
+    return (keySensor_ != nullptr) || (lockSensor_ != nullptr) || 
+           (lightSensor_ != nullptr) || (debugErrorSensor_ != nullptr);
 }

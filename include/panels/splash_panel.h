@@ -8,6 +8,7 @@
 #include "interfaces/i_style_service.h"
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
+#include <memory>
 
 /**
  * @class SplashPanel
@@ -46,9 +47,9 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
-    // IInputService Interface Implementation - Simplified (no animation interruption)
-    void OnShortPress() override;
-    void OnLongPress() override;
+    // IInputService Interface Implementation - Action-based (no animation interruption)
+    std::unique_ptr<IInputAction> GetShortPressAction() override;
+    std::unique_ptr<IInputAction> GetLongPressAction() override;
     bool CanProcessInput() const override;
     
     // IPanel override to provide input service

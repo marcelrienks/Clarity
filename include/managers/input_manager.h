@@ -2,13 +2,13 @@
 
 #include "interfaces/i_interrupt.h"
 #include "interfaces/i_input_service.h"
-#include "interfaces/i_panel_service.h"
 #include "interfaces/i_input_action.h"
 #include "sensors/input_button_sensor.h"
 #include "utilities/types.h"
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <functional>
 
 /**
  * @class InputManager
@@ -29,13 +29,14 @@ class InputManager : public IInterrupt
 {
 public:
     // Constructors and Destructors
-    InputManager(std::shared_ptr<InputButtonSensor> buttonSensor, IPanelService* panelService);
+    InputManager(std::shared_ptr<InputButtonSensor> buttonSensor);
     
     /**
-     * @brief Register input actions for panels
-     * @details Must be called after Init() to configure panel-specific actions
+     * @brief Set callback for panel switch requests from actions
+     * @param callback Function to call when an action requests a panel switch
      */
-    void RegisterInputActions();
+    void SetPanelSwitchCallback(std::function<void(const char*)> callback);
+    
     InputManager(const InputManager&) = delete;
     InputManager& operator=(const InputManager&) = delete;
     ~InputManager() = default;
@@ -44,7 +45,6 @@ public:
     
     /**
      * @brief Initialize GPIO pin and input detection
-     * Uses panelService injected via constructor
      */
     void Init();
 
@@ -78,13 +78,6 @@ public:
      * @deprecated Use CheckInterrupts() via InterruptManager instead
      */
     void ProcessInputEvents();
-
-    /**
-     * @brief Process any pending input events that were queued
-     * @details Should be called after ProcessInputEvents() in main loop
-     * @deprecated Integrated into CheckInterrupts() method
-     */
-    void ProcessPendingInputs();
 
     /**
      * @brief Register a panel as the current input service
@@ -133,22 +126,14 @@ private:
     void CheckPressTimeout();
     bool IsButtonPressed() const;
     unsigned long GetCurrentTime() const;
-
-    // Input action structure
-    struct InputAction {
-        const char* targetPanel;  // Panel to load
-        bool enabled;            // Whether action is enabled
-    };
-
     
+    // Action processing methods
+    void ProcessPendingActions();
+
     // Dependencies
     std::shared_ptr<InputButtonSensor> buttonSensor_;
     IInputService* currentService_;
-    IPanelService* panelService_;
-    
-    // Action mappings (panel name -> action)
-    std::unordered_map<std::string, InputAction> shortPressActions_;
-    std::unordered_map<std::string, InputAction> longPressActions_;
+    std::function<void(const char*)> panelSwitchCallback_;
 
 
     // State tracking

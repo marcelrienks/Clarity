@@ -35,13 +35,13 @@ void PanelManager::RegisterAllPanels()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, InputManager *inputManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), inputManager_(inputManager)
 {
-    if (!display || !gpio || !styleService) {
-        log_e("PanelManager requires all dependencies: display, gpio, and styleService");
+    if (!display || !gpio || !styleService || !inputManager) {
+        log_e("PanelManager requires all dependencies: display, gpio, styleService, and inputManager");
         ErrorManager::Instance().ReportCriticalError("PanelManager", 
-            "Missing required dependencies - display, gpio, or styleService is null");
+            "Missing required dependencies - display, gpio, styleService, or inputManager is null");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
         log_d("Creating PanelManager with injected dependencies");
@@ -226,9 +226,4 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
     // No need to clear triggers - GPIO state manages trigger active/inactive status
 }
 
-/// @brief Set the InputManager for panel input handling
-void PanelManager::SetInputManager(InputManager* inputManager)
-{
-    inputManager_ = inputManager;
-}
 

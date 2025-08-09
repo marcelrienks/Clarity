@@ -15,10 +15,30 @@ public:
     PanelSwitchAction(IPanelService* panelService, const char* targetPanel);
     void Execute() override;
     const char* GetDescription() const override;
+    const char* GetActionType() const override { return "PanelSwitchAction"; }
 
 private:
     IPanelService* panelService_;
     const char* targetPanel_;
+    mutable char description_[64];
+};
+
+/**
+ * @class SimplePanelSwitchAction
+ * @brief Action to request a panel switch without needing IPanelService at creation
+ */
+class SimplePanelSwitchAction : public IInputAction
+{
+public:
+    SimplePanelSwitchAction(const char* targetPanel, std::function<void(const char*)> onExecute = nullptr);
+    void Execute() override;
+    const char* GetDescription() const override;
+    const char* GetActionType() const override { return "SimplePanelSwitchAction"; }
+    const char* GetTargetPanel() const { return targetPanel_; }
+
+private:
+    const char* targetPanel_;
+    std::function<void(const char*)> onExecute_;
     mutable char description_[64];
 };
 
@@ -32,6 +52,7 @@ public:
     SkipAnimationAction(std::function<void()> skipCallback);
     void Execute() override;
     const char* GetDescription() const override;
+    const char* GetActionType() const override { return "SkipAnimationAction"; }
 
 private:
     std::function<void()> skipCallback_;
@@ -49,6 +70,7 @@ public:
     MenuNavigationAction(Direction direction, std::function<void(Direction)> navigationCallback);
     void Execute() override;
     const char* GetDescription() const override;
+    const char* GetActionType() const override { return "MenuNavigationAction"; }
 
 private:
     Direction direction_;
@@ -65,4 +87,5 @@ class NoAction : public IInputAction
 public:
     void Execute() override {} // Do nothing
     const char* GetDescription() const override { return "No action"; }
+    const char* GetActionType() const override { return "NoAction"; }
 };

@@ -19,7 +19,7 @@
  * allocation for the entire application. It implements efficient style sharing
  * to reduce memory usage and provides consistent theming across all components.
  *
- * @design_pattern Service with Dependency Injection - managed by ServiceContainer
+ * @design_pattern Service with Factory Pattern - created by ManagerFactory
  * @theme_system Day/Night themes with customizable color schemes
  * @style_sharing Shared style objects reduce memory fragmentation
  * @memory_optimization Single style instances used by multiple components
