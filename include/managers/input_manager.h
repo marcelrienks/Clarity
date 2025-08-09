@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <string>
+#include <queue>
 
 /**
  * @class InputManager
@@ -62,6 +63,12 @@ public:
      */
     void ClearInputService();
 
+    /**
+     * @brief Process queued input events when LVGL is idle
+     * @details This method should be called from the main loop after LVGL task handling
+     */
+    void ProcessQueuedInputs();
+
 private:
     // Button state tracking
     enum class ButtonState {
@@ -89,6 +96,18 @@ private:
         const char* targetPanel;  // Panel to load
         bool enabled;            // Whether action is enabled
     };
+
+    // Queued input event structure
+    enum class QueuedInputType {
+        SHORT_PRESS,
+        LONG_PRESS
+    };
+
+    struct QueuedInputEvent {
+        QueuedInputType type;
+        IInputService* targetService;
+        std::string panelName;
+    };
     
     // Dependencies
     std::shared_ptr<InputButtonSensor> buttonSensor_;
@@ -98,6 +117,13 @@ private:
     // Action mappings (panel name -> action)
     std::unordered_map<std::string, InputAction> shortPressActions_;
     std::unordered_map<std::string, InputAction> longPressActions_;
+
+    // Input queue for deferred processing
+    std::queue<QueuedInputEvent> inputQueue_;
+    
+    // Queue management methods
+    void QueueInputEvent(QueuedInputType type, IInputService* service, const std::string& panelName);
+    void ExecuteQueuedEvent(const QueuedInputEvent& event);
 
     // State tracking
     ButtonState buttonState_;

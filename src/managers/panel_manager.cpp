@@ -140,14 +140,11 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     {
         log_d("Cleaning up existing panel before creating new one");
         
-        // Temporarily disabled InputManager cleanup to debug heap corruption
-        /*
         // Unregister input service if current panel implements it
         if (inputManager_)
         {
             inputManager_->ClearInputService();
         }
-        */
         
         panel_.reset();
     }
@@ -161,8 +158,6 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
         currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';
         currentPanel = currentPanelBuffer;
         
-        // Temporarily disabled InputManager integration to debug heap corruption
-        /*
         // Register input service if panel implements it (using composition approach)
         if (inputManager_)
         {
@@ -177,7 +172,6 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
                 log_d("Panel %s does not implement IInputService", panelName);
             }
         }
-        */
 
         SetUiState(UIState::LOADING);
         panel_->Load(completionCallback);

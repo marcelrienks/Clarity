@@ -103,8 +103,8 @@ void InputManager::ProcessInputEvents()
                         panelService_->CreateAndLoadPanel(it->second.targetPanel);
                     }
                 } else if (currentService_) {
-                    // No panel switch action, delegate to panel's handler
-                    currentService_->OnLongPress();
+                    // No panel switch action, queue for deferred processing
+                    QueueInputEvent(QueuedInputType::LONG_PRESS, currentService_, currentPanelName_);
                 }
                 
                 buttonState_ = ButtonState::LONG_PRESS_SENT;
@@ -167,8 +167,8 @@ void InputManager::HandleButtonRelease()
                     panelService_->CreateAndLoadPanel(it->second.targetPanel);
                 }
             } else if (currentService_) {
-                // No panel switch action, delegate to panel's handler
-                currentService_->OnShortPress();
+                // No panel switch action, queue for deferred processing
+                QueueInputEvent(QueuedInputType::SHORT_PRESS, currentService_, currentPanelName_);
             }
         }
     }
@@ -223,4 +223,39 @@ void InputManager::RegisterInputActions()
     // ConfigPanel: Short=next option, Long=select
     shortPressActions_[PanelNames::CONFIG] = {nullptr, false}; // Handled internally by panel
     longPressActions_[PanelNames::CONFIG] = {nullptr, false};  // Handled internally by panel
+}
+
+// Queue management methods
+
+void InputManager::QueueInputEvent(QueuedInputType type, IInputService* service, const std::string& panelName)
+{
+    if (service) {
+        inputQueue_.push({type, service, panelName});
+        log_d("Queued %s for panel: %s", (type == QueuedInputType::SHORT_PRESS) ? "SHORT_PRESS" : "LONG_PRESS", panelName.c_str());
+    }
+}
+
+void InputManager::ExecuteQueuedEvent(const QueuedInputEvent& event)
+{
+    log_d("Executing queued %s for panel: %s", 
+          (event.type == QueuedInputType::SHORT_PRESS) ? "SHORT_PRESS" : "LONG_PRESS", 
+          event.panelName.c_str());
+          
+    if (event.targetService) {
+        if (event.type == QueuedInputType::SHORT_PRESS) {
+            event.targetService->OnShortPress();
+        } else {
+            event.targetService->OnLongPress();
+        }
+    }
+}
+
+void InputManager::ProcessQueuedInputs()
+{
+    // Process all queued input events when LVGL is idle
+    while (!inputQueue_.empty()) {
+        auto event = inputQueue_.front();
+        inputQueue_.pop();
+        ExecuteQueuedEvent(event);
+    }
 }

@@ -71,7 +71,6 @@ void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location
     // Apply location settings
     lv_obj_align(scale_, location.align, location.x_offset, location.y_offset);
 
-    // Setup scale properties based on derived class configuration
     create_scale(location.rotation);
     create_icon();
     create_labels();
@@ -252,13 +251,17 @@ void OemOilComponent::create_labels()
     // Create "L" label for low end
     lowLabel_ = lv_label_create(scale_);
     lv_label_set_text(lowLabel_, UIConstants::GAUGE_LOW_LABEL);
-    lv_obj_add_style(lowLabel_, &styleService_->GetTextStyle(), MAIN_DEFAULT);
+    if (styleService_ && styleService_->IsInitialized()) {
+        lv_obj_add_style(lowLabel_, &styleService_->GetTextStyle(), MAIN_DEFAULT);
+    }
     lv_obj_set_style_text_font(lowLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
     // Create "H" label for high end
     highLabel_ = lv_label_create(scale_);
     lv_label_set_text(highLabel_, UIConstants::GAUGE_HIGH_LABEL);
-    lv_obj_add_style(highLabel_, &styleService_->GetTextStyle(), MAIN_DEFAULT);
+    if (styleService_ && styleService_->IsInitialized()) {
+        lv_obj_add_style(highLabel_, &styleService_->GetTextStyle(), MAIN_DEFAULT);
+    }
     lv_obj_set_style_text_font(highLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
     // Calculate label positions based on scale rotation and angle range
@@ -373,20 +376,28 @@ void OemOilComponent::create_scale(int32_t rotation)
     lv_scale_set_major_tick_every(scale_, 3);
     lv_scale_set_label_show(scale_, false); // Disable built-in labels, use custom L/H positioning
 
-    // Apply shared styles to scale parts
-    lv_obj_add_style(scale_, &styleService_->GetGaugeMainStyle(), MAIN_DEFAULT);
-    lv_obj_add_style(scale_, &styleService_->GetGaugeIndicatorStyle(), INDICATOR_DEFAULT);
-    lv_obj_add_style(scale_, &styleService_->GetGaugeItemsStyle(), ITEMS_DEFAULT);
+    if (styleService_ && styleService_->IsInitialized()) {
+        log_d("Applying gauge styles to scale object");
+        lv_obj_add_style(scale_, &styleService_->GetGaugeMainStyle(), MAIN_DEFAULT);
+        lv_obj_add_style(scale_, &styleService_->GetGaugeIndicatorStyle(), INDICATOR_DEFAULT);
+        lv_obj_add_style(scale_, &styleService_->GetGaugeItemsStyle(), ITEMS_DEFAULT);
+    } else {
+        log_w("StyleService not available for gauge style application");
+    }
 
-    // Create danger zone section
     lv_scale_section_t *section = lv_scale_add_section(scale_);
     if (!section) {
         return;
     }
     
-    lv_scale_section_set_style(section, MAIN_DEFAULT, &styleService_->GetGaugeMainStyle());
-    lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
-    lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
+    if (styleService_ && styleService_->IsInitialized()) {
+        log_d("Applying danger zone styles to scale section");
+        lv_scale_section_set_style(section, MAIN_DEFAULT, &styleService_->GetGaugeMainStyle());
+        lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
+        lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
+    } else {
+        log_w("StyleService not available for danger zone style application");
+    }
 
     // Set danger zone range - derived classes will handle specific ranges
     setup_danger_zone(section);

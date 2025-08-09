@@ -6,17 +6,13 @@
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : IPanel(), // Explicitly call base constructor first
-      gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
       currentOilPressureValue_(-1),
       currentOilTemperatureValue_(-1),
       lastTheme_("")
 {
-    // Explicitly initialize inherited screen_ member
-    screen_ = nullptr;
-    
     // Initialize LVGL animation structures to prevent undefined behavior
     lv_anim_init(&pressureAnimation_);
     lv_anim_init(&temperatureAnimation_);
@@ -96,28 +92,27 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
 
-    // Check StyleManager initialization before creating components
+    // Create components for both pressure and temperature
     if (styleService_ && styleService_->IsInitialized()) {
-        log_d("Creating components with properly initialized StyleManager");
+        log_d("Creating pressure and temperature components");
         oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
         oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
     } else {
         log_w("StyleService not properly initialized, skipping component creation");
-        log_d("styleService_ pointer: %p", styleService_);
-        if (styleService_) {
-            log_d("StyleManager initialized: %s", styleService_->IsInitialized() ? "true" : "false");
-        }
     }
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
+    // Render both components
     if (oemOilPressureComponent_) {
         oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
+        log_d("Pressure component rendered successfully");
     }
     if (oemOilTemperatureComponent_) {
         oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+        log_d("Temperature component rendered successfully");
     }
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -125,7 +120,6 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     
     lv_screen_load(screen_);
     
-    // Always apply current theme to the screen when loading (ensures theme is current)
     if (styleService_) {
         styleService_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
@@ -400,7 +394,7 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     return sensorValue;
 }
 
-// IPanel override to provide input service via composition - temporarily disabled
+// IPanel override to provide input service via composition
 // IInputService* OemOilPanel::GetInputService()
 // {
 //     return inputHandler_.get();

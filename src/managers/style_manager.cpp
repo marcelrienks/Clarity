@@ -48,11 +48,23 @@ void StyleManager::InitializeStyles()
 void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
     log_d("Applying current theme styles to screen object - screen: %p, backgroundStyle: %p", screen, &backgroundStyle);
+    
+    // Safety checks
+    if (!screen) {
+        log_w("Cannot apply theme to null screen");
+        return;
+    }
+    
+    if (!initialized_) {
+        log_w("StyleManager not initialized, skipping theme application");
+        return;
+    }
 
+    log_d("About to call lv_obj_add_style...");
     // Only apply the background style to screens
     // Other styles should be applied to specific components that need them
-
     lv_obj_add_style(screen, &backgroundStyle, MAIN_DEFAULT);
+    log_d("lv_obj_add_style completed successfully");
 
     // Don't apply all styles to the same screen - this can cause conflicts
     // Components should apply their own specific styles as needed
@@ -129,13 +141,12 @@ void StyleManager::SetTheme(const char* theme)
     lv_style_set_line_width(&gaugeDangerSectionStyle, 5);
     lv_style_set_line_color(&gaugeDangerSectionStyle, colours.gaugeDanger);
 
-    // Apply the updated theme to the current screen
-    lv_obj_t *current_screen = lv_scr_act();
-    if (current_screen != nullptr) {
-        ApplyThemeToScreen(current_screen);
-        // Force LVGL to refresh the display
-        lv_obj_invalidate(current_screen);
-    }
+    // lv_obj_t *current_screen = lv_scr_act();
+    // if (current_screen != nullptr) {
+    //     ApplyThemeToScreen(current_screen);
+    //     // Force LVGL to refresh the display
+    //     lv_obj_invalidate(current_screen);
+    // }
 }
 
 // Accessor Methods

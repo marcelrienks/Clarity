@@ -46,7 +46,7 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
-    // IInputService Interface Implementation
+    // IInputService Interface Implementation - Simplified (no animation interruption)
     void OnShortPress() override;
     void OnLongPress() override;
     
@@ -75,7 +75,5 @@ private:
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
     
-    // State tracking
-    bool animationSkipped_ = false;
-    lv_timer_t* currentTimer_ = nullptr;
+    // No state tracking needed - simplified approach
 };

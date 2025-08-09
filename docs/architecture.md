@@ -77,6 +77,18 @@ Light sensor triggers theme changes (no panel switch).
 - `IComponent`: UI element rendering
 - `ISensor`: Data acquisition
 
+## History:
+
+Issues and previous architectures that have decided the direction of this project.
+
+## Trigger Interrupts and Input
+
+Attempted in the past to use hardware GPIO interrupts to log messages on queues, in separate core threads, but ultimately this caused mass complexity with sharing state between the cores, and processing through all messages to set up a previous state for logic etc. Ultimately decided on simply checking all GPIO state during main core thread and LVGL idle state. This does mean that triggers are not processed immediately, and there is a delay, but this is minimal, and the architecture is much more reliable.
+
+Also interrupting LVGL and animations causes non stop crashing errors and complexity that does not justify the immediate reaction, both error logs, and input can wait to be processed during idle time rather.
+
+<This section needs to be expanded on>
+
 ## Service Architecture
 
 Dependency injection via service container enables loose coupling and testability.

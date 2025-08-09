@@ -6,21 +6,13 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      animationSkipped_(false), currentTimer_(nullptr)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
 {
     // Component will be created during load() method
 }
 
 SplashPanel::~SplashPanel()
 {
-    // Clean up any active timer
-    if (currentTimer_)
-    {
-        lv_timer_del(currentTimer_);
-        currentTimer_ = nullptr;
-    }
-
     if (screen_)
     {
         lv_obj_del(screen_);
@@ -70,9 +62,8 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     // Render the component
     component_->Render(screen_, splashLocation, displayProvider_);
     
-    // Store timer reference and reset skip flag
-    animationSkipped_ = false;
-    currentTimer_ = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
+    // Start animation sequence (no interruption allowed)
+    lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Update the reading on the screen
@@ -117,7 +108,6 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     auto *fadeOutTimer = lv_timer_create(SplashPanel::fade_out_timer_callback,
                                            _ANIMATION_TIME + _DELAY_TIME + _DISPLAY_TIME,
                                            panel);
-    panel->currentTimer_ = fadeOutTimer;
 
     // Remove the fade_in_timer after transition
     lv_timer_del(fadeInTimer);
@@ -143,7 +133,6 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     auto *completionTimer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
                                              _ANIMATION_TIME + _DELAY_TIME, // Small extra delay to ensure animation is complete
                                              panel);
-    panel->currentTimer_ = completionTimer;
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);
@@ -153,32 +142,12 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 
 void SplashPanel::OnShortPress()
 {
-    // Short press skips animation and loads default panel immediately
-    if (animationSkipped_)
-    {
-        log_d("SplashPanel: Animation already skipped");
-        return;
-    }
-    
-    log_i("SplashPanel: Short press - skipping animation");
-    animationSkipped_ = true;
-    
-    // Cancel current timer if exists
-    if (currentTimer_)
-    {
-        lv_timer_del(currentTimer_);
-        currentTimer_ = nullptr;
-    }
-    
-    // Load blank screen immediately without animation
-    lv_scr_load(blankScreen_);
-    
-    // Execute callback to load default panel
-    callbackFunction_();
+    // No animation interruption allowed - input will be queued for when splash completes
+    log_d("SplashPanel: Input received during animation - will be processed after completion");
 }
 
 void SplashPanel::OnLongPress()
 {
-    // Long press: Handled by InputManager action system
-    // This method exists to satisfy IInputService interface but does nothing
+    // No animation interruption allowed - input will be queued for when splash completes
+    log_d("SplashPanel: Input received during animation - will be processed after completion");
 }
