@@ -52,15 +52,10 @@ jobs:
     - name: Run All Wokwi Integration Tests
       env:
         WOKWI_CLI_TOKEN: ${{ secrets.WOKWI_CLI_TOKEN }}
-      continue-on-error: true
       run: |
         echo "🚗 Running Wokwi Integration Tests..."
         chmod +x run_wokwi_tests.sh
-        if ! ./run_wokwi_tests.sh; then
-          echo "⚠️ Wokwi integration tests failed - continuing anyway"
-          exit 0
-        fi
-        echo "✅ All Wokwi integration tests passed"
+        ./run_wokwi_tests.sh
       
     - name: Upload Test Results
       uses: actions/upload-artifact@v4

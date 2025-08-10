@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
+#include "interfaces/i_input_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
@@ -43,7 +44,7 @@
  * @context The components are currently set to 240x240 size in order to ensure
  * that they maintain a consistent appearance with OEM styling by being shown on either side of the screen.
  */
-class OemOilPanel : public IPanel
+class OemOilPanel : public IPanel, public IInputService
 {
 public:
     // Constructors and Destructors
@@ -52,9 +53,17 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::OIL;
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init() override;
+    void Load(std::function<void()> callbackFunction) override;
+    void Update(std::function<void()> callbackFunction) override;
+    
+    // IInputService Interface Implementation
+    std::unique_ptr<IInputAction> GetShortPressAction() override;
+    std::unique_ptr<IInputAction> GetLongPressAction() override;
+    bool CanProcessInput() const override;
+    
+    // IPanel override to provide input service
+    IInputService* GetInputService() override { return this; }
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;
@@ -87,7 +96,7 @@ private:
     IStyleService *styleService_;
 
     // Instance Data Members - UI Objects
-    lv_obj_t *screen_; // All panels should always have their own screens
+    // screen_ is inherited from IPanel base class
 
     // Instance Data Members - Components and Sensors
     std::shared_ptr<IComponent> oemOilPressureComponent_;
@@ -106,4 +115,5 @@ private:
     // Instance Data Members - Animation Objects
     lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)
     lv_anim_t temperatureAnimation_;
+    
 };

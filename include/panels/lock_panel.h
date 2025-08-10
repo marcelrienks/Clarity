@@ -42,9 +42,9 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::LOCK;
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init() override;
+    void Load(std::function<void()> callbackFunction) override;
+    void Update(std::function<void()> callbackFunction) override;
 
 private:
     // Static Methods
@@ -54,7 +54,7 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
-    lv_obj_t *screen_; // All panels should always have their own screens
+    // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> lockComponent_;
     std::shared_ptr<LockSensor> lockSensor_;
     ComponentLocation centerLocation_;

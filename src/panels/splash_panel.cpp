@@ -1,6 +1,8 @@
 #include "panels/splash_panel.h"
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
+#include "managers/trigger_manager.h"
+#include "actions/input_actions.h"
 
 // Constructors and Destructors
 
@@ -32,21 +34,21 @@ SplashPanel::~SplashPanel()
 
 /// @brief Initialize the screen with component
 /// Creates blank screens for animation transitions
-void SplashPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void SplashPanel::Init()
 {
     log_d("Initializing splash panel screen and animation components");
-    if (!display) {
+    if (!displayProvider_) {
         log_e("SplashPanel requires display provider");
         return;
     }
 
-    blankScreen_ = display->CreateScreen();
-    screen_ = display->CreateScreen();
+    blankScreen_ = displayProvider_->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
 }
 
 /// @brief Show the screen
 /// @param callbackFunction the function to call when the splash screen is complete
-void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void SplashPanel::Load(std::function<void()> callbackFunction)
 {
     log_i("Loading splash panel with fade-in animation");
 
@@ -59,12 +61,14 @@ void SplashPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Render the component
-    component_->Render(screen_, splashLocation, display);
-    lv_timer_t *transition_timer = lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
+    component_->Render(screen_, splashLocation, displayProvider_);
+    
+    // Start animation sequence (no interruption allowed)
+    lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void SplashPanel::Update(std::function<void()> callbackFunction)
 {
     callbackFunction();
 }
@@ -133,4 +137,30 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);
+}
+
+// IInputService Interface Implementation
+
+std::unique_ptr<IInputAction> SplashPanel::GetShortPressAction()
+{
+    // Short press during splash: Skip animation (future enhancement)
+    // For now, return NoAction since we don't interrupt animations
+    log_d("SplashPanel: Short press action requested - returning NoAction (animation will complete)");
+    return std::make_unique<NoAction>();
+}
+
+std::unique_ptr<IInputAction> SplashPanel::GetLongPressAction()
+{
+    // Long press during splash: Switch to CONFIG panel
+    return std::make_unique<SimplePanelSwitchAction>(PanelNames::CONFIG,
+        [](const char* panelName) {
+            log_i("SplashPanel: Long press - switching to CONFIG panel");
+        }
+    );
+}
+
+bool SplashPanel::CanProcessInput() const
+{
+    // SplashPanel never processes input directly - always queue for after animation
+    return false;
 }

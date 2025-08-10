@@ -1,106 +1,116 @@
 #include "main.h"
-#include "device.h"
-#include "managers/preference_manager.h"
-#include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
-#include "managers/panel_manager.h"
-#include "managers/error_manager.h"
+#include "factories/provider_factory.h"
 #include "factories/manager_factory.h"
+#include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
+#include "managers/style_manager.h"
+#include "managers/preference_manager.h"
+#include "managers/input_manager.h"
+#include "managers/panel_manager.h"
+#include "managers/trigger_manager.h"
+#include "managers/interrupt_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/types.h"
 #include "utilities/ticker.h"
 
-// Global services - direct instantiation to avoid service container issues
-std::unique_ptr<Device> device;
+// Global services - factory-created instances
+std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<GpioProvider> gpioProvider;
 std::unique_ptr<LvglDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
+std::unique_ptr<InputManager> inputManager;
 std::unique_ptr<PanelManager> panelManager;
 std::unique_ptr<TriggerManager> triggerManager;
+std::unique_ptr<InterruptManager> interruptManager;
+ErrorManager *errorManager;
 
+bool initializeServices()
+{
+    log_i("Starting Clarity service initialization...");
 
-void initializeServices() {
-    log_d("Starting service initialization...");
-    
-    log_d("Creating Device...");
-    device = std::make_unique<Device>();
-    
-    log_d("Creating GpioProvider...");
-    gpioProvider = std::make_unique<GpioProvider>();
-    
-    log_d("Creating DisplayProvider...");
-    displayProvider = std::make_unique<LvglDisplayProvider>(device->screen);
-    
-    log_d("Creating StyleManager...");
-    styleManager = std::make_unique<StyleManager>();
-    styleManager->Init(Themes::DAY);
-    
-    log_d("Creating PreferenceManager...");
-    preferenceManager = std::make_unique<PreferenceManager>();
-    preferenceManager->Init();
-    
-    log_d("Creating PanelManager...");
-    panelManager = std::make_unique<PanelManager>(
+    // Create providers - factories handle all error checking and logging
+    deviceProvider = ProviderFactory::createDeviceProvider();
+    gpioProvider = ProviderFactory::createGpioProvider();
+    displayProvider = ProviderFactory::createLvglDisplayProvider(deviceProvider.get());
+
+    // Create managers - factories handle all error checking and logging
+    styleManager = ManagerFactory::createStyleManager(Themes::DAY);
+    preferenceManager = ManagerFactory::createPreferenceManager();
+    inputManager = ManagerFactory::createInputManager(gpioProvider.get(), nullptr);
+    panelManager = ManagerFactory::createPanelManager(
         displayProvider.get(),
-        gpioProvider.get(),
-        styleManager.get()
-    );
-    
-    log_d("Creating TriggerManager...");
+        gpioProvider.get(), styleManager.get(),
+        inputManager.get());
     triggerManager = ManagerFactory::createTriggerManager(
         gpioProvider.get(),
         panelManager.get(),
-        styleManager.get()
-    );
-    
-    log_d("Initializing ErrorManager...");
-    // ErrorManager is a singleton, just initialize it
-    ErrorManager::Instance();
-    
-    log_d("Service initialization completed successfully");
-}
+        styleManager.get());
+    interruptManager = ManagerFactory::createInterruptManager();
+    errorManager = ManagerFactory::createErrorManager();
 
+    // Verify all critical services were created
+    bool allServicesCreated = deviceProvider && gpioProvider && displayProvider &&
+                              styleManager && preferenceManager && inputManager &&
+                              panelManager && triggerManager && interruptManager && errorManager;
+
+    if (!allServicesCreated)
+    {
+        log_e("Critical service creation failed - check factory logs above");
+        return false;
+    }
+
+    // Setup InputManager callback after successful creation
+    inputManager->SetPanelSwitchCallback([&](const char *panelName){
+        log_d("InputManager requests panel switch to: %s", panelName);
+        panelManager->CreateAndLoadPanel(panelName); });
+
+    log_i("All services initialized successfully");
+    return true;
+}
 
 void setup()
 {
-    log_d("Starting Clarity application setup - using direct service instantiation");
+    log_i("Starting Clarity application...");
 
-    initializeServices();
-
-    log_d("Preparing device...");
-    device->prepare();
-    Ticker::handleLvTasks();
-    
-    log_d("Initializing Clarity application");
-    
-    // Initialize trigger service after all dependencies are resolved
-    triggerManager->Init();
+    if (!initializeServices())
+    {
+        log_e("Service initialization failed - cannot continue");
+        return;
+    }
 
     Ticker::handleLvTasks();
+    styleManager->InitializeStyles();
+    interruptManager->Init();
+    interruptManager->RegisterInterruptSource(triggerManager.get()); // Priority 100
+    interruptManager->RegisterInterruptSource(inputManager.get());   // Priority 50
+    Ticker::handleLvTasks();
 
-    // Check if startup triggers require a specific panel, otherwise use config default
-    const char* startupPanel = triggerManager->GetStartupPanelOverride();
-    if (startupPanel) {
-        log_i("Using startup panel override: %s", startupPanel);
+    // Load startup panel
+    const char *startupPanel = triggerManager->GetStartupPanelOverride();
+    if (startupPanel)
+    {
         panelManager->CreateAndLoadPanelWithSplash(startupPanel);
-    } else {
+    }
+    else
+    {
         auto config = preferenceManager->GetConfig();
-        log_i("Using config default panel: %s", config.panelName.c_str());
         panelManager->CreateAndLoadPanelWithSplash(config.panelName.c_str());
     }
-    
+
     Ticker::handleLvTasks();
+    log_i("Clarity application started successfully");
 }
 
 void loop()
 {
-    // Process trigger events directly
-    triggerManager->ProcessTriggerEvents();
-    
+    // Process all interrupt sources via InterruptManager (triggers, inputs, etc.)
+    interruptManager->CheckAllInterrupts();
+
+    // Update panel state
     panelManager->UpdatePanel();
     Ticker::handleLvTasks();
+
     Ticker::handleDynamicDelay(millis());
 }
-

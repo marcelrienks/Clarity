@@ -10,6 +10,7 @@
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/error_panel.h"
+#include "panels/config_panel.h"
 
 std::unique_ptr<IComponent> UIFactory::createKeyComponent(IStyleService *styleService) {
     return std::make_unique<KeyComponent>(styleService);
@@ -53,4 +54,8 @@ std::unique_ptr<IPanel> UIFactory::createOemOilPanel(IGpioProvider *gpio, IDispl
 
 std::unique_ptr<IPanel> UIFactory::createErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService) {
     return std::make_unique<ErrorPanel>(gpio, display, styleService);
+}
+
+std::unique_ptr<IPanel> UIFactory::createConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService) {
+    return std::make_unique<ConfigPanel>(gpio, display, styleService);
 }

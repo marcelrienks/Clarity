@@ -4,57 +4,80 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/preference_manager.h"
+#include "managers/input_manager.h"
+#include "managers/interrupt_manager.h"
+#include "managers/error_manager.h"
 #include "sensors/key_sensor.h"
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
 #include "sensors/debug_error_sensor.h"
+#include "sensors/input_button_sensor.h"
 #include <esp32-hal-log.h>
 
 // Factory Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService)
+std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, InputManager* inputManager)
 {
-    log_d("Creating PanelManager with injected dependencies");
+    log_d("ManagerFactory: Creating PanelManager (UI panel coordination)...");
     
     if (!display) {
-        throw std::invalid_argument("ManagerFactory::createPanelManager requires valid IDisplayProvider");
+        log_e("ManagerFactory: Cannot create PanelManager - IDisplayProvider is null");
+        return nullptr;
     }
     if (!gpio) {
-        throw std::invalid_argument("ManagerFactory::createPanelManager requires valid IGpioProvider");
+        log_e("ManagerFactory: Cannot create PanelManager - IGpioProvider is null");
+        return nullptr;
     }
     if (!styleService) {
-        throw std::invalid_argument("ManagerFactory::createPanelManager requires valid IStyleService");
+        log_e("ManagerFactory: Cannot create PanelManager - IStyleService is null");
+        return nullptr;
+    }
+    if (!inputManager) {
+        log_e("ManagerFactory: Cannot create PanelManager - InputManager is null");
+        return nullptr;
     }
     
-    // Create PanelManager with direct dependencies - no factory needed
-    auto manager = std::make_unique<PanelManager>(display, gpio, styleService);
-    manager->Init();
+    auto manager = std::make_unique<PanelManager>(display, gpio, styleService, inputManager);
+    if (!manager) {
+        log_e("ManagerFactory: Failed to create PanelManager - allocation failed");
+        return nullptr;
+    }
     
+    log_d("ManagerFactory: Initializing PanelManager...");
+    manager->Init();
+    log_d("ManagerFactory: PanelManager created successfully");
     return manager;
 }
 
 std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *theme)
 {
-    log_d("Creating StyleManager with theme: %s", theme ? theme : "default");
+    log_d("ManagerFactory: Creating StyleManager (LVGL theme system) with theme: %s", theme ? theme : "default");
     
-    auto manager = std::make_unique<StyleManager>();
-    manager->Init(theme ? theme : Themes::NIGHT);
+    auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::DAY);
+    if (!manager) {
+        log_e("ManagerFactory: Failed to create StyleManager - allocation failed");
+        return nullptr;
+    }
     
+    log_d("ManagerFactory: StyleManager created successfully");
     return manager;
 }
 
 std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider *gpio, IPanelService *panelService, IStyleService *styleService)
 {
-    log_d("Creating TriggerManager with injected sensor dependencies");
+    log_d("ManagerFactory: Creating TriggerManager (sensor monitoring system)...");
     
     if (!gpio) {
-        throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IGpioProvider");
+        log_e("ManagerFactory: Cannot create TriggerManager - IGpioProvider is null");
+        return nullptr;
     }
     if (!panelService) {
-        throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IPanelService");
+        log_e("ManagerFactory: Cannot create TriggerManager - IPanelService is null");
+        return nullptr;
     }
     if (!styleService) {
-        throw std::invalid_argument("ManagerFactory::createTriggerManager requires valid IStyleService");
+        log_e("ManagerFactory: Cannot create TriggerManager - IStyleService is null");
+        return nullptr;
     }
     
     // Create sensors that TriggerManager needs
@@ -63,18 +86,91 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
     auto lightSensor = std::make_shared<LightSensor>(gpio);
     auto debugErrorSensor = std::make_shared<DebugErrorSensor>(gpio);
     
-    auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, debugErrorSensor, panelService, styleService);
-    manager->Init();
+    if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor) {
+        log_e("ManagerFactory: Failed to create sensors for TriggerManager");
+        return nullptr;
+    }
     
+    auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, debugErrorSensor, panelService, styleService);
+    if (!manager) {
+        log_e("ManagerFactory: Failed to create TriggerManager - allocation failed");
+        return nullptr;
+    }
+    
+    log_d("ManagerFactory: Initializing TriggerManager with sensors...");
+    manager->Init();
+    log_d("ManagerFactory: TriggerManager created successfully");
     return manager;
 }
 
 std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 {
-    log_d("Creating PreferenceManager");
+    log_d("ManagerFactory: Creating PreferenceManager (persistent settings)...");
     
     auto manager = std::make_unique<PreferenceManager>();
-    manager->Init();
+    if (!manager) {
+        log_e("ManagerFactory: Failed to create PreferenceManager - allocation failed");
+        return nullptr;
+    }
     
+    log_d("ManagerFactory: Initializing PreferenceManager...");
+    manager->Init();
+    log_d("ManagerFactory: PreferenceManager created successfully");
     return manager;
+}
+
+std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* gpio, IPanelService* panelService)
+{
+    log_d("ManagerFactory: Creating InputManager (button input system)...");
+    
+    if (!gpio) {
+        log_e("ManagerFactory: Cannot create InputManager - IGpioProvider is null");
+        return nullptr;
+    }
+    
+    // Create InputButtonSensor that InputManager needs
+    auto inputButtonSensor = std::make_shared<InputButtonSensor>(gpio);
+    if (!inputButtonSensor) {
+        log_e("ManagerFactory: Failed to create InputButtonSensor for InputManager");
+        return nullptr;
+    }
+    
+    auto manager = std::make_unique<InputManager>(inputButtonSensor);
+    if (!manager) {
+        log_e("ManagerFactory: Failed to create InputManager - allocation failed");
+        return nullptr;
+    }
+    
+    log_d("ManagerFactory: Initializing InputManager...");
+    manager->Init();
+    log_d("ManagerFactory: InputManager created successfully");
+    return manager;
+}
+
+std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager()
+{
+    log_d("ManagerFactory: Creating InterruptManager (interrupt coordination)...");
+    
+    auto manager = std::make_unique<InterruptManager>();
+    if (!manager) {
+        log_e("ManagerFactory: Failed to create InterruptManager - allocation failed");
+        return nullptr;
+    }
+    
+    log_d("ManagerFactory: InterruptManager created successfully");
+    return manager;
+}
+
+ErrorManager* ManagerFactory::createErrorManager()
+{
+    log_d("ManagerFactory: Creating ErrorManager (system error tracking)...");
+    
+    ErrorManager* errorManager = &ErrorManager::Instance();
+    if (!errorManager) {
+        log_e("ManagerFactory: Failed to get ErrorManager singleton instance");
+        return nullptr;
+    }
+    
+    log_d("ManagerFactory: ErrorManager created successfully");
+    return errorManager;
 }

@@ -2,11 +2,13 @@
 
 // Project Includes
 #include "interfaces/i_panel.h"
+#include "interfaces/i_input_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
+#include <memory>
 
 /**
  * @class SplashPanel
@@ -32,7 +34,7 @@
  * animations for smooth transitions and automatically proceeds to the main
  * application panel when animation completes.
  */
-class SplashPanel : public IPanel
+class SplashPanel : public IPanel, public IInputService
 {
 public:
     // Constructors and Destructors
@@ -41,9 +43,17 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::SPLASH;
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init() override;
+    void Load(std::function<void()> callbackFunction) override;
+    void Update(std::function<void()> callbackFunction) override;
+    
+    // IInputService Interface Implementation - Action-based (no animation interruption)
+    std::unique_ptr<IInputAction> GetShortPressAction() override;
+    std::unique_ptr<IInputAction> GetLongPressAction() override;
+    bool CanProcessInput() const override;
+    
+    // IPanel override to provide input service
+    IInputService* GetInputService() override { return this; }
 
 private:
     // Private Data Members
@@ -58,7 +68,7 @@ private:
     IStyleService *styleService_;
 
     // Components
-    lv_obj_t *screen_; // All panels should always have their own screens
+    // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> component_;
     lv_obj_t *blankScreen_;
 
@@ -66,4 +76,6 @@ private:
     static void animation_complete_timer_callback(lv_timer_t *timer);
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
+    
+    // No state tracking needed - simplified approach
 };

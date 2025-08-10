@@ -124,6 +124,7 @@ struct PanelNames
     static constexpr const char* KEY = "KeyPanel";       ///< Key status panel
     static constexpr const char* LOCK = "LockPanel";     ///< Lock status panel
     static constexpr const char* ERROR = "ErrorPanel";   ///< Error display panel
+    static constexpr const char* CONFIG = "ConfigPanel"; ///< Configuration settings panel
 };
 
 /// @struct TriggerNames

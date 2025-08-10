@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
+#include "interfaces/i_input_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
@@ -37,7 +38,7 @@
  * It automatically appears when errors occur and manages user acknowledgment
  * and dismissal workflows.
  */
-class ErrorPanel : public IPanel
+class ErrorPanel : public IPanel, public IInputService
 {
 public:
     // Constructors and Destructors
@@ -46,9 +47,17 @@ public:
 
     // Core Functionality Methods
     static constexpr const char* NAME = PanelNames::ERROR;
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> callbackFunction, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init() override;
+    void Load(std::function<void()> callbackFunction) override;
+    void Update(std::function<void()> callbackFunction) override;
+    
+    // IInputService Interface Implementation
+    std::unique_ptr<IInputAction> GetShortPressAction() override;
+    std::unique_ptr<IInputAction> GetLongPressAction() override;
+    bool CanProcessInput() const override;
+    
+    // IPanel override to provide input service
+    IInputService* GetInputService() override { return this; }
 
 private:
     // Static Methods
@@ -58,10 +67,11 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_; 
     IStyleService *styleService_;
-    lv_obj_t *screen_;                              // Panel's dedicated screen
+    // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> errorListComponent_; // Error list component
     ComponentLocation centerLocation_;              // Component positioning
     bool panelLoaded_;                              // Track panel load state
     std::vector<ErrorInfo> currentErrors_;          // Cache of current error state
     const char* previousTheme_;                     // Store previous theme to restore on exit
+    size_t currentErrorIndex_ = 0;                  // Current error being displayed
 };

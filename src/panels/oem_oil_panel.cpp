@@ -2,14 +2,21 @@
 #include "factories/ui_factory.h"
 #include "utilities/lv_tools.h"
 #include "managers/style_manager.h"
+#include "actions/input_actions.h"
 
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
-      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)) 
+      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
+      currentOilPressureValue_(-1),
+      currentOilTemperatureValue_(-1),
+      lastTheme_("")
 {
+    // Initialize LVGL animation structures to prevent undefined behavior
+    lv_anim_init(&pressureAnimation_);
+    lv_anim_init(&temperatureAnimation_);
 }
 
 OemOilPanel::~OemOilPanel()
@@ -61,11 +68,11 @@ OemOilPanel::~OemOilPanel()
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
-void OemOilPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Init()
 {
     log_d("Initializing OEM oil panel with sensors and display components");
 
-    screen_ = display->CreateScreen();
+    screen_ = displayProvider_->CreateScreen();
     
     // Apply current theme immediately after screen creation
     if (styleService_) {
@@ -81,28 +88,39 @@ void OemOilPanel::Init(IGpioProvider* gpio, IDisplayProvider* display)
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
-void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Load(std::function<void()> callbackFunction)
 {
     log_d("Loading OEM oil panel with pressure and temperature gauges");
     callbackFunction_ = callbackFunction;
 
-    // Create components directly using UIFactory
-    oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
-    oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
+    // Create components for both pressure and temperature
+    if (styleService_ && styleService_->IsInitialized()) {
+        log_d("Creating pressure and temperature components");
+        oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
+        oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
+    } else {
+        log_w("StyleService not properly initialized, skipping component creation");
+    }
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210); // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
     
-    oemOilPressureComponent_->Render(screen_, pressureLocation, display);
-    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, display);
+    // Render both components
+    if (oemOilPressureComponent_) {
+        oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
+        log_d("Pressure component rendered successfully");
+    }
+    if (oemOilTemperatureComponent_) {
+        oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+        log_d("Temperature component rendered successfully");
+    }
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
     
     lv_screen_load(screen_);
     
-    // Always apply current theme to the screen when loading (ensures theme is current)
     if (styleService_) {
         styleService_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
@@ -111,7 +129,7 @@ void OemOilPanel::Load(std::function<void()> callbackFunction, IGpioProvider* gp
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::Update(std::function<void()> callbackFunction, IGpioProvider* gpio, IDisplayProvider* display)
+void OemOilPanel::Update(std::function<void()> callbackFunction)
 {
 
     callbackFunction_ = callbackFunction;
@@ -154,7 +172,12 @@ void OemOilPanel::UpdateOilPressure()
 
     // Skip update if pressure animation is already running
     if (isPressureAnimationRunning_) {
-        log_d("Pressure animation running, skipping update");
+        return;
+    }
+
+    // Safety check for sensor availability
+    if (!oemOilPressureSensor_) {
+        log_w("Pressure sensor is null, skipping update");
         return;
     }
 
@@ -199,7 +222,12 @@ void OemOilPanel::UpdateOilTemperature()
 
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_) {
-        log_d("Temperature animation running, skipping update");
+        return;
+    }
+
+    // Safety check for sensor availability
+    if (!oemOilTemperatureSensor_) {
+        log_w("Temperature sensor is null, skipping update");
         return;
     }
 
@@ -238,6 +266,29 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_start(&temperatureAnimation_);
 }
 
+std::unique_ptr<IInputAction> OemOilPanel::GetShortPressAction()
+{
+    // Short press: No action for oil panel
+    log_d("OemOilPanel: Short press action requested - returning NoAction");
+    return std::make_unique<NoAction>();
+}
+
+std::unique_ptr<IInputAction> OemOilPanel::GetLongPressAction()
+{
+    // Long press: Switch to CONFIG panel
+    return std::make_unique<SimplePanelSwitchAction>(PanelNames::CONFIG,
+        [](const char* panelName) {
+            log_i("OemOilPanel: Long press - switching to CONFIG panel");
+        }
+    );
+}
+
+bool OemOilPanel::CanProcessInput() const
+{
+    // OemOilPanel can always process input (no animations that block input)
+    return true;
+}
+
 // Static Callback Methods
 
 /// @brief The callback to be run once show panel has completed
@@ -256,6 +307,7 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
     
     thisInstance->callbackFunction_();
 }
+
 
 /// @brief Callback when animation has completed. aka update complete
 /// @param animation the object that was animated
@@ -353,3 +405,9 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     
     return sensorValue;
 }
+
+// IPanel override to provide input service via composition
+// IInputService* OemOilPanel::GetInputService()
+// {
+//     return inputHandler_.get();
+// }

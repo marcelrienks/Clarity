@@ -26,7 +26,7 @@
  * @pin_constraints:
  * - GPIO 36 & 39: ADC input only (no pull-up/pull-down)
  * - GPIO 25-27: Full-featured general purpose I/O
- * - GPIO 33: Digital input with pull-up capability
+ * - GPIO 32 & 33: Digital input with pull-up capability
  * 
  * @dependency_injection:
  * - Implements IGpioProvider for testability

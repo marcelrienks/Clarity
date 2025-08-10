@@ -58,3 +58,5 @@ steps:
 # Position 2 -> GPIO 26 -> Key Not Present -> 2  
 # Position 3 -> GPIO 27 -> Lock -> 4
 # Position 4 -> GPIO 33 -> Lights -> 8
+# Position 8 -> GPIO 34 -> Debug Error -> 128
+# Push Button -> GPIO 32 -> Input Button

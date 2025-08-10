@@ -82,12 +82,7 @@ bool ErrorManager::ShouldTriggerErrorPanel() const {
     
     // Always trigger if we have pending errors - let the trigger system handle the logic
     // of whether to actually switch panels
-    bool shouldTrigger = HasPendingErrors();
-    log_d("ShouldTriggerErrorPanel: %s (errors=%d, panelActive=%s)", 
-          shouldTrigger ? "true" : "false", 
-          errorQueue_.size(), 
-          errorPanelActive_ ? "true" : "false");
-    return shouldTrigger;
+    return HasPendingErrors();
 }
 
 void ErrorManager::SetErrorPanelActive(bool active) {

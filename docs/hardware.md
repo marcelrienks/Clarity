@@ -43,12 +43,16 @@ Clarity is designed for ESP32-based automotive gauge systems with a round displa
 | Oil Temperature  | GPIO 39   | VN (ADC1_3) | 0-4095   | Engine oil temperature |
 
 ### Digital Sensors (GPIO)
-| Sensor           | ESP32 Pin | Mode        | Purpose                    |
-|------------------|-----------|-------------|----------------------------|
-| Key Present      | GPIO 25   | INPUT       | Ignition key detected      |
-| Key Not Present  | GPIO 26   | INPUT       | Ignition key not detected  |
-| Lock State       | GPIO 27   | INPUT       | Vehicle lock status        |
-| Light Sensor     | GPIO 33   | INPUT       | Day/night detection        |
+| Sensor           | ESP32 Pin | Mode        | Pull Config | Purpose                    |
+|------------------|-----------|-------------|-------------|----------------------------|
+| Key Present      | GPIO 25   | INPUT       | PULLDOWN    | Ignition key detected      |
+| Key Not Present  | GPIO 26   | INPUT       | PULLDOWN    | Ignition key not detected  |
+| Lock State       | GPIO 27   | INPUT       | PULLDOWN    | Vehicle lock status        |
+| Light Sensor     | GPIO 33   | INPUT       | PULLDOWN    | Day/night detection        |
+| Input Button     | GPIO 32   | INPUT       | PULLDOWN    | Single button navigation   |
+| Debug Error Sensor | GPIO 34 | INPUT       | None*       | Debug error trigger (dev only) |
+
+*GPIO 34 is an input-only pin without internal pull resistors. External pull-down required.
 
 ## Power Configuration
 - **Supply Voltage**: 3.3V (regulated from 12V automotive supply)
@@ -77,6 +81,8 @@ For development and testing, Clarity uses the Wokwi online ESP32 simulator.
 | Key Not Present Switch| DIP Switch #2   | ESP32:GPIO26     | Key absence detection  |
 | Lock Switch         | DIP Switch #3     | ESP32:GPIO27     | Lock state             |
 | Light Sensor        | DIP Switch #4     | ESP32:GPIO33     | Day/night simulation   |
+| Input Button        | Push Button       | ESP32:GPIO32     | User input             |
+| Debug Error Sensor  | DIP Switch #8     | ESP32:GPIO34     | Error trigger (debug)  |
 
 ### Wokwi Limitations
 - **Display Shape**: Uses square ILI9341 instead of round GC9A01
@@ -95,7 +101,8 @@ For development and testing, Clarity uses the Wokwi online ESP32 simulator.
     { "type": "wokwi-ili9341", "id": "lcd1" },
     { "type": "wokwi-potentiometer", "id": "pot1" },
     { "type": "wokwi-potentiometer", "id": "pot2" },
-    { "type": "wokwi-dip-switch-8", "id": "sw1" }
+    { "type": "wokwi-dip-switch-8", "id": "sw1" },
+    { "type": "wokwi-pushbutton", "id": "btn1" }
   ]
 }
 ```

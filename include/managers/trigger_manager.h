@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interfaces/i_interrupt.h"
 #include "utilities/types.h"
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
@@ -29,7 +30,7 @@
  * 4. Priority evaluation from lowest to highest (highest priority action wins)
  * 5. No cross-core communication needed
  */
-class TriggerManager : public ITriggerService
+class TriggerManager : public ITriggerService, public IInterrupt
 {
 public:
     // Startup panel override method
@@ -46,6 +47,28 @@ public:
     // ITriggerService Interface Implementation
     void Init() override;
     void ProcessTriggerEvents() override;
+
+    // IInterrupt Interface Implementation
+    
+    /**
+     * @brief Check for pending interrupts and process them (IInterrupt interface)
+     * @details Called by InterruptManager during idle time - redirects to ProcessTriggerEvents()
+     */
+    void CheckInterrupts() override;
+
+    /**
+     * @brief Check if there are pending trigger interrupts (IInterrupt interface)
+     * @details Quick check for trigger state changes without processing
+     * @return true if trigger events are pending
+     */
+    bool HasPendingInterrupts() const override;
+
+    /**
+     * @brief Get interrupt priority level (IInterrupt interface)
+     * @details Trigger priority is 100 (higher than input=50)
+     * @return Priority value of 100
+     */
+    int GetPriority() const override { return 100; }
 
     // Trigger Management
     void AddTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) override;

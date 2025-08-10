@@ -52,11 +52,14 @@
  * The factory pattern allows easy addition of new panel types.
  */
 
+// Forward declaration
+class InputManager;
+
 class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, InputManager *inputManager);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -102,6 +105,7 @@ public:
     /// @brief Callback executed when trigger-driven panel loading is complete
     /// @param triggerId ID of the trigger that initiated the panel switch
     void TriggerPanelSwitchCallback(const char *triggerId) override;
+    
 
 private:
 
@@ -138,6 +142,7 @@ private:
     IGpioProvider *gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr; ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;       ///< Style service for UI theming
+    InputManager *inputManager_ = nullptr;         ///< Input manager for button handling
     // Removed IPanelFactory - using UIFactory directly
     // Removed queue handles - now using shared state trigger system
 };

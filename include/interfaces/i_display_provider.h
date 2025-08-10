@@ -21,7 +21,7 @@
  * - Hardware-specific optimizations
  * 
  * @implementation_notes:
- * - Real hardware: LvglDisplayProvider with Device integration
+ * - Real hardware: LvglDisplayProvider with DeviceProvider integration
  * - Testing: MockDisplayProvider with simulated display
  * - LVGL threading: All operations must be LVGL thread-safe
  * 

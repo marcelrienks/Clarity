@@ -109,9 +109,6 @@ void TriggerManager::CheckSensorChanges()
 void TriggerManager::CheckErrorTrigger()
 {
     bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
-    log_d("CheckErrorTrigger: shouldShowErrorPanel=%s, errors=%d", 
-          shouldShowErrorPanel ? "true" : "false", 
-          ErrorManager::Instance().GetErrorQueue().size());
     CheckTriggerChange(TRIGGER_ERROR_OCCURRED, shouldShowErrorPanel);
 }
 
@@ -309,4 +306,28 @@ bool TriggerManager::HasTrigger(const std::string& triggerName) const {
         }
     }
     return false;
+}
+
+// IInterrupt Interface Implementation
+
+void TriggerManager::CheckInterrupts()
+{
+    // Redirect to existing trigger processing method
+    ProcessTriggerEvents();
+}
+
+bool TriggerManager::HasPendingInterrupts() const
+{
+    if (!initialized_) {
+        return false;
+    }
+    
+    // For now, we'll do a simple check that's always conservative
+    // In a real implementation, we might track previous states
+    // But since TriggerManager processing is lightweight, we can afford to check always
+    
+    // Always return true if we have sensors - this ensures triggers are always checked
+    // This is not the most optimized approach, but it's safe and correct
+    return (keySensor_ != nullptr) || (lockSensor_ != nullptr) || 
+           (lightSensor_ != nullptr) || (debugErrorSensor_ != nullptr);
 }

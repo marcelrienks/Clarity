@@ -4,7 +4,7 @@
 
 // Constructors and Destructors
 DebugErrorSensor::DebugErrorSensor(IGpioProvider *gpioProvider)
-    : gpioProvider_(gpioProvider), previousState_(false), initialized_(false)
+    : gpioProvider_(gpioProvider), previousState_(false), initialized_(false), startupTime_(0)
 {
     log_d("Creating DebugErrorSensor for GPIO %d", gpio_pins::DEBUG_ERROR);
 }
@@ -19,20 +19,30 @@ void DebugErrorSensor::Init()
         return;
     }
     
-    // Configure pin as input with pull-down
-    gpioProvider_->PinMode(gpio_pins::DEBUG_ERROR, INPUT_PULLDOWN);
+    // Configure pin as input (GPIO 34 has no internal pull resistors)
+    // External pull-down resistor required in hardware
+    gpioProvider_->PinMode(gpio_pins::DEBUG_ERROR, INPUT);
     
-    // Read initial state
-    previousState_ = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
+    // Initialize state - always start with LOW state to avoid false triggers
+    // GPIO 34 lacks internal pull resistors and may float during startup
+    previousState_ = false;  // Start assuming pin is LOW
+    startupTime_ = millis();  // Record startup time for grace period
     initialized_ = true;
     
-    log_d("DebugErrorSensor initialized, initial state: %s", previousState_ ? "HIGH" : "LOW");
+    log_d("DebugErrorSensor initialized, ignoring actual pin state during startup");
 }
 
 Reading DebugErrorSensor::GetReading()
 {
     if (!initialized_) {
         log_w("DebugErrorSensor not initialized");
+        return false;
+    }
+    
+    // Ignore input during startup grace period (500ms)
+    // This prevents false triggers from GPIO 34 floating during initialization
+    const unsigned long STARTUP_GRACE_PERIOD_MS = 500;
+    if (millis() - startupTime_ < STARTUP_GRACE_PERIOD_MS) {
         return false;
     }
     

@@ -5,6 +5,7 @@
 
 #include <lvgl.h>
 #include <memory>
+#include <string>
 
 #define MAIN_DEFAULT LV_PART_MAIN | LV_STATE_DEFAULT
 #define ITEMS_DEFAULT LV_PART_ITEMS | LV_STATE_DEFAULT
@@ -18,7 +19,7 @@
  * allocation for the entire application. It implements efficient style sharing
  * to reduce memory usage and provides consistent theming across all components.
  *
- * @design_pattern Service with Dependency Injection - managed by ServiceContainer
+ * @design_pattern Service with Factory Pattern - created by ManagerFactory
  * @theme_system Day/Night themes with customizable color schemes
  * @style_sharing Shared style objects reduce memory fragmentation
  * @memory_optimization Single style instances used by multiple components
@@ -61,14 +62,13 @@ class StyleManager : public IStyleService
 {
 public:
     // Constructors and Destructors
-    StyleManager() {}
+    explicit StyleManager(const char* theme);
     ~StyleManager();
     StyleManager(const StyleManager&) = delete;
     StyleManager& operator=(const StyleManager&) = delete;
 
     // Core Functionality Methods (IStyleService implementation)
     void InitializeStyles() override;
-    void Init(const char *theme) override;
     void SetTheme(const char *theme) override;
     void ApplyThemeToScreen(lv_obj_t *screen) override;
 
@@ -83,12 +83,12 @@ public:
     lv_style_t& GetGaugeItemsStyle() override { return gaugeItemsStyle; }
     lv_style_t& GetGaugeMainStyle() override { return gaugeMainStyle; }
     lv_style_t& GetGaugeDangerSectionStyle() override { return gaugeDangerSectionStyle; }
-    const char* GetCurrentTheme() const override { return THEME; }
-    const ThemeColors& GetThemeColors() const override { return GetColours(THEME); }
+    const char* GetCurrentTheme() const override { return THEME.c_str(); }
+    const ThemeColors& GetThemeColors() const override { return GetColours(THEME.c_str()); }
     bool IsInitialized() const override { return initialized_; }
     
     // Public Data Members - Theme State
-    const char *THEME = Themes::NIGHT;
+    std::string THEME = Themes::NIGHT;
 
     // Core Style Objects
     lv_style_t backgroundStyle;    // Style for backgrounds

@@ -20,7 +20,7 @@
  * @update_strategy Event-driven or polled based on implementation
  * 
  * @simulation_mode Currently uses simulated data for testing
- * @hardware_interface Designed for digital input pin monitoring
+ * @hardware_interface GPIO 25 (key present) and GPIO 26 (key not present) with pull-down resistors
  * @debouncing Built-in debouncing for stable readings
  * 
  * @usage_context:
