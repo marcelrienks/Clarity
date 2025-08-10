@@ -1,12 +1,12 @@
 # Input System Implementation Plan
 
 ## Overview
-This document outlines the implementation plan for adding single button input functionality to the Clarity digital gauge system. The button will be connected to GPIO 34 and provide different behaviors based on the current panel and press duration.
+This document outlines the implementation plan for adding single button input functionality to the Clarity digital gauge system. The button will be connected to GPIO 32 and provide different behaviors based on the current panel and press duration.
 
 ## Phase 1: Hardware & Core Input System
 
 ### Hardware Setup
-* Add push button to wokwi diagram wired to GPIO 34 (3.3V connection)
+* Add push button to wokwi diagram wired to GPIO 32 (3.3V connection)
 * Configure rising edge detection (trigger only when pin changes to HIGH)
 * Implement proper debouncing to prevent false triggers
 

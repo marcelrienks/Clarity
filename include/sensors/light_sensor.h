@@ -19,7 +19,7 @@
  * @data_type Boolean (true=lights on, false=lights off)
  * @update_strategy Event-driven or polled based on implementation
  * 
- * @hardware_interface Designed for digital input pin monitoring
+ * @hardware_interface GPIO 33 with pull-down resistor
  * @debouncing Built-in debouncing for stable readings
  * 
  * @usage_context:

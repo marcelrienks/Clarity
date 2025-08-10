@@ -80,6 +80,7 @@ void InputManager::ProcessInputEvents()
                 if (IsButtonPressed()) {
                     buttonState_ = ButtonState::PRESSED;
                     pressStartTime_ = currentTime;
+                    log_d("Button press confirmed after debounce at %lu ms", currentTime);
                 } else {
                     buttonState_ = ButtonState::IDLE;
                 }
@@ -88,10 +89,10 @@ void InputManager::ProcessInputEvents()
 
         case ButtonState::PRESSED:
         {
-            // Check for long press threshold (1-3 seconds)
+            // Check for long press threshold (2-5 seconds)
             unsigned long pressDuration = currentTime - pressStartTime_;
             if (pressDuration >= LONG_PRESS_THRESHOLD_MS && pressDuration <= LONG_PRESS_MAX_MS && buttonState_ != ButtonState::LONG_PRESS_SENT) {
-                log_i("Long press detected");
+                log_i("Long press detected after %lu ms (started at %lu ms)", pressDuration, pressStartTime_);
                 
                 if (currentService_) {
                     // Get action from current panel
@@ -169,12 +170,15 @@ void InputManager::HandleButtonRelease()
 {
     unsigned long currentTime = GetCurrentTime();
     
+    log_d("Button release detected at %lu ms", currentTime);
+    
     if (buttonState_ == ButtonState::PRESSED) {
         // Calculate press duration
         unsigned long pressDuration = currentTime - pressStartTime_;
+        log_d("Button release duration: %lu ms (from %lu to %lu)", pressDuration, pressStartTime_, currentTime);
         
         if (pressDuration > LONG_PRESS_MAX_MS) {
-            // Press was too long (>3 seconds), ignore it
+            // Press was too long (>5 seconds), ignore it
             log_w("Button press too long (%lu ms), ignoring", pressDuration);
         }
         else if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS) {
@@ -251,7 +255,23 @@ bool InputManager::IsButtonPressed() const
     }
     
     // Use the button sensor to check if button is pressed
-    return buttonSensor_->IsButtonPressed();
+    bool pressed = buttonSensor_->IsButtonPressed();
+    
+    // Debug logging for phantom button presses
+    static bool lastLoggedState = false;
+    static bool firstCall = true;
+    static unsigned long lastLogTime = 0;
+    unsigned long currentTime = millis();
+    
+    // Log state changes or periodically log current state
+    if (firstCall || pressed != lastLoggedState || (currentTime - lastLogTime > 5000)) {
+        log_d("GPIO 32 state: %s (time: %lu)", pressed ? "HIGH (PRESSED)" : "LOW (released)", currentTime);
+        lastLoggedState = pressed;
+        firstCall = false;
+        lastLogTime = currentTime;
+    }
+    
+    return pressed;
 }
 
 unsigned long InputManager::GetCurrentTime() const

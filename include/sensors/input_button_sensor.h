@@ -9,17 +9,17 @@
  * @class InputButtonSensor
  * @brief Input button sensor for single button navigation
  * 
- * @details This sensor monitors the state of the input button connected to GPIO 34,
+ * @details This sensor monitors the state of the input button connected to GPIO 32,
  * providing boolean readings for button press detection. It follows the same
  * pattern as other sensors in the system for consistent GPIO access.
  * 
  * @model_role Provides button state data to InputManager for timing logic
  * @data_type Boolean (true=button pressed, false=button not pressed)
- * @hardware_pin GPIO 34 connected to 3.3V through push button
+ * @hardware_pin GPIO 32 connected to 3.3V through push button
  * 
  * @gpio_configuration:
- * - Pin: GPIO 34 (input-only pin on ESP32)
- * - Mode: INPUT (no internal pull-up/down needed, button provides 3.3V)
+ * - Pin: GPIO 32 (general purpose I/O pin on ESP32)
+ * - Mode: INPUT_PULLDOWN (internal pull-down resistor enabled)
  * - Logic: HIGH when pressed, LOW when not pressed
  * 
  * @usage_context:

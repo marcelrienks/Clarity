@@ -14,14 +14,14 @@
  * @class InputManager
  * @brief Centralized button input management with action-based workflow
  * 
- * @details This class handles GPIO 34 button input detection, debouncing, and 
+ * @details This class handles GPIO 32 button input detection, debouncing, and 
  * timing logic to distinguish between short and long presses. It uses an
  * action-based approach where panels provide action objects that InputManager
  * executes when appropriate, supporting queuing during animations.
  * 
  * @architecture Implements IInterrupt for unified interrupt handling
- * @gpio_pin GPIO 34 with rising edge detection (3.3V pull-up)
- * @timing Short press: 50ms-1000ms, Long press: 1000ms-3000ms, Timeout: >3000ms
+ * @gpio_pin GPIO 32 with pull-down resistor (3.3V when pressed)
+ * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms, Timeout: >5000ms
  * @debouncing 50ms debounce window to prevent false triggers
  * @priority 50 (lower than triggers, higher than background tasks)
  */
@@ -104,9 +104,9 @@ private:
     // Timing constants (milliseconds)
     static constexpr unsigned long DEBOUNCE_TIME_MS = 50;
     static constexpr unsigned long SHORT_PRESS_MIN_MS = 50;
-    static constexpr unsigned long LONG_PRESS_THRESHOLD_MS = 1000;  // 1 second
-    static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;       // 3 seconds
-    static constexpr unsigned long MAX_PRESS_TIME_MS = 3100;      // Slightly above 3s for timeout
+    static constexpr unsigned long LONG_PRESS_THRESHOLD_MS = 2000;  // 2 seconds
+    static constexpr unsigned long LONG_PRESS_MAX_MS = 5000;       // 5 seconds
+    static constexpr unsigned long MAX_PRESS_TIME_MS = 5100;      // Slightly above 5s for timeout
     static constexpr unsigned long INPUT_TIMEOUT_MS = 3000;
 
     // Pending action structure  

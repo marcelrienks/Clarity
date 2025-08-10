@@ -14,7 +14,7 @@
  * 
  * @design_pattern Strategy + Command patterns - Actions as strategy objects
  * @execution_flow Panel defines actions → InputManager executes when ready
- * @timing Short press: 50ms-1000ms, Long press: 1000ms-3000ms, Timeout: >3000ms
+ * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms, Timeout: >5000ms
  */
 class IInputService
 {
@@ -22,14 +22,14 @@ public:
     virtual ~IInputService() = default;
 
     /**
-     * @brief Get action to execute for short button press (50ms - 1000ms)
+     * @brief Get action to execute for short button press (50ms - 2000ms)
      * @details Called when button is pressed and released within short press window
      * @return Action object to execute, or nullptr for no action
      */
     virtual std::unique_ptr<IInputAction> GetShortPressAction() = 0;
 
     /**
-     * @brief Get action to execute for long button press (1000ms - 3000ms)
+     * @brief Get action to execute for long button press (2000ms - 5000ms)
      * @details Called when button is held down for longer than long press threshold
      * @return Action object to execute, or nullptr for no action
      */

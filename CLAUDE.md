@@ -37,25 +37,7 @@ pio.exe run -e release        # Optimized release build with inverted colors
 
 ## Architecture
 
-The codebase follows an MVP (Model-View-Presenter) pattern with a layered architecture:
-
-**DeviceProvider → Display → Panels → Components**
-
-- **DeviceProvider** (`providers/device_provider.h/cpp`): Hardware abstraction layer managing the display and LVGL integration
-- **Panels** (`panels/`): Presenters that coordinate between sensors and components, managing screen layouts
-- **Components** (`components/`): Views that render UI elements (gauges, indicators, etc.)
-- **Sensors** (`sensors/`): Models that handle data acquisition from hardware inputs
-- **Managers**: 
-  - `PanelManager`: Handles panel switching and lifecycle
-  - `PreferenceManager`: Manages persistent settings
-  - `StyleManager`: Manages LVGL styling and themes
-
-## Key Interfaces
-
-- `IDevice`: Hardware abstraction for display devices
-- `IPanel`: Interface for screen/panel implementations with init/load/update lifecycle
-- `IComponent`: Interface for UI components with render_load/render_update methods
-- `ISensor`: Interface for sensor data acquisition
+For architecture details, see: `docs/architecture.md`
 
 ## Build Configuration
 

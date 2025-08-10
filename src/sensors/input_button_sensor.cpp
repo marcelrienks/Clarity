@@ -19,13 +19,16 @@ InputButtonSensor::InputButtonSensor(IGpioProvider* gpioProvider)
 
 void InputButtonSensor::Init()
 {
-    // Initialize input button sensor on GPIO 34
-
-    // Configure GPIO 34 as input with pull-down resistor
-    // Button connects to 3.3V when pressed, so we need pull-down to ensure LOW when not pressed
+    // Configure GPIO 32 as input with pull-down resistor
+    // This ensures LOW state when button is not pressed (Normally Open button to 3.3V)
     gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT_PULLDOWN);
     
     log_d("InputButtonSensor initialized on GPIO %d with pull-down", gpio_pins::INPUT_BUTTON);
+    
+    // Log initial state after proper configuration
+    bool initialState = gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
+    log_i("GPIO %d initial state after configuration: %s", gpio_pins::INPUT_BUTTON, 
+          initialState ? "HIGH (pressed)" : "LOW (released)");
 }
 
 Reading InputButtonSensor::GetReading()
@@ -37,6 +40,6 @@ Reading InputButtonSensor::GetReading()
 
 bool InputButtonSensor::IsButtonPressed()
 {
-    // GPIO 34 reads HIGH when button is pressed (connected to 3.3V)
+    // GPIO 32 reads HIGH when button is pressed (connected to 3.3V)
     return gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
 }
