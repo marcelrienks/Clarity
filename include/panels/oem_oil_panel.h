@@ -1,7 +1,8 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_panel.h"
-#include "interfaces/i_input_service.h"
+#include "interfaces/i_action_service.h"
+#include "interfaces/i_panel_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
@@ -14,8 +15,8 @@
 
 #include <utilities/lv_tools.h>
 
-// Forward declarations
-class IPanelActions;
+// Forward declarations  
+// (Using interfaces instead of concrete classes)
 
 /**
  * @class OemOilPanel
@@ -47,7 +48,7 @@ class IPanelActions;
  * @context The components are currently set to 240x240 size in order to ensure
  * that they maintain a consistent appearance with OEM styling by being shown on either side of the screen.
  */
-class OemOilPanel : public IPanel, public IInputService
+class OemOilPanel : public IPanel, public IActionService
 {
 public:
     // Constructors and Destructors
@@ -60,16 +61,16 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
-    // Panel actions injection method
-    void SetPanelActions(IPanelActions* panelActions);
+    // Manager injection method
+    void SetManagers(IPanelService* panelService, IStyleService* styleService);
     
-    // IInputService Interface Implementation
+    // IActionService Interface Implementation
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
     bool CanProcessInput() const override;
     
-    // IPanel override to provide input service
-    IInputService* GetInputService() override { return this; }
+    // IPanel override to provide action service
+    IActionService* GetInputService() override { return this; }
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;
@@ -101,7 +102,7 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
-    IPanelActions *panelActions_;
+    IPanelService *panelService_;
 
     // Instance Data Members - UI Objects
     // screen_ is inherited from IPanel base class

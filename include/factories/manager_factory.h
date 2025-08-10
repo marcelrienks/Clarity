@@ -2,6 +2,7 @@
 
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_action_manager.h"
 #include "interfaces/i_trigger_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_gpio_provider.h"
@@ -39,9 +40,9 @@ public:
     /// @param display Display provider for UI operations
     /// @param gpio GPIO provider for hardware access
     /// @param styleService Style service for UI theming
-    /// @param actionManager Action manager for button handling
+    /// @param actionManager Action manager interface for button handling
     /// @return Unique pointer to configured PanelManager instance or nullptr on failure
-    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService, ActionManager* actionManager);
+    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService, IActionManager* actionManager);
     
     /// @brief Create StyleManager with optional theme
     /// @param theme Initial theme to apply (defaults to DAY theme)
@@ -60,7 +61,7 @@ public:
     static std::unique_ptr<PreferenceManager> createPreferenceManager();
     
     /// @brief Create ActionManager with injected sensor dependencies
-    /// @param gpio GPIO provider for creating InputButtonSensor
+    /// @param gpio GPIO provider for creating ActionButtonSensor
     /// @param panelService Panel service for triggering panel switches (can be nullptr)
     /// @return Unique pointer to configured ActionManager instance or nullptr on failure
     static std::unique_ptr<ActionManager> createActionManager(IGpioProvider* gpio, IPanelService* panelService);

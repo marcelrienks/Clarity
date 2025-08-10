@@ -1,7 +1,7 @@
 #include "managers/panel_manager.h"
 #include "managers/error_manager.h"
 #include "managers/action_manager.h"
-#include "interfaces/i_input_service.h"
+#include "interfaces/i_action_service.h"
 #include "panels/oem_oil_panel.h"
 #include "utilities/ticker.h"
 #include <esp32-hal-log.h>
@@ -36,7 +36,7 @@ void PanelManager::RegisterAllPanels()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, ActionManager *actionManager)
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager *actionManager)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), actionManager_(actionManager)
 {
     if (!display || !gpio || !styleService || !actionManager) {
@@ -79,10 +79,10 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
         uniquePanel = UIFactory::createSplashPanel(gpioProvider_, displayProvider_, styleService_);
     } else if (strcmp(panelName, PanelNames::OIL) == 0) {
         uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
-        // Inject panel actions for OemOilPanel
+        // Inject managers for OemOilPanel
         if (uniquePanel) {
             OemOilPanel* oilPanel = static_cast<OemOilPanel*>(uniquePanel.get());
-            oilPanel->SetPanelActions(this); // this implements IPanelActions
+            oilPanel->SetManagers(this, styleService_);
         }
     } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
         uniquePanel = UIFactory::createErrorPanel(gpioProvider_, displayProvider_, styleService_);
@@ -167,15 +167,15 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
         // Register input service if panel implements it (using composition approach)
         if (actionManager_)
         {
-            IInputService* inputService = panel_->GetInputService();
-            if (inputService)
+            IActionService* actionService = panel_->GetInputService();
+            if (actionService)
             {
-                log_i("Panel %s implements IInputService, registering for input", currentPanel);
-                actionManager_->SetInputService(inputService, currentPanel);
+                log_i("Panel %s implements IActionService, registering for input", currentPanel);
+                actionManager_->SetInputService(actionService, currentPanel);
             }
             else
             {
-                log_d("Panel %s does not implement IInputService", panelName);
+                log_d("Panel %s does not implement IActionService", panelName);
             }
         }
 
@@ -207,27 +207,6 @@ void PanelManager::UpdatePanel()
     }
 }
 
-/// @brief Get function for panel switching that panels can use in their actions
-std::function<void(const char*)> PanelManager::GetPanelSwitchFunction()
-{
-    return [this](const char* panelName) {
-        log_i("PanelManager: Direct panel switch requested to: %s", panelName);
-        this->CreateAndLoadPanel(panelName);
-    };
-}
-
-/// @brief Get function for theme switching that panels can use in their actions
-std::function<void(const char*)> PanelManager::GetThemeSwitchFunction()
-{
-    return [this](const char* theme) {
-        log_i("PanelManager: Direct theme switch requested to: %s", theme);
-        if (styleService_) {
-            styleService_->SetTheme(theme);
-        } else {
-            log_w("PanelManager: StyleService not available for theme switch");
-        }
-    };
-}
 
 /// @brief Set current UI state for synchronization
 void PanelManager::SetUiState(UIState state)

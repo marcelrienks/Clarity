@@ -6,14 +6,14 @@
 #include "hardware/gpio_pins.h"
 
 /**
- * @class InputButtonSensor
- * @brief Input button sensor for single button navigation
+ * @class ActionButtonSensor
+ * @brief Action button sensor for single button navigation
  * 
- * @details This sensor monitors the state of the input button connected to GPIO 32,
+ * @details This sensor monitors the state of the action button connected to GPIO 32,
  * providing boolean readings for button press detection. It follows the same
  * pattern as other sensors in the system for consistent GPIO access.
  * 
- * @model_role Provides button state data to InputManager for timing logic
+ * @model_role Provides button state data to ActionManager for timing logic
  * @data_type Boolean (true=button pressed, false=button not pressed)
  * @hardware_pin GPIO 32 connected to 3.3V through push button
  * 
@@ -30,17 +30,17 @@
  * @consistency Follows same pattern as KeySensor, LockSensor, etc.
  * @dependency_injection Uses IGpioProvider for hardware abstraction
  */
-class InputButtonSensor : public ISensor
+class ActionButtonSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    InputButtonSensor(IGpioProvider* gpioProvider);
+    ActionButtonSensor(IGpioProvider* gpioProvider);
 
     // ISensor Interface Implementation
     void Init() override;
     Reading GetReading() override;
     
-    /// @brief Get current button state directly (for InputManager)
+    /// @brief Get current button state directly (for ActionManager)
     /// @return true if button is currently pressed, false otherwise
     bool IsButtonPressed();
 

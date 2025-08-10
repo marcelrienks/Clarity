@@ -11,12 +11,12 @@
 #include "sensors/lock_sensor.h"
 #include "sensors/light_sensor.h"
 #include "sensors/debug_error_sensor.h"
-#include "sensors/input_button_sensor.h"
+#include "sensors/action_button_sensor.h"
 #include <esp32-hal-log.h>
 
 // Factory Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, ActionManager* actionManager)
+std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager* actionManager)
 {
     log_d("ManagerFactory: Creating PanelManager (UI panel coordination)...");
     
@@ -33,7 +33,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
         return nullptr;
     }
     if (!actionManager) {
-        log_e("ManagerFactory: Cannot create PanelManager - ActionManager is null");
+        log_e("ManagerFactory: Cannot create PanelManager - IActionManager is null");
         return nullptr;
     }
     
@@ -128,14 +128,14 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
         return nullptr;
     }
     
-    // Create InputButtonSensor that ActionManager needs
-    auto inputButtonSensor = std::make_shared<InputButtonSensor>(gpio);
-    if (!inputButtonSensor) {
-        log_e("ManagerFactory: Failed to create InputButtonSensor for ActionManager");
+    // Create ActionButtonSensor that ActionManager needs
+    auto actionButtonSensor = std::make_shared<ActionButtonSensor>(gpio);
+    if (!actionButtonSensor) {
+        log_e("ManagerFactory: Failed to create ActionButtonSensor for ActionManager");
         return nullptr;
     }
     
-    auto manager = std::make_unique<ActionManager>(inputButtonSensor);
+    auto manager = std::make_unique<ActionManager>(actionButtonSensor);
     if (!manager) {
         log_e("ManagerFactory: Failed to create ActionManager - allocation failed");
         return nullptr;

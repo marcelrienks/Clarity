@@ -15,7 +15,7 @@
 // Static instance definition
 ActionManager* ActionManager::instance_ = nullptr;
 
-ActionManager::ActionManager(std::shared_ptr<InputButtonSensor> buttonSensor)
+ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor)
     : buttonSensor_(buttonSensor)
     , currentService_(nullptr)
     , panelSwitchCallback_(nullptr)
@@ -141,7 +141,7 @@ void ActionManager::ProcessInputEvents()
     }
 }
 
-void ActionManager::SetInputService(IInputService* service, const char* panelName)
+void ActionManager::SetInputService(IActionService* service, const char* panelName)
 {
     currentService_ = service;
     currentPanelName_ = panelName ? panelName : "";
@@ -286,7 +286,7 @@ unsigned long ActionManager::GetCurrentTime() const
     return millis();
 }
 
-// IInterrupt Interface Implementation
+// IInterruptService Interface Implementation
 
 void ActionManager::CheckInterrupts()
 {
@@ -354,11 +354,11 @@ void ActionManager::ProcessPendingActions()
 // Static method for panel switch requests
 void ActionManager::RequestPanelSwitch(const char* targetPanel)
 {
-    if (instance_ && instance_->panelSwitchCallback_) {
-        log_i("ActionManager: Static panel switch requested to: %s", targetPanel);
-        instance_->panelSwitchCallback_(targetPanel);
+    if (panelSwitchCallback_) {
+        log_i("ActionManager: Panel switch requested to: %s", targetPanel);
+        panelSwitchCallback_(targetPanel);
     } else {
-        log_w("ActionManager: Panel switch requested but no instance or callback available");
+        log_w("ActionManager: Panel switch requested but no callback available");
     }
 }
 

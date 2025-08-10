@@ -2,7 +2,7 @@
 
 // Project Includes
 #include "interfaces/i_panel.h"
-#include "interfaces/i_input_service.h"
+#include "interfaces/i_action_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
@@ -34,7 +34,7 @@
  * animations for smooth transitions and automatically proceeds to the main
  * application panel when animation completes.
  */
-class SplashPanel : public IPanel, public IInputService
+class SplashPanel : public IPanel, public IActionService
 {
 public:
     // Constructors and Destructors
@@ -47,13 +47,13 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
-    // IInputService Interface Implementation - Action-based (no animation interruption)
+    // IActionService Interface Implementation - Action-based (no animation interruption)
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
     bool CanProcessInput() const override;
     
     // IPanel override to provide input service
-    IInputService* GetInputService() override { return this; }
+    IActionService* GetInputService() override { return this; }
 
 private:
     // Private Data Members

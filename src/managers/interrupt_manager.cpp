@@ -33,7 +33,7 @@ void InterruptManager::Init()
     log_i("InterruptManager initialized");
 }
 
-void InterruptManager::RegisterInterruptSource(IInterrupt* source)
+void InterruptManager::RegisterInterruptSource(IInterruptService* source)
 {
     if (!source) {
         log_w("Attempted to register null interrupt source");
@@ -54,7 +54,7 @@ void InterruptManager::RegisterInterruptSource(IInterrupt* source)
           source->GetPriority(), interruptSources_.size());
 }
 
-void InterruptManager::UnregisterInterruptSource(IInterrupt* source)
+void InterruptManager::UnregisterInterruptSource(IInterruptService* source)
 {
     if (!source) {
         return;
@@ -82,7 +82,7 @@ void InterruptManager::CheckAllInterrupts()
     }
     
     // Process interrupt sources in priority order
-    for (IInterrupt* source : interruptSources_) {
+    for (IInterruptService* source : interruptSources_) {
         if (source && source->HasPendingInterrupts()) {
             source->CheckInterrupts();
         }
@@ -93,7 +93,7 @@ void InterruptManager::CheckAllInterrupts()
 
 bool InterruptManager::HasAnyPendingInterrupts() const
 {
-    for (const IInterrupt* source : interruptSources_) {
+    for (const IInterruptService* source : interruptSources_) {
         if (source && source->HasPendingInterrupts()) {
             return true;
         }
@@ -104,7 +104,7 @@ bool InterruptManager::HasAnyPendingInterrupts() const
 void InterruptManager::SortSourcesByPriority()
 {
     std::sort(interruptSources_.begin(), interruptSources_.end(),
-              [](const IInterrupt* a, const IInterrupt* b) {
+              [](const IInterruptService* a, const IInterruptService* b) {
                   if (!a) return false;
                   if (!b) return true;
                   return a->GetPriority() > b->GetPriority(); // Higher priority first

@@ -3,22 +3,22 @@
 #include "utilities/types.h"
 
 /**
- * @interface IInputService
- * @brief Interface for panels to provide input actions to InputManager
+ * @interface IActionService
+ * @brief Interface for panels to provide button actions to ActionManager
  * 
  * @details This interface defines the contract for panels to specify what actions
  * should be taken for button input events. Panels return action objects that
- * InputManager can execute when appropriate, providing separation between
+ * ActionManager can execute when appropriate, providing separation between
  * action definition and action execution.
  * 
  * @design_pattern Strategy + Command patterns - Actions as strategy objects
- * @execution_flow Panel defines actions → InputManager executes when ready
+ * @execution_flow Panel defines actions → ActionManager executes when ready
  * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms, Timeout: >5000ms
  */
-class IInputService
+class IActionService
 {
 public:
-    virtual ~IInputService() = default;
+    virtual ~IActionService() = default;
 
     /**
      * @brief Get action to execute for short button press (50ms - 2000ms)
@@ -36,7 +36,7 @@ public:
 
     /**
      * @brief Check if the panel can currently process input events
-     * @details Used by InputManager to determine if inputs should be queued
+     * @details Used by ActionManager to determine if inputs should be queued
      * @return true if the panel can process inputs immediately, false to queue
      */
     virtual bool CanProcessInput() const = 0;

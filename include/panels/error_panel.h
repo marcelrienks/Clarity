@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_panel.h"
-#include "interfaces/i_input_service.h"
+#include "interfaces/i_action_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
@@ -38,7 +38,7 @@
  * It automatically appears when errors occur and manages user acknowledgment
  * and dismissal workflows.
  */
-class ErrorPanel : public IPanel, public IInputService
+class ErrorPanel : public IPanel, public IActionService
 {
 public:
     // Constructors and Destructors
@@ -51,13 +51,13 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
-    // IInputService Interface Implementation
+    // IActionService Interface Implementation
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
     bool CanProcessInput() const override;
     
     // IPanel override to provide input service
-    IInputService* GetInputService() override { return this; }
+    IActionService* GetInputService() override { return this; }
 
 private:
     // Static Methods

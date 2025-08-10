@@ -1,13 +1,14 @@
 #include "panels/oem_oil_panel.h"
 #include "factories/ui_factory.h"
 #include "utilities/lv_tools.h"
-#include "interfaces/i_panel_actions.h"
+#include "managers/panel_manager.h"
+#include "managers/style_manager.h"
 #include "managers/action_manager.h"
 
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelActions_(nullptr),
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
       currentOilPressureValue_(-1),
@@ -278,23 +279,26 @@ Action OemOilPanel::GetLongPressAction()
     // Long press: Switch to CONFIG panel
     log_i("OemOilPanel: Long press - switching to CONFIG panel");
     
-    // Return an action that directly calls the panel switch function
-    if (panelActions_) {
-        auto switchFunction = panelActions_->GetPanelSwitchFunction();
-        return Action([switchFunction]() {
-            switchFunction(PanelNames::CONFIG);
+    // Return an action that directly calls PanelService interface
+    if (panelService_) {
+        return Action([this]() {
+            panelService_->CreateAndLoadPanel(PanelNames::CONFIG);
         }, "Switch to CONFIG panel from oil panel");
     }
     
-    log_w("OemOilPanel: PanelActions not available, returning no action");
-    return Action(nullptr, "No action - PanelActions unavailable");
+    log_w("OemOilPanel: PanelService not available, returning no action");
+    return Action(nullptr, "No action - PanelService unavailable");
 }
 
-// Panel actions injection method
-void OemOilPanel::SetPanelActions(IPanelActions* panelActions)
+// Manager injection method
+void OemOilPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
 {
-    panelActions_ = panelActions;
-    log_d("OemOilPanel: PanelActions injected: %p", panelActions);
+    panelService_ = panelService;
+    // styleService_ is already set in constructor, but update if different instance provided
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+    log_d("OemOilPanel: Managers injected - PanelService: %p, StyleService: %p", panelService, styleService);
 }
 
 bool OemOilPanel::CanProcessInput() const

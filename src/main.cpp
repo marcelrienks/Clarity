@@ -41,7 +41,8 @@ bool initializeServices()
     actionManager = ManagerFactory::createActionManager(gpioProvider.get(), nullptr);
     panelManager = ManagerFactory::createPanelManager(
         displayProvider.get(),
-        gpioProvider.get(), styleManager.get(),
+        gpioProvider.get(), 
+        styleManager.get(),
         actionManager.get());
     triggerManager = ManagerFactory::createTriggerManager(
         gpioProvider.get(),

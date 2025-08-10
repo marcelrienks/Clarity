@@ -1,8 +1,9 @@
 #pragma once
 
-#include "interfaces/i_interrupt.h"
-#include "interfaces/i_input_service.h"
-#include "sensors/input_button_sensor.h"
+#include "interfaces/i_interrupt_service.h"
+#include "interfaces/i_action_manager.h"
+#include "interfaces/i_action_service.h"
+#include "sensors/action_button_sensor.h"
 #include "utilities/types.h"
 #include <memory>
 #include <unordered_map>
@@ -18,23 +19,23 @@
  * action-based approach where panels provide action objects that InputManager
  * executes when appropriate, supporting queuing during animations.
  * 
- * @architecture Implements IInterrupt for unified interrupt handling
+ * @architecture Implements IInterruptService for unified interrupt handling
  * @gpio_pin GPIO 32 with pull-down resistor (3.3V when pressed)
  * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms, Timeout: >5000ms
  * @debouncing 50ms debounce window to prevent false triggers
  * @priority 50 (lower than triggers, higher than background tasks)
  */
-class ActionManager : public IInterrupt
+class ActionManager : public IInterruptService, public IActionManager
 {
 public:
     // Constructors and Destructors
-    ActionManager(std::shared_ptr<InputButtonSensor> buttonSensor);
+    ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor);
     
     /**
      * @brief Set callback for panel switch requests from actions
      * @param callback Function to call when an action requests a panel switch
      */
-    void SetPanelSwitchCallback(std::function<void(const char*)> callback);
+    void SetPanelSwitchCallback(std::function<void(const char*)> callback) override;
     
     ActionManager(const ActionManager&) = delete;
     ActionManager& operator=(const ActionManager&) = delete;
@@ -47,23 +48,23 @@ public:
      */
     void Init();
 
-    // IInterrupt Interface Implementation
+    // IInterruptService Interface Implementation
     
     /**
-     * @brief Check for pending interrupts and process them (IInterrupt interface)
+     * @brief Check for pending interrupts and process them (IInterruptService interface)
      * @details Called by InterruptManager during idle time
      */
     void CheckInterrupts() override;
 
     /**
-     * @brief Check if there are pending input interrupts (IInterrupt interface)
+     * @brief Check if there are pending input interrupts (IInterruptService interface)
      * @details Quick check without processing for optimization
      * @return true if input events are pending
      */
     bool HasPendingInterrupts() const override;
 
     /**
-     * @brief Get interrupt priority level (IInterrupt interface)
+     * @brief Get interrupt priority level (IInterruptService interface)
      * @details Input priority is 50 (lower than triggers=100)
      * @return Priority value of 50
      */
@@ -80,21 +81,21 @@ public:
 
     /**
      * @brief Register a panel as the current input service
-     * @param service Pointer to panel implementing IInputService
+     * @param service Pointer to panel implementing IActionService
      * @param panelName Name of the panel for action lookup
      */
-    void SetInputService(IInputService* service, const char* panelName);
+    void SetInputService(IActionService* service, const char* panelName) override;
 
     /**
      * @brief Remove current input service
      */
-    void ClearInputService();
+    void ClearInputService() override;
     
     /**
-     * @brief Static function for panels to request panel switches
+     * @brief Request panel switch operation (IActionManager interface)
      * @param targetPanel Name of the panel to switch to
      */
-    static void RequestPanelSwitch(const char* targetPanel);
+    void RequestPanelSwitch(const char* targetPanel) override;
 
 private:
     // Button state tracking
@@ -136,8 +137,8 @@ private:
     void ProcessPendingActions();
 
     // Dependencies
-    std::shared_ptr<InputButtonSensor> buttonSensor_;
-    IInputService* currentService_;
+    std::shared_ptr<ActionButtonSensor> buttonSensor_;
+    IActionService* currentService_;
     std::function<void(const char*)> panelSwitchCallback_;
 
     // Static instance for global access

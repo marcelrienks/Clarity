@@ -308,7 +308,7 @@ bool TriggerManager::HasTrigger(const std::string& triggerName) const {
     return false;
 }
 
-// IInterrupt Interface Implementation
+// IInterruptService Interface Implementation
 
 void TriggerManager::CheckInterrupts()
 {

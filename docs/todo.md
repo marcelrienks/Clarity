@@ -1,3 +1,7 @@
+* I don't like these, their logic should either be absorbed elsewhere or removed
+    * i_panel_actions
+    * i_panel_switch_service
+* should there be a panel factory?
 * Consolidate panel switching mechanism between PanelManager, and InputManager  
 If possible they should use a similar mechanism in the form of a simplePanelSwitchAction
 * Expand on the idea of interrupts, where we have two types, triggers and input

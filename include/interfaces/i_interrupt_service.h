@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @interface IInterrupt
+ * @interface IInterruptService
  * @brief Interface for systems that need periodic interrupt checking during idle time
  * 
  * @details This interface abstracts the concept of interrupt-style processing for
@@ -13,10 +13,10 @@
  * @priority_system Higher priority interrupts are checked first
  * @idle_integration Called during LVGL idle time and animation gaps
  */
-class IInterrupt
+class IInterruptService
 {
 public:
-    virtual ~IInterrupt() = default;
+    virtual ~IInterruptService() = default;
 
     /**
      * @brief Check for pending interrupts and process them

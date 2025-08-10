@@ -11,7 +11,7 @@
 #include "interfaces/i_display_provider.h"
 
 // Forward declaration
-class IInputService;
+class IActionService;
 
 /**
  * @interface IPanel
@@ -70,8 +70,8 @@ public:
     virtual void Update(std::function<void()> callbackFunction) = 0;
 
     /// @brief Get the input service interface if this panel supports input
-    /// @return Pointer to IInputService or nullptr if not supported
-    virtual IInputService* GetInputService() { return nullptr; }
+    /// @return Pointer to IActionService or nullptr if not supported
+    virtual IActionService* GetInputService() { return nullptr; }
 
 protected:
     // Protected Data Members

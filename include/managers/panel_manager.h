@@ -4,7 +4,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
-#include "interfaces/i_panel_actions.h"
+#include "interfaces/i_action_manager.h"
 #include "factories/ui_factory.h"
 #include "interfaces/i_panel_service.h"
 #include "utilities/types.h"
@@ -54,14 +54,13 @@
  */
 
 // Forward declarations
-class ActionManager;
 class StyleManager;
 
-class PanelManager : public IPanelService, public IPanelActions
+class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, ActionManager *actionManager);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager *actionManager);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -91,14 +90,6 @@ public:
     /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel() override;
     
-    // IPanelActions interface implementation
-    /// @brief Get function for panel switching that panels can use in their actions
-    /// @return Function that takes panel name and switches to that panel
-    std::function<void(const char*)> GetPanelSwitchFunction() override;
-    
-    /// @brief Get function for theme switching that panels can use in their actions  
-    /// @return Function that takes theme name and switches to that theme
-    std::function<void(const char*)> GetThemeSwitchFunction() override;
 
 
     // State Management Methods (IPanelService implementation)
@@ -151,7 +142,7 @@ private:
     IGpioProvider *gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr; ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;       ///< Style service for UI theming
-    ActionManager *actionManager_ = nullptr;         ///< Action manager for button handling
+    IActionManager *actionManager_ = nullptr;     ///< Action manager interface for button handling
     // Removed IPanelFactory - using UIFactory directly
     // Removed queue handles - now using shared state trigger system
 };

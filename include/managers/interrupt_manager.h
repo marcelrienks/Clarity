@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interfaces/i_interrupt.h"
+#include "interfaces/i_interrupt_service.h"
 #include <vector>
 #include <memory>
 
@@ -38,13 +38,13 @@ public:
      * @param source Pointer to interrupt source (must remain valid)
      * @details Sources are automatically sorted by priority after registration
      */
-    void RegisterInterruptSource(IInterrupt* source);
+    void RegisterInterruptSource(IInterruptService* source);
 
     /**
      * @brief Unregister an interrupt source
      * @param source Pointer to interrupt source to remove
      */
-    void UnregisterInterruptSource(IInterrupt* source);
+    void UnregisterInterruptSource(IInterruptService* source);
 
     /**
      * @brief Check all registered interrupt sources in priority order
@@ -71,7 +71,7 @@ private:
     void SortSourcesByPriority();
     
     // Data members
-    std::vector<IInterrupt*> interruptSources_;
+    std::vector<IInterruptService*> interruptSources_;
     bool initialized_;
     
     // Statistics (for debugging)
