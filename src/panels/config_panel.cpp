@@ -57,14 +57,17 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     // Reset menu to first item
     currentMenuIndex_ = 0;
     
+    log_d("Creating menu UI...");
     // Create the menu UI
     CreateMenuUI();
     
-    // Load screen with animation
-    lv_screen_load_anim(screen_, LV_SCR_LOAD_ANIM_FADE_IN, 300, 0, false);
+    log_v("loading...");
+    lv_screen_load(screen_);
     
-    // Create completion event
-    lv_obj_add_event_cb(screen_, ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
+    // Call the completion callback directly (like other panels do)
+    if (callbackFunction_) {
+        callbackFunction_();
+    }
 }
 
 void ConfigPanel::Update(std::function<void()> callbackFunction)
@@ -77,16 +80,30 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 
 void ConfigPanel::CreateMenuUI()
 {
+    log_d("CreateMenuUI: Starting, screen_ = %p", screen_);
+    
+    if (!screen_) {
+        log_e("CreateMenuUI: screen_ is NULL!");
+        return;
+    }
+    
+    log_d("CreateMenuUI: Setting background color...");
     // Apply grey theme for settings
     lv_obj_set_style_bg_color(screen_, lv_color_hex(0x2C2C2C), LV_PART_MAIN);
     
+    log_d("CreateMenuUI: Creating title label...");
     // Create title
     titleLabel_ = lv_label_create(screen_);
+    log_d("CreateMenuUI: Setting title text...");
     lv_label_set_text(titleLabel_, "Configuration");
+    log_d("CreateMenuUI: Setting title color...");
     lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
+    log_d("CreateMenuUI: Setting title font...");
     lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_20, LV_PART_MAIN);
+    log_d("CreateMenuUI: Aligning title...");
     lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 20);
     
+    log_d("CreateMenuUI: Creating menu container...");
     // Create menu container
     menuContainer_ = lv_obj_create(screen_);
     lv_obj_set_size(menuContainer_, 200, 120);
