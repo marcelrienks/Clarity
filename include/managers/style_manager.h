@@ -87,6 +87,10 @@ public:
     const ThemeColors& GetThemeColors() const override { return GetColours(THEME.c_str()); }
     bool IsInitialized() const override { return initialized_; }
     
+    /// @brief Get function for theme switching that panels can use in their actions
+    /// @return Function that takes theme name and switches to that theme
+    std::function<void(const char*)> GetThemeSwitchFunction();
+    
     // Public Data Members - Theme State
     std::string THEME = Themes::NIGHT;
 

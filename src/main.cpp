@@ -6,7 +6,7 @@
 #include "providers/lvgl_display_provider.h"
 #include "managers/style_manager.h"
 #include "managers/preference_manager.h"
-#include "managers/input_manager.h"
+#include "managers/action_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/interrupt_manager.h"
@@ -20,7 +20,7 @@ std::unique_ptr<GpioProvider> gpioProvider;
 std::unique_ptr<LvglDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
-std::unique_ptr<InputManager> inputManager;
+std::unique_ptr<ActionManager> actionManager;
 std::unique_ptr<PanelManager> panelManager;
 std::unique_ptr<TriggerManager> triggerManager;
 std::unique_ptr<InterruptManager> interruptManager;
@@ -38,11 +38,11 @@ bool initializeServices()
     // Create managers - factories handle all error checking and logging
     styleManager = ManagerFactory::createStyleManager(Themes::DAY);
     preferenceManager = ManagerFactory::createPreferenceManager();
-    inputManager = ManagerFactory::createInputManager(gpioProvider.get(), nullptr);
+    actionManager = ManagerFactory::createActionManager(gpioProvider.get(), nullptr);
     panelManager = ManagerFactory::createPanelManager(
         displayProvider.get(),
         gpioProvider.get(), styleManager.get(),
-        inputManager.get());
+        actionManager.get());
     triggerManager = ManagerFactory::createTriggerManager(
         gpioProvider.get(),
         panelManager.get(),
@@ -52,7 +52,7 @@ bool initializeServices()
 
     // Verify all critical services were created
     bool allServicesCreated = deviceProvider && gpioProvider && displayProvider &&
-                              styleManager && preferenceManager && inputManager &&
+                              styleManager && preferenceManager && actionManager &&
                               panelManager && triggerManager && interruptManager && errorManager;
 
     if (!allServicesCreated)
@@ -61,9 +61,9 @@ bool initializeServices()
         return false;
     }
 
-    // Setup InputManager callback after successful creation
-    inputManager->SetPanelSwitchCallback([&](const char *panelName){
-        log_d("InputManager requests panel switch to: %s", panelName);
+    // Setup ActionManager callback after successful creation
+    actionManager->SetPanelSwitchCallback([&](const char *panelName){
+        log_d("ActionManager requests panel switch to: %s", panelName);
         panelManager->CreateAndLoadPanel(panelName); });
 
     log_i("All services initialized successfully");
@@ -84,7 +84,7 @@ void setup()
     styleManager->InitializeStyles();
     interruptManager->Init();
     interruptManager->RegisterInterruptSource(triggerManager.get()); // Priority 100
-    interruptManager->RegisterInterruptSource(inputManager.get());   // Priority 50
+    interruptManager->RegisterInterruptSource(actionManager.get());   // Priority 50
     Ticker::handleLvTasks();
 
     // Load startup panel

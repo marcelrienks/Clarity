@@ -4,7 +4,7 @@
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include "managers/preference_manager.h"
-#include "managers/input_manager.h"
+#include "managers/action_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/error_manager.h"
 #include "sensors/key_sensor.h"
@@ -16,7 +16,7 @@
 
 // Factory Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, InputManager* inputManager)
+std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, ActionManager* actionManager)
 {
     log_d("ManagerFactory: Creating PanelManager (UI panel coordination)...");
     
@@ -32,12 +32,12 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
         log_e("ManagerFactory: Cannot create PanelManager - IStyleService is null");
         return nullptr;
     }
-    if (!inputManager) {
-        log_e("ManagerFactory: Cannot create PanelManager - InputManager is null");
+    if (!actionManager) {
+        log_e("ManagerFactory: Cannot create PanelManager - ActionManager is null");
         return nullptr;
     }
     
-    auto manager = std::make_unique<PanelManager>(display, gpio, styleService, inputManager);
+    auto manager = std::make_unique<PanelManager>(display, gpio, styleService, actionManager);
     if (!manager) {
         log_e("ManagerFactory: Failed to create PanelManager - allocation failed");
         return nullptr;
@@ -119,31 +119,31 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     return manager;
 }
 
-std::unique_ptr<InputManager> ManagerFactory::createInputManager(IGpioProvider* gpio, IPanelService* panelService)
+std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider* gpio, IPanelService* panelService)
 {
-    log_d("ManagerFactory: Creating InputManager (button input system)...");
+    log_d("ManagerFactory: Creating ActionManager (button input system)...");
     
     if (!gpio) {
-        log_e("ManagerFactory: Cannot create InputManager - IGpioProvider is null");
+        log_e("ManagerFactory: Cannot create ActionManager - IGpioProvider is null");
         return nullptr;
     }
     
-    // Create InputButtonSensor that InputManager needs
+    // Create InputButtonSensor that ActionManager needs
     auto inputButtonSensor = std::make_shared<InputButtonSensor>(gpio);
     if (!inputButtonSensor) {
-        log_e("ManagerFactory: Failed to create InputButtonSensor for InputManager");
+        log_e("ManagerFactory: Failed to create InputButtonSensor for ActionManager");
         return nullptr;
     }
     
-    auto manager = std::make_unique<InputManager>(inputButtonSensor);
+    auto manager = std::make_unique<ActionManager>(inputButtonSensor);
     if (!manager) {
-        log_e("ManagerFactory: Failed to create InputManager - allocation failed");
+        log_e("ManagerFactory: Failed to create ActionManager - allocation failed");
         return nullptr;
     }
     
-    log_d("ManagerFactory: Initializing InputManager...");
+    log_d("ManagerFactory: Initializing ActionManager...");
     manager->Init();
-    log_d("ManagerFactory: InputManager created successfully");
+    log_d("ManagerFactory: ActionManager created successfully");
     return manager;
 }
 

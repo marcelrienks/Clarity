@@ -2,7 +2,6 @@
 
 #include "interfaces/i_interrupt.h"
 #include "interfaces/i_input_service.h"
-#include "interfaces/i_input_action.h"
 #include "sensors/input_button_sensor.h"
 #include "utilities/types.h"
 #include <memory>
@@ -11,8 +10,8 @@
 #include <functional>
 
 /**
- * @class InputManager
- * @brief Centralized button input management with action-based workflow
+ * @class ActionManager
+ * @brief Centralized action execution and button input management
  * 
  * @details This class handles GPIO 32 button input detection, debouncing, and 
  * timing logic to distinguish between short and long presses. It uses an
@@ -25,11 +24,11 @@
  * @debouncing 50ms debounce window to prevent false triggers
  * @priority 50 (lower than triggers, higher than background tasks)
  */
-class InputManager : public IInterrupt
+class ActionManager : public IInterrupt
 {
 public:
     // Constructors and Destructors
-    InputManager(std::shared_ptr<InputButtonSensor> buttonSensor);
+    ActionManager(std::shared_ptr<InputButtonSensor> buttonSensor);
     
     /**
      * @brief Set callback for panel switch requests from actions
@@ -37,9 +36,9 @@ public:
      */
     void SetPanelSwitchCallback(std::function<void(const char*)> callback);
     
-    InputManager(const InputManager&) = delete;
-    InputManager& operator=(const InputManager&) = delete;
-    ~InputManager() = default;
+    ActionManager(const ActionManager&) = delete;
+    ActionManager& operator=(const ActionManager&) = delete;
+    ~ActionManager() = default;
 
     // Core Functionality
     
@@ -90,7 +89,12 @@ public:
      * @brief Remove current input service
      */
     void ClearInputService();
-
+    
+    /**
+     * @brief Static function for panels to request panel switches
+     * @param targetPanel Name of the panel to switch to
+     */
+    static void RequestPanelSwitch(const char* targetPanel);
 
 private:
     // Button state tracking
@@ -111,12 +115,12 @@ private:
 
     // Pending action structure  
     struct PendingAction {
-        std::unique_ptr<IInputAction> action = nullptr;
+        Action action;
         unsigned long timestamp = 0;
         
-        bool HasAction() const { return action != nullptr; }
+        bool HasAction() const { return action.IsValid() || action.IsPanelSwitch(); }
         void Clear() { 
-            action.reset(); 
+            action = Action(); 
             timestamp = 0; 
         }
     };
@@ -136,6 +140,8 @@ private:
     IInputService* currentService_;
     std::function<void(const char*)> panelSwitchCallback_;
 
+    // Static instance for global access
+    static ActionManager* instance_;
 
     // State tracking
     ButtonState buttonState_;

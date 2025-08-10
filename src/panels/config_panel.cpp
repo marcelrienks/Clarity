@@ -1,7 +1,6 @@
 #include "panels/config_panel.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
-#include "actions/input_actions.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
@@ -185,27 +184,23 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 // IInputService Interface Implementation
 
-std::unique_ptr<IInputAction> ConfigPanel::GetShortPressAction()
+Action ConfigPanel::GetShortPressAction()
 {
     // Short press cycles through menu options
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::NEXT,
-        [this](MenuNavigationAction::Direction) {
-            currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
-            log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
-            UpdateMenuDisplay();
-        }
-    );
+    return Action([this]() {
+        currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
+        log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
+        UpdateMenuDisplay();
+    }, "ConfigPanel menu navigation");
 }
 
-std::unique_ptr<IInputAction> ConfigPanel::GetLongPressAction()
+Action ConfigPanel::GetLongPressAction()
 {
     // Long press executes current option
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::SELECT,
-        [this](MenuNavigationAction::Direction) {
-            log_i("ConfigPanel: Long press - executing '%s'", menuItems_[currentMenuIndex_].label.c_str());
-            ExecuteCurrentOption();
-        }
-    );
+    return Action([this]() {
+        log_i("ConfigPanel: Long press - executing '%s'", menuItems_[currentMenuIndex_].label.c_str());
+        ExecuteCurrentOption();
+    }, "ConfigPanel menu selection");
 }
 
 bool ConfigPanel::CanProcessInput() const

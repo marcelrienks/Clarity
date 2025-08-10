@@ -1,13 +1,13 @@
 #include "panels/oem_oil_panel.h"
 #include "factories/ui_factory.h"
 #include "utilities/lv_tools.h"
-#include "managers/style_manager.h"
-#include "actions/input_actions.h"
+#include "interfaces/i_panel_actions.h"
+#include "managers/action_manager.h"
 
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelActions_(nullptr),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
       currentOilPressureValue_(-1),
@@ -266,21 +266,35 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_start(&temperatureAnimation_);
 }
 
-std::unique_ptr<IInputAction> OemOilPanel::GetShortPressAction()
+Action OemOilPanel::GetShortPressAction()
 {
     // Short press: No action for oil panel
     log_d("OemOilPanel: Short press action requested - returning NoAction");
-    return std::make_unique<NoAction>();
+    return Action(nullptr, "No action");
 }
 
-std::unique_ptr<IInputAction> OemOilPanel::GetLongPressAction()
+Action OemOilPanel::GetLongPressAction()
 {
     // Long press: Switch to CONFIG panel
-    return std::make_unique<SimplePanelSwitchAction>(PanelNames::CONFIG,
-        [](const char* panelName) {
-            log_i("OemOilPanel: Long press - switching to CONFIG panel");
-        }
-    );
+    log_i("OemOilPanel: Long press - switching to CONFIG panel");
+    
+    // Return an action that directly calls the panel switch function
+    if (panelActions_) {
+        auto switchFunction = panelActions_->GetPanelSwitchFunction();
+        return Action([switchFunction]() {
+            switchFunction(PanelNames::CONFIG);
+        }, "Switch to CONFIG panel from oil panel");
+    }
+    
+    log_w("OemOilPanel: PanelActions not available, returning no action");
+    return Action(nullptr, "No action - PanelActions unavailable");
+}
+
+// Panel actions injection method
+void OemOilPanel::SetPanelActions(IPanelActions* panelActions)
+{
+    panelActions_ = panelActions;
+    log_d("OemOilPanel: PanelActions injected: %p", panelActions);
 }
 
 bool OemOilPanel::CanProcessInput() const

@@ -2,7 +2,6 @@
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
-#include "actions/input_actions.h"
 
 // Constructors and Destructors
 
@@ -141,22 +140,19 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 
 // IInputService Interface Implementation
 
-std::unique_ptr<IInputAction> SplashPanel::GetShortPressAction()
+Action SplashPanel::GetShortPressAction()
 {
     // Short press during splash: Skip animation (future enhancement)
     // For now, return NoAction since we don't interrupt animations
     log_d("SplashPanel: Short press action requested - returning NoAction (animation will complete)");
-    return std::make_unique<NoAction>();
+    return Action(nullptr, "No action");
 }
 
-std::unique_ptr<IInputAction> SplashPanel::GetLongPressAction()
+Action SplashPanel::GetLongPressAction()
 {
     // Long press during splash: Switch to CONFIG panel
-    return std::make_unique<SimplePanelSwitchAction>(PanelNames::CONFIG,
-        [](const char* panelName) {
-            log_i("SplashPanel: Long press - switching to CONFIG panel");
-        }
-    );
+    log_i("SplashPanel: Long press - switching to CONFIG panel");
+    return Action(PanelNames::CONFIG, "Switch to CONFIG panel from splash");
 }
 
 bool SplashPanel::CanProcessInput() const

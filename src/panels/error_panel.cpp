@@ -2,7 +2,6 @@
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
-#include "actions/input_actions.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
@@ -143,51 +142,47 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 // IInputService Interface Implementation
 
-std::unique_ptr<IInputAction> ErrorPanel::GetShortPressAction()
+Action ErrorPanel::GetShortPressAction()
 {
     // Short press cycles through each error
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::NEXT,
-        [this](MenuNavigationAction::Direction) {
-            if (currentErrors_.empty()) {
-                log_d("ErrorPanel: No errors to cycle through");
-                return;
-            }
-            
-            // Move to next error (wrap around)
-            currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-            
-            log_i("ErrorPanel: Short press - showing error %d of %d", 
-                  currentErrorIndex_ + 1, currentErrors_.size());
-            
-            // Update the error list component to highlight current error
-            if (errorListComponent_) {
-                log_d("Currently showing error %d: %s", currentErrorIndex_ + 1, 
-                      currentErrors_[currentErrorIndex_].message.c_str());
-            }
+    return Action([this]() {
+        if (currentErrors_.empty()) {
+            log_d("ErrorPanel: No errors to cycle through");
+            return;
         }
-    );
+        
+        // Move to next error (wrap around)
+        currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+        
+        log_i("ErrorPanel: Short press - showing error %d of %d", 
+              currentErrorIndex_ + 1, currentErrors_.size());
+        
+        // Update the error list component to highlight current error
+        if (errorListComponent_) {
+            log_d("Currently showing error %d: %s", currentErrorIndex_ + 1, 
+                  currentErrors_[currentErrorIndex_].message.c_str());
+        }
+    }, "ErrorPanel cycle through errors");
 }
 
-std::unique_ptr<IInputAction> ErrorPanel::GetLongPressAction()
+Action ErrorPanel::GetLongPressAction()
 {
     // Long press clears all errors
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::SELECT,
-        [this](MenuNavigationAction::Direction) {
-            log_i("ErrorPanel: Long press - clearing all errors");
-            
-            // Clear all errors from the error manager
-            ErrorManager::Instance().ClearAllErrors();
-            
-            // Clear local cache
-            currentErrors_.clear();
-            currentErrorIndex_ = 0;
-            
-            // Update the display
-            if (errorListComponent_) {
-                log_d("Error list cleared, component will update on next cycle");
-            }
+    return Action([this]() {
+        log_i("ErrorPanel: Long press - clearing all errors");
+        
+        // Clear all errors from the error manager
+        ErrorManager::Instance().ClearAllErrors();
+        
+        // Clear local cache
+        currentErrors_.clear();
+        currentErrorIndex_ = 0;
+        
+        // Update the display
+        if (errorListComponent_) {
+            log_d("Error list cleared, component will update on next cycle");
         }
-    );
+    }, "ErrorPanel clear all errors");
 }
 
 bool ErrorPanel::CanProcessInput() const

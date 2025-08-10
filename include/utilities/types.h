@@ -27,6 +27,7 @@
 #include <string>
 #include <variant>
 #include <vector>
+#include <functional>
 #include <stdint.h>
 
 // Types/Structs/Enums
@@ -306,5 +307,27 @@ struct ThemeColors
     lv_color_t needleDanger;   // Danger needle color (bright red/orange)
     lv_color_t keyPresent;     // Normal key present clor (pure white)
     lv_color_t keyNotPresent; // Normal Key not present color (bright red)
+};
+
+/// @struct Action
+/// @brief Simple action struct that holds a function to execute
+struct Action {
+    std::function<void()> execute;  ///< Function to execute
+    std::string description;        ///< Human-readable description
+    const char* targetPanel;        ///< Target panel for panel switch actions (optional)
+    
+    // Constructor for general actions
+    Action(std::function<void()> func = nullptr, const char* desc = "No action") 
+        : execute(func), description(desc ? desc : ""), targetPanel(nullptr) {}
+        
+    // Constructor for panel switch actions
+    Action(const char* panel, const char* desc = nullptr) 
+        : execute(nullptr), description(desc ? desc : std::string("Switch to ") + panel), targetPanel(panel) {}
+        
+    // Check if action has a valid function
+    bool IsValid() const { return execute != nullptr; }
+    
+    // Check if this is a panel switch action
+    bool IsPanelSwitch() const { return targetPanel != nullptr; }
 };
 

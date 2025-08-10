@@ -48,8 +48,8 @@ public:
     void Update(std::function<void()> callbackFunction) override;
     
     // IInputService Interface Implementation - Action-based (no animation interruption)
-    std::unique_ptr<IInputAction> GetShortPressAction() override;
-    std::unique_ptr<IInputAction> GetLongPressAction() override;
+    Action GetShortPressAction() override;
+    Action GetLongPressAction() override;
     bool CanProcessInput() const override;
     
     // IPanel override to provide input service

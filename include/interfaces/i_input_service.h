@@ -1,7 +1,6 @@
 #pragma once
 
-#include "interfaces/i_input_action.h"
-#include <memory>
+#include "utilities/types.h"
 
 /**
  * @interface IInputService
@@ -24,16 +23,16 @@ public:
     /**
      * @brief Get action to execute for short button press (50ms - 2000ms)
      * @details Called when button is pressed and released within short press window
-     * @return Action object to execute, or nullptr for no action
+     * @return Action struct containing function to execute
      */
-    virtual std::unique_ptr<IInputAction> GetShortPressAction() = 0;
+    virtual Action GetShortPressAction() = 0;
 
     /**
      * @brief Get action to execute for long button press (2000ms - 5000ms)
      * @details Called when button is held down for longer than long press threshold
-     * @return Action object to execute, or nullptr for no action
+     * @return Action struct containing function to execute
      */
-    virtual std::unique_ptr<IInputAction> GetLongPressAction() = 0;
+    virtual Action GetLongPressAction() = 0;
 
     /**
      * @brief Check if the panel can currently process input events

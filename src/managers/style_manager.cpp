@@ -165,3 +165,12 @@ const ThemeColors &StyleManager::GetColours(const char* theme) const
         return dayThemeColours_;
     }
 }
+
+/// @brief Get function for theme switching that panels can use in their actions
+std::function<void(const char*)> StyleManager::GetThemeSwitchFunction()
+{
+    return [this](const char* theme) {
+        log_i("StyleManager: Direct theme switch requested to: %s", theme);
+        this->SetTheme(theme);
+    };
+}

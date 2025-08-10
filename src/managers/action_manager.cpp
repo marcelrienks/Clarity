@@ -1,19 +1,21 @@
-#include "managers/input_manager.h"
-#include "actions/input_actions.h"
+#include "managers/action_manager.h"
 #include "utilities/types.h"
 #include <Arduino.h>
 #include <cstring>
 
 #ifdef CLARITY_DEBUG
 #include "esp32-hal-log.h"
-#define LOG_TAG "InputManager"
+#define LOG_TAG "ActionManager"
 #else
 #define log_d(...)
 #define log_w(...)
 #define log_e(...)
 #endif
 
-InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor)
+// Static instance definition
+ActionManager* ActionManager::instance_ = nullptr;
+
+ActionManager::ActionManager(std::shared_ptr<InputButtonSensor> buttonSensor)
     : buttonSensor_(buttonSensor)
     , currentService_(nullptr)
     , panelSwitchCallback_(nullptr)
@@ -23,12 +25,13 @@ InputManager::InputManager(std::shared_ptr<InputButtonSensor> buttonSensor)
     , lastButtonState_(false)
     , initialized_(false)
 {
+    instance_ = this;
 }
 
-void InputManager::Init()
+void ActionManager::Init()
 {
     if (initialized_) {
-        log_w("InputManager already initialized");
+        log_w("ActionManager already initialized");
         return;
     }
 
@@ -49,10 +52,10 @@ void InputManager::Init()
     
     
     initialized_ = true;
-    log_i("InputManager initialized");
+    log_i("ActionManager initialized");
 }
 
-void InputManager::ProcessInputEvents()
+void ActionManager::ProcessInputEvents()
 {
     if (!initialized_) {
         return;
@@ -96,24 +99,25 @@ void InputManager::ProcessInputEvents()
                 
                 if (currentService_) {
                     // Get action from current panel
-                    auto action = currentService_->GetLongPressAction();
-                    if (action) {
+                    Action action = currentService_->GetLongPressAction();
+                    if (action.IsValid() || action.IsPanelSwitch()) {
                         // Check if panel can process action immediately
-                        if (currentService_->CanProcessInput() && action->CanExecute()) {
-                            log_d("Executing long press action immediately: %s", action->GetDescription());
-                            action->Execute();
+                        if (currentService_->CanProcessInput()) {
+                            log_d("Executing long press action immediately: %s", action.description.c_str());
                             
-                            // Check if this is a SimplePanelSwitchAction that needs callback handling
-                            if (strcmp(action->GetActionType(), "SimplePanelSwitchAction") == 0 && panelSwitchCallback_) {
-                                auto simplePanelSwitchAction = static_cast<SimplePanelSwitchAction*>(action.get());
-                                log_d("Handling SimplePanelSwitchAction via callback (immediate long press)");
-                                panelSwitchCallback_(simplePanelSwitchAction->GetTargetPanel());
+                            if (action.IsPanelSwitch() && panelSwitchCallback_) {
+                                // Handle panel switch
+                                log_d("Handling panel switch to: %s", action.targetPanel);
+                                panelSwitchCallback_(action.targetPanel);
+                            } else if (action.IsValid()) {
+                                // Execute custom action
+                                action.execute();
                             }
                         } else {
                             // Store the action for later processing (overwrites any pending short press)
                             pendingAction_.action = std::move(action);
                             pendingAction_.timestamp = currentTime;
-                            log_d("Long press action queued for later: %s", pendingAction_.action->GetDescription());
+                            log_d("Long press action queued for later: %s", pendingAction_.action.description.c_str());
                         }
                     }
                 }
@@ -137,26 +141,26 @@ void InputManager::ProcessInputEvents()
     }
 }
 
-void InputManager::SetInputService(IInputService* service, const char* panelName)
+void ActionManager::SetInputService(IInputService* service, const char* panelName)
 {
     currentService_ = service;
     currentPanelName_ = panelName ? panelName : "";
     log_d("Input service set for panel %s: %p", panelName, service);
 }
 
-void InputManager::ClearInputService()
+void ActionManager::ClearInputService()
 {
     currentService_ = nullptr;
     log_d("Input service cleared");
 }
 
-void InputManager::SetPanelSwitchCallback(std::function<void(const char*)> callback)
+void ActionManager::SetPanelSwitchCallback(std::function<void(const char*)> callback)
 {
     panelSwitchCallback_ = callback;
     log_d("Panel switch callback set: %p", &callback);
 }
 
-void InputManager::HandleButtonPress()
+void ActionManager::HandleButtonPress()
 {
     unsigned long currentTime = GetCurrentTime();
     
@@ -166,7 +170,7 @@ void InputManager::HandleButtonPress()
     debounceStartTime_ = currentTime;
 }
 
-void InputManager::HandleButtonRelease()
+void ActionManager::HandleButtonRelease()
 {
     unsigned long currentTime = GetCurrentTime();
     
@@ -186,24 +190,25 @@ void InputManager::HandleButtonRelease()
             
             if (currentService_) {
                 // Get action from current panel
-                auto action = currentService_->GetShortPressAction();
-                if (action) {
+                Action action = currentService_->GetShortPressAction();
+                if (action.IsValid() || action.IsPanelSwitch()) {
                     // Check if panel can process action immediately
-                    if (currentService_->CanProcessInput() && action->CanExecute()) {
-                        log_d("Executing short press action immediately: %s", action->GetDescription());
-                        action->Execute();
+                    if (currentService_->CanProcessInput()) {
+                        log_d("Executing short press action immediately: %s", action.description.c_str());
                         
-                        // Check if this is a SimplePanelSwitchAction that needs callback handling
-                        if (strcmp(action->GetActionType(), "SimplePanelSwitchAction") == 0 && panelSwitchCallback_) {
-                            auto simplePanelSwitchAction = static_cast<SimplePanelSwitchAction*>(action.get());
-                            log_d("Handling SimplePanelSwitchAction via callback (immediate short press)");
-                            panelSwitchCallback_(simplePanelSwitchAction->GetTargetPanel());
+                        if (action.IsPanelSwitch() && panelSwitchCallback_) {
+                            // Handle panel switch
+                            log_d("Handling panel switch to: %s", action.targetPanel);
+                            panelSwitchCallback_(action.targetPanel);
+                        } else if (action.IsValid()) {
+                            // Execute custom action
+                            action.execute();
                         }
                     } else {
                         // Store the action for later processing
                         pendingAction_.action = std::move(action);
                         pendingAction_.timestamp = currentTime;
-                        log_d("Short press action queued for later: %s", pendingAction_.action->GetDescription());
+                        log_d("Short press action queued for later: %s", pendingAction_.action.description.c_str());
                     }
                 }
             }
@@ -213,22 +218,23 @@ void InputManager::HandleButtonRelease()
             log_i("Long press detected on release");
             
             if (currentService_) {
-                auto action = currentService_->GetLongPressAction();
-                if (action) {
-                    if (currentService_->CanProcessInput() && action->CanExecute()) {
-                        log_d("Executing long press action on release: %s", action->GetDescription());
-                        action->Execute();
+                Action action = currentService_->GetLongPressAction();
+                if (action.IsValid() || action.IsPanelSwitch()) {
+                    if (currentService_->CanProcessInput()) {
+                        log_d("Executing long press action on release: %s", action.description.c_str());
                         
-                        // Check if this is a SimplePanelSwitchAction that needs callback handling
-                        if (strcmp(action->GetActionType(), "SimplePanelSwitchAction") == 0 && panelSwitchCallback_) {
-                            auto simplePanelSwitchAction = static_cast<SimplePanelSwitchAction*>(action.get());
-                            log_d("Handling SimplePanelSwitchAction via callback (long press on release)");
-                            panelSwitchCallback_(simplePanelSwitchAction->GetTargetPanel());
+                        if (action.IsPanelSwitch() && panelSwitchCallback_) {
+                            // Handle panel switch
+                            log_d("Handling panel switch to: %s", action.targetPanel);
+                            panelSwitchCallback_(action.targetPanel);
+                        } else if (action.IsValid()) {
+                            // Execute custom action
+                            action.execute();
                         }
                     } else {
                         pendingAction_.action = std::move(action);
                         pendingAction_.timestamp = currentTime;
-                        log_d("Long press action queued for later: %s", pendingAction_.action->GetDescription());
+                        log_d("Long press action queued for later: %s", pendingAction_.action.description.c_str());
                     }
                 }
             }
@@ -238,7 +244,7 @@ void InputManager::HandleButtonRelease()
     buttonState_ = ButtonState::IDLE;
 }
 
-void InputManager::CheckPressTimeout()
+void ActionManager::CheckPressTimeout()
 {
     unsigned long currentTime = GetCurrentTime();
     
@@ -248,7 +254,7 @@ void InputManager::CheckPressTimeout()
     }
 }
 
-bool InputManager::IsButtonPressed() const
+bool ActionManager::IsButtonPressed() const
 {
     if (!buttonSensor_ || !initialized_) {
         return false;
@@ -274,7 +280,7 @@ bool InputManager::IsButtonPressed() const
     return pressed;
 }
 
-unsigned long InputManager::GetCurrentTime() const
+unsigned long ActionManager::GetCurrentTime() const
 {
     // Use millis() equivalent - this will need to be mocked for testing
     return millis();
@@ -282,7 +288,7 @@ unsigned long InputManager::GetCurrentTime() const
 
 // IInterrupt Interface Implementation
 
-void InputManager::CheckInterrupts()
+void ActionManager::CheckInterrupts()
 {
     if (!initialized_) {
         return;
@@ -295,7 +301,7 @@ void InputManager::CheckInterrupts()
     ProcessPendingActions();
 }
 
-bool InputManager::HasPendingInterrupts() const
+bool ActionManager::HasPendingInterrupts() const
 {
     if (!initialized_) {
         return false;
@@ -312,7 +318,7 @@ bool InputManager::HasPendingInterrupts() const
 
 // Action Processing Methods
 
-void InputManager::ProcessPendingActions()
+void ActionManager::ProcessPendingActions()
 {
     if (!pendingAction_.HasAction()) {
         return;
@@ -322,24 +328,22 @@ void InputManager::ProcessPendingActions()
     
     // Check if pending action has expired
     if (currentTime - pendingAction_.timestamp > INPUT_TIMEOUT_MS) {
-        log_d("Pending action expired, discarding: %s", pendingAction_.action->GetDescription());
+        log_d("Pending action expired, discarding: %s", pendingAction_.action.description.c_str());
         pendingAction_.Clear();
         return;
     }
     
     // Check if current service can now process the action
     if (currentService_ && currentService_->CanProcessInput()) {
-        log_d("Executing queued action: %s", pendingAction_.action->GetDescription());
+        log_d("Executing queued action: %s", pendingAction_.action.description.c_str());
         
-        if (pendingAction_.action->CanExecute()) {
-            pendingAction_.action->Execute();
-            
-            // Check if this is a SimplePanelSwitchAction that needs callback handling
-            if (strcmp(pendingAction_.action->GetActionType(), "SimplePanelSwitchAction") == 0 && panelSwitchCallback_) {
-                auto simplePanelSwitchAction = static_cast<SimplePanelSwitchAction*>(pendingAction_.action.get());
-                log_d("Handling SimplePanelSwitchAction via callback");
-                panelSwitchCallback_(simplePanelSwitchAction->GetTargetPanel());
-            }
+        if (pendingAction_.action.IsPanelSwitch() && panelSwitchCallback_) {
+            // Handle panel switch
+            log_d("Handling queued panel switch to: %s", pendingAction_.action.targetPanel);
+            panelSwitchCallback_(pendingAction_.action.targetPanel);
+        } else if (pendingAction_.action.IsValid()) {
+            // Execute custom action
+            pendingAction_.action.execute();
         }
         
         // Clear the pending action after processing
@@ -347,5 +351,14 @@ void InputManager::ProcessPendingActions()
     }
 }
 
-
+// Static method for panel switch requests
+void ActionManager::RequestPanelSwitch(const char* targetPanel)
+{
+    if (instance_ && instance_->panelSwitchCallback_) {
+        log_i("ActionManager: Static panel switch requested to: %s", targetPanel);
+        instance_->panelSwitchCallback_(targetPanel);
+    } else {
+        log_w("ActionManager: Panel switch requested but no instance or callback available");
+    }
+}
 

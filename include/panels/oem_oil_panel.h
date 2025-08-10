@@ -14,6 +14,9 @@
 
 #include <utilities/lv_tools.h>
 
+// Forward declarations
+class IPanelActions;
+
 /**
  * @class OemOilPanel
  * @brief Main oil monitoring dashboard panel
@@ -57,9 +60,12 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
+    // Panel actions injection method
+    void SetPanelActions(IPanelActions* panelActions);
+    
     // IInputService Interface Implementation
-    std::unique_ptr<IInputAction> GetShortPressAction() override;
-    std::unique_ptr<IInputAction> GetLongPressAction() override;
+    Action GetShortPressAction() override;
+    Action GetLongPressAction() override;
     bool CanProcessInput() const override;
     
     // IPanel override to provide input service
@@ -72,6 +78,7 @@ private:
     // Core Functionality Methods
     void UpdateOilPressure();
     void UpdateOilTemperature();
+    
     
     // Value mapping methods
     /// @brief Map oil pressure sensor value to display scale
@@ -94,6 +101,7 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
+    IPanelActions *panelActions_;
 
     // Instance Data Members - UI Objects
     // screen_ is inherited from IPanel base class

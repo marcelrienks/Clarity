@@ -14,7 +14,7 @@ class PanelManager;
 class StyleManager;
 class TriggerManager;
 class PreferenceManager;
-class InputManager;
+class ActionManager;
 class InterruptManager;
 
 /**
@@ -39,9 +39,9 @@ public:
     /// @param display Display provider for UI operations
     /// @param gpio GPIO provider for hardware access
     /// @param styleService Style service for UI theming
-    /// @param inputManager Input manager for button handling
+    /// @param actionManager Action manager for button handling
     /// @return Unique pointer to configured PanelManager instance or nullptr on failure
-    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService, InputManager* inputManager);
+    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService, ActionManager* actionManager);
     
     /// @brief Create StyleManager with optional theme
     /// @param theme Initial theme to apply (defaults to DAY theme)
@@ -59,11 +59,11 @@ public:
     /// @return Unique pointer to configured PreferenceManager instance or nullptr on failure
     static std::unique_ptr<PreferenceManager> createPreferenceManager();
     
-    /// @brief Create InputManager with injected sensor dependencies
+    /// @brief Create ActionManager with injected sensor dependencies
     /// @param gpio GPIO provider for creating InputButtonSensor
     /// @param panelService Panel service for triggering panel switches (can be nullptr)
-    /// @return Unique pointer to configured InputManager instance or nullptr on failure
-    static std::unique_ptr<InputManager> createInputManager(IGpioProvider* gpio, IPanelService* panelService);
+    /// @return Unique pointer to configured ActionManager instance or nullptr on failure
+    static std::unique_ptr<ActionManager> createActionManager(IGpioProvider* gpio, IPanelService* panelService);
     
     /// @brief Create InterruptManager (no dependencies currently)
     /// @return Unique pointer to configured InterruptManager instance or nullptr on failure
