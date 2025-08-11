@@ -6,7 +6,7 @@
 // Constructors and Destructors
 
 /// @brief Constructor for OilPressureSensor
-OilPressureSensor::OilPressureSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
+OilPressureSensor::OilPressureSensor(IGpioProvider* gpioProvider, int updateRateMs) : gpioProvider_(gpioProvider), updateIntervalMs_(updateRateMs)
 {
     // Initialize with zero reading
     currentReading_ = 0;
@@ -36,8 +36,8 @@ Reading OilPressureSensor::GetReading()
 {
     unsigned long currentTime = millis();
     
-    // Only read new value every UPDATE_INTERVAL_MS milliseconds
-    if (currentTime - lastUpdateTime_ >= UPDATE_INTERVAL_MS) {
+    // Only read new value every updateIntervalMs_ milliseconds (from preferences)
+    if (currentTime - lastUpdateTime_ >= updateIntervalMs_) {
         lastUpdateTime_ = currentTime;
         previousReading_ = currentReading_; // Store current before reading new
         

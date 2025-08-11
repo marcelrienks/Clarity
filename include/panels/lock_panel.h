@@ -48,6 +48,9 @@ public:
     
     // Manager injection method (minimal implementation - panel has no actions)
     void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
+    
+    // IPanel override - Lock panel is NOT configurable (system panel)
+    bool IsConfigurable() const override { return false; }
 
 private:
     // Static Methods

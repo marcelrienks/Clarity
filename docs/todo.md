@@ -1,3 +1,5 @@
+* Document current arch, and relationships
+* What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?
 * I don't like these, their logic should either be absorbed elsewhere or removed
     * i_panel_actions
     * i_panel_switch_service

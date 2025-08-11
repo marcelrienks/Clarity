@@ -76,6 +76,16 @@ void PreferenceManager::LoadConfig()
     }
 
     config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
+    
+    // Load theme if present, otherwise use default
+    if (!doc[JsonDocNames::THEME].isNull()) {
+        config.theme = std::string(doc[JsonDocNames::THEME].as<const char *>());
+    }
+    
+    // Load update rate if present, otherwise use default
+    if (!doc[JsonDocNames::UPDATE_RATE].isNull()) {
+        config.updateRate = doc[JsonDocNames::UPDATE_RATE].as<int>();
+    }
 }
 
 /// @brief Save the current configuration to preferences_
@@ -89,6 +99,8 @@ void PreferenceManager::SaveConfig()
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
     doc[JsonDocNames::PANEL_NAME] = config.panelName.c_str();
+    doc[JsonDocNames::THEME] = config.theme.c_str();
+    doc[JsonDocNames::UPDATE_RATE] = config.updateRate;
 
     // Serialize to JSON string
     String jsonString;

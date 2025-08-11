@@ -16,7 +16,7 @@
 
 // Factory Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager* actionManager)
+std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager* actionManager, IPreferenceService* preferenceService)
 {
     log_d("ManagerFactory: Creating PanelManager (UI panel coordination)...");
     
@@ -36,8 +36,12 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
         log_e("ManagerFactory: Cannot create PanelManager - IActionManager is null");
         return nullptr;
     }
+    if (!preferenceService) {
+        log_e("ManagerFactory: Cannot create PanelManager - IPreferenceService is null");
+        return nullptr;
+    }
     
-    auto manager = std::make_unique<PanelManager>(display, gpio, styleService, actionManager);
+    auto manager = std::make_unique<PanelManager>(display, gpio, styleService, actionManager, preferenceService);
     if (!manager) {
         log_e("ManagerFactory: Failed to create PanelManager - allocation failed");
         return nullptr;

@@ -41,8 +41,9 @@ public:
     /// @param gpio GPIO provider for hardware access
     /// @param styleService Style service for UI theming
     /// @param actionManager Action manager interface for button handling
+    /// @param preferenceService Preference service for configuration settings
     /// @return Unique pointer to configured PanelManager instance or nullptr on failure
-    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService, IActionManager* actionManager);
+    static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService, IActionManager* actionManager, IPreferenceService* preferenceService);
     
     /// @brief Create StyleManager with optional theme
     /// @param theme Initial theme to apply (defaults to DAY theme)

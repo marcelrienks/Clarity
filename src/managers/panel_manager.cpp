@@ -3,6 +3,7 @@
 #include "managers/action_manager.h"
 #include "interfaces/i_action_service.h"
 #include "panels/oem_oil_panel.h"
+#include "panels/config_panel.h"
 #include "utilities/ticker.h"
 #include <esp32-hal-log.h>
 #include <cstring>
@@ -36,13 +37,13 @@ void PanelManager::RegisterAllPanels()
 
 // Constructors and Destructors
 
-PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager *actionManager)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), actionManager_(actionManager)
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager *actionManager, IPreferenceService *preferenceService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), actionManager_(actionManager), preferenceService_(preferenceService)
 {
-    if (!display || !gpio || !styleService || !actionManager) {
-        log_e("PanelManager requires all dependencies: display, gpio, styleService, and actionManager");
+    if (!display || !gpio || !styleService || !actionManager || !preferenceService) {
+        log_e("PanelManager requires all dependencies: display, gpio, styleService, actionManager, and preferenceService");
         ErrorManager::Instance().ReportCriticalError("PanelManager", 
-            "Missing required dependencies - display, gpio, styleService, or actionManager is null");
+            "Missing required dependencies - display, gpio, styleService, actionManager, or preferenceService is null");
         // In a real embedded system, you might want to handle this more gracefully
     } else {
         log_d("Creating PanelManager with injected dependencies");
@@ -158,6 +159,23 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     if (panel_) {
         // Inject managers for all panels (they can choose to use them or not)
         panel_->SetManagers(this, styleService_);
+        
+        // Special injection for ConfigPanel - inject preference service
+        if (strcmp(panelName, PanelNames::CONFIG) == 0) {
+            ConfigPanel* configPanel = static_cast<ConfigPanel*>(panel_.get());
+            if (configPanel && preferenceService_) {
+                configPanel->SetPreferenceService(preferenceService_);
+            }
+        }
+        
+        // Special injection for OemOilPanel - inject preference service to apply sensor update rates
+        if (strcmp(panelName, PanelNames::OIL) == 0) {
+            OemOilPanel* oemOilPanel = static_cast<OemOilPanel*>(panel_.get());
+            if (oemOilPanel && preferenceService_) {
+                oemOilPanel->SetPreferenceService(preferenceService_);
+            }
+        }
+        
         panel_->Init();
 
         // Update current panel using std::string for memory safety

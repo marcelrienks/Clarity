@@ -3,28 +3,14 @@
 #include "managers/trigger_manager.h"
 #include "utilities/types.h"
 #include <Arduino.h>
+#include <algorithm>
 
 // Constructors and Destructors
 ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       currentMenuIndex_(0)
 {
-    // Initialize menu items (placeholder options for Phase 3)
-    menuItems_ = {
-        {"Option 1", []() { log_i("Option 1 selected"); }},
-        {"Option 2", []() { log_i("Option 2 selected"); }},
-        {"Exit", [this]() { 
-            log_i("Exiting config panel");
-            // Return to previous panel using restoration panel
-            if (panelService_) {
-                const char* restorationPanel = panelService_->GetRestorationPanel();
-                log_i("Returning to restoration panel: %s", restorationPanel);
-                panelService_->CreateAndLoadPanel(restorationPanel, []() {
-                    // Panel switch callback handled by service
-                }, false);
-            }
-        }}
-    };
+    // Menu items will be initialized after preferences are injected
 }
 
 ConfigPanel::~ConfigPanel()
@@ -59,8 +45,9 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     
     callbackFunction_ = callbackFunction;
     
-    // Reset menu to first item
+    // Reset menu to first item and main menu state
     currentMenuIndex_ = 0;
+    currentMenuState_ = MenuState::MainMenu;
     
     // Creating menu UI
     // Create the menu UI
@@ -135,7 +122,7 @@ void ConfigPanel::CreateMenuUI()
     
     // Create hint label
     hintLabel_ = lv_label_create(screen_);
-    lv_label_set_text(hintLabel_, "Short: Next | Long: Select");
+    lv_label_set_text(hintLabel_, "Short: Cycle | Long: Apply");
     lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN);
     lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(hintLabel_, LV_ALIGN_BOTTOM_MID, 0, -20);
@@ -146,6 +133,24 @@ void ConfigPanel::CreateMenuUI()
 
 void ConfigPanel::UpdateMenuDisplay()
 {
+    // Update title based on current menu state
+    if (titleLabel_) {
+        switch (currentMenuState_) {
+            case MenuState::MainMenu:
+                lv_label_set_text(titleLabel_, "Configuration");
+                break;
+            case MenuState::PanelSubmenu:
+                lv_label_set_text(titleLabel_, "Select Panel");
+                break;
+            case MenuState::ThemeSubmenu:
+                lv_label_set_text(titleLabel_, "Select Theme");
+                break;
+            case MenuState::UpdateRateSubmenu:
+                lv_label_set_text(titleLabel_, "Update Rate");
+                break;
+        }
+    }
+    
     // Update all menu items
     for (size_t i = 0; i < menuLabels_.size(); ++i)
     {
@@ -224,4 +229,262 @@ void ConfigPanel::SetManagers(IPanelService* panelService, IStyleService* styleS
         styleService_ = styleService;
     }
     // Managers injected successfully
+}
+
+void ConfigPanel::SetPreferenceService(IPreferenceService* preferenceService)
+{
+    preferenceService_ = preferenceService;
+    // Initialize menu items now that we have access to preferences
+    InitializeMenuItems();
+}
+
+void ConfigPanel::InitializeMenuItems()
+{
+    if (!preferenceService_) {
+        log_e("Cannot initialize menu items without preference service");
+        return;
+    }
+
+    UpdateMenuItemsWithCurrentValues();
+}
+
+void ConfigPanel::UpdateMenuItemsWithCurrentValues()
+{
+    if (!preferenceService_) return;
+    
+    const Configs& config = preferenceService_->GetConfig();
+    
+    // Format panel name for display (remove "Panel" suffix)
+    std::string panelDisplay = config.panelName;
+    if (panelDisplay.find("Panel") != std::string::npos) {
+        panelDisplay = panelDisplay.substr(0, panelDisplay.find("Panel"));
+    }
+    
+    menuItems_ = {
+        {"Panel: " + panelDisplay, [this]() { EnterSubmenu(MenuState::PanelSubmenu); }},
+        {"Theme: " + config.theme, [this]() { EnterSubmenu(MenuState::ThemeSubmenu); }},
+        {"Rate: " + std::to_string(config.updateRate) + "ms", [this]() { EnterSubmenu(MenuState::UpdateRateSubmenu); }},
+        {"Exit", [this]() { 
+            log_i("Exiting config panel and saving settings");
+            // Save configuration before exiting
+            if (preferenceService_) {
+                preferenceService_->SaveConfig();
+                log_i("Configuration saved");
+            }
+            // Return to previous panel using restoration panel
+            if (panelService_) {
+                const char* restorationPanel = panelService_->GetRestorationPanel();
+                log_i("Returning to restoration panel: %s", restorationPanel);
+                panelService_->CreateAndLoadPanel(restorationPanel, []() {
+                    // Panel switch callback handled by service
+                }, false);
+            }
+        }}
+    };
+}
+
+void ConfigPanel::CycleDefaultPanel()
+{
+    if (!preferenceService_) return;
+    
+    Configs config = preferenceService_->GetConfig();
+    
+    // Only show configurable panels
+    // Currently only OemOilPanel is configurable
+    // Future panels can be added here if they return true from IsConfigurable()
+    std::vector<const char*> configurablePanels = {
+        PanelNames::OIL
+    };
+    
+    // For now, with only one configurable panel, we don't need to cycle
+    // This is ready for future expansion when more panels become configurable
+    config.panelName = configurablePanels[0];
+    preferenceService_->SetConfig(config);
+    preferenceService_->SaveConfig();
+    
+    log_i("Default panel set to: %s", config.panelName.c_str());
+}
+
+void ConfigPanel::CycleTheme()
+{
+    if (!preferenceService_) return;
+    
+    Configs config = preferenceService_->GetConfig();
+    
+    // Cycle through available themes
+    if (config.theme == Themes::DAY) {
+        config.theme = Themes::NIGHT;
+    } else {
+        config.theme = Themes::DAY;
+    }
+    
+    preferenceService_->SetConfig(config);
+    preferenceService_->SaveConfig();
+    
+    // Apply theme immediately
+    if (styleService_) {
+        styleService_->SetTheme(config.theme.c_str());
+    }
+    
+    log_i("Theme changed to: %s", config.theme.c_str());
+}
+
+void ConfigPanel::CycleUpdateRate()
+{
+    if (!preferenceService_) return;
+    
+    Configs config = preferenceService_->GetConfig();
+    
+    // Cycle through common update rates
+    std::vector<int> rates = {250, 500, 1000, 2000};
+    
+    auto it = std::find(rates.begin(), rates.end(), config.updateRate);
+    if (it != rates.end()) {
+        ++it;
+        if (it == rates.end()) {
+            it = rates.begin(); // Wrap around
+        }
+    } else {
+        it = rates.begin(); // Default to first if not found
+    }
+    
+    config.updateRate = *it;
+    preferenceService_->SetConfig(config);
+    preferenceService_->SaveConfig();
+    
+    log_i("Update rate changed to: %d ms", config.updateRate);
+}
+
+void ConfigPanel::EnterSubmenu(MenuState submenu)
+{
+    log_i("Entering submenu: %d", static_cast<int>(submenu));
+    currentMenuState_ = submenu;
+    currentMenuIndex_ = 0;
+    UpdateSubmenuItems();
+    UpdateMenuDisplay();
+}
+
+void ConfigPanel::ExitSubmenu()
+{
+    log_i("Exiting submenu, returning to main menu");
+    currentMenuState_ = MenuState::MainMenu;
+    currentMenuIndex_ = 0;
+    UpdateMenuItemsWithCurrentValues();
+    UpdateMenuDisplay();
+}
+
+void ConfigPanel::UpdateSubmenuItems()
+{
+    if (!preferenceService_) return;
+    
+    const Configs& config = preferenceService_->GetConfig();
+    menuItems_.clear();
+    
+    switch (currentMenuState_) {
+        case MenuState::PanelSubmenu:
+            {
+                // Currently only OemOilPanel is configurable
+                // In the future, this will dynamically build from all configurable panels
+                menuItems_ = {
+                    {"Oil Panel", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.panelName = PanelNames::OIL;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        case MenuState::ThemeSubmenu:
+            {
+                menuItems_ = {
+                    {"Day", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.theme = Themes::DAY;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        if (styleService_) {
+                            styleService_->SetTheme(cfg.theme.c_str());
+                        }
+                        ExitSubmenu();
+                    }},
+                    {"Night", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.theme = Themes::NIGHT;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        if (styleService_) {
+                            styleService_->SetTheme(cfg.theme.c_str());
+                        }
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        case MenuState::UpdateRateSubmenu:
+            {
+                menuItems_ = {
+                    {"250ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.updateRate = 250;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"500ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.updateRate = 500;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"1000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.updateRate = 1000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"2000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.updateRate = 2000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        default:
+            // Should not happen
+            break;
+    }
+    
+    // Rebuild UI with new menu items
+    if (menuContainer_ && !menuLabels_.empty()) {
+        // Clear existing labels
+        for (auto* label : menuLabels_) {
+            lv_obj_delete(label);
+        }
+        menuLabels_.clear();
+        
+        // Create new labels
+        for (size_t i = 0; i < menuItems_.size(); ++i) {
+            lv_obj_t* item = lv_label_create(menuContainer_);
+            lv_label_set_text(item, menuItems_[i].label.c_str());
+            lv_obj_set_style_text_color(item, lv_color_hex(0xAAAAAA), LV_PART_MAIN);
+            lv_obj_set_style_text_font(item, &lv_font_montserrat_16, LV_PART_MAIN);
+            lv_obj_set_width(item, lv_pct(100));
+            lv_obj_set_style_pad_ver(item, 5, LV_PART_MAIN);
+            
+            menuLabels_.push_back(item);
+        }
+    }
 }

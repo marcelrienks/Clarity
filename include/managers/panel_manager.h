@@ -5,6 +5,7 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
 #include "interfaces/i_action_manager.h"
+#include "interfaces/i_preference_service.h"
 #include "factories/ui_factory.h"
 #include "interfaces/i_panel_service.h"
 #include "utilities/types.h"
@@ -60,7 +61,7 @@ class PanelManager : public IPanelService
 {
 public:
     // Constructors and Destructors
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager *actionManager);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService, IActionManager *actionManager, IPreferenceService *preferenceService);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -140,12 +141,15 @@ private:
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
     
     // Panel name storage using std::string for memory safety and automatic management
+    // Using std::string instead of char* to prevent corruption when source strings are deallocated
+    // This was causing garbage characters (e.g., �8�?�8�?) in logs when panel names became invalid
     std::string currentPanelStr_;                 ///< Safe storage for current panel name
     std::string restorationPanelStr_;             ///< Safe storage for restoration panel name
     IGpioProvider *gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr; ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;       ///< Style service for UI theming
     IActionManager *actionManager_ = nullptr;     ///< Action manager interface for button handling
+    IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
     // Removed IPanelFactory - using UIFactory directly
     // Removed queue handles - now using shared state trigger system
 };

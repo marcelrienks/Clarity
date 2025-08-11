@@ -58,6 +58,9 @@ public:
     
     // IPanel override to provide input service
     IActionService* GetInputService() override { return this; }
+    
+    // IPanel override - Splash panel is NOT configurable (system panel)
+    bool IsConfigurable() const override { return false; }
 
 private:
     // Private Data Members

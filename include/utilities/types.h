@@ -148,6 +148,8 @@ struct TriggerNames
 struct JsonDocNames
 {
     static constexpr const char *PANEL_NAME = "panel_name"; ///< Default panel setting
+    static constexpr const char *THEME = "theme";           ///< Theme setting
+    static constexpr const char *UPDATE_RATE = "update_rate"; ///< Update rate setting
 };
 
 /// @struct SystemConstants

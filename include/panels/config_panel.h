@@ -6,6 +6,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_preference_service.h"
 #include "utilities/types.h"
 
 #include <utilities/lv_tools.h>
@@ -57,6 +58,7 @@ public:
     
     // Manager injection method
     void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
+    void SetPreferenceService(IPreferenceService* preferenceService);
     
     // IActionService Interface Implementation
     Action GetShortPressAction() override;
@@ -65,8 +67,19 @@ public:
     
     // IPanel override to provide input service
     IActionService* GetInputService() override { return this; }
+    
+    // IPanel override - Config panel is NOT configurable (system panel)
+    bool IsConfigurable() const override { return false; }
 
 private:
+    // Menu state enum
+    enum class MenuState {
+        MainMenu,
+        PanelSubmenu,
+        ThemeSubmenu,
+        UpdateRateSubmenu
+    };
+
     // Menu item structure
     struct MenuItem {
         std::string label;
@@ -77,6 +90,14 @@ private:
     void CreateMenuUI();
     void UpdateMenuDisplay();
     void ExecuteCurrentOption();
+    void InitializeMenuItems();
+    void UpdateMenuItemsWithCurrentValues();
+    void CycleDefaultPanel();
+    void CycleTheme();
+    void CycleUpdateRate();
+    void EnterSubmenu(MenuState submenu);
+    void ExitSubmenu();
+    void UpdateSubmenuItems();
     
     // Static callback
     static void ShowPanelCompletionCallback(lv_event_t *event);
@@ -86,11 +107,14 @@ private:
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
+    IPreferenceService *preferenceService_ = nullptr;
     // screen_ is inherited from IPanel base class
     
     // Menu state
     std::vector<MenuItem> menuItems_;
     size_t currentMenuIndex_ = 0;
+    MenuState currentMenuState_ = MenuState::MainMenu;
+    std::string selectedSettingValue_;
     
     // UI elements
     lv_obj_t *titleLabel_ = nullptr;

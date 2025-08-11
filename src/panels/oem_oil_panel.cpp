@@ -305,6 +305,27 @@ void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
     // Managers injected successfully
 }
 
+/// @brief Set preference service and apply sensor update rate from preferences
+/// @param preferenceService The preference service to use for configuration
+void OemOilPanel::SetPreferenceService(IPreferenceService* preferenceService)
+{
+    preferenceService_ = preferenceService;
+    
+    // Apply updateRate from preferences to sensors if preference service is available
+    if (preferenceService_) {
+        auto config = preferenceService_->GetConfig();
+        log_i("Applying sensor update rate from preferences: %d ms", config.updateRate);
+        
+        // Apply to pressure sensor - we know the concrete types since we created them
+        auto pressureSensor = std::static_pointer_cast<OilPressureSensor>(oemOilPressureSensor_);
+        pressureSensor->SetUpdateRate(config.updateRate);
+        
+        // Apply to temperature sensor - we know the concrete types since we created them
+        auto temperatureSensor = std::static_pointer_cast<OilTemperatureSensor>(oemOilTemperatureSensor_);
+        temperatureSensor->SetUpdateRate(config.updateRate);
+    }
+}
+
 bool OemOilPanel::CanProcessInput() const
 {
     // OemOilPanel can always process input (no animations that block input)

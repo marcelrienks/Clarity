@@ -6,6 +6,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_preference_service.h"
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"
 #include "sensors/oil_pressure_sensor.h"
@@ -64,6 +65,10 @@ public:
     // Manager injection method
     void SetManagers(IPanelService* panelService, IStyleService* styleService);
     
+    /// @brief Set preference service and apply sensor update rate from preferences
+    /// @param preferenceService The preference service to use for configuration
+    void SetPreferenceService(IPreferenceService* preferenceService);
+    
     // IActionService Interface Implementation
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
@@ -71,6 +76,9 @@ public:
     
     // IPanel override to provide action service
     IActionService* GetInputService() override { return this; }
+    
+    // IPanel override - Oil panel is configurable as default
+    bool IsConfigurable() const override { return true; }
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;
@@ -103,6 +111,7 @@ private:
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
+    IPreferenceService *preferenceService_ = nullptr;
 
     // Instance Data Members - UI Objects
     // screen_ is inherited from IPanel base class

@@ -43,7 +43,8 @@ bool initializeServices()
         displayProvider.get(),
         gpioProvider.get(), 
         styleManager.get(),
-        actionManager.get());
+        actionManager.get(),
+        preferenceManager.get());
     triggerManager = ManagerFactory::createTriggerManager(
         gpioProvider.get(),
         panelManager.get(),

@@ -49,11 +49,15 @@ class OilTemperatureSensor : public ISensor
 {
 public:
     // Constructors and Destructors
-    OilTemperatureSensor(IGpioProvider *gpioProvider);
+    OilTemperatureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
 
     // Core Functionality Methods
     void Init() override;
     Reading GetReading() override;
+    
+    /// @brief Set the update rate in milliseconds (applied from preferences)
+    /// @param updateRateMs Update interval in milliseconds
+    void SetUpdateRate(int updateRateMs) { updateIntervalMs_ = updateRateMs; }
 
 private:
     // Private Data Members
@@ -61,7 +65,7 @@ private:
     int32_t currentReading_ = 0;
     int32_t previousReading_ = -1;
     unsigned long lastUpdateTime_ = 0;
-    static constexpr unsigned long UPDATE_INTERVAL_MS = 1000; // Update every 1000ms (1Hz)
+    unsigned long updateIntervalMs_; // Configurable update interval from preferences
     
     // ADC and potentiometer calibration constants
     static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC
