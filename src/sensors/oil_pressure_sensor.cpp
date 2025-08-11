@@ -1,5 +1,6 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "managers/error_manager.h"
+#include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -65,5 +66,25 @@ Reading OilPressureSensor::GetReading()
     }
     
     return currentReading_;
+}
+
+/// @brief Get pressure value converted to configured unit
+/// @param barValue Pressure value in Bar
+/// @return Converted pressure value
+float OilPressureSensor::GetConvertedPressure(float barValue) const
+{
+    if (!preferenceService_) {
+        return barValue; // Return Bar if no preference service
+    }
+    
+    const Configs& config = preferenceService_->GetConfig();
+    
+    if (config.pressureUnit == "PSI") {
+        return UnitConverter::BarToPsi(barValue);
+    } else if (config.pressureUnit == "kPa") {
+        return UnitConverter::BarToKPa(barValue);
+    }
+    
+    return barValue; // Default to Bar
 }
 

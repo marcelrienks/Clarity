@@ -147,9 +147,13 @@ struct TriggerNames
 /// documents for PreferenceManager serialization.
 struct JsonDocNames
 {
-    static constexpr const char *PANEL_NAME = "panel_name"; ///< Default panel setting
-    static constexpr const char *THEME = "theme";           ///< Theme setting
-    static constexpr const char *UPDATE_RATE = "update_rate"; ///< Update rate setting
+    static constexpr const char *PANEL_NAME = "panel_name";       ///< Default panel setting
+    static constexpr const char *SHOW_SPLASH = "show_splash";     ///< Show splash screen setting
+    static constexpr const char *SPLASH_DURATION = "splash_duration"; ///< Splash duration setting
+    static constexpr const char *THEME = "theme";                 ///< Theme setting
+    static constexpr const char *UPDATE_RATE = "update_rate";     ///< Update rate setting
+    static constexpr const char *PRESSURE_UNIT = "pressure_unit"; ///< Pressure unit setting
+    static constexpr const char *TEMP_UNIT = "temp_unit";         ///< Temperature unit setting
 };
 
 /// @struct SystemConstants
@@ -223,9 +227,18 @@ struct ComponentLocation
 /// @default_values All fields have sensible defaults for first-run
 struct Configs
 {
+    // General settings
     std::string panelName = PanelNames::OIL; ///< Default panel on startup
+    bool showSplash = true;                  ///< Show splash screen on startup
+    int splashDuration = 2000;               ///< Splash screen duration in milliseconds
+    
+    // Display settings
     std::string theme = Themes::DAY;         ///< Theme preference (Day/Night)
+    
+    // Sensor settings
     int updateRate = 500;                    ///< Sensor update rate in milliseconds
+    std::string pressureUnit = "PSI";        ///< Pressure unit (PSI, Bar, kPa)
+    std::string tempUnit = "C";              ///< Temperature unit (C, F)
 };
 
 /// @brief UI state for processing decisions

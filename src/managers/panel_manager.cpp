@@ -176,6 +176,14 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
             }
         }
         
+        // Special injection for SplashPanel - inject preference service for configurable duration
+        if (strcmp(panelName, PanelNames::SPLASH) == 0) {
+            SplashPanel* splashPanel = static_cast<SplashPanel*>(panel_.get());
+            if (splashPanel && preferenceService_) {
+                splashPanel->SetPreferenceService(preferenceService_);
+            }
+        }
+        
         panel_->Init();
 
         // Update current panel using std::string for memory safety
@@ -207,6 +215,18 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
     log_d("Loading panel with splash screen transition: %s", panelName);
+
+    // Check if splash screen should be shown
+    if (preferenceService_) {
+        const Configs& config = preferenceService_->GetConfig();
+        if (!config.showSplash) {
+            log_d("Splash screen disabled, loading panel directly: %s", panelName);
+            CreateAndLoadPanel(panelName, []() {
+                // Panel loaded directly without splash
+            });
+            return;
+        }
+    }
 
     // Capture panel name as string to avoid pointer corruption issues
     std::string targetPanel(panelName);

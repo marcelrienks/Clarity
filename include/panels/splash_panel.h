@@ -7,6 +7,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_preference_service.h"
 #include "components/clarity_component.h"
 #include "utilities/lv_tools.h"
 #include <memory>
@@ -51,6 +52,9 @@ public:
     // Manager injection method
     void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
     
+    // Preference service injection
+    void SetPreferenceService(IPreferenceService* preferenceService);
+    
     // IActionService Interface Implementation - Action-based (no animation interruption)
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
@@ -71,6 +75,7 @@ private:
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
+    IPreferenceService *preferenceService_ = nullptr;
 
     // Components
     // screen_ is inherited from IPanel base class
@@ -82,5 +87,6 @@ private:
     static void fade_in_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
     
-    // No state tracking needed - simplified approach
+    // Helper methods
+    int GetSplashDuration() const;
 };

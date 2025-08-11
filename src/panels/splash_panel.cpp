@@ -104,9 +104,10 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
                         _DELAY_TIME,
                         false);
 
-    // Schedule the fade-out animation (Display time added to allow a short little period where the logo is fully visible, this does not happen with fade out)
+    // Schedule the fade-out animation using configurable duration
+    int splashDuration = panel->GetSplashDuration();
     auto *fadeOutTimer = lv_timer_create(SplashPanel::fade_out_timer_callback,
-                                           _ANIMATION_TIME + _DELAY_TIME + _DISPLAY_TIME,
+                                           splashDuration,
                                            panel);
 
     // Remove the fade_in_timer after transition
@@ -181,4 +182,19 @@ void SplashPanel::SetManagers(IPanelService* panelService, IStyleService* styleS
         styleService_ = styleService;
     }
     // Managers injected successfully
+}
+
+void SplashPanel::SetPreferenceService(IPreferenceService* preferenceService)
+{
+    preferenceService_ = preferenceService;
+}
+
+int SplashPanel::GetSplashDuration() const
+{
+    if (preferenceService_) {
+        const Configs& config = preferenceService_->GetConfig();
+        return config.splashDuration;
+    }
+    // Fallback to default timing if no preference service
+    return _ANIMATION_TIME + _DELAY_TIME + _DISPLAY_TIME;
 }

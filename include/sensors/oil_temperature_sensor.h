@@ -5,7 +5,9 @@
 // Project Includes
 #include "interfaces/i_sensor.h"
 #include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_preference_service.h"
 #include "utilities/types.h"
+#include "utilities/unit_converter.h"
 #include "hardware/gpio_pins.h"
 
 /**
@@ -58,10 +60,20 @@ public:
     /// @brief Set the update rate in milliseconds (applied from preferences)
     /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs) { updateIntervalMs_ = updateRateMs; }
+    
+    /// @brief Set preference service for unit conversion
+    /// @param preferenceService Preference service instance
+    void SetPreferenceService(IPreferenceService* preferenceService) { preferenceService_ = preferenceService; }
+    
+    /// @brief Get temperature value converted to configured unit
+    /// @param celsiusValue Temperature value in Celsius
+    /// @return Converted temperature value
+    float GetConvertedTemperature(float celsiusValue) const;
 
 private:
     // Private Data Members
     IGpioProvider *gpioProvider_;
+    IPreferenceService *preferenceService_ = nullptr;
     int32_t currentReading_ = 0;
     int32_t previousReading_ = -1;
     unsigned long lastUpdateTime_ = 0;

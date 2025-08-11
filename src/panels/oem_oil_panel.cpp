@@ -323,6 +323,10 @@ void OemOilPanel::SetPreferenceService(IPreferenceService* preferenceService)
         // Apply to temperature sensor - we know the concrete types since we created them
         auto temperatureSensor = std::static_pointer_cast<OilTemperatureSensor>(oemOilTemperatureSensor_);
         temperatureSensor->SetUpdateRate(config.updateRate);
+        
+        // Inject preference service into sensors for unit conversion
+        pressureSensor->SetPreferenceService(preferenceService_);
+        temperatureSensor->SetPreferenceService(preferenceService_);
     }
 }
 

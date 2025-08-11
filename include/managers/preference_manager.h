@@ -57,6 +57,11 @@ public:
     Configs& GetConfig() override;
     const Configs& GetConfig() const override;
     void SetConfig(const Configs& config) override;
+    
+    // Generic preference access methods
+    std::string GetPreference(const std::string& key) const override;
+    void SetPreference(const std::string& key, const std::string& value) override;
+    bool HasPreference(const std::string& key) const override;
 
     // Public Data Members
     inline static Configs config;

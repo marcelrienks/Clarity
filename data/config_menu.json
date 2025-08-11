@@ -11,18 +11,30 @@
           "label": "Default Panel",
           "type": "choice",
           "preference": "panel_name",
-          "choices": ["$DYNAMIC_PANELS$"],
-          "choiceLabels": ["$DYNAMIC_PANEL_LABELS$"]
+          "choices": ["OemOilPanel", "KeyPanel", "LockPanel"],
+          "choiceLabels": ["Oil Monitor", "Key Status", "Lock Status"],
+          "default": "OemOilPanel"
         },
         {
-          "id": "startup_delay",
-          "label": "Startup Delay",
+          "id": "show_splash",
+          "label": "Show Splash Screen",
+          "type": "toggle",
+          "preference": "show_splash",
+          "default": "true"
+        },
+        {
+          "id": "splash_duration",
+          "label": "Splash Duration (ms)",
           "type": "number",
-          "preference": "startup_delay",
-          "min": 0,
+          "preference": "splash_duration",
+          "min": 500,
           "max": 5000,
-          "step": 100,
-          "default": "1000"
+          "step": 250,
+          "default": "2000",
+          "visible": {
+            "preference": "show_splash",
+            "equals": "true"
+          }
         },
         {
           "id": "back_general",
@@ -41,39 +53,8 @@
           "label": "Theme",
           "type": "choice",
           "preference": "theme",
-          "choices": ["Day", "Night", "Auto"],
+          "choices": ["Day", "Night"],
           "default": "Day"
-        },
-        {
-          "id": "brightness",
-          "label": "Brightness",
-          "type": "number",
-          "preference": "brightness",
-          "min": 10,
-          "max": 100,
-          "step": 10,
-          "default": "80"
-        },
-        {
-          "id": "auto_dim",
-          "label": "Auto Dim",
-          "type": "toggle",
-          "preference": "auto_dim",
-          "default": "false"
-        },
-        {
-          "id": "dim_timeout",
-          "label": "Dim Timeout (s)",
-          "type": "number",
-          "preference": "dim_timeout",
-          "min": 5,
-          "max": 300,
-          "step": 5,
-          "default": "30",
-          "visible": {
-            "preference": "auto_dim",
-            "equals": "true"
-          }
         },
         {
           "id": "back_display",
@@ -97,7 +78,7 @@
           "default": "500"
         },
         {
-          "id": "oil_pressure_unit",
+          "id": "pressure_unit",
           "label": "Pressure Unit",
           "type": "choice",
           "preference": "pressure_unit",
@@ -114,12 +95,6 @@
           "default": "C"
         },
         {
-          "id": "calibrate_sensors",
-          "label": "Calibrate Sensors",
-          "type": "action",
-          "action": "calibrate_sensors"
-        },
-        {
           "id": "back_sensors",
           "label": "Back",
           "type": "back"
@@ -131,13 +106,6 @@
       "label": "Advanced",
       "type": "submenu",
       "items": [
-        {
-          "id": "debug_mode",
-          "label": "Debug Mode",
-          "type": "toggle",
-          "preference": "debug_mode",
-          "default": "false"
-        },
         {
           "id": "factory_reset",
           "label": "Factory Reset",

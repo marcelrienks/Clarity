@@ -1,4 +1,5 @@
 #include "sensors/oil_temperature_sensor.h"
+#include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -57,5 +58,23 @@ Reading OilTemperatureSensor::GetReading()
     }
     
     return currentReading_;
+}
+
+/// @brief Get temperature value converted to configured unit
+/// @param celsiusValue Temperature value in Celsius
+/// @return Converted temperature value
+float OilTemperatureSensor::GetConvertedTemperature(float celsiusValue) const
+{
+    if (!preferenceService_) {
+        return celsiusValue; // Return Celsius if no preference service
+    }
+    
+    const Configs& config = preferenceService_->GetConfig();
+    
+    if (config.tempUnit == "F") {
+        return UnitConverter::CelsiusToFahrenheit(celsiusValue);
+    }
+    
+    return celsiusValue; // Default to Celsius
 }
 
