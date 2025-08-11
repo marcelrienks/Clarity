@@ -4,6 +4,7 @@
 #include "interfaces/i_action_service.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/config_panel.h"
+#include "panels/splash_panel.h"
 #include "utilities/ticker.h"
 #include <esp32-hal-log.h>
 #include <cstring>
@@ -108,7 +109,7 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     panel_.reset();
     Ticker::handleLvTasks();
 
-    CreateAndLoadPanel(panelName, [this]()
+    CreateAndLoadPanelDirect(panelName, [this]()
                        { this->PanelManager::PanelCompletionCallback(); });
 }
 
@@ -132,6 +133,27 @@ void PanelManager::PanelCompletionCallback()
 void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback, bool isTriggerDriven)
 {
     log_d("Creating and loading panel: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
+
+    // Check if splash screen should be shown
+    bool showSplash = true;
+    if (preferenceService_) {
+        const Configs& config = preferenceService_->GetConfig();
+        showSplash = config.showSplash;
+    }
+
+    if (showSplash && !isTriggerDriven) {
+        log_d("Loading panel with splash screen transition: %s", panelName);
+        CreateAndLoadPanelWithSplash(panelName);
+    } else {
+        log_d("Loading panel directly: %s", panelName);
+        CreateAndLoadPanelDirect(panelName, completionCallback, isTriggerDriven);
+    }
+}
+
+/// @brief Internal method to create and load a panel directly without splash
+void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback, bool isTriggerDriven)
+{
+    log_d("Creating and loading panel directly: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
 
     // Track this as the last non-trigger panel only for user-driven changes
     if (!isTriggerDriven)
@@ -211,26 +233,14 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     }
 }
 
-/// @brief Load a panel after first showing a splash screen transition
+/// @brief Internal method to load a panel after first showing a splash screen transition
 void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
     log_d("Loading panel with splash screen transition: %s", panelName);
 
-    // Check if splash screen should be shown
-    if (preferenceService_) {
-        const Configs& config = preferenceService_->GetConfig();
-        if (!config.showSplash) {
-            log_d("Splash screen disabled, loading panel directly: %s", panelName);
-            CreateAndLoadPanel(panelName, []() {
-                // Panel loaded directly without splash
-            });
-            return;
-        }
-    }
-
     // Capture panel name as string to avoid pointer corruption issues
     std::string targetPanel(panelName);
-    CreateAndLoadPanel(PanelNames::SPLASH, [this, targetPanel]()
+    CreateAndLoadPanelDirect(PanelNames::SPLASH, [this, targetPanel]()
                        { this->PanelManager::SplashCompletionCallback(targetPanel.c_str()); });
 }
 

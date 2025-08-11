@@ -89,12 +89,12 @@ void setup()
     const char *startupPanel = triggerManager->GetStartupPanelOverride();
     if (startupPanel)
     {
-        panelManager->CreateAndLoadPanelWithSplash(startupPanel);
+        panelManager->CreateAndLoadPanel(startupPanel);
     }
     else
     {
         auto config = preferenceManager->GetConfig();
-        panelManager->CreateAndLoadPanelWithSplash(config.panelName.c_str());
+        panelManager->CreateAndLoadPanel(config.panelName.c_str());
     }
 
     Ticker::handleLvTasks();

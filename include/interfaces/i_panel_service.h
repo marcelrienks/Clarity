@@ -46,11 +46,6 @@ public:
                                    std::function<void()> completionCallback = nullptr,
                                    bool isTriggerDriven = false) = 0;
 
-    /**
-     * @brief Load a panel after first showing a splash screen transition
-     * @param panelName Name of the target panel to load after splash
-     */
-    virtual void CreateAndLoadPanelWithSplash(const char* panelName) = 0;
 
     /**
      * @brief Update the currently active panel (called from main loop)

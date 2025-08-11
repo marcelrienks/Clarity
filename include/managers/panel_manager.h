@@ -84,10 +84,6 @@ public:
     /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
     void CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false) override;
     
-    /// @brief Load a panel after first showing a splash screen transition
-    /// @param panelName Name of the target panel to load after splash
-    void CreateAndLoadPanelWithSplash(const char *panelName) override;
-    
     /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel() override;
     
@@ -118,6 +114,16 @@ private:
     /// @param panel_name Name of the panel type to create
     /// @return Shared pointer to the created panel instance
     std::shared_ptr<IPanel> CreatePanel(const char *panelName);
+    
+    /// @brief Internal method to create and load a panel directly without splash
+    /// @param panelName Name of the panel to create and load
+    /// @param completionCallback Optional callback function to execute when loading is complete
+    /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
+    void CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback = nullptr, bool isTriggerDriven = false);
+    
+    /// @brief Internal method to load a panel after first showing a splash screen transition
+    /// @param panelName Name of the target panel to load after splash
+    void CreateAndLoadPanelWithSplash(const char *panelName);
     
     
     
