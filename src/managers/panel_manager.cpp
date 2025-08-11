@@ -48,10 +48,12 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
         log_d("Creating PanelManager with injected dependencies");
     }
     
-    // Initialize the current panel buffer with the default value
-    strncpy(currentPanelBuffer, PanelNames::OIL, sizeof(currentPanelBuffer) - 1);
-    currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';
-    currentPanel = currentPanelBuffer;
+    // Initialize panel names using std::string for memory safety
+    currentPanelStr_ = PanelNames::OIL;
+    currentPanel = currentPanelStr_.c_str();
+    
+    restorationPanelStr_ = PanelNames::OIL;
+    restorationPanel = restorationPanelStr_.c_str();
 }
 
 PanelManager::~PanelManager()
@@ -133,7 +135,9 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     // Track this as the last non-trigger panel only for user-driven changes
     if (!isTriggerDriven)
     {
-        restorationPanel = panelName;
+        // Update restoration panel using std::string for memory safety
+        restorationPanelStr_ = panelName;
+        restorationPanel = restorationPanelStr_.c_str();
     }
 
     // Clean up existing panel before creating new one
@@ -156,10 +160,9 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
         panel_->SetManagers(this, styleService_);
         panel_->Init();
 
-        // Make a copy of the panel name to avoid pointer issues
-        strncpy(currentPanelBuffer, panelName, sizeof(currentPanelBuffer) - 1);
-        currentPanelBuffer[sizeof(currentPanelBuffer) - 1] = '\0';
-        currentPanel = currentPanelBuffer;
+        // Update current panel using std::string for memory safety
+        currentPanelStr_ = panelName;
+        currentPanel = currentPanelStr_.c_str();
         
         // Register input service if panel implements it (using composition approach)
         if (actionManager_)

@@ -15,9 +15,11 @@ ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleS
         {"Option 2", []() { log_i("Option 2 selected"); }},
         {"Exit", [this]() { 
             log_i("Exiting config panel");
-            // Return to previous panel (OIL panel as default)
+            // Return to previous panel using restoration panel
             if (panelService_) {
-                panelService_->CreateAndLoadPanel(PanelNames::OIL, []() {
+                const char* restorationPanel = panelService_->GetRestorationPanel();
+                log_i("Returning to restoration panel: %s", restorationPanel);
+                panelService_->CreateAndLoadPanel(restorationPanel, []() {
                     // Panel switch callback handled by service
                 }, false);
             }

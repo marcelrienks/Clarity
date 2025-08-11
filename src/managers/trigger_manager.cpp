@@ -172,10 +172,11 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
                 // Note: UIState checking removed - not available in IPanelService interface
                 // Panel service will handle state management internally
                 
-                // No other panel triggers active - restore to default
-                log_i("No other panel triggers active - restoring to default: %s", mapping->restoreTarget);
+                // No other panel triggers active - restore to actual previous panel
+                const char* restorationPanel = panelService_->GetRestorationPanel();
+                log_i("No other panel triggers active - restoring to previous panel: %s", restorationPanel);
                 if (panelService_) {
-                    panelService_->CreateAndLoadPanel(mapping->restoreTarget, []() {
+                    panelService_->CreateAndLoadPanel(restorationPanel, []() {
                         // Panel switch callback handled by service
                     }, false);
                 }

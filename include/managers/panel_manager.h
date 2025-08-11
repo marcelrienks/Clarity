@@ -130,7 +130,7 @@ private:
     void PanelCompletionCallback();
 
 public:
-    // Public Data Members
+    // Public Data Members - using c_str() to maintain const char* interface compatibility
     const char *currentPanel = PanelNames::OIL;     ///< Current panel state
     const char *restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
 
@@ -138,7 +138,10 @@ private:
     // Instance Data Members
     std::shared_ptr<IPanel> panel_ = nullptr;
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
-    char currentPanelBuffer[32];                  ///< Buffer for current panel name to avoid pointer issues
+    
+    // Panel name storage using std::string for memory safety and automatic management
+    std::string currentPanelStr_;                 ///< Safe storage for current panel name
+    std::string restorationPanelStr_;             ///< Safe storage for restoration panel name
     IGpioProvider *gpioProvider_ = nullptr;       ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr; ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;       ///< Style service for UI theming
