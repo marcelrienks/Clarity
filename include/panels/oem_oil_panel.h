@@ -76,9 +76,6 @@ public:
     
     // IPanel override to provide action service
     IActionService* GetInputService() override { return this; }
-    
-    // IPanel override - Oil panel is configurable as default
-    bool IsConfigurable() const override { return true; }
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;

@@ -67,9 +67,6 @@ public:
     
     // IPanel override to provide input service
     IActionService* GetInputService() override { return this; }
-    
-    // IPanel override - Config panel is NOT configurable (system panel)
-    bool IsConfigurable() const override { return false; }
 
 private:
     // Menu state enum

@@ -289,20 +289,29 @@ void ConfigPanel::CycleDefaultPanel()
     
     Configs config = preferenceService_->GetConfig();
     
-    // Only show configurable panels
-    // Currently only OemOilPanel is configurable
-    // Future panels can be added here if they return true from IsConfigurable()
-    std::vector<const char*> configurablePanels = {
-        PanelNames::OIL
+    // Cycle through available panels
+    std::vector<const char*> panels = {
+        PanelNames::OIL,
+        PanelNames::KEY,
+        PanelNames::LOCK
     };
     
-    // For now, with only one configurable panel, we don't need to cycle
-    // This is ready for future expansion when more panels become configurable
-    config.panelName = configurablePanels[0];
+    // Find current panel and move to next
+    auto it = std::find(panels.begin(), panels.end(), config.panelName);
+    if (it != panels.end()) {
+        ++it;
+        if (it == panels.end()) {
+            it = panels.begin(); // Wrap around
+        }
+    } else {
+        it = panels.begin(); // Default to first if not found
+    }
+    
+    config.panelName = *it;
     preferenceService_->SetConfig(config);
     preferenceService_->SaveConfig();
     
-    log_i("Default panel set to: %s", config.panelName.c_str());
+    log_i("Default panel changed to: %s", config.panelName.c_str());
 }
 
 void ConfigPanel::CycleTheme()

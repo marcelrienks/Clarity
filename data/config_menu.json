@@ -1,0 +1,161 @@
+{
+  "version": "1.0",
+  "menu": [
+    {
+      "id": "general",
+      "label": "General",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "default_panel",
+          "label": "Default Panel",
+          "type": "choice",
+          "preference": "panel_name",
+          "choices": ["$DYNAMIC_PANELS$"],
+          "choiceLabels": ["$DYNAMIC_PANEL_LABELS$"]
+        },
+        {
+          "id": "startup_delay",
+          "label": "Startup Delay",
+          "type": "number",
+          "preference": "startup_delay",
+          "min": 0,
+          "max": 5000,
+          "step": 100,
+          "default": "1000"
+        },
+        {
+          "id": "back_general",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "display",
+      "label": "Display",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "theme",
+          "label": "Theme",
+          "type": "choice",
+          "preference": "theme",
+          "choices": ["Day", "Night", "Auto"],
+          "default": "Day"
+        },
+        {
+          "id": "brightness",
+          "label": "Brightness",
+          "type": "number",
+          "preference": "brightness",
+          "min": 10,
+          "max": 100,
+          "step": 10,
+          "default": "80"
+        },
+        {
+          "id": "auto_dim",
+          "label": "Auto Dim",
+          "type": "toggle",
+          "preference": "auto_dim",
+          "default": "false"
+        },
+        {
+          "id": "dim_timeout",
+          "label": "Dim Timeout (s)",
+          "type": "number",
+          "preference": "dim_timeout",
+          "min": 5,
+          "max": 300,
+          "step": 5,
+          "default": "30",
+          "visible": {
+            "preference": "auto_dim",
+            "equals": "true"
+          }
+        },
+        {
+          "id": "back_display",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "sensors",
+      "label": "Sensors",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "update_rate",
+          "label": "Update Rate",
+          "type": "choice",
+          "preference": "update_rate",
+          "choices": [250, 500, 1000, 2000],
+          "choiceLabels": ["250ms", "500ms", "1s", "2s"],
+          "default": "500"
+        },
+        {
+          "id": "oil_pressure_unit",
+          "label": "Pressure Unit",
+          "type": "choice",
+          "preference": "pressure_unit",
+          "choices": ["PSI", "Bar", "kPa"],
+          "default": "PSI"
+        },
+        {
+          "id": "temperature_unit",
+          "label": "Temperature Unit",
+          "type": "choice",
+          "preference": "temp_unit",
+          "choices": ["C", "F"],
+          "choiceLabels": ["Celsius", "Fahrenheit"],
+          "default": "C"
+        },
+        {
+          "id": "calibrate_sensors",
+          "label": "Calibrate Sensors",
+          "type": "action",
+          "action": "calibrate_sensors"
+        },
+        {
+          "id": "back_sensors",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "label": "Advanced",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "debug_mode",
+          "label": "Debug Mode",
+          "type": "toggle",
+          "preference": "debug_mode",
+          "default": "false"
+        },
+        {
+          "id": "factory_reset",
+          "label": "Factory Reset",
+          "type": "action",
+          "action": "factory_reset"
+        },
+        {
+          "id": "back_advanced",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "exit",
+      "label": "Exit",
+      "type": "action",
+      "action": "save_and_exit"
+    }
+  ]
+}

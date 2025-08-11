@@ -81,12 +81,6 @@ public:
     /// @details Called after panel construction to inject manager dependencies
     virtual void SetManagers(IPanelService* panelService, IStyleService* styleService) {}
 
-    /// @brief Check if this panel can be configured as a default panel
-    /// @return true if panel can be selected as default, false otherwise
-    /// @details Only panels suitable for normal operation should return true.
-    /// System panels (key, lock, error, splash, config) should return false.
-    virtual bool IsConfigurable() const { return false; }
-
 protected:
     // Protected Data Members
     std::function<void()> callbackFunction_;

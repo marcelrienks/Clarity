@@ -63,4 +63,27 @@ public:
      * @param config New configuration settings to apply
      */
     virtual void SetConfig(const Configs& config) = 0;
+    
+    // Generic preference access methods for dynamic menus
+    
+    /**
+     * @brief Get a preference value by key
+     * @param key The preference key
+     * @return String representation of the value
+     */
+    virtual std::string GetPreference(const std::string& key) const = 0;
+    
+    /**
+     * @brief Set a preference value by key
+     * @param key The preference key
+     * @param value String representation of the value
+     */
+    virtual void SetPreference(const std::string& key, const std::string& value) = 0;
+    
+    /**
+     * @brief Check if a preference exists
+     * @param key The preference key
+     * @return true if preference exists
+     */
+    virtual bool HasPreference(const std::string& key) const = 0;
 };
