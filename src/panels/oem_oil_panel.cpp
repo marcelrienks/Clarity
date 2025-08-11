@@ -71,7 +71,7 @@ OemOilPanel::~OemOilPanel()
 /// Creates screen and initializes sensors with sentinel values
 void OemOilPanel::Init()
 {
-    log_d("Initializing OEM oil panel with sensors and display components");
+    // Initializing OEM oil panel with sensors and display components
 
     screen_ = displayProvider_->CreateScreen();
     
@@ -91,12 +91,12 @@ void OemOilPanel::Init()
 /// @param callbackFunction to be called when the panel load is completed
 void OemOilPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading OEM oil panel with pressure and temperature gauges");
+    // Loading OEM oil panel with pressure and temperature gauges
     callbackFunction_ = callbackFunction;
 
     // Create components for both pressure and temperature
     if (styleService_ && styleService_->IsInitialized()) {
-        log_d("Creating pressure and temperature components");
+        // Creating pressure and temperature components
         oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
         oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
     } else {
@@ -110,11 +110,11 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     // Render both components
     if (oemOilPressureComponent_) {
         oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
-        log_d("Pressure component rendered successfully");
+        // Pressure component rendered successfully
     }
     if (oemOilTemperatureComponent_) {
         oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
-        log_d("Temperature component rendered successfully");
+        // Temperature component rendered successfully
     }
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -141,7 +141,7 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
     const char *currentTheme = styleService ? styleService->GetCurrentTheme() : "";
     if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme)) {
         forceComponentRefresh_ = true;
-        log_d("Theme changed to %s, forcing component refresh", currentTheme);
+        // Theme changed, forcing component refresh
         lastTheme_ = String(currentTheme);
         
         // Apply the new theme to the screen background when theme changes
@@ -188,7 +188,7 @@ void OemOilPanel::UpdateOilPressure()
     
     // Handle forced refresh (theme changes) even when values unchanged
     if (value == currentOilPressureValue_ && forceComponentRefresh_) {
-        log_d("Pressure value unchanged (%d) but forced refresh required - updating colors only", value);
+        // Pressure value unchanged but forced refresh required - updating colors only
         oemOilPressureComponent_->Refresh(Reading{value});
         return; // No animation needed since value didn't change
     }
@@ -238,7 +238,7 @@ void OemOilPanel::UpdateOilTemperature()
     
     // Handle forced refresh (theme changes) even when values unchanged
     if (value == currentOilTemperatureValue_ && forceComponentRefresh_) {
-        log_d("Temperature value unchanged (%d) but forced refresh required - updating colors only", value);
+        // Temperature value unchanged but forced refresh required - updating colors only
         oemOilTemperatureComponent_->Refresh(Reading{value});
         return; // No animation needed since value didn't change
     }
@@ -300,7 +300,7 @@ void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
     if (styleService != styleService_) {
         styleService_ = styleService;
     }
-    log_d("OemOilPanel: Managers injected - PanelService: %p, StyleService: %p", panelService, styleService);
+    // Managers injected successfully
 }
 
 bool OemOilPanel::CanProcessInput() const

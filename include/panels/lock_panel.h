@@ -45,6 +45,9 @@ public:
     void Init() override;
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
+    
+    // Manager injection method (minimal implementation - panel has no actions)
+    void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
 
 private:
     // Static Methods

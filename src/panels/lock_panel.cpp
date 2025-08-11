@@ -34,7 +34,7 @@ LockPanel::~LockPanel()
 /// @brief Initialize the lock panel and its components
 void LockPanel::Init()
 {
-    log_d("Initializing lock panel with sensor and display components");
+    // Initializing lock panel with sensor and display components
 
     screen_ = displayProvider_->CreateScreen();
     
@@ -51,7 +51,7 @@ void LockPanel::Init()
 /// @brief Load the lock panel UI components
 void LockPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading lock panel with current lock state display");
+    // Loading lock panel with current lock state display
     callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
@@ -83,8 +83,18 @@ void LockPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Lock panel load completed - screen displayed");
+    // Lock panel load completed - screen displayed
 
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
     thisInstance->callbackFunction_();
+}
+
+// Manager injection method
+void LockPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+{
+    // LockPanel doesn't use panelService (no actions), but update styleService if different
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
 }

@@ -107,9 +107,12 @@ void InterruptManager::CheckAllInterrupts()
     checkCount_++;
     unsigned long currentTime = millis();
     
+    // Remove excessive logging - only log when there's activity
+    
     // Quick optimization: check if any sources have pending work
-    if (!HasAnyPendingInterrupts()) {
-        return;
+    bool hasAnyPending = HasAnyPendingInterrupts();
+    if (!hasAnyPending) {
+        return; // No logging for no activity
     }
     
     // Check triggers first - if any have pending interrupts, skip actions

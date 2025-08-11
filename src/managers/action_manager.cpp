@@ -59,6 +59,15 @@ void ActionManager::ProcessInputEvents()
     }
 
     bool currentButtonState = IsButtonPressed();
+    
+    // Log only actual button state changes
+    static bool lastLoggedState = false;
+    static bool firstCall = true;
+    if (firstCall || currentButtonState != lastLoggedState) {
+        log_i("Button state changed: %s", currentButtonState ? "PRESSED" : "RELEASED");
+        lastLoggedState = currentButtonState;
+        firstCall = false;
+    }
     unsigned long currentTime = GetCurrentTime();
 
     // Detect button state changes
@@ -231,18 +240,14 @@ bool ActionManager::IsButtonPressed() const
     // Use the button sensor to check if button is pressed
     bool pressed = buttonSensor_->IsButtonPressed();
     
-    // Debug logging for phantom button presses
+    // Only log actual state changes (removes excessive periodic logging)
     static bool lastLoggedState = false;
     static bool firstCall = true;
-    static unsigned long lastLogTime = 0;
-    unsigned long currentTime = millis();
     
-    // Log state changes or periodically log current state
-    if (firstCall || pressed != lastLoggedState || (currentTime - lastLogTime > 5000)) {
-        log_d("GPIO 32 state: %s (time: %lu)", pressed ? "HIGH (PRESSED)" : "LOW (released)", currentTime);
+    if (firstCall || pressed != lastLoggedState) {
+        log_d("GPIO 32 state: %s", pressed ? "HIGH (PRESSED)" : "LOW (released)");
         lastLoggedState = pressed;
         firstCall = false;
-        lastLogTime = currentTime;
     }
     
     return pressed;
@@ -275,13 +280,19 @@ bool ActionManager::HasPendingInterrupts() const
         return false;
     }
     
-    // Check if button state has changed or if we have pending actions
-    bool currentButtonState = IsButtonPressed();
-    bool buttonStateChanged = (currentButtonState != lastButtonState_);
+    // Always return true if we have pending actions or are in an active button state
     bool hasPendingAction = pendingAction_.IsValid();
     bool inActiveState = (buttonState_ != ButtonState::IDLE);
     
-    return buttonStateChanged || hasPendingAction || inActiveState;
+    // Check for button state changes by comparing current state with cached state
+    bool currentButtonState = IsButtonPressed();
+    bool buttonStateChanged = (currentButtonState != lastButtonState_);
+    
+    bool result = hasPendingAction || inActiveState || buttonStateChanged;
+    
+    // Remove excessive logging - HasPendingInterrupts is called very frequently
+    
+    return result;
 }
 
 // Action Processing Methods

@@ -6,10 +6,10 @@
 
 // Constructors and Destructors
 ErrorPanel::ErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) 
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       panelLoaded_(false), previousTheme_(nullptr)
 {
-    log_d("Creating ErrorPanel");
+    // Creating ErrorPanel
     // Component will be created during load() method
 }
 
@@ -47,12 +47,11 @@ void ErrorPanel::Init()
 
     screen_ = displayProvider_->CreateScreen();
     
-    // Store current theme before switching to ERROR theme
+    // Store current theme before switching to ERROR theme (but don't apply it yet)
     if (styleService_) {
         previousTheme_ = styleService_->GetCurrentTheme();
-        log_d("Storing previous theme: %s", previousTheme_);
-        styleService_->SetTheme(Themes::ERROR);
-        styleService_->ApplyThemeToScreen(screen_);
+        // Storing previous theme
+        // Don't set theme yet - do it after screen is loaded
     }
     
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -64,7 +63,10 @@ void ErrorPanel::Init()
 /// @brief Load the error panel UI components
 void ErrorPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading error panel with current errors");
+    // Loading error panel with current errors
+
+    // Store callback for later use
+    callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
     errorListComponent_ = UIFactory::createErrorListComponent(styleService_);
@@ -83,16 +85,51 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     lv_obj_add_event_cb(screen_, ErrorPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading error panel...");
+    
+    // Add safety check before screen load
+    if (!screen_) {
+        log_e("Screen is null, cannot load error panel");
+        if (callbackFunction_) {
+            callbackFunction_();
+        }
+        return;
+    }
+    
+    // About to call lv_screen_load
+    
+    // Add more safety checks
+    if (!screen_) {
+        log_e("screen_ is null before lv_screen_load");
+        if (callbackFunction_) callbackFunction_();
+        return;
+    }
+    
+    // Check if screen is a valid LVGL object
+    if (!lv_obj_is_valid(screen_)) {
+        log_e("screen_ is not a valid LVGL object");
+        if (callbackFunction_) callbackFunction_();
+        return;
+    }
+    
+    // Screen is valid, calling lv_screen_load
+    
+    // Add a small delay to ensure any previous screen operations are complete
+    delay(10);
+    
     lv_screen_load(screen_);
+    // lv_screen_load completed successfully
     
     // Ensure ERROR theme is applied when panel is loaded
     if (styleService_) {
+        // Applying ERROR theme to screen
         styleService_->SetTheme(Themes::ERROR);
         styleService_->ApplyThemeToScreen(screen_);
+        // ERROR theme applied successfully
     }
     
+    // Setting panelLoaded flag to true
     panelLoaded_ = true;
-    callbackFunction();
+    // ErrorPanel Load() method completed successfully
 }
 
 /// @brief Update the error panel with current error data
@@ -117,7 +154,7 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
     
     // Update display if errors have changed
     if (errorsChanged) {
-        log_d("Error list changed - updating display");
+        // Error list changed - updating display
         currentErrors_ = newErrors;
         if (errorListComponent_) {
             errorListComponent_->Refresh(Reading{}); // Component will fetch errors internally
@@ -136,8 +173,16 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
 // Static Event Callbacks
 void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Error panel loaded successfully");
-    // Panel load completion handled automatically
+    // Error panel loaded successfully
+    
+    if (!event) {
+        return;
+    }
+
+    auto thisInstance = static_cast<ErrorPanel *>(lv_event_get_user_data(event));
+    if (thisInstance && thisInstance->callbackFunction_) {
+        thisInstance->callbackFunction_();
+    }
 }
 
 // IInputService Interface Implementation
@@ -180,7 +225,7 @@ Action ErrorPanel::GetLongPressAction()
         
         // Update the display
         if (errorListComponent_) {
-            log_d("Error list cleared, component will update on next cycle");
+            // Error list cleared, component will update on next cycle
         }
     });
 }
@@ -189,4 +234,15 @@ bool ErrorPanel::CanProcessInput() const
 {
     // ErrorPanel can always process input (no animations that block input)
     return true;
+}
+
+// Manager injection method
+void ErrorPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+{
+    panelService_ = panelService;
+    // styleService_ is already set in constructor, but update if different instance provided
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
 }

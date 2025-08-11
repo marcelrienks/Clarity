@@ -35,7 +35,7 @@ SplashPanel::~SplashPanel()
 /// Creates blank screens for animation transitions
 void SplashPanel::Init()
 {
-    log_d("Initializing splash panel screen and animation components");
+    // Initializing splash panel screen and animation components
     if (!displayProvider_) {
         log_e("SplashPanel requires display provider");
         return;
@@ -78,7 +78,7 @@ void SplashPanel::Update(std::function<void()> callbackFunction)
 /// @param animation_timer the animation_timer that has completed
 void SplashPanel::animation_complete_timer_callback(lv_timer_t *animationTimer)
 {
-    log_d("Animation sequence complete - executing callback");
+    // Animation sequence complete - executing callback
 
     // Get the splash panel instance
     auto *thisInstance = static_cast<SplashPanel *>(lv_timer_get_user_data(animationTimer));
@@ -92,7 +92,7 @@ void SplashPanel::animation_complete_timer_callback(lv_timer_t *animationTimer)
 /// @param fade_in_timer the fade_in_timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
 {
-    log_d("Animation sequence complete - executing callback");
+    // Animation sequence complete - executing callback
 
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeInTimer));
@@ -117,7 +117,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
 /// @param fade_out_timer the animation_timer that has completed
 void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 {
-    log_d("Animation sequence complete - executing callback");
+    // Animation sequence complete - executing callback
 
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
@@ -178,5 +178,5 @@ void SplashPanel::SetManagers(IPanelService* panelService, IStyleService* styleS
     if (styleService != styleService_) {
         styleService_ = styleService;
     }
-    log_d("SplashPanel: Managers injected - PanelService: %p, StyleService: %p", panelService, styleService);
+    // Managers injected successfully
 }

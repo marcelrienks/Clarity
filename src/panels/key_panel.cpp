@@ -28,7 +28,7 @@ KeyPanel::~KeyPanel()
 /// @brief Initialize the key panel and its components
 void KeyPanel::Init()
 {
-    log_d("Initializing key panel and reading current GPIO key state");
+    // Initializing key panel and reading current GPIO key state
 
     if (!displayProvider_ || !gpioProvider_) {
         log_e("KeyPanel requires display and gpio providers");
@@ -51,7 +51,7 @@ void KeyPanel::Init()
 /// @brief Load the key panel UI components
 void KeyPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading key panel with current key state display");
+    // Loading key panel with current key state display
     callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
@@ -103,8 +103,18 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Key panel load completed - screen displayed");
+    // Key panel load completed - screen displayed
 
     auto thisInstance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
     thisInstance->callbackFunction_();
+}
+
+// Manager injection method
+void KeyPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+{
+    // KeyPanel doesn't use panelService (no actions), but update styleService if different
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
 }

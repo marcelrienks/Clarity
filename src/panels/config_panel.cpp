@@ -1,11 +1,12 @@
 #include "panels/config_panel.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
+#include "utilities/types.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
 ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       currentMenuIndex_(0)
 {
     // Initialize menu items (placeholder options for Phase 3)
@@ -14,9 +15,12 @@ ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleS
         {"Option 2", []() { log_i("Option 2 selected"); }},
         {"Exit", [this]() { 
             log_i("Exiting config panel");
-            // Return to previous panel
-            // For now, just go back to OIL panel as default
-            // In Phase 4, this will use proper panel restoration
+            // Return to previous panel (OIL panel as default)
+            if (panelService_) {
+                panelService_->CreateAndLoadPanel(PanelNames::OIL, []() {
+                    // Panel switch callback handled by service
+                }, false);
+            }
         }}
     };
 }
@@ -56,7 +60,7 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     // Reset menu to first item
     currentMenuIndex_ = 0;
     
-    log_d("Creating menu UI...");
+    // Creating menu UI
     // Create the menu UI
     CreateMenuUI();
     
@@ -79,30 +83,30 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 
 void ConfigPanel::CreateMenuUI()
 {
-    log_d("CreateMenuUI: Starting, screen_ = %p", screen_);
+    // CreateMenuUI: Starting
     
     if (!screen_) {
         log_e("CreateMenuUI: screen_ is NULL!");
         return;
     }
     
-    log_d("CreateMenuUI: Setting background color...");
+    // CreateMenuUI: Setting background color
     // Apply grey theme for settings
     lv_obj_set_style_bg_color(screen_, lv_color_hex(0x2C2C2C), LV_PART_MAIN);
     
-    log_d("CreateMenuUI: Creating title label...");
+    // CreateMenuUI: Creating title label
     // Create title
     titleLabel_ = lv_label_create(screen_);
-    log_d("CreateMenuUI: Setting title text...");
+    // CreateMenuUI: Setting title text
     lv_label_set_text(titleLabel_, "Configuration");
-    log_d("CreateMenuUI: Setting title color...");
+    // CreateMenuUI: Setting title color
     lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
-    log_d("CreateMenuUI: Setting title font...");
+    // CreateMenuUI: Setting title font
     lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_20, LV_PART_MAIN);
-    log_d("CreateMenuUI: Aligning title...");
+    // CreateMenuUI: Aligning title
     lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 20);
     
-    log_d("CreateMenuUI: Creating menu container...");
+    // CreateMenuUI: Creating menu container
     // Create menu container
     menuContainer_ = lv_obj_create(screen_);
     lv_obj_set_size(menuContainer_, 200, 120);
@@ -173,7 +177,7 @@ void ConfigPanel::ExecuteCurrentOption()
 
 void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Config panel loaded successfully");
+    // Config panel loaded successfully
     
     auto* panel = static_cast<ConfigPanel*>(lv_event_get_user_data(event));
     if (panel && panel->callbackFunction_)
@@ -207,4 +211,15 @@ bool ConfigPanel::CanProcessInput() const
 {
     // ConfigPanel can always process input (no animations that block input)
     return true;
+}
+
+// Manager injection method
+void ConfigPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+{
+    panelService_ = panelService;
+    // styleService_ is already set in constructor, but update if different instance provided
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
 }

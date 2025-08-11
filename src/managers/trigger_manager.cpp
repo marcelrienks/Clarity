@@ -322,12 +322,34 @@ bool TriggerManager::HasPendingInterrupts() const
         return false;
     }
     
-    // For now, we'll do a simple check that's always conservative
-    // In a real implementation, we might track previous states
-    // But since TriggerManager processing is lightweight, we can afford to check always
+    // Check if any sensor states have changed by comparing current states with cached states
+    GpioState currentState = const_cast<TriggerManager*>(this)->ReadAllSensorStates();
     
-    // Always return true if we have sensors - this ensures triggers are always checked
-    // This is not the most optimized approach, but it's safe and correct
-    return (keySensor_ != nullptr) || (lockSensor_ != nullptr) || 
-           (lightSensor_ != nullptr) || (debugErrorSensor_ != nullptr);
+    // Check each trigger for state changes
+    for (const auto& trigger : triggers_) {
+        bool currentPinState = false;
+        
+        // Get current pin state based on trigger type
+        if (trigger.triggerId == TRIGGER_KEY_PRESENT) {
+            currentPinState = currentState.keyPresent;
+        } else if (trigger.triggerId == TRIGGER_KEY_NOT_PRESENT) {
+            currentPinState = currentState.keyNotPresent;
+        } else if (trigger.triggerId == TRIGGER_LOCK_STATE) {
+            currentPinState = currentState.lockState;
+        } else if (trigger.triggerId == TRIGGER_LIGHTS_STATE) {
+            currentPinState = currentState.lightsState;
+        } else if (trigger.triggerId == TRIGGER_ERROR_OCCURRED) {
+            currentPinState = ErrorManager::Instance().ShouldTriggerErrorPanel();
+        }
+        
+        // Check if state changed from what we have stored
+        TriggerExecutionState currentTriggerState = currentPinState ? 
+            TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
+        
+        if (trigger.currentState != currentTriggerState) {
+            return true; // State change detected
+        }
+    }
+    
+    return false; // No state changes detected
 }
