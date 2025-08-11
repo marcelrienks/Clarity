@@ -10,7 +10,7 @@
  * during animations or other blocking operations.
  * 
  * @design_pattern Strategy pattern for interrupt handling
- * @priority_system Higher priority interrupts are checked first
+ * @evaluation_order Triggers are evaluated first, actions only if no triggers active
  * @idle_integration Called during LVGL idle time and animation gaps
  */
 class IInterruptService
@@ -32,11 +32,4 @@ public:
      */
     virtual bool HasPendingInterrupts() const = 0;
 
-    /**
-     * @brief Get the priority level for this interrupt source
-     * @details Higher priority interrupts are checked first.
-     * Typical priorities: Triggers=100, Input=50, Background=10
-     * @return Priority value (higher = more important)
-     */
-    virtual int GetPriority() const = 0;
 };

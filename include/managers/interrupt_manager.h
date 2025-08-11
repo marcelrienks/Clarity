@@ -6,13 +6,13 @@
 
 /**
  * @class InterruptManager
- * @brief Centralized manager for all interrupt sources with priority handling
+ * @brief Centralized manager for interrupt sources with ordered evaluation
  * 
- * @details This class coordinates checking of all interrupt sources (triggers, inputs, etc.)
- * during idle time. It maintains a priority-ordered list of interrupt sources and
- * provides efficient checking to minimize overhead during animations and operations.
+ * @details This class coordinates checking of interrupt sources (triggers, inputs, etc.)
+ * during idle time. It evaluates triggers first, then actions only if no triggers
+ * are active, ensuring proper precedence in the interrupt handling system.
  * 
- * @priority_system Higher priority sources are checked first
+ * @evaluation_order Triggers first, then actions if no triggers active
  * @idle_integration Designed to be called during LVGL idle time and animation gaps
  * @performance_optimized Skips sources that report no pending interrupts
  */
@@ -34,22 +34,35 @@ public:
     void Init();
 
     /**
-     * @brief Register an interrupt source for periodic checking
-     * @param source Pointer to interrupt source (must remain valid)
-     * @details Sources are automatically sorted by priority after registration
+     * @brief Register a trigger interrupt source
+     * @param source Pointer to trigger source (must remain valid)
+     * @details Triggers are evaluated before actions
      */
-    void RegisterInterruptSource(IInterruptService* source);
+    void RegisterTriggerSource(IInterruptService* source);
+    
+    /**
+     * @brief Register an action interrupt source
+     * @param source Pointer to action source (must remain valid)
+     * @details Actions are evaluated only if no triggers are active
+     */
+    void RegisterActionSource(IInterruptService* source);
 
     /**
-     * @brief Unregister an interrupt source
-     * @param source Pointer to interrupt source to remove
+     * @brief Unregister a trigger interrupt source
+     * @param source Pointer to trigger source to remove
      */
-    void UnregisterInterruptSource(IInterruptService* source);
+    void UnregisterTriggerSource(IInterruptService* source);
+    
+    /**
+     * @brief Unregister an action interrupt source
+     * @param source Pointer to action source to remove
+     */
+    void UnregisterActionSource(IInterruptService* source);
 
     /**
-     * @brief Check all registered interrupt sources in priority order
-     * @details This is the main method called during idle time. It efficiently
-     * checks only sources that report pending interrupts.
+     * @brief Check interrupt sources in ordered evaluation
+     * @details Checks triggers first, then actions only if no triggers active.
+     * This is the main method called during idle time.
      */
     void CheckAllInterrupts();
 
@@ -61,17 +74,21 @@ public:
     bool HasAnyPendingInterrupts() const;
 
     /**
-     * @brief Get the number of registered interrupt sources
-     * @return Count of registered sources
+     * @brief Get the number of registered trigger sources
+     * @return Count of registered trigger sources
      */
-    size_t GetSourceCount() const { return interruptSources_.size(); }
+    size_t GetTriggerSourceCount() const { return triggerSources_.size(); }
+    
+    /**
+     * @brief Get the number of registered action sources
+     * @return Count of registered action sources
+     */
+    size_t GetActionSourceCount() const { return actionSources_.size(); }
 
 private:
-    // Internal methods
-    void SortSourcesByPriority();
-    
     // Data members
-    std::vector<IInterruptService*> interruptSources_;
+    std::vector<IInterruptService*> triggerSources_;
+    std::vector<IInterruptService*> actionSources_;
     bool initialized_;
     
     // Statistics (for debugging)

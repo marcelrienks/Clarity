@@ -162,7 +162,7 @@ Action ErrorPanel::GetShortPressAction()
             log_d("Currently showing error %d: %s", currentErrorIndex_ + 1, 
                   currentErrors_[currentErrorIndex_].message.c_str());
         }
-    }, "ErrorPanel cycle through errors");
+    });
 }
 
 Action ErrorPanel::GetLongPressAction()
@@ -182,7 +182,7 @@ Action ErrorPanel::GetLongPressAction()
         if (errorListComponent_) {
             log_d("Error list cleared, component will update on next cycle");
         }
-    }, "ErrorPanel clear all errors");
+    });
 }
 
 bool ErrorPanel::CanProcessInput() const

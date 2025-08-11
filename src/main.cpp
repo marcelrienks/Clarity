@@ -62,10 +62,6 @@ bool initializeServices()
         return false;
     }
 
-    // Setup ActionManager callback after successful creation
-    actionManager->SetPanelSwitchCallback([&](const char *panelName){
-        log_d("ActionManager requests panel switch to: %s", panelName);
-        panelManager->CreateAndLoadPanel(panelName); });
 
     log_i("All services initialized successfully");
     return true;
@@ -84,8 +80,8 @@ void setup()
     Ticker::handleLvTasks();
     styleManager->InitializeStyles();
     interruptManager->Init();
-    interruptManager->RegisterInterruptSource(triggerManager.get()); // Priority 100
-    interruptManager->RegisterInterruptSource(actionManager.get());   // Priority 50
+    interruptManager->RegisterTriggerSource(triggerManager.get()); 
+    interruptManager->RegisterActionSource(actionManager.get());
     Ticker::handleLvTasks();
 
     // Load startup panel

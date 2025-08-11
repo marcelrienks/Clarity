@@ -6,7 +6,7 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr)
 {
     // Component will be created during load() method
 }
@@ -145,18 +145,38 @@ Action SplashPanel::GetShortPressAction()
     // Short press during splash: Skip animation (future enhancement)
     // For now, return NoAction since we don't interrupt animations
     log_d("SplashPanel: Short press action requested - returning NoAction (animation will complete)");
-    return Action(nullptr, "No action");
+    return Action(nullptr);
 }
 
 Action SplashPanel::GetLongPressAction()
 {
     // Long press during splash: Switch to CONFIG panel
     log_i("SplashPanel: Long press - switching to CONFIG panel");
-    return Action(PanelNames::CONFIG, "Switch to CONFIG panel from splash");
+    
+    // Return an action that directly calls PanelService interface
+    if (panelService_) {
+        return Action([this]() {
+            panelService_->CreateAndLoadPanel(PanelNames::CONFIG);
+        });
+    }
+    
+    log_w("SplashPanel: PanelService not available, returning no action");
+    return Action(nullptr);
 }
 
 bool SplashPanel::CanProcessInput() const
 {
     // SplashPanel never processes input directly - always queue for after animation
     return false;
+}
+
+// Manager injection method
+void SplashPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+{
+    panelService_ = panelService;
+    // styleService_ is already set in constructor, but update if different instance provided
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+    log_d("SplashPanel: Managers injected - PanelService: %p, StyleService: %p", panelService, styleService);
 }

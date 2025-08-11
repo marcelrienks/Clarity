@@ -271,7 +271,7 @@ Action OemOilPanel::GetShortPressAction()
 {
     // Short press: No action for oil panel
     log_d("OemOilPanel: Short press action requested - returning NoAction");
-    return Action(nullptr, "No action");
+    return Action(nullptr);
 }
 
 Action OemOilPanel::GetLongPressAction()
@@ -283,15 +283,17 @@ Action OemOilPanel::GetLongPressAction()
     if (panelService_) {
         return Action([this]() {
             panelService_->CreateAndLoadPanel(PanelNames::CONFIG);
-        }, "Switch to CONFIG panel from oil panel");
+        });
     }
     
     log_w("OemOilPanel: PanelService not available, returning no action");
-    return Action(nullptr, "No action - PanelService unavailable");
+    return Action(nullptr);
 }
 
-// Manager injection method
-void OemOilPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+/// @brief Manager injection method to prevent circular references
+/// @param panelService the panel manager instance
+/// @param styleService  the style manager instance
+void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     panelService_ = panelService;
     // styleService_ is already set in constructor, but update if different instance provided

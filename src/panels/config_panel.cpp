@@ -191,7 +191,7 @@ Action ConfigPanel::GetShortPressAction()
         currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
         log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
         UpdateMenuDisplay();
-    }, "ConfigPanel menu navigation");
+    });
 }
 
 Action ConfigPanel::GetLongPressAction()
@@ -200,7 +200,7 @@ Action ConfigPanel::GetLongPressAction()
     return Action([this]() {
         log_i("ConfigPanel: Long press - executing '%s'", menuItems_[currentMenuIndex_].label.c_str());
         ExecuteCurrentOption();
-    }, "ConfigPanel menu selection");
+    });
 }
 
 bool ConfigPanel::CanProcessInput() const

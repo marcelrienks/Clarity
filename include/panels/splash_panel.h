@@ -3,6 +3,7 @@
 // Project Includes
 #include "interfaces/i_panel.h"
 #include "interfaces/i_action_service.h"
+#include "interfaces/i_panel_service.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
@@ -47,6 +48,9 @@ public:
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
     
+    // Manager injection method
+    void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
+    
     // IActionService Interface Implementation - Action-based (no animation interruption)
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
@@ -66,6 +70,7 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
+    IPanelService *panelService_;
 
     // Components
     // screen_ is inherited from IPanel base class

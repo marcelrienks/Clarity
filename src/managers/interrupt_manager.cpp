@@ -25,7 +25,8 @@ void InterruptManager::Init()
         return;
     }
     
-    interruptSources_.clear();
+    triggerSources_.clear();
+    actionSources_.clear();
     lastCheckTime_ = millis();
     checkCount_ = 0;
     
@@ -33,37 +34,67 @@ void InterruptManager::Init()
     log_i("InterruptManager initialized");
 }
 
-void InterruptManager::RegisterInterruptSource(IInterruptService* source)
+void InterruptManager::RegisterTriggerSource(IInterruptService* source)
 {
     if (!source) {
-        log_w("Attempted to register null interrupt source");
+        log_w("Attempted to register null trigger source");
         return;
     }
     
     // Check if already registered
-    auto it = std::find(interruptSources_.begin(), interruptSources_.end(), source);
-    if (it != interruptSources_.end()) {
-        log_w("Interrupt source already registered");
+    auto it = std::find(triggerSources_.begin(), triggerSources_.end(), source);
+    if (it != triggerSources_.end()) {
+        log_w("Trigger source already registered");
         return;
     }
     
-    interruptSources_.push_back(source);
-    SortSourcesByPriority();
+    triggerSources_.push_back(source);
     
-    log_d("Registered interrupt source with priority %d (total: %zu)", 
-          source->GetPriority(), interruptSources_.size());
+    log_d("Registered trigger source (total: %zu)", triggerSources_.size());
 }
 
-void InterruptManager::UnregisterInterruptSource(IInterruptService* source)
+void InterruptManager::RegisterActionSource(IInterruptService* source)
+{
+    if (!source) {
+        log_w("Attempted to register null action source");
+        return;
+    }
+    
+    // Check if already registered
+    auto it = std::find(actionSources_.begin(), actionSources_.end(), source);
+    if (it != actionSources_.end()) {
+        log_w("Action source already registered");
+        return;
+    }
+    
+    actionSources_.push_back(source);
+    
+    log_d("Registered action source (total: %zu)", actionSources_.size());
+}
+
+void InterruptManager::UnregisterTriggerSource(IInterruptService* source)
 {
     if (!source) {
         return;
     }
     
-    auto it = std::find(interruptSources_.begin(), interruptSources_.end(), source);
-    if (it != interruptSources_.end()) {
-        interruptSources_.erase(it);
-        log_d("Unregistered interrupt source (remaining: %zu)", interruptSources_.size());
+    auto it = std::find(triggerSources_.begin(), triggerSources_.end(), source);
+    if (it != triggerSources_.end()) {
+        triggerSources_.erase(it);
+        log_d("Unregistered trigger source (remaining: %zu)", triggerSources_.size());
+    }
+}
+
+void InterruptManager::UnregisterActionSource(IInterruptService* source)
+{
+    if (!source) {
+        return;
+    }
+    
+    auto it = std::find(actionSources_.begin(), actionSources_.end(), source);
+    if (it != actionSources_.end()) {
+        actionSources_.erase(it);
+        log_d("Unregistered action source (remaining: %zu)", actionSources_.size());
     }
 }
 
@@ -81,10 +112,21 @@ void InterruptManager::CheckAllInterrupts()
         return;
     }
     
-    // Process interrupt sources in priority order
-    for (IInterruptService* source : interruptSources_) {
+    // Check triggers first - if any have pending interrupts, skip actions
+    bool triggersActive = false;
+    for (IInterruptService* source : triggerSources_) {
         if (source && source->HasPendingInterrupts()) {
             source->CheckInterrupts();
+            triggersActive = true;
+        }
+    }
+    
+    // Only check actions if no triggers were active
+    if (!triggersActive) {
+        for (IInterruptService* source : actionSources_) {
+            if (source && source->HasPendingInterrupts()) {
+                source->CheckInterrupts();
+            }
         }
     }
     
@@ -93,22 +135,20 @@ void InterruptManager::CheckAllInterrupts()
 
 bool InterruptManager::HasAnyPendingInterrupts() const
 {
-    for (const IInterruptService* source : interruptSources_) {
+    // Check triggers first
+    for (const IInterruptService* source : triggerSources_) {
         if (source && source->HasPendingInterrupts()) {
             return true;
         }
     }
+    
+    // Then check actions
+    for (const IInterruptService* source : actionSources_) {
+        if (source && source->HasPendingInterrupts()) {
+            return true;
+        }
+    }
+    
     return false;
 }
 
-void InterruptManager::SortSourcesByPriority()
-{
-    std::sort(interruptSources_.begin(), interruptSources_.end(),
-              [](const IInterruptService* a, const IInterruptService* b) {
-                  if (!a) return false;
-                  if (!b) return true;
-                  return a->GetPriority() > b->GetPriority(); // Higher priority first
-              });
-    
-    log_d("Sorted %zu interrupt sources by priority", interruptSources_.size());
-}

@@ -79,11 +79,6 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
         uniquePanel = UIFactory::createSplashPanel(gpioProvider_, displayProvider_, styleService_);
     } else if (strcmp(panelName, PanelNames::OIL) == 0) {
         uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
-        // Inject managers for OemOilPanel
-        if (uniquePanel) {
-            OemOilPanel* oilPanel = static_cast<OemOilPanel*>(uniquePanel.get());
-            oilPanel->SetManagers(this, styleService_);
-        }
     } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
         uniquePanel = UIFactory::createErrorPanel(gpioProvider_, displayProvider_, styleService_);
     } else if (strcmp(panelName, PanelNames::CONFIG) == 0) {
@@ -149,7 +144,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
         // Unregister input service if current panel implements it
         if (actionManager_)
         {
-            actionManager_->ClearInputService();
+            actionManager_->ClearPanel();
         }
         
         panel_.reset();
@@ -157,6 +152,8 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 
     panel_ = CreatePanel(panelName);
     if (panel_) {
+        // Inject managers for all panels (they can choose to use them or not)
+        panel_->SetManagers(this, styleService_);
         panel_->Init();
 
         // Make a copy of the panel name to avoid pointer issues
@@ -170,8 +167,8 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
             IActionService* actionService = panel_->GetInputService();
             if (actionService)
             {
-                log_i("Panel %s implements IActionService, registering for input", currentPanel);
-                actionManager_->SetInputService(actionService, currentPanel);
+                log_i("Panel %s implements IActionService, registering for actions", currentPanel);
+                actionManager_->RegisterPanel(actionService, currentPanel);
             }
             else
             {

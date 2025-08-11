@@ -12,20 +12,17 @@
 #define log_e(...)
 #endif
 
-// Static instance definition
-ActionManager* ActionManager::instance_ = nullptr;
-
 ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor)
     : buttonSensor_(buttonSensor)
     , currentService_(nullptr)
-    , panelSwitchCallback_(nullptr)
     , buttonState_(ButtonState::IDLE)
     , pressStartTime_(0)
     , debounceStartTime_(0)
     , lastButtonState_(false)
     , initialized_(false)
+    , pendingAction_(nullptr)
+    , pendingActionTimestamp_(0)
 {
-    instance_ = this;
 }
 
 void ActionManager::Init()
@@ -100,24 +97,16 @@ void ActionManager::ProcessInputEvents()
                 if (currentService_) {
                     // Get action from current panel
                     Action action = currentService_->GetLongPressAction();
-                    if (action.IsValid() || action.IsPanelSwitch()) {
+                    if (action.IsValid()) {
                         // Check if panel can process action immediately
                         if (currentService_->CanProcessInput()) {
-                            log_d("Executing long press action immediately: %s", action.description.c_str());
-                            
-                            if (action.IsPanelSwitch() && panelSwitchCallback_) {
-                                // Handle panel switch
-                                log_d("Handling panel switch to: %s", action.targetPanel);
-                                panelSwitchCallback_(action.targetPanel);
-                            } else if (action.IsValid()) {
-                                // Execute custom action
-                                action.execute();
-                            }
+                            log_d("Executing long press action immediately");
+                            action.execute();
                         } else {
-                            // Store the action for later processing (overwrites any pending short press)
-                            pendingAction_.action = std::move(action);
-                            pendingAction_.timestamp = currentTime;
-                            log_d("Long press action queued for later: %s", pendingAction_.action.description.c_str());
+                            // Store the action for later processing (overwrites any pending action)
+                            pendingAction_ = std::move(action);
+                            pendingActionTimestamp_ = currentTime;
+                            log_d("Long press action queued for later");
                         }
                     }
                 }
@@ -141,24 +130,19 @@ void ActionManager::ProcessInputEvents()
     }
 }
 
-void ActionManager::SetInputService(IActionService* service, const char* panelName)
+void ActionManager::RegisterPanel(IActionService* service, const char* panelName)
 {
     currentService_ = service;
     currentPanelName_ = panelName ? panelName : "";
-    log_d("Input service set for panel %s: %p", panelName, service);
+    log_d("Panel registered for actions: %s %p", panelName, service);
 }
 
-void ActionManager::ClearInputService()
+void ActionManager::ClearPanel()
 {
     currentService_ = nullptr;
-    log_d("Input service cleared");
+    log_d("Panel registration cleared");
 }
 
-void ActionManager::SetPanelSwitchCallback(std::function<void(const char*)> callback)
-{
-    panelSwitchCallback_ = callback;
-    log_d("Panel switch callback set: %p", &callback);
-}
 
 void ActionManager::HandleButtonPress()
 {
@@ -191,24 +175,16 @@ void ActionManager::HandleButtonRelease()
             if (currentService_) {
                 // Get action from current panel
                 Action action = currentService_->GetShortPressAction();
-                if (action.IsValid() || action.IsPanelSwitch()) {
+                if (action.IsValid()) {
                     // Check if panel can process action immediately
                     if (currentService_->CanProcessInput()) {
-                        log_d("Executing short press action immediately: %s", action.description.c_str());
-                        
-                        if (action.IsPanelSwitch() && panelSwitchCallback_) {
-                            // Handle panel switch
-                            log_d("Handling panel switch to: %s", action.targetPanel);
-                            panelSwitchCallback_(action.targetPanel);
-                        } else if (action.IsValid()) {
-                            // Execute custom action
-                            action.execute();
-                        }
+                        log_d("Executing short press action immediately");
+                        action.execute();
                     } else {
                         // Store the action for later processing
-                        pendingAction_.action = std::move(action);
-                        pendingAction_.timestamp = currentTime;
-                        log_d("Short press action queued for later: %s", pendingAction_.action.description.c_str());
+                        pendingAction_ = std::move(action);
+                        pendingActionTimestamp_ = currentTime;
+                        log_d("Short press action queued for later");
                     }
                 }
             }
@@ -219,22 +195,14 @@ void ActionManager::HandleButtonRelease()
             
             if (currentService_) {
                 Action action = currentService_->GetLongPressAction();
-                if (action.IsValid() || action.IsPanelSwitch()) {
+                if (action.IsValid()) {
                     if (currentService_->CanProcessInput()) {
-                        log_d("Executing long press action on release: %s", action.description.c_str());
-                        
-                        if (action.IsPanelSwitch() && panelSwitchCallback_) {
-                            // Handle panel switch
-                            log_d("Handling panel switch to: %s", action.targetPanel);
-                            panelSwitchCallback_(action.targetPanel);
-                        } else if (action.IsValid()) {
-                            // Execute custom action
-                            action.execute();
-                        }
+                        log_d("Executing long press action on release");
+                        action.execute();
                     } else {
-                        pendingAction_.action = std::move(action);
-                        pendingAction_.timestamp = currentTime;
-                        log_d("Long press action queued for later: %s", pendingAction_.action.description.c_str());
+                        pendingAction_ = std::move(action);
+                        pendingActionTimestamp_ = currentTime;
+                        log_d("Long press action queued for later");
                     }
                 }
             }
@@ -310,7 +278,7 @@ bool ActionManager::HasPendingInterrupts() const
     // Check if button state has changed or if we have pending actions
     bool currentButtonState = IsButtonPressed();
     bool buttonStateChanged = (currentButtonState != lastButtonState_);
-    bool hasPendingAction = pendingAction_.HasAction();
+    bool hasPendingAction = pendingAction_.IsValid();
     bool inActiveState = (buttonState_ != ButtonState::IDLE);
     
     return buttonStateChanged || hasPendingAction || inActiveState;
@@ -320,45 +288,30 @@ bool ActionManager::HasPendingInterrupts() const
 
 void ActionManager::ProcessPendingActions()
 {
-    if (!pendingAction_.HasAction()) {
+    if (!pendingAction_.IsValid()) {
         return;
     }
     
     unsigned long currentTime = GetCurrentTime();
     
     // Check if pending action has expired
-    if (currentTime - pendingAction_.timestamp > INPUT_TIMEOUT_MS) {
-        log_d("Pending action expired, discarding: %s", pendingAction_.action.description.c_str());
-        pendingAction_.Clear();
+    if (currentTime - pendingActionTimestamp_ > INPUT_TIMEOUT_MS) {
+        log_d("Pending action expired, discarding");
+        pendingAction_ = Action(nullptr);
+        pendingActionTimestamp_ = 0;
         return;
     }
     
     // Check if current service can now process the action
     if (currentService_ && currentService_->CanProcessInput()) {
-        log_d("Executing queued action: %s", pendingAction_.action.description.c_str());
+        log_d("Executing queued action");
         
-        if (pendingAction_.action.IsPanelSwitch() && panelSwitchCallback_) {
-            // Handle panel switch
-            log_d("Handling queued panel switch to: %s", pendingAction_.action.targetPanel);
-            panelSwitchCallback_(pendingAction_.action.targetPanel);
-        } else if (pendingAction_.action.IsValid()) {
-            // Execute custom action
-            pendingAction_.action.execute();
-        }
+        pendingAction_.execute();
         
         // Clear the pending action after processing
-        pendingAction_.Clear();
+        pendingAction_ = Action(nullptr);
+        pendingActionTimestamp_ = 0;
     }
 }
 
-// Static method for panel switch requests
-void ActionManager::RequestPanelSwitch(const char* targetPanel)
-{
-    if (panelSwitchCallback_) {
-        log_i("ActionManager: Panel switch requested to: %s", targetPanel);
-        panelSwitchCallback_(targetPanel);
-    } else {
-        log_w("ActionManager: Panel switch requested but no callback available");
-    }
-}
 

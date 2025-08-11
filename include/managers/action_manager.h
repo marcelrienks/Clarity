@@ -31,11 +31,6 @@ public:
     // Constructors and Destructors
     ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor);
     
-    /**
-     * @brief Set callback for panel switch requests from actions
-     * @param callback Function to call when an action requests a panel switch
-     */
-    void SetPanelSwitchCallback(std::function<void(const char*)> callback) override;
     
     ActionManager(const ActionManager&) = delete;
     ActionManager& operator=(const ActionManager&) = delete;
@@ -64,40 +59,22 @@ public:
     bool HasPendingInterrupts() const override;
 
     /**
-     * @brief Get interrupt priority level (IInterruptService interface)
-     * @details Input priority is 50 (lower than triggers=100)
-     * @return Priority value of 50
-     */
-    int GetPriority() const override { return 50; }
-
-    // Legacy Methods (for backward compatibility during transition)
-    
-    /**
-     * @brief Process button input events (call regularly from main loop)
-     * @details Handles debouncing, timing, and event generation
-     * @deprecated Use CheckInterrupts() via InterruptManager instead
-     */
-    void ProcessInputEvents();
-
-    /**
-     * @brief Register a panel as the current input service
+     * @brief Register a panel as the current action handler
      * @param service Pointer to panel implementing IActionService
      * @param panelName Name of the panel for action lookup
      */
-    void SetInputService(IActionService* service, const char* panelName) override;
+    void RegisterPanel(IActionService* service, const char* panelName) override;
 
     /**
-     * @brief Remove current input service
+     * @brief Remove current panel registration
      */
-    void ClearInputService() override;
+    void ClearPanel() override;
     
-    /**
-     * @brief Request panel switch operation (IActionManager interface)
-     * @param targetPanel Name of the panel to switch to
-     */
-    void RequestPanelSwitch(const char* targetPanel) override;
 
 private:
+    // Internal processing methods
+    void ProcessInputEvents();
+    
     // Button state tracking
     enum class ButtonState {
         IDLE,           // Button not pressed
@@ -114,17 +91,6 @@ private:
     static constexpr unsigned long MAX_PRESS_TIME_MS = 5100;      // Slightly above 5s for timeout
     static constexpr unsigned long INPUT_TIMEOUT_MS = 3000;
 
-    // Pending action structure  
-    struct PendingAction {
-        Action action;
-        unsigned long timestamp = 0;
-        
-        bool HasAction() const { return action.IsValid() || action.IsPanelSwitch(); }
-        void Clear() { 
-            action = Action(); 
-            timestamp = 0; 
-        }
-    };
 
     // Input processing methods
     void HandleButtonPress();
@@ -139,10 +105,6 @@ private:
     // Dependencies
     std::shared_ptr<ActionButtonSensor> buttonSensor_;
     IActionService* currentService_;
-    std::function<void(const char*)> panelSwitchCallback_;
-
-    // Static instance for global access
-    static ActionManager* instance_;
 
     // State tracking
     ButtonState buttonState_;
@@ -151,5 +113,8 @@ private:
     bool lastButtonState_;
     bool initialized_;
     std::string currentPanelName_;
-    PendingAction pendingAction_;
+    
+    // Single pending action (only the latest one is kept)
+    Action pendingAction_;
+    unsigned long pendingActionTimestamp_;
 };

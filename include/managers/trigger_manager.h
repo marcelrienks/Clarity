@@ -63,12 +63,6 @@ public:
      */
     bool HasPendingInterrupts() const override;
 
-    /**
-     * @brief Get interrupt priority level (IInterruptService interface)
-     * @details Trigger priority is 100 (higher than input=50)
-     * @return Priority value of 100
-     */
-    int GetPriority() const override { return 100; }
 
     // Trigger Management
     void AddTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) override;

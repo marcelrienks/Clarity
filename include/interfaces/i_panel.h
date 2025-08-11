@@ -10,8 +10,10 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 
-// Forward declaration
+// Forward declarations
 class IActionService;
+class IPanelService;
+class IStyleService;
 
 /**
  * @interface IPanel
@@ -72,6 +74,12 @@ public:
     /// @brief Get the input service interface if this panel supports input
     /// @return Pointer to IActionService or nullptr if not supported
     virtual IActionService* GetInputService() { return nullptr; }
+    
+    /// @brief Set manager services for panels that need them
+    /// @param panelService Service for panel switching
+    /// @param styleService Service for theme management
+    /// @details Called after panel construction to inject manager dependencies
+    virtual void SetManagers(IPanelService* panelService, IStyleService* styleService) {}
 
 protected:
     // Protected Data Members
