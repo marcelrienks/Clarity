@@ -78,5 +78,5 @@ private:
     bool panelLoaded_;                              // Track panel load state
     std::vector<ErrorInfo> currentErrors_;          // Cache of current error state
     const char* previousTheme_;                     // Store previous theme to restore on exit
-    size_t currentErrorIndex_ = 0;                  // Current error being displayed
+    // Note: currentErrorIndex_ removed - ErrorListComponent manages its own index
 };

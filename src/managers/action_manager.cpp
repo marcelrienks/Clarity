@@ -157,7 +157,7 @@ void ActionManager::HandleButtonPress()
 {
     unsigned long currentTime = GetCurrentTime();
     
-    log_d("Button press detected at %lu ms", currentTime);
+    log_i("ActionManager: Button press detected at %lu ms", currentTime);
     
     buttonState_ = ButtonState::DEBOUNCE;
     debounceStartTime_ = currentTime;
@@ -240,12 +240,16 @@ bool ActionManager::IsButtonPressed() const
     // Use the button sensor to check if button is pressed
     bool pressed = buttonSensor_->IsButtonPressed();
     
-    // Only log actual state changes (removes excessive periodic logging)
+    // Enhanced logging to debug button press detection
     static bool lastLoggedState = false;
     static bool firstCall = true;
+    static unsigned long logCount = 0;
     
-    if (firstCall || pressed != lastLoggedState) {
-        log_d("GPIO 32 state: %s", pressed ? "HIGH (PRESSED)" : "LOW (released)");
+    logCount++;
+    
+    // Log every 1000 calls or on state changes
+    if (firstCall || pressed != lastLoggedState || (logCount % 1000 == 0)) {
+        log_i("ActionManager: Button check %lu - GPIO 32 state: %s", logCount, pressed ? "HIGH (PRESSED)" : "LOW (released)");
         lastLoggedState = pressed;
         firstCall = false;
     }
@@ -280,19 +284,9 @@ bool ActionManager::HasPendingInterrupts() const
         return false;
     }
     
-    // Always return true if we have pending actions or are in an active button state
-    bool hasPendingAction = pendingAction_.IsValid();
-    bool inActiveState = (buttonState_ != ButtonState::IDLE);
-    
-    // Check for button state changes by comparing current state with cached state
-    bool currentButtonState = IsButtonPressed();
-    bool buttonStateChanged = (currentButtonState != lastButtonState_);
-    
-    bool result = hasPendingAction || inActiveState || buttonStateChanged;
-    
-    // Remove excessive logging - HasPendingInterrupts is called very frequently
-    
-    return result;
+    // Always return true to ensure continuous button polling
+    // This is necessary to detect button state changes
+    return true;
 }
 
 // Action Processing Methods

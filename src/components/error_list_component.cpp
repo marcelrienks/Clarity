@@ -195,14 +195,18 @@ void ErrorListComponent::DisplayCurrentError()
 
 void ErrorListComponent::CycleToNextError()
 {
-    if (currentErrors_.empty()) return;
+    if (currentErrors_.empty()) {
+        log_d("CycleToNextError: No errors to cycle through");
+        return;
+    }
     
     // Increment button press count
     buttonPressCount_++;
+    log_i("CycleToNextError: Button press %zu of %zu total errors", buttonPressCount_, currentErrors_.size());
     
     // If we've shown all errors, clear and trigger restore
     if (buttonPressCount_ > currentErrors_.size()) {
-        log_d("All errors shown - clearing errors and triggering restore");
+        log_i("All %zu errors have been shown - clearing errors and triggering panel restore", currentErrors_.size());
         ErrorManager::Instance().ClearAllErrors();
         ErrorManager::Instance().SetErrorPanelActive(false);
         // The trigger system will handle restoring to the appropriate panel
@@ -212,6 +216,7 @@ void ErrorListComponent::CycleToNextError()
     // Move to next error (only if we haven't shown all yet)
     if (buttonPressCount_ <= currentErrors_.size()) {
         currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+        log_i("CycleToNextError: Moving to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
         DisplayCurrentError();
         
         // Update border color for new current error
@@ -219,7 +224,7 @@ void ErrorListComponent::CycleToNextError()
         lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
     }
     
-    log_d("Button press %zu/%zu, showing error %zu/%zu", 
+    log_d("CycleToNextError: Button press %zu/%zu, showing error %zu/%zu", 
           buttonPressCount_, currentErrors_.size() + 1,
           currentErrorIndex_ + 1, currentErrors_.size());
 }

@@ -2,6 +2,7 @@
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
+#include "components/error_list_component.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
@@ -196,16 +197,14 @@ Action ErrorPanel::GetShortPressAction()
             return;
         }
         
-        // Move to next error (wrap around)
-        currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+        log_i("ErrorPanel: Short press - cycling to next error");
         
-        log_i("ErrorPanel: Short press - showing error %d of %d", 
-              currentErrorIndex_ + 1, currentErrors_.size());
-        
-        // Update the error list component to highlight current error
+        // Use the ErrorListComponent's built-in cycling method
         if (errorListComponent_) {
-            log_d("Currently showing error %d: %s", currentErrorIndex_ + 1, 
-                  currentErrors_[currentErrorIndex_].message.c_str());
+            // Static cast to ErrorListComponent (safe since we created it)
+            auto errorList = std::static_pointer_cast<ErrorListComponent>(errorListComponent_);
+            errorList->CycleToNextError();
+            log_i("ErrorPanel: Cycled to next error in list");
         }
     });
 }
@@ -221,7 +220,6 @@ Action ErrorPanel::GetLongPressAction()
         
         // Clear local cache
         currentErrors_.clear();
-        currentErrorIndex_ = 0;
         
         // Update the display
         if (errorListComponent_) {

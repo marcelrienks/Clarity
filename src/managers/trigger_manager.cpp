@@ -69,9 +69,15 @@ void TriggerManager::ProcessTriggerEvents()
     CheckErrorTrigger();
     
     // Check debug error sensor (it handles error generation internally)
-    #ifdef CLARITY_DEBUG
-    debugErrorSensor_->GetReading(); // This will trigger errors on rising edge
-    #endif
+    // Temporarily remove #ifdef to ensure it's being called
+    if (debugErrorSensor_) {
+        static unsigned long debugCallCount = 0;
+        debugCallCount++;
+        if (debugCallCount % 100 == 0) {  // Log every 100 calls
+            log_d("TriggerManager: DebugErrorSensor called %lu times", debugCallCount);
+        }
+        debugErrorSensor_->GetReading(); // This will trigger errors on rising edge
+    }
 }
 
 GpioState TriggerManager::ReadAllSensorStates()
@@ -324,34 +330,7 @@ bool TriggerManager::HasPendingInterrupts() const
         return false;
     }
     
-    // Check if any sensor states have changed by comparing current states with cached states
-    GpioState currentState = const_cast<TriggerManager*>(this)->ReadAllSensorStates();
-    
-    // Check each trigger for state changes
-    for (const auto& trigger : triggers_) {
-        bool currentPinState = false;
-        
-        // Get current pin state based on trigger type
-        if (trigger.triggerId == TRIGGER_KEY_PRESENT) {
-            currentPinState = currentState.keyPresent;
-        } else if (trigger.triggerId == TRIGGER_KEY_NOT_PRESENT) {
-            currentPinState = currentState.keyNotPresent;
-        } else if (trigger.triggerId == TRIGGER_LOCK_STATE) {
-            currentPinState = currentState.lockState;
-        } else if (trigger.triggerId == TRIGGER_LIGHTS_STATE) {
-            currentPinState = currentState.lightsState;
-        } else if (trigger.triggerId == TRIGGER_ERROR_OCCURRED) {
-            currentPinState = ErrorManager::Instance().ShouldTriggerErrorPanel();
-        }
-        
-        // Check if state changed from what we have stored
-        TriggerExecutionState currentTriggerState = currentPinState ? 
-            TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
-        
-        if (trigger.currentState != currentTriggerState) {
-            return true; // State change detected
-        }
-    }
-    
-    return false; // No state changes detected
+    // Always return true to ensure sensor polling happens
+    // This allows detection of sensor state changes and debug error triggers
+    return true;
 }

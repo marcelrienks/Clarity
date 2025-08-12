@@ -103,11 +103,25 @@ void setup()
 
 void loop()
 {
+    static unsigned long loopCount = 0;
+    loopCount++;
+    
+    // Log every 1000 loops to verify main loop is running
+    if (loopCount % 1000 == 0) {
+        log_d("Main loop running - count: %lu", loopCount);
+    }
+    
     // Process all interrupt sources via InterruptManager (triggers, inputs, etc.)
-    interruptManager->CheckAllInterrupts();
+    if (interruptManager) {
+        interruptManager->CheckAllInterrupts();
+    } else {
+        log_e("interruptManager is null!");
+    }
 
     // Update panel state
-    panelManager->UpdatePanel();
+    if (panelManager) {
+        panelManager->UpdatePanel();
+    }
     Ticker::handleLvTasks();
 
     Ticker::handleDynamicDelay(millis());
