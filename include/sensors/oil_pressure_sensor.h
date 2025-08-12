@@ -3,45 +3,34 @@
 // System/Library Includes
 
 // Project Includes
-#include "interfaces/i_sensor.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_preference_service.h"
-#include "utilities/types.h"
-#include "utilities/unit_converter.h"
+#include "sensors/unit_aware_sensor.h"
 #include "hardware/gpio_pins.h"
 
 /**
  * @class OilPressureSensor
- * @brief Oil pressure monitoring sensor with delta-based updates
+ * @brief Oil pressure monitoring sensor with unit-aware conversions
  * 
  * @details This sensor monitors engine oil pressure levels and provides
- * intelligent caching and delta-based updates for performance optimization.
- * It implements time-based sampling and change detection to minimize
- * unnecessary UI updates.
+ * readings in the unit requested by the consuming panel/component.
+ * It inherits delta-based updates and time-based sampling from UnitAwareSensor.
  * 
  * @model_role Provides oil pressure data to OemOilPressureComponent
- * @data_type int32_t (Bar - metric pressure unit)
- * @range 0-10 Bar typical automotive range
- * @update_frequency 1 Hz (every 1000ms)
+ * @supported_units: Bar, PSI, kPa
+ * @range 0-10 Bar (0-145 PSI, 0-1000 kPa) typical automotive range
+ * @update_frequency Configurable via constructor
  * 
- * @performance_features:
- * - Delta-based updates: Only reports when value changes
- * - Cached readings: Avoids redundant sensor polling
- * - Time-based sampling: Controlled update intervals
- * - Previous value tracking: Enables change detection
+ * @unit_conversion:
+ * - Bar: Direct mapping 0-10 Bar
+ * - PSI: 0-145 PSI (14.5 PSI per Bar)
+ * - kPa: 0-1000 kPa (100 kPa per Bar)
  * 
  * @hardware_interface 3.3V analog pressure sensor input via GPIO pin
  * @calibration 22k potentiometer: 0V = 0 Bar, 3.3V = 10 Bar
  * 
- * @critical_thresholds:
- * - Normal: 2-10 Bar
- * - Warning: 0-2 Bar
- * 
- * @context This sensor feeds the left-side oil pressure gauge.
- * It provides smart caching and delta updates for smooth performance.
- * Reads 3.3V analog input directly with linear voltage-to-pressure mapping.
+ * @context This sensor provides pressure readings in the unit requested
+ * by the panel, removing unit conversion logic from display components.
  */
-class OilPressureSensor : public ISensor
+class OilPressureSensor : public UnitAwareSensor
 {
 public:
     // Constructors and Destructors
@@ -49,29 +38,20 @@ public:
 
     // Core Functionality Methods
     void Init() override;
-    Reading GetReading() override;
+    std::vector<std::string> GetSupportedUnits() const override;
     
-    /// @brief Set the update rate in milliseconds (applied from preferences)
+    /// @brief Set the update rate in milliseconds
     /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs) { updateIntervalMs_ = updateRateMs; }
-    
-    /// @brief Set preference service for unit conversion
-    /// @param preferenceService Preference service instance
-    void SetPreferenceService(IPreferenceService* preferenceService) { preferenceService_ = preferenceService; }
-    
 
-private:
-    // Private Data Members
-    IGpioProvider *gpioProvider_;
-    IPreferenceService *preferenceService_ = nullptr;
-    int32_t currentReading_ = 0;
-    int32_t previousReading_ = -1;
-    unsigned long lastUpdateTime_ = 0;
-    unsigned long updateIntervalMs_; // Configurable update interval from preferences
+protected:
+    // UnitAwareSensor implementation
+    int32_t ReadRawValue() override;
+    int32_t ConvertReading(int32_t rawValue) override;
     
-    // ADC and potentiometer calibration constants
-    static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC
+private:
+    // Pressure calibration constants
     static constexpr int32_t PRESSURE_MAX_BAR = 10; // Maximum pressure reading in Bar
-    static constexpr int32_t POTENTIOMETER_RESISTANCE = 22000; // 22k ohm potentiometer
-    static constexpr float SUPPLY_VOLTAGE = 3.3; // ESP32 3.3V supply
+    static constexpr int32_t PRESSURE_MAX_PSI = 145; // Maximum pressure reading in PSI (10 Bar * 14.5)
+    static constexpr int32_t PRESSURE_MAX_KPA = 1000; // Maximum pressure reading in kPa (10 Bar * 100)
 };

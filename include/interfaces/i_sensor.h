@@ -1,5 +1,9 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
+// System/Library Includes
+#include <string>
+#include <vector>
+
 // Project Includes
 #include "utilities/types.h"
 
@@ -14,7 +18,8 @@
  * @design_pattern Model in MVP - handles data acquisition and processing
  * @data_flow:
  * 1. init(): Initialize sensor hardware/configuration
- * 2. getReading(): Acquire current sensor value as Reading variant
+ * 2. setTargetUnit(): Set the unit of measure for readings (optional)
+ * 3. getReading(): Acquire current sensor value as Reading variant
  * 
  * @reading_types:
  * - int32_t: Numeric values (pressure, temperature)
@@ -22,6 +27,11 @@
  * - double: Precise measurements
  * - std::string: Status messages or text data
  * - std::monostate: Invalid/uninitialized readings
+ * 
+ * @unit_handling:
+ * - Sensors supporting units implement SetTargetUnit()
+ * - Unit conversion happens within the sensor
+ * - Readings are returned in the requested unit
  * 
  * @hardware_abstraction:
  * - Sensors abstract GPIO/ADC access via IGpioProvider
@@ -45,4 +55,15 @@ public:
     // Core Interface Methods
     virtual void Init() = 0;
     virtual Reading GetReading() = 0;
+    
+    // Optional Unit Support
+    /// @brief Set the target unit of measure for sensor readings
+    /// @param unit The unit to use for readings (e.g., "Bar", "PSI", "C", "F")
+    /// @note Default implementation does nothing for sensors without units
+    virtual void SetTargetUnit(const std::string& unit) {}
+    
+    /// @brief Get supported units for this sensor
+    /// @return Vector of supported unit strings, empty if no units
+    /// @note Default returns empty vector for sensors without units
+    virtual std::vector<std::string> GetSupportedUnits() const { return {}; }
 };
