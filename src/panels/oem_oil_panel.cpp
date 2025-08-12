@@ -427,31 +427,78 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 
 /// @brief Map oil pressure sensor value to display scale
 /// @param sensorValue Raw sensor value (1-10 Bar)
-/// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
+/// @return Mapped value for display (0-60, representing pressure range)
 int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
-    // Clamp sensor value to valid range (1-10 Bar)
-    if (sensorValue < 1) sensorValue = 1;
-    if (sensorValue > 10) sensorValue = 10;
+    // Sensor now returns values in configured units, map to display scale (0-60)
+    int32_t mappedValue;
     
-    // Map 1-10 Bar to 0-60 display units
-    // Formula: (sensorValue - 1) * 60 / 9
-    // This maps: 1 Bar -> 0, 10 Bar -> 60
-    // Display represents 0.0-6.0 Bar with 0.1 precision (x10 multiplier)
-    return ((sensorValue - 1) * 60) / 9;
+    if (preferenceService_) {
+        const Configs& config = preferenceService_->GetConfig();
+        if (config.pressureUnit == "PSI") {
+            // Sensor returns 0-145 PSI, map to 0-60 display
+            // Clamp to valid range (14.5-145 PSI equivalent to 1-10 Bar)
+            if (sensorValue < 15) sensorValue = 15;
+            if (sensorValue > 145) sensorValue = 145;
+            // Map useful PSI range (15-145) to display scale (0-60)
+            mappedValue = ((sensorValue - 15) * 60) / 130;
+        } else if (config.pressureUnit == "kPa") {
+            // Sensor returns 0-1000 kPa, map to 0-60 display  
+            // Clamp to valid range (100-1000 kPa equivalent to 1-10 Bar)
+            if (sensorValue < 100) sensorValue = 100;
+            if (sensorValue > 1000) sensorValue = 1000;
+            // Map useful kPa range (100-1000) to display scale (0-60)
+            mappedValue = ((sensorValue - 100) * 60) / 900;
+        } else {
+            // Bar: sensor returns 0-10 Bar, map to 0-60 display
+            // Clamp to valid range (1-10 Bar)
+            if (sensorValue < 1) sensorValue = 1;
+            if (sensorValue > 10) sensorValue = 10;
+            // Map Bar range (1-10) to display scale (0-60)
+            mappedValue = ((sensorValue - 1) * 60) / 9;
+        }
+    } else {
+        // Fallback to Bar mapping
+        if (sensorValue < 1) sensorValue = 1;
+        if (sensorValue > 10) sensorValue = 10;
+        mappedValue = ((sensorValue - 1) * 60) / 9;
+    }
+    
+    return mappedValue;
 }
 
 /// @brief Map oil temperature sensor value to display scale
-/// @param sensorValue Raw sensor value (0-120°C)
-/// @return Mapped value for display
+/// @param sensorValue Temperature value in configured units
+/// @return Mapped value for display (0-120 scale)
 int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 {
-    // Temperature mapping is direct 1:1 as the display range matches sensor range
-    // Clamp to valid range (0-120°C)
-    if (sensorValue < 0) sensorValue = 0;
-    if (sensorValue > 120) sensorValue = 120;
+    // Sensor now returns values in configured units, map to display scale (0-120)
+    int32_t mappedValue;
     
-    return sensorValue;
+    if (preferenceService_) {
+        const Configs& config = preferenceService_->GetConfig();
+        if (config.tempUnit == "F") {
+            // Sensor returns 32-248°F, map to 0-120 display scale
+            // Clamp to valid range (32-248°F equivalent to 0-120°C)
+            if (sensorValue < 32) sensorValue = 32;
+            if (sensorValue > 248) sensorValue = 248;
+            // Map Fahrenheit range (32-248) to display scale (0-120)
+            mappedValue = ((sensorValue - 32) * 120) / 216;
+        } else {
+            // Celsius: sensor returns 0-120°C, direct mapping to display scale
+            // Clamp to valid range (0-120°C)
+            if (sensorValue < 0) sensorValue = 0;
+            if (sensorValue > 120) sensorValue = 120;
+            mappedValue = sensorValue;
+        }
+    } else {
+        // Fallback to Celsius mapping
+        if (sensorValue < 0) sensorValue = 0;
+        if (sensorValue > 120) sensorValue = 120;
+        mappedValue = sensorValue;
+    }
+    
+    return mappedValue;
 }
 
 // IPanel override to provide input service via composition

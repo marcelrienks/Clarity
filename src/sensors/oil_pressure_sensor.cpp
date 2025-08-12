@@ -52,15 +52,37 @@ Reading OilPressureSensor::GetReading()
             return std::monostate{}; // Return invalid reading
         }
         
-        // Convert ADC value to pressure using voltage divider calculation
+        // Convert ADC value directly to configured pressure unit
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V
-        // Pressure mapping: 0V = 0 Bar, 3.3V = 10 Bar
-        int32_t newValue = (adcValue * PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
+        // Pressure mapping based on configured unit preference
+        int32_t newValue;
+        if (preferenceService_) {
+            const Configs& config = preferenceService_->GetConfig();
+            if (config.pressureUnit == "PSI") {
+                // Map 0-4095 ADC to 0-145 PSI (0-10 Bar equivalent)
+                newValue = (adcValue * 145) / ADC_MAX_VALUE;
+            } else if (config.pressureUnit == "kPa") {
+                // Map 0-4095 ADC to 0-1000 kPa (0-10 Bar equivalent)
+                newValue = (adcValue * 1000) / ADC_MAX_VALUE;
+            } else {
+                // Default Bar mapping: 0-4095 ADC to 0-10 Bar
+                newValue = (adcValue * PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
+            }
+        } else {
+            // Fallback to Bar if no preference service
+            newValue = (adcValue * PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
+        }
         
         // Only update if value actually changed (avoid redundant updates)
         if (newValue != currentReading_) {
             currentReading_ = newValue;
-            log_i("Pressure reading changed to %d Bar (ADC: %d)", currentReading_, adcValue);
+            // Log with appropriate unit
+            const char* unit = "Bar"; // Default
+            if (preferenceService_) {
+                const Configs& config = preferenceService_->GetConfig();
+                unit = config.pressureUnit.c_str();
+            }
+            log_i("Pressure reading changed to %d %s (ADC: %d)", currentReading_, unit, adcValue);
 
         }
     }
@@ -68,23 +90,4 @@ Reading OilPressureSensor::GetReading()
     return currentReading_;
 }
 
-/// @brief Get pressure value converted to configured unit
-/// @param barValue Pressure value in Bar
-/// @return Converted pressure value
-float OilPressureSensor::GetConvertedPressure(float barValue) const
-{
-    if (!preferenceService_) {
-        return barValue; // Return Bar if no preference service
-    }
-    
-    const Configs& config = preferenceService_->GetConfig();
-    
-    if (config.pressureUnit == "PSI") {
-        return UnitConverter::BarToPsi(barValue);
-    } else if (config.pressureUnit == "kPa") {
-        return UnitConverter::BarToKPa(barValue);
-    }
-    
-    return barValue; // Default to Bar
-}
 

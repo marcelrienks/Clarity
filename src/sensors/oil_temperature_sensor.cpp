@@ -44,15 +44,36 @@ Reading OilTemperatureSensor::GetReading()
         // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
         int32_t adcValue = gpioProvider_->AnalogRead(gpio_pins::OIL_TEMPERATURE);
         
-        // Convert ADC value to temperature using voltage divider calculation
+        // Convert ADC value directly to configured temperature unit
         // For 22k potentiometer: Voltage = (ADC_value / 4095) * 3.3V
-        // Temperature mapping: 0V = 0°C, 3.3V = 120°C
-        int32_t newValue = (adcValue * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
+        // Temperature mapping based on configured unit preference
+        int32_t newValue;
+        if (preferenceService_) {
+            const Configs& config = preferenceService_->GetConfig();
+            if (config.tempUnit == "F") {
+                // Map 0-4095 ADC to 32-248°F (0-120°C equivalent)
+                // Formula: F = C * 9/5 + 32, so 0°C=32°F, 120°C=248°F
+                int32_t celsiusValue = (adcValue * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
+                newValue = (celsiusValue * 9) / 5 + 32;
+            } else {
+                // Default Celsius mapping: 0-4095 ADC to 0-120°C
+                newValue = (adcValue * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
+            }
+        } else {
+            // Fallback to Celsius if no preference service
+            newValue = (adcValue * TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
+        }
         
         // Only update if value actually changed (avoid redundant updates)
         if (newValue != currentReading_) {
             currentReading_ = newValue;
-            log_i("Temperature reading changed to %d°C (ADC: %d)", currentReading_, adcValue);
+            // Log with appropriate unit
+            const char* unit = "°C"; // Default
+            if (preferenceService_) {
+                const Configs& config = preferenceService_->GetConfig();
+                unit = (config.tempUnit == "F") ? "°F" : "°C";
+            }
+            log_i("Temperature reading changed to %d%s (ADC: %d)", currentReading_, unit, adcValue);
 
         }
     }
@@ -60,21 +81,4 @@ Reading OilTemperatureSensor::GetReading()
     return currentReading_;
 }
 
-/// @brief Get temperature value converted to configured unit
-/// @param celsiusValue Temperature value in Celsius
-/// @return Converted temperature value
-float OilTemperatureSensor::GetConvertedTemperature(float celsiusValue) const
-{
-    if (!preferenceService_) {
-        return celsiusValue; // Return Celsius if no preference service
-    }
-    
-    const Configs& config = preferenceService_->GetConfig();
-    
-    if (config.tempUnit == "F") {
-        return UnitConverter::CelsiusToFahrenheit(celsiusValue);
-    }
-    
-    return celsiusValue; // Default to Celsius
-}
 

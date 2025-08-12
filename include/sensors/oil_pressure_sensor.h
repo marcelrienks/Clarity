@@ -59,10 +59,6 @@ public:
     /// @param preferenceService Preference service instance
     void SetPreferenceService(IPreferenceService* preferenceService) { preferenceService_ = preferenceService; }
     
-    /// @brief Get pressure value converted to configured unit
-    /// @param barValue Pressure value in Bar
-    /// @return Converted pressure value
-    float GetConvertedPressure(float barValue) const;
 
 private:
     // Private Data Members

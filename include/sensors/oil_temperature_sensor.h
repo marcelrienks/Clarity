@@ -65,10 +65,6 @@ public:
     /// @param preferenceService Preference service instance
     void SetPreferenceService(IPreferenceService* preferenceService) { preferenceService_ = preferenceService; }
     
-    /// @brief Get temperature value converted to configured unit
-    /// @param celsiusValue Temperature value in Celsius
-    /// @return Converted temperature value
-    float GetConvertedTemperature(float celsiusValue) const;
 
 private:
     // Private Data Members
