@@ -158,6 +158,9 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
 {
     log_d("Creating and loading panel directly: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
 
+    // Track current panel trigger state
+    currentPanelIsTriggerDriven_ = isTriggerDriven;
+
     // Track this as the last non-trigger panel only for user-driven changes
     if (!isTriggerDriven)
     {
@@ -275,6 +278,11 @@ const char *PanelManager::GetCurrentPanel() const
 const char *PanelManager::GetRestorationPanel() const
 {
     return restorationPanel;
+}
+
+bool PanelManager::IsCurrentPanelTriggerDriven() const
+{
+    return currentPanelIsTriggerDriven_;
 }
 
 /// @brief Callback executed when trigger-driven panel loading is complete

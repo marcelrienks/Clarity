@@ -11,8 +11,9 @@
 #define log_i(...)
 #endif
 
-InterruptManager::InterruptManager()
-    : initialized_(false)
+InterruptManager::InterruptManager(IPanelService* panelService)
+    : panelService_(panelService)
+    , initialized_(false)
     , lastCheckTime_(0)
     , checkCount_(0)
 {
@@ -115,21 +116,18 @@ void InterruptManager::CheckAllInterrupts()
         return; // No logging for no activity
     }
     
-    // Check triggers first - if any have pending interrupts, skip actions
-    bool triggersActive = false;
+    // Always check triggers - TriggerManager is smart enough to handle
+    // trigger-driven panel logic internally
     for (IInterruptService* source : triggerSources_) {
         if (source && source->HasPendingInterrupts()) {
             source->CheckInterrupts();
-            triggersActive = true;
         }
     }
     
-    // Only check actions if no triggers were active
-    if (!triggersActive) {
-        for (IInterruptService* source : actionSources_) {
-            if (source && source->HasPendingInterrupts()) {
-                source->CheckInterrupts();
-            }
+    // Always check actions - button input should work regardless of panel type
+    for (IInterruptService* source : actionSources_) {
+        if (source && source->HasPendingInterrupts()) {
+            source->CheckInterrupts();
         }
     }
     

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_interrupt_service.h"
+#include "interfaces/i_panel_service.h"
 #include <vector>
 #include <memory>
 
@@ -20,7 +21,7 @@ class InterruptManager
 {
 public:
     // Constructors and Destructors
-    InterruptManager();
+    InterruptManager(IPanelService* panelService = nullptr);
     ~InterruptManager() = default;
     
     // Disable copy/move to maintain singleton-like behavior
@@ -89,6 +90,7 @@ private:
     // Data members
     std::vector<IInterruptService*> triggerSources_;
     std::vector<IInterruptService*> actionSources_;
+    IPanelService* panelService_;
     bool initialized_;
     
     // Statistics (for debugging)

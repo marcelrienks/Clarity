@@ -144,6 +144,15 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
 void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
+        // Check if current panel is trigger-driven and prevent new trigger activations
+        // Exception: Allow error trigger to always activate (it manages its own state)
+        if (panelService_ && panelService_->IsCurrentPanelTriggerDriven()) {
+            if (mapping->triggerId != TRIGGER_ERROR_OCCURRED) {
+                log_d("Skipping trigger activation for %s - trigger-driven panel active", mapping->triggerId);
+                return;
+            }
+        }
+        
         // Execute trigger action when activated
         if (mapping->actionType == TriggerActionType::LoadPanel) {
             log_i("Executing panel action: Load %s", mapping->actionTarget);

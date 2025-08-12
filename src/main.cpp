@@ -49,7 +49,7 @@ bool initializeServices()
         gpioProvider.get(),
         panelManager.get(),
         styleManager.get());
-    interruptManager = ManagerFactory::createInterruptManager();
+    interruptManager = ManagerFactory::createInterruptManager(panelManager.get());
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created

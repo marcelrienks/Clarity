@@ -98,6 +98,10 @@ public:
     /// @return Restoration panel identifier string
     const char *GetRestorationPanel() const override;
     
+    /// @brief Check if the current panel is trigger-driven
+    /// @return True if current panel was loaded by a trigger, false for user-driven panels
+    bool IsCurrentPanelTriggerDriven() const override;
+    
     // Trigger Integration Methods (IPanelService implementation)
     /// @brief Callback executed when trigger-driven panel loading is complete
     /// @param triggerId ID of the trigger that initiated the panel switch
@@ -145,6 +149,7 @@ private:
     // Instance Data Members
     std::shared_ptr<IPanel> panel_ = nullptr;
     UIState uiState_ = UIState::IDLE;             ///< Current UI processing state
+    bool currentPanelIsTriggerDriven_ = false;    ///< Track if current panel is trigger-driven
     
     // Panel name storage using std::string for memory safety and automatic management
     // Using std::string instead of char* to prevent corruption when source strings are deallocated

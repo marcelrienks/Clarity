@@ -247,8 +247,8 @@ bool ActionManager::IsButtonPressed() const
     
     logCount++;
     
-    // Log every 1000 calls or on state changes
-    if (firstCall || pressed != lastLoggedState || (logCount % 1000 == 0)) {
+    // Log every 500 calls or on state changes (more frequent logging)
+    if (firstCall || pressed != lastLoggedState || (logCount % 500 == 0)) {
         log_i("ActionManager: Button check %lu - GPIO 32 state: %s", logCount, pressed ? "HIGH (PRESSED)" : "LOW (released)");
         lastLoggedState = pressed;
         firstCall = false;
@@ -269,6 +269,14 @@ void ActionManager::CheckInterrupts()
 {
     if (!initialized_) {
         return;
+    }
+    
+    static unsigned long checkCount = 0;
+    checkCount++;
+    
+    // Log every 500 calls to verify this method is being called
+    if (checkCount % 500 == 0) {
+        log_i("ActionManager: CheckInterrupts called %lu times", checkCount);
     }
     
     // Process button input events

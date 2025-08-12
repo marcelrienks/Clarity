@@ -71,6 +71,12 @@ public:
      * @return Restoration panel identifier string
      */
     virtual const char* GetRestorationPanel() const = 0;
+    
+    /**
+     * @brief Check if the current panel is trigger-driven
+     * @return True if current panel was loaded by a trigger, false for user-driven panels
+     */
+    virtual bool IsCurrentPanelTriggerDriven() const = 0;
 
     // Trigger Integration Methods
     

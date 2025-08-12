@@ -151,17 +151,18 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
     return manager;
 }
 
-std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager()
+std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelService* panelService)
 {
     log_d("ManagerFactory: Creating InterruptManager (interrupt coordination)...");
     
-    auto manager = std::make_unique<InterruptManager>();
+    auto manager = std::make_unique<InterruptManager>(panelService);
     if (!manager) {
         log_e("ManagerFactory: Failed to create InterruptManager - allocation failed");
         return nullptr;
     }
     
-    log_d("ManagerFactory: InterruptManager created successfully");
+    log_d("ManagerFactory: InterruptManager created successfully with panel service: %s", 
+          panelService ? "provided" : "null");
     return manager;
 }
 

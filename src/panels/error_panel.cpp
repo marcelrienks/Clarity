@@ -190,21 +190,28 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 Action ErrorPanel::GetShortPressAction()
 {
+    log_i("ErrorPanel: GetShortPressAction() called - creating short press action");
+    
     // Short press cycles through each error
     return Action([this]() {
+        log_i("ErrorPanel: SHORT PRESS ACTION EXECUTED!");
+        
         if (currentErrors_.empty()) {
-            log_d("ErrorPanel: No errors to cycle through");
+            log_w("ErrorPanel: No errors to cycle through");
             return;
         }
         
-        log_i("ErrorPanel: Short press - cycling to next error");
+        log_i("ErrorPanel: Short press - cycling to next error (current errors: %zu)", currentErrors_.size());
         
         // Use the ErrorListComponent's built-in cycling method
         if (errorListComponent_) {
             // Static cast to ErrorListComponent (safe since we created it)
             auto errorList = std::static_pointer_cast<ErrorListComponent>(errorListComponent_);
+            log_i("ErrorPanel: About to call CycleToNextError()");
             errorList->CycleToNextError();
-            log_i("ErrorPanel: Cycled to next error in list");
+            log_i("ErrorPanel: CycleToNextError() completed");
+        } else {
+            log_e("ErrorPanel: errorListComponent_ is null!");
         }
     });
 }
