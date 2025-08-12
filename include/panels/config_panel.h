@@ -8,10 +8,12 @@
 #include "interfaces/i_style_service.h"
 #include "interfaces/i_preference_service.h"
 #include "utilities/types.h"
+#include "components/config_component.h"
 
 #include <utilities/lv_tools.h>
 #include <vector>
 #include <string>
+#include <memory>
 
 /**
  * @class ConfigPanel
@@ -81,21 +83,10 @@ private:
         TempUnitSubmenu
     };
 
-    // Menu item structure
-    struct MenuItem {
-        std::string label;
-        std::function<void()> action;
-    };
-
     // Private methods
-    void CreateMenuUI();
-    void UpdateMenuDisplay();
-    void ExecuteCurrentOption();
     void InitializeMenuItems();
     void UpdateMenuItemsWithCurrentValues();
-    void CycleDefaultPanel();
-    void CycleTheme();
-    void CycleUpdateRate();
+    void ExecuteCurrentOption();
     void EnterSubmenu(MenuState submenu);
     void ExitSubmenu();
     void UpdateSubmenuItems();
@@ -111,17 +102,13 @@ private:
     IPreferenceService *preferenceService_ = nullptr;
     // screen_ is inherited from IPanel base class
     
-    // Menu state
-    std::vector<MenuItem> menuItems_;
+    // Component (View)
+    std::unique_ptr<ConfigComponent> configComponent_;
+    
+    // Menu state (Presenter logic)
+    std::vector<ConfigComponent::MenuItem> menuItems_;
     size_t currentMenuIndex_ = 0;
     MenuState currentMenuState_ = MenuState::MainMenu;
-    std::string selectedSettingValue_;
-    
-    // UI elements
-    lv_obj_t *titleLabel_ = nullptr;
-    lv_obj_t *menuContainer_ = nullptr;
-    std::vector<lv_obj_t*> menuLabels_;
-    lv_obj_t *hintLabel_ = nullptr;
     
     // Callback function
     std::function<void()> callbackFunction_;

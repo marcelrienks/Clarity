@@ -8,7 +8,7 @@
 // Constructors and Destructors
 ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      currentMenuIndex_(0)
+      currentMenuIndex_(0), configComponent_(std::make_unique<ConfigComponent>())
 {
     // Menu items will be initialized after preferences are injected
 }
@@ -16,6 +16,8 @@ ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleS
 ConfigPanel::~ConfigPanel()
 {
     log_d("Destroying ConfigPanel...");
+    
+    configComponent_.reset();
     
     if (screen_)
     {
@@ -49,9 +51,15 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     currentMenuIndex_ = 0;
     currentMenuState_ = MenuState::MainMenu;
     
-    // Creating menu UI
-    // Create the menu UI
-    CreateMenuUI();
+    // Initialize the config component with the screen
+    if (configComponent_ && screen_) {
+        configComponent_->Init(screen_);
+        
+        // Set initial menu items
+        UpdateMenuItemsWithCurrentValues();
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
+    }
     
     log_v("loading...");
     lv_screen_load(screen_);
@@ -69,162 +77,6 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 }
 
 // Private methods
-
-void ConfigPanel::CreateMenuUI()
-{
-    // CreateMenuUI: Starting
-    
-    if (!screen_) {
-        log_e("CreateMenuUI: screen_ is NULL!");
-        return;
-    }
-    
-    // CreateMenuUI: Setting background color
-    // Apply grey theme for settings
-    lv_obj_set_style_bg_color(screen_, lv_color_hex(0x2C2C2C), LV_PART_MAIN);
-    
-    // CreateMenuUI: Creating title label
-    // Create title
-    titleLabel_ = lv_label_create(screen_);
-    // CreateMenuUI: Setting title text
-    lv_label_set_text(titleLabel_, "Configuration");
-    // CreateMenuUI: Setting title color
-    lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
-    // CreateMenuUI: Setting title font
-    lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_18, LV_PART_MAIN);
-    // CreateMenuUI: Aligning title
-    lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 15);
-    
-    // CreateMenuUI: Creating menu container
-    // Create menu container - now covers most of the screen for round display
-    menuContainer_ = lv_obj_create(screen_);
-    lv_obj_set_size(menuContainer_, 240, 180); // Full width, most height
-    lv_obj_align(menuContainer_, LV_ALIGN_CENTER, 0, 10);
-    lv_obj_set_style_bg_opa(menuContainer_, LV_OPA_TRANSP, LV_PART_MAIN);
-    lv_obj_set_style_border_width(menuContainer_, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(menuContainer_, 0, LV_PART_MAIN);
-    lv_obj_clear_flag(menuContainer_, LV_OBJ_FLAG_SCROLLABLE);
-    
-    // Create menu items - we'll show 5 items at a time (2 above, current, 2 below)
-    menuLabels_.clear();
-    const int VISIBLE_ITEMS = 5;
-    const int CENTER_INDEX = 2; // Middle position (0-indexed)
-    
-    for (int i = 0; i < VISIBLE_ITEMS; ++i)
-    {
-        lv_obj_t* item = lv_label_create(menuContainer_);
-        lv_obj_set_width(item, 200);
-        lv_obj_set_style_text_align(item, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN);
-        
-        // Position items vertically
-        int yOffset = -60 + (i * 30); // 30px spacing between items
-        lv_obj_align(item, LV_ALIGN_CENTER, 0, yOffset);
-        
-        // Set initial style
-        lv_obj_set_style_text_font(item, &lv_font_montserrat_16, LV_PART_MAIN);
-        
-        menuLabels_.push_back(item);
-    }
-    
-    // Create hint label
-    hintLabel_ = lv_label_create(screen_);
-    lv_label_set_text(hintLabel_, "Short: Next | Long: Select");
-    lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN);
-    lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(hintLabel_, LV_ALIGN_BOTTOM_MID, 0, -15);
-    
-    // Update display to show current selection
-    UpdateMenuDisplay();
-}
-
-void ConfigPanel::UpdateMenuDisplay()
-{
-    // Update title based on current menu state
-    if (titleLabel_) {
-        switch (currentMenuState_) {
-            case MenuState::MainMenu:
-                lv_label_set_text(titleLabel_, "Configuration");
-                break;
-            case MenuState::PanelSubmenu:
-                lv_label_set_text(titleLabel_, "Select Panel");
-                break;
-            case MenuState::ThemeSubmenu:
-                lv_label_set_text(titleLabel_, "Select Theme");
-                break;
-            case MenuState::UpdateRateSubmenu:
-                lv_label_set_text(titleLabel_, "Update Rate");
-                break;
-            case MenuState::SplashSubmenu:
-                lv_label_set_text(titleLabel_, "Splash Screen");
-                break;
-            case MenuState::SplashDurationSubmenu:
-                lv_label_set_text(titleLabel_, "Splash Duration");
-                break;
-            case MenuState::PressureUnitSubmenu:
-                lv_label_set_text(titleLabel_, "Pressure Unit");
-                break;
-            case MenuState::TempUnitSubmenu:
-                lv_label_set_text(titleLabel_, "Temperature Unit");
-                break;
-        }
-    }
-    
-    // Update menu items with scrolling effect
-    const int VISIBLE_ITEMS = 5;
-    const int CENTER_INDEX = 2;
-    
-    for (int i = 0; i < VISIBLE_ITEMS && i < static_cast<int>(menuLabels_.size()); ++i)
-    {
-        // Calculate which menu item to show at this position
-        int menuItemIndex = (static_cast<int>(currentMenuIndex_) - CENTER_INDEX + i + static_cast<int>(menuItems_.size())) 
-                           % static_cast<int>(menuItems_.size());
-        
-        if (menuItemIndex >= 0 && menuItemIndex < static_cast<int>(menuItems_.size()))
-        {
-            lv_label_set_text(menuLabels_[i], menuItems_[menuItemIndex].label.c_str());
-            
-            // Calculate distance from center
-            int distanceFromCenter = abs(i - CENTER_INDEX);
-            
-            // Apply fading effect based on distance from center
-            if (i == CENTER_INDEX)
-            {
-                // Center item - fully highlighted
-                lv_obj_set_style_text_color(menuLabels_[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_18, LV_PART_MAIN);
-                lv_obj_set_style_text_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
-                
-                // Add subtle background highlight
-                lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x444444), LV_PART_MAIN);
-                lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_50, LV_PART_MAIN);
-                lv_obj_set_style_radius(menuLabels_[i], 5, LV_PART_MAIN);
-                lv_obj_set_style_pad_all(menuLabels_[i], 8, LV_PART_MAIN);
-            }
-            else
-            {
-                // Apply progressive fading based on distance
-                uint8_t opacity = LV_OPA_100 - (distanceFromCenter * 30); // Fade by 30% per step
-                uint8_t colorValue = 0xCC - (distanceFromCenter * 0x33); // Fade color from 0xCC to 0x66
-                
-                lv_obj_set_style_text_color(menuLabels_[i], lv_color_hex(colorValue << 16 | colorValue << 8 | colorValue), LV_PART_MAIN);
-                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_16, LV_PART_MAIN);
-                lv_obj_set_style_text_opa(menuLabels_[i], opacity, LV_PART_MAIN);
-                
-                // Remove background from non-selected items
-                lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_0, LV_PART_MAIN);
-                lv_obj_set_style_pad_all(menuLabels_[i], 0, LV_PART_MAIN);
-            }
-            
-            // Show the label
-            lv_obj_clear_flag(menuLabels_[i], LV_OBJ_FLAG_HIDDEN);
-        }
-        else
-        {
-            // Hide labels that don't have corresponding menu items
-            lv_obj_add_flag(menuLabels_[i], LV_OBJ_FLAG_HIDDEN);
-        }
-    }
-}
 
 void ConfigPanel::ExecuteCurrentOption()
 {
@@ -255,7 +107,9 @@ Action ConfigPanel::GetShortPressAction()
     return Action([this]() {
         currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
         log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
-        UpdateMenuDisplay();
+        if (configComponent_) {
+            configComponent_->SetCurrentIndex(currentMenuIndex_);
+        }
     });
 }
 
@@ -339,87 +193,13 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
             }
         }}
     };
-}
-
-void ConfigPanel::CycleDefaultPanel()
-{
-    if (!preferenceService_) return;
     
-    Configs config = preferenceService_->GetConfig();
-    
-    // Cycle through available panels
-    std::vector<const char*> panels = {
-        PanelNames::OIL,
-        PanelNames::KEY,
-        PanelNames::LOCK
-    };
-    
-    // Find current panel and move to next
-    auto it = std::find(panels.begin(), panels.end(), config.panelName);
-    if (it != panels.end()) {
-        ++it;
-        if (it == panels.end()) {
-            it = panels.begin(); // Wrap around
-        }
-    } else {
-        it = panels.begin(); // Default to first if not found
+    // Update component with new menu items
+    if (configComponent_) {
+        configComponent_->SetTitle("Configuration");
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
     }
-    
-    config.panelName = *it;
-    preferenceService_->SetConfig(config);
-    preferenceService_->SaveConfig();
-    
-    log_i("Default panel changed to: %s", config.panelName.c_str());
-}
-
-void ConfigPanel::CycleTheme()
-{
-    if (!preferenceService_) return;
-    
-    Configs config = preferenceService_->GetConfig();
-    
-    // Cycle through available themes
-    if (config.theme == Themes::DAY) {
-        config.theme = Themes::NIGHT;
-    } else {
-        config.theme = Themes::DAY;
-    }
-    
-    preferenceService_->SetConfig(config);
-    preferenceService_->SaveConfig();
-    
-    // Apply theme immediately
-    if (styleService_) {
-        styleService_->SetTheme(config.theme.c_str());
-    }
-    
-    log_i("Theme changed to: %s", config.theme.c_str());
-}
-
-void ConfigPanel::CycleUpdateRate()
-{
-    if (!preferenceService_) return;
-    
-    Configs config = preferenceService_->GetConfig();
-    
-    // Cycle through common update rates
-    std::vector<int> rates = {250, 500, 1000, 2000};
-    
-    auto it = std::find(rates.begin(), rates.end(), config.updateRate);
-    if (it != rates.end()) {
-        ++it;
-        if (it == rates.end()) {
-            it = rates.begin(); // Wrap around
-        }
-    } else {
-        it = rates.begin(); // Default to first if not found
-    }
-    
-    config.updateRate = *it;
-    preferenceService_->SetConfig(config);
-    preferenceService_->SaveConfig();
-    
-    log_i("Update rate changed to: %d ms", config.updateRate);
 }
 
 void ConfigPanel::EnterSubmenu(MenuState submenu)
@@ -428,7 +208,6 @@ void ConfigPanel::EnterSubmenu(MenuState submenu)
     currentMenuState_ = submenu;
     currentMenuIndex_ = 0;
     UpdateSubmenuItems();
-    UpdateMenuDisplay();
 }
 
 void ConfigPanel::ExitSubmenu()
@@ -437,7 +216,6 @@ void ConfigPanel::ExitSubmenu()
     currentMenuState_ = MenuState::MainMenu;
     currentMenuIndex_ = 0;
     UpdateMenuItemsWithCurrentValues();
-    UpdateMenuDisplay();
 }
 
 void ConfigPanel::UpdateSubmenuItems()
@@ -446,10 +224,12 @@ void ConfigPanel::UpdateSubmenuItems()
     
     const Configs& config = preferenceService_->GetConfig();
     menuItems_.clear();
+    std::string title = "Configuration";
     
     switch (currentMenuState_) {
         case MenuState::PanelSubmenu:
             {
+                title = "Select Panel";
                 // Currently only OemOilPanel is configurable
                 // In the future, this will dynamically build from all configurable panels
                 menuItems_ = {
@@ -467,6 +247,7 @@ void ConfigPanel::UpdateSubmenuItems()
             
         case MenuState::ThemeSubmenu:
             {
+                title = "Select Theme";
                 menuItems_ = {
                     {"Day", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
@@ -495,6 +276,7 @@ void ConfigPanel::UpdateSubmenuItems()
             
         case MenuState::UpdateRateSubmenu:
             {
+                title = "Update Rate";
                 menuItems_ = {
                     {"250ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
@@ -531,6 +313,7 @@ void ConfigPanel::UpdateSubmenuItems()
             
         case MenuState::SplashSubmenu:
             {
+                title = "Splash Screen";
                 menuItems_ = {
                     {"On", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
@@ -553,6 +336,7 @@ void ConfigPanel::UpdateSubmenuItems()
             
         case MenuState::SplashDurationSubmenu:
             {
+                title = "Splash Duration";
                 menuItems_ = {
                     {"1000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
@@ -589,6 +373,7 @@ void ConfigPanel::UpdateSubmenuItems()
             
         case MenuState::PressureUnitSubmenu:
             {
+                title = "Pressure Unit";
                 menuItems_ = {
                     {"PSI", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
@@ -618,6 +403,7 @@ void ConfigPanel::UpdateSubmenuItems()
             
         case MenuState::TempUnitSubmenu:
             {
+                title = "Temperature Unit";
                 menuItems_ = {
                     {"C", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
@@ -643,11 +429,10 @@ void ConfigPanel::UpdateSubmenuItems()
             break;
     }
     
-    // Rebuild UI with new menu items
-    if (menuContainer_ && !menuLabels_.empty()) {
-        // Don't recreate labels - just update the display
-        // Reset menu index when entering submenu
-        currentMenuIndex_ = 0;
-        UpdateMenuDisplay();
+    // Update component with new menu items and title
+    if (configComponent_) {
+        configComponent_->SetTitle(title);
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
     }
 }
