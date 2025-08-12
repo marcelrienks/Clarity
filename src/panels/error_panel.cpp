@@ -40,6 +40,8 @@ void ErrorPanel::Init()
     log_d("Initializing ErrorPanel");
     if (!displayProvider_ || !gpioProvider_) {
         log_e("ErrorPanel requires display and gpio providers");
+        ErrorManager::Instance().ReportCriticalError("ErrorPanel", 
+            "Missing required providers - display or gpio provider is null");
         return;
     }
 
@@ -70,6 +72,8 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     // Render the component
     if (!displayProvider_) {
         log_e("ErrorPanel load requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", 
+            "Cannot render component - display provider is null");
         return;
     }
     errorListComponent_->Render(screen_, centerLocation_, displayProvider_);
@@ -83,6 +87,8 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     // Add safety check before screen load
     if (!screen_) {
         log_e("Screen is null, cannot load error panel");
+        ErrorManager::Instance().ReportCriticalError("ErrorPanel", 
+            "Cannot load panel - screen creation failed");
         if (callbackFunction_) {
             callbackFunction_();
         }
@@ -167,6 +173,8 @@ Action ErrorPanel::GetShortPressAction()
             errorList->CycleToNextError();
         } else {
             log_e("ErrorPanel: errorListComponent_ is null!");
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", 
+                "Cannot cycle errors - errorListComponent is null");
         }
     });
 }

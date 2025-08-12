@@ -16,6 +16,8 @@ void DebugErrorSensor::Init()
     
     if (!gpioProvider_) {
         log_e("DebugErrorSensor requires GPIO provider");
+        ErrorManager::Instance().ReportCriticalError("DebugErrorSensor", 
+            "Cannot initialize - GPIO provider is null");
         return;
     }
     

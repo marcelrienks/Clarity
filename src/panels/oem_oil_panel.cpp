@@ -4,6 +4,7 @@
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "managers/action_manager.h"
+#include "managers/error_manager.h"
 
 // Constructors and Destructors
 

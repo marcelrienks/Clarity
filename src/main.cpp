@@ -60,6 +60,16 @@ bool initializeServices()
     if (!allServicesCreated)
     {
         log_e("Critical service creation failed - check factory logs above");
+        // Report critical errors for null services
+        if (!deviceProvider) ErrorManager::Instance().ReportCriticalError("Main", "DeviceProvider creation failed");
+        if (!gpioProvider) ErrorManager::Instance().ReportCriticalError("Main", "GpioProvider creation failed");
+        if (!displayProvider) ErrorManager::Instance().ReportCriticalError("Main", "DisplayProvider creation failed");
+        if (!styleManager) ErrorManager::Instance().ReportCriticalError("Main", "StyleManager creation failed");
+        if (!preferenceManager) ErrorManager::Instance().ReportCriticalError("Main", "PreferenceManager creation failed");
+        if (!actionManager) ErrorManager::Instance().ReportCriticalError("Main", "ActionManager creation failed");
+        if (!panelManager) ErrorManager::Instance().ReportCriticalError("Main", "PanelManager creation failed");
+        if (!triggerManager) ErrorManager::Instance().ReportCriticalError("Main", "TriggerManager creation failed");
+        if (!interruptManager) ErrorManager::Instance().ReportCriticalError("Main", "InterruptManager creation failed");
         return false;
     }
 

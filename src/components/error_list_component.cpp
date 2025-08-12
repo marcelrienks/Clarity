@@ -23,6 +23,8 @@ void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &locat
 
     if (!display) {
         log_e("ErrorListComponent requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorListComponent", 
+            "Cannot render - display provider is null");
         return;
     }
     

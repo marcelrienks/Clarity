@@ -1,6 +1,7 @@
 #include "panels/config_panel.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/types.h"
 #include <Arduino.h>
 #include <algorithm>
@@ -33,6 +34,8 @@ void ConfigPanel::Init()
     if (!displayProvider_)
     {
         log_e("ConfigPanel requires display provider");
+        ErrorManager::Instance().ReportCriticalError("ConfigPanel", 
+            "Missing required display provider");
         return;
     }
     
@@ -157,6 +160,8 @@ void ConfigPanel::InitializeMenuItems()
 {
     if (!preferenceService_) {
         log_e("Cannot initialize menu items without preference service");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigPanel", 
+            "Cannot initialize menu - preference service is null");
         return;
     }
 
