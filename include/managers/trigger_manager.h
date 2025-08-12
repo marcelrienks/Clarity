@@ -76,8 +76,11 @@ private:
     void CheckTriggerChange(const char *triggerId, bool currentPinState);
     void InitializeTrigger(const char *triggerId, bool currentPinState);
     Trigger *FindTriggerMapping(const char *triggerId);
-    void UpdateActiveTriggersSimple(Trigger *mapping, TriggerExecutionState newState);
     void ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state) override;
+    
+    // Invalid key state handling
+    bool IsKeyStateInvalid() const;
+    void RestoreFromInvalidKeyState();
 
     // Sensor and service dependencies
     std::shared_ptr<KeySensor> keySensor_;
@@ -87,10 +90,10 @@ private:
     IPanelService *panelService_ = nullptr;
     IStyleService *styleService_ = nullptr;
     
-    // State tracking
-    static Trigger triggers_[];
-    Trigger *activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
-    Trigger *activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
-    const char *startupPanelOverride_ = nullptr;
-    bool initialized_ = false;  // Prevent double initialization
+    // Trigger definitions
+    static Trigger triggers_[];                    // Static array of all trigger definitions
+    
+    // Initialization state
+    const char *startupPanelOverride_ = nullptr;   // Panel to load at startup if triggers active
+    bool initialized_ = false;                     // Prevent double initialization
 };

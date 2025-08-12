@@ -134,9 +134,8 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
               newState == TriggerExecutionState::ACTIVE ? "ACTIVE" : "INACTIVE");
         
         mapping->currentState = newState;
-        UpdateActiveTriggersSimple(mapping, newState);
         
-        // Execute trigger action immediately
+        // Execute trigger action immediately - no complex state tracking needed
         ExecuteTriggerAction(mapping, newState);
     }
 }
@@ -144,13 +143,11 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
 void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
-        // Check if current panel is trigger-driven and prevent new trigger activations
-        // Exception: Allow error trigger to always activate (it manages its own state)
-        if (panelService_ && panelService_->IsCurrentPanelTriggerDriven()) {
-            if (mapping->triggerId != TRIGGER_ERROR_OCCURRED) {
-                log_d("Skipping trigger activation for %s - trigger-driven panel active", mapping->triggerId);
-                return;
-            }
+        // Check for invalid key state BEFORE any trigger action
+        if (IsKeyStateInvalid()) {
+            log_w("Invalid key state detected - both key_present and key_not_present active, restoring to previous panel");
+            RestoreFromInvalidKeyState();
+            return;
         }
         
         // Execute trigger action when activated
@@ -173,29 +170,22 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
             }
         }
     } else {
-        // Handle trigger deactivation - execute restore action
+        // Handle trigger deactivation - restore to previous panel
         if (mapping->actionType == TriggerActionType::LoadPanel) {
-            if (activePanelTrigger_) {
-                // Load panel from remaining active trigger
-                log_i("Panel trigger deactivated but another active - loading panel: %s", activePanelTrigger_->actionTarget);
-                if (panelService_) {
-                    panelService_->CreateAndLoadPanel(activePanelTrigger_->actionTarget, []() {
-                        // Panel switch callback handled by service
-                    }, true);
-                }
-            } else {
-                // Note: UIState checking removed - not available in IPanelService interface
-                // Panel service will handle state management internally
-                
-                // No other panel triggers active - restore to actual previous panel
-                const char* restorationPanel = panelService_->GetRestorationPanel();
-                log_i("No other panel triggers active - restoring to previous panel: %s", restorationPanel);
-                if (panelService_) {
-                    // Use isTriggerDriven=true for automatic trigger restoration to skip splash
-                    panelService_->CreateAndLoadPanel(restorationPanel, []() {
-                        // Panel switch callback handled by service
-                    }, true);
-                }
+            // Check for invalid key state before restoration
+            if (IsKeyStateInvalid()) {
+                log_w("Invalid key state detected during deactivation, restoring to previous panel");
+                RestoreFromInvalidKeyState();
+                return;
+            }
+            
+            // Use restoration panel tracking - PanelManager knows what to restore to
+            const char* restorationPanel = panelService_->GetRestorationPanel();
+            log_i("Panel trigger deactivated - restoring to previous panel: %s", restorationPanel);
+            if (panelService_) {
+                panelService_->CreateAndLoadPanel(restorationPanel, []() {
+                    // Panel switch callback handled by service
+                }, true);
             }
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme) {
@@ -230,17 +220,20 @@ void TriggerManager::InitializeTriggersFromSensors()
     // Initialize error trigger based on current error state
     InitializeTrigger(TRIGGER_ERROR_OCCURRED, ErrorManager::Instance().ShouldTriggerErrorPanel());
     
-    // Apply initial actions from active triggers
-    if (activeThemeTrigger_) {
-        log_i("Applying startup theme action: %s", activeThemeTrigger_->actionTarget);
-        if (styleService_) {
-            styleService_->SetTheme(activeThemeTrigger_->actionTarget);
+    // Check for active triggers at startup and apply their actions
+    for (auto& trigger : triggers_) {
+        if (trigger.currentState == TriggerExecutionState::ACTIVE) {
+            if (trigger.actionType == TriggerActionType::ToggleTheme) {
+                log_i("Applying startup theme action: %s", trigger.actionTarget);
+                if (styleService_) {
+                    styleService_->SetTheme(trigger.actionTarget);
+                }
+            } else if (trigger.actionType == TriggerActionType::LoadPanel) {
+                log_i("Startup panel action detected: Load %s", trigger.actionTarget);
+                startupPanelOverride_ = trigger.actionTarget;
+                break; // Only use the first active panel trigger
+            }
         }
-    }
-    
-    if (activePanelTrigger_) {
-        log_i("Startup panel action detected: Load %s", activePanelTrigger_->actionTarget);
-        startupPanelOverride_ = activePanelTrigger_->actionTarget;
     }
 }
 
@@ -252,10 +245,7 @@ void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinSta
     TriggerExecutionState initialState = currentPinState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
     mapping->currentState = initialState;
     
-    // Update simplified active trigger tracking
-    if (initialState == TriggerExecutionState::ACTIVE) {
-        UpdateActiveTriggersSimple(mapping, initialState);
-    }
+    // No complex trigger tracking needed - simplified approach
     
     log_d("Trigger %s initialized to %s based on GPIO state", 
           triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
@@ -273,38 +263,49 @@ Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
     return nullptr;
 }
 
-void TriggerManager::UpdateActiveTriggersSimple(Trigger *mapping, TriggerExecutionState newState)
+
+/// @brief Check if both key triggers are active simultaneously (invalid hardware state)
+bool TriggerManager::IsKeyStateInvalid() const
 {
-    if (newState == TriggerExecutionState::ACTIVE) {
-        if (mapping->actionType == TriggerActionType::LoadPanel) {
-            // Update active panel trigger if this is higher priority
-            if (!activePanelTrigger_ || mapping->priority < activePanelTrigger_->priority) {
-                activePanelTrigger_ = mapping;
-                log_i("Set active panel trigger: %s (priority %d)", mapping->triggerId, (int)mapping->priority);
-            }
-        } else if (mapping->actionType == TriggerActionType::ToggleTheme) {
-            activeThemeTrigger_ = mapping;
-            log_i("Set active theme trigger: %s", mapping->triggerId);
+    Trigger* keyPresentTrigger = nullptr;
+    Trigger* keyNotPresentTrigger = nullptr;
+    
+    // Find both key triggers
+    for (auto& trigger : triggers_) {
+        if (trigger.triggerId == TRIGGER_KEY_PRESENT) {
+            keyPresentTrigger = &trigger;
+        } else if (trigger.triggerId == TRIGGER_KEY_NOT_PRESENT) {
+            keyNotPresentTrigger = &trigger;
         }
-    } else {
-        if (mapping->actionType == TriggerActionType::LoadPanel && activePanelTrigger_ == mapping) {
-            // Find next highest priority active panel trigger
-            activePanelTrigger_ = nullptr;
-            for (auto& checkMapping : triggers_) {
-                if (checkMapping.actionType == TriggerActionType::LoadPanel && 
-                    checkMapping.currentState == TriggerExecutionState::ACTIVE &&
-                    &checkMapping != mapping) {
-                    if (!activePanelTrigger_ || checkMapping.priority < activePanelTrigger_->priority) {
-                        activePanelTrigger_ = &checkMapping;
-                    }
+    }
+    
+    // Invalid state if both are active
+    return (keyPresentTrigger && keyPresentTrigger->currentState == TriggerExecutionState::ACTIVE) &&
+           (keyNotPresentTrigger && keyNotPresentTrigger->currentState == TriggerExecutionState::ACTIVE);
+}
+
+/// @brief Restore to previous panel when key state is invalid
+void TriggerManager::RestoreFromInvalidKeyState()
+{
+    if (panelService_) {
+        // Restore to the panel that was active before key triggers
+        const char* restorationPanel = panelService_->GetRestorationPanel();
+        log_i("Restoring to panel due to invalid key state: %s", restorationPanel);
+        panelService_->CreateAndLoadPanel(restorationPanel, []() {
+            // Panel switch callback handled by service
+        }, true); // Use trigger-driven to skip splash
+        
+        // Clear both key triggers from active state
+        for (auto& trigger : triggers_) {
+            if (trigger.triggerId == TRIGGER_KEY_PRESENT || trigger.triggerId == TRIGGER_KEY_NOT_PRESENT) {
+                if (trigger.currentState == TriggerExecutionState::ACTIVE) {
+                    log_i("Clearing invalid key trigger: %s", trigger.triggerId);
+                    trigger.currentState = TriggerExecutionState::INACTIVE;
                 }
             }
-            log_i("Removed panel trigger %s, new active: %s", mapping->triggerId, 
-                  activePanelTrigger_ ? activePanelTrigger_->triggerId : "none");
-        } else if (mapping->actionType == TriggerActionType::ToggleTheme && activeThemeTrigger_ == mapping) {
-            activeThemeTrigger_ = nullptr;
-            log_i("Removed theme trigger: %s", mapping->triggerId);
         }
+        
+        // No complex trigger tracking needed - restoration handled by PanelManager
     }
 }
 
@@ -339,7 +340,7 @@ bool TriggerManager::HasPendingInterrupts() const
         return false;
     }
     
-    // Always return true to ensure sensor polling happens
+    // Always return true to ensure continuous sensor polling
     // This allows detection of sensor state changes and debug error triggers
     return true;
 }
