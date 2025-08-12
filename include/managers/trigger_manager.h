@@ -78,10 +78,10 @@ private:
     Trigger *FindTriggerMapping(const char *triggerId);
     void ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state) override;
     
-    // Invalid key state handling
-    bool IsKeyStateInvalid() const;
-    void RestoreFromInvalidKeyState();
 
+    // Simple active trigger tracking helper
+    Trigger *FindActivePanel();
+    
     // Sensor and service dependencies
     std::shared_ptr<KeySensor> keySensor_;
     std::shared_ptr<LockSensor> lockSensor_;

@@ -143,14 +143,7 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
 void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
     if (state == TriggerExecutionState::ACTIVE) {
-        // Check for invalid key state BEFORE any trigger action
-        if (IsKeyStateInvalid()) {
-            log_w("Invalid key state detected - both key_present and key_not_present active, restoring to previous panel");
-            RestoreFromInvalidKeyState();
-            return;
-        }
-        
-        // Execute trigger action when activated
+        // Execute trigger action when activated - no complex state checking
         if (mapping->actionType == TriggerActionType::LoadPanel) {
             log_i("Executing panel action: Load %s", mapping->actionTarget);
             if (panelService_) {
@@ -170,28 +163,29 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
             }
         }
     } else {
-        // Handle trigger deactivation - restore to previous panel
+        // Handle trigger deactivation - check for other active triggers first
         if (mapping->actionType == TriggerActionType::LoadPanel) {
-            // Check for invalid key state before restoration
-            if (IsKeyStateInvalid()) {
-                log_w("Invalid key state detected during deactivation, restoring to previous panel");
-                RestoreFromInvalidKeyState();
-                return;
-            }
-            
-            // Use restoration panel tracking - PanelManager knows what to restore to
-            const char* restorationPanel = panelService_->GetRestorationPanel();
-            log_i("Panel trigger deactivated - restoring to previous panel: %s", restorationPanel);
-            if (panelService_) {
-                panelService_->CreateAndLoadPanel(restorationPanel, []() {
-                    // Panel switch callback handled by service
-                }, true);
+            Trigger* activePanel = FindActivePanel();
+            if (activePanel) {
+                // Load panel from remaining active trigger
+                log_i("Panel trigger deactivated but another active - loading panel: %s", activePanel->actionTarget);
+                if (panelService_) {
+                    panelService_->CreateAndLoadPanel(activePanel->actionTarget, []() {
+                        // Panel switch callback handled by service
+                    }, true);
+                }
+            } else {
+                // No other panel triggers active - restore to user panel
+                const char* restorationPanel = panelService_->GetRestorationPanel();
+                log_i("No other panel triggers active - restoring to user panel: %s", restorationPanel);
+                if (panelService_) {
+                    panelService_->CreateAndLoadPanel(restorationPanel, []() {
+                        // Panel switch callback handled by service
+                    }, true); // Skip splash when restoring from triggers
+                }
             }
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme) {
-            // Note: UIState checking removed - not available in IPanelService interface
-            // Panel service will handle state management internally
-            
             log_i("Restoring theme: %s", mapping->restoreTarget);
             if (styleService_) {
                 styleService_->SetTheme(mapping->restoreTarget);
@@ -263,51 +257,22 @@ Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
     return nullptr;
 }
 
-
-/// @brief Check if both key triggers are active simultaneously (invalid hardware state)
-bool TriggerManager::IsKeyStateInvalid() const
+Trigger *TriggerManager::FindActivePanel()
 {
-    Trigger* keyPresentTrigger = nullptr;
-    Trigger* keyNotPresentTrigger = nullptr;
-    
-    // Find both key triggers
+    Trigger* activePanel = nullptr;
     for (auto& trigger : triggers_) {
-        if (trigger.triggerId == TRIGGER_KEY_PRESENT) {
-            keyPresentTrigger = &trigger;
-        } else if (trigger.triggerId == TRIGGER_KEY_NOT_PRESENT) {
-            keyNotPresentTrigger = &trigger;
-        }
-    }
-    
-    // Invalid state if both are active
-    return (keyPresentTrigger && keyPresentTrigger->currentState == TriggerExecutionState::ACTIVE) &&
-           (keyNotPresentTrigger && keyNotPresentTrigger->currentState == TriggerExecutionState::ACTIVE);
-}
-
-/// @brief Restore to previous panel when key state is invalid
-void TriggerManager::RestoreFromInvalidKeyState()
-{
-    if (panelService_) {
-        // Restore to the panel that was active before key triggers
-        const char* restorationPanel = panelService_->GetRestorationPanel();
-        log_i("Restoring to panel due to invalid key state: %s", restorationPanel);
-        panelService_->CreateAndLoadPanel(restorationPanel, []() {
-            // Panel switch callback handled by service
-        }, true); // Use trigger-driven to skip splash
-        
-        // Clear both key triggers from active state
-        for (auto& trigger : triggers_) {
-            if (trigger.triggerId == TRIGGER_KEY_PRESENT || trigger.triggerId == TRIGGER_KEY_NOT_PRESENT) {
-                if (trigger.currentState == TriggerExecutionState::ACTIVE) {
-                    log_i("Clearing invalid key trigger: %s", trigger.triggerId);
-                    trigger.currentState = TriggerExecutionState::INACTIVE;
-                }
+        if (trigger.actionType == TriggerActionType::LoadPanel && 
+            trigger.currentState == TriggerExecutionState::ACTIVE) {
+            // Find highest priority active panel trigger (lower priority value = higher priority)
+            if (!activePanel || trigger.priority < activePanel->priority) {
+                activePanel = &trigger;
             }
         }
-        
-        // No complex trigger tracking needed - restoration handled by PanelManager
     }
+    return activePanel;
 }
+
+
 
 void TriggerManager::AddTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) {
     log_d("Adding trigger %s", triggerName.c_str());

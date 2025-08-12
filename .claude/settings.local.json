@@ -95,7 +95,8 @@
       "WebFetch(domain:google.github.io)",
       "Bash(git config:*)",
       "Bash(for panel in key_panel lock_panel config_panel)",
-      "Bash(do echo \"=== Checking $panel ===\")"
+      "Bash(do echo \"=== Checking $panel ===\")",
+      "Bash(git stash:*)"
     ],
     "deny": []
   }

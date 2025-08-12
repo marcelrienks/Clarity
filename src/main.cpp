@@ -36,8 +36,10 @@ bool initializeServices()
     displayProvider = ProviderFactory::createLvglDisplayProvider(deviceProvider.get());
 
     // Create managers - factories handle all error checking and logging
-    styleManager = ManagerFactory::createStyleManager(Themes::DAY);
     preferenceManager = ManagerFactory::createPreferenceManager();
+    // Initialize StyleManager with user's theme preference
+    const char* userTheme = preferenceManager->GetConfig().theme.c_str();
+    styleManager = ManagerFactory::createStyleManager(userTheme);
     actionManager = ManagerFactory::createActionManager(gpioProvider.get(), nullptr);
     panelManager = ManagerFactory::createPanelManager(
         displayProvider.get(),
