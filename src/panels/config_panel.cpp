@@ -114,6 +114,13 @@ Action ConfigPanel::GetShortPressAction()
         log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
         if (configComponent_) {
             configComponent_->SetCurrentIndex(currentMenuIndex_);
+            
+            // Update hint text based on current menu item
+            if (menuItems_[currentMenuIndex_].label == "Exit") {
+                configComponent_->SetHintText("Short: Next | Long: Press to exit");
+            } else {
+                configComponent_->SetHintText("Short: Next | Long: Select");
+            }
         }
     });
 }

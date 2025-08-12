@@ -147,12 +147,8 @@ void ErrorListComponent::CreateSingleErrorUI(lv_obj_t* parent)
 void ErrorListComponent::DisplayCurrentError()
 {
     if (currentErrors_.empty()) {
-        // No errors to display
-        lv_label_set_text(errorCountLabel_, "0/0");
-        lv_label_set_text(errorLevelLabel_, "NO ERRORS");
-        lv_label_set_text(errorSourceLabel_, "");
-        lv_label_set_text(errorMessageLabel_, "All systems operational");
-        lv_label_set_text(navigationIndicator_, "");
+        // Don't update display when no errors - panel should be closing
+        // This prevents the brief "0/0 errors" screen from showing
         return;
     }
     
@@ -179,13 +175,16 @@ void ErrorListComponent::DisplayCurrentError()
     // Update message - can display full message now with wrapping
     lv_label_set_text(errorMessageLabel_, currentError.message.c_str());
     
-    // Update navigation indicator based on button press count
-    if (buttonPressCount_ >= currentErrors_.size()) {
+    // Update navigation indicator based on whether we're on the last error
+    if (currentErrors_.size() == 1) {
+        // Single error - always show exit
         lv_label_set_text(navigationIndicator_, "Press to exit");
-    } else if (currentErrors_.size() > 1) {
-        lv_label_set_text(navigationIndicator_, "Press for next");
+    } else if (buttonPressCount_ >= (currentErrors_.size() - 1)) {
+        // On last error or beyond - show exit
+        lv_label_set_text(navigationIndicator_, "Press to exit");
     } else {
-        lv_label_set_text(navigationIndicator_, "Press to exit");
+        // More errors to show - show next
+        lv_label_set_text(navigationIndicator_, "Press for next");
     }
     
     log_d("Displaying error %zu/%zu: [%s] %s", 
@@ -200,33 +199,28 @@ void ErrorListComponent::CycleToNextError()
         return;
     }
     
-    // Increment button press count
-    buttonPressCount_++;
-    log_i("CycleToNextError: Button press %zu of %zu total errors", buttonPressCount_, currentErrors_.size());
-    
-    // If we've shown all errors, clear and trigger restore
-    if (buttonPressCount_ > currentErrors_.size()) {
-        log_i("All %zu errors have been shown - clearing errors and triggering panel restore", currentErrors_.size());
+    // Check if we should exit (when user presses on last error)
+    if (buttonPressCount_ >= (currentErrors_.size() - 1)) {
+        log_i("User pressed exit on last error (%zu/%zu) - clearing errors and triggering panel restore", 
+              currentErrorIndex_ + 1, currentErrors_.size());
         ErrorManager::Instance().ClearAllErrors();
         ErrorManager::Instance().SetErrorPanelActive(false);
         // The trigger system will handle restoring to the appropriate panel
         return;
     }
     
-    // Move to next error (only if we haven't shown all yet)
-    if (buttonPressCount_ <= currentErrors_.size()) {
-        currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-        log_i("CycleToNextError: Moving to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
-        DisplayCurrentError();
-        
-        // Update border color for new current error
-        lv_color_t borderColor = GetErrorColor(currentErrors_[currentErrorIndex_].level);
-        lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
-    }
+    // Increment button press count
+    buttonPressCount_++;
     
-    log_d("CycleToNextError: Button press %zu/%zu, showing error %zu/%zu", 
-          buttonPressCount_, currentErrors_.size() + 1,
-          currentErrorIndex_ + 1, currentErrors_.size());
+    // Move to next error
+    currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+    log_i("CycleToNextError: Button press %zu, moving to error %zu/%zu", 
+          buttonPressCount_, currentErrorIndex_ + 1, currentErrors_.size());
+    DisplayCurrentError();
+    
+    // Update border color for new current error
+    lv_color_t borderColor = GetErrorColor(currentErrors_[currentErrorIndex_].level);
+    lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
 }
 
 void ErrorListComponent::HandleCycleButtonPress()
