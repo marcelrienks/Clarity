@@ -15,7 +15,6 @@ ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleS
 
 ConfigPanel::~ConfigPanel()
 {
-    log_d("Destroying ConfigPanel...");
     
     configComponent_.reset();
     
@@ -30,7 +29,6 @@ ConfigPanel::~ConfigPanel()
 
 void ConfigPanel::Init()
 {
-    log_d("Initializing ConfigPanel");
     
     if (!displayProvider_)
     {
@@ -66,7 +64,6 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
         configComponent_->SetCurrentIndex(currentMenuIndex_);
     }
     
-    log_v("loading...");
     lv_screen_load(screen_);
     
     // Call the completion callback directly (like other panels do)
@@ -111,7 +108,6 @@ Action ConfigPanel::GetShortPressAction()
     // Short press cycles through menu options
     return Action([this]() {
         currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
-        log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
         if (configComponent_) {
             configComponent_->SetCurrentIndex(currentMenuIndex_);
             
@@ -129,7 +125,6 @@ Action ConfigPanel::GetLongPressAction()
 {
     // Long press executes current option
     return Action([this]() {
-        log_i("ConfigPanel: Long press - executing '%s'", menuItems_[currentMenuIndex_].label.c_str());
         ExecuteCurrentOption();
     });
 }
@@ -189,16 +184,13 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
         {"Pressure: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
         {"Temp: " + config.tempUnit, [this]() { EnterSubmenu(MenuState::TempUnitSubmenu); }},
         {"Exit", [this]() { 
-            log_i("Exiting config panel and saving settings");
             // Save configuration before exiting
             if (preferenceService_) {
                 preferenceService_->SaveConfig();
-                log_i("Configuration saved");
             }
             // Return to previous panel using restoration panel
             if (panelService_) {
                 const char* restorationPanel = panelService_->GetRestorationPanel();
-                log_i("Returning to restoration panel: %s", restorationPanel);
                 // Use isTriggerDriven=true to prevent splash screen on programmatic panel switches
                 panelService_->CreateAndLoadPanel(restorationPanel, []() {
                     // Panel switch callback handled by service
@@ -217,7 +209,6 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
 
 void ConfigPanel::EnterSubmenu(MenuState submenu)
 {
-    log_i("Entering submenu: %d", static_cast<int>(submenu));
     currentMenuState_ = submenu;
     currentMenuIndex_ = 0;
     UpdateSubmenuItems();
@@ -225,7 +216,6 @@ void ConfigPanel::EnterSubmenu(MenuState submenu)
 
 void ConfigPanel::ExitSubmenu()
 {
-    log_i("Exiting submenu, returning to main menu");
     currentMenuState_ = MenuState::MainMenu;
     currentMenuIndex_ = 0;
     UpdateMenuItemsWithCurrentValues();

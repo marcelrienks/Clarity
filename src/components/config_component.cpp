@@ -5,6 +5,7 @@
 // Constructor
 ConfigComponent::ConfigComponent()
 {
+    log_d("Creating ConfigComponent");
 }
 
 // IComponent interface implementation
@@ -29,7 +30,6 @@ void ConfigComponent::SetValue(int32_t value)
 void ConfigComponent::Init(lv_obj_t* screen)
 {
     if (!screen) {
-        log_e("ConfigComponent::Init - screen is NULL!");
         return;
     }
     

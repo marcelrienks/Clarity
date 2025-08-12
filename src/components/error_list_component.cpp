@@ -9,19 +9,17 @@ ErrorListComponent::ErrorListComponent(IStyleService* styleService)
       errorMessageLabel_(nullptr), navigationIndicator_(nullptr), currentErrorIndex_(0),
       buttonPressCount_(0)
 {
-    log_d("Creating ErrorListComponent for single error display");
+    log_d("Creating ErrorListComponent");
 }
 
 ErrorListComponent::~ErrorListComponent()
 {
     // LVGL objects are managed by the parent screen, no manual deletion needed
-    log_d("Destroying ErrorListComponent single error display");
 }
 
 // Core Functionality Methods
 void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider* display)
 {
-    log_d("Rendering error list component at specified location");
 
     if (!display) {
         log_e("ErrorListComponent requires display provider");
@@ -51,7 +49,6 @@ void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &locat
 
 void ErrorListComponent::Refresh(const Reading& reading)
 {
-    log_d("Refreshing single error display with new error data");
     
     // For single error display, we'll update directly from ErrorManager rather than using Reading
     // This allows us to get the complete error queue information and maintain current position
@@ -68,7 +65,6 @@ void ErrorListComponent::UpdateErrorDisplay()
 
 void ErrorListComponent::UpdateErrorDisplay(const std::vector<ErrorInfo>& errors)
 {
-    log_d("Updating single error display with %d errors", errors.size());
     
     // Store current error state
     currentErrors_ = errors;
@@ -95,7 +91,6 @@ void ErrorListComponent::UpdateErrorDisplay(const std::vector<ErrorInfo>& errors
 // Internal Methods
 void ErrorListComponent::CreateSingleErrorUI(lv_obj_t* parent)
 {
-    log_d("Creating single error UI structure optimized for full screen display");
     
     // Create error position indicator at top
     errorCountLabel_ = lv_label_create(parent);
@@ -187,22 +182,16 @@ void ErrorListComponent::DisplayCurrentError()
         lv_label_set_text(navigationIndicator_, "Press for next");
     }
     
-    log_d("Displaying error %zu/%zu: [%s] %s", 
-          currentErrorIndex_ + 1, currentErrors_.size(), 
-          levelText, currentError.source);
 }
 
 void ErrorListComponent::CycleToNextError()
 {
     if (currentErrors_.empty()) {
-        log_d("CycleToNextError: No errors to cycle through");
         return;
     }
     
     // Check if we should exit (when user presses on last error)
     if (buttonPressCount_ >= (currentErrors_.size() - 1)) {
-        log_i("User pressed exit on last error (%zu/%zu) - clearing errors and triggering panel restore", 
-              currentErrorIndex_ + 1, currentErrors_.size());
         ErrorManager::Instance().ClearAllErrors();
         ErrorManager::Instance().SetErrorPanelActive(false);
         // The trigger system will handle restoring to the appropriate panel
@@ -214,8 +203,6 @@ void ErrorListComponent::CycleToNextError()
     
     // Move to next error
     currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-    log_i("CycleToNextError: Button press %zu, moving to error %zu/%zu", 
-          buttonPressCount_, currentErrorIndex_ + 1, currentErrors_.size());
     DisplayCurrentError();
     
     // Update border color for new current error
@@ -226,7 +213,6 @@ void ErrorListComponent::CycleToNextError()
 void ErrorListComponent::HandleCycleButtonPress()
 {
     // Public interface method to be called from GPIO button handling
-    log_d("GPIO button press detected - cycling to next error");
     CycleToNextError();
 }
 
@@ -264,7 +250,6 @@ const char* ErrorListComponent::GetErrorLevelText(ErrorLevel level)
 void ErrorListComponent::ErrorAcknowledgeCallback(lv_event_t *event)
 {
     size_t errorIndex = reinterpret_cast<size_t>(lv_event_get_user_data(event));
-    log_d("Acknowledging error at index %d", errorIndex);
     
     ErrorManager::Instance().AcknowledgeError(errorIndex);
 }
@@ -272,7 +257,6 @@ void ErrorListComponent::ErrorAcknowledgeCallback(lv_event_t *event)
 void ErrorListComponent::ClearAllErrorsCallback(lv_event_t *event)
 {
     ErrorListComponent* component = static_cast<ErrorListComponent*>(lv_event_get_user_data(event));
-    log_d("Clearing all errors");
     
     ErrorManager::Instance().ClearAllErrors();
 }
