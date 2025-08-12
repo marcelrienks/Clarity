@@ -263,7 +263,11 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
     menuItems_ = {
         {"Panel: " + panelDisplay, [this]() { EnterSubmenu(MenuState::PanelSubmenu); }},
         {"Theme: " + config.theme, [this]() { EnterSubmenu(MenuState::ThemeSubmenu); }},
+        {"Splash: " + std::string(config.showSplash ? "On" : "Off"), [this]() { EnterSubmenu(MenuState::SplashSubmenu); }},
+        {"Splash Time: " + std::to_string(config.splashDuration) + "ms", [this]() { EnterSubmenu(MenuState::SplashDurationSubmenu); }},
         {"Rate: " + std::to_string(config.updateRate) + "ms", [this]() { EnterSubmenu(MenuState::UpdateRateSubmenu); }},
+        {"Pressure: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
+        {"Temp: " + config.tempUnit, [this]() { EnterSubmenu(MenuState::TempUnitSubmenu); }},
         {"Exit", [this]() { 
             log_i("Exiting config panel and saving settings");
             // Save configuration before exiting
@@ -462,6 +466,115 @@ void ConfigPanel::UpdateSubmenuItems()
                     {"2000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
                         cfg.updateRate = 2000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        case MenuState::SplashSubmenu:
+            {
+                menuItems_ = {
+                    {"On", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.showSplash = true;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Off", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.showSplash = false;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        case MenuState::SplashDurationSubmenu:
+            {
+                menuItems_ = {
+                    {"1000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.splashDuration = 1000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"2000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.splashDuration = 2000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"3000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.splashDuration = 3000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"5000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.splashDuration = 5000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        case MenuState::PressureUnitSubmenu:
+            {
+                menuItems_ = {
+                    {"PSI", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.pressureUnit = "PSI";
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Bar", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.pressureUnit = "Bar";
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"kPa", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.pressureUnit = "kPa";
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"Back", [this]() { ExitSubmenu(); }}
+                };
+            }
+            break;
+            
+        case MenuState::TempUnitSubmenu:
+            {
+                menuItems_ = {
+                    {"C", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.tempUnit = "C";
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"F", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.tempUnit = "F";
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();

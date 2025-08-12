@@ -74,7 +74,11 @@ private:
         MainMenu,
         PanelSubmenu,
         ThemeSubmenu,
-        UpdateRateSubmenu
+        UpdateRateSubmenu,
+        SplashSubmenu,
+        SplashDurationSubmenu,
+        PressureUnitSubmenu,
+        TempUnitSubmenu
     };
 
     // Menu item structure
