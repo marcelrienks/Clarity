@@ -1,4 +1,5 @@
 #include "managers/action_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/types.h"
 #include <Arduino.h>
 #include <cstring>
@@ -34,6 +35,8 @@ void ActionManager::Init()
 
     if (!buttonSensor_) {
         log_e("Button sensor is null");
+        ErrorManager::Instance().ReportCriticalError("ActionManager", 
+            "Cannot initialize - button sensor is null");
         return;
     }
     

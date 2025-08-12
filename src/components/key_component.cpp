@@ -1,4 +1,5 @@
 #include "components/key_component.h"
+#include "managers/error_manager.h"
 #include <icons/key_solid.h>
 #include <esp32-hal-log.h>
 
@@ -46,6 +47,8 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
 
     if (!display) {
         log_e("KeyComponent requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyComponent", 
+            "Cannot render - display provider is null");
         return;
     }
     

@@ -1,4 +1,5 @@
 #include "factories/provider_factory.h"
+#include "managers/error_manager.h"
 #include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
@@ -10,6 +11,8 @@ std::unique_ptr<DeviceProvider> ProviderFactory::createDeviceProvider()
     auto provider = std::make_unique<DeviceProvider>();
     if (!provider) {
         log_e("ProviderFactory: Failed to create DeviceProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", 
+            "DeviceProvider allocation failed - out of memory");
         return nullptr;
     }
     
@@ -18,6 +21,8 @@ std::unique_ptr<DeviceProvider> ProviderFactory::createDeviceProvider()
     
     if (!provider->screen) {
         log_e("ProviderFactory: DeviceProvider screen initialization failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", 
+            "DeviceProvider screen initialization failed - hardware error");
         return nullptr;
     }
     
@@ -32,6 +37,8 @@ std::unique_ptr<GpioProvider> ProviderFactory::createGpioProvider()
     auto provider = std::make_unique<GpioProvider>();
     if (!provider) {
         log_e("ProviderFactory: Failed to create GpioProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", 
+            "GpioProvider allocation failed - out of memory");
         return nullptr;
     }
     
@@ -45,11 +52,15 @@ std::unique_ptr<LvglDisplayProvider> ProviderFactory::createLvglDisplayProvider(
     
     if (!deviceProvider) {
         log_e("ProviderFactory: Cannot create LvglDisplayProvider - DeviceProvider is null");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", 
+            "Cannot create LvglDisplayProvider - DeviceProvider dependency is null");
         return nullptr;
     }
     
     if (!deviceProvider->screen) {
         log_e("ProviderFactory: Cannot create LvglDisplayProvider - DeviceProvider screen is null");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", 
+            "Cannot create LvglDisplayProvider - DeviceProvider screen is null");
         return nullptr;
     }
     
@@ -57,6 +68,8 @@ std::unique_ptr<LvglDisplayProvider> ProviderFactory::createLvglDisplayProvider(
     auto provider = std::make_unique<LvglDisplayProvider>(deviceProvider->screen);
     if (!provider) {
         log_e("ProviderFactory: Failed to create LvglDisplayProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", 
+            "LvglDisplayProvider allocation failed - out of memory");
         return nullptr;
     }
     

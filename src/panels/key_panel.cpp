@@ -1,4 +1,5 @@
 #include "panels/key_panel.h"
+#include "managers/error_manager.h"
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include <variant>
@@ -32,6 +33,8 @@ void KeyPanel::Init()
 
     if (!displayProvider_ || !gpioProvider_) {
         log_e("KeyPanel requires display and gpio providers");
+        ErrorManager::Instance().ReportCriticalError("KeyPanel", 
+            "Missing required providers - display or gpio provider is null");
         return;
     }
 
@@ -60,6 +63,8 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
     // Render the component
     if (!displayProvider_) {
         log_e("KeyPanel load requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", 
+            "Cannot load - display provider is null");
         return;
     }
     keyComponent_->Render(screen_, centerLocation_, displayProvider_);
@@ -81,6 +86,8 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
 {
     if (!gpioProvider_) {
         log_e("KeyPanel update requires gpio provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", 
+            "Cannot update - gpio provider is null");
         return;
     }
 

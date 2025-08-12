@@ -1,4 +1,5 @@
 #include "components/lock_component.h"
+#include "managers/error_manager.h"
 #include <icons/lock_alt_solid.h>
 #include <esp32-hal-log.h>
 
@@ -41,6 +42,8 @@ void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, 
 
     if (!display) {
         log_e("LockComponent requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "LockComponent", 
+            "Cannot render - display provider is null");
         return;
     }
     

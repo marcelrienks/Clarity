@@ -1,4 +1,5 @@
 #include "components/oem/oem_oil_component.h"
+#include "managers/error_manager.h"
 #include <esp32-hal-log.h>
 #include "managers/style_manager.h"  // For MAIN_DEFAULT, ITEMS_DEFAULT, INDICATOR_DEFAULT constants
 #include <math.h>
@@ -25,6 +26,8 @@ OemOilComponent::OemOilComponent(IStyleService* styleService)
     // Validate styleService dependency
     if (!styleService_) {
         log_e("StyleService is required but was null");
+        ErrorManager::Instance().ReportCriticalError("OemOilComponent", 
+            "Cannot create - StyleService dependency is null");
     }
 }
 
@@ -57,6 +60,8 @@ void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location
 
     if (!screen || !display) {
         log_e("OemOilComponent requires screen and display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OemOilComponent", 
+            "Cannot render - screen or display provider is null");
         return;
     }
     

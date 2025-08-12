@@ -22,28 +22,40 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
     
     if (!display) {
         log_e("ManagerFactory: Cannot create PanelManager - IDisplayProvider is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create PanelManager - DisplayProvider dependency is null");
         return nullptr;
     }
     if (!gpio) {
         log_e("ManagerFactory: Cannot create PanelManager - IGpioProvider is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create PanelManager - GpioProvider dependency is null");
         return nullptr;
     }
     if (!styleService) {
         log_e("ManagerFactory: Cannot create PanelManager - IStyleService is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create PanelManager - StyleService dependency is null");
         return nullptr;
     }
     if (!actionManager) {
         log_e("ManagerFactory: Cannot create PanelManager - IActionManager is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create PanelManager - ActionManager dependency is null");
         return nullptr;
     }
     if (!preferenceService) {
         log_e("ManagerFactory: Cannot create PanelManager - IPreferenceService is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create PanelManager - PreferenceService dependency is null");
         return nullptr;
     }
     
     auto manager = std::make_unique<PanelManager>(display, gpio, styleService, actionManager, preferenceService);
     if (!manager) {
         log_e("ManagerFactory: Failed to create PanelManager - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "PanelManager allocation failed - out of memory");
         return nullptr;
     }
     
@@ -60,6 +72,8 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
     auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::DAY);
     if (!manager) {
         log_e("ManagerFactory: Failed to create StyleManager - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "StyleManager allocation failed - out of memory");
         return nullptr;
     }
     
@@ -73,14 +87,20 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
     
     if (!gpio) {
         log_e("ManagerFactory: Cannot create TriggerManager - IGpioProvider is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create TriggerManager - GpioProvider dependency is null");
         return nullptr;
     }
     if (!panelService) {
         log_e("ManagerFactory: Cannot create TriggerManager - IPanelService is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create TriggerManager - PanelService dependency is null");
         return nullptr;
     }
     if (!styleService) {
         log_e("ManagerFactory: Cannot create TriggerManager - IStyleService is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create TriggerManager - StyleService dependency is null");
         return nullptr;
     }
     
@@ -92,12 +112,16 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
     
     if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor) {
         log_e("ManagerFactory: Failed to create sensors for TriggerManager");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "TriggerManager sensor allocation failed - out of memory");
         return nullptr;
     }
     
     auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, debugErrorSensor, panelService, styleService);
     if (!manager) {
         log_e("ManagerFactory: Failed to create TriggerManager - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "TriggerManager allocation failed - out of memory");
         return nullptr;
     }
     
@@ -114,6 +138,8 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     auto manager = std::make_unique<PreferenceManager>();
     if (!manager) {
         log_e("ManagerFactory: Failed to create PreferenceManager - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "PreferenceManager allocation failed - out of memory");
         return nullptr;
     }
     
@@ -129,6 +155,8 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
     
     if (!gpio) {
         log_e("ManagerFactory: Cannot create ActionManager - IGpioProvider is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "Cannot create ActionManager - GpioProvider dependency is null");
         return nullptr;
     }
     
@@ -136,12 +164,16 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
     auto actionButtonSensor = std::make_shared<ActionButtonSensor>(gpio);
     if (!actionButtonSensor) {
         log_e("ManagerFactory: Failed to create ActionButtonSensor for ActionManager");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "ActionButtonSensor allocation failed - out of memory");
         return nullptr;
     }
     
     auto manager = std::make_unique<ActionManager>(actionButtonSensor);
     if (!manager) {
         log_e("ManagerFactory: Failed to create ActionManager - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "ActionManager allocation failed - out of memory");
         return nullptr;
     }
     
@@ -158,6 +190,8 @@ std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelS
     auto manager = std::make_unique<InterruptManager>(panelService);
     if (!manager) {
         log_e("ManagerFactory: Failed to create InterruptManager - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory", 
+            "InterruptManager allocation failed - out of memory");
         return nullptr;
     }
     

@@ -1,4 +1,5 @@
 #include "panels/splash_panel.h"
+#include "managers/error_manager.h"
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
@@ -38,6 +39,8 @@ void SplashPanel::Init()
     // Initializing splash panel screen and animation components
     if (!displayProvider_) {
         log_e("SplashPanel requires display provider");
+        ErrorManager::Instance().ReportCriticalError("SplashPanel", 
+            "Cannot initialize - display provider is null");
         return;
     }
 

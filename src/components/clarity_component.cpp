@@ -1,4 +1,5 @@
 #include "components/clarity_component.h"
+#include "managers/error_manager.h"
 #include <esp32-hal-log.h>
 
 // Constructors and Destructors
@@ -18,6 +19,8 @@ void ClarityComponent::Render(lv_obj_t *screen, const ComponentLocation& locatio
     // Using a label (recommended for text display)
     if (!display) {
         log_e("ClarityComponent requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ClarityComponent", 
+            "Cannot render - display provider is null");
         return;
     }
     
