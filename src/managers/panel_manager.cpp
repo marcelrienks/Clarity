@@ -161,12 +161,20 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     // Track current panel trigger state
     currentPanelIsTriggerDriven_ = isTriggerDriven;
 
-    // Track this as the last non-trigger panel only for user-driven changes
+    // Update restoration panel tracking for proper trigger hierarchy
     if (!isTriggerDriven)
     {
-        // Update restoration panel using std::string for memory safety
+        // User-driven panel changes update restoration tracking
         restorationPanelStr_ = panelName;
         restorationPanel = restorationPanelStr_.c_str();
+        log_d("Restoration panel updated to: %s (user-driven)", restorationPanel);
+    }
+    else if (currentPanelIsTriggerDriven_)
+    {
+        // When switching from one trigger panel to another, update restoration to current panel
+        restorationPanelStr_ = currentPanel;
+        restorationPanel = restorationPanelStr_.c_str();
+        log_d("Restoration panel updated to: %s (trigger-to-trigger)", restorationPanel);
     }
 
     // Clean up existing panel before creating new one
