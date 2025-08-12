@@ -230,7 +230,7 @@ struct Configs
     // General settings
     std::string panelName = PanelNames::OIL; ///< Default panel on startup
     bool showSplash = true;                  ///< Show splash screen on startup
-    int splashDuration = 1000 ;               ///< Splash screen duration in milliseconds
+    int splashDuration = 1500 ;               ///< Splash screen duration in milliseconds
     
     // Display settings
     std::string theme = Themes::DAY;         ///< Theme preference (Day/Night)

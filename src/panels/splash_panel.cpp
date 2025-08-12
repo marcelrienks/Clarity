@@ -3,6 +3,7 @@
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
+#include <algorithm>
 
 // Constructors and Destructors
 
@@ -65,7 +66,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     // Render the component
     component_->Render(screen_, splashLocation, displayProvider_);
     
-    // Start animation sequence (no interruption allowed)
+    // Start animation sequence with initial delay before fade-in
     lv_timer_create(SplashPanel::fade_in_timer_callback, 100, this);
 }
 
@@ -79,7 +80,7 @@ void SplashPanel::Update(std::function<void()> callbackFunction)
 
 /// @brief Callback for when the animation is complete
 /// @param animation_timer the animation_timer that has completed
-void SplashPanel::animation_complete_timer_callback(lv_timer_t *animationTimer)
+void SplashPanel::fading_out_timer_callback(lv_timer_t *animationTimer)
 {
     // Animation sequence complete - executing callback
 
@@ -103,14 +104,13 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     log_v("Fading in...");
     lv_screen_load_anim(panel->screen_,
                         LV_SCR_LOAD_ANIM_FADE_IN,
-                        _ANIMATION_TIME,
+                        panel->GetAnimationTime(),
                         _DELAY_TIME,
                         false);
 
-    // Schedule the fade-out animation using configurable duration
-    int splashDuration = panel->GetSplashDuration();
-    auto *fadeOutTimer = lv_timer_create(SplashPanel::fade_out_timer_callback,
-                                           splashDuration,
+    // Schedule the fade-out animation after display duration
+    auto *fadingInTimer = lv_timer_create(SplashPanel::fading_in_timer_callback,
+                                           panel->GetFadeInDuration(),
                                            panel);
 
     // Remove the fade_in_timer after transition
@@ -119,7 +119,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
 
 /// @brief Callback function for the fade out animation_timer completion
 /// @param fade_out_timer the animation_timer that has completed
-void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
+void SplashPanel::fading_in_timer_callback(lv_timer_t *fadeOutTimer)
 {
     // Animation sequence complete - executing callback
 
@@ -129,13 +129,13 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     log_v("Fading out...");
     lv_scr_load_anim(panel->blankScreen_,
                      LV_SCR_LOAD_ANIM_FADE_OUT,
-                     _ANIMATION_TIME,
+                     panel->GetAnimationTime(),
                      0,
                      false);
 
     // Create a animation_timer for the completion callback
-    auto *completionTimer = lv_timer_create(SplashPanel::animation_complete_timer_callback,
-                                             _ANIMATION_TIME + _DELAY_TIME, // Small extra delay to ensure animation is complete
+    auto *fadingOutTimer = lv_timer_create(SplashPanel::fading_out_timer_callback,
+                                             panel->GetFadeOutDuration(),
                                              panel);
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
@@ -199,5 +199,23 @@ int SplashPanel::GetSplashDuration() const
         return config.splashDuration;
     }
     // Fallback to default timing if no preference service
-    return _ANIMATION_TIME + _DELAY_TIME + _DISPLAY_TIME;
+    return 1500;
+}
+
+int SplashPanel::GetAnimationTime() const
+{
+    // Animation time is fixed at 1000ms regardless of splash duration
+    return (SplashPanel::GetSplashDuration() - _DISPLAY_TIME) / 2;
+}
+
+int SplashPanel::GetFadeInDuration() const
+{
+    // Duration for fade-in timer (animation + display + delay)
+    return GetAnimationTime() + _DISPLAY_TIME + _DELAY_TIME;
+}
+
+int SplashPanel::GetFadeOutDuration() const
+{
+    // Duration for fade-out completion timer (animation + delay)
+    return GetAnimationTime() + _DELAY_TIME;
 }

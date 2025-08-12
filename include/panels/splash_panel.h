@@ -21,8 +21,8 @@
  * the system initializes in the background.
  * 
  * @presenter_role Coordinates the ClarityComponent for branding display
- * @animation_sequence Fade-in (2000ms) → Display (850ms) → Fade-out → Next panel
- * @timing_total ~3050ms total display time
+ * @animation_sequence Initial delay (100ms) → Fade-in (1000ms) → Display (configurable) → Fade-out (1000ms) → Complete (100ms delay) → Next panel
+ * @timing_total ~2200ms + configurable display time
  * 
  * @transitions_to OemOilPanel (or user-configured default panel)
  * @memory_usage Minimal - single component with timer-based animations
@@ -66,9 +66,14 @@ public:
 private:
     // Private Data Members
     // Panel specific constants
-    static constexpr const int _ANIMATION_TIME = 1000;
+    static constexpr const int _DISPLAY_TIME = 500;
     static constexpr const int _DELAY_TIME = 100;
-    static constexpr const int _DISPLAY_TIME = 600;
+    
+    // Calculate timing based on splash duration from config
+    int GetAnimationTime() const;
+    int GetFadeInDuration() const;
+    int GetFadeOutDuration() const;
+    int GetCompletionTimerDuration() const;
 
     // Dependencies
     IGpioProvider *gpioProvider_;
@@ -83,9 +88,9 @@ private:
     lv_obj_t *blankScreen_;
 
     // Static Callback Methods
-    static void animation_complete_timer_callback(lv_timer_t *timer);
+    static void fading_out_timer_callback(lv_timer_t *timer);
     static void fade_in_timer_callback(lv_timer_t *timer);
-    static void fade_out_timer_callback(lv_timer_t *timer);
+    static void fading_in_timer_callback(lv_timer_t *timer);
     
     // Helper methods
     int GetSplashDuration() const;

@@ -346,30 +346,30 @@ void ConfigPanel::UpdateSubmenuItems()
             {
                 title = "Splash Duration";
                 menuItems_ = {
-                    {"1000ms", [this]() {
+                    {"1500ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 500;
+                        cfg.splashDuration = 1500;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"1750ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.splashDuration = 1750;
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();
                     }},
                     {"2000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 750;
-                        preferenceService_->SetConfig(cfg);
-                        preferenceService_->SaveConfig();
-                        ExitSubmenu();
-                    }},
-                    {"3000ms", [this]() {
-                        Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 1000;
-                        preferenceService_->SetConfig(cfg);
-                        preferenceService_->SaveConfig();
-                        ExitSubmenu();
-                    }},
-                    {"5000ms", [this]() {
-                        Configs cfg = preferenceService_->GetConfig();
                         cfg.splashDuration = 2000;
+                        preferenceService_->SetConfig(cfg);
+                        preferenceService_->SaveConfig();
+                        ExitSubmenu();
+                    }},
+                    {"2000ms", [this]() {
+                        Configs cfg = preferenceService_->GetConfig();
+                        cfg.splashDuration = 2500;
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();
