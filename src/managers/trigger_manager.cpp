@@ -176,9 +176,10 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
                 const char* restorationPanel = panelService_->GetRestorationPanel();
                 log_i("No other panel triggers active - restoring to previous panel: %s", restorationPanel);
                 if (panelService_) {
+                    // Use isTriggerDriven=true for automatic trigger restoration to skip splash
                     panelService_->CreateAndLoadPanel(restorationPanel, []() {
                         // Panel switch callback handled by service
-                    }, false);
+                    }, true);
                 }
             }
         }
