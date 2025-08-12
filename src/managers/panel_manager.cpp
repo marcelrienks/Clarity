@@ -134,14 +134,17 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
 {
     log_d("Creating and loading panel: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
 
-    // Check if splash screen should be shown
-    bool showSplash = true;
-    if (preferenceService_) {
+    // Check if splash screen should be shown - only if NOT trigger-driven and splash is enabled
+    bool showSplash = false;
+    if (preferenceService_ && !isTriggerDriven) {
         const Configs& config = preferenceService_->GetConfig();
         showSplash = config.showSplash;
+        log_d("User-driven panel load - splash setting: %s", showSplash ? "enabled" : "disabled");
+    } else {
+        log_d("Trigger-driven panel load - skipping splash screen");
     }
 
-    if (showSplash && !isTriggerDriven) {
+    if (showSplash) {
         log_d("Loading panel with splash screen transition: %s", panelName);
         CreateAndLoadPanelWithSplash(panelName);
     } else {

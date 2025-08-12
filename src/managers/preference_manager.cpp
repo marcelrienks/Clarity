@@ -124,9 +124,20 @@ void PreferenceManager::SaveConfig()
     // Serialize to JSON string
     String jsonString;
     serializeJson(doc, jsonString);
+    
+    log_d("Serialized config JSON: %s", jsonString.c_str());
 
     // Save the JSON string to preferences_
     size_t written = preferences_.putString(CONFIG_KEY, jsonString);
+    if (written > 0) {
+        log_i("Configuration saved successfully (%zu bytes written)", written);
+        // Commit changes to NVS - this is critical for persistence across reboots
+        preferences_.end();
+        // Reopen preferences for future operations
+        preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
+    } else {
+        log_e("Failed to save configuration to NVS");
+    }
 }
 
 // IPreferenceService interface implementation

@@ -74,8 +74,10 @@ void ConfigComponent::SetHintText(const std::string& hint)
 
 void ConfigComponent::CreateUI()
 {
-    // Apply grey theme for settings
-    lv_obj_set_style_bg_color(screen_, lv_color_hex(0x2C2C2C), LV_PART_MAIN);
+    // Apply circular styling for round display (240px diameter, so radius = 120)
+    lv_obj_set_style_radius(screen_, 120, LV_PART_MAIN);
+    
+    // Note: Background color and theme are applied via StyleManager in ConfigPanel
     
     // Create title label
     titleLabel_ = lv_label_create(screen_);

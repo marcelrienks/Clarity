@@ -39,6 +39,11 @@ void ConfigPanel::Init()
     }
     
     screen_ = displayProvider_->CreateScreen();
+    
+    // Apply theme to screen for consistent styling with other panels
+    if (styleService_) {
+        styleService_->ApplyThemeToScreen(screen_);
+    }
 }
 
 void ConfigPanel::Load(std::function<void()> callbackFunction)
@@ -187,9 +192,10 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
             if (panelService_) {
                 const char* restorationPanel = panelService_->GetRestorationPanel();
                 log_i("Returning to restoration panel: %s", restorationPanel);
+                // Use isTriggerDriven=true to prevent splash screen on programmatic panel switches
                 panelService_->CreateAndLoadPanel(restorationPanel, []() {
                     // Panel switch callback handled by service
-                }, false);
+                }, true);
             }
         }}
     };
