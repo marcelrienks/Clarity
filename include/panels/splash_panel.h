@@ -66,7 +66,7 @@ public:
 private:
     // Private Data Members
     // Panel specific constants
-    static constexpr const int _ANIMATION_TIME = 900;
+    static constexpr const int _ANIMATION_TIME = 1000;
     static constexpr const int _DELAY_TIME = 100;
     static constexpr const int _DISPLAY_TIME = 600;
 

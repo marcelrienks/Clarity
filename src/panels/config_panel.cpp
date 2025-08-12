@@ -348,28 +348,28 @@ void ConfigPanel::UpdateSubmenuItems()
                 menuItems_ = {
                     {"1000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 1000;
+                        cfg.splashDuration = 500;
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();
                     }},
                     {"2000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 2000;
+                        cfg.splashDuration = 750;
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();
                     }},
                     {"3000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 3000;
+                        cfg.splashDuration = 1000;
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();
                     }},
                     {"5000ms", [this]() {
                         Configs cfg = preferenceService_->GetConfig();
-                        cfg.splashDuration = 5000;
+                        cfg.splashDuration = 2000;
                         preferenceService_->SetConfig(cfg);
                         preferenceService_->SaveConfig();
                         ExitSubmenu();
