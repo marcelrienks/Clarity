@@ -59,6 +59,12 @@ class IPanelService
     virtual void SetUiState(UIState state) = 0;
 
     /**
+     * @brief Get the current UI state
+     * @return Current UI processing state
+     */
+    virtual UIState GetUIState() const = 0;
+
+    /**
      * @brief Get the current panel name
      * @return Current panel identifier string
      */

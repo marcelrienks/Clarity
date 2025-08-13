@@ -3,6 +3,7 @@
 #include "interfaces/i_action_manager.h"
 #include "interfaces/i_action_service.h"
 #include "interfaces/i_interrupt_service.h"
+#include "interfaces/i_panel_service.h"
 #include "sensors/action_button_sensor.h"
 #include "utilities/types.h"
 #include <functional>
@@ -29,7 +30,7 @@ class ActionManager : public IInterruptService, public IActionManager
 {
   public:
     // Constructors and Destructors
-    ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor);
+    ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, IPanelService *panelService);
 
     ActionManager(const ActionManager &) = delete;
     ActionManager &operator=(const ActionManager &) = delete;
@@ -99,10 +100,14 @@ class ActionManager : public IInterruptService, public IActionManager
 
     // Action processing methods
     void ProcessPendingActions();
+    
+    // Helper method to check if actions can be executed based on UIState
+    bool CanExecuteActions() const;
 
     // Dependencies
     std::shared_ptr<ActionButtonSensor> buttonSensor_;
     IActionService *currentService_;
+    IPanelService *panelService_;
 
     // State tracking
     ButtonState buttonState_;

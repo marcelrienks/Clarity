@@ -75,6 +75,10 @@ class PanelManager : public IPanelService
     /// @param state Current UI processing state
     void SetUiState(UIState state) override;
 
+    /// @brief Get the current UI state
+    /// @return Current UI processing state
+    UIState GetUIState() const override;
+
     /// @brief Create and load a panel by name with optional completion callback
     /// @param panelName Name of the panel to create and load
     /// @param completionCallback Optional callback function to execute when loading is complete

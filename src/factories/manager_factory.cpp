@@ -189,7 +189,7 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
         return nullptr;
     }
 
-    auto manager = std::make_unique<ActionManager>(actionButtonSensor);
+    auto manager = std::make_unique<ActionManager>(actionButtonSensor, panelService);
     if (!manager)
     {
         log_e("ManagerFactory: Failed to create ActionManager - allocation failed");

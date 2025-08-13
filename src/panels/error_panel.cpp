@@ -216,11 +216,6 @@ Action ErrorPanel::GetLongPressAction()
         });
 }
 
-bool ErrorPanel::CanProcessInput() const
-{
-    // ErrorPanel can always process input (no animations that block input)
-    return true;
-}
 
 // Manager injection method
 void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)

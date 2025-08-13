@@ -57,6 +57,12 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     log_i("Loading splash panel with fade-in animation");
 
     callbackFunction_ = callbackFunction;
+    
+    // Set UIState to LOADING during splash animation to prevent action processing
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::LOADING);
+    }
 
     // Create component directly using UIFactory
     component_ = UIFactory::createClarityComponent(styleService_);
@@ -87,6 +93,13 @@ void SplashPanel::fading_out_timer_callback(lv_timer_t *animationTimer)
 
     // Get the splash panel instance
     auto *thisInstance = static_cast<SplashPanel *>(lv_timer_get_user_data(animationTimer));
+    
+    // Reset UIState to IDLE when splash animation completes
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+    }
+    
     thisInstance->callbackFunction_();
 
     // Delete the animation_timer
@@ -166,11 +179,6 @@ Action SplashPanel::GetLongPressAction()
     return Action(nullptr);
 }
 
-bool SplashPanel::CanProcessInput() const
-{
-    // SplashPanel never processes input directly - always queue for after animation
-    return false;
-}
 
 // Manager injection method
 void SplashPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)

@@ -365,11 +365,6 @@ void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
     }
 }
 
-bool OemOilPanel::CanProcessInput() const
-{
-    // OemOilPanel can always process input (no animations that block input)
-    return true;
-}
 
 // Static Callback Methods
 

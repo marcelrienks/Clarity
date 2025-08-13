@@ -34,10 +34,4 @@ class IActionService
      */
     virtual Action GetLongPressAction() = 0;
 
-    /**
-     * @brief Check if the panel can currently process input events
-     * @details Used by ActionManager to determine if inputs should be queued
-     * @return true if the panel can process inputs immediately, false to queue
-     */
-    virtual bool CanProcessInput() const = 0;
 };

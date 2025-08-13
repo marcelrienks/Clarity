@@ -138,12 +138,6 @@ Action ConfigPanel::GetLongPressAction()
     return Action([this]() { ExecuteCurrentOption(); });
 }
 
-bool ConfigPanel::CanProcessInput() const
-{
-    // ConfigPanel can always process input (no animations that block input)
-    return true;
-}
-
 // Manager injection method
 void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {

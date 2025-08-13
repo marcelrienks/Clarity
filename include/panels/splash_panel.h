@@ -58,7 +58,6 @@ class SplashPanel : public IPanel, public IActionService
     // IActionService Interface Implementation - Action-based (no animation interruption)
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
-    bool CanProcessInput() const override;
 
     // IPanel override to provide input service
     IActionService *GetInputService() override

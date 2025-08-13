@@ -298,6 +298,12 @@ void PanelManager::SetUiState(UIState state)
     uiState_ = state;
 }
 
+/// @brief Get the current UI state
+UIState PanelManager::GetUIState() const
+{
+    return uiState_;
+}
+
 /// @brief Get the current panel name
 const char *PanelManager::GetCurrentPanel() const
 {

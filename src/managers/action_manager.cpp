@@ -13,8 +13,8 @@
     #define log_e(...)
 #endif
 
-ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor)
-    : buttonSensor_(buttonSensor), currentService_(nullptr), buttonState_(ButtonState::IDLE), pressStartTime_(0),
+ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, IPanelService *panelService)
+    : buttonSensor_(buttonSensor), currentService_(nullptr), panelService_(panelService), buttonState_(ButtonState::IDLE), pressStartTime_(0),
       debounceStartTime_(0), lastButtonState_(false), initialized_(false), pendingAction_(nullptr),
       pendingActionTimestamp_(0)
 {
@@ -118,8 +118,8 @@ void ActionManager::ProcessInputEvents()
                     Action action = currentService_->GetLongPressAction();
                     if (action.IsValid())
                     {
-                        // Check if panel can process action immediately
-                        if (currentService_->CanProcessInput())
+                        // Check if actions can be executed based on UIState
+                        if (CanExecuteActions())
                         {
                             log_d("Executing long press action immediately");
                             action.execute();
@@ -203,8 +203,8 @@ void ActionManager::HandleButtonRelease()
                 Action action = currentService_->GetShortPressAction();
                 if (action.IsValid())
                 {
-                    // Check if panel can process action immediately
-                    if (currentService_->CanProcessInput())
+                    // Check if actions can be executed based on UIState
+                    if (CanExecuteActions())
                     {
                         log_d("Executing short press action immediately");
                         action.execute();
@@ -229,7 +229,7 @@ void ActionManager::HandleButtonRelease()
                 Action action = currentService_->GetLongPressAction();
                 if (action.IsValid())
                 {
-                    if (currentService_->CanProcessInput())
+                    if (CanExecuteActions())
                     {
                         log_d("Executing long press action on release");
                         action.execute();
@@ -351,8 +351,8 @@ void ActionManager::ProcessPendingActions()
         return;
     }
 
-    // Check if current service can now process the action
-    if (currentService_ && currentService_->CanProcessInput())
+    // Check if actions can now be executed based on UIState
+    if (currentService_ && CanExecuteActions())
     {
         log_d("Executing queued action");
 
@@ -362,4 +362,20 @@ void ActionManager::ProcessPendingActions()
         pendingAction_ = Action(nullptr);
         pendingActionTimestamp_ = 0;
     }
+}
+
+// Helper method to check if actions can be executed based on UIState
+bool ActionManager::CanExecuteActions() const
+{
+    if (!panelService_)
+    {
+        log_w("PanelService not available, defaulting to allow actions");
+        return true; // Fallback to allow actions if panel service is not available
+    }
+    
+    UIState currentState = panelService_->GetUIState();
+    
+    // Actions can only be executed when UI is IDLE
+    // UPDATING/LOADING/LVGL_BUSY should queue actions for later processing
+    return currentState == UIState::IDLE;
 }

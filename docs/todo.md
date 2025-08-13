@@ -1,4 +1,3 @@
-* review the CanProcessInput() function, does it always return true?
 * Ensure all functions, classes have proper comments
 * Document current arch, and relationships
 * What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?

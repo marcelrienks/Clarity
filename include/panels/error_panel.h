@@ -56,7 +56,6 @@ class ErrorPanel : public IPanel, public IActionService
     // IActionService Interface Implementation
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
-    bool CanProcessInput() const override;
 
     // IPanel override to provide input service
     IActionService *GetInputService() override
