@@ -57,10 +57,19 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     currentMenuIndex_ = 0;
     currentMenuState_ = MenuState::MainMenu;
 
+    // Apply current theme from preferences to config panel
+    if (styleService_ && preferenceService_)
+    {
+        const Configs &config = preferenceService_->GetConfig();
+        styleService_->SetTheme(config.theme.c_str());
+        styleService_->ApplyThemeToScreen(screen_);
+    }
+
     // Initialize the config component with the screen
     if (configComponent_ && screen_)
     {
         configComponent_->Init(screen_);
+        configComponent_->SetStyleService(styleService_);
 
         // Set initial menu items
         UpdateMenuItemsWithCurrentValues();
@@ -281,6 +290,7 @@ void ConfigPanel::UpdateSubmenuItems()
                                if (styleService_)
                                {
                                    styleService_->SetTheme(cfg.theme.c_str());
+                                   styleService_->ApplyThemeToScreen(screen_);
                                }
                                ExitSubmenu();
                            }},
@@ -294,6 +304,7 @@ void ConfigPanel::UpdateSubmenuItems()
                                if (styleService_)
                                {
                                    styleService_->SetTheme(cfg.theme.c_str());
+                                   styleService_->ApplyThemeToScreen(screen_);
                                }
                                ExitSubmenu();
                            }},

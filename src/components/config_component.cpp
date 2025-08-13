@@ -84,7 +84,62 @@ void ConfigComponent::SetHintText(const std::string &hint)
     }
 }
 
+void ConfigComponent::SetStyleService(IStyleService* styleService)
+{
+    styleService_ = styleService;
+}
+
 // Private methods
+
+lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool isSelected) const
+{
+    if (!styleService_) 
+    {
+        // Fallback to default colors if no style service
+        return isSelected ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x888888);
+    }
+
+    const ThemeColors& colors = styleService_->GetThemeColors();
+    const char* theme = styleService_->GetCurrentTheme();
+    
+    if (isSelected)
+    {
+        return lv_color_hex(0xFFFFFF); // Selected is always white
+    }
+    
+    // Create gradient based on theme
+    if (strcmp(theme, "Night") == 0)
+    {
+        // Night theme - shades of red based on distance
+        uint32_t baseColor = 0xB00020; // Deep red from night theme
+        uint8_t red = (baseColor >> 16) & 0xFF;
+        uint8_t green = (baseColor >> 8) & 0xFF;
+        uint8_t blue = baseColor & 0xFF;
+        
+        // Reduce intensity based on distance (further = darker)
+        float intensity = 1.0f - (distanceFromCenter * 0.3f);
+        if (intensity < 0.2f) intensity = 0.2f; // Minimum visibility
+        
+        red = (uint8_t)(red * intensity);
+        green = (uint8_t)(green * intensity);
+        blue = (uint8_t)(blue * intensity);
+        
+        return lv_color_hex((red << 16) | (green << 8) | blue);
+    }
+    else
+    {
+        // Day theme - shades of gray based on distance  
+        uint32_t baseColor = 0xEEEEEE; // Light gray from day theme
+        uint8_t gray = (baseColor >> 16) & 0xFF;
+        
+        // Reduce intensity based on distance (further = darker)
+        float intensity = 1.0f - (distanceFromCenter * 0.3f);
+        if (intensity < 0.2f) intensity = 0.2f; // Minimum visibility
+        
+        gray = (uint8_t)(gray * intensity);
+        return lv_color_hex((gray << 16) | (gray << 8) | gray);
+    }
+}
 
 void ConfigComponent::CreateUI()
 {
@@ -155,7 +210,7 @@ void ConfigComponent::UpdateMenuDisplay()
             if (i == CENTER_INDEX)
             {
                 // Center item - fully highlighted with bold styling
-                lv_obj_set_style_text_color(menuLabels_[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN);
+                lv_obj_set_style_text_color(menuLabels_[i], GetThemeGradientColor(0, true), LV_PART_MAIN);
                 lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_20, LV_PART_MAIN); // Larger font for selected
                 lv_obj_set_style_text_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
 
@@ -171,10 +226,9 @@ void ConfigComponent::UpdateMenuDisplay()
             {
                 // Apply progressive fading and font size reduction based on distance
                 uint8_t opacity = LV_OPA_100 - (distanceFromCenter * 45); // Increased fade by 45% per step (was 30%)
-                uint8_t colorValue = 0xCC - (distanceFromCenter * 0x44);  // More color fade from 0xCC to 0x44 (was 0x33)
 
-                lv_obj_set_style_text_color(
-                    menuLabels_[i], lv_color_hex(colorValue << 16 | colorValue << 8 | colorValue), LV_PART_MAIN);
+                // Use theme-appropriate gradient colors
+                lv_obj_set_style_text_color(menuLabels_[i], GetThemeGradientColor(distanceFromCenter), LV_PART_MAIN);
                 
                 // Progressive font size reduction - more dramatic stepping
                 const lv_font_t* font;

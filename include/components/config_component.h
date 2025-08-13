@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_component.h"
+#include "interfaces/i_style_service.h"
 #include "utilities/types.h"
 #include <functional>
 #include <string>
@@ -52,6 +53,9 @@ class ConfigComponent : public IComponent
 
     // ConfigComponent specific initialization
     void Init(lv_obj_t *screen);
+    
+    // Set style service for theme-aware colors
+    void SetStyleService(IStyleService* styleService);
 
     // Configuration menu specific methods
     void SetTitle(const std::string &title);
@@ -73,6 +77,9 @@ class ConfigComponent : public IComponent
     // UI creation methods
     void CreateUI();
     void UpdateMenuDisplay();
+    
+    // Theme-aware color helpers
+    lv_color_t GetThemeGradientColor(int distanceFromCenter, bool isSelected = false) const;
 
     // LVGL objects
     lv_obj_t *screen_ = nullptr;
@@ -86,6 +93,9 @@ class ConfigComponent : public IComponent
     std::vector<MenuItem> menuItems_;
     size_t currentIndex_ = 0;
     std::string currentTitle_ = "Configuration";
+    
+    // Style service for theme-aware colors
+    IStyleService* styleService_ = nullptr;
 
     // Constants
     static constexpr int VISIBLE_ITEMS = 5;

@@ -1,3 +1,7 @@
+* Config
+    * Fix tooltip
+    On first setting it's over 2 liines (which does not look good) and on second settings it's on one line again. Also ensure that this tooltop and the config tooltip are the same size
+    * Theme is not being applied 
 * review the intended use of the lib folder and check if there is any source that matches the use case, like ticker.cpp
 * I don't like the idea of the factory registration, can this not be absored by the relevant factories?
 * Document current arch, and relationships
