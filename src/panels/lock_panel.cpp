@@ -1,5 +1,5 @@
 #include "panels/lock_panel.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
 #include <variant>
@@ -57,7 +57,7 @@ void LockPanel::Load(std::function<void()> callbackFunction)
     callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
-    lockComponent_ = UIFactory::createLockComponent(styleService_);
+    lockComponent_ = ComponentFactory::CreateComponent("Lock", styleService_);
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->Render(screen_, centerLocation_, displayProvider_);

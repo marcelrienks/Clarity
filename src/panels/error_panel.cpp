@@ -1,6 +1,6 @@
 #include "panels/error_panel.h"
 #include "components/error_component.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include <Arduino.h>
@@ -71,7 +71,7 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
-    errorComponent_ = UIFactory::createErrorComponent(styleService_);
+    errorComponent_ = ComponentFactory::CreateComponent("Error", styleService_);
 
     // Render the component
     if (!displayProvider_)

@@ -1,3 +1,4 @@
+* I don't like the idea of the factory registration, can this not be absored by the relevant factories?
 * Document current arch, and relationships
 * What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?
 * should there be a panel factory?

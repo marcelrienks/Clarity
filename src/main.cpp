@@ -1,6 +1,7 @@
 #include "main.h"
 #include "factories/manager_factory.h"
 #include "factories/provider_factory.h"
+#include "factories/factory_registration.h"
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
@@ -29,6 +30,9 @@ ErrorManager *errorManager;
 bool initializeServices()
 {
     log_i("Starting Clarity service initialization...");
+
+    // Initialize UI factories for panel and component creation
+    InitializeFactories();
 
     // Create providers - factories handle all error checking and logging
     deviceProvider = ProviderFactory::createDeviceProvider();

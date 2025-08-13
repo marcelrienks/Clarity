@@ -1,5 +1,5 @@
 #include "panels/oem_oil_panel.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "managers/panel_manager.h"
@@ -104,8 +104,8 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     if (styleService_ && styleService_->IsInitialized())
     {
         // Creating pressure and temperature components
-        oemOilPressureComponent_ = UIFactory::createOemOilPressureComponent(styleService_);
-        oemOilTemperatureComponent_ = UIFactory::createOemOilTemperatureComponent(styleService_);
+        oemOilPressureComponent_ = ComponentFactory::CreateComponent("OilPressure", styleService_);
+        oemOilTemperatureComponent_ = ComponentFactory::CreateComponent("OilTemperature", styleService_);
     }
     else
     {

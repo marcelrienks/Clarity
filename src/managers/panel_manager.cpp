@@ -6,6 +6,7 @@
 #include "panels/oem_oil_panel.h"
 #include "panels/splash_panel.h"
 #include "utilities/ticker.h"
+#include "factories/panel_factory.h"
 #include <cstring>
 #include <esp32-hal-log.h>
 
@@ -24,7 +25,9 @@ void PanelManager::Init()
     Ticker::handleLvTasks();
 }
 
-/// @brief Register all available panel types (deprecated - handled by factory)\n/// @details This method is now a no-op as panel registration is handled by UIFactory\nvoid PanelManager::RegisterAllPanels()
+/// @brief Register all available panel types (deprecated - handled by factory)
+/// @details This method is now a no-op as panel registration is handled by PanelFactory
+void PanelManager::RegisterAllPanels()
 {
     log_d("Registering all panels...");
 
@@ -77,38 +80,15 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_d("Creating panel instance for type: %s", panelName);
 
-    // Use UIFactory for direct panel creation
-    std::unique_ptr<IPanel> uniquePanel;
-
-    if (strcmp(panelName, PanelNames::KEY) == 0)
+    // Use PanelFactory for panel creation
+    std::unique_ptr<IPanel> uniquePanel = PanelFactory::CreatePanel(
+        panelName, gpioProvider_, displayProvider_, styleService_);
+    
+    if (!uniquePanel)
     {
-        uniquePanel = UIFactory::createKeyPanel(gpioProvider_, displayProvider_, styleService_);
-    }
-    else if (strcmp(panelName, PanelNames::LOCK) == 0)
-    {
-        uniquePanel = UIFactory::createLockPanel(gpioProvider_, displayProvider_, styleService_);
-    }
-    else if (strcmp(panelName, PanelNames::SPLASH) == 0)
-    {
-        uniquePanel = UIFactory::createSplashPanel(gpioProvider_, displayProvider_, styleService_);
-    }
-    else if (strcmp(panelName, PanelNames::OIL) == 0)
-    {
-        uniquePanel = UIFactory::createOemOilPanel(gpioProvider_, displayProvider_, styleService_);
-    }
-    else if (strcmp(panelName, PanelNames::ERROR) == 0)
-    {
-        uniquePanel = UIFactory::createErrorPanel(gpioProvider_, displayProvider_, styleService_);
-    }
-    else if (strcmp(panelName, PanelNames::CONFIG) == 0)
-    {
-        uniquePanel = UIFactory::createConfigPanel(gpioProvider_, displayProvider_, styleService_);
-    }
-    else
-    {
-        log_e("Unknown panel type: %s", panelName);
+        log_e("Failed to create panel: %s", panelName);
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
-                                             std::string("Unknown panel type: ") + panelName);
+                                             std::string("Failed to create panel: ") + panelName);
         return nullptr;
     }
 
@@ -316,7 +296,9 @@ const char *PanelManager::GetRestorationPanel() const
     return restorationPanel;
 }
 
-/// @brief Check if the current panel was loaded by a trigger\n/// @return true if panel was loaded by hardware trigger, false if user-driven\nbool PanelManager::IsCurrentPanelTriggerDriven() const
+/// @brief Check if the current panel was loaded by a trigger
+/// @return true if panel was loaded by hardware trigger, false if user-driven
+bool PanelManager::IsCurrentPanelTriggerDriven() const
 {
     return currentPanelIsTriggerDriven_;
 }

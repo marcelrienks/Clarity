@@ -1,5 +1,5 @@
 #include "panels/splash_panel.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
@@ -65,7 +65,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     }
 
     // Create component directly using UIFactory
-    component_ = UIFactory::createClarityComponent(styleService_);
+    component_ = ComponentFactory::CreateComponent("Clarity", styleService_);
 
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);

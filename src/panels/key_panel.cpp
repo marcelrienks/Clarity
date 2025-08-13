@@ -1,5 +1,5 @@
 #include "panels/key_panel.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
 #include <Arduino.h>
@@ -61,7 +61,7 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
     callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
-    keyComponent_ = UIFactory::createKeyComponent(styleService_);
+    keyComponent_ = ComponentFactory::CreateComponent("Key", styleService_);
 
     // Render the component
     if (!displayProvider_)
