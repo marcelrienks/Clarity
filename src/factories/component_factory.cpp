@@ -1,6 +1,12 @@
 #include "factories/component_factory.h"
-#include "managers/error_manager.h"
-#include <algorithm>
+#include "components/clarity_component.h"
+#include "components/oem/oem_oil_pressure_component.h"
+#include "components/oem/oem_oil_temperature_component.h"
+#include "components/error_component.h"
+#include "components/key_component.h"
+#include "components/lock_component.h"
+#include "components/config_component.h"
+#include "interfaces/i_style_service.h"
 
 #ifdef CLARITY_DEBUG
     #include "esp32-hal-log.h"
@@ -10,97 +16,51 @@
     #define log_e(...)
 #endif
 
-// Static member initialization
-std::unordered_map<std::string, ComponentFactory::ComponentCreator> ComponentFactory::componentCreators_;
-
-/// @brief Register a component creator with the factory
-void ComponentFactory::RegisterComponent(const std::string& name, ComponentCreator creator)
+ComponentFactory& ComponentFactory::Instance()
 {
-    if (name.empty())
-    {
-        log_e("Cannot register component with empty name");
-        return;
-    }
-    
-    if (!creator)
-    {
-        log_e("Cannot register null creator for component: %s", name.c_str());
-        return;
-    }
-    
-    componentCreators_[name] = creator;
-    log_d("Registered component type: %s", name.c_str());
+    static ComponentFactory instance;
+    return instance;
 }
 
-/// @brief Create a component by name
-std::unique_ptr<IComponent> ComponentFactory::CreateComponent(const std::string& name, 
-                                                              IStyleService* styleService)
+std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyleService* style)
 {
-    auto it = componentCreators_.find(name);
-    if (it == componentCreators_.end())
-    {
-        log_e("Component type not found: %s", name.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ComponentFactory",
-                                           "Unknown component type: " + name);
-        return nullptr;
-    }
-    
-    if (!styleService)
-    {
-        log_e("Cannot create component '%s' with null style service", name.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ComponentFactory",
-                                           "Null style service for component: " + name);
-        return nullptr;
-    }
-    
-    try
-    {
-        auto component = it->second(styleService);
-        if (!component)
-        {
-            log_e("Component creator returned null for type: %s", name.c_str());
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ComponentFactory",
-                                               "Failed to create component: " + name);
-            return nullptr;
-        }
-        
-        log_d("Successfully created component: %s", name.c_str());
-        return component;
-    }
-    catch (const std::exception& e)
-    {
-        log_e("Exception creating component '%s': %s", name.c_str(), e.what());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ComponentFactory",
-                                           "Exception creating " + name + ": " + e.what());
-        return nullptr;
-    }
+    log_d("Creating ClarityComponent");
+    return std::make_unique<ClarityComponent>(style);
 }
 
-/// @brief Check if a component type is registered
-bool ComponentFactory::IsComponentRegistered(const std::string& name)
+std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleService* style)
 {
-    return componentCreators_.find(name) != componentCreators_.end();
+    log_d("Creating OilPressureComponent");
+    return std::make_unique<OemOilPressureComponent>(style);
 }
 
-/// @brief Clear all registered component types
-void ComponentFactory::ClearRegistrations()
+std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(IStyleService* style)
 {
-    componentCreators_.clear();
-    log_d("Cleared all component registrations");
+    log_d("Creating OilTemperatureComponent");
+    return std::make_unique<OemOilTemperatureComponent>(style);
 }
 
-/// @brief Get list of all registered component types
-std::vector<std::string> ComponentFactory::GetRegisteredComponents()
+std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleService* style)
 {
-    std::vector<std::string> names;
-    names.reserve(componentCreators_.size());
-    
-    for (const auto& pair : componentCreators_)
-    {
-        names.push_back(pair.first);
-    }
-    
-    // Sort for consistent ordering
-    std::sort(names.begin(), names.end());
-    return names;
+    log_d("Creating ErrorComponent");
+    return std::make_unique<ErrorComponent>(style);
+}
+
+std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleService* style)
+{
+    log_d("Creating KeyComponent");
+    return std::make_unique<KeyComponent>(style);
+}
+
+std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleService* style)
+{
+    log_d("Creating LockComponent");
+    return std::make_unique<LockComponent>(style);
+}
+
+std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleService* style)
+{
+    log_d("Creating ConfigComponent");
+    // ConfigComponent doesn't use style service in constructor
+    return std::make_unique<ConfigComponent>();
 }

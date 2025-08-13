@@ -1,12 +1,15 @@
 #include "panels/lock_panel.h"
 #include "factories/component_factory.h"
+#include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
 #include <variant>
 
 // Constructors and Destructors
-LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                     IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       lockSensor_(std::make_shared<LockSensor>(gpio))
 {
     // Component will be created during load() method
@@ -56,8 +59,8 @@ void LockPanel::Load(std::function<void()> callbackFunction)
     // Loading lock panel with current lock state display
     callbackFunction_ = callbackFunction;
 
-    // Create component directly using UIFactory
-    lockComponent_ = ComponentFactory::CreateComponent("Lock", styleService_);
+    // Create component using injected factory
+    lockComponent_ = componentFactory_->CreateLockComponent(styleService_);
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->Render(screen_, centerLocation_, displayProvider_);

@@ -11,6 +11,9 @@
 #include "interfaces/i_style_service.h"
 #include <memory>
 
+// Forward declarations
+class IComponentFactory;
+
 /**
  * @class SplashPanel
  * @brief Startup splash screen with animated Clarity branding
@@ -40,7 +43,8 @@ class SplashPanel : public IPanel, public IActionService
 {
   public:
     // Constructors and Destructors
-    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                IComponentFactory* componentFactory = nullptr);
     ~SplashPanel();
 
     // Core Functionality Methods
@@ -83,6 +87,7 @@ class SplashPanel : public IPanel, public IActionService
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
+    IComponentFactory *componentFactory_;
 
     // Components
     // screen_ is inherited from IPanel base class

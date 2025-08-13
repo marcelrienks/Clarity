@@ -1,13 +1,16 @@
 #include "panels/error_panel.h"
 #include "components/error_component.h"
 #include "factories/component_factory.h"
+#include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
-ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                       IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       panelLoaded_(false), previousTheme_(nullptr)
 {
 }
@@ -70,8 +73,8 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     // Store callback for later use
     callbackFunction_ = callbackFunction;
 
-    // Create component directly using UIFactory
-    errorComponent_ = ComponentFactory::CreateComponent("Error", styleService_);
+    // Create component using injected factory
+    errorComponent_ = componentFactory_->CreateErrorComponent(styleService_);
 
     // Render the component
     if (!displayProvider_)

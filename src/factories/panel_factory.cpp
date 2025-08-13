@@ -1,6 +1,13 @@
 #include "factories/panel_factory.h"
-#include "managers/error_manager.h"
-#include <algorithm>
+#include "panels/splash_panel.h"
+#include "panels/oem_oil_panel.h"
+#include "panels/error_panel.h"
+#include "panels/config_panel.h"
+#include "panels/key_panel.h"
+#include "panels/lock_panel.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_style_service.h"
 
 #ifdef CLARITY_DEBUG
     #include "esp32-hal-log.h"
@@ -10,116 +17,44 @@
     #define log_e(...)
 #endif
 
-// Static member initialization
-std::unordered_map<std::string, PanelFactory::PanelCreator> PanelFactory::panelCreators_;
-
-/// @brief Register a panel creator with the factory
-void PanelFactory::RegisterPanel(const std::string& name, PanelCreator creator)
+PanelFactory& PanelFactory::Instance()
 {
-    if (name.empty())
-    {
-        log_e("Cannot register panel with empty name");
-        return;
-    }
-    
-    if (!creator)
-    {
-        log_e("Cannot register null creator for panel: %s", name.c_str());
-        return;
-    }
-    
-    panelCreators_[name] = creator;
-    log_d("Registered panel type: %s", name.c_str());
+    static PanelFactory instance;
+    return instance;
 }
 
-/// @brief Create a panel by name
-std::unique_ptr<IPanel> PanelFactory::CreatePanel(const std::string& name,
-                                                   IGpioProvider* gpioProvider,
-                                                   IDisplayProvider* displayProvider,
-                                                   IStyleService* styleService)
+std::unique_ptr<IPanel> PanelFactory::CreateSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style)
 {
-    auto it = panelCreators_.find(name);
-    if (it == panelCreators_.end())
-    {
-        log_e("Panel type not found: %s", name.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelFactory",
-                                           "Unknown panel type: " + name);
-        return nullptr;
-    }
-    
-    // Validate required dependencies
-    if (!gpioProvider)
-    {
-        log_e("Cannot create panel '%s' with null GPIO provider", name.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelFactory",
-                                           "Null GPIO provider for panel: " + name);
-        return nullptr;
-    }
-    
-    if (!displayProvider)
-    {
-        log_e("Cannot create panel '%s' with null display provider", name.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelFactory",
-                                           "Null display provider for panel: " + name);
-        return nullptr;
-    }
-    
-    if (!styleService)
-    {
-        log_e("Cannot create panel '%s' with null style service", name.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelFactory",
-                                           "Null style service for panel: " + name);
-        return nullptr;
-    }
-    
-    try
-    {
-        auto panel = it->second(gpioProvider, displayProvider, styleService);
-        if (!panel)
-        {
-            log_e("Panel creator returned null for type: %s", name.c_str());
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelFactory",
-                                               "Failed to create panel: " + name);
-            return nullptr;
-        }
-        
-        log_d("Successfully created panel: %s", name.c_str());
-        return panel;
-    }
-    catch (const std::exception& e)
-    {
-        log_e("Exception creating panel '%s': %s", name.c_str(), e.what());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelFactory",
-                                           "Exception creating " + name + ": " + e.what());
-        return nullptr;
-    }
+    log_d("Creating SplashPanel");
+    return std::make_unique<SplashPanel>(gpio, display, style);
 }
 
-/// @brief Check if a panel type is registered
-bool PanelFactory::IsPanelRegistered(const std::string& name)
+std::unique_ptr<IPanel> PanelFactory::CreateOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style)
 {
-    return panelCreators_.find(name) != panelCreators_.end();
+    log_d("Creating OemOilPanel");
+    return std::make_unique<OemOilPanel>(gpio, display, style);
 }
 
-/// @brief Clear all registered panel types
-void PanelFactory::ClearRegistrations()
+std::unique_ptr<IPanel> PanelFactory::CreateErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style)
 {
-    panelCreators_.clear();
-    log_d("Cleared all panel registrations");
+    log_d("Creating ErrorPanel");
+    return std::make_unique<ErrorPanel>(gpio, display, style);
 }
 
-/// @brief Get list of all registered panel types
-std::vector<std::string> PanelFactory::GetRegisteredPanels()
+std::unique_ptr<IPanel> PanelFactory::CreateConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style)
 {
-    std::vector<std::string> names;
-    names.reserve(panelCreators_.size());
-    
-    for (const auto& pair : panelCreators_)
-    {
-        names.push_back(pair.first);
-    }
-    
-    // Sort for consistent ordering
-    std::sort(names.begin(), names.end());
-    return names;
+    log_d("Creating ConfigPanel");
+    return std::make_unique<ConfigPanel>(gpio, display, style);
+}
+
+std::unique_ptr<IPanel> PanelFactory::CreateKeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style)
+{
+    log_d("Creating KeyPanel");
+    return std::make_unique<KeyPanel>(gpio, display, style);
+}
+
+std::unique_ptr<IPanel> PanelFactory::CreateLockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style)
+{
+    log_d("Creating LockPanel");
+    return std::make_unique<LockPanel>(gpio, display, style);
 }

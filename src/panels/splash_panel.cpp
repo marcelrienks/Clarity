@@ -1,5 +1,6 @@
 #include "panels/splash_panel.h"
 #include "factories/component_factory.h"
+#include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
@@ -8,8 +9,10 @@
 
 // Constructors and Destructors
 
-SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr)
+SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                         IComponentFactory* componentFactory)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
     // Component will be created during load() method
 }
@@ -64,8 +67,8 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
         panelService_->SetUiState(UIState::LOADING);
     }
 
-    // Create component directly using UIFactory
-    component_ = ComponentFactory::CreateComponent("Clarity", styleService_);
+    // Create component using injected factory
+    component_ = componentFactory_->CreateClarityComponent(styleService_);
 
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);

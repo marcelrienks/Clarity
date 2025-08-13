@@ -1,5 +1,7 @@
 #include "managers/panel_manager.h"
 #include "interfaces/i_action_service.h"
+#include "interfaces/i_panel_factory.h"
+#include "interfaces/i_component_factory.h"
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "panels/config_panel.h"
@@ -7,6 +9,8 @@
 #include "panels/splash_panel.h"
 #include "utilities/ticker.h"
 #include "factories/panel_factory.h"
+#include "factories/component_factory.h"
+#include "utilities/constants.h"
 #include <cstring>
 #include <esp32-hal-log.h>
 
@@ -40,9 +44,11 @@ void PanelManager::RegisterAllPanels()
 // Constructors and Destructors
 
 PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IActionManager *actionManager, IPreferenceService *preferenceService)
+                           IActionManager *actionManager, IPreferenceService *preferenceService,
+                           IPanelFactory* panelFactory, IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), actionManager_(actionManager),
-      preferenceService_(preferenceService)
+      preferenceService_(preferenceService), panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
     if (!display || !gpio || !styleService || !actionManager || !preferenceService)
     {
@@ -80,9 +86,22 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_d("Creating panel instance for type: %s", panelName);
 
-    // Use PanelFactory for panel creation
-    std::unique_ptr<IPanel> uniquePanel = PanelFactory::CreatePanel(
-        panelName, gpioProvider_, displayProvider_, styleService_);
+    // Use injected factory for panel creation
+    std::unique_ptr<IPanel> uniquePanel;
+    
+    if (strcmp(panelName, PanelNames::SPLASH) == 0) {
+        uniquePanel = panelFactory_->CreateSplashPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::OIL) == 0) {
+        uniquePanel = panelFactory_->CreateOemOilPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
+        uniquePanel = panelFactory_->CreateErrorPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::CONFIG) == 0) {
+        uniquePanel = panelFactory_->CreateConfigPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::KEY) == 0) {
+        uniquePanel = panelFactory_->CreateKeyPanel(gpioProvider_, displayProvider_, styleService_);
+    } else if (strcmp(panelName, PanelNames::LOCK) == 0) {
+        uniquePanel = panelFactory_->CreateLockPanel(gpioProvider_, displayProvider_, styleService_);
+    }
     
     if (!uniquePanel)
     {

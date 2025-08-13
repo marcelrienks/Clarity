@@ -17,6 +17,7 @@
 
 // Forward declarations
 // (Using interfaces instead of concrete classes)
+class IComponentFactory;
 
 /**
  * @class OemOilPanel
@@ -52,7 +53,8 @@ class OemOilPanel : public IPanel, public IActionService
 {
   public:
     // Constructors and Destructors
-    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                IComponentFactory* componentFactory = nullptr);
     ~OemOilPanel();
 
     // Core Functionality Methods
@@ -109,6 +111,7 @@ class OemOilPanel : public IPanel, public IActionService
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
+    IComponentFactory *componentFactory_;
 
     // Instance Data Members - UI Objects
     // screen_ is inherited from IPanel base class

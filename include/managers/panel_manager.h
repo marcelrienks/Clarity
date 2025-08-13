@@ -54,13 +54,16 @@
 
 // Forward declarations
 class StyleManager;
+class IPanelFactory;
+class IComponentFactory;
 
 class PanelManager : public IPanelService
 {
   public:
     // Constructors and Destructors
     PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                 IActionManager *actionManager, IPreferenceService *preferenceService);
+                 IActionManager *actionManager, IPreferenceService *preferenceService,
+                 IPanelFactory* panelFactory = nullptr, IComponentFactory* componentFactory = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -155,6 +158,6 @@ class PanelManager : public IPanelService
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
     IActionManager *actionManager_ = nullptr;         ///< Action manager interface for button handling
     IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
-    // Removed IPanelFactory - using UIFactory directly
-    // Removed queue handles - now using shared state trigger system
+    IPanelFactory *panelFactory_ = nullptr;           ///< Panel factory for creating panels
+    IComponentFactory *componentFactory_ = nullptr;   ///< Component factory for dependency injection
 };

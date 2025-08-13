@@ -10,6 +10,9 @@
 #include "managers/error_manager.h"
 #include "utilities/types.h"
 
+// Forward declarations
+class IComponentFactory;
+
 /**
  * @class ErrorPanel
  * @brief Application error display and management panel
@@ -41,7 +44,8 @@ class ErrorPanel : public IPanel, public IActionService
 {
   public:
     // Constructors and Destructors
-    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+               IComponentFactory* componentFactory = nullptr);
     ~ErrorPanel();
 
     // Core Functionality Methods
@@ -72,6 +76,7 @@ class ErrorPanel : public IPanel, public IActionService
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
+    IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> errorComponent_; // Error component
     ComponentLocation centerLocation_;               // Component positioning

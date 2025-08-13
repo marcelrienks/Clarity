@@ -8,6 +8,9 @@
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
 
+// Forward declarations
+class IComponentFactory;
+
 /**
  * @class LockPanel
  * @brief Lock status monitoring panel
@@ -35,7 +38,8 @@ class LockPanel : public IPanel
 {
   public:
     // Constructors and Destructors
-    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+              IComponentFactory* componentFactory = nullptr);
     ~LockPanel();
 
     // Core Functionality Methods
@@ -55,6 +59,7 @@ class LockPanel : public IPanel
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
+    IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> lockComponent_;
     std::shared_ptr<LockSensor> lockSensor_;

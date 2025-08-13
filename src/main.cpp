@@ -1,7 +1,5 @@
 #include "main.h"
 #include "factories/manager_factory.h"
-#include "factories/provider_factory.h"
-#include "factories/factory_registration.h"
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
@@ -31,13 +29,44 @@ bool initializeServices()
 {
     log_i("Starting Clarity service initialization...");
 
-    // Initialize UI factories for panel and component creation
-    InitializeFactories();
+    // Create providers directly
+    log_d("Creating DeviceProvider...");
+    deviceProvider = std::make_unique<DeviceProvider>();
+    if (!deviceProvider) {
+        log_e("Failed to create DeviceProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider allocation failed");
+        return false;
+    }
+    deviceProvider->prepare();
+    if (!deviceProvider->screen) {
+        log_e("DeviceProvider screen initialization failed");
+        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider screen initialization failed");
+        return false;
+    }
+    log_d("DeviceProvider created successfully");
 
-    // Create providers - factories handle all error checking and logging
-    deviceProvider = ProviderFactory::createDeviceProvider();
-    gpioProvider = ProviderFactory::createGpioProvider();
-    displayProvider = ProviderFactory::createLvglDisplayProvider(deviceProvider.get());
+    log_d("Creating GpioProvider...");
+    gpioProvider = std::make_unique<GpioProvider>();
+    if (!gpioProvider) {
+        log_e("Failed to create GpioProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "GpioProvider allocation failed");
+        return false;
+    }
+    log_d("GpioProvider created successfully");
+
+    log_d("Creating LvglDisplayProvider...");
+    if (!deviceProvider->screen) {
+        log_e("Cannot create LvglDisplayProvider - DeviceProvider screen is null");
+        ErrorManager::Instance().ReportCriticalError("main", "Cannot create LvglDisplayProvider - screen is null");
+        return false;
+    }
+    displayProvider = std::make_unique<LvglDisplayProvider>(deviceProvider->screen);
+    if (!displayProvider) {
+        log_e("Failed to create LvglDisplayProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "LvglDisplayProvider allocation failed");
+        return false;
+    }
+    log_d("LvglDisplayProvider created successfully");
 
     // Create managers - factories handle all error checking and logging
     preferenceManager = ManagerFactory::createPreferenceManager();

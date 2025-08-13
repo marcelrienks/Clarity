@@ -8,6 +8,9 @@
 #include "sensors/key_sensor.h"
 #include "utilities/types.h"
 
+// Forward declarations
+class IComponentFactory;
+
 /**
  * @class KeyPanel
  * @brief Key status monitoring panel
@@ -35,7 +38,8 @@ class KeyPanel : public IPanel
 {
   public:
     // Constructors and Destructors
-    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+             IComponentFactory* componentFactory = nullptr);
     ~KeyPanel();
 
     // Core Functionality Methods
@@ -55,6 +59,7 @@ class KeyPanel : public IPanel
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
+    IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> keyComponent_;
     std::shared_ptr<KeySensor> keySensor_;
