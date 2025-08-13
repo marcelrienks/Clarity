@@ -87,7 +87,7 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
     if (!currentErrors_.empty() && currentErrorIndex_ < currentErrors_.size())
     {
         ErrorLevel currentLevel = currentErrors_[currentErrorIndex_].level;
-        lv_color_t borderColor = GetErrorColor(currentLevel);
+        lv_color_t borderColor = StyleUtils::GetErrorColor(currentLevel);
         lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
     }
 }
@@ -167,7 +167,7 @@ void ErrorComponent::DisplayCurrentError()
     // Update error level with color
     const char *levelText = GetErrorLevelText(currentError.level);
     lv_label_set_text(errorLevelLabel_, levelText);
-    lv_obj_set_style_text_color(errorLevelLabel_, GetErrorColor(currentError.level), 0);
+    lv_obj_set_style_text_color(errorLevelLabel_, StyleUtils::GetErrorColor(currentError.level), 0);
 
     // Update source
     lv_label_set_text(errorSourceLabel_, currentError.source);
@@ -217,7 +217,7 @@ void ErrorComponent::CycleToNextError()
     DisplayCurrentError();
 
     // Update border color for new current error
-    lv_color_t borderColor = GetErrorColor(currentErrors_[currentErrorIndex_].level);
+    lv_color_t borderColor = StyleUtils::GetErrorColor(currentErrors_[currentErrorIndex_].level);
     lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
 }
 
@@ -228,21 +228,6 @@ void ErrorComponent::HandleCycleButtonPress()
 }
 
 // Helper Methods
-lv_color_t ErrorComponent::GetErrorColor(ErrorLevel level)
-{
-    switch (level)
-    {
-        case ErrorLevel::CRITICAL:
-            return lv_color_hex(0xFF0000); // Red
-        case ErrorLevel::ERROR:
-            return lv_color_hex(0xFFFF00); // Yellow
-        case ErrorLevel::WARNING:
-            return lv_color_hex(0xFFFFFF); // White
-        default:
-            return lv_color_hex(0xFFFFFF); // Default to white
-    }
-}
-
 const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
 {
     switch (level)

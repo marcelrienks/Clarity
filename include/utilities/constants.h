@@ -246,18 +246,3 @@ struct UIConstants
     static constexpr const char *GAUGE_HIGH_LABEL = "H"; ///< High gauge indicator
 };
 
-// Theme color definitions
-struct ThemeColors
-{
-    lv_color_t background;    // Background color
-    lv_color_t text;          // Text color
-    lv_color_t primary;       // Primary accent color
-    lv_color_t gaugeNormal;   // Normal gauge color
-    lv_color_t gaugeWarning;  // Warning gauge color
-    lv_color_t gaugeDanger;   // Danger gauge color
-    lv_color_t gaugeTicks;    // Gauge tick marks (soft off-white)
-    lv_color_t needleNormal;  // Normal needle color (bright white)
-    lv_color_t needleDanger;  // Danger needle color (bright red/orange)
-    lv_color_t keyPresent;    // Normal key present clor (pure white)
-    lv_color_t keyNotPresent; // Normal Key not present color (bright red)
-};

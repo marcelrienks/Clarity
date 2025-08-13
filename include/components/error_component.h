@@ -3,6 +3,7 @@
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"
 #include "managers/error_manager.h"
+#include "utilities/styles.h"
 #include "utilities/types.h"
 
 #include <lvgl.h>
@@ -63,7 +64,6 @@ class ErrorComponent : public IComponent
     void CreateSingleErrorUI(lv_obj_t *parent);
     void DisplayCurrentError();
     void CreateNavigationIndicators(lv_obj_t *parent);
-    lv_color_t GetErrorColor(ErrorLevel level);
     const char *GetErrorLevelText(ErrorLevel level);
 
     // Protected Data Members

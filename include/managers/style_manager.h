@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_style_service.h"
+#include "utilities/styles.h"
 #include "utilities/types.h"
 
 #include <lvgl.h>
@@ -147,46 +148,10 @@ class StyleManager : public IStyleService
     // Core Functionality Methods
     void ResetStyles();
 
-    // Instance Data Members
-    ThemeColors dayThemeColours_ = {
-        .background = lv_color_hex(0x121212),
-        .text = lv_color_hex(0xEEEEEE),
-        .primary = lv_color_hex(0xEEEEEE),
-        .gaugeNormal = lv_color_hex(0xEEEEEE),
-        .gaugeWarning = lv_color_hex(0xFB8C00),
-        .gaugeDanger = lv_color_hex(0xB00020),
-        .gaugeTicks = lv_color_hex(0xF0F0E8),   // Soft off-white for ticks
-        .needleNormal = lv_color_hex(0xFFFFFF), // Pure white for needles
-        .needleDanger = lv_color_hex(0xDC143C), // Crimson red for danger
-        .keyPresent = lv_color_hex(0x006400),   // Deep green for key present
-        .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
-    };
-    ThemeColors nightThemeColours_ = {
-        .background = lv_color_hex(0x000000), // Solid black background
-        .text = lv_color_hex(0xB00020),
-        .primary = lv_color_hex(0xB00020),
-        .gaugeNormal = lv_color_hex(0xB00020), // Red icons in night mode
-        .gaugeWarning = lv_color_hex(0xFB8C00),
-        .gaugeDanger = lv_color_hex(0xB00020),
-        .gaugeTicks = lv_color_hex(0xB00020),   // Red tick marks for night mode
-        .needleNormal = lv_color_hex(0xFFFFFF), // Pure white for needles
-        .needleDanger = lv_color_hex(0xDC143C), // Crimson red for danger
-        .keyPresent = lv_color_hex(0x006400),   // Deep green for key present
-        .keyNotPresent = lv_color_hex(0xDC143C) // Crimson red for key not present
-    };
-    ThemeColors errorThemeColours_ = {
-        .background = lv_color_hex(0x000000),   // Black background for high contrast
-        .text = lv_color_hex(0xFFFFFF),         // White text for maximum readability
-        .primary = lv_color_hex(0xFF0000),      // Bright red for error emphasis
-        .gaugeNormal = lv_color_hex(0xFFFFFF),  // White for general elements
-        .gaugeWarning = lv_color_hex(0xFFFF00), // Yellow for warnings
-        .gaugeDanger = lv_color_hex(0xFF0000),  // Red for critical errors
-        .gaugeTicks = lv_color_hex(0xFFFFFF),   // White tick marks
-        .needleNormal = lv_color_hex(0xFFFFFF), // White needles
-        .needleDanger = lv_color_hex(0xFF0000), // Red for danger
-        .keyPresent = lv_color_hex(0xFFFFFF),   // White (not used in error panel)
-        .keyNotPresent = lv_color_hex(0xFFFFFF) // White (not used in error panel)
-    };
+    // Instance Data Members - Theme color references from styles.h
+    const ThemeColors& dayThemeColours_ = ThemeDefinitions::DAY_THEME;
+    const ThemeColors& nightThemeColours_ = ThemeDefinitions::NIGHT_THEME;
+    const ThemeColors& errorThemeColours_ = ThemeDefinitions::ERROR_THEME;
 
   private:
     bool initialized_ = false;

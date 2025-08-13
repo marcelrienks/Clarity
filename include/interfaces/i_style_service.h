@@ -4,6 +4,7 @@
 #include <lvgl.h>
 
 // Project Includes
+#include "utilities/styles.h"
 #include "utilities/types.h"
 
 /**
