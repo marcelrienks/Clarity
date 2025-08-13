@@ -9,7 +9,7 @@
 #include <vector>
 
 /**
- * @class ErrorListComponent
+ * @class ErrorComponent
  * @brief Single error display component optimized for full screen round display
  *
  * @details This component displays one error at a time using maximum screen real estate
@@ -34,12 +34,12 @@
  * @context This component displays system errors one at a time for focused attention.
  * It's designed to be used by ErrorPanel with GPIO button navigation integration.
  */
-class ErrorListComponent : public IComponent
+class ErrorComponent : public IComponent
 {
   public:
     // Constructors and Destructors
-    explicit ErrorListComponent(IStyleService *styleService);
-    virtual ~ErrorListComponent();
+    explicit ErrorComponent(IStyleService *styleService);
+    virtual ~ErrorComponent();
 
     // Core Functionality Methods
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;

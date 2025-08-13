@@ -56,7 +56,7 @@ class UIFactory
     static std::unique_ptr<IComponent> createClarityComponent(IStyleService *styleService);
     static std::unique_ptr<IComponent> createOemOilPressureComponent(IStyleService *styleService);
     static std::unique_ptr<IComponent> createOemOilTemperatureComponent(IStyleService *styleService);
-    static std::unique_ptr<IComponent> createErrorListComponent(IStyleService *styleService);
+    static std::unique_ptr<IComponent> createErrorComponent(IStyleService *styleService);
 
     // Panel creation methods
     static std::unique_ptr<IPanel> createKeyPanel(IGpioProvider *gpio, IDisplayProvider *display,

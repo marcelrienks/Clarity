@@ -1,5 +1,5 @@
 #include "panels/error_panel.h"
-#include "components/error_list_component.h"
+#include "components/error_component.h"
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
@@ -20,9 +20,9 @@ ErrorPanel::~ErrorPanel()
         lv_obj_delete(screen_);
     }
 
-    if (errorListComponent_)
+    if (errorComponent_)
     {
-        errorListComponent_.reset();
+        errorComponent_.reset();
     }
 
     // Reset error panel active flag when panel is destroyed
@@ -71,7 +71,7 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     callbackFunction_ = callbackFunction;
 
     // Create component directly using UIFactory
-    errorListComponent_ = UIFactory::createErrorListComponent(styleService_);
+    errorComponent_ = UIFactory::createErrorComponent(styleService_);
 
     // Render the component
     if (!displayProvider_)
@@ -81,11 +81,11 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
                                              "Cannot render component - display provider is null");
         return;
     }
-    errorListComponent_->Render(screen_, centerLocation_, displayProvider_);
+    errorComponent_->Render(screen_, centerLocation_, displayProvider_);
 
     // Get current errors and refresh component
     std::vector<ErrorInfo> currentErrors = ErrorManager::Instance().GetErrorQueue();
-    errorListComponent_->Refresh(Reading{}); // Component will fetch errors internally
+    errorComponent_->Refresh(Reading{}); // Component will fetch errors internally
 
     lv_obj_add_event_cb(screen_, ErrorPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -142,9 +142,9 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
     if (errorsChanged)
     {
         currentErrors_ = newErrors;
-        if (errorListComponent_)
+        if (errorComponent_)
         {
-            errorListComponent_->Refresh(Reading{}); // Component will fetch errors internally
+            errorComponent_->Refresh(Reading{}); // Component will fetch errors internally
         }
     }
 
@@ -186,15 +186,15 @@ Action ErrorPanel::GetShortPressAction()
                 return;
             }
 
-            // Use the ErrorListComponent's built-in cycling method
-            if (errorListComponent_)
+            // Use the ErrorComponent's built-in cycling method
+            if (errorComponent_)
             {
-                auto errorList = std::static_pointer_cast<ErrorListComponent>(errorListComponent_);
+                auto errorList = std::static_pointer_cast<ErrorComponent>(errorComponent_);
                 errorList->CycleToNextError();
             }
             else
             {
-                log_e("ErrorPanel: errorListComponent_ is null!");
+                log_e("ErrorPanel: errorComponent_ is null!");
                 ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
                                                      "Cannot cycle errors - errorListComponent is null");
             }

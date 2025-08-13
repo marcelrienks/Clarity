@@ -1,6 +1,6 @@
 #pragma once
 
-#include "components/error_list_component.h"
+#include "components/error_component.h"
 #include "interfaces/i_action_service.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
@@ -74,10 +74,10 @@ class ErrorPanel : public IPanel, public IActionService
     IStyleService *styleService_;
     IPanelService *panelService_;
     // screen_ is inherited from IPanel base class
-    std::shared_ptr<IComponent> errorListComponent_; // Error list component
+    std::shared_ptr<IComponent> errorComponent_; // Error component
     ComponentLocation centerLocation_;               // Component positioning
     bool panelLoaded_;                               // Track panel load state
     std::vector<ErrorInfo> currentErrors_;           // Cache of current error state
     const char *previousTheme_;                      // Store previous theme to restore on exit
-    // Note: currentErrorIndex_ removed - ErrorListComponent manages its own index
+    // Note: currentErrorIndex_ removed - ErrorComponent manages its own index
 };

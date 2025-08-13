@@ -1,6 +1,6 @@
 #include "factories/ui_factory.h"
 #include "components/clarity_component.h"
-#include "components/error_list_component.h"
+#include "components/error_component.h"
 #include "components/key_component.h"
 #include "components/lock_component.h"
 #include "components/oem/oem_oil_pressure_component.h"
@@ -37,9 +37,9 @@ std::unique_ptr<IComponent> UIFactory::createOemOilTemperatureComponent(IStyleSe
     return std::make_unique<OemOilTemperatureComponent>(styleService);
 }
 
-std::unique_ptr<IComponent> UIFactory::createErrorListComponent(IStyleService *styleService)
+std::unique_ptr<IComponent> UIFactory::createErrorComponent(IStyleService *styleService)
 {
-    return std::make_unique<ErrorListComponent>(styleService);
+    return std::make_unique<ErrorComponent>(styleService);
 }
 
 std::unique_ptr<IPanel> UIFactory::createKeyPanel(IGpioProvider *gpio, IDisplayProvider *display,

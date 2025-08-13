@@ -1,29 +1,29 @@
-#include "components/error_list_component.h"
+#include "components/error_component.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
 // Constructors and Destructors
-ErrorListComponent::ErrorListComponent(IStyleService *styleService)
+ErrorComponent::ErrorComponent(IStyleService *styleService)
     : styleService_(styleService), errorContainer_(nullptr), errorContentArea_(nullptr), errorCountLabel_(nullptr),
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
       currentErrorIndex_(0), buttonPressCount_(0)
 {
-    log_d("Creating ErrorListComponent");
+    log_d("Creating ErrorComponent");
 }
 
-ErrorListComponent::~ErrorListComponent()
+ErrorComponent::~ErrorComponent()
 {
     // LVGL objects are managed by the parent screen, no manual deletion needed
 }
 
 // Core Functionality Methods
-void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
+void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
 
     if (!display)
     {
-        log_e("ErrorListComponent requires display provider");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorListComponent",
+        log_e("ErrorComponent requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorComponent",
                                              "Cannot render - display provider is null");
         return;
     }
@@ -49,7 +49,7 @@ void ErrorListComponent::Render(lv_obj_t *screen, const ComponentLocation &locat
     UpdateErrorDisplay();
 }
 
-void ErrorListComponent::Refresh(const Reading &reading)
+void ErrorComponent::Refresh(const Reading &reading)
 {
 
     // For single error display, we'll update directly from ErrorManager rather than using Reading
@@ -58,14 +58,14 @@ void ErrorListComponent::Refresh(const Reading &reading)
 }
 
 // Error-specific methods
-void ErrorListComponent::UpdateErrorDisplay()
+void ErrorComponent::UpdateErrorDisplay()
 {
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
     UpdateErrorDisplay(newErrors);
 }
 
-void ErrorListComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
+void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
 {
 
     // Store current error state
@@ -93,7 +93,7 @@ void ErrorListComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors
 }
 
 // Internal Methods
-void ErrorListComponent::CreateSingleErrorUI(lv_obj_t *parent)
+void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
 {
 
     // Create error position indicator at top
@@ -143,7 +143,7 @@ void ErrorListComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_label_set_text(navigationIndicator_, "Loading...");
 }
 
-void ErrorListComponent::DisplayCurrentError()
+void ErrorComponent::DisplayCurrentError()
 {
     if (currentErrors_.empty())
     {
@@ -193,7 +193,7 @@ void ErrorListComponent::DisplayCurrentError()
     }
 }
 
-void ErrorListComponent::CycleToNextError()
+void ErrorComponent::CycleToNextError()
 {
     if (currentErrors_.empty())
     {
@@ -221,14 +221,14 @@ void ErrorListComponent::CycleToNextError()
     lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
 }
 
-void ErrorListComponent::HandleCycleButtonPress()
+void ErrorComponent::HandleCycleButtonPress()
 {
     // Public interface method to be called from GPIO button handling
     CycleToNextError();
 }
 
 // Helper Methods
-lv_color_t ErrorListComponent::GetErrorColor(ErrorLevel level)
+lv_color_t ErrorComponent::GetErrorColor(ErrorLevel level)
 {
     switch (level)
     {
@@ -243,7 +243,7 @@ lv_color_t ErrorListComponent::GetErrorColor(ErrorLevel level)
     }
 }
 
-const char *ErrorListComponent::GetErrorLevelText(ErrorLevel level)
+const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
 {
     switch (level)
     {
@@ -259,16 +259,16 @@ const char *ErrorListComponent::GetErrorLevelText(ErrorLevel level)
 }
 
 // Static Event Callbacks
-void ErrorListComponent::ErrorAcknowledgeCallback(lv_event_t *event)
+void ErrorComponent::ErrorAcknowledgeCallback(lv_event_t *event)
 {
     size_t errorIndex = reinterpret_cast<size_t>(lv_event_get_user_data(event));
 
     ErrorManager::Instance().AcknowledgeError(errorIndex);
 }
 
-void ErrorListComponent::ClearAllErrorsCallback(lv_event_t *event)
+void ErrorComponent::ClearAllErrorsCallback(lv_event_t *event)
 {
-    ErrorListComponent *component = static_cast<ErrorListComponent *>(lv_event_get_user_data(event));
+    ErrorComponent *component = static_cast<ErrorComponent *>(lv_event_get_user_data(event));
 
     ErrorManager::Instance().ClearAllErrors();
 }

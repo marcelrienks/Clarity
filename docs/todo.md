@@ -1,6 +1,3 @@
-* rename error_list_component, to error_component
-* Move the ThemeColours struct to the types header
-* move the ThemeColours from Style_manager.h and GetErrorColor from error component into a styles.h file within utilities directory
 * review the CanProcessInput() function, does it always return true?
 * Ensure all functions, classes have proper comments
 * Document current arch, and relationships
