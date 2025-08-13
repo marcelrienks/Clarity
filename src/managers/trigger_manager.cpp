@@ -86,8 +86,8 @@ void TriggerManager::ProcessTriggerEvents()
     {
         static unsigned long debugCallCount = 0;
         debugCallCount++;
-        if (debugCallCount % 100 == 0)
-        { // Log every 100 calls
+        if (debugCallCount % 5000 == 0)
+        { // Log every 5000 calls to reduce noise
             log_d("TriggerManager: DebugErrorSensor called %lu times", debugCallCount);
         }
         debugErrorSensor_->GetReading(); // This will trigger errors on rising edge

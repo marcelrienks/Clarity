@@ -16,6 +16,8 @@ ActionButtonSensor::ActionButtonSensor(IGpioProvider *gpioProvider) : gpioProvid
 
 // ISensor Interface Implementation
 
+/// @brief Initialize the action button sensor on GPIO 32
+/// @details Configures GPIO with pull-down resistor for button input
 void ActionButtonSensor::Init()
 {
     // Configure GPIO 32 as input with pull-down resistor
@@ -30,6 +32,8 @@ void ActionButtonSensor::Init()
           initialState ? "HIGH (pressed)" : "LOW (released)");
 }
 
+/// @brief Get the current button state as a sensor reading
+/// @return Reading containing 1 if pressed, 0 if released
 Reading ActionButtonSensor::GetReading()
 {
     // Return button state as boolean (0 = not pressed, 1 = pressed)
@@ -37,6 +41,8 @@ Reading ActionButtonSensor::GetReading()
     return static_cast<int32_t>(pressed ? 1 : 0);
 }
 
+/// @brief Check if the action button is currently pressed
+/// @return true if button is pressed (GPIO HIGH), false otherwise
 bool ActionButtonSensor::IsButtonPressed()
 {
     // GPIO 32 reads HIGH when button is pressed (connected to 3.3V)

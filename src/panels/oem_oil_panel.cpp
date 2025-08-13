@@ -292,6 +292,8 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_start(&temperatureAnimation_);
 }
 
+/// @brief Get action for short button press
+/// @return NoAction - oil panel doesn't respond to short presses
 Action OemOilPanel::GetShortPressAction()
 {
     // Short press: No action for oil panel
@@ -299,6 +301,8 @@ Action OemOilPanel::GetShortPressAction()
     return Action(nullptr);
 }
 
+/// @brief Get action for long button press
+/// @return Action to switch to CONFIG panel
 Action OemOilPanel::GetLongPressAction()
 {
     // Long press: Switch to CONFIG panel

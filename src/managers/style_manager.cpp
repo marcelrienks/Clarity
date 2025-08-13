@@ -65,11 +65,9 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
         return;
     }
 
-    log_d("About to call lv_obj_add_style...");
     // Only apply the background style to screens
     // Other styles should be applied to specific components that need them
     lv_obj_add_style(screen, &backgroundStyle, MAIN_DEFAULT);
-    log_d("lv_obj_add_style completed successfully");
 
     // Don't apply all styles to the same screen - this can cause conflicts
     // Components should apply their own specific styles as needed

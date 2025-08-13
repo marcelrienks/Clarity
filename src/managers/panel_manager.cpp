@@ -24,7 +24,7 @@ void PanelManager::Init()
     Ticker::handleLvTasks();
 }
 
-void PanelManager::RegisterAllPanels()
+/// @brief Register all available panel types (deprecated - handled by factory)\n/// @details This method is now a no-op as panel registration is handled by UIFactory\nvoid PanelManager::RegisterAllPanels()
 {
     log_d("Registering all panels...");
 
@@ -316,7 +316,7 @@ const char *PanelManager::GetRestorationPanel() const
     return restorationPanel;
 }
 
-bool PanelManager::IsCurrentPanelTriggerDriven() const
+/// @brief Check if the current panel was loaded by a trigger\n/// @return true if panel was loaded by hardware trigger, false if user-driven\nbool PanelManager::IsCurrentPanelTriggerDriven() const
 {
     return currentPanelIsTriggerDriven_;
 }

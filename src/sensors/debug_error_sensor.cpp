@@ -51,8 +51,7 @@ Reading DebugErrorSensor::GetReading()
     const unsigned long STARTUP_GRACE_PERIOD_MS = 1000;
     if (millis() - startupTime_ < STARTUP_GRACE_PERIOD_MS)
     {
-        log_v("DebugErrorSensor: Still in grace period (%lu ms remaining)",
-              STARTUP_GRACE_PERIOD_MS - (millis() - startupTime_));
+        // Grace period - suppress logging to reduce noise
         return previousState_; // Return last known stable state
     }
 

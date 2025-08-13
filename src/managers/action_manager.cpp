@@ -166,6 +166,15 @@ void ActionManager::ClearPanel()
     log_d("Panel registration cleared");
 }
 
+/// @brief Set the panel service after construction (for circular dependency resolution)
+/// @param panelService Panel service for UIState checking
+void ActionManager::SetPanelService(IPanelService *panelService)
+{
+    panelService_ = panelService;
+}
+
+/// @brief Handle button press event - starts debounce timer
+/// @details Transitions to DEBOUNCE state and records press start time
 void ActionManager::HandleButtonPress()
 {
     unsigned long currentTime = GetCurrentTime();
@@ -176,6 +185,9 @@ void ActionManager::HandleButtonPress()
     debounceStartTime_ = currentTime;
 }
 
+/// @brief Handle button release event - determines press type and executes action
+/// @details Calculates press duration to distinguish between short/long presses
+/// and executes the appropriate action if within valid timing windows
 void ActionManager::HandleButtonRelease()
 {
     unsigned long currentTime = GetCurrentTime();
@@ -248,6 +260,8 @@ void ActionManager::HandleButtonRelease()
     buttonState_ = ButtonState::IDLE;
 }
 
+/// @brief Check if button press has exceeded maximum allowed duration
+/// @details Resets state to IDLE if press exceeds MAX_PRESS_TIME_MS (5.1 seconds)
 void ActionManager::CheckPressTimeout()
 {
     unsigned long currentTime = GetCurrentTime();
@@ -259,6 +273,9 @@ void ActionManager::CheckPressTimeout()
     }
 }
 
+/// @brief Check if button is currently pressed
+/// @return true if button is pressed (GPIO HIGH), false otherwise
+/// @details Uses button sensor to read GPIO 32 state with pull-down configuration
 bool ActionManager::IsButtonPressed() const
 {
     if (!buttonSensor_ || !initialized_)
@@ -276,10 +293,10 @@ bool ActionManager::IsButtonPressed() const
 
     logCount++;
 
-    // Log every 500 calls or on state changes (more frequent logging)
-    if (firstCall || pressed != lastLoggedState || (logCount % 500 == 0))
+    // Log every 10000 calls or on state changes only
+    if (firstCall || pressed != lastLoggedState || (logCount % 10000 == 0))
     {
-        log_i("ActionManager: Button check %lu - GPIO 32 state: %s", logCount,
+        log_d("ActionManager: Button check %lu - GPIO 32 state: %s", logCount,
               pressed ? "HIGH (PRESSED)" : "LOW (released)");
         lastLoggedState = pressed;
         firstCall = false;
@@ -288,6 +305,9 @@ bool ActionManager::IsButtonPressed() const
     return pressed;
 }
 
+/// @brief Get current system time in milliseconds
+/// @return Current time from millis()
+/// @details Wrapper for millis() to enable mocking in unit tests
 unsigned long ActionManager::GetCurrentTime() const
 {
     // Use millis() equivalent - this will need to be mocked for testing
@@ -306,10 +326,10 @@ void ActionManager::CheckInterrupts()
     static unsigned long checkCount = 0;
     checkCount++;
 
-    // Log every 500 calls to verify this method is being called
-    if (checkCount % 500 == 0)
+    // Log every 10000 calls to verify this method is being called
+    if (checkCount % 10000 == 0)
     {
-        log_i("ActionManager: CheckInterrupts called %lu times", checkCount);
+        log_d("ActionManager: CheckInterrupts called %lu times", checkCount);
     }
 
     // Process button input events
@@ -333,6 +353,9 @@ bool ActionManager::HasPendingInterrupts() const
 
 // Action Processing Methods
 
+/// @brief Process any pending actions if UIState allows
+/// @details Executes queued actions when UIState returns to IDLE
+/// Actions expire after INPUT_TIMEOUT_MS (3 seconds)
 void ActionManager::ProcessPendingActions()
 {
     if (!pendingAction_.IsValid())
@@ -364,7 +387,9 @@ void ActionManager::ProcessPendingActions()
     }
 }
 
-// Helper method to check if actions can be executed based on UIState
+/// @brief Check if actions can be executed based on current UIState
+/// @return true if UIState is IDLE, false otherwise
+/// @details Actions are only executed when UI is not busy with animations or updates
 bool ActionManager::CanExecuteActions() const
 {
     if (!panelService_)

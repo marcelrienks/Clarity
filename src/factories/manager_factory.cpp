@@ -169,8 +169,6 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 
 std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider *gpio, IPanelService *panelService)
 {
-    log_d("ManagerFactory: Creating ActionManager (button input system)...");
-
     if (!gpio)
     {
         log_e("ManagerFactory: Cannot create ActionManager - IGpioProvider is null");
@@ -198,9 +196,8 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
         return nullptr;
     }
 
-    log_d("ManagerFactory: Initializing ActionManager...");
     manager->Init();
-    log_d("ManagerFactory: ActionManager created successfully");
+    log_d("ManagerFactory: ActionManager created and initialized successfully");
     return manager;
 }
 

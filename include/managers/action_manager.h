@@ -69,6 +69,12 @@ class ActionManager : public IInterruptService, public IActionManager
      * @brief Remove current panel registration
      */
     void ClearPanel() override;
+    
+    /**
+     * @brief Set the panel service after construction (for circular dependency resolution)
+     * @param panelService Panel service for UIState checking
+     */
+    void SetPanelService(IPanelService *panelService);
 
   private:
     // Internal processing methods

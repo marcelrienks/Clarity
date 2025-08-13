@@ -40,9 +40,12 @@ bool initializeServices()
     // Initialize StyleManager with user's theme preference
     const char *userTheme = preferenceManager->GetConfig().theme.c_str();
     styleManager = ManagerFactory::createStyleManager(userTheme);
+    // Create ActionManager with nullptr first, then update after PanelManager is created
     actionManager = ManagerFactory::createActionManager(gpioProvider.get(), nullptr);
     panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
                                                       actionManager.get(), preferenceManager.get());
+    // Resolve circular dependency: ActionManager needs PanelService for UIState checking
+    actionManager->SetPanelService(panelManager.get());
     triggerManager = ManagerFactory::createTriggerManager(gpioProvider.get(), panelManager.get(), styleManager.get());
     interruptManager = ManagerFactory::createInterruptManager(panelManager.get());
     errorManager = ManagerFactory::createErrorManager();
