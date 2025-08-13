@@ -90,6 +90,6 @@ class ConfigComponent : public IComponent
     // Constants
     static constexpr int VISIBLE_ITEMS = 5;
     static constexpr int CENTER_INDEX = 2;
-    static constexpr int ITEM_HEIGHT = 30;
+    static constexpr int ITEM_HEIGHT = 24; // Reduced from 30 to 24 for tighter spacing
     static constexpr int MENU_WIDTH = 200;
 };

@@ -35,7 +35,17 @@ void ConfigComponent::Init(lv_obj_t *screen)
     }
 
     screen_ = screen;
-    container_ = screen; // Use screen directly as container
+    
+    // Create main container using full 240x240 screen size (like ErrorComponent)
+    container_ = lv_obj_create(screen);
+    lv_obj_set_size(container_, 240, 240); // Full screen size
+    lv_obj_align(container_, LV_ALIGN_CENTER, 0, 0);
+    
+    // Apply circular styling to container, not screen
+    lv_obj_set_style_radius(container_, 120, LV_PART_MAIN); // Make it circular (half of 240)
+    
+    // Ensure container has transparent background to use panel's theme
+    lv_obj_set_style_bg_opa(container_, LV_OPA_TRANSP, LV_PART_MAIN);
 
     CreateUI();
 }
@@ -78,20 +88,17 @@ void ConfigComponent::SetHintText(const std::string &hint)
 
 void ConfigComponent::CreateUI()
 {
-    // Apply circular styling for round display (240px diameter, so radius = 120)
-    lv_obj_set_style_radius(screen_, 120, LV_PART_MAIN);
+    // Note: Circular styling and background theme are now applied to container in Init()
 
-    // Note: Background color and theme are applied via StyleManager in ConfigPanel
-
-    // Create title label
-    titleLabel_ = lv_label_create(screen_);
+    // Create title label (child of container, not screen)
+    titleLabel_ = lv_label_create(container_);
     lv_label_set_text(titleLabel_, currentTitle_.c_str());
     lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
     lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_18, LV_PART_MAIN);
     lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 15);
 
-    // Create menu container - covers most of the screen for round display
-    menuContainer_ = lv_obj_create(screen_);
+    // Create menu container - covers most of the screen for round display (child of container)
+    menuContainer_ = lv_obj_create(container_);
     lv_obj_set_size(menuContainer_, 240, 180); // Full width, most height
     lv_obj_align(menuContainer_, LV_ALIGN_CENTER, 0, 10);
     lv_obj_set_style_bg_opa(menuContainer_, LV_OPA_TRANSP, LV_PART_MAIN);
@@ -117,9 +124,9 @@ void ConfigComponent::CreateUI()
         menuLabels_.push_back(item);
     }
 
-    // Create hint label
-    hintLabel_ = lv_label_create(screen_);
-    lv_label_set_text(hintLabel_, "Short: Next | Long: Select");
+    // Create hint label (child of container, not screen)
+    hintLabel_ = lv_label_create(container_);
+    lv_label_set_text(hintLabel_, "Short: Next\nLong: Select");
     lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN);
     lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_12, LV_PART_MAIN);
     lv_obj_align(hintLabel_, LV_ALIGN_BOTTOM_MID, 0, -15);
@@ -147,32 +154,64 @@ void ConfigComponent::UpdateMenuDisplay()
             // Apply fading effect based on distance from center
             if (i == CENTER_INDEX)
             {
-                // Center item - fully highlighted
+                // Center item - fully highlighted with bold styling
                 lv_obj_set_style_text_color(menuLabels_[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_18, LV_PART_MAIN);
+                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_20, LV_PART_MAIN); // Larger font for selected
                 lv_obj_set_style_text_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
 
-                // Add subtle background highlight
-                lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x444444), LV_PART_MAIN);
-                lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_50, LV_PART_MAIN);
-                lv_obj_set_style_radius(menuLabels_[i], 5, LV_PART_MAIN);
-                lv_obj_set_style_pad_all(menuLabels_[i], 8, LV_PART_MAIN);
+                // Enhanced background highlight for selected item
+                lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN);
+                lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_70, LV_PART_MAIN); // More visible background
+                lv_obj_set_style_radius(menuLabels_[i], 6, LV_PART_MAIN); // Reduced radius for tighter look
+                lv_obj_set_style_pad_all(menuLabels_[i], 6, LV_PART_MAIN); // Reduced padding from 10 to 6
+                lv_obj_set_style_border_width(menuLabels_[i], 1, LV_PART_MAIN);
+                lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN);
             }
             else
             {
-                // Apply progressive fading based on distance
-                uint8_t opacity = LV_OPA_100 - (distanceFromCenter * 30); // Fade by 30% per step
-                uint8_t colorValue = 0xCC - (distanceFromCenter * 0x33);  // Fade color from 0xCC to 0x66
+                // Apply progressive fading and font size reduction based on distance
+                uint8_t opacity = LV_OPA_100 - (distanceFromCenter * 45); // Increased fade by 45% per step (was 30%)
+                uint8_t colorValue = 0xCC - (distanceFromCenter * 0x44);  // More color fade from 0xCC to 0x44 (was 0x33)
 
                 lv_obj_set_style_text_color(
                     menuLabels_[i], lv_color_hex(colorValue << 16 | colorValue << 8 | colorValue), LV_PART_MAIN);
-                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_16, LV_PART_MAIN);
+                
+                // Progressive font size reduction - more dramatic stepping
+                const lv_font_t* font;
+                switch (distanceFromCenter) {
+                    case 1:
+                        font = &lv_font_montserrat_14;
+                        break;
+                    case 2:
+                        font = &lv_font_montserrat_12;
+                        break;
+                    default:
+                        font = &lv_font_montserrat_8;
+                        break;
+                }
+                lv_obj_set_style_text_font(menuLabels_[i], font, LV_PART_MAIN);
                 lv_obj_set_style_text_opa(menuLabels_[i], opacity, LV_PART_MAIN);
 
-                // Remove background from non-selected items
+                // Remove background and border from non-selected items
                 lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_0, LV_PART_MAIN);
+                lv_obj_set_style_border_width(menuLabels_[i], 0, LV_PART_MAIN);
                 lv_obj_set_style_pad_all(menuLabels_[i], 0, LV_PART_MAIN);
             }
+
+            // Apply distance-based positioning with adjusted padding
+            int baseYOffset = -60 + (i * ITEM_HEIGHT);
+            int adjustedYOffset = baseYOffset;
+            
+            // Adjust positioning based on distance from center
+            if (distanceFromCenter == 1) {
+                // Adjacent settings - increase gap from selected item (bigger breathing room)
+                adjustedYOffset = baseYOffset + (i < CENTER_INDEX ? -6 : 6);
+            } else if (distanceFromCenter >= 2) {
+                // Outermost settings - compress slightly toward center
+                adjustedYOffset = baseYOffset + (i < CENTER_INDEX ? -4 : 4);
+            }
+            
+            lv_obj_align(menuLabels_[i], LV_ALIGN_CENTER, 0, adjustedYOffset);
 
             // Show the label
             lv_obj_clear_flag(menuLabels_[i], LV_OBJ_FLAG_HIDDEN);

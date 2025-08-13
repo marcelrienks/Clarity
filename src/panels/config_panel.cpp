@@ -189,10 +189,10 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
         {"Theme: " + config.theme, [this]() { EnterSubmenu(MenuState::ThemeSubmenu); }},
         {"Splash: " + std::string(config.showSplash ? "On" : "Off"),
          [this]() { EnterSubmenu(MenuState::SplashSubmenu); }},
-        {"Splash Time: " + std::to_string(config.splashDuration) + "ms",
+        {"Splash T: " + std::to_string(config.splashDuration) + "ms",
          [this]() { EnterSubmenu(MenuState::SplashDurationSubmenu); }},
         {"Rate: " + std::to_string(config.updateRate) + "ms", [this]() { EnterSubmenu(MenuState::UpdateRateSubmenu); }},
-        {"Pressure: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
+        {"Press: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
         {"Temp: " + config.tempUnit, [this]() { EnterSubmenu(MenuState::TempUnitSubmenu); }},
         {"Exit", [this]()
          {
