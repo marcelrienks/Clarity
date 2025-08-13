@@ -72,29 +72,35 @@ void PreferenceManager::LoadConfig()
     }
 
     config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
-    
+
     // Load all settings with defaults if not present
-    if (!doc[JsonDocNames::SHOW_SPLASH].isNull()) {
+    if (!doc[JsonDocNames::SHOW_SPLASH].isNull())
+    {
         config.showSplash = doc[JsonDocNames::SHOW_SPLASH].as<bool>();
     }
-    
-    if (!doc[JsonDocNames::SPLASH_DURATION].isNull()) {
+
+    if (!doc[JsonDocNames::SPLASH_DURATION].isNull())
+    {
         config.splashDuration = doc[JsonDocNames::SPLASH_DURATION].as<int>();
     }
-    
-    if (!doc[JsonDocNames::THEME].isNull()) {
+
+    if (!doc[JsonDocNames::THEME].isNull())
+    {
         config.theme = std::string(doc[JsonDocNames::THEME].as<const char *>());
     }
-    
-    if (!doc[JsonDocNames::UPDATE_RATE].isNull()) {
+
+    if (!doc[JsonDocNames::UPDATE_RATE].isNull())
+    {
         config.updateRate = doc[JsonDocNames::UPDATE_RATE].as<int>();
     }
-    
-    if (!doc[JsonDocNames::PRESSURE_UNIT].isNull()) {
+
+    if (!doc[JsonDocNames::PRESSURE_UNIT].isNull())
+    {
         config.pressureUnit = std::string(doc[JsonDocNames::PRESSURE_UNIT].as<const char *>());
     }
-    
-    if (!doc[JsonDocNames::TEMP_UNIT].isNull()) {
+
+    if (!doc[JsonDocNames::TEMP_UNIT].isNull())
+    {
         config.tempUnit = std::string(doc[JsonDocNames::TEMP_UNIT].as<const char *>());
     }
 }
@@ -120,18 +126,21 @@ void PreferenceManager::SaveConfig()
     // Serialize to JSON string
     String jsonString;
     serializeJson(doc, jsonString);
-    
+
     log_d("Serialized config JSON: %s", jsonString.c_str());
 
     // Save the JSON string to preferences_
     size_t written = preferences_.putString(CONFIG_KEY, jsonString);
-    if (written > 0) {
+    if (written > 0)
+    {
         log_i("Configuration saved successfully (%zu bytes written)", written);
         // Commit changes to NVS - this is critical for persistence across reboots
         preferences_.end();
         // Reopen preferences for future operations
         preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
-    } else {
+    }
+    else
+    {
         log_e("Failed to save configuration to NVS");
     }
 }
@@ -140,21 +149,21 @@ void PreferenceManager::SaveConfig()
 
 /// @brief Get the current configuration object
 /// @return Reference to current configuration settings
-Configs& PreferenceManager::GetConfig()
+Configs &PreferenceManager::GetConfig()
 {
     return config;
 }
 
 /// @brief Get the current configuration object (read-only)
 /// @return Const reference to current configuration settings
-const Configs& PreferenceManager::GetConfig() const
+const Configs &PreferenceManager::GetConfig() const
 {
     return config;
 }
 
 /// @brief Update the configuration object
 /// @param newConfig New configuration settings to apply
-void PreferenceManager::SetConfig(const Configs& newConfig)
+void PreferenceManager::SetConfig(const Configs &newConfig)
 {
     config = newConfig;
 }
@@ -164,16 +173,23 @@ void PreferenceManager::SetConfig(const Configs& newConfig)
 /// @brief Get a preference value by key
 /// @param key The preference key
 /// @return String representation of the value
-std::string PreferenceManager::GetPreference(const std::string& key) const
+std::string PreferenceManager::GetPreference(const std::string &key) const
 {
-    if (key == "panel_name") return config.panelName;
-    if (key == "show_splash") return config.showSplash ? "true" : "false";
-    if (key == "splash_duration") return std::to_string(config.splashDuration);
-    if (key == "theme") return config.theme;
-    if (key == "update_rate") return std::to_string(config.updateRate);
-    if (key == "pressure_unit") return config.pressureUnit;
-    if (key == "temp_unit") return config.tempUnit;
-    
+    if (key == "panel_name")
+        return config.panelName;
+    if (key == "show_splash")
+        return config.showSplash ? "true" : "false";
+    if (key == "splash_duration")
+        return std::to_string(config.splashDuration);
+    if (key == "theme")
+        return config.theme;
+    if (key == "update_rate")
+        return std::to_string(config.updateRate);
+    if (key == "pressure_unit")
+        return config.pressureUnit;
+    if (key == "temp_unit")
+        return config.tempUnit;
+
     log_w("Unknown preference key: %s", key.c_str());
     return "";
 }
@@ -181,23 +197,38 @@ std::string PreferenceManager::GetPreference(const std::string& key) const
 /// @brief Set a preference value by key
 /// @param key The preference key
 /// @param value String representation of the value
-void PreferenceManager::SetPreference(const std::string& key, const std::string& value)
+void PreferenceManager::SetPreference(const std::string &key, const std::string &value)
 {
-    if (key == "panel_name") {
+    if (key == "panel_name")
+    {
         config.panelName = value;
-    } else if (key == "show_splash") {
+    }
+    else if (key == "show_splash")
+    {
         config.showSplash = (value == "true");
-    } else if (key == "splash_duration") {
+    }
+    else if (key == "splash_duration")
+    {
         config.splashDuration = std::stoi(value);
-    } else if (key == "theme") {
+    }
+    else if (key == "theme")
+    {
         config.theme = value;
-    } else if (key == "update_rate") {
+    }
+    else if (key == "update_rate")
+    {
         config.updateRate = std::stoi(value);
-    } else if (key == "pressure_unit") {
+    }
+    else if (key == "pressure_unit")
+    {
         config.pressureUnit = value;
-    } else if (key == "temp_unit") {
+    }
+    else if (key == "temp_unit")
+    {
         config.tempUnit = value;
-    } else {
+    }
+    else
+    {
         log_w("Unknown preference key: %s", key.c_str());
     }
 }
@@ -205,11 +236,10 @@ void PreferenceManager::SetPreference(const std::string& key, const std::string&
 /// @brief Check if a preference exists
 /// @param key The preference key
 /// @return true if preference exists
-bool PreferenceManager::HasPreference(const std::string& key) const
+bool PreferenceManager::HasPreference(const std::string &key) const
 {
-    return (key == "panel_name" || key == "show_splash" || key == "splash_duration" ||
-            key == "theme" || key == "update_rate" ||
-            key == "pressure_unit" || key == "temp_unit");
+    return (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
+            key == "update_rate" || key == "pressure_unit" || key == "temp_unit");
 }
 
 // Private Methods

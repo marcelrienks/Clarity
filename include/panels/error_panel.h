@@ -1,16 +1,14 @@
 #pragma once
 
-#include "interfaces/i_panel.h"
-#include "interfaces/i_action_service.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_display_provider.h"
-#include "interfaces/i_style_service.h"
 #include "components/error_list_component.h"
+#include "interfaces/i_action_service.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_panel.h"
+#include "interfaces/i_panel_service.h"
+#include "interfaces/i_style_service.h"
 #include "managers/error_manager.h"
 #include "utilities/types.h"
-
-#include <utilities/lv_tools.h>
 
 /**
  * @class ErrorPanel
@@ -31,7 +29,7 @@
  *
  * @visual_feedback:
  * - Critical: Red background/border for critical errors
- * - Error: Orange background/border for regular errors  
+ * - Error: Orange background/border for regular errors
  * - Warning: Yellow background/border for warnings
  * - Auto-dismiss indicators for warnings
  *
@@ -41,42 +39,45 @@
  */
 class ErrorPanel : public IPanel, public IActionService
 {
-public:
+  public:
     // Constructors and Destructors
     ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~ErrorPanel();
 
     // Core Functionality Methods
-    static constexpr const char* NAME = PanelNames::ERROR;
+    static constexpr const char *NAME = PanelNames::ERROR;
     void Init() override;
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
-    
+
     // Manager injection method
-    void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
-    
+    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+
     // IActionService Interface Implementation
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
     bool CanProcessInput() const override;
-    
-    // IPanel override to provide input service
-    IActionService* GetInputService() override { return this; }
 
-private:
+    // IPanel override to provide input service
+    IActionService *GetInputService() override
+    {
+        return this;
+    }
+
+  private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
     IGpioProvider *gpioProvider_;
-    IDisplayProvider *displayProvider_; 
+    IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> errorListComponent_; // Error list component
-    ComponentLocation centerLocation_;              // Component positioning
-    bool panelLoaded_;                              // Track panel load state
-    std::vector<ErrorInfo> currentErrors_;          // Cache of current error state
-    const char* previousTheme_;                     // Store previous theme to restore on exit
+    ComponentLocation centerLocation_;               // Component positioning
+    bool panelLoaded_;                               // Track panel load state
+    std::vector<ErrorInfo> currentErrors_;           // Cache of current error state
+    const char *previousTheme_;                      // Store previous theme to restore on exit
     // Note: currentErrorIndex_ removed - ErrorListComponent manages its own index
 };

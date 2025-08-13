@@ -1,14 +1,12 @@
 #pragma once
 
-#include "interfaces/i_panel.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_display_provider.h"  
-#include "interfaces/i_style_service.h"
 #include "components/key_component.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_panel.h"
+#include "interfaces/i_style_service.h"
 #include "sensors/key_sensor.h"
 #include "utilities/types.h"
-
-#include <utilities/lv_tools.h>
 
 /**
  * @class KeyPanel
@@ -35,27 +33,27 @@
  */
 class KeyPanel : public IPanel
 {
-public:
+  public:
     // Constructors and Destructors
     KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~KeyPanel();
 
     // Core Functionality Methods
-    static constexpr const char* NAME = PanelNames::KEY;
+    static constexpr const char *NAME = PanelNames::KEY;
     void Init() override;
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
-    
-    // Manager injection method (minimal implementation - panel has no actions)
-    void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
 
-private:
+    // Manager injection method (minimal implementation - panel has no actions)
+    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+
+  private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // Instance Data Members
     IGpioProvider *gpioProvider_;
-    IDisplayProvider *displayProvider_; 
+    IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> keyComponent_;

@@ -2,16 +2,15 @@
 #include <Arduino.h>
 
 #ifdef CLARITY_DEBUG
-#include "esp32-hal-log.h"
-#define LOG_TAG "ActionButtonSensor"
+    #include "esp32-hal-log.h"
+    #define LOG_TAG "ActionButtonSensor"
 #else
-#define log_d(...)
+    #define log_d(...)
 #endif
 
 // Constructors and Destructors
 
-ActionButtonSensor::ActionButtonSensor(IGpioProvider* gpioProvider) 
-    : gpioProvider_(gpioProvider)
+ActionButtonSensor::ActionButtonSensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
 }
 
@@ -22,12 +21,12 @@ void ActionButtonSensor::Init()
     // Configure GPIO 32 as input with pull-down resistor
     // This ensures LOW state when button is not pressed (Normally Open button to 3.3V)
     gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT_PULLDOWN);
-    
+
     log_d("ActionButtonSensor initialized on GPIO %d with pull-down", gpio_pins::INPUT_BUTTON);
-    
+
     // Log initial state after proper configuration
     bool initialState = gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
-    log_i("GPIO %d initial state after configuration: %s", gpio_pins::INPUT_BUTTON, 
+    log_i("GPIO %d initial state after configuration: %s", gpio_pins::INPUT_BUTTON,
           initialState ? "HIGH (pressed)" : "LOW (released)");
 }
 

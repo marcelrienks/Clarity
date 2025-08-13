@@ -96,7 +96,11 @@
       "Bash(git config:*)",
       "Bash(for panel in key_panel lock_panel config_panel)",
       "Bash(do echo \"=== Checking $panel ===\")",
-      "Bash(git stash:*)"
+      "Bash(git stash:*)",
+      "Bash(clang-format:*)",
+      "Bash(apt list:*)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)"
     ],
     "deny": []
   }

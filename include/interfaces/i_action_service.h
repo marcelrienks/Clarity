@@ -5,19 +5,19 @@
 /**
  * @interface IActionService
  * @brief Interface for panels to provide button actions to ActionManager
- * 
+ *
  * @details This interface defines the contract for panels to specify what actions
  * should be taken for button input events. Panels return action objects that
  * ActionManager can execute when appropriate, providing separation between
  * action definition and action execution.
- * 
+ *
  * @design_pattern Strategy + Command patterns - Actions as strategy objects
  * @execution_flow Panel defines actions → ActionManager executes when ready
  * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms, Timeout: >5000ms
  */
 class IActionService
 {
-public:
+  public:
     virtual ~IActionService() = default;
 
     /**

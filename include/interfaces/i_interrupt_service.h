@@ -3,19 +3,19 @@
 /**
  * @interface IInterruptService
  * @brief Interface for systems that need periodic interrupt checking during idle time
- * 
+ *
  * @details This interface abstracts the concept of interrupt-style processing for
  * both trigger events and input events. It allows any system to register for
  * periodic checking during idle time, ensuring responsive event handling even
  * during animations or other blocking operations.
- * 
+ *
  * @design_pattern Strategy pattern for interrupt handling
  * @evaluation_order Triggers are evaluated first, actions only if no triggers active
  * @idle_integration Called during LVGL idle time and animation gaps
  */
 class IInterruptService
 {
-public:
+  public:
     virtual ~IInterruptService() = default;
 
     /**
@@ -31,5 +31,4 @@ public:
      * @return true if interrupts are pending, false otherwise
      */
     virtual bool HasPendingInterrupts() const = 0;
-
 };

@@ -6,9 +6,9 @@
 #include <memory>
 
 // Project Includes
-#include "interfaces/i_sensor.h"
-#include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_sensor.h"
 
 // Forward declarations
 class IActionService;
@@ -18,41 +18,41 @@ class IStyleService;
 /**
  * @interface IPanel
  * @brief Base interface for all screen panels in the Clarity system
- * 
+ *
  * @details This interface defines the contract for panels that manage complete
  * screens in the MVP architecture. Panels act as Presenters, coordinating
  * between sensors (models) and components (views) to create cohesive displays.
- * 
+ *
  * @design_pattern Presenter in MVP - coordinates models and views
  * @lifecycle:
  * 1. init(): Initialize panel and create components
  * 2. load(): Setup UI and start async operations with callback
  * 3. update(): Periodic refresh of sensor data and UI
  * 4. show(): Make panel visible on screen
- * 
+ *
  * @async_handling:
  * - load() accepts completion callbacks for smooth transitions
  * - Panels can perform time-consuming initialization without blocking
  * - PanelManager uses callbacks to coordinate panel switching
- * 
+ *
  * @sensor_integration:
  * - Panels create and manage sensor instances
  * - Regular update() calls refresh sensor readings
  * - Sensor data passed to components via refresh() methods
- * 
+ *
  * @implementations:
  * - SplashPanel: Startup branding screen
  * - OemOilPanel: Main oil monitoring dashboard
  * - KeyPanel: Key status display
  * - LockPanel: Lock status display
- * 
+ *
  * @context This is the base interface for all screen panels.
  * Panels coordinate the entire screen experience, managing sensors
  * and components to create complete user interfaces.
  */
 class IPanel
 {
-public:
+  public:
     // Destructors
     virtual ~IPanel() = default;
 
@@ -73,16 +73,21 @@ public:
 
     /// @brief Get the input service interface if this panel supports input
     /// @return Pointer to IActionService or nullptr if not supported
-    virtual IActionService* GetInputService() { return nullptr; }
-    
+    virtual IActionService *GetInputService()
+    {
+        return nullptr;
+    }
+
     /// @brief Set manager services for panels that need them
     /// @param panelService Service for panel switching
     /// @param styleService Service for theme management
     /// @details Called after panel construction to inject manager dependencies
-    virtual void SetManagers(IPanelService* panelService, IStyleService* styleService) {}
+    virtual void SetManagers(IPanelService *panelService, IStyleService *styleService)
+    {
+    }
 
-protected:
+  protected:
     // Protected Data Members
     std::function<void()> callbackFunction_;
-    lv_obj_t* screen_ = nullptr;
+    lv_obj_t *screen_ = nullptr;
 };

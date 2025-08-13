@@ -1,12 +1,13 @@
 #include "panels/lock_panel.h"
 #include "factories/ui_factory.h"
 #include "managers/style_manager.h"
+#include <esp32-hal-log.h>
 #include <variant>
 
 // Constructors and Destructors
-LockPanel::LockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
+LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      lockSensor_(std::make_shared<LockSensor>(gpio)) 
+      lockSensor_(std::make_shared<LockSensor>(gpio))
 {
     // Component will be created during load() method
 }
@@ -37,9 +38,10 @@ void LockPanel::Init()
     // Initializing lock panel with sensor and display components
 
     screen_ = displayProvider_->CreateScreen();
-    
+
     // Apply current theme immediately after screen creation
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->ApplyThemeToScreen(screen_);
     }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -64,9 +66,10 @@ void LockPanel::Load(std::function<void()> callbackFunction)
 
     log_v("loading...");
     lv_screen_load(screen_);
-    
+
     // Always apply current theme to the screen when loading (ensures theme is current)
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->ApplyThemeToScreen(screen_);
     }
 }
@@ -90,10 +93,11 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 }
 
 // Manager injection method
-void LockPanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     // LockPanel doesn't use panelService (no actions), but update styleService if different
-    if (styleService != styleService_) {
+    if (styleService != styleService_)
+    {
         styleService_ = styleService;
     }
     // Managers injected successfully

@@ -1,18 +1,20 @@
 #include "providers/lvgl_display_provider.h"
 #include "managers/style_manager.h"
 
-LvglDisplayProvider::LvglDisplayProvider(lv_obj_t *mainScreen)
-    : mainScreen_(mainScreen), initialized_(false)
+LvglDisplayProvider::LvglDisplayProvider(lv_obj_t *mainScreen) : mainScreen_(mainScreen), initialized_(false)
 {
 }
 
-void LvglDisplayProvider::Initialize() {
-    if (!initialized_) {
+void LvglDisplayProvider::Initialize()
+{
+    if (!initialized_)
+    {
         initialized_ = true;
     }
 }
 
-bool LvglDisplayProvider::IsInitialized() const {
+bool LvglDisplayProvider::IsInitialized() const
+{
     return initialized_;
 }
 
@@ -74,7 +76,8 @@ lv_obj_t *LvglDisplayProvider::CreateLine(lv_obj_t *parent)
 
 void LvglDisplayProvider::DeleteObject(lv_obj_t *obj)
 {
-    if (obj != nullptr) {
+    if (obj != nullptr)
+    {
 #ifdef UNIT_TESTING
         lv_obj_del(obj);
 #else
@@ -83,7 +86,8 @@ void LvglDisplayProvider::DeleteObject(lv_obj_t *obj)
     }
 }
 
-void LvglDisplayProvider::AddEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code, void *user_data)
+void LvglDisplayProvider::AddEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code,
+                                           void *user_data)
 {
     lv_obj_add_event_cb(obj, callback, event_code, user_data);
 }

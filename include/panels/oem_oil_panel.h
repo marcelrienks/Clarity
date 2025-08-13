@@ -1,97 +1,98 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
-#include "interfaces/i_panel.h"
-#include "interfaces/i_action_service.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_display_provider.h"
-#include "interfaces/i_style_service.h"
-#include "interfaces/i_preference_service.h"
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"
+#include "interfaces/i_action_service.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_panel.h"
+#include "interfaces/i_panel_service.h"
+#include "interfaces/i_preference_service.h"
+#include "interfaces/i_style_service.h"
+#include "managers/trigger_manager.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
-#include "managers/trigger_manager.h"
+#include <Arduino.h>
 
-#include <utilities/lv_tools.h>
-
-// Forward declarations  
+// Forward declarations
 // (Using interfaces instead of concrete classes)
 
 /**
  * @class OemOilPanel
  * @brief Main oil monitoring dashboard panel
- * 
+ *
  * @details This panel serves as the primary monitoring interface for engine oil
  * systems. It coordinates two specialized gauge components for pressure and
  * temperature monitoring, positioned side-by-side for optimal visibility.
- * 
+ *
  * @presenter_role Coordinates OemOilPressureComponent and OemOilTemperatureComponent
  * @data_sources OilPressureSensor and OilTemperatureSensor with delta-based updates
  * @update_strategy Smart caching with animation-based smooth transitions
- * 
+ *
  * @ui_layout:
  * - Oil Pressure Gauge: Left side (LV_ALIGN_LEFT_MID) - 120x120px
  * - Oil Temperature Gauge: Right side (LV_ALIGN_RIGHT_MID) - 120x120px
  * - Both gauges feature danger zone indicators and smooth needle animations
- * 
+ *
  * @animation_system:
  * - Dual independent animations for pressure and temperature
  * - Prevents conflicts with separate animation objects
  * - Completion callbacks ensure proper synchronization
- * 
+ *
  * @performance_optimizations:
  * - Delta-based updates (skips unchanged values)
  * - Cached previous values for comparison
  * - Efficient animation state tracking
- * 
+ *
  * @context The components are currently set to 240x240 size in order to ensure
  * that they maintain a consistent appearance with OEM styling by being shown on either side of the screen.
  */
 class OemOilPanel : public IPanel, public IActionService
 {
-public:
+  public:
     // Constructors and Destructors
     OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~OemOilPanel();
 
     // Core Functionality Methods
-    static constexpr const char* NAME = PanelNames::OIL;
+    static constexpr const char *NAME = PanelNames::OIL;
     void Init() override;
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
-    
+
     // Manager injection method
-    void SetManagers(IPanelService* panelService, IStyleService* styleService);
-    
+    void SetManagers(IPanelService *panelService, IStyleService *styleService);
+
     /// @brief Set preference service and apply sensor update rate from preferences
     /// @param preferenceService The preference service to use for configuration
-    void SetPreferenceService(IPreferenceService* preferenceService);
-    
+    void SetPreferenceService(IPreferenceService *preferenceService);
+
     // IActionService Interface Implementation
     Action GetShortPressAction() override;
     Action GetLongPressAction() override;
     bool CanProcessInput() const override;
-    
+
     // IPanel override to provide action service
-    IActionService* GetInputService() override { return this; }
+    IActionService *GetInputService() override
+    {
+        return this;
+    }
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;
 
-private:
+  private:
     // Core Functionality Methods
     void UpdateOilPressure();
     void UpdateOilTemperature();
-    
-    
+
     // Value mapping methods
     /// @brief Map oil pressure sensor value to display scale
     /// @param sensor_value Raw sensor value (1-10 Bar)
     /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
     int32_t MapPressureValue(int32_t sensorValue);
-    
+
     /// @brief Map oil temperature sensor value to display scale
     /// @param sensor_value Raw sensor value (0-120°C)
     /// @return Mapped value for display
@@ -124,11 +125,10 @@ private:
     int32_t currentOilTemperatureValue_;
     bool isPressureAnimationRunning_ = false;
     bool isTemperatureAnimationRunning_ = false;
-    bool forceComponentRefresh_ = false;  // Force component refresh regardless of value changes
-    String lastTheme_;  // Track last theme to force refresh when theme changes
+    bool forceComponentRefresh_ = false; // Force component refresh regardless of value changes
+    String lastTheme_;                   // Track last theme to force refresh when theme changes
 
     // Instance Data Members - Animation Objects
-    lv_anim_t pressureAnimation_;   // Instance-level animation objects (prevents memory leaks)
+    lv_anim_t pressureAnimation_; // Instance-level animation objects (prevents memory leaks)
     lv_anim_t temperatureAnimation_;
-    
 };

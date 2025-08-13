@@ -1,14 +1,12 @@
 #pragma once
 
-#include "interfaces/i_panel.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_display_provider.h"
-#include "interfaces/i_style_service.h"
 #include "components/lock_component.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_panel.h"
+#include "interfaces/i_style_service.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
-
-#include <utilities/lv_tools.h>
 
 /**
  * @class LockPanel
@@ -35,21 +33,21 @@
  */
 class LockPanel : public IPanel
 {
-public:
+  public:
     // Constructors and Destructors
     LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~LockPanel();
 
     // Core Functionality Methods
-    static constexpr const char* NAME = PanelNames::LOCK;
+    static constexpr const char *NAME = PanelNames::LOCK;
     void Init() override;
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
-    
-    // Manager injection method (minimal implementation - panel has no actions)
-    void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
 
-private:
+    // Manager injection method (minimal implementation - panel has no actions)
+    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+
+  private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
 

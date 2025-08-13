@@ -5,7 +5,7 @@
 // Constructors and Destructors
 
 /// @brief Constructor for KeySensor
-KeySensor::KeySensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
+KeySensor::KeySensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
 }
 
@@ -16,15 +16,16 @@ void KeySensor::Init()
 {
     // Configure both GPIO pins for digital input (safe to call multiple times)
     static bool initialized = false;
-    if (!initialized) {
-        log_d("Initializing key sensor on GPIO %d (key present) and GPIO %d (key not present)",
-              gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    if (!initialized)
+    {
+        log_d("Initializing key sensor on GPIO %d (key present) and GPIO %d (key not present)", gpio_pins::KEY_PRESENT,
+              gpio_pins::KEY_NOT_PRESENT);
         initialized = true;
     }
 
     gpioProvider_->PinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
     gpioProvider_->PinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
-    
+
     // Attach interrupts for immediate state change detection
     gpioProvider_->AttachInterrupt(gpio_pins::KEY_PRESENT, nullptr, CHANGE);
     gpioProvider_->AttachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, CHANGE);
@@ -51,18 +52,21 @@ KeyState KeySensor::readKeyState()
 {
     bool pin25High = gpioProvider_->DigitalRead(gpio_pins::KEY_PRESENT);
     bool pin26High = gpioProvider_->DigitalRead(gpio_pins::KEY_NOT_PRESENT);
-    
-    if (pin25High && pin26High) {
+
+    if (pin25High && pin26High)
+    {
         return KeyState::Inactive; // Both pins HIGH - invalid state
     }
-    
-    if (pin25High) {
+
+    if (pin25High)
+    {
         return KeyState::Present;
     }
-    
-    if (pin26High) {
+
+    if (pin26High)
+    {
         return KeyState::NotPresent;
     }
-    
+
     return KeyState::Inactive; // Both pins LOW
 }

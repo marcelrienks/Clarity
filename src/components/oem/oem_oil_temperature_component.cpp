@@ -3,8 +3,7 @@
 
 // Constructors and Destructors
 
-OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService* styleService)
-    : OemOilComponent(styleService)
+OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService *styleService) : OemOilComponent(styleService)
 {
     // Constructor delegates to base class
 }
@@ -13,7 +12,7 @@ OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService* styleServi
 
 /// @brief Gets the icon for the oil temperature component.
 /// @return Pointer to the icon image descriptor.
-const lv_image_dsc_t* OemOilTemperatureComponent::get_icon() const
+const lv_image_dsc_t *OemOilTemperatureComponent::get_icon() const
 {
     return &oil_temp_regular;
 }
@@ -69,10 +68,10 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
     // Maps the value from the original scale (0-120) to the normal scale (120-0).
     // LVGL 9.3 has a bug that does allow setting a reverse scale 120-0, but it cannot animate the needle using that.
     // This method is used to map the value from the original scale (0-120) to the normal scale (120-0).
-    
+
     // Map from [0,120] to [120,0] reverse the scale
     int32_t mappedValue = OemOilTemperatureComponent::get_scale_max() - value;
-    
+
     return mappedValue;
 }
 
@@ -81,7 +80,8 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) const
 {
     // Danger zone: map correct danger zone to reversed danger zone (hack to solve reversed scale in LVGL 9.3)
-    lv_scale_section_set_range(section, map_value_for_display(OemOilTemperatureComponent::get_scale_max()), map_value_for_display(OemOilTemperatureComponent::get_danger_zone()));
+    lv_scale_section_set_range(section, map_value_for_display(OemOilTemperatureComponent::get_scale_max()),
+                               map_value_for_display(OemOilTemperatureComponent::get_danger_zone()));
 }
 
 /// @brief Gets the Y offset for the oil temperature icon.
@@ -94,12 +94,12 @@ int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 /// @brief Gets the label angles for L and H labels with swapped positioning.
 /// @param lAngle Reference to store the L label angle.
 /// @param hAngle Reference to store the H label angle.
-void OemOilTemperatureComponent::get_label_angles(int32_t& lAngle, int32_t& hAngle) const
+void OemOilTemperatureComponent::get_label_angles(int32_t &lAngle, int32_t &hAngle) const
 {
     // Swap L and H positioning due to reversed scale mapping
     // H label: At _scale_rotation angle (where L would normally be)
     hAngle = scaleRotation_;
-    
+
     // L label: At _scale_rotation + angle_range (where H would normally be)
     lAngle = scaleRotation_ + get_angle_range();
 }

@@ -1,18 +1,18 @@
 #include "main.h"
-#include "factories/provider_factory.h"
 #include "factories/manager_factory.h"
+#include "factories/provider_factory.h"
+#include "managers/action_manager.h"
+#include "managers/error_manager.h"
+#include "managers/interrupt_manager.h"
+#include "managers/panel_manager.h"
+#include "managers/preference_manager.h"
+#include "managers/style_manager.h"
+#include "managers/trigger_manager.h"
 #include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
-#include "managers/style_manager.h"
-#include "managers/preference_manager.h"
-#include "managers/action_manager.h"
-#include "managers/panel_manager.h"
-#include "managers/trigger_manager.h"
-#include "managers/interrupt_manager.h"
-#include "managers/error_manager.h"
-#include "utilities/types.h"
 #include "utilities/ticker.h"
+#include "utilities/types.h"
 
 // Global services - factory-created instances
 std::unique_ptr<DeviceProvider> deviceProvider;
@@ -38,43 +38,43 @@ bool initializeServices()
     // Create managers - factories handle all error checking and logging
     preferenceManager = ManagerFactory::createPreferenceManager();
     // Initialize StyleManager with user's theme preference
-    const char* userTheme = preferenceManager->GetConfig().theme.c_str();
+    const char *userTheme = preferenceManager->GetConfig().theme.c_str();
     styleManager = ManagerFactory::createStyleManager(userTheme);
     actionManager = ManagerFactory::createActionManager(gpioProvider.get(), nullptr);
-    panelManager = ManagerFactory::createPanelManager(
-        displayProvider.get(),
-        gpioProvider.get(), 
-        styleManager.get(),
-        actionManager.get(),
-        preferenceManager.get());
-    triggerManager = ManagerFactory::createTriggerManager(
-        gpioProvider.get(),
-        panelManager.get(),
-        styleManager.get());
+    panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
+                                                      actionManager.get(), preferenceManager.get());
+    triggerManager = ManagerFactory::createTriggerManager(gpioProvider.get(), panelManager.get(), styleManager.get());
     interruptManager = ManagerFactory::createInterruptManager(panelManager.get());
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created
-    bool allServicesCreated = deviceProvider && gpioProvider && displayProvider &&
-                              styleManager && preferenceManager && actionManager &&
-                              panelManager && triggerManager && interruptManager && errorManager;
+    bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && styleManager && preferenceManager &&
+                              actionManager && panelManager && triggerManager && interruptManager && errorManager;
 
     if (!allServicesCreated)
     {
         log_e("Critical service creation failed - check factory logs above");
         // Report critical errors for null services
-        if (!deviceProvider) ErrorManager::Instance().ReportCriticalError("Main", "DeviceProvider creation failed");
-        if (!gpioProvider) ErrorManager::Instance().ReportCriticalError("Main", "GpioProvider creation failed");
-        if (!displayProvider) ErrorManager::Instance().ReportCriticalError("Main", "DisplayProvider creation failed");
-        if (!styleManager) ErrorManager::Instance().ReportCriticalError("Main", "StyleManager creation failed");
-        if (!preferenceManager) ErrorManager::Instance().ReportCriticalError("Main", "PreferenceManager creation failed");
-        if (!actionManager) ErrorManager::Instance().ReportCriticalError("Main", "ActionManager creation failed");
-        if (!panelManager) ErrorManager::Instance().ReportCriticalError("Main", "PanelManager creation failed");
-        if (!triggerManager) ErrorManager::Instance().ReportCriticalError("Main", "TriggerManager creation failed");
-        if (!interruptManager) ErrorManager::Instance().ReportCriticalError("Main", "InterruptManager creation failed");
+        if (!deviceProvider)
+            ErrorManager::Instance().ReportCriticalError("Main", "DeviceProvider creation failed");
+        if (!gpioProvider)
+            ErrorManager::Instance().ReportCriticalError("Main", "GpioProvider creation failed");
+        if (!displayProvider)
+            ErrorManager::Instance().ReportCriticalError("Main", "DisplayProvider creation failed");
+        if (!styleManager)
+            ErrorManager::Instance().ReportCriticalError("Main", "StyleManager creation failed");
+        if (!preferenceManager)
+            ErrorManager::Instance().ReportCriticalError("Main", "PreferenceManager creation failed");
+        if (!actionManager)
+            ErrorManager::Instance().ReportCriticalError("Main", "ActionManager creation failed");
+        if (!panelManager)
+            ErrorManager::Instance().ReportCriticalError("Main", "PanelManager creation failed");
+        if (!triggerManager)
+            ErrorManager::Instance().ReportCriticalError("Main", "TriggerManager creation failed");
+        if (!interruptManager)
+            ErrorManager::Instance().ReportCriticalError("Main", "InterruptManager creation failed");
         return false;
     }
-
 
     log_i("All services initialized successfully");
     return true;
@@ -93,7 +93,7 @@ void setup()
     Ticker::handleLvTasks();
     styleManager->InitializeStyles();
     interruptManager->Init();
-    interruptManager->RegisterTriggerSource(triggerManager.get()); 
+    interruptManager->RegisterTriggerSource(triggerManager.get());
     interruptManager->RegisterActionSource(actionManager.get());
     Ticker::handleLvTasks();
 
@@ -117,21 +117,26 @@ void loop()
 {
     static unsigned long loopCount = 0;
     loopCount++;
-    
+
     // Log every 1000 loops to verify main loop is running
-    if (loopCount % 1000 == 0) {
+    if (loopCount % 1000 == 0)
+    {
         log_d("Main loop running - count: %lu", loopCount);
     }
-    
+
     // Process all interrupt sources via InterruptManager (triggers, inputs, etc.)
-    if (interruptManager) {
+    if (interruptManager)
+    {
         interruptManager->CheckAllInterrupts();
-    } else {
+    }
+    else
+    {
         log_e("interruptManager is null!");
     }
 
     // Update panel state
-    if (panelManager) {
+    if (panelManager)
+    {
         panelManager->UpdatePanel();
     }
     Ticker::handleLvTasks();
