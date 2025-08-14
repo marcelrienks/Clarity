@@ -46,17 +46,10 @@ class ActionManager : public IInterruptService, public IActionManager
     // IInterruptService Interface Implementation
 
     /**
-     * @brief Check for pending interrupts and process them (IInterruptService interface)
+     * @brief Process input events (IInterruptService interface)
      * @details Called by InterruptManager during idle time
      */
-    void CheckInterrupts() override;
-
-    /**
-     * @brief Check if there are pending input interrupts (IInterruptService interface)
-     * @details Quick check without processing for optimization
-     * @return true if input events are pending
-     */
-    bool HasPendingInterrupts() const override;
+    void Process() override { ProcessInputEvents(); }
 
     /**
      * @brief Register a panel as the current action handler

@@ -2,15 +2,14 @@
 
 /**
  * @interface IInterruptService
- * @brief Interface for systems that need periodic interrupt checking during idle time
+ * @brief Interface for systems that need periodic processing during idle time
  *
- * @details This interface abstracts the concept of interrupt-style processing for
- * both trigger events and input events. It allows any system to register for
- * periodic checking during idle time, ensuring responsive event handling even
- * during animations or other blocking operations.
+ * @details This interface provides a simple contract for systems that need
+ * to be polled periodically. Both triggers and actions implement this to
+ * check GPIO states, button presses, and other events during idle time.
  *
  * @design_pattern Strategy pattern for interrupt handling
- * @evaluation_order Triggers are evaluated first, actions only if no triggers active
+ * @evaluation_order Triggers are evaluated first, then actions
  * @idle_integration Called during LVGL idle time and animation gaps
  */
 class IInterruptService
@@ -19,16 +18,10 @@ class IInterruptService
     virtual ~IInterruptService() = default;
 
     /**
-     * @brief Check for pending interrupts and process them
+     * @brief Process any pending events or state changes
      * @details This method should be lightweight and non-blocking.
      * Heavy processing should be deferred or queued.
+     * Called continuously during idle time.
      */
-    virtual void CheckInterrupts() = 0;
-
-    /**
-     * @brief Check if there are any pending interrupts without processing them
-     * @details Used to optimize interrupt checking - skip if no pending work
-     * @return true if interrupts are pending, false otherwise
-     */
-    virtual bool HasPendingInterrupts() const = 0;
+    virtual void Process() = 0;
 };

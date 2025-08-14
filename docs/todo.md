@@ -1,3 +1,6 @@
+* Review interrupt logic, it seem fragmented
+    * add a quick and clean interrupt check in between splash panel animations  
+    BUT actually all we need to do between animation, is set the UIState to idle, and allow the update function, which is constantly running to call check. Essentially make sure that individual components do not do interrupt checks, they must just accurately manage UIStates, and then anytime there is IDLE, the main loop should be running checks
 * review logging, and the level between debug and info
     * every method (within reason) should have a debug log
     * every major concept (managers, panels, components etc.) should have an info log at key points

@@ -67,12 +67,6 @@ class InterruptManager
      */
     void CheckAllInterrupts();
 
-    /**
-     * @brief Check if any interrupt sources have pending work
-     * @details Quick check without processing - useful for optimization
-     * @return true if any source has pending interrupts
-     */
-    bool HasAnyPendingInterrupts() const;
 
     /**
      * @brief Get the number of registered trigger sources

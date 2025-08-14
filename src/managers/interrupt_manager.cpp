@@ -115,56 +115,24 @@ void InterruptManager::CheckAllInterrupts()
     checkCount_++;
     unsigned long currentTime = millis();
 
-    // Remove excessive logging - only log when there's activity
-
-    // Quick optimization: check if any sources have pending work
-    bool hasAnyPending = HasAnyPendingInterrupts();
-    if (!hasAnyPending)
-    {
-        return; // No logging for no activity
-    }
-
-    // Always check triggers - TriggerManager is smart enough to handle
-    // trigger-driven panel logic internally
+    // Process all trigger sources directly
     for (IInterruptService *source : triggerSources_)
     {
-        if (source && source->HasPendingInterrupts())
+        if (source)
         {
-            source->CheckInterrupts();
+            source->Process();
         }
     }
 
-    // Always check actions - button input should work regardless of panel type
+    // Process all action sources directly
     for (IInterruptService *source : actionSources_)
     {
-        if (source && source->HasPendingInterrupts())
+        if (source)
         {
-            source->CheckInterrupts();
+            source->Process();
         }
     }
 
     lastCheckTime_ = currentTime;
 }
 
-bool InterruptManager::HasAnyPendingInterrupts() const
-{
-    // Check triggers first
-    for (const IInterruptService *source : triggerSources_)
-    {
-        if (source && source->HasPendingInterrupts())
-        {
-            return true;
-        }
-    }
-
-    // Then check actions
-    for (const IInterruptService *source : actionSources_)
-    {
-        if (source && source->HasPendingInterrupts())
-        {
-            return true;
-        }
-    }
-
-    return false;
-}

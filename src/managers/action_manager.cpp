@@ -151,6 +151,9 @@ void ActionManager::ProcessInputEvents()
             // No action needed
             break;
     }
+
+    // Process any pending actions
+    ProcessPendingActions();
 }
 
 void ActionManager::RegisterPanel(IActionService *service, const char *panelName)
@@ -314,42 +317,7 @@ unsigned long ActionManager::GetCurrentTime() const
     return millis();
 }
 
-// IInterruptService Interface Implementation
 
-void ActionManager::CheckInterrupts()
-{
-    if (!initialized_)
-    {
-        return;
-    }
-
-    static unsigned long checkCount = 0;
-    checkCount++;
-
-    // Log every 10000 calls to verify this method is being called
-    if (checkCount % 10000 == 0)
-    {
-        log_d("ActionManager: CheckInterrupts called %lu times", checkCount);
-    }
-
-    // Process button input events
-    ProcessInputEvents();
-
-    // Process any pending actions
-    ProcessPendingActions();
-}
-
-bool ActionManager::HasPendingInterrupts() const
-{
-    if (!initialized_)
-    {
-        return false;
-    }
-
-    // Always return true to ensure continuous button polling
-    // This is necessary to detect button state changes
-    return true;
-}
 
 // Action Processing Methods
 

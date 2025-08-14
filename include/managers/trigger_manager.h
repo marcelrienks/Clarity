@@ -60,17 +60,10 @@ class TriggerManager : public ITriggerService, public IInterruptService
     // IInterruptService Interface Implementation
 
     /**
-     * @brief Check for pending interrupts and process them (IInterruptService interface)
-     * @details Called by InterruptManager during idle time - redirects to ProcessTriggerEvents()
+     * @brief Process trigger events (IInterruptService interface)
+     * @details Called by InterruptManager during idle time
      */
-    void CheckInterrupts() override;
-
-    /**
-     * @brief Check if there are pending trigger interrupts (IInterruptService interface)
-     * @details Quick check for trigger state changes without processing
-     * @return true if trigger events are pending
-     */
-    bool HasPendingInterrupts() const override;
+    void Process() override { ProcessTriggerEvents(); }
 
     // Trigger Management
     void AddTrigger(const std::string &triggerName, ISensor *sensor, std::function<void()> callback) override;

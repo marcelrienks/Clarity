@@ -345,22 +345,3 @@ bool TriggerManager::HasTrigger(const std::string &triggerName) const
     return false;
 }
 
-// IInterruptService Interface Implementation
-
-void TriggerManager::CheckInterrupts()
-{
-    // Redirect to existing trigger processing method
-    ProcessTriggerEvents();
-}
-
-bool TriggerManager::HasPendingInterrupts() const
-{
-    if (!initialized_)
-    {
-        return false;
-    }
-
-    // Always return true to ensure continuous sensor polling
-    // This allows detection of sensor state changes and debug error triggers
-    return true;
-}
