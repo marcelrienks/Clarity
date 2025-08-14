@@ -5,6 +5,7 @@
 #include "utilities/types.h"
 #include <Arduino.h>
 #include <algorithm>
+#include <cstring>
 
 // Constructors and Destructors
 ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
@@ -57,12 +58,17 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     currentMenuIndex_ = 0;
     currentMenuState_ = MenuState::MainMenu;
 
-    // Apply current theme from preferences to config panel
-    if (styleService_ && preferenceService_)
+    // Apply current theme to config panel (don't change the theme, just apply existing)
+    if (styleService_)
     {
-        const Configs &config = preferenceService_->GetConfig();
-        styleService_->SetTheme(config.theme.c_str());
         styleService_->ApplyThemeToScreen(screen_);
+        
+        // For night theme, override the screen background to use dark red instead of black
+        const char* theme = styleService_->GetCurrentTheme();
+        if (strcmp(theme, "Night") == 0) {
+            lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
+            lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+        }
     }
 
     // Initialize the config component with the screen
@@ -291,6 +297,13 @@ void ConfigPanel::UpdateSubmenuItems()
                                {
                                    styleService_->SetTheme(cfg.theme.c_str());
                                    styleService_->ApplyThemeToScreen(screen_);
+                                   // Override screen background for config panel
+                                   lv_obj_set_style_bg_color(screen_, lv_color_hex(0x121212), LV_PART_MAIN); // Day theme gray
+                                   lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+                                   // Update component theme colors
+                                   if (configComponent_) {
+                                       configComponent_->UpdateThemeColors();
+                                   }
                                }
                                ExitSubmenu();
                            }},
@@ -305,6 +318,13 @@ void ConfigPanel::UpdateSubmenuItems()
                                {
                                    styleService_->SetTheme(cfg.theme.c_str());
                                    styleService_->ApplyThemeToScreen(screen_);
+                                   // Override screen background for config panel
+                                   lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Night theme dark red
+                                   lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+                                   // Update component theme colors
+                                   if (configComponent_) {
+                                       configComponent_->UpdateThemeColors();
+                                   }
                                }
                                ExitSubmenu();
                            }},

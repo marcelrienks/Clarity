@@ -56,6 +56,9 @@ class ConfigComponent : public IComponent
     
     // Set style service for theme-aware colors
     void SetStyleService(IStyleService* styleService);
+    
+    // Update colors based on current theme
+    void UpdateThemeColors();
 
     // Configuration menu specific methods
     void SetTitle(const std::string &title);

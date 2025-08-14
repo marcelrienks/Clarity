@@ -1,6 +1,7 @@
 #include "components/config_component.h"
 #include <Arduino.h>
 #include <cmath>
+#include <cstring>
 
 // Constructor
 ConfigComponent::ConfigComponent()
@@ -9,7 +10,6 @@ ConfigComponent::ConfigComponent()
 }
 
 // IComponent interface implementation
-
 void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     Init(screen);
@@ -26,7 +26,6 @@ void ConfigComponent::SetValue(int32_t value)
 }
 
 // ConfigComponent specific initialization
-
 void ConfigComponent::Init(lv_obj_t *screen)
 {
     if (!screen)
@@ -44,7 +43,7 @@ void ConfigComponent::Init(lv_obj_t *screen)
     // Apply circular styling to container, not screen
     lv_obj_set_style_radius(container_, 120, LV_PART_MAIN); // Make it circular (half of 240)
     
-    // Ensure container has transparent background to use panel's theme
+    // Default transparent background (will be updated by UpdateThemeColors if styleService is set)
     lv_obj_set_style_bg_opa(container_, LV_OPA_TRANSP, LV_PART_MAIN);
 
     CreateUI();
@@ -87,6 +86,48 @@ void ConfigComponent::SetHintText(const std::string &hint)
 void ConfigComponent::SetStyleService(IStyleService* styleService)
 {
     styleService_ = styleService;
+    UpdateThemeColors();
+}
+
+void ConfigComponent::UpdateThemeColors()
+{
+    if (!styleService_) return;
+    
+    const char* theme = styleService_->GetCurrentTheme();
+    bool isNightTheme = (strcmp(theme, "Night") == 0);
+    
+    // Update container background
+    if (container_) {
+        if (isNightTheme) {
+            // Use very dark red background for night theme
+            lv_obj_set_style_bg_color(container_, lv_color_hex(0x1A0000), LV_PART_MAIN);
+            lv_obj_set_style_bg_opa(container_, LV_OPA_COVER, LV_PART_MAIN);
+        } else {
+            // Transparent to use panel's theme background
+            lv_obj_set_style_bg_opa(container_, LV_OPA_TRANSP, LV_PART_MAIN);
+        }
+    }
+    
+    // Update title color
+    if (titleLabel_) {
+        if (isNightTheme) {
+            lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xFF6666), LV_PART_MAIN); // Light red for night theme
+        } else {
+            lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN); // Light gray for day theme
+        }
+    }
+    
+    // Update hint text color
+    if (hintLabel_) {
+        if (isNightTheme) {
+            lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x993333), LV_PART_MAIN); // Darker red for night theme
+        } else {
+            lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN); // Gray for day theme
+        }
+    }
+    
+    // Update menu display to refresh all menu item colors
+    UpdateMenuDisplay();
 }
 
 // Private methods
@@ -104,7 +145,15 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     
     if (isSelected)
     {
-        return lv_color_hex(0xFFFFFF); // Selected is always white
+        // Selected item color based on theme
+        if (strcmp(theme, "Night") == 0)
+        {
+            return lv_color_hex(0xFF0000); // Bright red for selected item in night theme
+        }
+        else
+        {
+            return lv_color_hex(0xFFFFFF); // White for selected item in day theme
+        }
     }
     
     // Create gradient based on theme
@@ -148,7 +197,7 @@ void ConfigComponent::CreateUI()
     // Create title label (child of container, not screen)
     titleLabel_ = lv_label_create(container_);
     lv_label_set_text(titleLabel_, currentTitle_.c_str());
-    lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
+    lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN); // Default color
     lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_18, LV_PART_MAIN);
     lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 15);
 
@@ -181,9 +230,9 @@ void ConfigComponent::CreateUI()
 
     // Create hint label (child of container, not screen)
     hintLabel_ = lv_label_create(container_);
-    lv_label_set_text(hintLabel_, "Short: Next\nLong: Select");
-    lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN);
-    lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_12, LV_PART_MAIN);
+    lv_label_set_text(hintLabel_, "Short: Next | Long: Select");
+    lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN); // Default color
+    lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_10, LV_PART_MAIN);
     lv_obj_align(hintLabel_, LV_ALIGN_BOTTOM_MID, 0, -15);
 
     // Initial display update
@@ -214,18 +263,29 @@ void ConfigComponent::UpdateMenuDisplay()
                 lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_20, LV_PART_MAIN); // Larger font for selected
                 lv_obj_set_style_text_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
 
-                // Enhanced background highlight for selected item
-                lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN);
+                // Enhanced background highlight for selected item with theme-appropriate colors
+                if (styleService_) {
+                    const char* theme = styleService_->GetCurrentTheme();
+                    if (strcmp(theme, "Night") == 0) {
+                        lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x4D1F1F), LV_PART_MAIN); // Dark red background
+                        lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x993333), LV_PART_MAIN); // Medium red border
+                    } else {
+                        lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN); // Gray background
+                        lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN); // Light gray border
+                    }
+                } else {
+                    lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN);
+                    lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN);
+                }
                 lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_70, LV_PART_MAIN); // More visible background
                 lv_obj_set_style_radius(menuLabels_[i], 6, LV_PART_MAIN); // Reduced radius for tighter look
                 lv_obj_set_style_pad_all(menuLabels_[i], 6, LV_PART_MAIN); // Reduced padding from 10 to 6
                 lv_obj_set_style_border_width(menuLabels_[i], 1, LV_PART_MAIN);
-                lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN);
             }
             else
             {
                 // Apply progressive fading and font size reduction based on distance
-                uint8_t opacity = LV_OPA_100 - (distanceFromCenter * 45); // Increased fade by 45% per step (was 30%)
+                uint8_t opacity = LV_OPA_100 - (distanceFromCenter * 35);
 
                 // Use theme-appropriate gradient colors
                 lv_obj_set_style_text_color(menuLabels_[i], GetThemeGradientColor(distanceFromCenter), LV_PART_MAIN);
