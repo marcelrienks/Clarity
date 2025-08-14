@@ -1,255 +1,271 @@
-# Factory Refactoring Plan: Option 4 with Dependency Injection
+# UIState Management and Interrupt Processing
 
 ## Overview
-Replace the current registry-based ComponentFactory and PanelFactory with direct factory methods that use dependency injection for testability. This combines compile-time type safety with runtime testability.
 
-## Current State
-- Registry-based factories with string lookups
-- InitializeFactories() registration step required
-- Runtime component/panel resolution via string names
-- Good testability but magic strings and runtime overhead
+The Clarity application uses a UIState system to coordinate interrupt processing with LVGL UI operations. This document describes the distributed state management architecture that ensures interrupts are only processed when the UI is idle, preventing conflicts with animations and transitions.
 
-## Target State
-- Direct factory methods with compile-time type safety
-- Dependency injection via interfaces for testability
-- No registration step or magic strings
-- Zero runtime overhead with full test coverage
+## Core Architecture Principles
 
-## Implementation Plan
+1. **Single-Point Interrupt Checking**: Interrupts are ONLY checked from the main loop
+2. **Distributed State Management**: Components closest to the activity set the state
+3. **LVGL Synchronization**: UIState reflects LVGL's activity status
+4. **Explicit State Transitions**: All state changes should be logged for debugging
 
-### Phase 1: Create Factory Interfaces
+## UIState Enum
 
-#### 1.1 Create IComponentFactory Interface
-**File:** `include/interfaces/i_component_factory.h`
 ```cpp
-class IComponentFactory {
-public:
-    virtual ~IComponentFactory() = default;
-    virtual std::unique_ptr<ClarityComponent> CreateClarityComponent(IStyleService* style) = 0;
-    virtual std::unique_ptr<OilPressureComponent> CreateOilPressureComponent(IStyleService* style) = 0;
-    virtual std::unique_ptr<OilTemperatureComponent> CreateOilTemperatureComponent(IStyleService* style) = 0;
-    virtual std::unique_ptr<ErrorComponent> CreateErrorComponent(IStyleService* style) = 0;
-    virtual std::unique_ptr<KeyComponent> CreateKeyComponent(IStyleService* style) = 0;
-    virtual std::unique_ptr<LockComponent> CreateLockComponent(IStyleService* style) = 0;
-    virtual std::unique_ptr<ConfigComponent> CreateConfigComponent(IStyleService* style) = 0;
+enum class UIState {
+    IDLE,           // No LVGL activity, safe for all operations
+    LOADING,        // Panel loading with potential animations
+    UPDATING,       // Panel updating (sensor data refresh)
+    ANIMATING,      // LVGL animations in progress
+    TRANSITIONING,  // Panel transitions in progress
+    LVGL_BUSY       // Generic LVGL busy state
 };
 ```
 
-#### 1.2 Create IPanelFactory Interface
-**File:** `include/interfaces/i_panel_factory.h`
+### State Descriptions
+
+- **IDLE**: LVGL is not running any animations or transitions. Safe to:
+  - Process all interrupts (triggers and actions)
+  - Switch panels
+  - Execute user actions
+  
+- **LOADING**: A panel is being loaded, potentially with entrance animations
+  - Interrupts are deferred
+  - Critical triggers may still be processed (implementation-specific)
+  
+- **UPDATING**: Panel is refreshing its data (e.g., sensor readings)
+  - Low-priority interrupts deferred
+  - High-priority triggers may be processed
+  
+- **ANIMATING**: LVGL animations are actively running (e.g., gauge needle movement)
+  - All interrupts deferred until animation completes
+  - Ensures smooth visual transitions
+  
+- **TRANSITIONING**: Panel-to-panel transitions in progress
+  - All interrupts deferred
+  - Prevents panel switching during transitions
+  
+- **LVGL_BUSY**: Generic busy state for other LVGL operations
+  - Reserved for future use
+  - All interrupts deferred
+
+## State Ownership and Management
+
+### Who Can Set UIState
+
+1. **Panels** (Most Granular)
+   - Have direct knowledge of their animations
+   - Should set state when starting/completing animations
+   - Example: OemOilPanel sets ANIMATING during gauge updates
+
+2. **PanelManager** (High-Level)
+   - Sets default states for panel operations
+   - Manages state during panel switches
+   - Provides fallback state management
+
+3. **Special Components**
+   - Components with LVGL knowledge may set states
+   - Must coordinate with PanelManager
+
+### State Setting Rules
+
 ```cpp
-class IPanelFactory {
-public:
-    virtual ~IPanelFactory() = default;
-    virtual std::unique_ptr<SplashPanel> CreateSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) = 0;
-    virtual std::unique_ptr<OemOilPanel> CreateOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) = 0;
-    virtual std::unique_ptr<ErrorPanel> CreateErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) = 0;
-    virtual std::unique_ptr<ConfigPanel> CreateConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) = 0;
-    virtual std::unique_ptr<KeyPanel> CreateKeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) = 0;
-    virtual std::unique_ptr<LockPanel> CreateLockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) = 0;
-};
-```
-
-### Phase 2: Update Concrete Factory Implementations
-
-#### 2.1 Update ComponentFactory
-**File:** `include/factories/component_factory.h`
-```cpp
-class ComponentFactory : public IComponentFactory {
-public:
-    static ComponentFactory& Instance();
-    
-    // IComponentFactory implementation
-    std::unique_ptr<ClarityComponent> CreateClarityComponent(IStyleService* style) override;
-    std::unique_ptr<OilPressureComponent> CreateOilPressureComponent(IStyleService* style) override;
-    // ... other component methods
-    
-private:
-    ComponentFactory() = default;
-};
-```
-
-#### 2.2 Update PanelFactory
-**File:** `include/factories/panel_factory.h`
-```cpp
-class PanelFactory : public IPanelFactory {
-public:
-    static PanelFactory& Instance();
-    
-    // IPanelFactory implementation  
-    std::unique_ptr<SplashPanel> CreateSplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) override;
-    std::unique_ptr<OemOilPanel> CreateOemOilPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style) override;
-    // ... other panel methods
-    
-private:
-    PanelFactory() = default;
-};
-```
-
-### Phase 3: Update Panel Constructors for Dependency Injection
-
-#### 3.1 Update Panel Constructors
-Inject IComponentFactory into panels that create components:
-
-**Files to Update:**
-- `include/panels/splash_panel.h`
-- `include/panels/oem_oil_panel.h` 
-- `include/panels/error_panel.h`
-- `include/panels/key_panel.h`
-- `include/panels/lock_panel.h`
-
-**Example (SplashPanel):**
-```cpp
-class SplashPanel : public IPanel {
-private:
-    IComponentFactory* componentFactory_;
-    
-public:
-    SplashPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* style,
-                IComponentFactory* componentFactory = &ComponentFactory::Instance());
-    
-    void Load() override;
-};
-```
-
-#### 3.2 Update Panel Implementations
-Replace string-based component creation with direct method calls:
-
-**Before:**
-```cpp
-component_ = ComponentFactory::CreateComponent("Clarity", styleService_);
-```
-
-**After:**
-```cpp
-component_ = componentFactory_->CreateClarityComponent(styleService_);
-```
-
-### Phase 4: Update PanelManager for Dependency Injection
-
-#### 4.1 Update PanelManager Constructor
-**File:** `include/managers/panel_manager.h`
-```cpp
-class PanelManager : public IPanelService {
-private:
-    IPanelFactory* panelFactory_;
-    IComponentFactory* componentFactory_;
-    
-public:
-    PanelManager(IDisplayProvider* display, IGpioProvider* gpio, IStyleService* styleService,
-                 IActionManager* actionManager, IPreferenceService* preferenceService,
-                 IPanelFactory* panelFactory = &PanelFactory::Instance(),
-                 IComponentFactory* componentFactory = &ComponentFactory::Instance());
-};
-```
-
-#### 4.2 Update CreatePanel Method
-Replace string-based panel creation:
-
-**Before:**
-```cpp
-std::unique_ptr<IPanel> uniquePanel = PanelFactory::CreatePanel(
-    panelName, gpioProvider_, displayProvider_, styleService_);
-```
-
-**After:**
-```cpp
-std::unique_ptr<IPanel> uniquePanel;
-if (strcmp(panelName, PanelNames::SPLASH) == 0) {
-    uniquePanel = panelFactory_->CreateSplashPanel(gpioProvider_, displayProvider_, styleService_);
-} else if (strcmp(panelName, PanelNames::OIL) == 0) {
-    uniquePanel = panelFactory_->CreateOemOilPanel(gpioProvider_, displayProvider_, styleService_);
+// Panel sets state during animation
+void OemOilPanel::UpdateGauge() {
+    panelService_->SetUiState(UIState::ANIMATING);
+    // Start LVGL animation
+    lv_anim_start(&animation_);
 }
-// ... other panel types
+
+// Panel clears state when complete
+void OemOilPanel::AnimationComplete() {
+    panelService_->SetUiState(UIState::IDLE);
+}
+
+// PanelManager provides default behavior
+void PanelManager::UpdatePanel() {
+    SetUiState(UIState::UPDATING);
+    panel_->Update(callback);
+}
 ```
 
-### Phase 5: Update Main.cpp and Remove Registry System
+## Main Loop Flow
 
-#### 5.1 Update Service Creation
-**File:** `src/main.cpp`
+```
+main loop() {
+    // 1. Check interrupts only when IDLE
+    if (uiState == IDLE) {
+        interruptManager->CheckAllInterrupts();
+        // This processes: triggers → actions
+    }
+    
+    // 2. Update active panel
+    panelManager->UpdatePanel();
+    // Panel may change UIState during update
+    
+    // 3. Process LVGL tasks
+    Ticker::handleLvTasks();
+    
+    // 4. Dynamic delay
+    Ticker::handleDynamicDelay();
+}
+```
+
+### Interrupt Processing Order
+
+When UIState is IDLE, interrupts are processed in priority order:
+1. **Triggers** (TriggerManager) - Hardware state changes
+2. **Actions** (ActionManager) - User input actions
+
+## Implementation Guidelines
+
+### For Panel Developers
+
+1. **Set State Before Animations**
+   ```cpp
+   void MyPanel::Load() {
+       if (hasAnimation) {
+           panelService_->SetUiState(UIState::LOADING);
+           startLoadAnimation();
+       }
+   }
+   ```
+
+2. **Clear State After Animations**
+   ```cpp
+   void MyPanel::OnAnimationComplete() {
+       panelService_->SetUiState(UIState::IDLE);
+       if (completionCallback_) {
+           completionCallback_();
+       }
+   }
+   ```
+
+3. **Use Appropriate States**
+   - LOADING: For initial panel load
+   - ANIMATING: For data update animations
+   - TRANSITIONING: For panel-to-panel transitions
+
+### For System Components
+
+1. **Check State Before Operations**
+   ```cpp
+   bool ActionManager::CanExecuteActions() {
+       UIState state = panelService_->GetUiState();
+       return state == UIState::IDLE;
+   }
+   ```
+
+2. **Queue Operations When Busy**
+   ```cpp
+   if (!CanExecuteActions()) {
+       pendingAction_ = action;
+       return;
+   }
+   ```
+
+## Example Scenarios
+
+### Scenario 1: Splash Screen with Pending Action
+
+```
+1. Splash panel loads → Sets LOADING
+2. User long-presses during splash → Action queued
+3. Splash animation completes → Sets IDLE  
+4. Main loop detects IDLE → Processes pending action
+5. Action loads config panel → Skips default panel
+```
+
+### Scenario 2: Gauge Animation
+
+```
+1. Oil panel updating → Sets UPDATING
+2. New sensor data arrives → Starts gauge animation
+3. Panel sets ANIMATING → Interrupts deferred
+4. Animation completes → Sets IDLE
+5. Main loop resumes interrupt processing
+```
+
+### Scenario 3: Panel Transition
+
+```
+1. Trigger detected → Request panel switch
+2. PanelManager sets TRANSITIONING
+3. Old panel unloads, new panel loads
+4. Transition complete → Sets IDLE
+5. Normal operation resumes
+```
+
+## State Transition Diagram
+
+```
+         ┌──────┐
+    ┌────│ IDLE │────┐
+    │    └──┬───┘    │
+    │       │        │
+    ▼       ▼        ▼
+┌────────┐┌─────────┐┌──────────┐
+│LOADING ││UPDATING ││ANIMATING │
+└────┬───┘└────┬────┘└─────┬────┘
+     │         │            │
+     └─────────┴────────────┘
+               │
+               ▼
+           ┌──────┐
+           │ IDLE │
+           └──────┘
+```
+
+## Debugging State Issues
+
+### Enable State Logging
+
 ```cpp
-// Remove InitializeFactories() call
-// Update PanelManager creation to inject factories if needed
-panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), 
-                                                  styleManager.get(), actionManager.get(), 
-                                                  preferenceManager.get());
+void PanelManager::SetUiState(UIState state) {
+    log_d("UIState transition: %s → %s", 
+          StateToString(uiState_), 
+          StateToString(state));
+    uiState_ = state;
+}
 ```
 
-#### 5.2 Remove Registry Files
-**Files to Remove:**
-- `include/factories/factory_registration.h`
-- `src/factories/factory_registration.cpp`
+### Common Issues
 
-### Phase 6: Testing Support
+1. **Stuck in Busy State**
+   - Panel forgot to set IDLE after animation
+   - Check animation completion callbacks
 
-#### 6.1 Create Mock Factories
-**File:** `test/mocks/mock_component_factory.h`
-```cpp
-class MockComponentFactory : public IComponentFactory {
-public:
-    MOCK_METHOD(std::unique_ptr<ClarityComponent>, CreateClarityComponent, (IStyleService*), (override));
-    MOCK_METHOD(std::unique_ptr<OilPressureComponent>, CreateOilPressureComponent, (IStyleService*), (override));
-    // ... other mock methods
-};
-```
+2. **Interrupts Not Processing**
+   - Verify main loop is checking state
+   - Ensure panels set IDLE when appropriate
 
-#### 6.2 Update Existing Tests
-Update panel tests to inject mock factories for isolated testing.
+3. **Jerky Animations**
+   - Interrupts processing during animation
+   - Verify ANIMATING state is set
 
-## Benefits of This Approach
+## Future Enhancements
 
-### Compile-Time Benefits
-- **Type Safety**: No magic strings, compile-time method resolution
-- **IDE Support**: Autocomplete, refactoring, go-to-definition
-- **Performance**: Direct method calls, no hash map lookups
+1. **State Priorities**: Allow certain high-priority interrupts during specific states
+2. **State Timeout**: Automatic recovery if stuck in busy state
+3. **Performance Metrics**: Track time spent in each state
+4. **State Stack**: Support nested state management for complex UIs
 
-### Runtime Benefits  
-- **Zero Registration**: No initialization step required
-- **Predictable**: No runtime configuration or string parsing
-- **Debuggable**: Clear stack traces with actual method names
+## Best Practices
 
-### Testing Benefits
-- **Mockable**: Easy to inject test doubles via interfaces
-- **Isolated**: Test panels without real component dependencies
-- **Flexible**: Can verify factory method calls and return custom implementations
+1. **Always Set State**: Don't assume default behavior
+2. **Log Transitions**: Help future debugging
+3. **Complete Callbacks**: Always transition to IDLE in completion callbacks
+4. **Test Interrupts**: Verify interrupts work correctly with your panel
+5. **Document States**: Comment why specific states are used
 
-### Maintenance Benefits
-- **Explicit**: Clear what components/panels exist from factory interface
-- **Familiar**: Similar to previous UIFactory pattern
-- **Simple**: Less abstraction than registry-based approach
+## Summary
 
-## Migration Strategy
+The distributed UIState management system ensures smooth UI operation by:
+- Preventing interrupt processing during LVGL activity
+- Allowing fine-grained control by panels
+- Maintaining single-point interrupt checking in main loop
+- Providing clear state ownership rules
 
-1. **Backward Compatible**: Implement new interfaces alongside existing factories
-2. **Incremental**: Update one panel at a time to use dependency injection
-3. **Test Coverage**: Ensure each panel has tests with mock factories before migration
-4. **Remove Registry**: Only remove registry system after all panels migrated
-
-## Files Affected
-
-### New Files
-- `include/interfaces/i_component_factory.h`
-- `include/interfaces/i_panel_factory.h` 
-- `test/mocks/mock_component_factory.h`
-- `test/mocks/mock_panel_factory.h`
-
-### Modified Files
-- `include/factories/component_factory.h`
-- `src/factories/component_factory.cpp`
-- `include/factories/panel_factory.h`
-- `src/factories/panel_factory.cpp`
-- `include/managers/panel_manager.h`
-- `src/managers/panel_manager.cpp`
-- `src/main.cpp`
-- All panel header/implementation files
-
-### Removed Files
-- `include/factories/factory_registration.h`
-- `src/factories/factory_registration.cpp`
-
-## Success Criteria
-- [ ] All panels compile with type-safe factory method calls
-- [ ] No magic strings in component/panel creation
-- [ ] Full test coverage with mock factory injection
-- [ ] Zero runtime registration or initialization overhead
-- [ ] Build time and runtime performance maintained or improved
+This architecture scales with application complexity while maintaining predictable behavior.
