@@ -1,13 +1,9 @@
-* Config
-    * Fix tooltip
-    On first setting it's over 2 liines (which does not look good) and on second settings it's on one line again. Also ensure that this tooltop and the config tooltip are the same size
-    * Theme is not being applied 
-* review the intended use of the lib folder and check if there is any source that matches the use case, like ticker.cpp
-* I don't like the idea of the factory registration, can this not be absored by the relevant factories?
+* review logging, and the level between debug and info
+    * every method (within reason) should have a debug log
+    * every major concept (managers, panels, components etc.) should have an info log at key points
+* Ensure that all function comments have the same param name as the actual argument in code
 * Document current arch, and relationships
 * What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?
-* should there be a panel factory?
-* Ensure that in between animation of splash and oil panel needle, that interrupts are checked
 * remove all comments based on changes made, so remove temp, test simplified
 * Ensure that all tests now inject using constructor, and not methods
 * Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interupts, and Input Event handling.  

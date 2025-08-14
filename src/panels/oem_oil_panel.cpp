@@ -577,9 +577,3 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 
     return mappedValue;
 }
-
-// IPanel override to provide input service via composition
-// IInputService* OemOilPanel::GetInputService()
-// {
-//     return inputHandler_.get();
-// }

@@ -95,9 +95,9 @@ class SplashPanel : public IPanel, public IActionService
     lv_obj_t *blankScreen_;
 
     // Static Callback Methods
-    static void fading_out_timer_callback(lv_timer_t *timer);
+    static void fading_completion_callback(lv_timer_t *timer);
     static void fade_in_timer_callback(lv_timer_t *timer);
-    static void fading_in_timer_callback(lv_timer_t *timer);
+    static void fade_out_timer_callback(lv_timer_t *timer);
 
     // Helper methods
     int GetSplashDuration() const;
