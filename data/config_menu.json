@@ -1,0 +1,129 @@
+{
+  "version": "1.0",
+  "menu": [
+    {
+      "id": "general",
+      "label": "General",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "default_panel",
+          "label": "Default Panel",
+          "type": "choice",
+          "preference": "panel_name",
+          "choices": ["OemOilPanel", "KeyPanel", "LockPanel"],
+          "choiceLabels": ["Oil Monitor", "Key Status", "Lock Status"],
+          "default": "OemOilPanel"
+        },
+        {
+          "id": "show_splash",
+          "label": "Show Splash Screen",
+          "type": "toggle",
+          "preference": "show_splash",
+          "default": "true"
+        },
+        {
+          "id": "splash_duration",
+          "label": "Splash Duration (ms)",
+          "type": "number",
+          "preference": "splash_duration",
+          "min": 500,
+          "max": 5000,
+          "step": 250,
+          "default": "2000",
+          "visible": {
+            "preference": "show_splash",
+            "equals": "true"
+          }
+        },
+        {
+          "id": "back_general",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "display",
+      "label": "Display",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "theme",
+          "label": "Theme",
+          "type": "choice",
+          "preference": "theme",
+          "choices": ["Day", "Night"],
+          "default": "Day"
+        },
+        {
+          "id": "back_display",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "sensors",
+      "label": "Sensors",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "update_rate",
+          "label": "Update Rate",
+          "type": "choice",
+          "preference": "update_rate",
+          "choices": [250, 500, 1000, 2000],
+          "choiceLabels": ["250ms", "500ms", "1s", "2s"],
+          "default": "500"
+        },
+        {
+          "id": "pressure_unit",
+          "label": "Pressure Unit",
+          "type": "choice",
+          "preference": "pressure_unit",
+          "choices": ["PSI", "Bar", "kPa"],
+          "default": "PSI"
+        },
+        {
+          "id": "temperature_unit",
+          "label": "Temperature Unit",
+          "type": "choice",
+          "preference": "temp_unit",
+          "choices": ["C", "F"],
+          "choiceLabels": ["Celsius", "Fahrenheit"],
+          "default": "C"
+        },
+        {
+          "id": "back_sensors",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "advanced",
+      "label": "Advanced",
+      "type": "submenu",
+      "items": [
+        {
+          "id": "factory_reset",
+          "label": "Factory Reset",
+          "type": "action",
+          "action": "factory_reset"
+        },
+        {
+          "id": "back_advanced",
+          "label": "Back",
+          "type": "back"
+        }
+      ]
+    },
+    {
+      "id": "exit",
+      "label": "Exit",
+      "type": "action",
+      "action": "save_and_exit"
+    }
+  ]
+}

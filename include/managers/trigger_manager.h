@@ -1,28 +1,37 @@
 #pragma once
 
-#include "interfaces/i_interrupt.h"
-#include "utilities/types.h"
 #include "hardware/gpio_pins.h"
+#include "interfaces/i_interrupt_service.h"
+#include "utilities/types.h"
+
+/// @brief Consolidated GPIO state structure for single-read pattern
+struct GpioState
+{
+    bool keyPresent;
+    bool keyNotPresent;
+    bool lockState;
+    bool lightsState;
+};
 #include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_trigger_service.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
-#include "sensors/key_sensor.h"
-#include "sensors/lock_sensor.h"
-#include "sensors/light_sensor.h"
+#include "interfaces/i_trigger_service.h"
 #include "sensors/debug_error_sensor.h"
-#include <vector>
+#include "sensors/key_sensor.h"
+#include "sensors/lights_sensor.h"
+#include "sensors/lock_sensor.h"
 #include <functional>
 #include <memory>
+#include <vector>
 
 /**
  * @class TriggerManager
  * @brief Simplified direct GPIO polling trigger manager with mapping-based architecture
- * 
+ *
  * @architecture:
  * - Direct GPIO polling and UI management
  * - Static trigger mappings replace dynamic trigger objects
- * 
+ *
  * @key_simplifications:
  * 1. Direct GPIO polling - no interrupts or queues
  * 2. Pin change detection via state comparison
@@ -30,15 +39,15 @@
  * 4. Priority evaluation from lowest to highest (highest priority action wins)
  * 5. No cross-core communication needed
  */
-class TriggerManager : public ITriggerService, public IInterrupt
+class TriggerManager : public ITriggerService, public IInterruptService
 {
-public:
+  public:
     // Startup panel override method
     const char *GetStartupPanelOverride() const override;
 
     // Constructors and Destructors
-    TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor, 
-                   std::shared_ptr<LightSensor> lightSensor, std::shared_ptr<DebugErrorSensor> debugErrorSensor,
+    TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared_ptr<LockSensor> lockSensor,
+                   std::shared_ptr<LightsSensor> lightSensor, std::shared_ptr<DebugErrorSensor> debugErrorSensor,
                    IPanelService *panelService, IStyleService *styleService);
     TriggerManager(const TriggerManager &) = delete;
     TriggerManager &operator=(const TriggerManager &) = delete;
@@ -48,33 +57,19 @@ public:
     void Init() override;
     void ProcessTriggerEvents() override;
 
-    // IInterrupt Interface Implementation
-    
-    /**
-     * @brief Check for pending interrupts and process them (IInterrupt interface)
-     * @details Called by InterruptManager during idle time - redirects to ProcessTriggerEvents()
-     */
-    void CheckInterrupts() override;
+    // IInterruptService Interface Implementation
 
     /**
-     * @brief Check if there are pending trigger interrupts (IInterrupt interface)
-     * @details Quick check for trigger state changes without processing
-     * @return true if trigger events are pending
+     * @brief Process trigger events (IInterruptService interface)
+     * @details Called by InterruptManager during idle time
      */
-    bool HasPendingInterrupts() const override;
-
-    /**
-     * @brief Get interrupt priority level (IInterrupt interface)
-     * @details Trigger priority is 100 (higher than input=50)
-     * @return Priority value of 100
-     */
-    int GetPriority() const override { return 100; }
+    void Process() override { ProcessTriggerEvents(); }
 
     // Trigger Management
-    void AddTrigger(const std::string& triggerName, ISensor *sensor, std::function<void()> callback) override;
-    bool HasTrigger(const std::string& triggerName) const override;
+    void AddTrigger(const std::string &triggerName, ISensor *sensor, std::function<void()> callback) override;
+    bool HasTrigger(const std::string &triggerName) const override;
 
-private:
+  private:
     void InitializeTriggersFromSensors();
     GpioState ReadAllSensorStates();
     void CheckSensorChanges();
@@ -82,21 +77,23 @@ private:
     void CheckTriggerChange(const char *triggerId, bool currentPinState);
     void InitializeTrigger(const char *triggerId, bool currentPinState);
     Trigger *FindTriggerMapping(const char *triggerId);
-    void UpdateActiveTriggersSimple(Trigger *mapping, TriggerExecutionState newState);
     void ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state) override;
+
+    // Simple active trigger tracking helper
+    Trigger *FindActivePanel();
 
     // Sensor and service dependencies
     std::shared_ptr<KeySensor> keySensor_;
     std::shared_ptr<LockSensor> lockSensor_;
-    std::shared_ptr<LightSensor> lightSensor_;
+    std::shared_ptr<LightsSensor> lightSensor_;
     std::shared_ptr<DebugErrorSensor> debugErrorSensor_;
     IPanelService *panelService_ = nullptr;
     IStyleService *styleService_ = nullptr;
-    
-    // State tracking
-    static Trigger triggers_[];
-    Trigger *activePanelTrigger_ = nullptr;  // Highest priority active panel trigger
-    Trigger *activeThemeTrigger_ = nullptr;  // Active theme trigger (only one at a time)
-    const char *startupPanelOverride_ = nullptr;
-    bool initialized_ = false;  // Prevent double initialization
+
+    // Trigger definitions
+    static Trigger triggers_[]; // Static array of all trigger definitions
+
+    // Initialization state
+    const char *startupPanelOverride_ = nullptr; // Panel to load at startup if triggers active
+    bool initialized_ = false;                   // Prevent double initialization
 };

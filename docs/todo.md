@@ -1,9 +1,12 @@
-* Consolidate panel switching mechanism between PanelManager, and InputManager  
-If possible they should use a similar mechanism in the form of a simplePanelSwitchAction
-* Expand on the idea of interrupts, where we have two types, triggers and input
-    * I think I forgot that triggers do not use queues any more, they just check current state. If so that means input will not be able to work like that
-        * If so think through input, and how best it can be built with the idea of letting main loop check for input during idle, and actioning
-* Ensure that in between animation of splash and oil panel needle, that interrupts are checked
+* Review interrupt logic, it seem fragmented
+    * add a quick and clean interrupt check in between splash panel animations  
+    BUT actually all we need to do between animation, is set the UIState to idle, and allow the update function, which is constantly running to call check. Essentially make sure that individual components do not do interrupt checks, they must just accurately manage UIStates, and then anytime there is IDLE, the main loop should be running checks
+* review logging, and the level between debug and info
+    * every method (within reason) should have a debug log
+    * every major concept (managers, panels, components etc.) should have an info log at key points
+* Ensure that all function comments have the same param name as the actual argument in code
+* Document current arch, and relationships
+* What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?
 * remove all comments based on changes made, so remove temp, test simplified
 * Ensure that all tests now inject using constructor, and not methods
 * Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interupts, and Input Event handling.  

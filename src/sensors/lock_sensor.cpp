@@ -5,7 +5,7 @@
 // Constructors and Destructors
 
 /// @brief Constructor for LockSensor
-LockSensor::LockSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider)
+LockSensor::LockSensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
 }
 
@@ -15,7 +15,8 @@ LockSensor::LockSensor(IGpioProvider* gpioProvider) : gpioProvider_(gpioProvider
 void LockSensor::Init()
 {
     static bool initialized = false;
-    if (!initialized) {
+    if (!initialized)
+    {
         log_d("Initializing lock sensor on GPIO %d", gpio_pins::LOCK);
         initialized = true;
     }
@@ -27,19 +28,18 @@ void LockSensor::Init()
 Reading LockSensor::GetReading()
 {
     bool isLockEngaged = gpioProvider_->DigitalRead(gpio_pins::LOCK);
-    
+
     // Only log state changes to reduce log spam during polling
     static bool lastState = false;
     static bool firstRead = true;
-    
-    if (firstRead || isLockEngaged != lastState) {
-        log_d("Lock sensor reading: %s (pin %d %s)", 
-              isLockEngaged ? "engaged" : "disengaged",
-              gpio_pins::LOCK,
+
+    if (firstRead || isLockEngaged != lastState)
+    {
+        log_d("Lock sensor reading: %s (pin %d %s)", isLockEngaged ? "engaged" : "disengaged", gpio_pins::LOCK,
               isLockEngaged ? "HIGH" : "LOW");
         lastState = isLockEngaged;
         firstRead = false;
     }
-    
+
     return Reading{isLockEngaged};
 }

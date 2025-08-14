@@ -1,36 +1,39 @@
 #include "panels/error_panel.h"
-#include "factories/ui_factory.h"
+#include "components/error_component.h"
+#include "factories/component_factory.h"
+#include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
-#include "actions/input_actions.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
-ErrorPanel::ErrorPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) 
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                       IComponentFactory* componentFactory)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       panelLoaded_(false), previousTheme_(nullptr)
 {
-    log_d("Creating ErrorPanel");
-    // Component will be created during load() method
 }
 
 ErrorPanel::~ErrorPanel()
 {
-    if (screen_) {
+    log_d("Destroying ErrorPanel...");
+    if (screen_)
+    {
         lv_obj_delete(screen_);
     }
 
-    if (errorListComponent_)
+    if (errorComponent_)
     {
-        errorListComponent_.reset();
+        errorComponent_.reset();
     }
-    
+
     // Reset error panel active flag when panel is destroyed
     ErrorManager::Instance().SetErrorPanelActive(false);
-    
+
     // Restore previous theme if one was stored
-    if (styleService_ && previousTheme_) {
-        log_d("Restoring previous theme: %s", previousTheme_);
+    if (styleService_ && previousTheme_)
+    {
         styleService_->SetTheme(previousTheme_);
     }
 }
@@ -39,25 +42,25 @@ ErrorPanel::~ErrorPanel()
 /// @brief Initialize the error panel and its UI structure
 void ErrorPanel::Init()
 {
-    log_d("Initializing error panel");
-
-    if (!displayProvider_ || !gpioProvider_) {
+    log_d("Initializing ErrorPanel");
+    if (!displayProvider_ || !gpioProvider_)
+    {
         log_e("ErrorPanel requires display and gpio providers");
+        ErrorManager::Instance().ReportCriticalError("ErrorPanel",
+                                                     "Missing required providers - display or gpio provider is null");
         return;
     }
 
     screen_ = displayProvider_->CreateScreen();
-    
-    // Store current theme before switching to ERROR theme
-    if (styleService_) {
+
+    // Store current theme before switching to ERROR theme (but don't apply it yet)
+    if (styleService_)
+    {
         previousTheme_ = styleService_->GetCurrentTheme();
-        log_d("Storing previous theme: %s", previousTheme_);
-        styleService_->SetTheme(Themes::ERROR);
-        styleService_->ApplyThemeToScreen(screen_);
     }
-    
+
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
-    
+
     // Set error panel as active in ErrorManager
     ErrorManager::Instance().SetErrorPanelActive(true);
 }
@@ -65,35 +68,52 @@ void ErrorPanel::Init()
 /// @brief Load the error panel UI components
 void ErrorPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading error panel with current errors");
+    log_i("Loading ErrorPanel with current error queue");
 
-    // Create component directly using UIFactory
-    errorListComponent_ = UIFactory::createErrorListComponent(styleService_);
+    // Store callback for later use
+    callbackFunction_ = callbackFunction;
+
+    // Create component using injected factory
+    errorComponent_ = componentFactory_->CreateErrorComponent(styleService_);
 
     // Render the component
-    if (!displayProvider_) {
+    if (!displayProvider_)
+    {
         log_e("ErrorPanel load requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                             "Cannot render component - display provider is null");
         return;
     }
-    errorListComponent_->Render(screen_, centerLocation_, displayProvider_);
-    
+    errorComponent_->Render(screen_, centerLocation_, displayProvider_);
+
     // Get current errors and refresh component
     std::vector<ErrorInfo> currentErrors = ErrorManager::Instance().GetErrorQueue();
-    errorListComponent_->Refresh(Reading{}); // Component will fetch errors internally
-    
+    errorComponent_->Refresh(Reading{}); // Component will fetch errors internally
+
     lv_obj_add_event_cb(screen_, ErrorPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
-    log_v("loading error panel...");
+    // Add safety check before screen load
+    if (!screen_)
+    {
+        log_e("Screen is null, cannot load error panel");
+        ErrorManager::Instance().ReportCriticalError("ErrorPanel", "Cannot load panel - screen creation failed");
+        if (callbackFunction_)
+        {
+            callbackFunction_();
+        }
+        return;
+    }
+
     lv_screen_load(screen_);
-    
+
     // Ensure ERROR theme is applied when panel is loaded
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->SetTheme(Themes::ERROR);
         styleService_->ApplyThemeToScreen(screen_);
     }
-    
+
     panelLoaded_ = true;
-    callbackFunction();
 }
 
 /// @brief Update the error panel with current error data
@@ -101,97 +121,112 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
 {
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
-    
+
     // Check if error list has changed
     bool errorsChanged = false;
-    if (newErrors.size() != currentErrors_.size()) {
+    if (newErrors.size() != currentErrors_.size())
+    {
         errorsChanged = true;
-    } else {
+    }
+    else
+    {
         // Compare timestamps to detect changes
-        for (size_t i = 0; i < newErrors.size() && !errorsChanged; i++) {
+        for (size_t i = 0; i < newErrors.size() && !errorsChanged; i++)
+        {
             if (newErrors[i].timestamp != currentErrors_[i].timestamp ||
-                newErrors[i].acknowledged != currentErrors_[i].acknowledged) {
+                newErrors[i].acknowledged != currentErrors_[i].acknowledged)
+            {
                 errorsChanged = true;
             }
         }
     }
-    
+
     // Update display if errors have changed
-    if (errorsChanged) {
-        log_d("Error list changed - updating display");
+    if (errorsChanged)
+    {
         currentErrors_ = newErrors;
-        if (errorListComponent_) {
-            errorListComponent_->Refresh(Reading{}); // Component will fetch errors internally
+        if (errorComponent_)
+        {
+            errorComponent_->Refresh(Reading{}); // Component will fetch errors internally
         }
     }
-    
+
     // If no errors remain, trigger restoration to previous panel
-    if (currentErrors_.empty() && panelLoaded_) {
-        log_d("All errors cleared - marking error panel for restoration");
+    if (currentErrors_.empty() && panelLoaded_)
+    {
         ErrorManager::Instance().SetErrorPanelActive(false);
     }
-    
+
     callbackFunction();
 }
 
 // Static Event Callbacks
 void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Error panel loaded successfully");
-    // Panel load completion handled automatically
+    if (!event)
+    {
+        return;
+    }
+
+    auto thisInstance = static_cast<ErrorPanel *>(lv_event_get_user_data(event));
+    if (thisInstance && thisInstance->callbackFunction_)
+    {
+        thisInstance->callbackFunction_();
+    }
 }
 
 // IInputService Interface Implementation
 
-std::unique_ptr<IInputAction> ErrorPanel::GetShortPressAction()
+Action ErrorPanel::GetShortPressAction()
 {
     // Short press cycles through each error
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::NEXT,
-        [this](MenuNavigationAction::Direction) {
-            if (currentErrors_.empty()) {
-                log_d("ErrorPanel: No errors to cycle through");
+    return Action(
+        [this]()
+        {
+            log_i("ErrorPanel: Short press - cycling to next error");
+            if (currentErrors_.empty())
+            {
                 return;
             }
-            
-            // Move to next error (wrap around)
-            currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-            
-            log_i("ErrorPanel: Short press - showing error %d of %d", 
-                  currentErrorIndex_ + 1, currentErrors_.size());
-            
-            // Update the error list component to highlight current error
-            if (errorListComponent_) {
-                log_d("Currently showing error %d: %s", currentErrorIndex_ + 1, 
-                      currentErrors_[currentErrorIndex_].message.c_str());
+
+            // Use the ErrorComponent's built-in cycling method
+            if (errorComponent_)
+            {
+                auto errorList = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+                errorList->CycleToNextError();
             }
-        }
-    );
+            else
+            {
+                log_e("ErrorPanel: errorComponent_ is null!");
+                ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                                     "Cannot cycle errors - errorListComponent is null");
+            }
+        });
 }
 
-std::unique_ptr<IInputAction> ErrorPanel::GetLongPressAction()
+Action ErrorPanel::GetLongPressAction()
 {
     // Long press clears all errors
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::SELECT,
-        [this](MenuNavigationAction::Direction) {
+    return Action(
+        [this]()
+        {
             log_i("ErrorPanel: Long press - clearing all errors");
-            
             // Clear all errors from the error manager
             ErrorManager::Instance().ClearAllErrors();
-            
+
             // Clear local cache
             currentErrors_.clear();
-            currentErrorIndex_ = 0;
-            
-            // Update the display
-            if (errorListComponent_) {
-                log_d("Error list cleared, component will update on next cycle");
-            }
-        }
-    );
+        });
 }
 
-bool ErrorPanel::CanProcessInput() const
+
+// Manager injection method
+void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
-    // ErrorPanel can always process input (no animations that block input)
-    return true;
+    panelService_ = panelService;
+    // styleService_ is already set in constructor, but update if different instance provided
+    if (styleService != styleService_)
+    {
+        styleService_ = styleService;
+    }
 }

@@ -1,12 +1,16 @@
 #include "panels/key_panel.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
+#include "interfaces/i_component_factory.h"
+#include "managers/error_manager.h"
 #include "managers/style_manager.h"
-#include <variant>
 #include <Arduino.h>
+#include <variant>
 
 // Constructors and Destructors
-KeyPanel::KeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService) 
+KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                   IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       keySensor_(std::make_shared<KeySensor>(gpio))
 {
     // Component will be created during load() method
@@ -14,7 +18,8 @@ KeyPanel::KeyPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService
 
 KeyPanel::~KeyPanel()
 {
-    if (screen_) {
+    if (screen_)
+    {
         lv_obj_delete(screen_);
     }
 
@@ -28,17 +33,21 @@ KeyPanel::~KeyPanel()
 /// @brief Initialize the key panel and its components
 void KeyPanel::Init()
 {
-    log_d("Initializing key panel and reading current GPIO key state");
+    // Initializing key panel and reading current GPIO key state
 
-    if (!displayProvider_ || !gpioProvider_) {
+    if (!displayProvider_ || !gpioProvider_)
+    {
         log_e("KeyPanel requires display and gpio providers");
+        ErrorManager::Instance().ReportCriticalError("KeyPanel",
+                                                     "Missing required providers - display or gpio provider is null");
         return;
     }
 
     screen_ = displayProvider_->CreateScreen();
-    
+
     // Apply current theme immediately after screen creation
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->ApplyThemeToScreen(screen_);
     }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -51,27 +60,30 @@ void KeyPanel::Init()
 /// @brief Load the key panel UI components
 void KeyPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading key panel with current key state display");
+    // Loading key panel with current key state display
     callbackFunction_ = callbackFunction;
 
-    // Create component directly using UIFactory
-    keyComponent_ = UIFactory::createKeyComponent(styleService_);
+    // Create component using injected factory
+    keyComponent_ = componentFactory_->CreateKeyComponent(styleService_);
 
     // Render the component
-    if (!displayProvider_) {
+    if (!displayProvider_)
+    {
         log_e("KeyPanel load requires display provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", "Cannot load - display provider is null");
         return;
     }
     keyComponent_->Render(screen_, centerLocation_, displayProvider_);
     keyComponent_->Refresh(Reading{static_cast<int32_t>(currentKeyState_)});
-    
+
     lv_obj_add_event_cb(screen_, KeyPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     log_v("loading...");
     lv_screen_load(screen_);
-    
+
     // Always apply current theme to the screen when loading (ensures theme is current)
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->ApplyThemeToScreen(screen_);
     }
 }
@@ -79,14 +91,16 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
 /// @brief Update the key panel with current sensor data
 void KeyPanel::Update(std::function<void()> callbackFunction)
 {
-    if (!gpioProvider_) {
+    if (!gpioProvider_)
+    {
         log_e("KeyPanel update requires gpio provider");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", "Cannot update - gpio provider is null");
         return;
     }
 
     // Get current key state from sensor
     KeyState newKeyState = keySensor_->GetKeyState();
-    
+
     // Update display if key state has changed
     if (newKeyState != currentKeyState_)
     {
@@ -94,7 +108,7 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
         currentKeyState_ = newKeyState;
         keyComponent_->Refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     }
-    
+
     callbackFunction();
 }
 
@@ -103,8 +117,19 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Key panel load completed - screen displayed");
+    // Key panel load completed - screen displayed
 
     auto thisInstance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
     thisInstance->callbackFunction_();
+}
+
+// Manager injection method
+void KeyPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
+{
+    // KeyPanel doesn't use panelService (no actions), but update styleService if different
+    if (styleService != styleService_)
+    {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
 }

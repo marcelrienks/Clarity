@@ -1,12 +1,16 @@
 #include "panels/lock_panel.h"
-#include "factories/ui_factory.h"
+#include "factories/component_factory.h"
+#include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
+#include <esp32-hal-log.h>
 #include <variant>
 
 // Constructors and Destructors
-LockPanel::LockPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
+LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+                     IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      lockSensor_(std::make_shared<LockSensor>(gpio)) 
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
+      lockSensor_(std::make_shared<LockSensor>(gpio))
 {
     // Component will be created during load() method
 }
@@ -34,12 +38,13 @@ LockPanel::~LockPanel()
 /// @brief Initialize the lock panel and its components
 void LockPanel::Init()
 {
-    log_d("Initializing lock panel with sensor and display components");
+    // Initializing lock panel with sensor and display components
 
     screen_ = displayProvider_->CreateScreen();
-    
+
     // Apply current theme immediately after screen creation
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->ApplyThemeToScreen(screen_);
     }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -51,11 +56,11 @@ void LockPanel::Init()
 /// @brief Load the lock panel UI components
 void LockPanel::Load(std::function<void()> callbackFunction)
 {
-    log_d("Loading lock panel with current lock state display");
+    // Loading lock panel with current lock state display
     callbackFunction_ = callbackFunction;
 
-    // Create component directly using UIFactory
-    lockComponent_ = UIFactory::createLockComponent(styleService_);
+    // Create component using injected factory
+    lockComponent_ = componentFactory_->CreateLockComponent(styleService_);
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->Render(screen_, centerLocation_, displayProvider_);
@@ -64,9 +69,10 @@ void LockPanel::Load(std::function<void()> callbackFunction)
 
     log_v("loading...");
     lv_screen_load(screen_);
-    
+
     // Always apply current theme to the screen when loading (ensures theme is current)
-    if (styleService_) {
+    if (styleService_)
+    {
         styleService_->ApplyThemeToScreen(screen_);
     }
 }
@@ -83,8 +89,19 @@ void LockPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Lock panel load completed - screen displayed");
+    // Lock panel load completed - screen displayed
 
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
     thisInstance->callbackFunction_();
+}
+
+// Manager injection method
+void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
+{
+    // LockPanel doesn't use panelService (no actions), but update styleService if different
+    if (styleService != styleService_)
+    {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
 }

@@ -2,8 +2,7 @@
 
 // Constructors and Destructors
 
-OemOilPressureComponent::OemOilPressureComponent(IStyleService* styleService)
-    : OemOilComponent(styleService)
+OemOilPressureComponent::OemOilPressureComponent(IStyleService *styleService) : OemOilComponent(styleService)
 {
     // Constructor delegates to base class
 }
@@ -12,7 +11,7 @@ OemOilPressureComponent::OemOilPressureComponent(IStyleService* styleService)
 
 /// @brief Gets the icon for the oil pressure component.
 /// @return Pointer to the icon image descriptor.
-const lv_image_dsc_t* OemOilPressureComponent::get_icon() const
+const lv_image_dsc_t *OemOilPressureComponent::get_icon() const
 {
     return &oil_can_regular;
 }
@@ -64,7 +63,8 @@ bool OemOilPressureComponent::is_danger_condition(int32_t value) const
 /// @param section The scale section to configure.
 void OemOilPressureComponent::setup_danger_zone(lv_scale_section_t *section) const
 {
-    lv_scale_section_set_range(section, OemOilPressureComponent::get_scale_min(), OemOilPressureComponent::get_danger_zone());
+    lv_scale_section_set_range(section, OemOilPressureComponent::get_scale_min(),
+                               OemOilPressureComponent::get_danger_zone());
 }
 
 /// @brief Gets the Y offset for the oil pressure icon.
@@ -77,12 +77,12 @@ int32_t OemOilPressureComponent::get_icon_y_offset() const
 /// @brief Gets the label angles for L and H labels.
 /// @param lAngle Reference to store the L label angle.
 /// @param hAngle Reference to store the H label angle.
-void OemOilPressureComponent::get_label_angles(int32_t& lAngle, int32_t& hAngle) const
+void OemOilPressureComponent::get_label_angles(int32_t &lAngle, int32_t &hAngle) const
 {
     // Standard positioning for pressure component
     // L label: At _scale_rotation angle (low pressure start)
     lAngle = scaleRotation_;
-    
+
     // H label: At _scale_rotation + angle_range (high pressure end)
     hAngle = scaleRotation_ + get_angle_range();
 }

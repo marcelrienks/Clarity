@@ -1,14 +1,15 @@
 #pragma once
 
-#include "interfaces/i_panel.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_display_provider.h"
-#include "interfaces/i_style_service.h"
 #include "components/lock_component.h"
+#include "interfaces/i_display_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_panel.h"
+#include "interfaces/i_style_service.h"
 #include "sensors/lock_sensor.h"
 #include "utilities/types.h"
 
-#include <utilities/lv_tools.h>
+// Forward declarations
+class IComponentFactory;
 
 /**
  * @class LockPanel
@@ -35,18 +36,22 @@
  */
 class LockPanel : public IPanel
 {
-public:
+  public:
     // Constructors and Destructors
-    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+              IComponentFactory* componentFactory = nullptr);
     ~LockPanel();
 
     // Core Functionality Methods
-    static constexpr const char* NAME = PanelNames::LOCK;
+    static constexpr const char *NAME = PanelNames::LOCK;
     void Init() override;
     void Load(std::function<void()> callbackFunction) override;
     void Update(std::function<void()> callbackFunction) override;
 
-private:
+    // Manager injection method (minimal implementation - panel has no actions)
+    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+
+  private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
@@ -54,6 +59,7 @@ private:
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
+    IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> lockComponent_;
     std::shared_ptr<LockSensor> lockSensor_;

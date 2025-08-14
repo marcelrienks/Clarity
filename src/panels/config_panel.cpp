@@ -1,31 +1,25 @@
 #include "panels/config_panel.h"
+#include "managers/error_manager.h"
 #include "managers/style_manager.h"
 #include "managers/trigger_manager.h"
-#include "actions/input_actions.h"
+#include "utilities/types.h"
 #include <Arduino.h>
+#include <algorithm>
+#include <cstring>
 
 // Constructors and Destructors
-ConfigPanel::ConfigPanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      currentMenuIndex_(0)
+ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
+      currentMenuIndex_(0), configComponent_(std::make_unique<ConfigComponent>())
 {
-    // Initialize menu items (placeholder options for Phase 3)
-    menuItems_ = {
-        {"Option 1", []() { log_i("Option 1 selected"); }},
-        {"Option 2", []() { log_i("Option 2 selected"); }},
-        {"Exit", [this]() { 
-            log_i("Exiting config panel");
-            // Return to previous panel
-            // For now, just go back to OIL panel as default
-            // In Phase 4, this will use proper panel restoration
-        }}
-    };
+    // Menu items will be initialized after preferences are injected
 }
 
 ConfigPanel::~ConfigPanel()
 {
-    log_d("Destroying ConfigPanel...");
-    
+
+    configComponent_.reset();
+
     if (screen_)
     {
         lv_obj_delete(screen_);
@@ -37,35 +31,63 @@ ConfigPanel::~ConfigPanel()
 
 void ConfigPanel::Init()
 {
-    log_d("Initializing ConfigPanel");
-    
+
     if (!displayProvider_)
     {
         log_e("ConfigPanel requires display provider");
+        ErrorManager::Instance().ReportCriticalError("ConfigPanel", "Missing required display provider");
         return;
     }
-    
+
     screen_ = displayProvider_->CreateScreen();
+
+    // Apply theme to screen for consistent styling with other panels
+    if (styleService_)
+    {
+        styleService_->ApplyThemeToScreen(screen_);
+    }
 }
 
 void ConfigPanel::Load(std::function<void()> callbackFunction)
 {
     log_i("Loading ConfigPanel");
-    
+
     callbackFunction_ = callbackFunction;
-    
-    // Reset menu to first item
+
+    // Reset menu to first item and main menu state
     currentMenuIndex_ = 0;
-    
-    log_d("Creating menu UI...");
-    // Create the menu UI
-    CreateMenuUI();
-    
-    log_v("loading...");
+    currentMenuState_ = MenuState::MainMenu;
+
+    // Apply current theme to config panel (don't change the theme, just apply existing)
+    if (styleService_)
+    {
+        styleService_->ApplyThemeToScreen(screen_);
+        
+        // For night theme, override the screen background to use dark red instead of black
+        const char* theme = styleService_->GetCurrentTheme();
+        if (strcmp(theme, "Night") == 0) {
+            lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
+            lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+        }
+    }
+
+    // Initialize the config component with the screen
+    if (configComponent_ && screen_)
+    {
+        configComponent_->Init(screen_);
+        configComponent_->SetStyleService(styleService_);
+
+        // Set initial menu items
+        UpdateMenuItemsWithCurrentValues();
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
+    }
+
     lv_screen_load(screen_);
-    
+
     // Call the completion callback directly (like other panels do)
-    if (callbackFunction_) {
+    if (callbackFunction_)
+    {
         callbackFunction_();
     }
 }
@@ -77,90 +99,6 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 }
 
 // Private methods
-
-void ConfigPanel::CreateMenuUI()
-{
-    log_d("CreateMenuUI: Starting, screen_ = %p", screen_);
-    
-    if (!screen_) {
-        log_e("CreateMenuUI: screen_ is NULL!");
-        return;
-    }
-    
-    log_d("CreateMenuUI: Setting background color...");
-    // Apply grey theme for settings
-    lv_obj_set_style_bg_color(screen_, lv_color_hex(0x2C2C2C), LV_PART_MAIN);
-    
-    log_d("CreateMenuUI: Creating title label...");
-    // Create title
-    titleLabel_ = lv_label_create(screen_);
-    log_d("CreateMenuUI: Setting title text...");
-    lv_label_set_text(titleLabel_, "Configuration");
-    log_d("CreateMenuUI: Setting title color...");
-    lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN);
-    log_d("CreateMenuUI: Setting title font...");
-    lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_20, LV_PART_MAIN);
-    log_d("CreateMenuUI: Aligning title...");
-    lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 20);
-    
-    log_d("CreateMenuUI: Creating menu container...");
-    // Create menu container
-    menuContainer_ = lv_obj_create(screen_);
-    lv_obj_set_size(menuContainer_, 200, 120);
-    lv_obj_align(menuContainer_, LV_ALIGN_CENTER, 0, 0);
-    lv_obj_set_style_bg_color(menuContainer_, lv_color_hex(0x3C3C3C), LV_PART_MAIN);
-    lv_obj_set_style_border_width(menuContainer_, 0, LV_PART_MAIN);
-    lv_obj_set_style_pad_all(menuContainer_, 10, LV_PART_MAIN);
-    lv_obj_set_flex_flow(menuContainer_, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(menuContainer_, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    
-    // Create menu items
-    menuLabels_.clear();
-    for (size_t i = 0; i < menuItems_.size(); ++i)
-    {
-        lv_obj_t* item = lv_label_create(menuContainer_);
-        lv_label_set_text(item, menuItems_[i].label.c_str());
-        lv_obj_set_style_text_color(item, lv_color_hex(0xAAAAAA), LV_PART_MAIN);
-        lv_obj_set_style_text_font(item, &lv_font_montserrat_16, LV_PART_MAIN);
-        lv_obj_set_width(item, lv_pct(100));
-        lv_obj_set_style_pad_ver(item, 5, LV_PART_MAIN);
-        
-        menuLabels_.push_back(item);
-    }
-    
-    // Create hint label
-    hintLabel_ = lv_label_create(screen_);
-    lv_label_set_text(hintLabel_, "Short: Next | Long: Select");
-    lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN);
-    lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_12, LV_PART_MAIN);
-    lv_obj_align(hintLabel_, LV_ALIGN_BOTTOM_MID, 0, -20);
-    
-    // Update display to show current selection
-    UpdateMenuDisplay();
-}
-
-void ConfigPanel::UpdateMenuDisplay()
-{
-    // Update all menu items
-    for (size_t i = 0; i < menuLabels_.size(); ++i)
-    {
-        if (i == currentMenuIndex_)
-        {
-            // Highlight current item
-            lv_obj_set_style_text_color(menuLabels_[i], lv_color_hex(0xFFFFFF), LV_PART_MAIN);
-            lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN);
-            lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
-            lv_obj_set_style_pad_hor(menuLabels_[i], 10, LV_PART_MAIN);
-        }
-        else
-        {
-            // Normal item
-            lv_obj_set_style_text_color(menuLabels_[i], lv_color_hex(0xAAAAAA), LV_PART_MAIN);
-            lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_0, LV_PART_MAIN);
-            lv_obj_set_style_pad_hor(menuLabels_[i], 0, LV_PART_MAIN);
-        }
-    }
-}
 
 void ConfigPanel::ExecuteCurrentOption()
 {
@@ -174,9 +112,9 @@ void ConfigPanel::ExecuteCurrentOption()
 
 void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_d("Config panel loaded successfully");
-    
-    auto* panel = static_cast<ConfigPanel*>(lv_event_get_user_data(event));
+    // Config panel loaded successfully
+
+    auto *panel = static_cast<ConfigPanel *>(lv_event_get_user_data(event));
     if (panel && panel->callbackFunction_)
     {
         panel->callbackFunction_();
@@ -185,31 +123,395 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 // IInputService Interface Implementation
 
-std::unique_ptr<IInputAction> ConfigPanel::GetShortPressAction()
+Action ConfigPanel::GetShortPressAction()
 {
     // Short press cycles through menu options
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::NEXT,
-        [this](MenuNavigationAction::Direction) {
+    return Action(
+        [this]()
+        {
             currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
-            log_i("ConfigPanel: Short press - selected '%s'", menuItems_[currentMenuIndex_].label.c_str());
-            UpdateMenuDisplay();
-        }
-    );
+            if (configComponent_)
+            {
+                configComponent_->SetCurrentIndex(currentMenuIndex_);
+
+                // Update hint text based on current menu item
+                if (menuItems_[currentMenuIndex_].label == "Exit")
+                {
+                    configComponent_->SetHintText("Short: Next | Long: Press to exit");
+                }
+                else
+                {
+                    configComponent_->SetHintText("Short: Next | Long: Select");
+                }
+            }
+        });
 }
 
-std::unique_ptr<IInputAction> ConfigPanel::GetLongPressAction()
+Action ConfigPanel::GetLongPressAction()
 {
     // Long press executes current option
-    return std::make_unique<MenuNavigationAction>(MenuNavigationAction::SELECT,
-        [this](MenuNavigationAction::Direction) {
-            log_i("ConfigPanel: Long press - executing '%s'", menuItems_[currentMenuIndex_].label.c_str());
-            ExecuteCurrentOption();
-        }
-    );
+    return Action([this]() { ExecuteCurrentOption(); });
 }
 
-bool ConfigPanel::CanProcessInput() const
+// Manager injection method
+void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
-    // ConfigPanel can always process input (no animations that block input)
-    return true;
+    panelService_ = panelService;
+    // styleService_ is already set in constructor, but update if different instance provided
+    if (styleService != styleService_)
+    {
+        styleService_ = styleService;
+    }
+    // Managers injected successfully
+}
+
+void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
+{
+    preferenceService_ = preferenceService;
+    // Initialize menu items now that we have access to preferences
+    InitializeMenuItems();
+}
+
+void ConfigPanel::InitializeMenuItems()
+{
+    if (!preferenceService_)
+    {
+        log_e("Cannot initialize menu items without preference service");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigPanel",
+                                             "Cannot initialize menu - preference service is null");
+        return;
+    }
+
+    UpdateMenuItemsWithCurrentValues();
+}
+
+void ConfigPanel::UpdateMenuItemsWithCurrentValues()
+{
+    if (!preferenceService_)
+        return;
+
+    const Configs &config = preferenceService_->GetConfig();
+
+    // Format panel name for display (remove "Panel" suffix)
+    std::string panelDisplay = config.panelName;
+    if (panelDisplay.find("Panel") != std::string::npos)
+    {
+        panelDisplay = panelDisplay.substr(0, panelDisplay.find("Panel"));
+    }
+
+    menuItems_ = {
+        {"Panel: " + panelDisplay, [this]() { EnterSubmenu(MenuState::PanelSubmenu); }},
+        {"Theme: " + config.theme, [this]() { EnterSubmenu(MenuState::ThemeSubmenu); }},
+        {"Splash: " + std::string(config.showSplash ? "On" : "Off"),
+         [this]() { EnterSubmenu(MenuState::SplashSubmenu); }},
+        {"Splash T: " + std::to_string(config.splashDuration) + "ms",
+         [this]() { EnterSubmenu(MenuState::SplashDurationSubmenu); }},
+        {"Rate: " + std::to_string(config.updateRate) + "ms", [this]() { EnterSubmenu(MenuState::UpdateRateSubmenu); }},
+        {"Press: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
+        {"Temp: " + config.tempUnit, [this]() { EnterSubmenu(MenuState::TempUnitSubmenu); }},
+        {"Exit", [this]()
+         {
+             // Save configuration before exiting
+             if (preferenceService_)
+             {
+                 preferenceService_->SaveConfig();
+             }
+             // Return to previous panel using restoration panel
+             if (panelService_)
+             {
+                 const char *restorationPanel = panelService_->GetRestorationPanel();
+                 // Use isTriggerDriven=true to prevent splash screen on programmatic panel switches
+                 panelService_->CreateAndLoadPanel(
+                     restorationPanel,
+                     []()
+                     {
+                         // Panel switch callback handled by service
+                     },
+                     true);
+             }
+         }}};
+
+    // Update component with new menu items
+    if (configComponent_)
+    {
+        configComponent_->SetTitle("Configuration");
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
+    }
+}
+
+void ConfigPanel::EnterSubmenu(MenuState submenu)
+{
+    currentMenuState_ = submenu;
+    currentMenuIndex_ = 0;
+    UpdateSubmenuItems();
+}
+
+void ConfigPanel::ExitSubmenu()
+{
+    currentMenuState_ = MenuState::MainMenu;
+    currentMenuIndex_ = 0;
+    UpdateMenuItemsWithCurrentValues();
+}
+
+void ConfigPanel::UpdateSubmenuItems()
+{
+    if (!preferenceService_)
+        return;
+
+    const Configs &config = preferenceService_->GetConfig();
+    menuItems_.clear();
+    std::string title = "Configuration";
+
+    switch (currentMenuState_)
+    {
+        case MenuState::PanelSubmenu:
+        {
+            title = "Select Panel";
+            // Currently only OemOilPanel is configurable
+            // In the future, this will dynamically build from all configurable panels
+            menuItems_ = {{"Oil Panel",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.panelName = PanelNames::OIL;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::ThemeSubmenu:
+        {
+            title = "Select Theme";
+            menuItems_ = {{"Day",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.theme = Themes::DAY;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               if (styleService_)
+                               {
+                                   styleService_->SetTheme(cfg.theme.c_str());
+                                   styleService_->ApplyThemeToScreen(screen_);
+                                   // Override screen background for config panel
+                                   lv_obj_set_style_bg_color(screen_, lv_color_hex(0x121212), LV_PART_MAIN); // Day theme gray
+                                   lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+                                   // Update component theme colors
+                                   if (configComponent_) {
+                                       configComponent_->UpdateThemeColors();
+                                   }
+                               }
+                               ExitSubmenu();
+                           }},
+                          {"Night",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.theme = Themes::NIGHT;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               if (styleService_)
+                               {
+                                   styleService_->SetTheme(cfg.theme.c_str());
+                                   styleService_->ApplyThemeToScreen(screen_);
+                                   // Override screen background for config panel
+                                   lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Night theme dark red
+                                   lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+                                   // Update component theme colors
+                                   if (configComponent_) {
+                                       configComponent_->UpdateThemeColors();
+                                   }
+                               }
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::UpdateRateSubmenu:
+        {
+            title = "Update Rate";
+            menuItems_ = {{"250ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.updateRate = 250;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"500ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.updateRate = 500;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"1000ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.updateRate = 1000;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"2000ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.updateRate = 2000;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::SplashSubmenu:
+        {
+            title = "Splash Screen";
+            menuItems_ = {{"On",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.showSplash = true;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Off",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.showSplash = false;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::SplashDurationSubmenu:
+        {
+            title = "Splash Duration";
+            menuItems_ = {{"1500ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.splashDuration = 1500;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"1750ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.splashDuration = 1750;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"2000ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.splashDuration = 2000;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"2000ms",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.splashDuration = 2500;
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::PressureUnitSubmenu:
+        {
+            title = "Pressure Unit";
+            menuItems_ = {{"PSI",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.pressureUnit = "PSI";
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Bar",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.pressureUnit = "Bar";
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"kPa",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.pressureUnit = "kPa";
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::TempUnitSubmenu:
+        {
+            title = "Temperature Unit";
+            menuItems_ = {{"C",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.tempUnit = "C";
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"F",
+                           [this]()
+                           {
+                               Configs cfg = preferenceService_->GetConfig();
+                               cfg.tempUnit = "F";
+                               preferenceService_->SetConfig(cfg);
+                               preferenceService_->SaveConfig();
+                               ExitSubmenu();
+                           }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        default:
+            // Should not happen
+            break;
+    }
+
+    // Update component with new menu items and title
+    if (configComponent_)
+    {
+        configComponent_->SetTitle(title);
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
+    }
 }

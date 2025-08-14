@@ -45,10 +45,10 @@ Hardware abstraction for display (GC9A01) and LVGL integration.
 
 ## Panel Switching
 
-Priority-based triggers:
-1. Key state → Key Panel
-2. Lock active → Lock Panel  
-3. Default → Oil Panel
+Sequential trigger evaluation:
+1. Triggers evaluated first (Key state → Key Panel, Lock active → Lock Panel)
+2. Actions evaluated only if no triggers active
+3. Default panel: Oil Panel
 
 Light sensor triggers theme changes (no panel switch).
 

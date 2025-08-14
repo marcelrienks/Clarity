@@ -67,7 +67,6 @@ DeviceProvider::DeviceProvider()
     setPanel(&panelInstance_);
 }
 
-
 // Core Functionality Methods
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
 void DeviceProvider::prepare()
@@ -78,7 +77,7 @@ void DeviceProvider::prepare()
     initDMA();
     startWrite();
     setRotation(0);
-    
+
 #ifdef WOKWI_EMULATOR
     // Enable horizontal mirroring to work around wokwi emulator limitation
     // The emulator uses a square ILI9341 display instead of the round GC9A01 target display
@@ -86,7 +85,7 @@ void DeviceProvider::prepare()
     writeCommand(0x36); // Memory Access Control
     writeData(0x48);    // Set MX bit (0x40) + BGR bit (0x08) for horizontal mirror with correct colors
 #endif
-    
+
     setBrightness(SCREEN_DEFAULT_BRIGHTNESS);
 
     lv_init();
@@ -97,11 +96,10 @@ void DeviceProvider::prepare()
     lv_display_set_user_data(display, this);
     lv_display_set_flush_cb(display, DeviceProvider::display_flush_callback);
     lv_display_set_buffers(display, lvBuffer_[0], lvBuffer_[1], LV_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
-    
+
     // Create main screen for display provider
     screen = lv_screen_active();
 }
-
 
 // Static Methods
 /// @brief Static Display Flush Wrapper function for LVGL display driver
@@ -116,10 +114,12 @@ void DeviceProvider::display_flush_callback(lv_display_t *display, const lv_area
     uint32_t height = lv_area_get_height(area);
     lv_draw_sw_rgb565_swap(data, width * height);
 
-    if (deviceInstance->getStartCount() == 0) {
+    if (deviceInstance->getStartCount() == 0)
+    {
         deviceInstance->endWrite();
     }
 
-    deviceInstance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1, (uint16_t *)data);
+    deviceInstance->pushImageDMA(area->x1, area->y1, area->x2 - area->x1 + 1, area->y2 - area->y1 + 1,
+                                 (uint16_t *)data);
     lv_disp_flush_ready(display);
 }

@@ -11,51 +11,51 @@
 /**
  * @class OemOilComponent
  * @brief Abstract base class for oem styled oil monitoring gauge components
- * 
+ *
  * @details This abstract class provides the common functionality for oem styled oil-related
  * gauge components (pressure, temperature). It implements the Template Method
  * design pattern, allowing derived classes to customize specific behaviors
  * while sharing common gauge rendering logic.
- * 
+ *
  * @design_pattern Template Method - defines gauge creation algorithm
  * @view_role Renders circular gauges with needles, scales, and danger zones
  * @ui_elements Scale, needle, center icon, danger zone sections
  * @positioning Supports all ComponentLocation alignment options
- * 
+ *
  * @gauge_specifications:
  * - Size: 240x240 pixels (configurable via ComponentLocation)
  * - Needle length: 90 pixels
  * - Scale ticks: 13 total, major every 2
  * - Danger zone: Red highlighting for critical values
- * 
+ *
  * @derived_classes:
  * - OemOilPressureComponent: Oil pressure monitoring (0-100 PSI)
  * - OemOilTemperatureComponent: Oil temperature monitoring (mapped range)
- * 
+ *
  * @virtual_methods Subclasses must implement:
  * - get_icon(): Component-specific icon
  * - get_scale_min/max(): Value range
  * - get_danger_zone(): Critical threshold
  * - setup_danger_zone(): Configure danger highlighting
  * - is_danger_condition(): Determine if value is critical
- * 
+ *
  * @context This is the base class for oem styled oil gauges. Currently used by
  * pressure and temperature components. The components are positioned on opposite sides
  * on the screen to maintain a consistent appearance with OEM styling.
  */
 class OemOilComponent : public IComponent
 {
-public:
+  public:
     // Constructors and Destructors
     OemOilComponent(IStyleService *styleService);
     virtual ~OemOilComponent();
 
     // Core Functionality Methods
-    void Render(lv_obj_t *screen, const ComponentLocation& location, IDisplayProvider *display) override;
-    void Refresh(const Reading& reading) override;
+    void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
+    void Refresh(const Reading &reading) override;
     void SetValue(int32_t value) override;
 
-protected:
+  protected:
     // Protected Data Members
     IStyleService *styleService_;
 
@@ -75,25 +75,25 @@ protected:
     // Protected Data Members
     // LVGL objects
     lv_obj_t *scale_;
-    lv_obj_t *needleLine_;      // Tip section - thinnest
-    lv_obj_t *needleMiddle_;    // Middle section - medium thickness
-    lv_obj_t *needleBase_;      // Base section - thickest for smooth tapered appearance
-    lv_obj_t *needleHighlightLine_;    // Highlight line for 3D effect - tip
-    lv_obj_t *needleHighlightMiddle_;  // Highlight line for 3D effect - middle
-    lv_obj_t *needleHighlightBase_;    // Highlight line for 3D effect - base
+    lv_obj_t *needleLine_;            // Tip section - thinnest
+    lv_obj_t *needleMiddle_;          // Middle section - medium thickness
+    lv_obj_t *needleBase_;            // Base section - thickest for smooth tapered appearance
+    lv_obj_t *needleHighlightLine_;   // Highlight line for 3D effect - tip
+    lv_obj_t *needleHighlightMiddle_; // Highlight line for 3D effect - middle
+    lv_obj_t *needleHighlightBase_;   // Highlight line for 3D effect - base
     lv_obj_t *oilIcon_;
-    lv_obj_t *lowLabel_;        // "L" label for low end
-    lv_obj_t *highLabel_;       // "H" label for high end
-    lv_obj_t *pivotCircle_;     // Main pivot circle
-    lv_obj_t *pivotHighlight_;  // Highlight on pivot for 3D effect
-    
+    lv_obj_t *lowLabel_;       // "L" label for low end
+    lv_obj_t *highLabel_;      // "H" label for high end
+    lv_obj_t *pivotCircle_;    // Main pivot circle
+    lv_obj_t *pivotHighlight_; // Highlight on pivot for 3D effect
+
     // Common constants
     static constexpr int32_t NEEDLE_LENGTH = 90;
-    
+
     // Scale rotation tracking for label positioning
     int32_t scaleRotation_;
 
-private:
+  private:
     // Private Methods
     void create_icon();
     void create_labels();
