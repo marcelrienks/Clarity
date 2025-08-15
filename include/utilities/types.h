@@ -145,6 +145,7 @@ struct Configs
 // System status, hardware state, and error tracking data
 //=============================================================================
 
+
 /// @brief Direct trigger mapping structure (replaces trigger objects)
 struct Trigger
 {

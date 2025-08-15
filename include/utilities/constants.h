@@ -87,11 +87,30 @@ enum class TriggerActionType
 /// @brief UI state for processing decisions
 enum class UIState
 {
-    IDLE,     ///< Safe to process all messages immediately
-    UPDATING, ///< Throttled processing (high/medium priority only)
-    LOADING,  ///< No message processing
-    LVGL_BUSY ///< No message processing
+    IDLE,          ///< No LVGL activity, safe for all operations
+    LOADING,       ///< Panel loading with potential animations
+    UPDATING,      ///< Panel updating (sensor data refresh)
+    ANIMATING,     ///< LVGL animations in progress
+    TRANSITIONING, ///< Panel transitions in progress
+    LVGL_BUSY      ///< Generic LVGL busy state
 };
+
+/// @brief Convert UIState enum to string for debugging
+/// @param state UIState to convert
+/// @return String representation of the UIState
+inline const char* UIStateToString(UIState state)
+{
+    switch (state)
+    {
+        case UIState::IDLE: return "IDLE";
+        case UIState::LOADING: return "LOADING";
+        case UIState::UPDATING: return "UPDATING";
+        case UIState::ANIMATING: return "ANIMATING";
+        case UIState::TRANSITIONING: return "TRANSITIONING";
+        case UIState::LVGL_BUSY: return "LVGL_BUSY";
+        default: return "UNKNOWN";
+    }
+}
 
 /// @brief Priority levels for trigger messages
 enum class TriggerPriority

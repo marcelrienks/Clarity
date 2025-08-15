@@ -102,6 +102,12 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
 {
     // Loading OEM oil panel with pressure and temperature gauges
     callbackFunction_ = callbackFunction;
+    
+    // Set LOADING state at the start of load
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::LOADING);
+    }
 
     // Create components for both pressure and temperature
     if (styleService_ && styleService_->IsInitialized())
@@ -149,6 +155,12 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
 {
 
     callbackFunction_ = callbackFunction;
+    
+    // Set UPDATING state at the start of update
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::UPDATING);
+    }
 
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
@@ -181,6 +193,11 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
     // If no animations were started, call completion callback immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_)
     {
+        // Set IDLE state when update completes without animations
+        if (panelService_)
+        {
+            panelService_->SetUiState(UIState::IDLE);
+        }
         callbackFunction_();
     }
 }
@@ -237,6 +254,11 @@ void OemOilPanel::UpdateOilPressure()
     lv_anim_set_completed_cb(&pressureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
     isPressureAnimationRunning_ = true;
+    // Set ANIMATING state before starting animation
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::ANIMATING);
+    }
     // Start pressure gauge animation
     lv_anim_start(&pressureAnimation_);
 }
@@ -291,6 +313,11 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_set_completed_cb(&temperatureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
     isTemperatureAnimationRunning_ = true;
+    // Set ANIMATING state before starting animation
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::ANIMATING);
+    }
     // Start temperature gauge animation
     lv_anim_start(&temperatureAnimation_);
 }
@@ -391,6 +418,12 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
         return;
     }
 
+    // Set IDLE state when loading is complete
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+    }
+    
     thisInstance->callbackFunction_();
 }
 
@@ -423,6 +456,11 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
     // Only call the callback function if both animations are not running
     if (!thisInstance->isPressureAnimationRunning_ && !thisInstance->isTemperatureAnimationRunning_)
     {
+        // Set IDLE state when all animations are complete
+        if (thisInstance->panelService_)
+        {
+            thisInstance->panelService_->SetUiState(UIState::IDLE);
+        }
         if (thisInstance->callbackFunction_)
         {
             thisInstance->callbackFunction_();

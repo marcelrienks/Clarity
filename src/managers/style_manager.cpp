@@ -50,7 +50,7 @@ void StyleManager::InitializeStyles()
 /// @param screen the screen to which the theme will be applied
 void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
-    log_d("Applying current theme styles to screen object - screen: %p, backgroundStyle: %p", screen, &backgroundStyle);
+    log_v("Applying current theme styles to screen object - screen: %p, backgroundStyle: %p", screen, &backgroundStyle);
 
     // Safety checks
     if (!screen)

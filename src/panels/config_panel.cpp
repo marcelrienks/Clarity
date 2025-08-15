@@ -53,6 +53,12 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     log_i("Loading ConfigPanel");
 
     callbackFunction_ = callbackFunction;
+    
+    // Set LOADING state at the start of load
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::LOADING);
+    }
 
     // Reset menu to first item and main menu state
     currentMenuIndex_ = 0;
@@ -83,18 +89,27 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
         configComponent_->SetCurrentIndex(currentMenuIndex_);
     }
 
+    // Register the screen loaded event callback
+    lv_obj_add_event_cb(screen_, ConfigPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
+    
     lv_screen_load(screen_);
-
-    // Call the completion callback directly (like other panels do)
-    if (callbackFunction_)
-    {
-        callbackFunction_();
-    }
 }
 
 void ConfigPanel::Update(std::function<void()> callbackFunction)
 {
+    // Set UPDATING state at the start of update
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::UPDATING);
+    }
+    
     // Config panel is static, no regular updates needed
+    // Set IDLE state when update completes
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::IDLE);
+    }
+    
     callbackFunction();
 }
 
@@ -115,9 +130,18 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     // Config panel loaded successfully
 
     auto *panel = static_cast<ConfigPanel *>(lv_event_get_user_data(event));
-    if (panel && panel->callbackFunction_)
+    if (panel)
     {
-        panel->callbackFunction_();
+        // Set IDLE state when loading is complete
+        if (panel->panelService_)
+        {
+            panel->panelService_->SetUiState(UIState::IDLE);
+        }
+        
+        if (panel->callbackFunction_)
+        {
+            panel->callbackFunction_();
+        }
     }
 }
 

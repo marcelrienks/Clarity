@@ -292,7 +292,7 @@ void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinSta
 
     // No complex trigger tracking needed - simplified approach
 
-    log_d("Trigger %s initialized to %s based on GPIO state", triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
+    log_v("Trigger %s initialized to %s based on GPIO state", triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
 }
 
 Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)

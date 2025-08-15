@@ -160,18 +160,22 @@ void loop()
         log_d("Main loop running - count: %lu", loopCount);
     }
 
-    // Process all interrupt sources via InterruptManager (triggers, inputs, etc.)
-    if (interruptManager)
+    // Check interrupts except during animations and transitions
+    if (interruptManager && panelManager)
     {
-        interruptManager->CheckAllInterrupts();
+        UIState currentState = panelManager->GetUiState();
+        if (currentState != UIState::ANIMATING && currentState != UIState::TRANSITIONING)
+        {
+            interruptManager->CheckAllInterrupts();
+        }
     }
-    else
+    else if (!interruptManager)
     {
         log_e("interruptManager is null!");
     }
 
-    // Update panel state
-    if (panelManager)
+    // Update panel state only when IDLE - allows loading and animations to complete
+    if (panelManager && panelManager->GetUiState() == UIState::IDLE)
     {
         panelManager->UpdatePanel();
     }

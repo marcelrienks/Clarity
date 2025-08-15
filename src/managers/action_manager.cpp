@@ -366,7 +366,7 @@ bool ActionManager::CanExecuteActions() const
         return true; // Fallback to allow actions if panel service is not available
     }
     
-    UIState currentState = panelService_->GetUIState();
+    UIState currentState = panelService_->GetUiState();
     
     // Actions can only be executed when UI is IDLE
     // UPDATING/LOADING/LVGL_BUSY should queue actions for later processing

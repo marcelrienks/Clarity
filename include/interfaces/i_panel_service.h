@@ -62,7 +62,7 @@ class IPanelService
      * @brief Get the current UI state
      * @return Current UI processing state
      */
-    virtual UIState GetUIState() const = 0;
+    virtual UIState GetUiState() const = 0;
 
     /**
      * @brief Get the current panel name

@@ -294,11 +294,20 @@ void PanelManager::UpdatePanel()
 /// @brief Set current UI state for synchronization
 void PanelManager::SetUiState(UIState state)
 {
-    uiState_ = state;
+    if (uiState_ != state)
+    {
+        // Only log significant state transitions (not routine IDLE/UPDATING cycles)
+        if (!(uiState_ == UIState::IDLE && state == UIState::UPDATING) &&
+            !(uiState_ == UIState::UPDATING && state == UIState::IDLE))
+        {
+            log_d("UIState transition: %s → %s", UIStateToString(uiState_), UIStateToString(state));
+        }
+        uiState_ = state;
+    }
 }
 
 /// @brief Get the current UI state
-UIState PanelManager::GetUIState() const
+UIState PanelManager::GetUiState() const
 {
     return uiState_;
 }
