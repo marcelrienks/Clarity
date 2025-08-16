@@ -79,7 +79,19 @@ OemOilPanel::~OemOilPanel()
 /// Creates screen and initializes sensors with sentinel values
 void OemOilPanel::Init()
 {
-    // Initializing OEM oil panel with sensors and display components
+    if (!displayProvider_)
+    {
+        log_e("OemOilPanel requires display provider");
+        ErrorManager::Instance().ReportCriticalError("OemOilPanel", "Missing required display provider");
+        return;
+    }
+
+    if (!oemOilPressureSensor_ || !oemOilTemperatureSensor_)
+    {
+        log_e("OemOilPanel requires pressure and temperature sensors");
+        ErrorManager::Instance().ReportCriticalError("OemOilPanel", "Missing required sensors");
+        return;
+    }
 
     screen_ = displayProvider_->CreateScreen();
 
@@ -110,15 +122,28 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     }
 
     // Create components for both pressure and temperature
-    if (styleService_ && styleService_->IsInitialized())
-    {
-        // Creating pressure and temperature components
-        oemOilPressureComponent_ = componentFactory_->CreateOilPressureComponent(styleService_);
-        oemOilTemperatureComponent_ = componentFactory_->CreateOilTemperatureComponent(styleService_);
-    }
-    else
+    if (!styleService_ || !styleService_->IsInitialized())
     {
         log_w("StyleService not properly initialized, skipping component creation");
+        return;
+    }
+
+    if (!componentFactory_)
+    {
+        log_e("ComponentFactory is required for component creation");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OemOilPanel", "ComponentFactory is null");
+        return;
+    }
+
+    // Creating pressure and temperature components
+    oemOilPressureComponent_ = componentFactory_->CreateOilPressureComponent(styleService_);
+    oemOilTemperatureComponent_ = componentFactory_->CreateOilTemperatureComponent(styleService_);
+
+    if (!oemOilPressureComponent_ || !oemOilTemperatureComponent_)
+    {
+        log_e("Failed to create required components");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OemOilPanel", "Component creation failed");
+        return;
     }
 
     // Create location parameters with rotational start points for scales
@@ -126,16 +151,8 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
 
     // Render both components
-    if (oemOilPressureComponent_)
-    {
-        oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
-        // Pressure component rendered successfully
-    }
-    if (oemOilTemperatureComponent_)
-    {
-        oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
-        // Temperature component rendered successfully
-    }
+    oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
+    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
 

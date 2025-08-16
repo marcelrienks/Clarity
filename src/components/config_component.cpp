@@ -241,6 +241,9 @@ void ConfigComponent::CreateUI()
 
 void ConfigComponent::UpdateMenuDisplay()
 {
+    if (menuItems_.empty() || menuLabels_.empty())
+        return;
+
     // Update menu items with scrolling effect
     for (int i = 0; i < VISIBLE_ITEMS && i < static_cast<int>(menuLabels_.size()); ++i)
     {

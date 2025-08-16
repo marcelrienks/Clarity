@@ -19,6 +19,13 @@ ErrorComponent::~ErrorComponent()
 // Core Functionality Methods
 void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
+    if (!screen)
+    {
+        log_e("ErrorComponent requires valid screen object");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorComponent",
+                                             "Cannot render - screen is null");
+        return;
+    }
 
     if (!display)
     {

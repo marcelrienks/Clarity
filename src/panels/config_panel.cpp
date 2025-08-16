@@ -116,31 +116,35 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 
 void ConfigPanel::ExecuteCurrentOption()
 {
-    if (currentMenuIndex_ < menuItems_.size() && menuItems_[currentMenuIndex_].action)
-    {
-        menuItems_[currentMenuIndex_].action();
-    }
+    if (currentMenuIndex_ >= menuItems_.size())
+        return;
+    
+    if (!menuItems_[currentMenuIndex_].action)
+        return;
+    
+    menuItems_[currentMenuIndex_].action();
 }
 
 // Static callbacks
 
 void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    // Config panel loaded successfully
+    if (!event)
+        return;
 
     auto *panel = static_cast<ConfigPanel *>(lv_event_get_user_data(event));
-    if (panel)
+    if (!panel)
+        return;
+
+    // Set IDLE state when loading is complete
+    if (panel->panelService_)
     {
-        // Set IDLE state when loading is complete
-        if (panel->panelService_)
-        {
-            panel->panelService_->SetUiState(UIState::IDLE);
-        }
-        
-        if (panel->callbackFunction_)
-        {
-            panel->callbackFunction_();
-        }
+        panel->panelService_->SetUiState(UIState::IDLE);
+    }
+    
+    if (panel->callbackFunction_)
+    {
+        panel->callbackFunction_();
     }
 }
 

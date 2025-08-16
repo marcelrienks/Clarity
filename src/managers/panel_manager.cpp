@@ -206,65 +206,70 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     }
 
     panel_ = CreatePanel(panelName);
-    if (panel_)
+    if (!panel_)
     {
-        // Inject managers for all panels (they can choose to use them or not)
-        panel_->SetManagers(this, styleService_);
-
-        // Special injection for ConfigPanel - inject preference service
-        if (strcmp(panelName, PanelNames::CONFIG) == 0)
-        {
-            ConfigPanel *configPanel = static_cast<ConfigPanel *>(panel_.get());
-            if (configPanel && preferenceService_)
-            {
-                configPanel->SetPreferenceService(preferenceService_);
-            }
-        }
-
-        // Special injection for OemOilPanel - inject preference service to apply sensor update rates
-        if (strcmp(panelName, PanelNames::OIL) == 0)
-        {
-            OemOilPanel *oemOilPanel = static_cast<OemOilPanel *>(panel_.get());
-            if (oemOilPanel && preferenceService_)
-            {
-                oemOilPanel->SetPreferenceService(preferenceService_);
-            }
-        }
-
-        // Special injection for SplashPanel - inject preference service for configurable duration
-        if (strcmp(panelName, PanelNames::SPLASH) == 0)
-        {
-            SplashPanel *splashPanel = static_cast<SplashPanel *>(panel_.get());
-            if (splashPanel && preferenceService_)
-            {
-                splashPanel->SetPreferenceService(preferenceService_);
-            }
-        }
-
-        panel_->Init();
-
-        // Update current panel using std::string for memory safety
-        currentPanelStr_ = panelName;
-        currentPanel = currentPanelStr_.c_str();
-
-        // Register input service if panel implements it (using composition approach)
-        if (actionManager_)
-        {
-            IActionService *actionService = panel_->GetInputService();
-            if (actionService)
-            {
-                log_i("Panel %s implements IActionService, registering for actions", currentPanel);
-                actionManager_->RegisterPanel(actionService, currentPanel);
-            }
-            else
-            {
-                log_d("Panel %s does not implement IActionService", panelName);
-            }
-        }
-
-        panel_->Load(completionCallback);
-        Ticker::handleLvTasks();
+        log_e("Failed to create panel: %s", panelName);
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
+                                             std::string("Panel creation failed for: ") + panelName);
+        return;
     }
+
+    // Inject managers for all panels (they can choose to use them or not)
+    panel_->SetManagers(this, styleService_);
+
+    // Special injection for ConfigPanel - inject preference service
+    if (strcmp(panelName, PanelNames::CONFIG) == 0)
+    {
+        ConfigPanel *configPanel = static_cast<ConfigPanel *>(panel_.get());
+        if (configPanel && preferenceService_)
+        {
+            configPanel->SetPreferenceService(preferenceService_);
+        }
+    }
+
+    // Special injection for OemOilPanel - inject preference service to apply sensor update rates
+    if (strcmp(panelName, PanelNames::OIL) == 0)
+    {
+        OemOilPanel *oemOilPanel = static_cast<OemOilPanel *>(panel_.get());
+        if (oemOilPanel && preferenceService_)
+        {
+            oemOilPanel->SetPreferenceService(preferenceService_);
+        }
+    }
+
+    // Special injection for SplashPanel - inject preference service for configurable duration
+    if (strcmp(panelName, PanelNames::SPLASH) == 0)
+    {
+        SplashPanel *splashPanel = static_cast<SplashPanel *>(panel_.get());
+        if (splashPanel && preferenceService_)
+        {
+            splashPanel->SetPreferenceService(preferenceService_);
+        }
+    }
+
+    panel_->Init();
+
+    // Update current panel using std::string for memory safety
+    currentPanelStr_ = panelName;
+    currentPanel = currentPanelStr_.c_str();
+
+    // Register input service if panel implements it (using composition approach)
+    if (actionManager_)
+    {
+        IActionService *actionService = panel_->GetInputService();
+        if (actionService)
+        {
+            log_i("Panel %s implements IActionService, registering for actions", currentPanel);
+            actionManager_->RegisterPanel(actionService, currentPanel);
+        }
+        else
+        {
+            log_d("Panel %s does not implement IActionService", panelName);
+        }
+    }
+
+    panel_->Load(completionCallback);
+    Ticker::handleLvTasks();
 }
 
 /// @brief Internal method to load a panel after first showing a splash screen transition

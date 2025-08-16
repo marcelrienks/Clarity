@@ -79,10 +79,22 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
         panelService_->SetUiState(UIState::BUSY);
     }
 
+    if (!componentFactory_)
+    {
+        log_e("ErrorPanel requires component factory");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", "ComponentFactory is null");
+        return;
+    }
+
     // Create component using injected factory
     errorComponent_ = componentFactory_->CreateErrorComponent(styleService_);
+    if (!errorComponent_)
+    {
+        log_e("Failed to create error component");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", "Component creation failed");
+        return;
+    }
 
-    // Render the component
     if (!displayProvider_)
     {
         log_e("ErrorPanel load requires display provider");
@@ -90,6 +102,8 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
                                              "Cannot render component - display provider is null");
         return;
     }
+
+    // Render the component
     errorComponent_->Render(screen_, centerLocation_, displayProvider_);
 
     // Get current errors and refresh component

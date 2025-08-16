@@ -68,8 +68,21 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
         panelService_->SetUiState(UIState::BUSY);
     }
 
+    if (!componentFactory_)
+    {
+        log_e("SplashPanel requires component factory");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "SplashPanel", "ComponentFactory is null");
+        return;
+    }
+
     // Create component using injected factory
     component_ = componentFactory_->CreateClarityComponent(styleService_);
+    if (!component_)
+    {
+        log_e("Failed to create clarity component for splash panel");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "SplashPanel", "Component creation failed");
+        return;
+    }
 
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
