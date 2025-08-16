@@ -23,9 +23,6 @@ void PanelManager::Init()
 {
     log_v("Init() called");
 
-    // Register all available panel types with the factory
-    RegisterAllPanels();
-
     Ticker::handleLvTasks();
     log_i("PanelManager initialization completed");
 }
@@ -163,15 +160,15 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     else
     {
         log_d("Loading panel directly: %s", panelName);
-        CreateAndLoadPanel(panelName, completionCallback, isTriggerDriven);
+        CreateAndLoadPanelDirect(panelName, completionCallback, isTriggerDriven);
     }
 }
 
 /// @brief Internal method to create and load a panel directly without splash
-void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback,
+void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback,
                                             bool isTriggerDriven)
 {
-    log_v("CreateAndLoadPanel() called for: %s", panelName);
+    log_v("CreateAndLoadPanelDirect() called for: %s", panelName);
 
     // Track current panel trigger state
     currentPanelIsTriggerDriven_ = isTriggerDriven;

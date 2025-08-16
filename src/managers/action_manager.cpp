@@ -1,6 +1,7 @@
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/types.h"
+#include "utilities/constants.h"
 #include <Arduino.h>
 #include <cstring>
 
@@ -8,6 +9,7 @@
     #include "esp32-hal-log.h"
     #define LOG_TAG "ActionManager"
 #else
+    #define log_v(...)
     #define log_d(...)
     #define log_w(...)
     #define log_e(...)
@@ -22,6 +24,7 @@ ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, I
 
 void ActionManager::Init()
 {
+    log_v("Init() called");
     if (initialized_)
     {
         log_w("ActionManager already initialized");
@@ -50,6 +53,7 @@ void ActionManager::Init()
 
 void ActionManager::ProcessInputEvents()
 {
+    log_v("ProcessInputEvents() called");
     if (!initialized_)
     {
         return;
@@ -160,6 +164,7 @@ void ActionManager::ProcessInputEvents()
 
 void ActionManager::RegisterPanel(IActionService *service, const char *panelName)
 {
+    log_v("RegisterPanel() called");
     currentService_ = service;
     currentPanelName_ = panelName ? panelName : "";
     log_d("Panel registered for actions: %s %p", panelName, service);
@@ -167,14 +172,15 @@ void ActionManager::RegisterPanel(IActionService *service, const char *panelName
 
 void ActionManager::ClearPanel()
 {
+    log_v("ClearPanel() called");
     currentService_ = nullptr;
-    log_d("Panel registration cleared");
 }
 
 /// @brief Set the panel service after construction (for circular dependency resolution)
 /// @param panelService Panel service for UIState checking
 void ActionManager::SetPanelService(IPanelService *panelService)
 {
+    log_v("SetPanelService() called");
     panelService_ = panelService;
 }
 
@@ -182,6 +188,7 @@ void ActionManager::SetPanelService(IPanelService *panelService)
 /// @details Transitions to DEBOUNCE state and records press start time
 void ActionManager::HandleButtonPress()
 {
+    log_v("HandleButtonPress() called");
     unsigned long currentTime = GetCurrentTime();
 
     log_i("ActionManager: Button press detected at %lu ms", currentTime);
@@ -195,6 +202,7 @@ void ActionManager::HandleButtonPress()
 /// and executes the appropriate action if within valid timing windows
 void ActionManager::HandleButtonRelease()
 {
+    log_v("HandleButtonRelease() called");
     unsigned long currentTime = GetCurrentTime();
 
     log_d("Button release detected at %lu ms", currentTime);
@@ -271,6 +279,7 @@ void ActionManager::HandleButtonRelease()
 /// @details Resets state to IDLE if press exceeds MAX_PRESS_TIME_MS (5.1 seconds)
 void ActionManager::CheckPressTimeout()
 {
+    log_v("CheckPressTimeout() called");
     unsigned long currentTime = GetCurrentTime();
 
     if (currentTime - pressStartTime_ >= MAX_PRESS_TIME_MS)
@@ -285,6 +294,7 @@ void ActionManager::CheckPressTimeout()
 /// @details Uses button sensor to read GPIO 32 state with pull-down configuration
 bool ActionManager::IsButtonPressed() const
 {
+    log_v("IsButtonPressed() called");
     if (!buttonSensor_ || !initialized_)
     {
         return false;
@@ -317,6 +327,7 @@ bool ActionManager::IsButtonPressed() const
 /// @details Wrapper for millis() to enable mocking in unit tests
 unsigned long ActionManager::GetCurrentTime() const
 {
+    log_v("GetCurrentTime() called");
     // Use millis() equivalent - this will need to be mocked for testing
     return millis();
 }
@@ -330,6 +341,7 @@ unsigned long ActionManager::GetCurrentTime() const
 /// Actions expire after INPUT_TIMEOUT_MS (3 seconds)
 void ActionManager::ProcessPendingActions()
 {
+    log_v("ProcessPendingActions() called");
     if (!pendingAction_.IsValid())
     {
         return;
@@ -364,6 +376,7 @@ void ActionManager::ProcessPendingActions()
 /// @details Actions are only executed when UI is not busy with animations or updates
 bool ActionManager::CanExecuteActions() const
 {
+    log_v("CanExecuteActions() called");
     if (!panelService_)
     {
         log_w("PanelService not available, defaulting to allow actions");
@@ -371,6 +384,8 @@ bool ActionManager::CanExecuteActions() const
     }
     
     UIState currentState = panelService_->GetUiState();
+    log_d("Checking UI state: %s, canExecute: %s", UIStateToString(currentState), 
+          currentState == UIState::IDLE ? "true" : "false");
     
     // Actions can only be executed when UI is IDLE
     // UPDATING/LOADING/LVGL_BUSY should queue actions for later processing

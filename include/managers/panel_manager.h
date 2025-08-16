@@ -122,7 +122,7 @@ class PanelManager : public IPanelService
     /// @param panelName Name of the panel to create and load
     /// @param completionCallback Optional callback function to execute when loading is complete
     /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback = nullptr,
+    void CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback = nullptr,
                                   bool isTriggerDriven = false);
 
     /// @brief Internal method to load a panel after first showing a splash screen transition

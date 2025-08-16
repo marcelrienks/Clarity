@@ -2,6 +2,7 @@
 #include "factories/component_factory.h"
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
+#include "managers/error_manager.h"
 #include <esp32-hal-log.h>
 #include <variant>
 

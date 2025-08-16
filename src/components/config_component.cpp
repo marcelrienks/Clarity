@@ -219,7 +219,6 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
 void ConfigComponent::CreateUI()
 {
     log_v("CreateUI() called");
-    log_d("Creating config component UI elements");
     
     // Note: Circular styling and background theme are now applied to container in Init()
 
