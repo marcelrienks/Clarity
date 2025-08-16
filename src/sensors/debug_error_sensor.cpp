@@ -7,6 +7,7 @@
 DebugErrorSensor::DebugErrorSensor(IGpioProvider *gpioProvider)
     : gpioProvider_(gpioProvider), previousState_(false), initialized_(false), startupTime_(0)
 {
+    log_v("DebugErrorSensor() constructor called");
     log_d("Creating DebugErrorSensor for GPIO %d", gpio_pins::DEBUG_ERROR);
 }
 

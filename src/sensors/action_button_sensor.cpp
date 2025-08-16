@@ -12,6 +12,7 @@
 
 ActionButtonSensor::ActionButtonSensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
+    log_v("ActionButtonSensor() constructor called");
 }
 
 // ISensor Interface Implementation

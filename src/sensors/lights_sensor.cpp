@@ -7,6 +7,7 @@
 /// @brief Constructor for LightsSensor
 LightsSensor::LightsSensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
+    log_v("LightsSensor() constructor called");
 }
 
 // Core Functionality Methods
@@ -14,6 +15,7 @@ LightsSensor::LightsSensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProv
 /// @brief Initialize the lights sensor hardware
 void LightsSensor::Init()
 {
+    log_v("Init() called");
     // Configure GPIO pin for digital input (safe to call multiple times)
     log_d("Initializing lights sensor on GPIO %d", gpio_pins::LIGHTS);
 
@@ -26,6 +28,7 @@ void LightsSensor::Init()
 /// @return Boolean indicating lights state (true=on, false=off)
 Reading LightsSensor::GetReading()
 {
+    log_v("GetReading() called");
     bool lightsOn = GetLightsState();
     return Reading{lightsOn};
 }
@@ -34,6 +37,7 @@ Reading LightsSensor::GetReading()
 /// @return true if lights are on, false if lights are off
 bool LightsSensor::GetLightsState()
 {
+    log_v("GetLightsState() called");
     bool lightsOn = gpioProvider_->DigitalRead(gpio_pins::LIGHTS);
 
     // Only log state changes to reduce log spam during polling

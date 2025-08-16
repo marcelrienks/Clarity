@@ -12,6 +12,7 @@ OemOilComponent::OemOilComponent(IStyleService *styleService)
       needleHighlightLine_(nullptr), needleHighlightMiddle_(nullptr), needleHighlightBase_(nullptr), oilIcon_(nullptr),
       lowLabel_(nullptr), highLabel_(nullptr), pivotCircle_(nullptr), pivotHighlight_(nullptr), scaleRotation_(0)
 {
+    log_v("OemOilComponent() constructor called");
     // Validate styleService dependency
     if (!styleService_)
     {
@@ -23,6 +24,7 @@ OemOilComponent::OemOilComponent(IStyleService *styleService)
 
 OemOilComponent::~OemOilComponent()
 {
+    log_v("~OemOilComponent() destructor called");
     // Cleanup LVGL objects
     if (needleLine_)
         lv_obj_del(needleLine_);
@@ -59,7 +61,7 @@ OemOilComponent::~OemOilComponent()
 /// @param location The location parameters for positioning the component.
 void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
-
+    log_v("Render() called");
     if (!screen || !display)
     {
         log_e("OemOilComponent requires screen and display provider");
@@ -92,7 +94,7 @@ void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location
 /// @param reading The Reading value to update the component with.
 void OemOilComponent::Refresh(const Reading &reading)
 {
-
+    log_v("Refresh() called");
     int32_t value = std::get<int32_t>(reading);
     const ThemeColors &colours = styleService_->GetThemeColors();
 

@@ -14,6 +14,7 @@
 InterruptManager::InterruptManager(IPanelService *panelService)
     : panelService_(panelService), initialized_(false), lastCheckTime_(0), checkCount_(0)
 {
+    log_v("InterruptManager() constructor called");
 }
 
 void InterruptManager::Init()

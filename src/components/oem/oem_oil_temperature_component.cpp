@@ -5,6 +5,7 @@
 
 OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService *styleService) : OemOilComponent(styleService)
 {
+    log_v("OemOilTemperatureComponent() constructor called");
     // Constructor delegates to base class
 }
 

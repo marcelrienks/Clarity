@@ -4,6 +4,7 @@
 
 ErrorManager &ErrorManager::Instance()
 {
+    log_v("Instance() called");
     static ErrorManager instance;
     return instance;
 }
@@ -96,6 +97,7 @@ void ErrorManager::ClearAllErrors()
 
 bool ErrorManager::ShouldTriggerErrorPanel() const
 {
+    log_v("ShouldTriggerErrorPanel() called");
     // Process auto-dismiss first (const_cast for this internal operation)
     const_cast<ErrorManager *>(this)->ProcessAutoDismiss();
 
@@ -106,11 +108,13 @@ bool ErrorManager::ShouldTriggerErrorPanel() const
 
 void ErrorManager::SetErrorPanelActive(bool active)
 {
+    log_v("SetErrorPanelActive() called");
     errorPanelActive_ = active;
 }
 
 void ErrorManager::TrimErrorQueue()
 {
+    log_v("TrimErrorQueue() called");
     if (errorQueue_.size() > MAX_ERROR_QUEUE_SIZE)
     {
         size_t originalSize = errorQueue_.size();
@@ -135,6 +139,7 @@ void ErrorManager::TrimErrorQueue()
 
 void ErrorManager::ProcessAutoDismiss()
 {
+    log_v("ProcessAutoDismiss() called");
     unsigned long currentTime = millis();
     size_t originalCount = errorQueue_.size();
 
@@ -157,6 +162,7 @@ void ErrorManager::ProcessAutoDismiss()
 
 ErrorLevel ErrorManager::GetHighestErrorLevel() const
 {
+    log_v("GetHighestErrorLevel() called");
     if (errorQueue_.empty())
     {
         return ErrorLevel::WARNING; // Default level

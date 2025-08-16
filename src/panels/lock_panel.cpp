@@ -116,6 +116,38 @@ void LockPanel::Update(std::function<void()> callbackFunction)
 {
     log_v("Update() called");
     
+    // Set BUSY at start of update
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::BUSY);
+    }
+
+    // Get current lock state from sensor
+    if (lockSensor_)
+    {
+        auto sensorReading = lockSensor_->GetReading();
+        bool currentLockState = std::get<bool>(sensorReading);
+        
+        // Update display if lock state has changed
+        if (currentLockState != isLockEngaged_)
+        {
+            log_d("Lock state changed from %s to %s", 
+                  isLockEngaged_ ? "engaged" : "disengaged",
+                  currentLockState ? "engaged" : "disengaged");
+            isLockEngaged_ = currentLockState;
+            if (lockComponent_)
+            {
+                lockComponent_->Refresh(Reading{isLockEngaged_});
+            }
+        }
+    }
+
+    // Set IDLE when update completes
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::IDLE);
+    }
+    
     callbackFunction();
 }
 

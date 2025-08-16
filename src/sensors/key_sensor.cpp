@@ -7,6 +7,7 @@
 /// @brief Constructor for KeySensor
 KeySensor::KeySensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
+    log_v("KeySensor() constructor called");
 }
 
 // Core Functionality Methods

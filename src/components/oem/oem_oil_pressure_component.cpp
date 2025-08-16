@@ -5,6 +5,7 @@
 
 OemOilPressureComponent::OemOilPressureComponent(IStyleService *styleService) : OemOilComponent(styleService)
 {
+    log_v("OemOilPressureComponent() constructor called");
     // Constructor delegates to base class
 }
 

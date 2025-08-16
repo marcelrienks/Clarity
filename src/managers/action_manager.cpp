@@ -20,6 +20,7 @@ ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, I
       debounceStartTime_(0), lastButtonState_(false), initialized_(false), pendingAction_(nullptr),
       pendingActionTimestamp_(0)
 {
+    log_v("ActionManager() constructor called");
 }
 
 void ActionManager::Init()

@@ -9,6 +9,7 @@
 OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, int updateRateMs)
     : gpioProvider_(gpioProvider), updateIntervalMs_(updateRateMs)
 {
+    log_v("OilPressureSensor() constructor called");
     // Set default unit to Bar
     targetUnit_ = "Bar";
     currentReading_ = 0;
@@ -87,6 +88,14 @@ Reading OilPressureSensor::GetReading()
     }
 
     return currentReading_;
+}
+
+/// @brief Set the update rate for sensor readings
+void OilPressureSensor::SetUpdateRate(int updateRateMs)
+{
+    log_v("SetUpdateRate() called");
+    updateIntervalMs_ = updateRateMs;
+    log_d("Oil pressure sensor update rate set to %d ms", updateIntervalMs_);
 }
 
 // Internal methods

@@ -4,6 +4,7 @@
 
 LvglDisplayProvider::LvglDisplayProvider(lv_obj_t *mainScreen) : mainScreen_(mainScreen), initialized_(false)
 {
+    log_v("LvglDisplayProvider() constructor called");
 }
 
 void LvglDisplayProvider::Initialize()

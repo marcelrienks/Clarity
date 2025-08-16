@@ -27,6 +27,7 @@ ErrorManager *errorManager;
 
 bool initializeServices()
 {
+    log_v("initializeServices() called");
     log_i("Starting Clarity service initialization...");
 
     // Create providers directly
@@ -118,6 +119,7 @@ bool initializeServices()
 
 void setup()
 {
+    log_v("setup() called");
     log_i("Starting Clarity application...");
 
     if (!initializeServices())
@@ -151,6 +153,7 @@ void setup()
 
 void loop()
 {
+    log_v("loop() called");
     static unsigned long loopCount = 0;
     loopCount++;
 

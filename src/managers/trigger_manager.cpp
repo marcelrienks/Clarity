@@ -27,6 +27,7 @@ TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared
     : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), debugErrorSensor_(debugErrorSensor),
       panelService_(panelService), styleService_(styleService)
 {
+    log_v("TriggerManager() constructor called");
     if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor || !panelService || !styleService)
     {
         log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, debugErrorSensor, "
@@ -41,6 +42,7 @@ TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared
 
 const char *TriggerManager::GetStartupPanelOverride() const
 {
+    log_v("GetStartupPanelOverride() called");
     // Check key presence on startup using sensor
     if (keySensor_->GetKeyState() == KeyState::Present)
     {
@@ -51,6 +53,7 @@ const char *TriggerManager::GetStartupPanelOverride() const
 
 void TriggerManager::Init()
 {
+    log_v("Init() called");
     // Prevent double initialization
     if (initialized_)
     {
@@ -75,6 +78,7 @@ void TriggerManager::Init()
 
 void TriggerManager::ProcessTriggerEvents()
 {
+    log_v("ProcessTriggerEvents() called");
     // Sensor-based polling - check for state changes
     CheckSensorChanges();
 
@@ -97,6 +101,7 @@ void TriggerManager::ProcessTriggerEvents()
 
 GpioState TriggerManager::ReadAllSensorStates()
 {
+    log_v("ReadAllSensorStates() called");
     // Single consolidated sensor read for all trigger states
     GpioState state;
 
@@ -117,6 +122,7 @@ GpioState TriggerManager::ReadAllSensorStates()
 
 void TriggerManager::CheckSensorChanges()
 {
+    log_v("CheckSensorChanges() called");
     // Read all sensor states once
     GpioState currentState = ReadAllSensorStates();
 
@@ -129,12 +135,14 @@ void TriggerManager::CheckSensorChanges()
 
 void TriggerManager::CheckErrorTrigger()
 {
+    log_v("CheckErrorTrigger() called");
     bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
     CheckTriggerChange(TriggerIds::ERROR_OCCURRED, shouldShowErrorPanel);
 }
 
 void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinState)
 {
+    log_v("CheckTriggerChange() called");
     Trigger *mapping = FindTriggerMapping(triggerId);
     if (!mapping)
         return;
@@ -157,6 +165,7 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
 
 void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
+    log_v("ExecuteTriggerAction() called");
     if (state == TriggerExecutionState::ACTIVE)
     {
         // Execute trigger action when activated - no complex state checking
@@ -244,6 +253,7 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
 
 void TriggerManager::InitializeTriggersFromSensors()
 {
+    log_v("InitializeTriggersFromSensors() called");
     log_d("Initializing trigger states from current sensor states...");
 
     // Read all sensor states once using consolidated method
@@ -283,6 +293,7 @@ void TriggerManager::InitializeTriggersFromSensors()
 
 void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinState)
 {
+    log_v("InitializeTrigger() called");
     Trigger *mapping = FindTriggerMapping(triggerId);
     if (!mapping)
         return;
@@ -298,6 +309,7 @@ void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinSta
 
 Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
 {
+    log_v("FindTriggerMapping() called");
     for (auto &trigger : triggers_)
     {
         if (trigger.triggerId == triggerId)
@@ -310,6 +322,7 @@ Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
 
 Trigger *TriggerManager::FindActivePanel()
 {
+    log_v("FindActivePanel() called");
     Trigger *activePanel = nullptr;
     for (auto &trigger : triggers_)
     {
@@ -327,6 +340,7 @@ Trigger *TriggerManager::FindActivePanel()
 
 void TriggerManager::AddTrigger(const std::string &triggerName, ISensor *sensor, std::function<void()> callback)
 {
+    log_v("AddTrigger() called");
     log_d("Adding trigger %s", triggerName.c_str());
     // Currently a no-op since triggers are statically defined
     // This interface method is part of ITriggerService interface
@@ -334,6 +348,7 @@ void TriggerManager::AddTrigger(const std::string &triggerName, ISensor *sensor,
 
 bool TriggerManager::HasTrigger(const std::string &triggerName) const
 {
+    log_v("HasTrigger() called");
     log_d("Checking for trigger %s", triggerName.c_str());
     // Check if the trigger exists in our static mapping
     for (const auto &trigger : triggers_)

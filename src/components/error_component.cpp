@@ -8,11 +8,13 @@ ErrorComponent::ErrorComponent(IStyleService *styleService)
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
       currentErrorIndex_(0), buttonPressCount_(0)
 {
+    log_v("ErrorComponent() constructor called");
     log_d("Creating ErrorComponent");
 }
 
 ErrorComponent::~ErrorComponent()
 {
+    log_v("~ErrorComponent() destructor called");
     // LVGL objects are managed by the parent screen, no manual deletion needed
 }
 

@@ -5,11 +5,13 @@
 // Constructors and Destructors
 StyleManager::StyleManager(const char *theme) : THEME(theme), initialized_(false)
 {
+    log_v("StyleManager() constructor called");
     log_d("Creating StyleManager with theme: %s (LVGL styles will be initialized later)", theme);
 }
 
 StyleManager::~StyleManager()
 {
+    log_v("~StyleManager() destructor called");
     ResetStyles();
 }
 

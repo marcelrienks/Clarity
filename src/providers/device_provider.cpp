@@ -1,11 +1,13 @@
 #include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 /// @brief DeviceProvider constructor, initialises the device and sets the bus, panel and light configurations
 DeviceProvider::DeviceProvider()
 {
+    log_v("DeviceProvider() constructor called");
     {
         auto cfg = busInstance_.config();
         cfg.spi_host = SPI;
@@ -71,6 +73,7 @@ DeviceProvider::DeviceProvider()
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
 void DeviceProvider::prepare()
 {
+    log_v("prepare() called");
     log_i("init...");
 
     init();
@@ -110,6 +113,7 @@ void DeviceProvider::prepare()
 /// @param data Pixel data buffer to display
 void DeviceProvider::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
+    log_v("display_flush_callback() called");
     DeviceProvider *deviceInstance = (DeviceProvider *)lv_display_get_user_data(display);
 
     uint32_t width = lv_area_get_width(area);

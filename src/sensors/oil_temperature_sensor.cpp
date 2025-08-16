@@ -9,6 +9,7 @@
 OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int updateRateMs)
     : gpioProvider_(gpioProvider), updateIntervalMs_(updateRateMs)
 {
+    log_v("OilTemperatureSensor() constructor called");
     // Set default unit to Celsius
     targetUnit_ = "C";
     currentReading_ = 0;
@@ -86,6 +87,14 @@ Reading OilTemperatureSensor::GetReading()
     }
 
     return currentReading_;
+}
+
+/// @brief Set the update rate for sensor readings
+void OilTemperatureSensor::SetUpdateRate(int updateRateMs)
+{
+    log_v("SetUpdateRate() called");
+    updateIntervalMs_ = updateRateMs;
+    log_d("Oil temperature sensor update rate set to %d ms", updateIntervalMs_);
 }
 
 // Internal methods

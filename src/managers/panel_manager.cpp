@@ -36,6 +36,7 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
       preferenceService_(preferenceService), panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
+    log_v("PanelManager() constructor called");
     if (!display || !gpio || !styleService || !actionManager || !preferenceService)
     {
         log_e("PanelManager requires all dependencies: display, gpio, styleService, actionManager, and "

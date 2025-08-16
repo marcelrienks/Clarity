@@ -37,6 +37,7 @@ void PreferenceManager::Init()
 void PreferenceManager::CreateDefaultConfig()
 {
     log_v("CreateDefaultConfig() called");
+    log_v("CreateDefaultConfig() called");
     log_d("Creating default configuration with OEM oil panel as default");
 
     config.panelName = PanelNames::OIL;
@@ -49,6 +50,7 @@ void PreferenceManager::CreateDefaultConfig()
 /// @return true if the load was successful, false otherwise
 void PreferenceManager::LoadConfig()
 {
+    log_v("LoadConfig() called");
     log_v("LoadConfig() called");
 
     String jsonString = preferences_.getString(CONFIG_KEY, "");
@@ -110,6 +112,7 @@ void PreferenceManager::LoadConfig()
 /// @return true if the save was successful, false otherwise
 void PreferenceManager::SaveConfig()
 {
+    log_v("SaveConfig() called");
     log_v("SaveConfig() called");
 
     preferences_.remove(CONFIG_KEY);
