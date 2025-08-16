@@ -58,11 +58,10 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
             "PanelManager",
             "Missing required dependencies - display, gpio, styleService, actionManager, or preferenceService is null");
         // In a real embedded system, you might want to handle this more gracefully
+        return;
     }
-    else
-    {
-        log_d("Creating PanelManager with injected dependencies");
-    }
+
+    log_d("Creating PanelManager with injected dependencies");
 
     // Initialize panel names using std::string for memory safety
     currentPanelStr_ = PanelNames::OIL;

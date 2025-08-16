@@ -41,11 +41,10 @@ void ConfigPanel::Init()
 
     screen_ = displayProvider_->CreateScreen();
 
-    // Apply theme to screen for consistent styling with other panels
-    if (styleService_)
-    {
-        styleService_->ApplyThemeToScreen(screen_);
-    }
+    if (!styleService_)
+        return;
+
+    styleService_->ApplyThemeToScreen(screen_);
 }
 
 void ConfigPanel::Load(std::function<void()> callbackFunction)
@@ -78,16 +77,16 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     }
 
     // Initialize the config component with the screen
-    if (configComponent_ && screen_)
-    {
-        configComponent_->Init(screen_);
-        configComponent_->SetStyleService(styleService_);
+    if (!configComponent_ || !screen_)
+        return;
 
-        // Set initial menu items
-        UpdateMenuItemsWithCurrentValues();
-        configComponent_->SetMenuItems(menuItems_);
-        configComponent_->SetCurrentIndex(currentMenuIndex_);
-    }
+    configComponent_->Init(screen_);
+    configComponent_->SetStyleService(styleService_);
+
+    // Set initial menu items
+    UpdateMenuItemsWithCurrentValues();
+    configComponent_->SetMenuItems(menuItems_);
+    configComponent_->SetCurrentIndex(currentMenuIndex_);
 
     // Register the screen loaded event callback
     lv_obj_add_event_cb(screen_, ConfigPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
