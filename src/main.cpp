@@ -160,11 +160,11 @@ void loop()
         log_d("Main loop running - count: %lu", loopCount);
     }
 
-    // Check interrupts except during animations and transitions
+    // Check interrupts only when UI is IDLE
     if (interruptManager && panelManager)
     {
         UIState currentState = panelManager->GetUiState();
-        if (currentState != UIState::ANIMATING && currentState != UIState::TRANSITIONING)
+        if (currentState == UIState::IDLE)
         {
             interruptManager->CheckAllInterrupts();
         }

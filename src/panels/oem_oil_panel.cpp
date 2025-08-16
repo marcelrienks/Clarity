@@ -103,10 +103,10 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     // Loading OEM oil panel with pressure and temperature gauges
     callbackFunction_ = callbackFunction;
     
-    // Set LOADING state at the start of load
+    // Set BUSY at start of load
     if (panelService_)
     {
-        panelService_->SetUiState(UIState::LOADING);
+        panelService_->SetUiState(UIState::BUSY);
     }
 
     // Create components for both pressure and temperature
@@ -156,10 +156,10 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
 
     callbackFunction_ = callbackFunction;
     
-    // Set UPDATING state at the start of update
+    // Set BUSY at start of update - data updates and potential animations
     if (panelService_)
     {
-        panelService_->SetUiState(UIState::UPDATING);
+        panelService_->SetUiState(UIState::BUSY);
     }
 
     // Always force component refresh when theme has changed (like panel restoration)
@@ -257,7 +257,7 @@ void OemOilPanel::UpdateOilPressure()
     // Set ANIMATING state before starting animation
     if (panelService_)
     {
-        panelService_->SetUiState(UIState::ANIMATING);
+        panelService_->SetUiState(UIState::BUSY);
     }
     // Start pressure gauge animation
     lv_anim_start(&pressureAnimation_);
@@ -316,7 +316,7 @@ void OemOilPanel::UpdateOilTemperature()
     // Set ANIMATING state before starting animation
     if (panelService_)
     {
-        panelService_->SetUiState(UIState::ANIMATING);
+        panelService_->SetUiState(UIState::BUSY);
     }
     // Start temperature gauge animation
     lv_anim_start(&temperatureAnimation_);

@@ -1,5 +1,5 @@
-* Review interrupt logic, it seem fragmented. review current code and ensure that we have 2 ui states, one BUSY, the other IDLE. The flow should be that by default when panel managers load or update is called, it automatically sets state to busy, as these functions will invariable set up animations or screen loading activities. Than knowing this, any individual panel must have the ability to set the state at a more granular level, e.g. splash panel can set the state to IDLE while the display timer is running, and no actual lvgl animations are running. Once the fade out animation starts, the panel must set the IDLE state again. Than once completion callback in panel manager to executed, the IDLE state is put back by deafault.
-* "Guard Clause" or "Early Return" pattern where you check for a negative state and then log/return/fail, with the desireg logic outside the conditional. Rather than an if that checks for positive state, and the required logic nested in the if, with an else that logs/returns/fails
+* Review interrupt logic, it seem fragmented. review current code and ensure that we have 2 ui states, one BUSY, the other IDLE. The flow should be that by default when panel managers load or update is called, it automatically sets state to busy, as these functions will invariable set up animations or screen loading activities. Than knowing this, any individual panel must have the ability to set the state at a more granular level, e.g. splash panel can set the state to IDLE while the display timer is running, and no actual lvgl animations are running. Once the fade out animation starts, the panel must set the IDLE state again. Than once completion callback in panel manager to executed, the IDLE state is put back by default.
+* "Guard Clause" or "Early Return" pattern where you check for a negative state and then log/return/fail, with the desired logic outside the conditional. Rather than an if that checks for positive state, and the required logic nested in the if, with an else that logs/returns/fails
 * review logging, and the level between debug and info
     * every method (within reason) should have a debug log
     * every major concept (managers, panels, components etc.) should have an info log at key points
@@ -8,7 +8,7 @@
 * What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?
 * remove all comments based on changes made, so remove temp, test simplified
 * Ensure that all tests now inject using constructor, and not methods
-* Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interupts, and Input Event handling.  
+* Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interrupts, and Input Event handling.  
 Also highlight the normal flow of panel loading, and the ability to show error messages, change configs, and handle button inputs which force an action for each panel
 * because of error panels, ensure that there are proper null and empty checks throughout the code
 * Complete unity and wokwi tests for error panel

@@ -62,10 +62,10 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
 
     callbackFunction_ = callbackFunction;
     
-    // Set UIState to LOADING during splash animation to prevent action processing
+    // Set BUSY at start of load - animations will be running
     if (panelService_)
     {
-        panelService_->SetUiState(UIState::LOADING);
+        panelService_->SetUiState(UIState::BUSY);
     }
 
     // Create component using injected factory
@@ -87,6 +87,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
 /// @brief Update the reading on the screen
 void SplashPanel::Update(std::function<void()> callbackFunction)
 {
+    // Splash panel doesn't need regular updates - animation handles its own state
     callbackFunction();
 }
 
@@ -113,7 +114,22 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
+    // During display period, no animations are running - set IDLE to allow actions
+    if (panel->panelService_)
+    {
+        panel->panelService_->SetUiState(UIState::IDLE);
+        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
+    }
+
     log_v("Fading out...");
+    
+    // About to start fade-out animation - set BUSY
+    if (panel->panelService_)
+    {
+        panel->panelService_->SetUiState(UIState::BUSY);
+        log_d("SplashPanel: Starting fade-out animation - setting BUSY");
+    }
+    
     lv_screen_load_anim(panel->blankScreen_, LV_SCR_LOAD_ANIM_FADE_OUT, panel->GetAnimationTime(), 0, false);
 
     // Schedule the fade-out animation
@@ -130,11 +146,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
-    // Reset UIState to IDLE when splash animation completes
-    if (panel->panelService_)
-    {
-        panel->panelService_->SetUiState(UIState::IDLE);
-    }
+    // PanelManager will set IDLE in its completion callback, no need to set it here
     
     panel->callbackFunction_();
 

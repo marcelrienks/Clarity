@@ -87,12 +87,8 @@ enum class TriggerActionType
 /// @brief UI state for processing decisions
 enum class UIState
 {
-    IDLE,          ///< No LVGL activity, safe for all operations
-    LOADING,       ///< Panel loading with potential animations
-    UPDATING,      ///< Panel updating (sensor data refresh)
-    ANIMATING,     ///< LVGL animations in progress
-    TRANSITIONING, ///< Panel transitions in progress
-    LVGL_BUSY      ///< Generic LVGL busy state
+    IDLE, ///< No UI activity, safe for button actions and interrupts
+    BUSY  ///< UI operations in progress (loading, updating, animating), no interrupts allowed
 };
 
 /// @brief Convert UIState enum to string for debugging
@@ -103,11 +99,7 @@ inline const char* UIStateToString(UIState state)
     switch (state)
     {
         case UIState::IDLE: return "IDLE";
-        case UIState::LOADING: return "LOADING";
-        case UIState::UPDATING: return "UPDATING";
-        case UIState::ANIMATING: return "ANIMATING";
-        case UIState::TRANSITIONING: return "TRANSITIONING";
-        case UIState::LVGL_BUSY: return "LVGL_BUSY";
+        case UIState::BUSY: return "BUSY";
         default: return "UNKNOWN";
     }
 }

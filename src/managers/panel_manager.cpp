@@ -263,7 +263,6 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
             }
         }
 
-        SetUiState(UIState::LOADING);
         panel_->Load(completionCallback);
         Ticker::handleLvTasks();
     }
@@ -285,7 +284,6 @@ void PanelManager::UpdatePanel()
 {
     if (panel_)
     {
-        SetUiState(UIState::UPDATING);
         panel_->Update([this]() { this->PanelManager::PanelCompletionCallback(); });
         Ticker::handleLvTasks();
     }
@@ -296,12 +294,7 @@ void PanelManager::SetUiState(UIState state)
 {
     if (uiState_ != state)
     {
-        // Only log significant state transitions (not routine IDLE/UPDATING cycles)
-        if (!(uiState_ == UIState::IDLE && state == UIState::UPDATING) &&
-            !(uiState_ == UIState::UPDATING && state == UIState::IDLE))
-        {
-            log_d("UIState transition: %s → %s", UIStateToString(uiState_), UIStateToString(state));
-        }
+        log_d("UIState transition: %s → %s", UIStateToString(uiState_), UIStateToString(state));
         uiState_ = state;
     }
 }

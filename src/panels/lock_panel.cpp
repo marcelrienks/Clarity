@@ -59,6 +59,12 @@ void LockPanel::Load(std::function<void()> callbackFunction)
     // Loading lock panel with current lock state display
     callbackFunction_ = callbackFunction;
 
+    // Set BUSY at start of load
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::BUSY);
+    }
+
     // Create component using injected factory
     lockComponent_ = componentFactory_->CreateLockComponent(styleService_);
 
@@ -80,6 +86,19 @@ void LockPanel::Load(std::function<void()> callbackFunction)
 /// @brief Update the lock panel with current sensor data
 void LockPanel::Update(std::function<void()> callbackFunction)
 {
+    // Set BUSY at start of update
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::BUSY);
+    }
+    
+    // Lock panel is static, no updates needed
+    // Set IDLE immediately since no processing is needed
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::IDLE);
+    }
+    
     callbackFunction();
 }
 
@@ -92,13 +111,21 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
     // Lock panel load completed - screen displayed
 
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
+    
+    // Set IDLE when load completes
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+    }
+    
     thisInstance->callbackFunction_();
 }
 
 // Manager injection method
 void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
-    // LockPanel doesn't use panelService (no actions), but update styleService if different
+    panelService_ = panelService;
+    // Update styleService if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;

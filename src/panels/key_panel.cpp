@@ -63,6 +63,12 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
     // Loading key panel with current key state display
     callbackFunction_ = callbackFunction;
 
+    // Set BUSY at start of load
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::BUSY);
+    }
+
     // Create component using injected factory
     keyComponent_ = componentFactory_->CreateKeyComponent(styleService_);
 
@@ -91,6 +97,12 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
 /// @brief Update the key panel with current sensor data
 void KeyPanel::Update(std::function<void()> callbackFunction)
 {
+    // Set BUSY at start of update
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::BUSY);
+    }
+
     if (!gpioProvider_)
     {
         log_e("KeyPanel update requires gpio provider");
@@ -109,6 +121,12 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
         keyComponent_->Refresh(Reading{static_cast<int32_t>(currentKeyState_)});
     }
 
+    // Set IDLE when update completes
+    if (panelService_)
+    {
+        panelService_->SetUiState(UIState::IDLE);
+    }
+
     callbackFunction();
 }
 
@@ -120,13 +138,21 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
     // Key panel load completed - screen displayed
 
     auto thisInstance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
+    
+    // Set IDLE when load completes
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+    }
+    
     thisInstance->callbackFunction_();
 }
 
 // Manager injection method
 void KeyPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
-    // KeyPanel doesn't use panelService (no actions), but update styleService if different
+    panelService_ = panelService;
+    // Update styleService if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;
