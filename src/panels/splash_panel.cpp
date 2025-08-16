@@ -187,7 +187,6 @@ Action SplashPanel::GetLongPressAction()
     log_v("GetLongPressAction() called");
 
     // Long press during splash: Switch to CONFIG panel
-    log_i("SplashPanel: Long press - switching to CONFIG panel");
 
     // Return an action that directly calls PanelService interface
     if (panelService_)

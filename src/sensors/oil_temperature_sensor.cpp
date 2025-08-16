@@ -21,7 +21,6 @@ void OilTemperatureSensor::Init()
 {
     log_v("Init() called");
     // Configure GPIO pin for analog input
-    log_d("Initializing oil temperature sensor ADC configuration");
 
     // Configure ADC resolution and attenuation for direct 3.3V operation
     analogReadResolution(12);       // 12-bit resolution (0-4095)
