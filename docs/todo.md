@@ -1,6 +1,5 @@
-* Review interrupt logic, it seem fragmented
-    * add a quick and clean interrupt check in between splash panel animations  
-    BUT actually all we need to do between animation, is set the UIState to idle, and allow the update function, which is constantly running to call check. Essentially make sure that individual components do not do interrupt checks, they must just accurately manage UIStates, and then anytime there is IDLE, the main loop should be running checks
+* Review interrupt logic, it seem fragmented. review current code and ensure that we have 2 ui states, one BUSY, the other IDLE. The flow should be that by default when panel managers load or update is called, it automatically sets state to busy, as these functions will invariable set up animations or screen loading activities. Than knowing this, any individual panel must have the ability to set the state at a more granular level, e.g. splash panel can set the state to IDLE while the display timer is running, and no actual lvgl animations are running. Once the fade out animation starts, the panel must set the IDLE state again. Than once completion callback in panel manager to executed, the IDLE state is put back by deafault.
+* "Guard Clause" or "Early Return" pattern where you check for a negative state and then log/return/fail, with the desireg logic outside the conditional. Rather than an if that checks for positive state, and the required logic nested in the if, with an else that logs/returns/fails
 * review logging, and the level between debug and info
     * every method (within reason) should have a debug log
     * every major concept (managers, panels, components etc.) should have an info log at key points
