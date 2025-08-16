@@ -77,7 +77,6 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     // Render the component
     component_->Render(screen_, splashLocation, displayProvider_);
 
-    log_v("Fading in...");
     lv_screen_load_anim(screen_, LV_SCR_LOAD_ANIM_FADE_IN, GetAnimationTime(), 0, false);
 
     // Schedule the fade-in animation
@@ -121,7 +120,6 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
         log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
     }
 
-    log_v("Fading out...");
     
     // About to start fade-out animation - set BUSY
     if (panel->panelService_)

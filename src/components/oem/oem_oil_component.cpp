@@ -153,8 +153,6 @@ void OemOilComponent::Refresh(const Reading &reading)
 /// @param value
 void OemOilComponent::SetValue(int32_t value)
 {
-    // Reduced logging - only log in verbose mode
-    log_v("SetValue: %i", value);
 
     // Allow derived classes to map values if needed (e.g., for reversed scales)
     int32_t mappedValue = map_value_for_display(value);

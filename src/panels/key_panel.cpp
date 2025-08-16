@@ -84,7 +84,6 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
 
     lv_obj_add_event_cb(screen_, KeyPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
-    log_v("loading...");
     lv_screen_load(screen_);
 
     // Always apply current theme to the screen when loading (ensures theme is current)

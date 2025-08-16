@@ -294,7 +294,12 @@ void PanelManager::SetUiState(UIState state)
 {
     if (uiState_ != state)
     {
-        log_d("UIState transition: %s → %s", UIStateToString(uiState_), UIStateToString(state));
+        // Only log significant state transitions (not routine IDLE/BUSY cycles during updates)
+        if (!(uiState_ == UIState::IDLE && state == UIState::BUSY) &&
+            !(uiState_ == UIState::BUSY && state == UIState::IDLE))
+        {
+            log_d("UIState transition: %s → %s", UIStateToString(uiState_), UIStateToString(state));
+        }
         uiState_ = state;
     }
 }

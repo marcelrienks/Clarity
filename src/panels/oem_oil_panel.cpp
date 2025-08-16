@@ -138,7 +138,6 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     }
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
-    log_v("loading...");
 
     lv_screen_load(screen_);
 

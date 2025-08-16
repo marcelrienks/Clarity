@@ -62,14 +62,6 @@ Reading DebugErrorSensor::GetReading()
     delay(5);
     bool confirmedState = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
 
-    // Log pin readings for debugging
-    static unsigned long lastLogTime = 0;
-    if (millis() - lastLogTime > 5000 || currentState != previousState_)
-    { // Log every 5 seconds or on change
-        log_v("DebugErrorSensor GPIO %d: first=%s, confirmed=%s, previous=%s", gpio_pins::DEBUG_ERROR,
-              currentState ? "HIGH" : "LOW", confirmedState ? "HIGH" : "LOW", previousState_ ? "HIGH" : "LOW");
-        lastLogTime = millis();
-    }
 
     // Only proceed if both readings match
     if (currentState != confirmedState)
