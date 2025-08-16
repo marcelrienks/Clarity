@@ -179,7 +179,7 @@ void loop()
     {
         panelManager->UpdatePanel();
     }
-    Ticker::handleLvTasks();
 
+    Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
 }

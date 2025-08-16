@@ -33,8 +33,6 @@ KeyPanel::~KeyPanel()
 /// @brief Initialize the key panel and its components
 void KeyPanel::Init()
 {
-    // Initializing key panel and reading current GPIO key state
-
     if (!displayProvider_ || !gpioProvider_)
     {
         log_e("KeyPanel requires display and gpio providers");
@@ -151,10 +149,10 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
 void KeyPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     panelService_ = panelService;
+
     // Update styleService if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;
     }
-    // Managers injected successfully
 }

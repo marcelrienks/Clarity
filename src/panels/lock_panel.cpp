@@ -84,20 +84,7 @@ void LockPanel::Load(std::function<void()> callbackFunction)
 
 /// @brief Update the lock panel with current sensor data
 void LockPanel::Update(std::function<void()> callbackFunction)
-{
-    // Set BUSY at start of update
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
-    
-    // Lock panel is static, no updates needed
-    // Set IDLE immediately since no processing is needed
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::IDLE);
-    }
-    
+{    
     callbackFunction();
 }
 
@@ -107,8 +94,6 @@ void LockPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    // Lock panel load completed - screen displayed
-
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
     
     // Set IDLE when load completes
@@ -124,10 +109,10 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     panelService_ = panelService;
+
     // Update styleService if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;
     }
-    // Managers injected successfully
 }

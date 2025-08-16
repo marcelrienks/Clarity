@@ -181,12 +181,12 @@ Action ConfigPanel::GetLongPressAction()
 void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     panelService_ = panelService;
+    
     // styleService_ is already set in constructor, but update if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;
     }
-    // Managers injected successfully
 }
 
 void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
