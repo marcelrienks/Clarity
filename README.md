@@ -13,6 +13,8 @@ After I had built this architecture, the project then became a test bed for usin
 - [Hardware](docs/hardware.md) - Hardware setup and configuration
 - [Testing](docs/test.md) - Unit and integration test guide  
 - [Scenarios](docs/scenario.md) - Usage workflows
+- [Standards](docs/standards.md) - Coding and naming standards
+- [Patterns](docs/patterns.md) - Various patterns followed in this project
 - [Todo](docs/todo.md) - Development tasks
 
 ## Quick Start

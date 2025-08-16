@@ -9,13 +9,14 @@
 // Constructors and Destructors
 
 OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                         IComponentFactory* componentFactory)
+                         IComponentFactory *componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)), currentOilPressureValue_(-1),
       currentOilTemperatureValue_(-1), lastTheme_("")
 {
+    log_v("OemOilPanel constructor called");
     // Initialize LVGL animation structures to prevent undefined behavior
     lv_anim_init(&pressureAnimation_);
     lv_anim_init(&temperatureAnimation_);
@@ -23,7 +24,7 @@ OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
 
 OemOilPanel::~OemOilPanel()
 {
-    log_d("Destroying OemOilPanel...");
+    log_v("~OemOilPanel() destructor called");
 
     // Stop any running animations before destroying the panel
     if (isPressureAnimationRunning_)
@@ -69,8 +70,6 @@ OemOilPanel::~OemOilPanel()
     {
         oemOilTemperatureSensor_.reset();
     }
-
-    log_d("OemOilPanel destruction complete");
 }
 
 // Core Functionality Methods
@@ -79,6 +78,8 @@ OemOilPanel::~OemOilPanel()
 /// Creates screen and initializes sensors with sentinel values
 void OemOilPanel::Init()
 {
+    log_v("Init() called");
+
     if (!displayProvider_)
     {
         log_e("OemOilPanel requires display provider");
@@ -106,15 +107,18 @@ void OemOilPanel::Init()
 
     oemOilTemperatureSensor_->Init();
     currentOilTemperatureValue_ = -1; // Sentinel value to ensure first update
+    
+    log_i("OemOilPanel initialization completed");
 }
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
 void OemOilPanel::Load(std::function<void()> callbackFunction)
 {
-    // Loading OEM oil panel with pressure and temperature gauges
+    log_v("Load() called");
+
     callbackFunction_ = callbackFunction;
-    
+
     // Set BUSY at start of load
     if (panelService_)
     {
@@ -155,7 +159,6 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
-
     lv_screen_load(screen_);
 
     if (styleService_)
@@ -164,14 +167,17 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
         // Update lastTheme_ to current theme to sync with theme detection in update()
         lastTheme_ = String(styleService_->GetCurrentTheme());
     }
+    
+    log_i("OemOilPanel loaded successfully");
 }
 
 /// @brief Update the reading on the screen
 void OemOilPanel::Update(std::function<void()> callbackFunction)
 {
+    log_v("Update() called");
 
     callbackFunction_ = callbackFunction;
-    
+
     // Set BUSY at start of update - data updates and potential animations
     if (panelService_)
     {
@@ -223,6 +229,7 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
 /// @brief Update the oil pressure reading on the screen
 void OemOilPanel::UpdateOilPressure()
 {
+    log_v("UpdateOilPressure() called");
 
     // Skip update if pressure animation is already running
     if (isPressureAnimationRunning_)
@@ -282,6 +289,7 @@ void OemOilPanel::UpdateOilPressure()
 /// @brief Update the oil temperature reading on the screen
 void OemOilPanel::UpdateOilTemperature()
 {
+    log_v("UpdateOilTemperature() called");
 
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_)
@@ -342,6 +350,8 @@ void OemOilPanel::UpdateOilTemperature()
 /// @return NoAction - oil panel doesn't respond to short presses
 Action OemOilPanel::GetShortPressAction()
 {
+    log_v("GetShortPressAction() called");
+
     // Short press: No action for oil panel
     log_d("OemOilPanel: Short press action requested - returning NoAction");
     return Action(nullptr);
@@ -351,27 +361,26 @@ Action OemOilPanel::GetShortPressAction()
 /// @return Action to switch to CONFIG panel
 Action OemOilPanel::GetLongPressAction()
 {
-    // Long press: Switch to CONFIG panel
-    log_i("OemOilPanel: Long press - switching to CONFIG panel");
+    log_v("GetLongPressAction() called");
 
     // Return an action that directly calls PanelService interface
-    if (panelService_)
+    if (!panelService_)
     {
-        return Action(
-            [this]()
-            {
-                panelService_->CreateAndLoadPanel(
-                    PanelNames::CONFIG,
-                    []()
-                    {
-                        // Panel switch callback handled by service
-                    },
-                    true); // Mark as trigger-driven to avoid overwriting restoration panel
-            });
+        log_w("OemOilPanel: PanelService not available, returning no action");
+        return Action(nullptr);
     }
 
-    log_w("OemOilPanel: PanelService not available, returning no action");
-    return Action(nullptr);
+    return Action(
+        [this]()
+        {
+            panelService_->CreateAndLoadPanel(
+                PanelNames::CONFIG,
+                []()
+                {
+                    // Panel switch callback handled by service
+                },
+                true); // Mark as trigger-driven to avoid overwriting restoration panel
+        });
 }
 
 /// @brief Manager injection method to prevent circular references
@@ -379,19 +388,22 @@ Action OemOilPanel::GetLongPressAction()
 /// @param styleService  the style manager instance
 void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
+
     panelService_ = panelService;
     // styleService_ is already set in constructor, but update if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;
     }
-    // Managers injected successfully
 }
 
 /// @brief Set preference service and apply sensor update rate from preferences
 /// @param preferenceService The preference service to use for configuration
 void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
+    log_v("SetPreferenceService() called");
+
     preferenceService_ = preferenceService;
 
     // Apply updateRate and units from preferences to sensors if preference service is available
@@ -415,13 +427,13 @@ void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
     }
 }
 
-
 // Static Callback Methods
 
 /// @brief The callback to be run once show panel has completed
 /// @param event LVGL event that was used to call this
 void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
+    log_v("ShowPanelCompletionCallback() called");
 
     if (!event)
     {
@@ -439,7 +451,7 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
     {
         thisInstance->panelService_->SetUiState(UIState::IDLE);
     }
-    
+
     thisInstance->callbackFunction_();
 }
 
@@ -489,6 +501,7 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 /// @param value the next value in a sequence to create a smooth transition
 void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 {
+    log_v("ExecutePressureAnimationCallback() called with value: %d", value);
 
     lv_anim_t *animation = lv_anim_get(target, ExecutePressureAnimationCallback); // get the animation
     if (animation == nullptr || animation->var == nullptr)
@@ -510,6 +523,7 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 /// @param value the next value in a sequence to create a smooth transition
 void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t value)
 {
+    log_v("ExecuteTemperatureAnimationCallback() called with value: %d", value);
 
     lv_anim_t *animation = lv_anim_get(target, ExecuteTemperatureAnimationCallback); // get the animation
     if (animation == nullptr || animation->var == nullptr)
@@ -533,6 +547,8 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 /// @return Mapped value for display (0-60, representing pressure range)
 int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
+    log_v("MapPressureValue() called with sensorValue: %d", sensorValue);
+
     // Sensor now returns values in configured units, map to display scale (0-60)
     int32_t mappedValue;
 
@@ -583,6 +599,7 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
         mappedValue = ((sensorValue - 1) * 60) / 9;
     }
 
+    log_v("MapPressureValue() returning: %d", mappedValue);
     return mappedValue;
 }
 
@@ -591,6 +608,8 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 /// @return Mapped value for display (0-120 scale)
 int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 {
+    log_v("MapTemperatureValue() called with sensorValue: %d", sensorValue);
+    
     // Sensor now returns values in configured units, map to display scale (0-120)
     int32_t mappedValue;
 
@@ -629,5 +648,6 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
         mappedValue = sensorValue;
     }
 
+    log_v("MapTemperatureValue() returning: %d", mappedValue);
     return mappedValue;
 }

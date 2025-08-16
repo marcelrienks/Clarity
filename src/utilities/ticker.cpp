@@ -1,5 +1,6 @@
 #include "utilities/ticker.h"
 #include <functional>
+#include <esp32-hal-log.h>
 
 // Static Methods
 
@@ -7,6 +8,7 @@
 /// @param start_time the start time of the loop method
 void Ticker::handleDynamicDelay(uint32_t startTime)
 {
+    log_v("handleDynamicDelay() called");
     // Calculate how long processing took
     uint32_t elapsedTime = millis() - startTime;
 
@@ -22,6 +24,7 @@ void Ticker::handleDynamicDelay(uint32_t startTime)
 /// @brief Handle lv tasks by calculating the time differences since start up
 void Ticker::handleLvTasks()
 {
+    log_v("handleLvTasks() called");
     // log_d("...");
     static uint32_t lastTickIncrement = 0;
     static uint32_t lastTaskRun = 0;

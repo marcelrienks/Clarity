@@ -14,6 +14,7 @@ OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService *styleServi
 /// @return Pointer to the icon image descriptor.
 const lv_image_dsc_t *OemOilTemperatureComponent::get_icon() const
 {
+    log_v("get_icon() called");
     return &oil_temp_regular;
 }
 
@@ -21,6 +22,7 @@ const lv_image_dsc_t *OemOilTemperatureComponent::get_icon() const
 /// @return The minimum scale value.
 int32_t OemOilTemperatureComponent::get_scale_min() const
 {
+    log_v("get_scale_min() called");
     return 0;
 }
 
@@ -28,6 +30,7 @@ int32_t OemOilTemperatureComponent::get_scale_min() const
 /// @return The maximum scale value.
 int32_t OemOilTemperatureComponent::get_scale_max() const
 {
+    log_v("get_scale_max() called");
     return 120;
 }
 
@@ -35,6 +38,7 @@ int32_t OemOilTemperatureComponent::get_scale_max() const
 /// @return The danger zone value.
 int32_t OemOilTemperatureComponent::get_danger_zone() const
 {
+    log_v("get_danger_zone() called");
     return 100;
 }
 
@@ -42,6 +46,7 @@ int32_t OemOilTemperatureComponent::get_danger_zone() const
 /// @return The scale mode.
 lv_scale_mode_t OemOilTemperatureComponent::get_scale_mode() const
 {
+    log_v("get_scale_mode() called");
     return LV_SCALE_MODE_ROUND_INNER;
 }
 
@@ -49,6 +54,7 @@ lv_scale_mode_t OemOilTemperatureComponent::get_scale_mode() const
 /// @return The angle range.
 int32_t OemOilTemperatureComponent::get_angle_range() const
 {
+    log_v("get_angle_range() called");
     return 120;
 }
 
@@ -57,6 +63,7 @@ int32_t OemOilTemperatureComponent::get_angle_range() const
 /// @return True if the value is in the danger zone, false otherwise.
 bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 {
+    log_v("is_danger_condition() called");
     return value >= OemOilTemperatureComponent::get_danger_zone();
 }
 
@@ -65,6 +72,7 @@ bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 /// @return The mapped value.
 int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 {
+    log_v("map_value_for_display() called");
     // Maps the value from the original scale (0-120) to the normal scale (120-0).
     // LVGL 9.3 has a bug that does allow setting a reverse scale 120-0, but it cannot animate the needle using that.
     // This method is used to map the value from the original scale (0-120) to the normal scale (120-0).
@@ -79,6 +87,7 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 /// @param section The scale section to configure.
 void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) const
 {
+    log_v("setup_danger_zone() called");
     // Danger zone: map correct danger zone to reversed danger zone (hack to solve reversed scale in LVGL 9.3)
     lv_scale_section_set_range(section, map_value_for_display(OemOilTemperatureComponent::get_scale_max()),
                                map_value_for_display(OemOilTemperatureComponent::get_danger_zone()));
@@ -88,6 +97,7 @@ void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) 
 /// @return The Y offset value.
 int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 {
+    log_v("get_icon_y_offset() called");
     return 55;
 }
 
@@ -96,6 +106,7 @@ int32_t OemOilTemperatureComponent::get_icon_y_offset() const
 /// @param hAngle Reference to store the H label angle.
 void OemOilTemperatureComponent::get_label_angles(int32_t &lAngle, int32_t &hAngle) const
 {
+    log_v("get_label_angles() called");
     // Swap L and H positioning due to reversed scale mapping
     // H label: At _scale_rotation angle (where L would normally be)
     hAngle = scaleRotation_;

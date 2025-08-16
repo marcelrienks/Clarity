@@ -21,6 +21,8 @@ void LockSensor::Init()
         initialized = true;
     }
     gpioProvider_->PinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
+    
+    log_i("LockSensor initialization completed on GPIO %d", gpio_pins::LOCK);
 }
 
 /// @brief Get the current lock status reading

@@ -6,10 +6,13 @@
 // Constructors and Destructors
 LockComponent::LockComponent(IStyleService *styleService) : lockIcon_(nullptr), styleService_(styleService)
 {
+    log_v("LockComponent constructor called");
 }
 
 LockComponent::~LockComponent()
 {
+    log_v("~LockComponent() destructor called");
+    
     if (lockIcon_)
     {
         lv_obj_del(lockIcon_);
@@ -19,7 +22,7 @@ LockComponent::~LockComponent()
 // Core Functionality Methods
 void LockComponent::Refresh(const Reading &reading)
 {
-    log_d("Refreshing lock component display with new state");
+    log_v("Refresh() called");
 
     bool is_lock_engaged = std::get<bool>(reading);
     lv_color_t colour = styleService_->GetThemeColors().keyPresent;
@@ -37,8 +40,8 @@ void LockComponent::Refresh(const Reading &reading)
 /// @param location The location parameters for positioning the component.
 void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
-    log_d("Rendering lock component icon at specified location");
-
+    log_v("Render() called");
+    
     if (!display)
     {
         log_e("LockComponent requires display provider");
@@ -46,6 +49,8 @@ void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, 
                                              "Cannot render - display provider is null");
         return;
     }
+
+    log_d("Rendering lock component icon at specified location");
 
     lockIcon_ = display->CreateImage(screen);
     lv_image_set_src(lockIcon_, &lock_alt_solid);

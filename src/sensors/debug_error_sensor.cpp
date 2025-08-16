@@ -1,6 +1,7 @@
 #include "sensors/debug_error_sensor.h"
 #include "managers/error_manager.h"
 #include <Arduino.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 DebugErrorSensor::DebugErrorSensor(IGpioProvider *gpioProvider)
@@ -12,6 +13,7 @@ DebugErrorSensor::DebugErrorSensor(IGpioProvider *gpioProvider)
 // Core Functionality Methods
 void DebugErrorSensor::Init()
 {
+    log_v("Init() called");
     log_d("Initializing DebugErrorSensor on GPIO %d", gpio_pins::DEBUG_ERROR);
 
     if (!gpioProvider_)
@@ -40,6 +42,7 @@ void DebugErrorSensor::Init()
 
 Reading DebugErrorSensor::GetReading()
 {
+    log_v("GetReading() called");
     if (!initialized_)
     {
         log_w("DebugErrorSensor not initialized");

@@ -5,6 +5,7 @@
 // Constructors and Destructors
 ClarityComponent::ClarityComponent(IStyleService *styleService) : styleService_(styleService)
 {
+    log_v("ClarityComponent constructor called");
 }
 
 // Core Functionality Methods
@@ -14,9 +15,8 @@ ClarityComponent::ClarityComponent(IStyleService *styleService) : styleService_(
 /// @param location the location parameters for positioning the component
 void ClarityComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
-    log_d("Rendering Clarity splash text component");
-
-    // Using a label (recommended for text display)
+    log_v("Render() called");
+    
     if (!display)
     {
         log_e("ClarityComponent requires display provider");
@@ -24,6 +24,8 @@ void ClarityComponent::Render(lv_obj_t *screen, const ComponentLocation &locatio
                                              "Cannot render - display provider is null");
         return;
     }
+
+    log_d("Rendering Clarity splash text component");
 
     lv_obj_t *splash = display->CreateLabel(screen);
     lv_label_set_text(splash, UIConstants::APP_NAME);

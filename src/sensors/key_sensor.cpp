@@ -14,6 +14,7 @@ KeySensor::KeySensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 /// @brief Initialize the key sensor hardware
 void KeySensor::Init()
 {
+    log_v("Init() called");
     // Configure both GPIO pins for digital input (safe to call multiple times)
     static bool initialized = false;
     if (!initialized)
@@ -29,12 +30,15 @@ void KeySensor::Init()
     // Attach interrupts for immediate state change detection
     gpioProvider_->AttachInterrupt(gpio_pins::KEY_PRESENT, nullptr, CHANGE);
     gpioProvider_->AttachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, CHANGE);
+    
+    log_i("KeySensor initialization completed on GPIO %d and %d", gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
 }
 
 /// @brief Get the current key reading
 /// @return KeyState indicating present, not present, or inactive
 Reading KeySensor::GetReading()
 {
+    log_v("GetReading() called");
     KeyState state = readKeyState();
     return static_cast<int32_t>(state);
 }
@@ -43,6 +47,7 @@ Reading KeySensor::GetReading()
 /// @return Current KeyState based on GPIO readings
 KeyState KeySensor::GetKeyState()
 {
+    log_v("GetKeyState() called");
     return readKeyState();
 }
 
@@ -50,6 +55,7 @@ KeyState KeySensor::GetKeyState()
 /// @return KeyState based on GPIO pin readings
 KeyState KeySensor::readKeyState()
 {
+    log_v("readKeyState() called");
     bool pin25High = gpioProvider_->DigitalRead(gpio_pins::KEY_PRESENT);
     bool pin26High = gpioProvider_->DigitalRead(gpio_pins::KEY_NOT_PRESENT);
 

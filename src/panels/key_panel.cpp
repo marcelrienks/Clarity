@@ -13,11 +13,14 @@ KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       keySensor_(std::make_shared<KeySensor>(gpio))
 {
+    log_v("KeyPanel constructor called");
     // Component will be created during load() method
 }
 
 KeyPanel::~KeyPanel()
 {
+    log_v("~KeyPanel() destructor called");
+    
     if (screen_)
     {
         lv_obj_delete(screen_);
@@ -33,6 +36,8 @@ KeyPanel::~KeyPanel()
 /// @brief Initialize the key panel and its components
 void KeyPanel::Init()
 {
+    log_v("Init() called");
+    
     if (!displayProvider_ || !gpioProvider_)
     {
         log_e("KeyPanel requires display and gpio providers");
@@ -53,12 +58,15 @@ void KeyPanel::Init()
     // Initialize sensor and get current key state
     keySensor_->Init();
     currentKeyState_ = keySensor_->GetKeyState();
+    
+    log_i("KeyPanel initialization completed");
 }
 
 /// @brief Load the key panel UI components
 void KeyPanel::Load(std::function<void()> callbackFunction)
 {
-    // Loading key panel with current key state display
+    log_v("Load() called");
+    
     callbackFunction_ = callbackFunction;
 
     // Set BUSY at start of load
@@ -67,8 +75,21 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
         panelService_->SetUiState(UIState::BUSY);
     }
 
+    if (!componentFactory_)
+    {
+        log_e("KeyPanel requires component factory");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", "ComponentFactory is null");
+        return;
+    }
+
     // Create component using injected factory
     keyComponent_ = componentFactory_->CreateKeyComponent(styleService_);
+    if (!keyComponent_)
+    {
+        log_e("Failed to create key component");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", "Component creation failed");
+        return;
+    }
 
     // Render the component
     if (!displayProvider_)
@@ -89,11 +110,15 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
     {
         styleService_->ApplyThemeToScreen(screen_);
     }
+    
+    log_i("KeyPanel loaded successfully");
 }
 
 /// @brief Update the key panel with current sensor data
 void KeyPanel::Update(std::function<void()> callbackFunction)
 {
+    log_v("Update() called");
+    
     // Set BUSY at start of update
     if (panelService_)
     {
@@ -132,9 +157,14 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    // Key panel load completed - screen displayed
+    log_v("ShowPanelCompletionCallback() called");
+    
+    if (!event)
+        return;
 
     auto thisInstance = static_cast<KeyPanel *>(lv_event_get_user_data(event));
+    if (!thisInstance)
+        return;
     
     // Set IDLE when load completes
     if (thisInstance->panelService_)
@@ -148,6 +178,8 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
 // Manager injection method
 void KeyPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
+    
     panelService_ = panelService;
 
     // Update styleService if different instance provided

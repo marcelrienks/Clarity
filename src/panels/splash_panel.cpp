@@ -15,11 +15,13 @@ SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
-    // Component will be created during load() method
+    log_v("SplashPanel constructor called");
 }
 
 SplashPanel::~SplashPanel()
 {
+    log_v("~SplashPanel() destructor called");
+
     if (screen_)
     {
         lv_obj_del(screen_);
@@ -42,7 +44,8 @@ SplashPanel::~SplashPanel()
 /// Creates blank screens for animation transitions
 void SplashPanel::Init()
 {
-    // Initializing splash panel screen and animation components
+    log_v("Init() called");
+
     if (!displayProvider_)
     {
         log_e("SplashPanel requires display provider");
@@ -58,7 +61,7 @@ void SplashPanel::Init()
 /// @param callbackFunction the function to call when the splash screen is complete
 void SplashPanel::Load(std::function<void()> callbackFunction)
 {
-    log_i("Loading splash panel with fade-in animation");
+    log_v("Load() called");
 
     callbackFunction_ = callbackFunction;
     
@@ -99,6 +102,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
 /// @brief Update the reading on the screen
 void SplashPanel::Update(std::function<void()> callbackFunction)
 {
+    log_v("Update() called");
     // Splash panel doesn't need regular updates - animation handles its own state
     callbackFunction();
 }
@@ -109,6 +113,7 @@ void SplashPanel::Update(std::function<void()> callbackFunction)
 /// @param fade_in_timer the fade_in_timer that has completed
 void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
 {
+    log_v("fade_in_timer_callback() called");
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeInTimer));
 
@@ -123,6 +128,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
 /// @param fadeOutTimer the animation_timer that has completed
 void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
 {
+    log_v("display_timer_callback() called");
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
@@ -154,6 +160,7 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
 /// @param fade_out_timer the animation_timer that has completed
 void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 {
+    log_v("fade_out_timer_callback() called");
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
@@ -169,14 +176,16 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 
 Action SplashPanel::GetShortPressAction()
 {
+    log_v("GetShortPressAction() called");
+
     // Short press during splash: Skip animation (future enhancement)
-    // For now, return NoAction since we don't interrupt animations
-    log_d("SplashPanel: Short press action requested - returning NoAction (animation will complete)");
     return Action(nullptr);
 }
 
 Action SplashPanel::GetLongPressAction()
 {
+    log_v("GetLongPressAction() called");
+
     // Long press during splash: Switch to CONFIG panel
     log_i("SplashPanel: Long press - switching to CONFIG panel");
 
@@ -203,6 +212,7 @@ Action SplashPanel::GetLongPressAction()
 // Manager injection method
 void SplashPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
     panelService_ = panelService;
     // styleService_ is already set in constructor, but update if different instance provided
     if (styleService != styleService_)
@@ -214,10 +224,14 @@ void SplashPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
 
 void SplashPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
+    log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
 }
 
 int SplashPanel::GetAnimationTime() const
 {
-    return (preferenceService_->GetConfig().splashDuration - _DISPLAY_TIME) / 2;
+    log_v("GetAnimationTime() called");
+    int animTime = (preferenceService_->GetConfig().splashDuration - _DISPLAY_TIME) / 2;
+
+    return animTime;
 }

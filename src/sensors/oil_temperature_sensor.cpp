@@ -19,6 +19,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
 /// @brief Initialize the oil temperature sensor hardware
 void OilTemperatureSensor::Init()
 {
+    log_v("Init() called");
     // Configure GPIO pin for analog input
     log_d("Initializing oil temperature sensor ADC configuration");
 
@@ -33,12 +34,14 @@ void OilTemperatureSensor::Init()
 /// @brief Get supported temperature units
 std::vector<std::string> OilTemperatureSensor::GetSupportedUnits() const
 {
+    log_v("GetSupportedUnits() called");
     return {"C", "F"};
 }
 
 /// @brief Set the target unit for temperature readings
 void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
 {
+    log_v("SetTargetUnit() called");
     // Validate unit is supported
     auto supportedUnits = GetSupportedUnits();
     if (!SensorHelper::IsUnitSupported(unit, supportedUnits))
@@ -57,6 +60,7 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
 /// @brief Get the current temperature reading
 Reading OilTemperatureSensor::GetReading()
 {
+    log_v("GetReading() called");
     // Check if enough time has passed for update
     if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
@@ -90,6 +94,7 @@ Reading OilTemperatureSensor::GetReading()
 /// @brief Read raw ADC value from temperature sensor
 int32_t OilTemperatureSensor::ReadRawValue()
 {
+    log_v("ReadRawValue() called");
     // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
     return gpioProvider_->AnalogRead(gpio_pins::OIL_TEMPERATURE);
 }
@@ -97,6 +102,7 @@ int32_t OilTemperatureSensor::ReadRawValue()
 /// @brief Convert raw ADC value to requested temperature unit
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
+    log_v("ConvertReading() called");
     // Convert ADC value directly to requested temperature unit
     // Base calibration: 0-4095 ADC = 0-120°C
 

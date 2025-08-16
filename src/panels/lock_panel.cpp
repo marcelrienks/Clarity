@@ -12,11 +12,13 @@ LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleServi
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       lockSensor_(std::make_shared<LockSensor>(gpio))
 {
+    log_v("LockPanel constructor called");
     // Component will be created during load() method
 }
 
 LockPanel::~LockPanel()
 {
+    log_v("~LockPanel() destructor called");
     if (screen_)
     {
         lv_obj_delete(screen_);
@@ -38,7 +40,15 @@ LockPanel::~LockPanel()
 /// @brief Initialize the lock panel and its components
 void LockPanel::Init()
 {
-    // Initializing lock panel with sensor and display components
+    log_v("Init() called");
+
+    if (!displayProvider_ || !gpioProvider_)
+    {
+        log_e("LockPanel requires display and gpio providers");
+        ErrorManager::Instance().ReportCriticalError("LockPanel",
+                                                     "Missing required providers - display or gpio provider is null");
+        return;
+    }
 
     screen_ = displayProvider_->CreateScreen();
 
@@ -51,12 +61,15 @@ void LockPanel::Init()
 
     lockSensor_->Init();
     isLockEngaged_ = false;
+    
+    log_i("LockPanel initialization completed");
 }
 
 /// @brief Load the lock panel UI components
 void LockPanel::Load(std::function<void()> callbackFunction)
 {
-    // Loading lock panel with current lock state display
+    log_v("Load() called");
+    
     callbackFunction_ = callbackFunction;
 
     // Set BUSY at start of load
@@ -65,8 +78,21 @@ void LockPanel::Load(std::function<void()> callbackFunction)
         panelService_->SetUiState(UIState::BUSY);
     }
 
+    if (!componentFactory_)
+    {
+        log_e("LockPanel requires component factory");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "LockPanel", "ComponentFactory is null");
+        return;
+    }
+
     // Create component using injected factory
     lockComponent_ = componentFactory_->CreateLockComponent(styleService_);
+    if (!lockComponent_)
+    {
+        log_e("Failed to create lock component");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "LockPanel", "Component creation failed");
+        return;
+    }
 
     // Create the lock component centered on screen, and immediately refresh it with the current lock status
     lockComponent_->Render(screen_, centerLocation_, displayProvider_);
@@ -80,11 +106,15 @@ void LockPanel::Load(std::function<void()> callbackFunction)
     {
         styleService_->ApplyThemeToScreen(screen_);
     }
+    
+    log_i("LockPanel loaded successfully");
 }
 
 /// @brief Update the lock panel with current sensor data
 void LockPanel::Update(std::function<void()> callbackFunction)
-{    
+{
+    log_v("Update() called");
+    
     callbackFunction();
 }
 
@@ -94,7 +124,14 @@ void LockPanel::Update(std::function<void()> callbackFunction)
 /// @param event LVGL event that was used to call this
 void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
+    log_v("ShowPanelCompletionCallback() called");
+    
+    if (!event)
+        return;
+
     auto thisInstance = static_cast<LockPanel *>(lv_event_get_user_data(event));
+    if (!thisInstance)
+        return;
     
     // Set IDLE when load completes
     if (thisInstance->panelService_)
@@ -108,6 +145,7 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
 // Manager injection method
 void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
     panelService_ = panelService;
 
     // Update styleService if different instance provided

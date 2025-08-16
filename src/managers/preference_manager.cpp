@@ -27,7 +27,7 @@ void PreferenceManager::Init()
     }
 
     else
-        log_i("Preferences initialized successfully");
+        log_i("PreferenceManager service started successfully - configuration loaded and ready");
 
     LoadConfig();
 }
@@ -138,6 +138,7 @@ void PreferenceManager::SaveConfig()
         preferences_.end();
         // Reopen preferences for future operations
         preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
+        log_i("System configuration updated and persisted to NVS storage");
     }
     else
     {

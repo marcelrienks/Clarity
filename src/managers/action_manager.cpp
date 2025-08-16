@@ -107,6 +107,8 @@ void ActionManager::ProcessInputEvents()
         {
             // Check for long press threshold (2-5 seconds)
             unsigned long pressDuration = currentTime - pressStartTime_;
+            log_d("Button timing check - pressDuration: %lu, threshold: %lu, max: %lu, currentTime: %lu", 
+                  pressDuration, LONG_PRESS_THRESHOLD_MS, LONG_PRESS_MAX_MS, currentTime);
             if (pressDuration >= LONG_PRESS_THRESHOLD_MS && pressDuration <= LONG_PRESS_MAX_MS &&
                 buttonState_ != ButtonState::LONG_PRESS_SENT)
             {
@@ -211,6 +213,8 @@ void ActionManager::HandleButtonRelease()
         else if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS)
         {
             log_i("Short press detected");
+            log_d("Short press analysis - duration: %lu, minShort: %lu, maxShort: %lu", 
+                  pressDuration, SHORT_PRESS_MIN_MS, LONG_PRESS_THRESHOLD_MS);
 
             if (currentService_)
             {

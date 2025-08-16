@@ -1,4 +1,3 @@
-* because of error panels, ensure that there are proper null and empty checks throughout the code
 * review logging, and the level between debug and info
     * every method (within reason) should have a debug log
     * every major concept (managers, panels, components etc.) should have an info log at key points

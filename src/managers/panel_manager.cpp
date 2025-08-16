@@ -21,24 +21,13 @@
 /// Hardware providers are already injected via constructor
 void PanelManager::Init()
 {
-    log_d("Initializing panel manager...");
+    log_v("Init() called");
 
     // Register all available panel types with the factory
     RegisterAllPanels();
 
     Ticker::handleLvTasks();
-}
-
-/// @brief Register all available panel types (deprecated - handled by factory)
-/// @details This method is now a no-op as panel registration is handled by PanelFactory
-void PanelManager::RegisterAllPanels()
-{
-    log_d("Registering all panels...");
-
-    // Panel registration is now handled by PanelFactory in main.cpp
-    // This method performs no operations as factory handles all panel creation
-
-    log_d("Panel registration handled by PanelFactory - no action required");
+    log_i("PanelManager initialization completed");
 }
 
 // Constructors and Destructors
@@ -73,6 +62,7 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
 
 PanelManager::~PanelManager()
 {
+    log_v("~PanelManager() destructor called");
     panel_.reset();
 }
 
@@ -83,10 +73,11 @@ PanelManager::~PanelManager()
 /// @return Interface type representing the panel
 std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
-    log_d("Creating panel instance for type: %s", panelName);
+    log_v("CreatePanel() called for: %s", panelName);
 
     // Use injected factory for panel creation
     std::unique_ptr<IPanel> uniquePanel;
+    log_d("Panel creation - type: %s, factory: %p", panelName, panelFactory_);
     
     if (strcmp(panelName, PanelNames::SPLASH) == 0) {
         uniquePanel = panelFactory_->CreateSplashPanel(gpioProvider_, displayProvider_, styleService_);
@@ -110,6 +101,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
         return nullptr;
     }
 
+    log_v("CreatePanel() completed successfully for: %s", panelName);
     return std::shared_ptr<IPanel>(uniquePanel.release());
 }
 
@@ -118,17 +110,18 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 /// @brief callback function to be executed on splash panel show completion
 void PanelManager::SplashCompletionCallback(const char *panelName)
 {
-    log_d("Splash screen animation completed, transitioning to panel: %s", panelName);
+    log_v("SplashCompletionCallback() called for panel: %s", panelName);
 
     panel_.reset();
     Ticker::handleLvTasks();
 
-    CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
+    CreateAndLoadPanel(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
 void PanelManager::PanelCompletionCallback()
 {
+    log_v("PanelCompletionCallback() called");
     SetUiState(UIState::IDLE);
 
     // System initialization complete - triggers will remain in INIT state
@@ -137,6 +130,7 @@ void PanelManager::PanelCompletionCallback()
     if (!systemInitialized)
     {
         systemInitialized = true;
+        log_i("System initialization complete");
     }
 }
 
@@ -146,7 +140,7 @@ void PanelManager::PanelCompletionCallback()
 void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback,
                                       bool isTriggerDriven)
 {
-    log_d("Creating and loading panel: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
+    log_i("Panel transition requested: %s", panelName);
 
     // Check if splash screen should be shown - only if NOT trigger-driven and splash is enabled
     bool showSplash = false;
@@ -169,15 +163,15 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     else
     {
         log_d("Loading panel directly: %s", panelName);
-        CreateAndLoadPanelDirect(panelName, completionCallback, isTriggerDriven);
+        CreateAndLoadPanel(panelName, completionCallback, isTriggerDriven);
     }
 }
 
 /// @brief Internal method to create and load a panel directly without splash
-void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback,
+void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback,
                                             bool isTriggerDriven)
 {
-    log_d("Creating and loading panel directly: %s (trigger-driven: %s)", panelName, isTriggerDriven ? "yes" : "no");
+    log_v("CreateAndLoadPanel() called for: %s", panelName);
 
     // Track current panel trigger state
     currentPanelIsTriggerDriven_ = isTriggerDriven;
@@ -218,7 +212,14 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     panel_->SetManagers(this, styleService_);
 
     // Special injection for ConfigPanel - inject preference service
-    if (strcmp(panelName, PanelNames::CONFIG) == 0)
+    bool isConfig = strcmp(panelName, PanelNames::CONFIG) == 0;
+    bool isOil = strcmp(panelName, PanelNames::OIL) == 0;
+    bool isSplash = strcmp(panelName, PanelNames::SPLASH) == 0;
+    log_d("Panel injection - type: %s, isConfig: %s, isOil: %s, isSplash: %s, preferenceService: %p", 
+          panelName, isConfig ? "true" : "false", isOil ? "true" : "false", 
+          isSplash ? "true" : "false", preferenceService_);
+    
+    if (isConfig)
     {
         ConfigPanel *configPanel = static_cast<ConfigPanel *>(panel_.get());
         if (configPanel && preferenceService_)
@@ -228,7 +229,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     }
 
     // Special injection for OemOilPanel - inject preference service to apply sensor update rates
-    if (strcmp(panelName, PanelNames::OIL) == 0)
+    if (isOil)
     {
         OemOilPanel *oemOilPanel = static_cast<OemOilPanel *>(panel_.get());
         if (oemOilPanel && preferenceService_)
@@ -238,7 +239,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     }
 
     // Special injection for SplashPanel - inject preference service for configurable duration
-    if (strcmp(panelName, PanelNames::SPLASH) == 0)
+    if (isSplash)
     {
         SplashPanel *splashPanel = static_cast<SplashPanel *>(panel_.get());
         if (splashPanel && preferenceService_)
@@ -270,22 +271,25 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
 
     panel_->Load(completionCallback);
     Ticker::handleLvTasks();
+    
+    log_v("CreateAndLoadPanelDirect() completed");
 }
 
 /// @brief Internal method to load a panel after first showing a splash screen transition
 void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
-    log_d("Loading panel with splash screen transition: %s", panelName);
+    log_v("CreateAndLoadPanelWithSplash() called for: %s", panelName);
 
     // Capture panel name as string to avoid pointer corruption issues
     std::string targetPanel(panelName);
-    CreateAndLoadPanelDirect(PanelNames::SPLASH, [this, targetPanel]()
+    CreateAndLoadPanel(PanelNames::SPLASH, [this, targetPanel]()
                              { this->PanelManager::SplashCompletionCallback(targetPanel.c_str()); });
 }
 
 /// @brief Update the currently active panel (called from main loop)
 void PanelManager::UpdatePanel()
 {
+    log_v("UpdatePanel() called");
     if (panel_)
     {
         panel_->Update([this]() { this->PanelManager::PanelCompletionCallback(); });
@@ -296,33 +300,28 @@ void PanelManager::UpdatePanel()
 /// @brief Set current UI state for synchronization
 void PanelManager::SetUiState(UIState state)
 {
-    if (uiState_ != state)
-    {
-        // Only log significant state transitions (not routine IDLE/BUSY cycles during updates)
-        if (!(uiState_ == UIState::IDLE && state == UIState::BUSY) &&
-            !(uiState_ == UIState::BUSY && state == UIState::IDLE))
-        {
-            log_d("UIState transition: %s → %s", UIStateToString(uiState_), UIStateToString(state));
-        }
-        uiState_ = state;
-    }
+    log_v("SetUiState() called with state: %s", UIStateToString(state));
+    uiState_ = state;
 }
 
 /// @brief Get the current UI state
 UIState PanelManager::GetUiState() const
 {
+    log_v("GetUiState() called");
     return uiState_;
 }
 
 /// @brief Get the current panel name
 const char *PanelManager::GetCurrentPanel() const
 {
+    log_v("GetCurrentPanel() called");
     return currentPanel;
 }
 
 /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
 const char *PanelManager::GetRestorationPanel() const
 {
+    log_v("GetRestorationPanel() called");
     return restorationPanel;
 }
 
@@ -330,12 +329,13 @@ const char *PanelManager::GetRestorationPanel() const
 /// @return true if panel was loaded by hardware trigger, false if user-driven
 bool PanelManager::IsCurrentPanelTriggerDriven() const
 {
+    log_v("IsCurrentPanelTriggerDriven() called");
     return currentPanelIsTriggerDriven_;
 }
 
 /// @brief Callback executed when trigger-driven panel loading is complete
 void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
+    log_v("TriggerPanelSwitchCallback() called for trigger: %s", triggerId);
     SetUiState(UIState::IDLE);
-    // No need to clear triggers - GPIO state manages trigger active/inactive status
 }

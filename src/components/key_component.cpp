@@ -6,10 +6,13 @@
 // Constructors and Destructors
 KeyComponent::KeyComponent(IStyleService *styleService) : keyIcon_(nullptr), styleService_(styleService)
 {
+    log_v("KeyComponent constructor called");
 }
 
 KeyComponent::~KeyComponent()
 {
+    log_v("~KeyComponent() destructor called");
+    
     if (keyIcon_)
     {
         lv_obj_del(keyIcon_);
@@ -19,7 +22,7 @@ KeyComponent::~KeyComponent()
 // Core Functionality Methods
 void KeyComponent::Refresh(const Reading &reading)
 {
-    log_d("Refreshing key component display with new state");
+    log_v("Refresh() called");
 
     KeyState key_state = static_cast<KeyState>(std::get<int32_t>(reading));
     lv_color_t colour;
@@ -42,8 +45,8 @@ void KeyComponent::Refresh(const Reading &reading)
 /// @param location The location parameters for positioning the component.
 void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
-    log_d("Rendering key component icon at specified location");
-
+    log_v("Render() called");
+    
     if (!display)
     {
         log_e("KeyComponent requires display provider");
@@ -51,6 +54,8 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
                                              "Cannot render - display provider is null");
         return;
     }
+
+    log_d("Rendering key component icon at specified location");
 
     keyIcon_ = display->CreateImage(screen);
     lv_image_set_src(keyIcon_, &key_solid);

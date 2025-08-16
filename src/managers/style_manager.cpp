@@ -17,6 +17,7 @@ StyleManager::~StyleManager()
 
 void StyleManager::InitializeStyles()
 {
+    log_v("InitializeStyles() called");
     if (!initialized_)
     {
         log_d("Initializing LVGL styles now that LVGL is ready: %s", THEME.c_str());
@@ -50,6 +51,7 @@ void StyleManager::InitializeStyles()
 /// @param screen the screen to which the theme will be applied
 void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
+    log_v("ApplyThemeToScreen() called");
 
     // Safety checks
     if (!screen)
@@ -78,6 +80,7 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 /// @brief Reset all styles to their default state
 void StyleManager::ResetStyles()
 {
+    log_v("ResetStyles() called");
     log_d("Resetting all LVGL styles to default state");
 
     // Reset all style objects
@@ -98,6 +101,7 @@ void StyleManager::ResetStyles()
 /// @param theme the theme to be applied
 void StyleManager::SetTheme(const char *theme)
 {
+    log_v("SetTheme() called");
     // Handle invalid theme gracefully
     if (!theme || strlen(theme) == 0)
     {
@@ -158,6 +162,7 @@ void StyleManager::SetTheme(const char *theme)
 /// @return the colour scheme for the specified theme
 const ThemeColors &StyleManager::GetColours(const char *theme) const
 {
+    log_v("GetColours() called");
     if (!theme)
         return dayThemeColours_;
 
@@ -178,6 +183,7 @@ const ThemeColors &StyleManager::GetColours(const char *theme) const
 /// @brief Get function for theme switching that panels can use in their actions
 std::function<void(const char *)> StyleManager::GetThemeSwitchFunction()
 {
+    log_v("GetThemeSwitchFunction() called");
     return [this](const char *theme)
     {
         log_i("StyleManager: Direct theme switch requested to: %s", theme);

@@ -99,6 +99,8 @@ void DeviceProvider::prepare()
 
     // Create main screen for display provider
     screen = lv_screen_active();
+    
+    log_i("DeviceProvider hardware initialization completed successfully");
 }
 
 // Static Methods

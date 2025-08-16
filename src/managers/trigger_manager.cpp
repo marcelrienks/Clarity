@@ -70,6 +70,7 @@ void TriggerManager::Init()
     InitializeTriggersFromSensors();
 
     initialized_ = true;
+    log_i("TriggerManager initialization completed - sensors initialized and triggers ready");
 }
 
 void TriggerManager::ProcessTriggerEvents()

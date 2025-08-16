@@ -21,6 +21,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
                                                                  IActionManager *actionManager,
                                                                  IPreferenceService *preferenceService)
 {
+    log_v("createPanelManager() called");
     log_d("ManagerFactory: Creating PanelManager (UI panel coordination)...");
 
     if (!display)
@@ -76,6 +77,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
 
 std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *theme)
 {
+    log_v("createStyleManager() called");
     log_d("ManagerFactory: Creating StyleManager (LVGL theme system) with theme: %s", theme ? theme : "default");
 
     auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::DAY);
@@ -94,6 +96,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
 std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider *gpio, IPanelService *panelService,
                                                                      IStyleService *styleService)
 {
+    log_v("createTriggerManager() called");
     log_d("ManagerFactory: Creating TriggerManager (sensor monitoring system)...");
 
     if (!gpio)
@@ -150,6 +153,7 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
 
 std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 {
+    log_v("createPreferenceManager() called");
     log_d("ManagerFactory: Creating PreferenceManager (persistent settings)...");
 
     auto manager = std::make_unique<PreferenceManager>();
@@ -169,6 +173,7 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 
 std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider *gpio, IPanelService *panelService)
 {
+    log_v("createActionManager() called");
     if (!gpio)
     {
         log_e("ManagerFactory: Cannot create ActionManager - IGpioProvider is null");
@@ -203,6 +208,7 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
 
 std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelService *panelService)
 {
+    log_v("createInterruptManager() called");
     log_d("ManagerFactory: Creating InterruptManager (interrupt coordination)...");
 
     auto manager = std::make_unique<InterruptManager>(panelService);
@@ -221,6 +227,7 @@ std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelS
 
 ErrorManager *ManagerFactory::createErrorManager()
 {
+    log_v("createErrorManager() called");
     log_d("ManagerFactory: Creating ErrorManager (system error tracking)...");
 
     ErrorManager *errorManager = &ErrorManager::Instance();

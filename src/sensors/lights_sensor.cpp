@@ -18,6 +18,8 @@ void LightsSensor::Init()
     log_d("Initializing lights sensor on GPIO %d", gpio_pins::LIGHTS);
 
     gpioProvider_->PinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
+    
+    log_i("LightsSensor initialization completed on GPIO %d", gpio_pins::LIGHTS);
 }
 
 /// @brief Get the current lights reading

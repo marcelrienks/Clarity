@@ -12,12 +12,13 @@ ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       currentMenuIndex_(0), configComponent_(std::make_unique<ConfigComponent>())
 {
-    // Menu items will be initialized after preferences are injected
+    log_v("ConfigPanel constructor called");
 }
 
 ConfigPanel::~ConfigPanel()
 {
-
+    log_v("~ConfigPanel() destructor called");
+    
     configComponent_.reset();
 
     if (screen_)
@@ -31,7 +32,8 @@ ConfigPanel::~ConfigPanel()
 
 void ConfigPanel::Init()
 {
-
+    log_v("Init() called");
+    
     if (!displayProvider_)
     {
         log_e("ConfigPanel requires display provider");
@@ -45,12 +47,14 @@ void ConfigPanel::Init()
         return;
 
     styleService_->ApplyThemeToScreen(screen_);
+    
+    log_i("ConfigPanel initialization completed");
 }
 
 void ConfigPanel::Load(std::function<void()> callbackFunction)
 {
-    log_i("Loading ConfigPanel");
-
+    log_v("Load() called");
+    
     callbackFunction_ = callbackFunction;
     
     // Set BUSY at start of load
@@ -92,10 +96,14 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     lv_obj_add_event_cb(screen_, ConfigPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
     
     lv_screen_load(screen_);
+    
+    log_i("ConfigPanel loaded successfully");
 }
 
 void ConfigPanel::Update(std::function<void()> callbackFunction)
 {
+    log_v("Update() called");
+
     // Set BUSY at start of update
     if (panelService_)
     {
@@ -116,6 +124,8 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 
 void ConfigPanel::ExecuteCurrentOption()
 {
+    log_v("ExecuteCurrentOption() called");
+
     if (currentMenuIndex_ >= menuItems_.size())
         return;
     
@@ -129,6 +139,7 @@ void ConfigPanel::ExecuteCurrentOption()
 
 void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
+    log_v("ShowPanelCompletionCallback() called");
     if (!event)
         return;
 
@@ -152,6 +163,8 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 Action ConfigPanel::GetShortPressAction()
 {
+    log_v("GetShortPressAction() called");
+
     // Short press cycles through menu options
     return Action(
         [this]()
@@ -176,6 +189,8 @@ Action ConfigPanel::GetShortPressAction()
 
 Action ConfigPanel::GetLongPressAction()
 {
+    log_v("GetLongPressAction() called");
+
     // Long press executes current option
     return Action([this]() { ExecuteCurrentOption(); });
 }
@@ -183,6 +198,7 @@ Action ConfigPanel::GetLongPressAction()
 // Manager injection method
 void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
     panelService_ = panelService;
     
     // styleService_ is already set in constructor, but update if different instance provided
@@ -194,6 +210,7 @@ void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
 
 void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
+    log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
     // Initialize menu items now that we have access to preferences
     InitializeMenuItems();
@@ -201,6 +218,8 @@ void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
 
 void ConfigPanel::InitializeMenuItems()
 {
+    log_v("InitializeMenuItems() called");
+
     if (!preferenceService_)
     {
         log_e("Cannot initialize menu items without preference service");
@@ -214,6 +233,8 @@ void ConfigPanel::InitializeMenuItems()
 
 void ConfigPanel::UpdateMenuItemsWithCurrentValues()
 {
+    log_v("UpdateMenuItemsWithCurrentValues() called");
+
     if (!preferenceService_)
         return;
 
@@ -269,6 +290,8 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
 
 void ConfigPanel::EnterSubmenu(MenuState submenu)
 {
+    log_v("EnterSubmenu() called");
+
     currentMenuState_ = submenu;
     currentMenuIndex_ = 0;
     UpdateSubmenuItems();
@@ -276,6 +299,7 @@ void ConfigPanel::EnterSubmenu(MenuState submenu)
 
 void ConfigPanel::ExitSubmenu()
 {
+    log_v("ExitSubmenu() called");
     currentMenuState_ = MenuState::MainMenu;
     currentMenuIndex_ = 0;
     UpdateMenuItemsWithCurrentValues();
@@ -283,6 +307,8 @@ void ConfigPanel::ExitSubmenu()
 
 void ConfigPanel::UpdateSubmenuItems()
 {
+    log_v("UpdateSubmenuItems() called");
+
     if (!preferenceService_)
         return;
 
