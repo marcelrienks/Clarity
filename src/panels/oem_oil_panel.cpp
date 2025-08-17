@@ -152,6 +152,10 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     // Render both components
     oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
     oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+    
+    // Initialize needle positions to match current values (prevents animation jumps)
+    oemOilPressureComponent_->SetValue(currentOilPressureValue_);
+    oemOilTemperatureComponent_->SetValue(currentOilTemperatureValue_);
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     lv_screen_load(screen_);
