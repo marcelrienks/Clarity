@@ -113,14 +113,13 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     panel_.reset();
     Ticker::handleLvTasks();
 
-    CreateAndLoadPanel(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
+    CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
 }
 
 /// @brief callback function to be executed on panel show completion
 void PanelManager::PanelCompletionCallback()
 {
     log_v("PanelCompletionCallback() called");
-    SetUiState(UIState::IDLE);
 
     // System initialization complete - triggers will remain in INIT state
     // until actual GPIO pin changes occur
@@ -280,7 +279,7 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 
     // Capture panel name as string to avoid pointer corruption issues
     std::string targetPanel(panelName);
-    CreateAndLoadPanel(PanelNames::SPLASH, [this, targetPanel]()
+    CreateAndLoadPanelDirect(PanelNames::SPLASH, [this, targetPanel]()
                              { this->PanelManager::SplashCompletionCallback(targetPanel.c_str()); });
 }
 

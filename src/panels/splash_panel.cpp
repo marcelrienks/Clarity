@@ -11,7 +11,7 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                         IComponentFactory* componentFactory)
+                         IComponentFactory *componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
@@ -64,7 +64,7 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     log_v("Load() called");
 
     callbackFunction_ = callbackFunction;
-    
+
     // Set BUSY at start of load - animations will be running
     if (panelService_)
     {
@@ -117,6 +117,13 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeInTimer));
 
+    // During display period, no animations are running - set IDLE to allow actions
+    if (panel->panelService_)
+    {
+        panel->panelService_->SetUiState(UIState::IDLE);
+        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
+    }
+
     // Create a timer for the callback
     lv_timer_create(SplashPanel::display_timer_callback, _DISPLAY_TIME, panel);
 
@@ -132,26 +139,20 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
-    // During display period, no animations are running - set IDLE to allow actions
-    if (panel->panelService_)
-    {
-        panel->panelService_->SetUiState(UIState::IDLE);
-        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
-    }
-
-    
     // About to start fade-out animation - set BUSY
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::BUSY);
         log_d("SplashPanel: Starting fade-out animation - setting BUSY");
     }
-    
+
     lv_screen_load_anim(panel->blankScreen_, LV_SCR_LOAD_ANIM_FADE_OUT, panel->GetAnimationTime(), 0, false);
 
     // Schedule the fade-out animation
-    lv_timer_create(SplashPanel::fade_out_timer_callback, panel->GetAnimationTime() + _DELAY_TIME, panel); //NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory becomes corrupted
-    
+    lv_timer_create(SplashPanel::fade_out_timer_callback, panel->GetAnimationTime() + _DELAY_TIME,
+                    panel); // NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory
+                            // becomes corrupted
+
     // Delete the animation_timer
     lv_timer_del(fadeOutTimer);
 }
@@ -164,8 +165,13 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
-    // PanelManager will set IDLE in its completion callback, no need to set it here
-    
+    // Due to all animations being completed, set state to IDLE again
+    if (panel->panelService_)
+    {
+        panel->panelService_->SetUiState(UIState::IDLE);
+        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
+    }
+
     panel->callbackFunction_();
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
