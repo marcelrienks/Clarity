@@ -80,12 +80,10 @@ class PanelManager : public IPanelService
     /// @return Current UI processing state
     UIState GetUiState() const override;
 
-    /// @brief Create and load a panel by name with optional completion callback
+    /// @brief Create and load a panel by name
     /// @param panelName Name of the panel to create and load
-    /// @param completionCallback Optional callback function to execute when loading is complete
     /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback = nullptr,
-                            bool isTriggerDriven = false) override;
+    void CreateAndLoadPanel(const char *panelName, bool isTriggerDriven = false) override;
 
     /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel() override;
@@ -131,6 +129,7 @@ class PanelManager : public IPanelService
     void CreateAndLoadPanelWithSplash(const char *panelName);
 
     // Callback Methods
+    
     /// @brief Callback executed when splash screen loading is complete
     /// @param panel_name Name of the target panel to load after splash
     void SplashCompletionCallback(const char *panelName);

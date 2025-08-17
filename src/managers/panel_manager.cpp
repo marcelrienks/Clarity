@@ -103,35 +103,10 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     return std::shared_ptr<IPanel>(uniquePanel.release());
 }
 
-// Callback Methods
-
-/// @brief callback function to be executed on splash panel show completion
-void PanelManager::SplashCompletionCallback(const char *panelName)
-{
-    log_v("SplashCompletionCallback() called for panel: %s", panelName);
-
-    panel_.reset();
-    Ticker::handleLvTasks();
-
-    CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
-}
-
-/// @brief callback function to be executed on panel show completion
-void PanelManager::PanelCompletionCallback()
-{
-    log_v("PanelCompletionCallback() called");
-    
-    // Set IDLE when panel operation completes
-    SetUiState(UIState::IDLE);
-
-    //TODO: this is where the completionCallback that was passed in to CreateAndLoad should be executed
-}
-
 // Core IPanelService interface implementations
 
-/// @brief Create and load a panel by name with optional completion callback
-void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void()> completionCallback,
-                                      bool isTriggerDriven)
+/// @brief Create and load a panel by name
+void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDriven)
 {
     log_i("Panel transition requested: %s", panelName);
 
@@ -156,7 +131,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, std::function<void(
     else
     {
         log_d("Loading panel directly: %s", panelName);
-        CreateAndLoadPanelDirect(panelName, completionCallback, isTriggerDriven);
+        CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); }, isTriggerDriven);
     }
 }
 
@@ -280,6 +255,28 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
     std::string targetPanel(panelName);
     CreateAndLoadPanelDirect(PanelNames::SPLASH, [this, targetPanel]()
                              { this->PanelManager::SplashCompletionCallback(targetPanel.c_str()); });
+}
+
+// Callback Methods
+
+/// @brief callback function to be executed on splash panel show completion
+void PanelManager::SplashCompletionCallback(const char *panelName)
+{
+    log_v("SplashCompletionCallback() called for panel: %s", panelName);
+
+    panel_.reset();
+    Ticker::handleLvTasks();
+
+    CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
+}
+
+/// @brief callback function to be executed on panel show completion
+void PanelManager::PanelCompletionCallback()
+{
+    log_v("PanelCompletionCallback() called");
+    
+    // Set IDLE when panel operation completes
+    SetUiState(UIState::IDLE);
 }
 
 /// @brief Update the currently active panel (called from main loop)

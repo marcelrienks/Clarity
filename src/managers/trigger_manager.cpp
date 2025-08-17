@@ -174,13 +174,7 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
             log_i("Executing panel action: Load %s", mapping->actionTarget);
             if (panelService_)
             {
-                panelService_->CreateAndLoadPanel(
-                    mapping->actionTarget,
-                    []()
-                    {
-                        // Panel switch callback handled by service
-                    },
-                    true);
+                panelService_->CreateAndLoadPanel(mapping->actionTarget, true);
             }
         }
         else if (mapping->actionType == TriggerActionType::ToggleTheme)
@@ -209,13 +203,7 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
                 log_i("Panel trigger deactivated but another active - loading panel: %s", activePanel->actionTarget);
                 if (panelService_)
                 {
-                    panelService_->CreateAndLoadPanel(
-                        activePanel->actionTarget,
-                        []()
-                        {
-                            // Panel switch callback handled by service
-                        },
-                        true);
+                    panelService_->CreateAndLoadPanel(activePanel->actionTarget, true);
                 }
             }
             else
@@ -225,13 +213,7 @@ void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionStat
                 log_i("No other panel triggers active - restoring to user panel: %s", restorationPanel);
                 if (panelService_)
                 {
-                    panelService_->CreateAndLoadPanel(
-                        restorationPanel,
-                        []()
-                        {
-                            // Panel switch callback handled by service
-                        },
-                        true); // Skip splash when restoring from triggers
+                    panelService_->CreateAndLoadPanel(restorationPanel, true);
                 }
             }
         }

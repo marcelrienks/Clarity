@@ -246,13 +246,7 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
              {
                  const char *restorationPanel = panelService_->GetRestorationPanel();
                  // Use isTriggerDriven=true to prevent splash screen on programmatic panel switches
-                 panelService_->CreateAndLoadPanel(
-                     restorationPanel,
-                     []()
-                     {
-                         // Panel switch callback handled by service
-                     },
-                     true);
+                 panelService_->CreateAndLoadPanel(restorationPanel, true);
              }
          }}};
 

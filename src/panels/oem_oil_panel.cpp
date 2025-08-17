@@ -359,13 +359,7 @@ Action OemOilPanel::GetLongPressAction()
     return Action(
         [this]()
         {
-            panelService_->CreateAndLoadPanel(
-                PanelNames::CONFIG,
-                []()
-                {
-                    // Panel switch callback handled by service
-                },
-                true); // Mark as trigger-driven to avoid overwriting restoration panel
+            panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
         });
 }
 
