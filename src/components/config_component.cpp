@@ -16,11 +16,6 @@ void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location
     Init(screen);
 }
 
-void ConfigComponent::Refresh(const Reading &reading)
-{
-    log_v("Refresh() called");
-    // Not used for config menu - updates handled via specific methods
-}
 
 void ConfigComponent::SetValue(int32_t value)
 {

@@ -69,11 +69,6 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
     
     callbackFunction_ = callbackFunction;
 
-    // Set BUSY at start of load
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     if (!componentFactory_)
     {
@@ -99,7 +94,13 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
         return;
     }
     keyComponent_->Render(screen_, centerLocation_, displayProvider_);
-    keyComponent_->Refresh(Reading{static_cast<int32_t>(currentKeyState_)});
+    
+    // Cast to KeyComponent to access SetColor method
+    KeyComponent* keyComp = static_cast<KeyComponent*>(keyComponent_.get());
+    if (keyComp)
+    {
+        keyComp->SetColor(currentKeyState_);
+    }
 
     lv_obj_add_event_cb(screen_, KeyPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -119,36 +120,7 @@ void KeyPanel::Update(std::function<void()> callbackFunction)
 {
     log_v("Update() called");
     
-    // Set BUSY at start of update
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
-
-    if (!gpioProvider_)
-    {
-        log_e("KeyPanel update requires gpio provider");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", "Cannot update - gpio provider is null");
-        return;
-    }
-
-    // Get current key state from sensor
-    KeyState newKeyState = keySensor_->GetKeyState();
-
-    // Update display if key state has changed
-    if (newKeyState != currentKeyState_)
-    {
-        log_d("Key state changed from %d to %d - updating display", (int)currentKeyState_, (int)newKeyState);
-        currentKeyState_ = newKeyState;
-        keyComponent_->Refresh(Reading{static_cast<int32_t>(currentKeyState_)});
-    }
-
-    // Set IDLE when update completes
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::IDLE);
-    }
-
+    // Key panel is static - no updates needed
     callbackFunction();
 }
 
@@ -166,11 +138,6 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!thisInstance)
         return;
     
-    // Set IDLE when load completes
-    if (thisInstance->panelService_)
-    {
-        thisInstance->panelService_->SetUiState(UIState::IDLE);
-    }
     
     thisInstance->callbackFunction_();
 }

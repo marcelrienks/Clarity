@@ -73,11 +73,6 @@ void LockPanel::Load(std::function<void()> callbackFunction)
     
     callbackFunction_ = callbackFunction;
 
-    // Set BUSY at start of load
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     if (!componentFactory_)
     {
@@ -95,9 +90,8 @@ void LockPanel::Load(std::function<void()> callbackFunction)
         return;
     }
 
-    // Create the lock component centered on screen, and immediately refresh it with the current lock status
+    // Create the lock component centered on screen - always shows red (engaged) state
     lockComponent_->Render(screen_, centerLocation_, displayProvider_);
-    lockComponent_->Refresh(Reading{isLockEngaged_});
     lv_obj_add_event_cb(screen_, LockPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     lv_screen_load(screen_);
@@ -116,38 +110,7 @@ void LockPanel::Update(std::function<void()> callbackFunction)
 {
     log_v("Update() called");
     
-    // Set BUSY at start of update
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
-
-    // Get current lock state from sensor
-    if (lockSensor_)
-    {
-        auto sensorReading = lockSensor_->GetReading();
-        bool currentLockState = std::get<bool>(sensorReading);
-        
-        // Update display if lock state has changed
-        if (currentLockState != isLockEngaged_)
-        {
-            log_d("Lock state changed from %s to %s", 
-                  isLockEngaged_ ? "engaged" : "disengaged",
-                  currentLockState ? "engaged" : "disengaged");
-            isLockEngaged_ = currentLockState;
-            if (lockComponent_)
-            {
-                lockComponent_->Refresh(Reading{isLockEngaged_});
-            }
-        }
-    }
-
-    // Set IDLE when update completes
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::IDLE);
-    }
-    
+    // Lock panel is static - no updates needed
     callbackFunction();
 }
 
@@ -166,11 +129,6 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!thisInstance)
         return;
     
-    // Set IDLE when load completes
-    if (thisInstance->panelService_)
-    {
-        thisInstance->panelService_->SetUiState(UIState::IDLE);
-    }
     
     thisInstance->callbackFunction_();
 }

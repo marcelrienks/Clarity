@@ -57,11 +57,6 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     
     callbackFunction_ = callbackFunction;
     
-    // Set BUSY at start of load
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     // Reset menu to first item and main menu state
     currentMenuIndex_ = 0;
@@ -104,19 +99,7 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 {
     log_v("Update() called");
 
-    // Set BUSY at start of update
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
-    
-    // Config panel is static, no regular updates needed
-    // Set IDLE immediately since no processing is needed
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::IDLE);
-    }
-    
+    // Config panel is static - no updates needed
     callbackFunction();
 }
 
@@ -147,12 +130,6 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!panel)
         return;
 
-    // Set IDLE state when loading is complete
-    if (panel->panelService_)
-    {
-        panel->panelService_->SetUiState(UIState::IDLE);
-    }
-    
     if (panel->callbackFunction_)
     {
         panel->callbackFunction_();

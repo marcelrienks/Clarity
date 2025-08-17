@@ -34,7 +34,6 @@ class LockComponent : public IComponent
     virtual ~LockComponent();
 
     // Core Functionality Methods
-    void Refresh(const Reading &reading) override;
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
 
   protected:

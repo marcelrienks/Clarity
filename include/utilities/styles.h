@@ -59,6 +59,7 @@ struct ThemeColors
     lv_color_t needleDanger;  ///< Danger needle color (bright red/orange)
     lv_color_t keyPresent;    ///< Normal key present color (pure white)
     lv_color_t keyNotPresent; ///< Normal Key not present color (bright red)
+    lv_color_t lockEngaged;   ///< Lock engaged color (red)
 };
 
 //=============================================================================
@@ -81,7 +82,8 @@ namespace ThemeDefinitions
         .needleNormal = lv_color_hex(0xFFFFFF), ///< Pure white for normal needles
         .needleDanger = lv_color_hex(0xDC143C), ///< Crimson red for danger needles
         .keyPresent = lv_color_hex(0x006400),   ///< Deep green for key present
-        .keyNotPresent = lv_color_hex(0xDC143C) ///< Crimson red for key not present
+        .keyNotPresent = lv_color_hex(0xDC143C), ///< Crimson red for key not present
+        .lockEngaged = lv_color_hex(0xDC143C)   ///< Crimson red for lock engaged
     };
 
     /// @brief Night theme colors - Black background with red accents
@@ -97,7 +99,8 @@ namespace ThemeDefinitions
         .needleNormal = lv_color_hex(0xFFFFFF), ///< Pure white for normal needles
         .needleDanger = lv_color_hex(0xDC143C), ///< Crimson red for danger needles
         .keyPresent = lv_color_hex(0x006400),   ///< Deep green for key present
-        .keyNotPresent = lv_color_hex(0xDC143C) ///< Crimson red for key not present
+        .keyNotPresent = lv_color_hex(0xDC143C), ///< Crimson red for key not present
+        .lockEngaged = lv_color_hex(0xDC143C)   ///< Crimson red for lock engaged
     };
 
     /// @brief Error theme colors - High contrast for error display
@@ -113,7 +116,8 @@ namespace ThemeDefinitions
         .needleNormal = lv_color_hex(0xFFFFFF), ///< White needles
         .needleDanger = lv_color_hex(0xFF0000), ///< Red for danger needles
         .keyPresent = lv_color_hex(0xFFFFFF),   ///< White (not used in error panel)
-        .keyNotPresent = lv_color_hex(0xFFFFFF) ///< White (not used in error panel)
+        .keyNotPresent = lv_color_hex(0xFFFFFF), ///< White (not used in error panel)
+        .lockEngaged = lv_color_hex(0xFF0000)   ///< Bright red for lock engaged
     };
 }
 

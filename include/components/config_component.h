@@ -48,7 +48,6 @@ class ConfigComponent : public IComponent
 
     // IComponent interface implementation
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
-    void Refresh(const Reading &reading) override;
     void SetValue(int32_t value) override;
 
     // ConfigComponent specific initialization

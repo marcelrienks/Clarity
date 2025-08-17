@@ -20,20 +20,6 @@ LockComponent::~LockComponent()
 }
 
 // Core Functionality Methods
-void LockComponent::Refresh(const Reading &reading)
-{
-    log_v("Refresh() called");
-
-    bool is_lock_engaged = std::get<bool>(reading);
-    lv_color_t colour = styleService_->GetThemeColors().keyPresent;
-    if (!is_lock_engaged)
-    {
-        colour = styleService_->GetThemeColors().keyNotPresent;
-    }
-
-    lv_obj_set_style_image_recolor(lockIcon_, colour, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(lockIcon_, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-}
 
 /// @brief This method initializes the lock status icon with location parameters
 /// @param screen The screen object to render the component on.
@@ -57,4 +43,12 @@ void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, 
 
     // Apply location settings
     lv_obj_align(lockIcon_, location.align, location.x_offset, location.y_offset);
+    
+    // Always show red (engaged) color for lock panel
+    if (styleService_)
+    {
+        lv_color_t lock_colour = styleService_->GetThemeColors().lockEngaged;
+        lv_obj_set_style_image_recolor(lockIcon_, lock_colour, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_image_recolor_opa(lockIcon_, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
 }

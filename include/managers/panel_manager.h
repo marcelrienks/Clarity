@@ -110,6 +110,7 @@ class PanelManager : public IPanelService
 
   private:
     // Core Functionality Methods
+    
     /// @brief Register all available panels
     void RegisterAllPanels();
 

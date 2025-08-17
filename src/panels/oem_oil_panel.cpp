@@ -119,11 +119,6 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
 
     callbackFunction_ = callbackFunction;
 
-    // Set BUSY at start of load
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     // Create components for both pressure and temperature
     if (!styleService_ || !styleService_->IsInitialized())
@@ -178,11 +173,6 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
 
     callbackFunction_ = callbackFunction;
 
-    // Set BUSY at start of update - data updates and potential animations
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
@@ -215,11 +205,7 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
     // If no animations were started, call completion callback immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_)
     {
-        // Set IDLE state when update completes without animations
-        if (panelService_)
-        {
-            panelService_->SetUiState(UIState::IDLE);
-        }
+        // No animations started - call completion callback immediately
         callbackFunction_();
     }
 }
@@ -446,11 +432,6 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
         return;
     }
 
-    // Set IDLE state when loading is complete
-    if (thisInstance->panelService_)
-    {
-        thisInstance->panelService_->SetUiState(UIState::IDLE);
-    }
 
     thisInstance->callbackFunction_();
 }

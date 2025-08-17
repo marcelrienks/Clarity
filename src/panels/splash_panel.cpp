@@ -64,13 +64,6 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
     log_v("Load() called");
 
     callbackFunction_ = callbackFunction;
-
-    // Set BUSY at start of load - animations will be running
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
-
     if (!componentFactory_)
     {
         log_e("SplashPanel requires component factory");
@@ -164,13 +157,6 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     log_v("fade_out_timer_callback() called");
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
-
-    // Due to all animations being completed, set state to IDLE again
-    if (panel->panelService_)
-    {
-        panel->panelService_->SetUiState(UIState::IDLE);
-        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
-    }
 
     panel->callbackFunction_();
 

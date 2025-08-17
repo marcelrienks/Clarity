@@ -120,15 +120,11 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
 void PanelManager::PanelCompletionCallback()
 {
     log_v("PanelCompletionCallback() called");
+    
+    // Set IDLE when panel operation completes
+    SetUiState(UIState::IDLE);
 
-    // System initialization complete - triggers will remain in INIT state
-    // until actual GPIO pin changes occur
-    static bool systemInitialized = false;
-    if (!systemInitialized)
-    {
-        systemInitialized = true;
-        log_i("System initialization complete");
-    }
+    //TODO: this is where the completionCallback that was passed in to CreateAndLoad should be executed
 }
 
 // Core IPanelService interface implementations
@@ -266,6 +262,9 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
         }
     }
 
+    // Set BUSY before loading panel
+    SetUiState(UIState::BUSY);
+    
     panel_->Load(completionCallback);
     Ticker::handleLvTasks();
     
@@ -289,6 +288,9 @@ void PanelManager::UpdatePanel()
     log_v("UpdatePanel() called");
     if (panel_)
     {
+        // Set BUSY before updating panel
+        SetUiState(UIState::BUSY);
+        
         panel_->Update([this]() { this->PanelManager::PanelCompletionCallback(); });
         Ticker::handleLvTasks();
     }

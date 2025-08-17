@@ -79,11 +79,6 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     // Store callback for later use
     callbackFunction_ = callbackFunction;
 
-    // Set BUSY at start of load
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     if (!componentFactory_)
     {
@@ -149,11 +144,6 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
 {
     log_v("Update() called");
 
-    // Set BUSY at start of update
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::BUSY);
-    }
 
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
@@ -193,11 +183,6 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
         ErrorManager::Instance().SetErrorPanelActive(false);
     }
 
-    // Set IDLE when update completes
-    if (panelService_)
-    {
-        panelService_->SetUiState(UIState::IDLE);
-    }
 
     callbackFunction();
 }
@@ -215,11 +200,6 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     auto thisInstance = static_cast<ErrorPanel *>(lv_event_get_user_data(event));
     if (thisInstance)
     {
-        // Set IDLE when load completes
-        if (thisInstance->panelService_)
-        {
-            thisInstance->panelService_->SetUiState(UIState::IDLE);
-        }
         
         if (thisInstance->callbackFunction_)
         {

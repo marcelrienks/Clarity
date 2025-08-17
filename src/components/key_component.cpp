@@ -20,25 +20,6 @@ KeyComponent::~KeyComponent()
 }
 
 // Core Functionality Methods
-void KeyComponent::Refresh(const Reading &reading)
-{
-    log_v("Refresh() called");
-
-    KeyState key_state = static_cast<KeyState>(std::get<int32_t>(reading));
-    lv_color_t colour;
-
-    if (key_state == KeyState::Present)
-    {
-        colour = styleService_->GetThemeColors().keyPresent;
-    }
-    else // KeyState::NotPresent or KeyState::Inactive
-    {
-        colour = styleService_->GetThemeColors().keyNotPresent;
-    }
-
-    lv_obj_set_style_image_recolor(keyIcon_, colour, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_image_recolor_opa(keyIcon_, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
-}
 
 /// @brief This method initializes the key present icon with location parameters
 /// @param screen The screen object to render the component on.
@@ -62,4 +43,29 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
 
     // Apply location settings
     lv_obj_align(keyIcon_, location.align, location.x_offset, location.y_offset);
+}
+
+/// @brief Set the key icon color based on key state
+/// @param keyState The current key state to determine color
+void KeyComponent::SetColor(KeyState keyState)
+{
+    log_v("SetColor() called with state: %d", static_cast<int>(keyState));
+    
+    if (!styleService_ || !keyIcon_)
+    {
+        return;
+    }
+    
+    lv_color_t colour;
+    if (keyState == KeyState::Present)
+    {
+        colour = styleService_->GetThemeColors().keyPresent;
+    }
+    else // KeyState::NotPresent or KeyState::Inactive
+    {
+        colour = styleService_->GetThemeColors().keyNotPresent;
+    }
+
+    lv_obj_set_style_image_recolor(keyIcon_, colour, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_image_recolor_opa(keyIcon_, LV_OPA_COVER, LV_PART_MAIN | LV_STATE_DEFAULT);
 }
