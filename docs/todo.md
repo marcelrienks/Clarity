@@ -1,6 +1,5 @@
-* review logging, and the level between debug and info
-    * every method (within reason) should have a debug log
-    * every major concept (managers, panels, components etc.) should have an info log at key points
+* review freeRTOS, specifically it's multitasking ability, and see if it would be beneficial for the interrupt system  
+Noting that I had previously used it for dual core, where one core monitored interrupts, and the other handled lvgl tasks, this became overley complex and unreliable due to keeping both cores in sync with regards to GPIO status, and the fact that it gave the app no overall benefit, as the lvgl core still checked the shared context only when it was idle, which is equivalent to current architecture where the app checks the current status during lvgl idle.
 * Ensure that all function comments have the same param name as the actual argument in code
 * Document current arch, and relationships
 * What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?

@@ -48,10 +48,7 @@ class OilTemperatureSensor : public ISensor
 
     /// @brief Set the update rate in milliseconds
     /// @param updateRateMs Update interval in milliseconds
-    void SetUpdateRate(int updateRateMs)
-    {
-        updateIntervalMs_ = updateRateMs;
-    }
+    void SetUpdateRate(int updateRateMs);
 
   protected:
     // Internal methods
