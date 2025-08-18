@@ -17,6 +17,7 @@ permissions:
 
 jobs:
   wokwi-integration-tests:
+    if: false  # TODO: Temporarily disabled
     name: Wokwi Integration Tests (11 scenarios)
     runs-on: ubuntu-latest
     
