@@ -166,70 +166,82 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
 void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
     log_v("ExecuteTriggerAction() called");
+    if (!mapping) return;
+    
     if (state == TriggerExecutionState::ACTIVE)
     {
-        // Execute trigger action when activated - no complex state checking
-        if (mapping->actionType == TriggerActionType::LoadPanel)
-        {
-            log_i("Executing panel action: Load %s", mapping->actionTarget);
-            if (panelService_)
-            {
-                panelService_->CreateAndLoadPanel(mapping->actionTarget, true);
-            }
-        }
-        else if (mapping->actionType == TriggerActionType::ToggleTheme)
-        {
-            log_i("Executing theme action: %s", mapping->actionTarget);
-            if (styleService_)
-            {
-                styleService_->SetTheme(mapping->actionTarget);
-                // Refresh current panel with new theme
-                if (panelService_)
-                {
-                    panelService_->UpdatePanel();
-                }
-            }
-        }
+        ExecuteActivation(mapping);
+        return;
     }
-    else
+    
+    ExecuteDeactivation(mapping);
+}
+
+void TriggerManager::ExecuteActivation(Trigger *mapping)
+{
+    if (mapping->actionType == TriggerActionType::LoadPanel)
     {
-        // Handle trigger deactivation - check for other active triggers first
-        if (mapping->actionType == TriggerActionType::LoadPanel)
-        {
-            Trigger *activePanel = FindActivePanel();
-            if (activePanel)
-            {
-                // Load panel from remaining active trigger
-                log_i("Panel trigger deactivated but another active - loading panel: %s", activePanel->actionTarget);
-                if (panelService_)
-                {
-                    panelService_->CreateAndLoadPanel(activePanel->actionTarget, true);
-                }
-            }
-            else
-            {
-                // No other panel triggers active - restore to user panel
-                const char *restorationPanel = panelService_->GetRestorationPanel();
-                log_i("No other panel triggers active - restoring to user panel: %s", restorationPanel);
-                if (panelService_)
-                {
-                    panelService_->CreateAndLoadPanel(restorationPanel, true);
-                }
-            }
-        }
-        else if (mapping->actionType == TriggerActionType::ToggleTheme)
-        {
-            log_i("Restoring theme: %s", mapping->restoreTarget);
-            if (styleService_)
-            {
-                styleService_->SetTheme(mapping->restoreTarget);
-                // Refresh current panel with restored theme
-                if (panelService_)
-                {
-                    panelService_->UpdatePanel();
-                }
-            }
-        }
+        LoadPanel(mapping->actionTarget);
+        return;
+    }
+    
+    if (mapping->actionType == TriggerActionType::ToggleTheme)
+    {
+        SetTheme(mapping->actionTarget);
+        return;
+    }
+}
+
+void TriggerManager::ExecuteDeactivation(Trigger *mapping)
+{
+    if (mapping->actionType == TriggerActionType::LoadPanel)
+    {
+        HandlePanelDeactivation(mapping);
+        return;
+    }
+    
+    if (mapping->actionType == TriggerActionType::ToggleTheme)
+    {
+        SetTheme(mapping->restoreTarget);
+        return;
+    }
+}
+
+void TriggerManager::HandlePanelDeactivation(Trigger *mapping)
+{
+    // Find another active panel trigger
+    Trigger *activePanel = FindActivePanel();
+    if (activePanel)
+    {
+        log_i("Panel trigger deactivated but another active - loading panel: %s", activePanel->actionTarget);
+        LoadPanel(activePanel->actionTarget);
+        return;
+    }
+    
+    // No other panel triggers active - restore to user panel
+    const char *restorationPanel = panelService_ ? panelService_->GetRestorationPanel() : nullptr;
+    log_i("No other panel triggers active - restoring to user panel: %s", restorationPanel);
+    LoadPanel(restorationPanel);
+}
+
+void TriggerManager::LoadPanel(const char *panelName)
+{
+    if (!panelService_ || !panelName) return;
+    
+    log_i("Loading panel: %s", panelName);
+    panelService_->CreateAndLoadPanel(panelName, true);
+}
+
+void TriggerManager::SetTheme(const char *themeName)
+{
+    if (!styleService_ || !themeName) return;
+    
+    log_i("Setting theme: %s", themeName);
+    styleService_->SetTheme(themeName);
+    
+    if (panelService_)
+    {
+        panelService_->UpdatePanel();
     }
 }
 
@@ -238,39 +250,65 @@ void TriggerManager::InitializeTriggersFromSensors()
     log_v("InitializeTriggersFromSensors() called");
     log_d("Initializing trigger states from current sensor states...");
 
-    // Read all sensor states once using consolidated method
+    if (!ValidateSensors())
+    {
+        log_e("Cannot initialize triggers - missing sensors");
+        return;
+    }
+
     GpioState currentState = ReadAllSensorStates();
+    InitializeAllTriggers(currentState);
+    ApplyStartupActions();
+}
 
-    // Initialize all triggers based on current pin states
-    InitializeTrigger(TriggerIds::KEY_PRESENT, currentState.keyPresent);
-    InitializeTrigger(TriggerIds::KEY_NOT_PRESENT, currentState.keyNotPresent);
-    InitializeTrigger(TriggerIds::LOCK_STATE, currentState.lockState);
-    InitializeTrigger(TriggerIds::LIGHTS_STATE, currentState.lightsState);
+bool TriggerManager::ValidateSensors()
+{
+    return keySensor_ && lockSensor_ && lightSensor_ && debugErrorSensor_;
+}
 
-    // Initialize error trigger based on current error state
+void TriggerManager::InitializeAllTriggers(const GpioState& state)
+{
+    InitializeTrigger(TriggerIds::KEY_PRESENT, state.keyPresent);
+    InitializeTrigger(TriggerIds::KEY_NOT_PRESENT, state.keyNotPresent);
+    InitializeTrigger(TriggerIds::LOCK_STATE, state.lockState);
+    InitializeTrigger(TriggerIds::LIGHTS_STATE, state.lightsState);
     InitializeTrigger(TriggerIds::ERROR_OCCURRED, ErrorManager::Instance().ShouldTriggerErrorPanel());
+}
 
-    // Check for active triggers at startup and apply their actions
+void TriggerManager::ApplyStartupActions()
+{
     for (auto &trigger : triggers_)
     {
-        if (trigger.currentState == TriggerExecutionState::ACTIVE)
+        if (trigger.currentState != TriggerExecutionState::ACTIVE) continue;
+        
+        if (trigger.actionType == TriggerActionType::ToggleTheme)
         {
-            if (trigger.actionType == TriggerActionType::ToggleTheme)
-            {
-                log_i("Applying startup theme action: %s", trigger.actionTarget);
-                if (styleService_)
-                {
-                    styleService_->SetTheme(trigger.actionTarget);
-                }
-            }
-            else if (trigger.actionType == TriggerActionType::LoadPanel)
-            {
-                log_i("Startup panel action detected: Load %s", trigger.actionTarget);
-                startupPanelOverride_ = trigger.actionTarget;
-                break; // Only use the first active panel trigger
-            }
+            ApplyStartupTheme(trigger.actionTarget);
+            continue;
+        }
+        
+        if (trigger.actionType == TriggerActionType::LoadPanel)
+        {
+            ApplyStartupPanel(trigger.actionTarget);
+            return; // Only use the first active panel trigger
         }
     }
+}
+
+void TriggerManager::ApplyStartupTheme(const char* themeName)
+{
+    if (!styleService_ || !themeName) return;
+    
+    log_i("Applying startup theme action: %s", themeName);
+    styleService_->SetTheme(themeName);
+}
+
+void TriggerManager::ApplyStartupPanel(const char* panelName)
+{
+    if (!panelName) return;
+    
+    log_i("Startup panel action detected: Load %s", panelName);
+    startupPanelOverride_ = panelName;
 }
 
 void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinState)

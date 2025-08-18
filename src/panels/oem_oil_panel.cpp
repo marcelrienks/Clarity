@@ -528,58 +528,63 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
     log_v("MapPressureValue() called with sensorValue: %d", sensorValue);
 
-    // Sensor now returns values in configured units, map to display scale (0-60)
-    int32_t mappedValue;
-
-    if (preferenceService_)
+    if (!preferenceService_)
     {
-        const Configs &config = preferenceService_->GetConfig();
-        if (config.pressureUnit == "PSI")
-        {
-            // Sensor returns 0-145 PSI, map to 0-60 display
-            // Clamp to valid range (14.5-145 PSI equivalent to 1-10 Bar)
-            if (sensorValue < 15)
-                sensorValue = 15;
-            if (sensorValue > 145)
-                sensorValue = 145;
-            // Map useful PSI range (15-145) to display scale (0-60)
-            mappedValue = ((sensorValue - 15) * 60) / 130;
-        }
-        else if (config.pressureUnit == "kPa")
-        {
-            // Sensor returns 0-1000 kPa, map to 0-60 display
-            // Clamp to valid range (100-1000 kPa equivalent to 1-10 Bar)
-            if (sensorValue < 100)
-                sensorValue = 100;
-            if (sensorValue > 1000)
-                sensorValue = 1000;
-            // Map useful kPa range (100-1000) to display scale (0-60)
-            mappedValue = ((sensorValue - 100) * 60) / 900;
-        }
-        else
-        {
-            // Bar: sensor returns 0-10 Bar, map to 0-60 display
-            // Clamp to valid range (1-10 Bar)
-            if (sensorValue < 1)
-                sensorValue = 1;
-            if (sensorValue > 10)
-                sensorValue = 10;
-            // Map Bar range (1-10) to display scale (0-60)
-            mappedValue = ((sensorValue - 1) * 60) / 9;
-        }
-    }
-    else
-    {
-        // Fallback to Bar mapping
-        if (sensorValue < 1)
-            sensorValue = 1;
-        if (sensorValue > 10)
-            sensorValue = 10;
-        mappedValue = ((sensorValue - 1) * 60) / 9;
+        int32_t result = MapBarPressure(sensorValue);
+        log_v("MapPressureValue() returning (fallback): %d", result);
+        return result;
     }
 
+    const Configs &config = preferenceService_->GetConfig();
+    int32_t mappedValue = MapPressureByUnit(sensorValue, config.pressureUnit);
+    
     log_v("MapPressureValue() returning: %d", mappedValue);
     return mappedValue;
+}
+
+int32_t OemOilPanel::MapPressureByUnit(int32_t sensorValue, const std::string& unit)
+{
+    if (unit == "PSI") return MapPSIPressure(sensorValue);
+    if (unit == "kPa") return MapkPaPressure(sensorValue);
+    
+    return MapBarPressure(sensorValue);
+}
+
+int32_t OemOilPanel::MapPSIPressure(int32_t sensorValue)
+{
+    // Sensor returns 0-145 PSI, map to 0-60 display
+    // Clamp to valid range (14.5-145 PSI equivalent to 1-10 Bar)
+    int32_t clampedValue = ClampValue(sensorValue, 15, 145);
+    
+    // Map useful PSI range (15-145) to display scale (0-60)
+    return ((clampedValue - 15) * 60) / 130;
+}
+
+int32_t OemOilPanel::MapkPaPressure(int32_t sensorValue)
+{
+    // Sensor returns 0-1000 kPa, map to 0-60 display
+    // Clamp to valid range (100-1000 kPa equivalent to 1-10 Bar)
+    int32_t clampedValue = ClampValue(sensorValue, 100, 1000);
+    
+    // Map useful kPa range (100-1000) to display scale (0-60)
+    return ((clampedValue - 100) * 60) / 900;
+}
+
+int32_t OemOilPanel::MapBarPressure(int32_t sensorValue)
+{
+    // Bar: sensor returns 0-10 Bar, map to 0-60 display
+    // Clamp to valid range (1-10 Bar)
+    int32_t clampedValue = ClampValue(sensorValue, 1, 10);
+    
+    // Map Bar range (1-10) to display scale (0-60)
+    return ((clampedValue - 1) * 60) / 9;
+}
+
+int32_t OemOilPanel::ClampValue(int32_t value, int32_t minVal, int32_t maxVal)
+{
+    if (value < minVal) return minVal;
+    if (value > maxVal) return maxVal;
+    return value;
 }
 
 /// @brief Map oil temperature sensor value to display scale

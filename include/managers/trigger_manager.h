@@ -71,6 +71,12 @@ class TriggerManager : public ITriggerService, public IInterruptService
 
   private:
     void InitializeTriggersFromSensors();
+    bool ValidateSensors();
+    void InitializeAllTriggers(const GpioState& state);
+    void ApplyStartupActions();
+    void ApplyStartupTheme(const char* themeName);
+    void ApplyStartupPanel(const char* panelName);
+    
     GpioState ReadAllSensorStates();
     void CheckSensorChanges();
     void CheckErrorTrigger();
@@ -78,6 +84,13 @@ class TriggerManager : public ITriggerService, public IInterruptService
     void InitializeTrigger(const char *triggerId, bool currentPinState);
     Trigger *FindTriggerMapping(const char *triggerId);
     void ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state) override;
+
+    // Helper methods for ExecuteTriggerAction
+    void ExecuteActivation(Trigger *mapping);
+    void ExecuteDeactivation(Trigger *mapping);
+    void HandlePanelDeactivation(Trigger *mapping);
+    void LoadPanel(const char *panelName);
+    void SetTheme(const char *themeName);
 
     // Simple active trigger tracking helper
     Trigger *FindActivePanel();

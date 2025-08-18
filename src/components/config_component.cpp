@@ -292,29 +292,7 @@ void ConfigComponent::UpdateMenuDisplay()
             // Apply fading effect based on distance from center
             if (i == CENTER_INDEX)
             {
-                // Center item - fully highlighted with bold styling
-                lv_obj_set_style_text_color(menuLabels_[i], GetThemeGradientColor(0, true), LV_PART_MAIN);
-                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_20, LV_PART_MAIN); // Larger font for selected
-                lv_obj_set_style_text_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
-
-                // Enhanced background highlight for selected item with theme-appropriate colors
-                if (styleService_) {
-                    const char* theme = styleService_->GetCurrentTheme();
-                    if (strcmp(theme, "Night") == 0) {
-                        lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x4D1F1F), LV_PART_MAIN); // Dark red background
-                        lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x993333), LV_PART_MAIN); // Medium red border
-                    } else {
-                        lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN); // Gray background
-                        lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN); // Light gray border
-                    }
-                } else {
-                    lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN);
-                    lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN);
-                }
-                lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_70, LV_PART_MAIN); // More visible background
-                lv_obj_set_style_radius(menuLabels_[i], 6, LV_PART_MAIN); // Reduced radius for tighter look
-                lv_obj_set_style_pad_all(menuLabels_[i], 6, LV_PART_MAIN); // Reduced padding from 10 to 6
-                lv_obj_set_style_border_width(menuLabels_[i], 1, LV_PART_MAIN);
+                ApplyCenterItemStyle(menuLabels_[i]);
             }
             else
             {
@@ -370,4 +348,49 @@ void ConfigComponent::UpdateMenuDisplay()
             lv_obj_add_flag(menuLabels_[i], LV_OBJ_FLAG_HIDDEN);
         }
     }
+}
+
+void ConfigComponent::ApplyCenterItemStyle(lv_obj_t* label)
+{
+    if (!label) return;
+    
+    // Center item - fully highlighted with bold styling
+    lv_obj_set_style_text_color(label, GetThemeGradientColor(0, true), LV_PART_MAIN);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_opa(label, LV_OPA_100, LV_PART_MAIN);
+
+    // Enhanced background highlight
+    ApplyCenterItemBackground(label);
+    
+    lv_obj_set_style_bg_opa(label, LV_OPA_70, LV_PART_MAIN);
+    lv_obj_set_style_radius(label, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(label, 6, LV_PART_MAIN);
+    lv_obj_set_style_border_width(label, 1, LV_PART_MAIN);
+}
+
+void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
+{
+    if (!styleService_)
+    {
+        ApplyDefaultCenterBackground(label);
+        return;
+    }
+
+    const char* theme = styleService_->GetCurrentTheme();
+    if (strcmp(theme, "Night") == 0)
+    {
+        lv_obj_set_style_bg_color(label, lv_color_hex(0x4D1F1F), LV_PART_MAIN);
+        lv_obj_set_style_border_color(label, lv_color_hex(0x993333), LV_PART_MAIN);
+        return;
+    }
+
+    // Default day theme
+    lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);
+    lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
+}
+
+void ConfigComponent::ApplyDefaultCenterBackground(lv_obj_t* label)
+{
+    lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);
+    lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
 }

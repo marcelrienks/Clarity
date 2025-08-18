@@ -80,6 +80,11 @@ class ConfigComponent : public IComponent
     void CreateUI();
     void UpdateMenuDisplay();
     
+    // Helper methods for UpdateMenuDisplay
+    void ApplyCenterItemStyle(lv_obj_t* label);
+    void ApplyCenterItemBackground(lv_obj_t* label);
+    void ApplyDefaultCenterBackground(lv_obj_t* label);
+    
     // Theme-aware color helpers
     lv_color_t GetThemeGradientColor(int distanceFromCenter, bool isSelected = false) const;
 

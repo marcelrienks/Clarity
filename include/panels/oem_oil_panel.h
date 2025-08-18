@@ -93,6 +93,13 @@ class OemOilPanel : public IPanel, public IActionService
     /// @param sensor_value Raw sensor value (1-10 Bar)
     /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
     int32_t MapPressureValue(int32_t sensorValue);
+    
+    // Helper methods for pressure mapping
+    int32_t MapPressureByUnit(int32_t sensorValue, const std::string& unit);
+    int32_t MapPSIPressure(int32_t sensorValue);
+    int32_t MapkPaPressure(int32_t sensorValue);
+    int32_t MapBarPressure(int32_t sensorValue);
+    int32_t ClampValue(int32_t value, int32_t minVal, int32_t maxVal);
 
     /// @brief Map oil temperature sensor value to display scale
     /// @param sensor_value Raw sensor value (0-120°C)

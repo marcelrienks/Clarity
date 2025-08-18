@@ -109,45 +109,8 @@ void ActionManager::ProcessInputEvents()
             break;
 
         case ButtonState::PRESSED:
-        {
-            // Check for long press threshold (2-5 seconds)
-            unsigned long pressDuration = currentTime - pressStartTime_;
-            log_d("Button timing check - pressDuration: %lu, threshold: %lu, max: %lu, currentTime: %lu", 
-                  pressDuration, LONG_PRESS_THRESHOLD_MS, LONG_PRESS_MAX_MS, currentTime);
-            if (pressDuration >= LONG_PRESS_THRESHOLD_MS && pressDuration <= LONG_PRESS_MAX_MS &&
-                buttonState_ != ButtonState::LONG_PRESS_SENT)
-            {
-                log_i("Long press detected after %lu ms (started at %lu ms)", pressDuration, pressStartTime_);
-
-                if (currentService_)
-                {
-                    // Get action from current panel
-                    Action action = currentService_->GetLongPressAction();
-                    if (action.IsValid())
-                    {
-                        // Check if actions can be executed based on UIState
-                        if (CanExecuteActions())
-                        {
-                            log_d("Executing long press action immediately");
-                            action.execute();
-                        }
-                        else
-                        {
-                            // Store the action for later processing (overwrites any pending action)
-                            pendingAction_ = std::move(action);
-                            pendingActionTimestamp_ = currentTime;
-                            log_d("Long press action queued for later");
-                        }
-                    }
-                }
-
-                buttonState_ = ButtonState::LONG_PRESS_SENT;
-            }
-
-            // Check for timeout
-            CheckPressTimeout();
+            HandlePressedState(currentTime);
             break;
-        }
 
         case ButtonState::LONG_PRESS_SENT:
             CheckPressTimeout();
@@ -160,6 +123,54 @@ void ActionManager::ProcessInputEvents()
     }
 
     // Process any pending actions
+}
+
+void ActionManager::HandlePressedState(unsigned long currentTime)
+{
+    if (!ShouldTriggerLongPress(currentTime))
+    {
+        CheckPressTimeout();
+        return;
+    }
+    
+    ExecuteLongPressAction(currentTime);
+    buttonState_ = ButtonState::LONG_PRESS_SENT;
+    CheckPressTimeout();
+}
+
+bool ActionManager::ShouldTriggerLongPress(unsigned long currentTime)
+{
+    if (buttonState_ == ButtonState::LONG_PRESS_SENT) return false;
+    
+    unsigned long pressDuration = currentTime - pressStartTime_;
+    log_d("Button timing check - pressDuration: %lu, threshold: %lu, max: %lu, currentTime: %lu", 
+          pressDuration, LONG_PRESS_THRESHOLD_MS, LONG_PRESS_MAX_MS, currentTime);
+    
+    return pressDuration >= LONG_PRESS_THRESHOLD_MS && 
+           pressDuration <= LONG_PRESS_MAX_MS;
+}
+
+void ActionManager::ExecuteLongPressAction(unsigned long currentTime)
+{
+    if (!currentService_) return;
+    
+    Action action = currentService_->GetLongPressAction();
+    if (!action.IsValid()) return;
+    
+    log_i("Long press detected after %lu ms (started at %lu ms)", 
+          currentTime - pressStartTime_, pressStartTime_);
+    
+    if (CanExecuteActions())
+    {
+        log_d("Executing long press action immediately");
+        action.execute();
+        return;
+    }
+    
+    // Store the action for later processing (overwrites any pending action)
+    pendingAction_ = std::move(action);
+    pendingActionTimestamp_ = currentTime;
+    log_d("Long press action queued for later");
     ProcessPendingActions();
 }
 

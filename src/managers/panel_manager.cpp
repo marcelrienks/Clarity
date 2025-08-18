@@ -74,33 +74,37 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     log_v("CreatePanel() called for: %s", panelName);
 
     // Use injected factory for panel creation
-    std::unique_ptr<IPanel> uniquePanel;
     log_d("Panel creation - type: %s, factory: %p", panelName, panelFactory_);
     
     if (strcmp(panelName, PanelNames::SPLASH) == 0) {
-        uniquePanel = panelFactory_->CreateSplashPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, PanelNames::OIL) == 0) {
-        uniquePanel = panelFactory_->CreateOemOilPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
-        uniquePanel = panelFactory_->CreateErrorPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, PanelNames::CONFIG) == 0) {
-        uniquePanel = panelFactory_->CreateConfigPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, PanelNames::KEY) == 0) {
-        uniquePanel = panelFactory_->CreateKeyPanel(gpioProvider_, displayProvider_, styleService_);
-    } else if (strcmp(panelName, PanelNames::LOCK) == 0) {
-        uniquePanel = panelFactory_->CreateLockPanel(gpioProvider_, displayProvider_, styleService_);
+        return panelFactory_->CreateSplashPanel(gpioProvider_, displayProvider_, styleService_);
     }
     
-    if (!uniquePanel)
-    {
-        log_e("Failed to create panel: %s", panelName);
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
-                                             std::string("Failed to create panel: ") + panelName);
-        return nullptr;
+    if (strcmp(panelName, PanelNames::OIL) == 0) {
+        return panelFactory_->CreateOemOilPanel(gpioProvider_, displayProvider_, styleService_);
     }
-
-    log_v("CreatePanel() completed successfully for: %s", panelName);
-    return std::shared_ptr<IPanel>(uniquePanel.release());
+    
+    if (strcmp(panelName, PanelNames::ERROR) == 0) {
+        return panelFactory_->CreateErrorPanel(gpioProvider_, displayProvider_, styleService_);
+    }
+    
+    if (strcmp(panelName, PanelNames::CONFIG) == 0) {
+        return panelFactory_->CreateConfigPanel(gpioProvider_, displayProvider_, styleService_);
+    }
+    
+    if (strcmp(panelName, PanelNames::KEY) == 0) {
+        return panelFactory_->CreateKeyPanel(gpioProvider_, displayProvider_, styleService_);
+    }
+    
+    if (strcmp(panelName, PanelNames::LOCK) == 0) {
+        return panelFactory_->CreateLockPanel(gpioProvider_, displayProvider_, styleService_);
+    }
+    
+    // Unknown panel type
+    log_e("Failed to create panel: %s", panelName);
+    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
+                                         std::string("Failed to create panel: ") + panelName);
+    return nullptr;
 }
 
 // Core IPanelService interface implementations
