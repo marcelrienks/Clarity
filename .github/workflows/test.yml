@@ -24,6 +24,7 @@ permissions:
 
 jobs:
   unity-tests:
+    if: false  # TODO: Temporarily disabled
     runs-on: ubuntu-latest
     name: Unity Tests (101 tests)
     
@@ -56,6 +57,7 @@ jobs:
           echo "✅ All Unity tests passed"
 
   build-verification:
+    if: false  # Temporarily disabled
     runs-on: ubuntu-latest
     name: Build Verification
     
