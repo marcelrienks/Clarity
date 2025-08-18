@@ -1,377 +1,366 @@
-# TriggerManager Simplification Options
+# Unified Interrupt Handling Architecture
 
-This document outlines various approaches to simplify the TriggerManager and ExecuteTriggerAction function implementation.
+This document outlines the plan to unify the interrupt handling architecture for both triggers and actions in the Clarity system, applying consistent patterns across both subsystems.
 
-## Current Implementation Overview
+## Overview
 
-The current `ExecuteTriggerAction` method uses a nested if-else structure to handle different trigger states and action types. This approach, while functional, can be simplified for better maintainability and readability.
+Both TriggerManager and ActionManager handle hardware interrupts but with different approaches. This plan unifies them under a common architecture while preserving their unique characteristics.
 
-### Current Structure
-- Uses if-else chains for action type dispatching
-- Handles both ACTIVE and INACTIVE states
-- Manages two action types: LoadPanel and ToggleTheme
-- Contains logic for finding fallback panels when triggers deactivate
+### Current State
+- **TriggerManager**: Handles GPIO sensors (key, lock, lights) with priority-based execution
+- **ActionManager**: Handles button presses with timing logic for short/long press detection
+- Both systems have state management, service dependencies, and deferred execution
 
-## Option 1: Command Pattern with Action Map
+### Goal
+Create a unified interrupt handling system that:
+- Maintains consistency between trigger and action handling
+- Reduces code duplication
+- Simplifies adding new interrupt sources
+- Preserves the unique characteristics of each interrupt type
 
-Replace the if-else chain with a map of action handlers for better extensibility.
+## Architecture Design
 
-### Implementation
+### Directory Structure
+```
+include/
+├── handlers/
+│   ├── interrupt_handler.h          # Base class
+│   ├── trigger_interrupt_handler.h  # Trigger-specific handler
+│   └── action_interrupt_handler.h   # Action-specific handler
+├── managers/
+│   └── interrupt_manager.h          # Unified interrupt manager
+└── utilities/
+    └── interrupt_types.h            # Common types and enums
+```
+
+### Core Components
+
+#### 1. Common Types (interrupt_types.h)
 ```cpp
-class TriggerManager {
-    using ActionHandler = std::function<void(const char*)>;
-    std::unordered_map<TriggerActionType, ActionHandler> actionHandlers_;
-    
-    void InitializeActionHandlers() {
-        actionHandlers_[TriggerActionType::LoadPanel] = [this](const char* target) {
-            if (panelService_) panelService_->CreateAndLoadPanel(target, true);
-        };
-        
-        actionHandlers_[TriggerActionType::ToggleTheme] = [this](const char* target) {
-            if (styleService_) {
-                styleService_->SetTheme(target);
-                if (panelService_) panelService_->UpdatePanel();
-            }
-        };
-    }
-    
-    void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state) {
-        if (state == TriggerExecutionState::ACTIVE && actionHandlers_.count(mapping->actionType)) {
-            actionHandlers_[mapping->actionType](mapping->actionTarget);
-        }
-    }
+enum class InterruptSource {
+    GPIO_TRIGGER,    // Key, Lock, Lights sensors
+    BUTTON_ACTION,   // Action button
+    ERROR_EVENT,     // Error manager
+    TIMER_EVENT      // Future: timed events
+};
+
+enum class InterruptState {
+    ACTIVE,
+    INACTIVE,
+    PENDING
+};
+
+struct InterruptData {
+    InterruptSource source;
+    int priority;
+    unsigned long timestamp;
+    InterruptState state;
+    std::variant<Trigger*, Action> payload;
 };
 ```
 
-### Pros
-- Easy to add new action types
-- No if-else chains
-- Clear separation of action logic
-
-### Cons
-- Uses dynamic memory (std::unordered_map)
-- More complex initialization
-- Function pointer overhead
-
-## Option 2: State Machine Pattern
-
-Simplify state transitions with a cleaner state machine approach.
-
-### Implementation
+#### 2. Base Interrupt Handler (interrupt_handler.h)
 ```cpp
-class TriggerManager {
-    void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state) {
-        if (!mapping) return;
-        
-        // Single dispatch based on state
-        auto handler = (state == TriggerExecutionState::ACTIVE) 
-            ? &TriggerManager::HandleActivation 
-            : &TriggerManager::HandleDeactivation;
-            
-        (this->*handler)(mapping);
-    }
-    
-private:
-    void HandleActivation(Trigger* mapping) {
-        switch (mapping->actionType) {
-            case TriggerActionType::LoadPanel:
-                if (panelService_) 
-                    panelService_->CreateAndLoadPanel(mapping->actionTarget, true);
-                break;
-            case TriggerActionType::ToggleTheme:
-                if (styleService_) {
-                    styleService_->SetTheme(mapping->actionTarget);
-                    if (panelService_) panelService_->UpdatePanel();
-                }
-                break;
-        }
-    }
-    
-    void HandleDeactivation(Trigger* mapping) {
-        if (mapping->actionType == TriggerActionType::LoadPanel) {
-            Trigger* activePanel = FindActivePanel();
-            if (activePanel && panelService_) {
-                panelService_->CreateAndLoadPanel(activePanel->actionTarget, true);
-            } else if (panelService_) {
-                panelService_->CreateAndLoadPanel(mapping->restoreTarget, true);
-            }
-        }
-    }
-};
-```
-
-### Pros
-- Clear state separation
-- Easy to understand flow
-- Maintains current architecture
-
-### Cons
-- Still requires switch/if statements
-- More methods to maintain
-
-## Option 3: Direct Action Execution (Remove Abstraction)
-
-Since there are only 2 action types, remove the abstraction layer entirely.
-
-### Implementation
-```cpp
-class TriggerManager {
-    void CheckTriggerChange(const char* triggerId, bool currentPinState) {
-        Trigger* mapping = FindTriggerMapping(triggerId);
-        if (!mapping) return;
-        
-        TriggerExecutionState newState = currentPinState 
-            ? TriggerExecutionState::ACTIVE 
-            : TriggerExecutionState::INACTIVE;
-            
-        if (newState == mapping->currentState) return;
-        
-        mapping->currentState = newState;
-        
-        // Direct execution based on trigger type
-        if (strcmp(triggerId, TriggerIds::LIGHTS_STATE) == 0) {
-            ExecuteThemeToggle(newState == TriggerExecutionState::ACTIVE 
-                ? mapping->actionTarget 
-                : mapping->restoreTarget);
-        } else {
-            ExecutePanelChange(mapping, newState);
-        }
-    }
-    
-private:
-    void ExecutePanelChange(Trigger* mapping, TriggerExecutionState state) {
-        if (!panelService_) return;
-        
-        if (state == TriggerExecutionState::ACTIVE) {
-            panelService_->CreateAndLoadPanel(mapping->actionTarget, true);
-        } else {
-            // Handle deactivation with fallback logic
-            Trigger* activePanel = FindActivePanel();
-            const char* targetPanel = activePanel 
-                ? activePanel->actionTarget 
-                : mapping->restoreTarget;
-            panelService_->CreateAndLoadPanel(targetPanel, true);
-        }
-    }
-    
-    void ExecuteThemeToggle(const char* themeName) {
-        if (styleService_) {
-            styleService_->SetTheme(themeName);
-            if (panelService_) panelService_->UpdatePanel();
-        }
-    }
-};
-```
-
-### Pros
-- Very direct and simple
-- No abstraction overhead
-- Fastest execution
-
-### Cons
-- Less flexible for future action types
-- Couples trigger logic with action execution
-
-## Option 4: Action Registry with Dependency Injection
-
-Move action execution out of TriggerManager into separate action executors.
-
-### Implementation
-```cpp
-// Base action executor interface
-class IActionExecutor {
-public:
-    virtual ~IActionExecutor() = default;
-    virtual void Execute(const Trigger& trigger, TriggerExecutionState state) = 0;
-    virtual TriggerActionType GetActionType() const = 0;
-};
-
-// Panel action executor
-class PanelActionExecutor : public IActionExecutor {
+/**
+ * @class InterruptHandler
+ * @brief Base class for all interrupt handlers
+ * 
+ * @details Provides common functionality for processing interrupts including
+ * panel loading, theme switching, and execution state checking. All specific
+ * interrupt handlers should inherit from this class.
+ */
+class InterruptHandler {
+protected:
     IPanelService* panelService_;
-    ITriggerService* triggerService_;
-    
-public:
-    PanelActionExecutor(IPanelService* panel, ITriggerService* trigger) 
-        : panelService_(panel), triggerService_(trigger) {}
-    
-    TriggerActionType GetActionType() const override { 
-        return TriggerActionType::LoadPanel; 
-    }
-    
-    void Execute(const Trigger& trigger, TriggerExecutionState state) override {
-        if (!panelService_) return;
-        
-        if (state == TriggerExecutionState::ACTIVE) {
-            panelService_->CreateAndLoadPanel(trigger.actionTarget, true);
-        } else {
-            // Deactivation logic with fallback
-            const char* fallbackPanel = DetermineFallbackPanel(trigger);
-            panelService_->CreateAndLoadPanel(fallbackPanel, true);
-        }
-    }
-    
-private:
-    const char* DetermineFallbackPanel(const Trigger& trigger) {
-        // Logic to find active panel or use restore target
-        return trigger.restoreTarget;
-    }
-};
-
-// Theme action executor
-class ThemeActionExecutor : public IActionExecutor {
     IStyleService* styleService_;
-    IPanelService* panelService_;
+    
+    // Common helper methods
+    void LoadPanel(const char* panelName);
+    void SetTheme(const char* themeName);
+    bool CanExecute() const;
     
 public:
-    ThemeActionExecutor(IStyleService* style, IPanelService* panel) 
-        : styleService_(style), panelService_(panel) {}
+    InterruptHandler(IPanelService* panel, IStyleService* style)
+        : panelService_(panel), styleService_(style) {}
     
-    TriggerActionType GetActionType() const override { 
-        return TriggerActionType::ToggleTheme; 
-    }
+    virtual ~InterruptHandler() = default;
     
-    void Execute(const Trigger& trigger, TriggerExecutionState state) override {
-        if (!styleService_) return;
-        
-        const char* theme = (state == TriggerExecutionState::ACTIVE) 
-            ? trigger.actionTarget 
-            : trigger.restoreTarget;
-            
-        styleService_->SetTheme(theme);
-        if (panelService_) panelService_->UpdatePanel();
-    }
+    // Pure virtual - must be implemented by derived classes
+    virtual void ProcessInterrupt(const InterruptData& data) = 0;
+    virtual void ProcessDeferred() = 0;
+    virtual InterruptSource GetHandledSource() const = 0;
 };
+```
 
-// Updated TriggerManager
-class TriggerManager {
-    std::vector<std::unique_ptr<IActionExecutor>> actionExecutors_;
+#### 3. Trigger Interrupt Handler (trigger_interrupt_handler.h)
+```cpp
+/**
+ * @class TriggerInterruptHandler
+ * @brief Handles GPIO trigger interrupts (key, lock, lights)
+ * 
+ * @details Processes trigger state changes and executes corresponding actions
+ * like panel loads and theme changes. Supports priority-based execution and
+ * deferred processing for non-critical triggers.
+ */
+class TriggerInterruptHandler : public InterruptHandler {
+private:
+    std::vector<InterruptData> deferredTriggers_;
+    Trigger* triggers_;  // Static trigger array
     
-    void RegisterActionExecutors() {
-        actionExecutors_.push_back(
-            std::make_unique<PanelActionExecutor>(panelService_, this));
-        actionExecutors_.push_back(
-            std::make_unique<ThemeActionExecutor>(styleService_, panelService_));
-    }
+    void ExecuteTrigger(Trigger* trigger, InterruptState state);
+    void ExecuteActivation(Trigger* trigger);
+    void ExecuteDeactivation(Trigger* trigger);
+    void HandlePanelDeactivation(Trigger* trigger);
+    Trigger* FindActivePanel();
     
-    void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state) {
-        for (auto& executor : actionExecutors_) {
-            if (executor->GetActionType() == mapping->actionType) {
-                executor->Execute(*mapping, state);
-                break;
-            }
-        }
+public:
+    TriggerInterruptHandler(IPanelService* panel, IStyleService* style, 
+                           Trigger* triggerArray)
+        : InterruptHandler(panel, style), triggers_(triggerArray) {}
+    
+    void ProcessInterrupt(const InterruptData& data) override;
+    void ProcessDeferred() override;
+    InterruptSource GetHandledSource() const override { 
+        return InterruptSource::GPIO_TRIGGER; 
     }
 };
 ```
 
-### Pros
-- Complete separation of concerns
-- Easy to unit test each executor
-- Follows SOLID principles
-- New action types don't modify TriggerManager
-
-### Cons
-- Most complex solution
-- Uses dynamic memory allocation
-- Over-engineered for only 2 action types
-
-## Option 5: Simplify with Early Returns (Recommended)
-
-Keep the current structure but make it cleaner with early returns and extracted methods.
-
-### Implementation
+#### 4. Action Interrupt Handler (action_interrupt_handler.h)
 ```cpp
-class TriggerManager {
-    void ExecuteTriggerAction(Trigger* mapping, TriggerExecutionState state) {
-        if (!mapping) return;
-        
-        if (state == TriggerExecutionState::ACTIVE) {
-            ExecuteActivation(mapping);
-            return;
-        }
-        
-        ExecuteDeactivation(mapping);
-    }
-
+/**
+ * @class ActionInterruptHandler
+ * @brief Handles button action interrupts with timing logic
+ * 
+ * @details Processes button presses, manages timing for short/long press
+ * detection, and queues actions when UI is busy. Maintains compatibility
+ * with existing Action-based panel callbacks.
+ */
+class ActionInterruptHandler : public InterruptHandler {
 private:
-    void ExecuteActivation(Trigger* mapping) {
-        switch (mapping->actionType) {
-            case TriggerActionType::LoadPanel:
-                LoadPanel(mapping->actionTarget);
+    std::queue<std::pair<Action, unsigned long>> actionQueue_;
+    static constexpr unsigned long QUEUE_TIMEOUT_MS = 3000;
+    
+    ButtonState buttonState_;
+    unsigned long pressStartTime_;
+    unsigned long debounceStartTime_;
+    
+    void ExecuteAction(const Action& action);
+    void QueueAction(const Action& action, unsigned long timestamp);
+    bool IsActionExpired(unsigned long timestamp) const;
+    
+public:
+    ActionInterruptHandler(IPanelService* panel, IStyleService* style)
+        : InterruptHandler(panel, style), 
+          buttonState_(ButtonState::IDLE),
+          pressStartTime_(0),
+          debounceStartTime_(0) {}
+    
+    void ProcessInterrupt(const InterruptData& data) override;
+    void ProcessDeferred() override;
+    InterruptSource GetHandledSource() const override { 
+        return InterruptSource::BUTTON_ACTION; 
+    }
+};
+```
+
+#### 5. Unified Interrupt Manager (interrupt_manager.h)
+```cpp
+/**
+ * @class InterruptManager
+ * @brief Centralized interrupt processing and routing
+ * 
+ * @details Manages all interrupt sources in the system, routes interrupts
+ * to appropriate handlers, and coordinates deferred execution. Replaces
+ * the separate TriggerManager and ActionManager with a unified approach.
+ */
+class InterruptManager : public IInterruptService {
+private:
+    // Handlers for different interrupt sources
+    std::unique_ptr<TriggerInterruptHandler> triggerHandler_;
+    std::unique_ptr<ActionInterruptHandler> actionHandler_;
+    
+    // Priority queue for pending interrupts
+    std::priority_queue<InterruptData> interruptQueue_;
+    
+    // Sensors
+    std::shared_ptr<KeySensor> keySensor_;
+    std::shared_ptr<LockSensor> lockSensor_;
+    std::shared_ptr<LightsSensor> lightSensor_;
+    std::shared_ptr<ActionButtonSensor> buttonSensor_;
+    
+    bool initialized_;
+    
+    // Helper methods
+    void PollSensors();
+    void ProcessQueuedInterrupts();
+    bool CanProcessDeferred() const;
+    
+public:
+    InterruptManager(/* sensor dependencies */);
+    
+    // IInterruptService interface
+    void Init() override;
+    void ProcessInterruptEvents() override;
+    const char* GetStartupPanelOverride() const override;
+    int GetPriority() const override { return 100; }
+    
+    // Queue interrupt for processing
+    void QueueInterrupt(InterruptData data);
+    
+    // Get specific handler (for testing)
+    InterruptHandler* GetHandler(InterruptSource source);
+};
+```
+
+## Implementation Details
+
+### Handler Implementation Pattern
+
+Each handler follows this pattern:
+
+```cpp
+void TriggerInterruptHandler::ProcessInterrupt(const InterruptData& data) {
+    if (data.source != InterruptSource::GPIO_TRIGGER) return;
+    
+    auto* trigger = std::get<Trigger*>(data.payload);
+    if (!trigger) return;
+    
+    // High priority triggers execute immediately
+    if (trigger->priority == TriggerPriority::CRITICAL) {
+        ExecuteTrigger(trigger, data.state);
+        return;
+    }
+    
+    // Lower priority triggers check UI state
+    if (CanExecute()) {
+        ExecuteTrigger(trigger, data.state);
+    } else {
+        deferredTriggers_.push_back(data);
+    }
+}
+
+void TriggerInterruptHandler::ProcessDeferred() {
+    if (!CanExecute() || deferredTriggers_.empty()) return;
+    
+    // Sort by priority
+    std::sort(deferredTriggers_.begin(), deferredTriggers_.end(),
+        [](const auto& a, const auto& b) { 
+            auto* triggerA = std::get<Trigger*>(a.payload);
+            auto* triggerB = std::get<Trigger*>(b.payload);
+            return triggerA->priority < triggerB->priority;
+        });
+    
+    // Process all deferred triggers
+    for (const auto& data : deferredTriggers_) {
+        ExecuteTrigger(std::get<Trigger*>(data.payload), data.state);
+    }
+    
+    deferredTriggers_.clear();
+}
+```
+
+### Interrupt Manager Flow
+
+```cpp
+void InterruptManager::ProcessInterruptEvents() {
+    // 1. Poll all sensors
+    PollSensors();
+    
+    // 2. Process queued interrupts by priority
+    ProcessQueuedInterrupts();
+    
+    // 3. Process deferred interrupts if UI is idle
+    if (CanProcessDeferred()) {
+        triggerHandler_->ProcessDeferred();
+        actionHandler_->ProcessDeferred();
+    }
+}
+
+void InterruptManager::ProcessQueuedInterrupts() {
+    while (!interruptQueue_.empty()) {
+        auto data = interruptQueue_.top();
+        interruptQueue_.pop();
+        
+        // Route to appropriate handler
+        switch (data.source) {
+            case InterruptSource::GPIO_TRIGGER:
+                triggerHandler_->ProcessInterrupt(data);
                 break;
                 
-            case TriggerActionType::ToggleTheme:
-                SetTheme(mapping->actionTarget);
+            case InterruptSource::BUTTON_ACTION:
+                actionHandler_->ProcessInterrupt(data);
+                break;
+                
+            case InterruptSource::ERROR_EVENT:
+                // Future: error handler
                 break;
         }
     }
-    
-    void ExecuteDeactivation(Trigger* mapping) {
-        // Only panel loads need deactivation handling
-        if (mapping->actionType != TriggerActionType::LoadPanel) {
-            return;
-        }
-        
-        // Find another active panel or use restore target
-        Trigger* activePanel = FindActivePanel();
-        const char* targetPanel = activePanel 
-            ? activePanel->actionTarget 
-            : mapping->restoreTarget;
-            
-        LoadPanel(targetPanel);
-    }
-    
-    void LoadPanel(const char* panelName) {
-        if (!panelService_ || !panelName) return;
-        
-        log_i("Loading panel: %s", panelName);
-        panelService_->CreateAndLoadPanel(panelName, true);
-    }
-    
-    void SetTheme(const char* themeName) {
-        if (!styleService_ || !themeName) return;
-        
-        log_i("Setting theme: %s", themeName);
-        styleService_->SetTheme(themeName);
-        
-        if (panelService_) {
-            panelService_->UpdatePanel();
-        }
-    }
-};
+}
 ```
 
-### Pros
-- Minimal changes to existing code
-- Clear and readable
-- No dynamic memory allocation
-- Easy to debug
-- Maintains current architecture
+## Benefits
 
-### Cons
-- Still uses switch statement
-- Less flexible than command pattern
+1. **Consistency**: Both triggers and actions follow the same interrupt handling pattern
+2. **Code Reuse**: Common functionality (LoadPanel, SetTheme, CanExecute) in base class
+3. **Extensibility**: Easy to add new interrupt sources (timers, network events, etc.)
+4. **Priority Management**: Unified priority queue ensures proper execution order
+5. **Testing**: Common base class and interfaces simplify unit testing
+6. **Maintainability**: Clear separation of concerns with handler-specific logic isolated
 
-## Recommendation
+## Migration Plan
 
-**Option 5 (Simplify with Early Returns)** is recommended for the following reasons:
+### Phase 1: Create Base Infrastructure
+1. Create `interrupt_types.h` with common enums and structures
+2. Implement `InterruptHandler` base class with common helpers
+3. Create handler directory structure
 
-1. **ESP32 Constraints**: No dynamic memory allocation, suitable for embedded systems
-2. **Minimal Risk**: Small incremental changes to existing code
-3. **Clarity**: Each method has a single responsibility
-4. **Maintainability**: Easy to understand and modify
-5. **Performance**: No function pointer overhead or map lookups
-6. **Pragmatic**: Appropriate complexity for only 2 action types
+### Phase 2: Implement Handlers
+1. Create `TriggerInterruptHandler` by extracting logic from TriggerManager
+2. Create `ActionInterruptHandler` by extracting logic from ActionManager
+3. Ensure both handlers maintain existing behavior
 
-## Implementation Steps
+### Phase 3: Create Unified Manager
+1. Implement `InterruptManager` with sensor polling
+2. Add interrupt routing logic
+3. Implement deferred processing coordination
 
-1. Extract `ExecuteActivation` and `ExecuteDeactivation` methods
-2. Create helper methods `LoadPanel` and `SetTheme`
-3. Simplify the main `ExecuteTriggerAction` method
-4. Add appropriate logging
-5. Update unit tests
+### Phase 4: Integration
+1. Replace TriggerManager and ActionManager usage with InterruptManager
+2. Update factory methods to create InterruptManager
+3. Update tests to use new architecture
 
-## Future Considerations
+### Phase 5: Cleanup
+1. Remove old TriggerManager and ActionManager classes
+2. Update documentation
+3. Add integration tests for unified system
 
-If more than 5-6 action types are added in the future, consider migrating to Option 1 (Command Pattern) or Option 4 (Action Registry) for better scalability.
+## Future Extensions
+
+The unified architecture makes it easy to add:
+
+1. **Timer-based interrupts**: For periodic updates or timeouts
+2. **Network interrupts**: For remote control or OTA updates
+3. **Sensor fusion**: Combining multiple sensors for complex triggers
+4. **Event recording**: Logging all interrupts for debugging
+5. **Interrupt masking**: Temporarily disabling certain interrupt sources
+
+## Considerations
+
+### Memory Usage
+- Static allocation preferred for ESP32
+- Minimal dynamic memory for queues with size limits
+- Reuse existing sensor and service pointers
+
+### Performance
+- Priority queue ensures critical interrupts execute first
+- Deferred processing prevents UI blocking
+- Direct function calls avoid virtual function overhead where possible
+
+### Backwards Compatibility
+- Existing Action and Trigger structures preserved
+- Panel interfaces unchanged
+- Sensor interfaces maintained
+
+This unified architecture provides a clean, extensible foundation for all interrupt handling in the Clarity system while maintaining the unique characteristics that make triggers and actions effective for their specific use cases.
