@@ -1,6 +1,7 @@
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/types.h"
+#include "utilities/constants.h"
 #include <Arduino.h>
 #include <cstring>
 
@@ -8,6 +9,7 @@
     #include "esp32-hal-log.h"
     #define LOG_TAG "ActionManager"
 #else
+    #define log_v(...)
     #define log_d(...)
     #define log_w(...)
     #define log_e(...)
@@ -18,10 +20,12 @@ ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, I
       debounceStartTime_(0), lastButtonState_(false), initialized_(false), pendingAction_(nullptr),
       pendingActionTimestamp_(0)
 {
+    log_v("ActionManager() constructor called");
 }
 
 void ActionManager::Init()
 {
+    log_v("Init() called");
     if (initialized_)
     {
         log_w("ActionManager already initialized");
@@ -50,6 +54,7 @@ void ActionManager::Init()
 
 void ActionManager::ProcessInputEvents()
 {
+    log_v("ProcessInputEvents() called");
     if (!initialized_)
     {
         return;
@@ -104,43 +109,8 @@ void ActionManager::ProcessInputEvents()
             break;
 
         case ButtonState::PRESSED:
-        {
-            // Check for long press threshold (2-5 seconds)
-            unsigned long pressDuration = currentTime - pressStartTime_;
-            if (pressDuration >= LONG_PRESS_THRESHOLD_MS && pressDuration <= LONG_PRESS_MAX_MS &&
-                buttonState_ != ButtonState::LONG_PRESS_SENT)
-            {
-                log_i("Long press detected after %lu ms (started at %lu ms)", pressDuration, pressStartTime_);
-
-                if (currentService_)
-                {
-                    // Get action from current panel
-                    Action action = currentService_->GetLongPressAction();
-                    if (action.IsValid())
-                    {
-                        // Check if actions can be executed based on UIState
-                        if (CanExecuteActions())
-                        {
-                            log_d("Executing long press action immediately");
-                            action.execute();
-                        }
-                        else
-                        {
-                            // Store the action for later processing (overwrites any pending action)
-                            pendingAction_ = std::move(action);
-                            pendingActionTimestamp_ = currentTime;
-                            log_d("Long press action queued for later");
-                        }
-                    }
-                }
-
-                buttonState_ = ButtonState::LONG_PRESS_SENT;
-            }
-
-            // Check for timeout
-            CheckPressTimeout();
+            HandlePressedState(currentTime);
             break;
-        }
 
         case ButtonState::LONG_PRESS_SENT:
             CheckPressTimeout();
@@ -153,11 +123,60 @@ void ActionManager::ProcessInputEvents()
     }
 
     // Process any pending actions
+}
+
+void ActionManager::HandlePressedState(unsigned long currentTime)
+{
+    if (!ShouldTriggerLongPress(currentTime))
+    {
+        CheckPressTimeout();
+        return;
+    }
+    
+    ExecuteLongPressAction(currentTime);
+    buttonState_ = ButtonState::LONG_PRESS_SENT;
+    CheckPressTimeout();
+}
+
+bool ActionManager::ShouldTriggerLongPress(unsigned long currentTime)
+{
+    if (buttonState_ == ButtonState::LONG_PRESS_SENT) return false;
+    
+    unsigned long pressDuration = currentTime - pressStartTime_;
+    log_d("Button timing check - pressDuration: %lu, threshold: %lu, max: %lu, currentTime: %lu", 
+          pressDuration, LONG_PRESS_THRESHOLD_MS, LONG_PRESS_MAX_MS, currentTime);
+    
+    return pressDuration >= LONG_PRESS_THRESHOLD_MS && 
+           pressDuration <= LONG_PRESS_MAX_MS;
+}
+
+void ActionManager::ExecuteLongPressAction(unsigned long currentTime)
+{
+    if (!currentService_) return;
+    
+    Action action = currentService_->GetLongPressAction();
+    if (!action.IsValid()) return;
+    
+    log_i("Long press detected after %lu ms (started at %lu ms)", 
+          currentTime - pressStartTime_, pressStartTime_);
+    
+    if (CanExecuteActions())
+    {
+        log_d("Executing long press action immediately");
+        action.execute();
+        return;
+    }
+    
+    // Store the action for later processing (overwrites any pending action)
+    pendingAction_ = std::move(action);
+    pendingActionTimestamp_ = currentTime;
+    log_d("Long press action queued for later");
     ProcessPendingActions();
 }
 
 void ActionManager::RegisterPanel(IActionService *service, const char *panelName)
 {
+    log_v("RegisterPanel() called");
     currentService_ = service;
     currentPanelName_ = panelName ? panelName : "";
     log_d("Panel registered for actions: %s %p", panelName, service);
@@ -165,14 +184,15 @@ void ActionManager::RegisterPanel(IActionService *service, const char *panelName
 
 void ActionManager::ClearPanel()
 {
+    log_v("ClearPanel() called");
     currentService_ = nullptr;
-    log_d("Panel registration cleared");
 }
 
 /// @brief Set the panel service after construction (for circular dependency resolution)
 /// @param panelService Panel service for UIState checking
 void ActionManager::SetPanelService(IPanelService *panelService)
 {
+    log_v("SetPanelService() called");
     panelService_ = panelService;
 }
 
@@ -180,6 +200,7 @@ void ActionManager::SetPanelService(IPanelService *panelService)
 /// @details Transitions to DEBOUNCE state and records press start time
 void ActionManager::HandleButtonPress()
 {
+    log_v("HandleButtonPress() called");
     unsigned long currentTime = GetCurrentTime();
 
     log_i("ActionManager: Button press detected at %lu ms", currentTime);
@@ -193,6 +214,7 @@ void ActionManager::HandleButtonPress()
 /// and executes the appropriate action if within valid timing windows
 void ActionManager::HandleButtonRelease()
 {
+    log_v("HandleButtonRelease() called");
     unsigned long currentTime = GetCurrentTime();
 
     log_d("Button release detected at %lu ms", currentTime);
@@ -211,6 +233,8 @@ void ActionManager::HandleButtonRelease()
         else if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < LONG_PRESS_THRESHOLD_MS)
         {
             log_i("Short press detected");
+            log_d("Short press analysis - duration: %lu, minShort: %lu, maxShort: %lu", 
+                  pressDuration, SHORT_PRESS_MIN_MS, LONG_PRESS_THRESHOLD_MS);
 
             if (currentService_)
             {
@@ -267,6 +291,7 @@ void ActionManager::HandleButtonRelease()
 /// @details Resets state to IDLE if press exceeds MAX_PRESS_TIME_MS (5.1 seconds)
 void ActionManager::CheckPressTimeout()
 {
+    log_v("CheckPressTimeout() called");
     unsigned long currentTime = GetCurrentTime();
 
     if (currentTime - pressStartTime_ >= MAX_PRESS_TIME_MS)
@@ -281,6 +306,7 @@ void ActionManager::CheckPressTimeout()
 /// @details Uses button sensor to read GPIO 32 state with pull-down configuration
 bool ActionManager::IsButtonPressed() const
 {
+    log_v("IsButtonPressed() called");
     if (!buttonSensor_ || !initialized_)
     {
         return false;
@@ -313,6 +339,7 @@ bool ActionManager::IsButtonPressed() const
 /// @details Wrapper for millis() to enable mocking in unit tests
 unsigned long ActionManager::GetCurrentTime() const
 {
+    log_v("GetCurrentTime() called");
     // Use millis() equivalent - this will need to be mocked for testing
     return millis();
 }
@@ -326,6 +353,7 @@ unsigned long ActionManager::GetCurrentTime() const
 /// Actions expire after INPUT_TIMEOUT_MS (3 seconds)
 void ActionManager::ProcessPendingActions()
 {
+    log_v("ProcessPendingActions() called");
     if (!pendingAction_.IsValid())
     {
         return;
@@ -360,13 +388,16 @@ void ActionManager::ProcessPendingActions()
 /// @details Actions are only executed when UI is not busy with animations or updates
 bool ActionManager::CanExecuteActions() const
 {
+    log_v("CanExecuteActions() called");
     if (!panelService_)
     {
         log_w("PanelService not available, defaulting to allow actions");
         return true; // Fallback to allow actions if panel service is not available
     }
     
-    UIState currentState = panelService_->GetUIState();
+    UIState currentState = panelService_->GetUiState();
+    log_d("Checking UI state: %s, canExecute: %s", UIStateToString(currentState), 
+          currentState == UIState::IDLE ? "true" : "false");
     
     // Actions can only be executed when UI is IDLE
     // UPDATING/LOADING/LVGL_BUSY should queue actions for later processing

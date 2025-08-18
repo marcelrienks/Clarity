@@ -1,271 +1,366 @@
-# UIState Management and Interrupt Processing
+# Unified Interrupt Handling Architecture
+
+This document outlines the plan to unify the interrupt handling architecture for both triggers and actions in the Clarity system, applying consistent patterns across both subsystems.
 
 ## Overview
 
-The Clarity application uses a UIState system to coordinate interrupt processing with LVGL UI operations. This document describes the distributed state management architecture that ensures interrupts are only processed when the UI is idle, preventing conflicts with animations and transitions.
+Both TriggerManager and ActionManager handle hardware interrupts but with different approaches. This plan unifies them under a common architecture while preserving their unique characteristics.
 
-## Core Architecture Principles
+### Current State
+- **TriggerManager**: Handles GPIO sensors (key, lock, lights) with priority-based execution
+- **ActionManager**: Handles button presses with timing logic for short/long press detection
+- Both systems have state management, service dependencies, and deferred execution
 
-1. **Single-Point Interrupt Checking**: Interrupts are ONLY checked from the main loop
-2. **Distributed State Management**: Components closest to the activity set the state
-3. **LVGL Synchronization**: UIState reflects LVGL's activity status
-4. **Explicit State Transitions**: All state changes should be logged for debugging
+### Goal
+Create a unified interrupt handling system that:
+- Maintains consistency between trigger and action handling
+- Reduces code duplication
+- Simplifies adding new interrupt sources
+- Preserves the unique characteristics of each interrupt type
 
-## UIState Enum
+## Architecture Design
 
+### Directory Structure
+```
+include/
+├── handlers/
+│   ├── interrupt_handler.h          # Base class
+│   ├── trigger_interrupt_handler.h  # Trigger-specific handler
+│   └── action_interrupt_handler.h   # Action-specific handler
+├── managers/
+│   └── interrupt_manager.h          # Unified interrupt manager
+└── utilities/
+    └── interrupt_types.h            # Common types and enums
+```
+
+### Core Components
+
+#### 1. Common Types (interrupt_types.h)
 ```cpp
-enum class UIState {
-    IDLE,           // No LVGL activity, safe for all operations
-    LOADING,        // Panel loading with potential animations
-    UPDATING,       // Panel updating (sensor data refresh)
-    ANIMATING,      // LVGL animations in progress
-    TRANSITIONING,  // Panel transitions in progress
-    LVGL_BUSY       // Generic LVGL busy state
+enum class InterruptSource {
+    GPIO_TRIGGER,    // Key, Lock, Lights sensors
+    BUTTON_ACTION,   // Action button
+    ERROR_EVENT,     // Error manager
+    TIMER_EVENT      // Future: timed events
+};
+
+enum class InterruptState {
+    ACTIVE,
+    INACTIVE,
+    PENDING
+};
+
+struct InterruptData {
+    InterruptSource source;
+    int priority;
+    unsigned long timestamp;
+    InterruptState state;
+    std::variant<Trigger*, Action> payload;
 };
 ```
 
-### State Descriptions
+#### 2. Base Interrupt Handler (interrupt_handler.h)
+```cpp
+/**
+ * @class InterruptHandler
+ * @brief Base class for all interrupt handlers
+ * 
+ * @details Provides common functionality for processing interrupts including
+ * panel loading, theme switching, and execution state checking. All specific
+ * interrupt handlers should inherit from this class.
+ */
+class InterruptHandler {
+protected:
+    IPanelService* panelService_;
+    IStyleService* styleService_;
+    
+    // Common helper methods
+    void LoadPanel(const char* panelName);
+    void SetTheme(const char* themeName);
+    bool CanExecute() const;
+    
+public:
+    InterruptHandler(IPanelService* panel, IStyleService* style)
+        : panelService_(panel), styleService_(style) {}
+    
+    virtual ~InterruptHandler() = default;
+    
+    // Pure virtual - must be implemented by derived classes
+    virtual void ProcessInterrupt(const InterruptData& data) = 0;
+    virtual void ProcessDeferred() = 0;
+    virtual InterruptSource GetHandledSource() const = 0;
+};
+```
 
-- **IDLE**: LVGL is not running any animations or transitions. Safe to:
-  - Process all interrupts (triggers and actions)
-  - Switch panels
-  - Execute user actions
-  
-- **LOADING**: A panel is being loaded, potentially with entrance animations
-  - Interrupts are deferred
-  - Critical triggers may still be processed (implementation-specific)
-  
-- **UPDATING**: Panel is refreshing its data (e.g., sensor readings)
-  - Low-priority interrupts deferred
-  - High-priority triggers may be processed
-  
-- **ANIMATING**: LVGL animations are actively running (e.g., gauge needle movement)
-  - All interrupts deferred until animation completes
-  - Ensures smooth visual transitions
-  
-- **TRANSITIONING**: Panel-to-panel transitions in progress
-  - All interrupts deferred
-  - Prevents panel switching during transitions
-  
-- **LVGL_BUSY**: Generic busy state for other LVGL operations
-  - Reserved for future use
-  - All interrupts deferred
+#### 3. Trigger Interrupt Handler (trigger_interrupt_handler.h)
+```cpp
+/**
+ * @class TriggerInterruptHandler
+ * @brief Handles GPIO trigger interrupts (key, lock, lights)
+ * 
+ * @details Processes trigger state changes and executes corresponding actions
+ * like panel loads and theme changes. Supports priority-based execution and
+ * deferred processing for non-critical triggers.
+ */
+class TriggerInterruptHandler : public InterruptHandler {
+private:
+    std::vector<InterruptData> deferredTriggers_;
+    Trigger* triggers_;  // Static trigger array
+    
+    void ExecuteTrigger(Trigger* trigger, InterruptState state);
+    void ExecuteActivation(Trigger* trigger);
+    void ExecuteDeactivation(Trigger* trigger);
+    void HandlePanelDeactivation(Trigger* trigger);
+    Trigger* FindActivePanel();
+    
+public:
+    TriggerInterruptHandler(IPanelService* panel, IStyleService* style, 
+                           Trigger* triggerArray)
+        : InterruptHandler(panel, style), triggers_(triggerArray) {}
+    
+    void ProcessInterrupt(const InterruptData& data) override;
+    void ProcessDeferred() override;
+    InterruptSource GetHandledSource() const override { 
+        return InterruptSource::GPIO_TRIGGER; 
+    }
+};
+```
 
-## State Ownership and Management
+#### 4. Action Interrupt Handler (action_interrupt_handler.h)
+```cpp
+/**
+ * @class ActionInterruptHandler
+ * @brief Handles button action interrupts with timing logic
+ * 
+ * @details Processes button presses, manages timing for short/long press
+ * detection, and queues actions when UI is busy. Maintains compatibility
+ * with existing Action-based panel callbacks.
+ */
+class ActionInterruptHandler : public InterruptHandler {
+private:
+    std::queue<std::pair<Action, unsigned long>> actionQueue_;
+    static constexpr unsigned long QUEUE_TIMEOUT_MS = 3000;
+    
+    ButtonState buttonState_;
+    unsigned long pressStartTime_;
+    unsigned long debounceStartTime_;
+    
+    void ExecuteAction(const Action& action);
+    void QueueAction(const Action& action, unsigned long timestamp);
+    bool IsActionExpired(unsigned long timestamp) const;
+    
+public:
+    ActionInterruptHandler(IPanelService* panel, IStyleService* style)
+        : InterruptHandler(panel, style), 
+          buttonState_(ButtonState::IDLE),
+          pressStartTime_(0),
+          debounceStartTime_(0) {}
+    
+    void ProcessInterrupt(const InterruptData& data) override;
+    void ProcessDeferred() override;
+    InterruptSource GetHandledSource() const override { 
+        return InterruptSource::BUTTON_ACTION; 
+    }
+};
+```
 
-### Who Can Set UIState
+#### 5. Unified Interrupt Manager (interrupt_manager.h)
+```cpp
+/**
+ * @class InterruptManager
+ * @brief Centralized interrupt processing and routing
+ * 
+ * @details Manages all interrupt sources in the system, routes interrupts
+ * to appropriate handlers, and coordinates deferred execution. Replaces
+ * the separate TriggerManager and ActionManager with a unified approach.
+ */
+class InterruptManager : public IInterruptService {
+private:
+    // Handlers for different interrupt sources
+    std::unique_ptr<TriggerInterruptHandler> triggerHandler_;
+    std::unique_ptr<ActionInterruptHandler> actionHandler_;
+    
+    // Priority queue for pending interrupts
+    std::priority_queue<InterruptData> interruptQueue_;
+    
+    // Sensors
+    std::shared_ptr<KeySensor> keySensor_;
+    std::shared_ptr<LockSensor> lockSensor_;
+    std::shared_ptr<LightsSensor> lightSensor_;
+    std::shared_ptr<ActionButtonSensor> buttonSensor_;
+    
+    bool initialized_;
+    
+    // Helper methods
+    void PollSensors();
+    void ProcessQueuedInterrupts();
+    bool CanProcessDeferred() const;
+    
+public:
+    InterruptManager(/* sensor dependencies */);
+    
+    // IInterruptService interface
+    void Init() override;
+    void ProcessInterruptEvents() override;
+    const char* GetStartupPanelOverride() const override;
+    int GetPriority() const override { return 100; }
+    
+    // Queue interrupt for processing
+    void QueueInterrupt(InterruptData data);
+    
+    // Get specific handler (for testing)
+    InterruptHandler* GetHandler(InterruptSource source);
+};
+```
 
-1. **Panels** (Most Granular)
-   - Have direct knowledge of their animations
-   - Should set state when starting/completing animations
-   - Example: OemOilPanel sets ANIMATING during gauge updates
+## Implementation Details
 
-2. **PanelManager** (High-Level)
-   - Sets default states for panel operations
-   - Manages state during panel switches
-   - Provides fallback state management
+### Handler Implementation Pattern
 
-3. **Special Components**
-   - Components with LVGL knowledge may set states
-   - Must coordinate with PanelManager
-
-### State Setting Rules
+Each handler follows this pattern:
 
 ```cpp
-// Panel sets state during animation
-void OemOilPanel::UpdateGauge() {
-    panelService_->SetUiState(UIState::ANIMATING);
-    // Start LVGL animation
-    lv_anim_start(&animation_);
-}
-
-// Panel clears state when complete
-void OemOilPanel::AnimationComplete() {
-    panelService_->SetUiState(UIState::IDLE);
-}
-
-// PanelManager provides default behavior
-void PanelManager::UpdatePanel() {
-    SetUiState(UIState::UPDATING);
-    panel_->Update(callback);
-}
-```
-
-## Main Loop Flow
-
-```
-main loop() {
-    // 1. Check interrupts only when IDLE
-    if (uiState == IDLE) {
-        interruptManager->CheckAllInterrupts();
-        // This processes: triggers → actions
+void TriggerInterruptHandler::ProcessInterrupt(const InterruptData& data) {
+    if (data.source != InterruptSource::GPIO_TRIGGER) return;
+    
+    auto* trigger = std::get<Trigger*>(data.payload);
+    if (!trigger) return;
+    
+    // High priority triggers execute immediately
+    if (trigger->priority == TriggerPriority::CRITICAL) {
+        ExecuteTrigger(trigger, data.state);
+        return;
     }
     
-    // 2. Update active panel
-    panelManager->UpdatePanel();
-    // Panel may change UIState during update
+    // Lower priority triggers check UI state
+    if (CanExecute()) {
+        ExecuteTrigger(trigger, data.state);
+    } else {
+        deferredTriggers_.push_back(data);
+    }
+}
+
+void TriggerInterruptHandler::ProcessDeferred() {
+    if (!CanExecute() || deferredTriggers_.empty()) return;
     
-    // 3. Process LVGL tasks
-    Ticker::handleLvTasks();
+    // Sort by priority
+    std::sort(deferredTriggers_.begin(), deferredTriggers_.end(),
+        [](const auto& a, const auto& b) { 
+            auto* triggerA = std::get<Trigger*>(a.payload);
+            auto* triggerB = std::get<Trigger*>(b.payload);
+            return triggerA->priority < triggerB->priority;
+        });
     
-    // 4. Dynamic delay
-    Ticker::handleDynamicDelay();
+    // Process all deferred triggers
+    for (const auto& data : deferredTriggers_) {
+        ExecuteTrigger(std::get<Trigger*>(data.payload), data.state);
+    }
+    
+    deferredTriggers_.clear();
 }
 ```
 
-### Interrupt Processing Order
-
-When UIState is IDLE, interrupts are processed in priority order:
-1. **Triggers** (TriggerManager) - Hardware state changes
-2. **Actions** (ActionManager) - User input actions
-
-## Implementation Guidelines
-
-### For Panel Developers
-
-1. **Set State Before Animations**
-   ```cpp
-   void MyPanel::Load() {
-       if (hasAnimation) {
-           panelService_->SetUiState(UIState::LOADING);
-           startLoadAnimation();
-       }
-   }
-   ```
-
-2. **Clear State After Animations**
-   ```cpp
-   void MyPanel::OnAnimationComplete() {
-       panelService_->SetUiState(UIState::IDLE);
-       if (completionCallback_) {
-           completionCallback_();
-       }
-   }
-   ```
-
-3. **Use Appropriate States**
-   - LOADING: For initial panel load
-   - ANIMATING: For data update animations
-   - TRANSITIONING: For panel-to-panel transitions
-
-### For System Components
-
-1. **Check State Before Operations**
-   ```cpp
-   bool ActionManager::CanExecuteActions() {
-       UIState state = panelService_->GetUiState();
-       return state == UIState::IDLE;
-   }
-   ```
-
-2. **Queue Operations When Busy**
-   ```cpp
-   if (!CanExecuteActions()) {
-       pendingAction_ = action;
-       return;
-   }
-   ```
-
-## Example Scenarios
-
-### Scenario 1: Splash Screen with Pending Action
-
-```
-1. Splash panel loads → Sets LOADING
-2. User long-presses during splash → Action queued
-3. Splash animation completes → Sets IDLE  
-4. Main loop detects IDLE → Processes pending action
-5. Action loads config panel → Skips default panel
-```
-
-### Scenario 2: Gauge Animation
-
-```
-1. Oil panel updating → Sets UPDATING
-2. New sensor data arrives → Starts gauge animation
-3. Panel sets ANIMATING → Interrupts deferred
-4. Animation completes → Sets IDLE
-5. Main loop resumes interrupt processing
-```
-
-### Scenario 3: Panel Transition
-
-```
-1. Trigger detected → Request panel switch
-2. PanelManager sets TRANSITIONING
-3. Old panel unloads, new panel loads
-4. Transition complete → Sets IDLE
-5. Normal operation resumes
-```
-
-## State Transition Diagram
-
-```
-         ┌──────┐
-    ┌────│ IDLE │────┐
-    │    └──┬───┘    │
-    │       │        │
-    ▼       ▼        ▼
-┌────────┐┌─────────┐┌──────────┐
-│LOADING ││UPDATING ││ANIMATING │
-└────┬───┘└────┬────┘└─────┬────┘
-     │         │            │
-     └─────────┴────────────┘
-               │
-               ▼
-           ┌──────┐
-           │ IDLE │
-           └──────┘
-```
-
-## Debugging State Issues
-
-### Enable State Logging
+### Interrupt Manager Flow
 
 ```cpp
-void PanelManager::SetUiState(UIState state) {
-    log_d("UIState transition: %s → %s", 
-          StateToString(uiState_), 
-          StateToString(state));
-    uiState_ = state;
+void InterruptManager::ProcessInterruptEvents() {
+    // 1. Poll all sensors
+    PollSensors();
+    
+    // 2. Process queued interrupts by priority
+    ProcessQueuedInterrupts();
+    
+    // 3. Process deferred interrupts if UI is idle
+    if (CanProcessDeferred()) {
+        triggerHandler_->ProcessDeferred();
+        actionHandler_->ProcessDeferred();
+    }
+}
+
+void InterruptManager::ProcessQueuedInterrupts() {
+    while (!interruptQueue_.empty()) {
+        auto data = interruptQueue_.top();
+        interruptQueue_.pop();
+        
+        // Route to appropriate handler
+        switch (data.source) {
+            case InterruptSource::GPIO_TRIGGER:
+                triggerHandler_->ProcessInterrupt(data);
+                break;
+                
+            case InterruptSource::BUTTON_ACTION:
+                actionHandler_->ProcessInterrupt(data);
+                break;
+                
+            case InterruptSource::ERROR_EVENT:
+                // Future: error handler
+                break;
+        }
+    }
 }
 ```
 
-### Common Issues
+## Benefits
 
-1. **Stuck in Busy State**
-   - Panel forgot to set IDLE after animation
-   - Check animation completion callbacks
+1. **Consistency**: Both triggers and actions follow the same interrupt handling pattern
+2. **Code Reuse**: Common functionality (LoadPanel, SetTheme, CanExecute) in base class
+3. **Extensibility**: Easy to add new interrupt sources (timers, network events, etc.)
+4. **Priority Management**: Unified priority queue ensures proper execution order
+5. **Testing**: Common base class and interfaces simplify unit testing
+6. **Maintainability**: Clear separation of concerns with handler-specific logic isolated
 
-2. **Interrupts Not Processing**
-   - Verify main loop is checking state
-   - Ensure panels set IDLE when appropriate
+## Migration Plan
 
-3. **Jerky Animations**
-   - Interrupts processing during animation
-   - Verify ANIMATING state is set
+### Phase 1: Create Base Infrastructure
+1. Create `interrupt_types.h` with common enums and structures
+2. Implement `InterruptHandler` base class with common helpers
+3. Create handler directory structure
 
-## Future Enhancements
+### Phase 2: Implement Handlers
+1. Create `TriggerInterruptHandler` by extracting logic from TriggerManager
+2. Create `ActionInterruptHandler` by extracting logic from ActionManager
+3. Ensure both handlers maintain existing behavior
 
-1. **State Priorities**: Allow certain high-priority interrupts during specific states
-2. **State Timeout**: Automatic recovery if stuck in busy state
-3. **Performance Metrics**: Track time spent in each state
-4. **State Stack**: Support nested state management for complex UIs
+### Phase 3: Create Unified Manager
+1. Implement `InterruptManager` with sensor polling
+2. Add interrupt routing logic
+3. Implement deferred processing coordination
 
-## Best Practices
+### Phase 4: Integration
+1. Replace TriggerManager and ActionManager usage with InterruptManager
+2. Update factory methods to create InterruptManager
+3. Update tests to use new architecture
 
-1. **Always Set State**: Don't assume default behavior
-2. **Log Transitions**: Help future debugging
-3. **Complete Callbacks**: Always transition to IDLE in completion callbacks
-4. **Test Interrupts**: Verify interrupts work correctly with your panel
-5. **Document States**: Comment why specific states are used
+### Phase 5: Cleanup
+1. Remove old TriggerManager and ActionManager classes
+2. Update documentation
+3. Add integration tests for unified system
 
-## Summary
+## Future Extensions
 
-The distributed UIState management system ensures smooth UI operation by:
-- Preventing interrupt processing during LVGL activity
-- Allowing fine-grained control by panels
-- Maintaining single-point interrupt checking in main loop
-- Providing clear state ownership rules
+The unified architecture makes it easy to add:
 
-This architecture scales with application complexity while maintaining predictable behavior.
+1. **Timer-based interrupts**: For periodic updates or timeouts
+2. **Network interrupts**: For remote control or OTA updates
+3. **Sensor fusion**: Combining multiple sensors for complex triggers
+4. **Event recording**: Logging all interrupts for debugging
+5. **Interrupt masking**: Temporarily disabling certain interrupt sources
+
+## Considerations
+
+### Memory Usage
+- Static allocation preferred for ESP32
+- Minimal dynamic memory for queues with size limits
+- Reuse existing sensor and service pointers
+
+### Performance
+- Priority queue ensures critical interrupts execute first
+- Deferred processing prevents UI blocking
+- Direct function calls avoid virtual function overhead where possible
+
+### Backwards Compatibility
+- Existing Action and Trigger structures preserved
+- Panel interfaces unchanged
+- Sensor interfaces maintained
+
+This unified architecture provides a clean, extensible foundation for all interrupt handling in the Clarity system while maintaining the unique characteristics that make triggers and actions effective for their specific use cases.

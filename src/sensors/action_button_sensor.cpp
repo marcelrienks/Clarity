@@ -12,6 +12,7 @@
 
 ActionButtonSensor::ActionButtonSensor(IGpioProvider *gpioProvider) : gpioProvider_(gpioProvider)
 {
+    log_v("ActionButtonSensor() constructor called");
 }
 
 // ISensor Interface Implementation
@@ -20,6 +21,7 @@ ActionButtonSensor::ActionButtonSensor(IGpioProvider *gpioProvider) : gpioProvid
 /// @details Configures GPIO with pull-down resistor for button input
 void ActionButtonSensor::Init()
 {
+    log_v("Init() called");
     // Configure GPIO 32 as input with pull-down resistor
     // This ensures LOW state when button is not pressed (Normally Open button to 3.3V)
     gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT_PULLDOWN);
@@ -36,6 +38,7 @@ void ActionButtonSensor::Init()
 /// @return Reading containing 1 if pressed, 0 if released
 Reading ActionButtonSensor::GetReading()
 {
+    log_v("GetReading() called");
     // Return button state as boolean (0 = not pressed, 1 = pressed)
     bool pressed = IsButtonPressed();
     return static_cast<int32_t>(pressed ? 1 : 0);
@@ -45,6 +48,7 @@ Reading ActionButtonSensor::GetReading()
 /// @return true if button is pressed (GPIO HIGH), false otherwise
 bool ActionButtonSensor::IsButtonPressed()
 {
+    log_v("IsButtonPressed() called");
     // GPIO 32 reads HIGH when button is pressed (connected to 3.3V)
     return gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
 }

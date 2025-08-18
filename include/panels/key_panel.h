@@ -4,6 +4,7 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
+#include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
 #include "sensors/key_sensor.h"
 #include "utilities/types.h"
@@ -59,6 +60,7 @@ class KeyPanel : public IPanel
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
+    IPanelService *panelService_ = nullptr;
     IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> keyComponent_;

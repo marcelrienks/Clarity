@@ -27,6 +27,7 @@ ErrorManager *errorManager;
 
 bool initializeServices()
 {
+    log_v("initializeServices() called");
     log_i("Starting Clarity service initialization...");
 
     // Create providers directly
@@ -118,6 +119,7 @@ bool initializeServices()
 
 void setup()
 {
+    log_v("setup() called");
     log_i("Starting Clarity application...");
 
     if (!initializeServices())
@@ -151,6 +153,7 @@ void setup()
 
 void loop()
 {
+    log_v("loop() called");
     static unsigned long loopCount = 0;
     loopCount++;
 
@@ -160,22 +163,26 @@ void loop()
         log_d("Main loop running - count: %lu", loopCount);
     }
 
-    // Process all interrupt sources via InterruptManager (triggers, inputs, etc.)
-    if (interruptManager)
+    // Check interrupts only when UI is IDLE
+    if (interruptManager && panelManager)
     {
-        interruptManager->CheckAllInterrupts();
+        UIState currentState = panelManager->GetUiState();
+        if (currentState == UIState::IDLE)
+        {
+            interruptManager->CheckAllInterrupts();
+        }
     }
-    else
+    else if (!interruptManager)
     {
         log_e("interruptManager is null!");
     }
 
-    // Update panel state
-    if (panelManager)
+    // Update panel state only when IDLE - allows loading and animations to complete
+    if (panelManager && panelManager->GetUiState() == UIState::IDLE)
     {
         panelManager->UpdatePanel();
     }
-    Ticker::handleLvTasks();
 
+    Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
 }

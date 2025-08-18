@@ -13,11 +13,13 @@ ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleSer
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       panelLoaded_(false), previousTheme_(nullptr)
 {
+    log_v("ErrorPanel constructor called");
 }
 
 ErrorPanel::~ErrorPanel()
 {
-    log_d("Destroying ErrorPanel...");
+    log_v("~ErrorPanel() destructor called");
+
     if (screen_)
     {
         lv_obj_delete(screen_);
@@ -42,7 +44,8 @@ ErrorPanel::~ErrorPanel()
 /// @brief Initialize the error panel and its UI structure
 void ErrorPanel::Init()
 {
-    log_d("Initializing ErrorPanel");
+    log_v("Init() called");
+
     if (!displayProvider_ || !gpioProvider_)
     {
         log_e("ErrorPanel requires display and gpio providers");
@@ -63,20 +66,36 @@ void ErrorPanel::Init()
 
     // Set error panel as active in ErrorManager
     ErrorManager::Instance().SetErrorPanelActive(true);
+    log_i("Error panel activated - switching to error display mode");
+    
+    log_i("ErrorPanel initialization completed");
 }
 
 /// @brief Load the error panel UI components
 void ErrorPanel::Load(std::function<void()> callbackFunction)
 {
-    log_i("Loading ErrorPanel with current error queue");
+    log_v("Load() called");
 
     // Store callback for later use
     callbackFunction_ = callbackFunction;
 
+
+    if (!componentFactory_)
+    {
+        log_e("ErrorPanel requires component factory");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", "ComponentFactory is null");
+        return;
+    }
+
     // Create component using injected factory
     errorComponent_ = componentFactory_->CreateErrorComponent(styleService_);
+    if (!errorComponent_)
+    {
+        log_e("Failed to create error component");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", "Component creation failed");
+        return;
+    }
 
-    // Render the component
     if (!displayProvider_)
     {
         log_e("ErrorPanel load requires display provider");
@@ -84,6 +103,8 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
                                              "Cannot render component - display provider is null");
         return;
     }
+
+    // Render the component
     errorComponent_->Render(screen_, centerLocation_, displayProvider_);
 
     // Get current errors and refresh component
@@ -114,11 +135,16 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     }
 
     panelLoaded_ = true;
+    
+    log_i("ErrorPanel loaded successfully");
 }
 
 /// @brief Update the error panel with current error data
 void ErrorPanel::Update(std::function<void()> callbackFunction)
 {
+    log_v("Update() called");
+
+
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
@@ -157,21 +183,28 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
         ErrorManager::Instance().SetErrorPanelActive(false);
     }
 
+
     callbackFunction();
 }
 
 // Static Event Callbacks
 void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
+    log_v("ShowPanelCompletionCallback() called");
+
     if (!event)
     {
         return;
     }
 
     auto thisInstance = static_cast<ErrorPanel *>(lv_event_get_user_data(event));
-    if (thisInstance && thisInstance->callbackFunction_)
+    if (thisInstance)
     {
-        thisInstance->callbackFunction_();
+        
+        if (thisInstance->callbackFunction_)
+        {
+            thisInstance->callbackFunction_();
+        }
     }
 }
 
@@ -179,6 +212,8 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 Action ErrorPanel::GetShortPressAction()
 {
+    log_v("GetShortPressAction() called");
+
     // Short press cycles through each error
     return Action(
         [this]()
@@ -206,6 +241,8 @@ Action ErrorPanel::GetShortPressAction()
 
 Action ErrorPanel::GetLongPressAction()
 {
+    log_v("GetLongPressAction() called");
+
     // Long press clears all errors
     return Action(
         [this]()
@@ -223,6 +260,8 @@ Action ErrorPanel::GetLongPressAction()
 // Manager injection method
 void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
+
     panelService_ = panelService;
     // styleService_ is already set in constructor, but update if different instance provided
     if (styleService != styleService_)

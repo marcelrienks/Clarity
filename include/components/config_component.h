@@ -48,7 +48,6 @@ class ConfigComponent : public IComponent
 
     // IComponent interface implementation
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
-    void Refresh(const Reading &reading) override;
     void SetValue(int32_t value) override;
 
     // ConfigComponent specific initialization
@@ -80,6 +79,11 @@ class ConfigComponent : public IComponent
     // UI creation methods
     void CreateUI();
     void UpdateMenuDisplay();
+    
+    // Helper methods for UpdateMenuDisplay
+    void ApplyCenterItemStyle(lv_obj_t* label);
+    void ApplyCenterItemBackground(lv_obj_t* label);
+    void ApplyDefaultCenterBackground(lv_obj_t* label);
     
     // Theme-aware color helpers
     lv_color_t GetThemeGradientColor(int distanceFromCenter, bool isSelected = false) const;

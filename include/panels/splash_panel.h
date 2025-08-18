@@ -73,13 +73,10 @@ class SplashPanel : public IPanel, public IActionService
     // Private Data Members
     // Panel specific constants
     static constexpr const int _DISPLAY_TIME = 500;
-    static constexpr const int _DELAY_TIME = 100;
+    static constexpr const int _DELAY_TIME = 50; //NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory becomes corrupted
 
     // Calculate timing based on splash duration from config
     int GetAnimationTime() const;
-    int GetFadeInDuration() const;
-    int GetFadeOutDuration() const;
-    int GetCompletionTimerDuration() const;
 
     // Dependencies
     IGpioProvider *gpioProvider_;
@@ -95,10 +92,7 @@ class SplashPanel : public IPanel, public IActionService
     lv_obj_t *blankScreen_;
 
     // Static Callback Methods
-    static void fading_completion_callback(lv_timer_t *timer);
     static void fade_in_timer_callback(lv_timer_t *timer);
+    static void display_timer_callback(lv_timer_t *timer);
     static void fade_out_timer_callback(lv_timer_t *timer);
-
-    // Helper methods
-    int GetSplashDuration() const;
 };

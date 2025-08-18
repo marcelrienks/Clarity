@@ -72,6 +72,9 @@ class ActionManager : public IInterruptService, public IActionManager
   private:
     // Internal processing methods
     void ProcessInputEvents();
+    void HandlePressedState(unsigned long currentTime);
+    bool ShouldTriggerLongPress(unsigned long currentTime);
+    void ExecuteLongPressAction(unsigned long currentTime);
 
     // Button state tracking
     enum class ButtonState

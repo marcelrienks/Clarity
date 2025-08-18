@@ -21,7 +21,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
                                                                  IActionManager *actionManager,
                                                                  IPreferenceService *preferenceService)
 {
-    log_d("ManagerFactory: Creating PanelManager (UI panel coordination)...");
+    log_v("createPanelManager() called");
 
     if (!display)
     {
@@ -59,8 +59,8 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
         return nullptr;
     }
 
-    auto manager = std::make_unique<PanelManager>(display, gpio, styleService, actionManager, preferenceService);
-    if (!manager)
+    auto panelManager = std::make_unique<PanelManager>(display, gpio, styleService, actionManager, preferenceService);
+    if (!panelManager)
     {
         log_e("ManagerFactory: Failed to create PanelManager - allocation failed");
         ErrorManager::Instance().ReportCriticalError("ManagerFactory",
@@ -69,14 +69,15 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
     }
 
     log_d("ManagerFactory: Initializing PanelManager...");
-    manager->Init();
+    panelManager->Init();
+    
     log_d("ManagerFactory: PanelManager created successfully");
-    return manager;
+    return panelManager;
 }
 
 std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *theme)
 {
-    log_d("ManagerFactory: Creating StyleManager (LVGL theme system) with theme: %s", theme ? theme : "default");
+    log_v("createStyleManager() called");
 
     auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::DAY);
     if (!manager)
@@ -94,7 +95,7 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
 std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider *gpio, IPanelService *panelService,
                                                                      IStyleService *styleService)
 {
-    log_d("ManagerFactory: Creating TriggerManager (sensor monitoring system)...");
+    log_v("createTriggerManager() called");
 
     if (!gpio)
     {
@@ -150,7 +151,7 @@ std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvid
 
 std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 {
-    log_d("ManagerFactory: Creating PreferenceManager (persistent settings)...");
+    log_v("createPreferenceManager() called");
 
     auto manager = std::make_unique<PreferenceManager>();
     if (!manager)
@@ -169,6 +170,8 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 
 std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider *gpio, IPanelService *panelService)
 {
+    log_v("createActionManager() called");
+    
     if (!gpio)
     {
         log_e("ManagerFactory: Cannot create ActionManager - IGpioProvider is null");
@@ -203,7 +206,7 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
 
 std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelService *panelService)
 {
-    log_d("ManagerFactory: Creating InterruptManager (interrupt coordination)...");
+    log_v("createInterruptManager() called");
 
     auto manager = std::make_unique<InterruptManager>(panelService);
     if (!manager)
@@ -221,7 +224,7 @@ std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelS
 
 ErrorManager *ManagerFactory::createErrorManager()
 {
-    log_d("ManagerFactory: Creating ErrorManager (system error tracking)...");
+    log_v("createErrorManager() called");
 
     ErrorManager *errorManager = &ErrorManager::Instance();
     if (!errorManager)

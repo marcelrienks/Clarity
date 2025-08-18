@@ -14,10 +14,12 @@
 InterruptManager::InterruptManager(IPanelService *panelService)
     : panelService_(panelService), initialized_(false), lastCheckTime_(0), checkCount_(0)
 {
+    log_v("InterruptManager() constructor called");
 }
 
 void InterruptManager::Init()
 {
+    log_v("Init() called");
     if (initialized_)
     {
         log_w("InterruptManager already initialized");
@@ -35,6 +37,7 @@ void InterruptManager::Init()
 
 void InterruptManager::RegisterTriggerSource(IInterruptService *source)
 {
+    log_v("RegisterTriggerSource() called");
     if (!source)
     {
         log_w("Attempted to register null trigger source");
@@ -56,6 +59,7 @@ void InterruptManager::RegisterTriggerSource(IInterruptService *source)
 
 void InterruptManager::RegisterActionSource(IInterruptService *source)
 {
+    log_v("RegisterActionSource() called");
     if (!source)
     {
         log_w("Attempted to register null action source");
@@ -77,6 +81,7 @@ void InterruptManager::RegisterActionSource(IInterruptService *source)
 
 void InterruptManager::UnregisterTriggerSource(IInterruptService *source)
 {
+    log_v("UnregisterTriggerSource() called");
     if (!source)
     {
         return;
@@ -92,6 +97,7 @@ void InterruptManager::UnregisterTriggerSource(IInterruptService *source)
 
 void InterruptManager::UnregisterActionSource(IInterruptService *source)
 {
+    log_v("UnregisterActionSource() called");
     if (!source)
     {
         return;
@@ -107,6 +113,7 @@ void InterruptManager::UnregisterActionSource(IInterruptService *source)
 
 void InterruptManager::CheckAllInterrupts()
 {
+    log_v("CheckAllInterrupts() called");
     if (!initialized_)
     {
         return;

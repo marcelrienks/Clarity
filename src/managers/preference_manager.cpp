@@ -8,7 +8,7 @@
 /// @brief Initialises the preference manager to handle application preferences_
 void PreferenceManager::Init()
 {
-    log_d("Initializing preference manager and loading configuration from NVS");
+    log_v("Init() called");
 
     // Initialize preferences_
     if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
@@ -27,7 +27,7 @@ void PreferenceManager::Init()
     }
 
     else
-        log_i("Preferences initialized successfully");
+        log_i("PreferenceManager service started successfully - configuration loaded and ready");
 
     LoadConfig();
 }
@@ -36,6 +36,8 @@ void PreferenceManager::Init()
 /// @return true if the save was successful
 void PreferenceManager::CreateDefaultConfig()
 {
+    log_v("CreateDefaultConfig() called");
+    log_v("CreateDefaultConfig() called");
     log_d("Creating default configuration with OEM oil panel as default");
 
     config.panelName = PanelNames::OIL;
@@ -48,7 +50,8 @@ void PreferenceManager::CreateDefaultConfig()
 /// @return true if the load was successful, false otherwise
 void PreferenceManager::LoadConfig()
 {
-    log_d("Loading application configuration from NVS preferences");
+    log_v("LoadConfig() called");
+    log_v("LoadConfig() called");
 
     String jsonString = preferences_.getString(CONFIG_KEY, "");
     if (jsonString.length() == 0)
@@ -109,7 +112,8 @@ void PreferenceManager::LoadConfig()
 /// @return true if the save was successful, false otherwise
 void PreferenceManager::SaveConfig()
 {
-    log_d("Saving current configuration to NVS preferences");
+    log_v("SaveConfig() called");
+    log_v("SaveConfig() called");
 
     preferences_.remove(CONFIG_KEY);
 
@@ -138,6 +142,7 @@ void PreferenceManager::SaveConfig()
         preferences_.end();
         // Reopen preferences for future operations
         preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
+        log_i("System configuration updated and persisted to NVS storage");
     }
     else
     {
@@ -151,6 +156,7 @@ void PreferenceManager::SaveConfig()
 /// @return Reference to current configuration settings
 Configs &PreferenceManager::GetConfig()
 {
+    log_v("GetConfig() called");
     return config;
 }
 
@@ -158,6 +164,7 @@ Configs &PreferenceManager::GetConfig()
 /// @return Const reference to current configuration settings
 const Configs &PreferenceManager::GetConfig() const
 {
+    log_v("GetConfig() const called");
     return config;
 }
 
@@ -165,6 +172,10 @@ const Configs &PreferenceManager::GetConfig() const
 /// @param newConfig New configuration settings to apply
 void PreferenceManager::SetConfig(const Configs &newConfig)
 {
+    log_v("SetConfig() called");
+    log_d("Setting configuration - panel: %s, theme: %s, showSplash: %s, updateRate: %d", 
+          newConfig.panelName.c_str(), newConfig.theme.c_str(), 
+          newConfig.showSplash ? "true" : "false", newConfig.updateRate);
     config = newConfig;
 }
 
@@ -175,6 +186,7 @@ void PreferenceManager::SetConfig(const Configs &newConfig)
 /// @return String representation of the value
 std::string PreferenceManager::GetPreference(const std::string &key) const
 {
+    log_v("GetPreference() called");
     if (key == "panel_name")
         return config.panelName;
     if (key == "show_splash")
@@ -199,6 +211,7 @@ std::string PreferenceManager::GetPreference(const std::string &key) const
 /// @param value String representation of the value
 void PreferenceManager::SetPreference(const std::string &key, const std::string &value)
 {
+    log_v("SetPreference() called");
     if (key == "panel_name")
     {
         config.panelName = value;
@@ -238,8 +251,11 @@ void PreferenceManager::SetPreference(const std::string &key, const std::string 
 /// @return true if preference exists
 bool PreferenceManager::HasPreference(const std::string &key) const
 {
-    return (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
-            key == "update_rate" || key == "pressure_unit" || key == "temp_unit");
+    log_v("HasPreference() called");
+    bool hasKey = (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
+                   key == "update_rate" || key == "pressure_unit" || key == "temp_unit");
+    log_d("Checking preference key: %s, exists: %s", key.c_str(), hasKey ? "true" : "false");
+    return hasKey;
 }
 
 // Private Methods

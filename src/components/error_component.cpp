@@ -8,17 +8,27 @@ ErrorComponent::ErrorComponent(IStyleService *styleService)
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
       currentErrorIndex_(0), buttonPressCount_(0)
 {
+    log_v("ErrorComponent() constructor called");
     log_d("Creating ErrorComponent");
 }
 
 ErrorComponent::~ErrorComponent()
 {
+    log_v("~ErrorComponent() destructor called");
     // LVGL objects are managed by the parent screen, no manual deletion needed
 }
 
 // Core Functionality Methods
 void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
+    log_v("Render() called");
+    if (!screen)
+    {
+        log_e("ErrorComponent requires valid screen object");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorComponent",
+                                             "Cannot render - screen is null");
+        return;
+    }
 
     if (!display)
     {
@@ -51,6 +61,7 @@ void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location,
 
 void ErrorComponent::Refresh(const Reading &reading)
 {
+    log_v("Refresh() called");
 
     // For single error display, we'll update directly from ErrorManager rather than using Reading
     // This allows us to get the complete error queue information and maintain current position
@@ -60,6 +71,7 @@ void ErrorComponent::Refresh(const Reading &reading)
 // Error-specific methods
 void ErrorComponent::UpdateErrorDisplay()
 {
+    log_v("UpdateErrorDisplay() called");
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
     UpdateErrorDisplay(newErrors);
@@ -67,6 +79,7 @@ void ErrorComponent::UpdateErrorDisplay()
 
 void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
 {
+    log_v("UpdateErrorDisplay() called with %zu errors", errors.size());
 
     // Store current error state
     currentErrors_ = errors;
@@ -95,6 +108,7 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
 // Internal Methods
 void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
 {
+    log_v("CreateSingleErrorUI() called");
 
     // Create error position indicator at top
     errorCountLabel_ = lv_label_create(parent);
@@ -145,6 +159,7 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
 
 void ErrorComponent::DisplayCurrentError()
 {
+    log_v("DisplayCurrentError() called");
     if (currentErrors_.empty())
     {
         // Don't update display when no errors - panel should be closing
@@ -195,6 +210,7 @@ void ErrorComponent::DisplayCurrentError()
 
 void ErrorComponent::CycleToNextError()
 {
+    log_v("CycleToNextError() called");
     if (currentErrors_.empty())
     {
         return;
@@ -223,6 +239,7 @@ void ErrorComponent::CycleToNextError()
 
 void ErrorComponent::HandleCycleButtonPress()
 {
+    log_v("HandleCycleButtonPress() called");
     // Public interface method to be called from GPIO button handling
     CycleToNextError();
 }
@@ -230,6 +247,7 @@ void ErrorComponent::HandleCycleButtonPress()
 // Helper Methods
 const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
 {
+    log_v("GetErrorLevelText() called");
     switch (level)
     {
         case ErrorLevel::CRITICAL:
@@ -246,6 +264,7 @@ const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
 // Static Event Callbacks
 void ErrorComponent::ErrorAcknowledgeCallback(lv_event_t *event)
 {
+    log_v("ErrorAcknowledgeCallback() called");
     size_t errorIndex = reinterpret_cast<size_t>(lv_event_get_user_data(event));
 
     ErrorManager::Instance().AcknowledgeError(errorIndex);
@@ -253,6 +272,7 @@ void ErrorComponent::ErrorAcknowledgeCallback(lv_event_t *event)
 
 void ErrorComponent::ClearAllErrorsCallback(lv_event_t *event)
 {
+    log_v("ClearAllErrorsCallback() called");
     ErrorComponent *component = static_cast<ErrorComponent *>(lv_event_get_user_data(event));
 
     ErrorManager::Instance().ClearAllErrors();

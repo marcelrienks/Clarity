@@ -27,6 +27,7 @@ TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared
     : keySensor_(keySensor), lockSensor_(lockSensor), lightSensor_(lightSensor), debugErrorSensor_(debugErrorSensor),
       panelService_(panelService), styleService_(styleService)
 {
+    log_v("TriggerManager() constructor called");
     if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor || !panelService || !styleService)
     {
         log_e("TriggerManager requires all dependencies: keySensor, lockSensor, lightSensor, debugErrorSensor, "
@@ -41,6 +42,7 @@ TriggerManager::TriggerManager(std::shared_ptr<KeySensor> keySensor, std::shared
 
 const char *TriggerManager::GetStartupPanelOverride() const
 {
+    log_v("GetStartupPanelOverride() called");
     // Check key presence on startup using sensor
     if (keySensor_->GetKeyState() == KeyState::Present)
     {
@@ -51,6 +53,7 @@ const char *TriggerManager::GetStartupPanelOverride() const
 
 void TriggerManager::Init()
 {
+    log_v("Init() called");
     // Prevent double initialization
     if (initialized_)
     {
@@ -70,10 +73,12 @@ void TriggerManager::Init()
     InitializeTriggersFromSensors();
 
     initialized_ = true;
+    log_i("TriggerManager initialization completed - sensors initialized and triggers ready");
 }
 
 void TriggerManager::ProcessTriggerEvents()
 {
+    log_v("ProcessTriggerEvents() called");
     // Sensor-based polling - check for state changes
     CheckSensorChanges();
 
@@ -96,6 +101,7 @@ void TriggerManager::ProcessTriggerEvents()
 
 GpioState TriggerManager::ReadAllSensorStates()
 {
+    log_v("ReadAllSensorStates() called");
     // Single consolidated sensor read for all trigger states
     GpioState state;
 
@@ -116,6 +122,7 @@ GpioState TriggerManager::ReadAllSensorStates()
 
 void TriggerManager::CheckSensorChanges()
 {
+    log_v("CheckSensorChanges() called");
     // Read all sensor states once
     GpioState currentState = ReadAllSensorStates();
 
@@ -128,12 +135,14 @@ void TriggerManager::CheckSensorChanges()
 
 void TriggerManager::CheckErrorTrigger()
 {
+    log_v("CheckErrorTrigger() called");
     bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
     CheckTriggerChange(TriggerIds::ERROR_OCCURRED, shouldShowErrorPanel);
 }
 
 void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinState)
 {
+    log_v("CheckTriggerChange() called");
     Trigger *mapping = FindTriggerMapping(triggerId);
     if (!mapping)
         return;
@@ -156,132 +165,155 @@ void TriggerManager::CheckTriggerChange(const char *triggerId, bool currentPinSt
 
 void TriggerManager::ExecuteTriggerAction(Trigger *mapping, TriggerExecutionState state)
 {
+    log_v("ExecuteTriggerAction() called");
+    if (!mapping) return;
+    
     if (state == TriggerExecutionState::ACTIVE)
     {
-        // Execute trigger action when activated - no complex state checking
-        if (mapping->actionType == TriggerActionType::LoadPanel)
-        {
-            log_i("Executing panel action: Load %s", mapping->actionTarget);
-            if (panelService_)
-            {
-                panelService_->CreateAndLoadPanel(
-                    mapping->actionTarget,
-                    []()
-                    {
-                        // Panel switch callback handled by service
-                    },
-                    true);
-            }
-        }
-        else if (mapping->actionType == TriggerActionType::ToggleTheme)
-        {
-            log_i("Executing theme action: %s", mapping->actionTarget);
-            if (styleService_)
-            {
-                styleService_->SetTheme(mapping->actionTarget);
-                // Refresh current panel with new theme
-                if (panelService_)
-                {
-                    panelService_->UpdatePanel();
-                }
-            }
-        }
+        ExecuteActivation(mapping);
+        return;
     }
-    else
+    
+    ExecuteDeactivation(mapping);
+}
+
+void TriggerManager::ExecuteActivation(Trigger *mapping)
+{
+    if (mapping->actionType == TriggerActionType::LoadPanel)
     {
-        // Handle trigger deactivation - check for other active triggers first
-        if (mapping->actionType == TriggerActionType::LoadPanel)
-        {
-            Trigger *activePanel = FindActivePanel();
-            if (activePanel)
-            {
-                // Load panel from remaining active trigger
-                log_i("Panel trigger deactivated but another active - loading panel: %s", activePanel->actionTarget);
-                if (panelService_)
-                {
-                    panelService_->CreateAndLoadPanel(
-                        activePanel->actionTarget,
-                        []()
-                        {
-                            // Panel switch callback handled by service
-                        },
-                        true);
-                }
-            }
-            else
-            {
-                // No other panel triggers active - restore to user panel
-                const char *restorationPanel = panelService_->GetRestorationPanel();
-                log_i("No other panel triggers active - restoring to user panel: %s", restorationPanel);
-                if (panelService_)
-                {
-                    panelService_->CreateAndLoadPanel(
-                        restorationPanel,
-                        []()
-                        {
-                            // Panel switch callback handled by service
-                        },
-                        true); // Skip splash when restoring from triggers
-                }
-            }
-        }
-        else if (mapping->actionType == TriggerActionType::ToggleTheme)
-        {
-            log_i("Restoring theme: %s", mapping->restoreTarget);
-            if (styleService_)
-            {
-                styleService_->SetTheme(mapping->restoreTarget);
-                // Refresh current panel with restored theme
-                if (panelService_)
-                {
-                    panelService_->UpdatePanel();
-                }
-            }
-        }
+        LoadPanel(mapping->actionTarget);
+        return;
+    }
+    
+    if (mapping->actionType == TriggerActionType::ToggleTheme)
+    {
+        SetTheme(mapping->actionTarget);
+        return;
+    }
+}
+
+void TriggerManager::ExecuteDeactivation(Trigger *mapping)
+{
+    if (mapping->actionType == TriggerActionType::LoadPanel)
+    {
+        HandlePanelDeactivation(mapping);
+        return;
+    }
+    
+    if (mapping->actionType == TriggerActionType::ToggleTheme)
+    {
+        SetTheme(mapping->restoreTarget);
+        return;
+    }
+}
+
+void TriggerManager::HandlePanelDeactivation(Trigger *mapping)
+{
+    // Find another active panel trigger
+    Trigger *activePanel = FindActivePanel();
+    if (activePanel)
+    {
+        log_i("Panel trigger deactivated but another active - loading panel: %s", activePanel->actionTarget);
+        LoadPanel(activePanel->actionTarget);
+        return;
+    }
+    
+    // No other panel triggers active - restore to user panel
+    const char *restorationPanel = panelService_ ? panelService_->GetRestorationPanel() : nullptr;
+    log_i("No other panel triggers active - restoring to user panel: %s", restorationPanel);
+    LoadPanel(restorationPanel);
+}
+
+void TriggerManager::LoadPanel(const char *panelName)
+{
+    if (!panelService_ || !panelName) return;
+    
+    log_i("Loading panel: %s", panelName);
+    panelService_->CreateAndLoadPanel(panelName, true);
+}
+
+void TriggerManager::SetTheme(const char *themeName)
+{
+    if (!styleService_ || !themeName) return;
+    
+    log_i("Setting theme: %s", themeName);
+    styleService_->SetTheme(themeName);
+    
+    if (panelService_)
+    {
+        panelService_->UpdatePanel();
     }
 }
 
 void TriggerManager::InitializeTriggersFromSensors()
 {
+    log_v("InitializeTriggersFromSensors() called");
     log_d("Initializing trigger states from current sensor states...");
 
-    // Read all sensor states once using consolidated method
+    if (!ValidateSensors())
+    {
+        log_e("Cannot initialize triggers - missing sensors");
+        return;
+    }
+
     GpioState currentState = ReadAllSensorStates();
+    InitializeAllTriggers(currentState);
+    ApplyStartupActions();
+}
 
-    // Initialize all triggers based on current pin states
-    InitializeTrigger(TriggerIds::KEY_PRESENT, currentState.keyPresent);
-    InitializeTrigger(TriggerIds::KEY_NOT_PRESENT, currentState.keyNotPresent);
-    InitializeTrigger(TriggerIds::LOCK_STATE, currentState.lockState);
-    InitializeTrigger(TriggerIds::LIGHTS_STATE, currentState.lightsState);
+bool TriggerManager::ValidateSensors()
+{
+    return keySensor_ && lockSensor_ && lightSensor_ && debugErrorSensor_;
+}
 
-    // Initialize error trigger based on current error state
+void TriggerManager::InitializeAllTriggers(const GpioState& state)
+{
+    InitializeTrigger(TriggerIds::KEY_PRESENT, state.keyPresent);
+    InitializeTrigger(TriggerIds::KEY_NOT_PRESENT, state.keyNotPresent);
+    InitializeTrigger(TriggerIds::LOCK_STATE, state.lockState);
+    InitializeTrigger(TriggerIds::LIGHTS_STATE, state.lightsState);
     InitializeTrigger(TriggerIds::ERROR_OCCURRED, ErrorManager::Instance().ShouldTriggerErrorPanel());
+}
 
-    // Check for active triggers at startup and apply their actions
+void TriggerManager::ApplyStartupActions()
+{
     for (auto &trigger : triggers_)
     {
-        if (trigger.currentState == TriggerExecutionState::ACTIVE)
+        if (trigger.currentState != TriggerExecutionState::ACTIVE) continue;
+        
+        if (trigger.actionType == TriggerActionType::ToggleTheme)
         {
-            if (trigger.actionType == TriggerActionType::ToggleTheme)
-            {
-                log_i("Applying startup theme action: %s", trigger.actionTarget);
-                if (styleService_)
-                {
-                    styleService_->SetTheme(trigger.actionTarget);
-                }
-            }
-            else if (trigger.actionType == TriggerActionType::LoadPanel)
-            {
-                log_i("Startup panel action detected: Load %s", trigger.actionTarget);
-                startupPanelOverride_ = trigger.actionTarget;
-                break; // Only use the first active panel trigger
-            }
+            ApplyStartupTheme(trigger.actionTarget);
+            continue;
+        }
+        
+        if (trigger.actionType == TriggerActionType::LoadPanel)
+        {
+            ApplyStartupPanel(trigger.actionTarget);
+            return; // Only use the first active panel trigger
         }
     }
 }
 
+void TriggerManager::ApplyStartupTheme(const char* themeName)
+{
+    if (!styleService_ || !themeName) return;
+    
+    log_i("Applying startup theme action: %s", themeName);
+    styleService_->SetTheme(themeName);
+}
+
+void TriggerManager::ApplyStartupPanel(const char* panelName)
+{
+    if (!panelName) return;
+    
+    log_i("Startup panel action detected: Load %s", panelName);
+    startupPanelOverride_ = panelName;
+}
+
 void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinState)
 {
+    log_v("InitializeTrigger() called");
     Trigger *mapping = FindTriggerMapping(triggerId);
     if (!mapping)
         return;
@@ -292,11 +324,12 @@ void TriggerManager::InitializeTrigger(const char *triggerId, bool currentPinSta
 
     // No complex trigger tracking needed - simplified approach
 
-    log_d("Trigger %s initialized to %s based on GPIO state", triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
+    log_v("Trigger %s initialized to %s based on GPIO state", triggerId, currentPinState ? "ACTIVE" : "INACTIVE");
 }
 
 Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
 {
+    log_v("FindTriggerMapping() called");
     for (auto &trigger : triggers_)
     {
         if (trigger.triggerId == triggerId)
@@ -309,6 +342,7 @@ Trigger *TriggerManager::FindTriggerMapping(const char *triggerId)
 
 Trigger *TriggerManager::FindActivePanel()
 {
+    log_v("FindActivePanel() called");
     Trigger *activePanel = nullptr;
     for (auto &trigger : triggers_)
     {
@@ -326,6 +360,7 @@ Trigger *TriggerManager::FindActivePanel()
 
 void TriggerManager::AddTrigger(const std::string &triggerName, ISensor *sensor, std::function<void()> callback)
 {
+    log_v("AddTrigger() called");
     log_d("Adding trigger %s", triggerName.c_str());
     // Currently a no-op since triggers are statically defined
     // This interface method is part of ITriggerService interface
@@ -333,6 +368,7 @@ void TriggerManager::AddTrigger(const std::string &triggerName, ISensor *sensor,
 
 bool TriggerManager::HasTrigger(const std::string &triggerName) const
 {
+    log_v("HasTrigger() called");
     log_d("Checking for trigger %s", triggerName.c_str());
     // Check if the trigger exists in our static mapping
     for (const auto &trigger : triggers_)

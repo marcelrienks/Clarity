@@ -1,17 +1,12 @@
-* Review interrupt logic, it seem fragmented
-    * add a quick and clean interrupt check in between splash panel animations  
-    BUT actually all we need to do between animation, is set the UIState to idle, and allow the update function, which is constantly running to call check. Essentially make sure that individual components do not do interrupt checks, they must just accurately manage UIStates, and then anytime there is IDLE, the main loop should be running checks
-* review logging, and the level between debug and info
-    * every method (within reason) should have a debug log
-    * every major concept (managers, panels, components etc.) should have an info log at key points
+* Simplify trigger managers, execute trigger action function
+* review freeRTOS, specifically it's multitasking ability, and see if it would be beneficial for the interrupt system  
+Noting that I had previously used it for dual core, where one core monitored interrupts, and the other handled lvgl tasks, this became overley complex and unreliable due to keeping both cores in sync with regards to GPIO status, and the fact that it gave the app no overall benefit, as the lvgl core still checked the shared context only when it was idle, which is equivalent to current architecture where the app checks the current status during lvgl idle.
 * Ensure that all function comments have the same param name as the actual argument in code
 * Document current arch, and relationships
 * What logic is over complicated, or over engineered? Is there any optimization, or simplification that can be done, without loosing any of the current functionality?
-* remove all comments based on changes made, so remove temp, test simplified
 * Ensure that all tests now inject using constructor, and not methods
-* Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interupts, and Input Event handling.  
+* Rewrite architecture document by summarising the current architecture, and highlight the MVP pattern, Trigger Interrupts, and Input Event handling.  
 Also highlight the normal flow of panel loading, and the ability to show error messages, change configs, and handle button inputs which force an action for each panel
-* because of error panels, ensure that there are proper null and empty checks throughout the code
 * Complete unity and wokwi tests for error panel
 * create unity and wokwi tests for input
     * this includes all panels

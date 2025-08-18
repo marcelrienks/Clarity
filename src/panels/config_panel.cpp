@@ -12,12 +12,13 @@ ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       currentMenuIndex_(0), configComponent_(std::make_unique<ConfigComponent>())
 {
-    // Menu items will be initialized after preferences are injected
+    log_v("ConfigPanel constructor called");
 }
 
 ConfigPanel::~ConfigPanel()
 {
-
+    log_v("~ConfigPanel() destructor called");
+    
     configComponent_.reset();
 
     if (screen_)
@@ -31,7 +32,8 @@ ConfigPanel::~ConfigPanel()
 
 void ConfigPanel::Init()
 {
-
+    log_v("Init() called");
+    
     if (!displayProvider_)
     {
         log_e("ConfigPanel requires display provider");
@@ -41,18 +43,20 @@ void ConfigPanel::Init()
 
     screen_ = displayProvider_->CreateScreen();
 
-    // Apply theme to screen for consistent styling with other panels
-    if (styleService_)
-    {
-        styleService_->ApplyThemeToScreen(screen_);
-    }
+    if (!styleService_)
+        return;
+
+    styleService_->ApplyThemeToScreen(screen_);
+    
+    log_i("ConfigPanel initialization completed");
 }
 
 void ConfigPanel::Load(std::function<void()> callbackFunction)
 {
-    log_i("Loading ConfigPanel");
-
+    log_v("Load() called");
+    
     callbackFunction_ = callbackFunction;
+    
 
     // Reset menu to first item and main menu state
     currentMenuIndex_ = 0;
@@ -72,29 +76,30 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     }
 
     // Initialize the config component with the screen
-    if (configComponent_ && screen_)
-    {
-        configComponent_->Init(screen_);
-        configComponent_->SetStyleService(styleService_);
+    if (!configComponent_ || !screen_)
+        return;
 
-        // Set initial menu items
-        UpdateMenuItemsWithCurrentValues();
-        configComponent_->SetMenuItems(menuItems_);
-        configComponent_->SetCurrentIndex(currentMenuIndex_);
-    }
+    configComponent_->Init(screen_);
+    configComponent_->SetStyleService(styleService_);
 
+    // Set initial menu items
+    UpdateMenuItemsWithCurrentValues();
+    configComponent_->SetMenuItems(menuItems_);
+    configComponent_->SetCurrentIndex(currentMenuIndex_);
+
+    // Register the screen loaded event callback
+    lv_obj_add_event_cb(screen_, ConfigPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
+    
     lv_screen_load(screen_);
-
-    // Call the completion callback directly (like other panels do)
-    if (callbackFunction_)
-    {
-        callbackFunction_();
-    }
+    
+    log_i("ConfigPanel loaded successfully");
 }
 
 void ConfigPanel::Update(std::function<void()> callbackFunction)
 {
-    // Config panel is static, no regular updates needed
+    log_v("Update() called");
+
+    // Config panel is static - no updates needed
     callbackFunction();
 }
 
@@ -102,20 +107,30 @@ void ConfigPanel::Update(std::function<void()> callbackFunction)
 
 void ConfigPanel::ExecuteCurrentOption()
 {
-    if (currentMenuIndex_ < menuItems_.size() && menuItems_[currentMenuIndex_].action)
-    {
-        menuItems_[currentMenuIndex_].action();
-    }
+    log_v("ExecuteCurrentOption() called");
+
+    if (currentMenuIndex_ >= menuItems_.size())
+        return;
+    
+    if (!menuItems_[currentMenuIndex_].action)
+        return;
+    
+    menuItems_[currentMenuIndex_].action();
 }
 
 // Static callbacks
 
 void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    // Config panel loaded successfully
+    log_v("ShowPanelCompletionCallback() called");
+    if (!event)
+        return;
 
     auto *panel = static_cast<ConfigPanel *>(lv_event_get_user_data(event));
-    if (panel && panel->callbackFunction_)
+    if (!panel)
+        return;
+
+    if (panel->callbackFunction_)
     {
         panel->callbackFunction_();
     }
@@ -125,6 +140,8 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 Action ConfigPanel::GetShortPressAction()
 {
+    log_v("GetShortPressAction() called");
+
     // Short press cycles through menu options
     return Action(
         [this]()
@@ -149,6 +166,8 @@ Action ConfigPanel::GetShortPressAction()
 
 Action ConfigPanel::GetLongPressAction()
 {
+    log_v("GetLongPressAction() called");
+
     // Long press executes current option
     return Action([this]() { ExecuteCurrentOption(); });
 }
@@ -156,17 +175,19 @@ Action ConfigPanel::GetLongPressAction()
 // Manager injection method
 void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
+    log_v("SetManagers() called");
     panelService_ = panelService;
+    
     // styleService_ is already set in constructor, but update if different instance provided
     if (styleService != styleService_)
     {
         styleService_ = styleService;
     }
-    // Managers injected successfully
 }
 
 void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
+    log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
     // Initialize menu items now that we have access to preferences
     InitializeMenuItems();
@@ -174,6 +195,8 @@ void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
 
 void ConfigPanel::InitializeMenuItems()
 {
+    log_v("InitializeMenuItems() called");
+
     if (!preferenceService_)
     {
         log_e("Cannot initialize menu items without preference service");
@@ -187,6 +210,8 @@ void ConfigPanel::InitializeMenuItems()
 
 void ConfigPanel::UpdateMenuItemsWithCurrentValues()
 {
+    log_v("UpdateMenuItemsWithCurrentValues() called");
+
     if (!preferenceService_)
         return;
 
@@ -221,13 +246,7 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
              {
                  const char *restorationPanel = panelService_->GetRestorationPanel();
                  // Use isTriggerDriven=true to prevent splash screen on programmatic panel switches
-                 panelService_->CreateAndLoadPanel(
-                     restorationPanel,
-                     []()
-                     {
-                         // Panel switch callback handled by service
-                     },
-                     true);
+                 panelService_->CreateAndLoadPanel(restorationPanel, true);
              }
          }}};
 
@@ -242,6 +261,8 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
 
 void ConfigPanel::EnterSubmenu(MenuState submenu)
 {
+    log_v("EnterSubmenu() called");
+
     currentMenuState_ = submenu;
     currentMenuIndex_ = 0;
     UpdateSubmenuItems();
@@ -249,6 +270,7 @@ void ConfigPanel::EnterSubmenu(MenuState submenu)
 
 void ConfigPanel::ExitSubmenu()
 {
+    log_v("ExitSubmenu() called");
     currentMenuState_ = MenuState::MainMenu;
     currentMenuIndex_ = 0;
     UpdateMenuItemsWithCurrentValues();
@@ -256,6 +278,8 @@ void ConfigPanel::ExitSubmenu()
 
 void ConfigPanel::UpdateSubmenuItems()
 {
+    log_v("UpdateSubmenuItems() called");
+
     if (!preferenceService_)
         return;
 

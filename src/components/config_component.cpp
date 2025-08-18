@@ -6,32 +6,35 @@
 // Constructor
 ConfigComponent::ConfigComponent()
 {
-    log_d("Creating ConfigComponent");
+    log_v("ConfigComponent constructor called");
 }
 
 // IComponent interface implementation
 void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
+    log_v("Render() called");
     Init(screen);
 }
 
-void ConfigComponent::Refresh(const Reading &reading)
-{
-    // Not used for config menu - updates handled via specific methods
-}
 
 void ConfigComponent::SetValue(int32_t value)
 {
+    log_v("SetValue() called");
     // Not used for config menu - updates handled via specific methods
 }
 
 // ConfigComponent specific initialization
 void ConfigComponent::Init(lv_obj_t *screen)
 {
+    log_v("Init() called");
+    
     if (!screen)
     {
+        log_e("ConfigComponent requires screen object");
         return;
     }
+
+    log_d("Initializing config component UI");
 
     screen_ = screen;
     
@@ -53,6 +56,7 @@ void ConfigComponent::Init(lv_obj_t *screen)
 
 void ConfigComponent::SetTitle(const std::string &title)
 {
+    log_v("SetTitle() called");
     currentTitle_ = title;
     if (titleLabel_)
     {
@@ -62,12 +66,14 @@ void ConfigComponent::SetTitle(const std::string &title)
 
 void ConfigComponent::SetMenuItems(const std::vector<MenuItem> &items)
 {
+    log_v("SetMenuItems() called");
     menuItems_ = items;
     UpdateMenuDisplay();
 }
 
 void ConfigComponent::SetCurrentIndex(size_t index)
 {
+    log_v("SetCurrentIndex() called");
     if (index < menuItems_.size())
     {
         currentIndex_ = index;
@@ -77,6 +83,7 @@ void ConfigComponent::SetCurrentIndex(size_t index)
 
 void ConfigComponent::SetHintText(const std::string &hint)
 {
+    log_v("SetHintText() called");
     if (hintLabel_)
     {
         lv_label_set_text(hintLabel_, hint.c_str());
@@ -85,13 +92,22 @@ void ConfigComponent::SetHintText(const std::string &hint)
 
 void ConfigComponent::SetStyleService(IStyleService* styleService)
 {
+    log_v("SetStyleService() called");
     styleService_ = styleService;
     UpdateThemeColors();
 }
 
 void ConfigComponent::UpdateThemeColors()
 {
-    if (!styleService_) return;
+    log_v("UpdateThemeColors() called");
+    
+    if (!styleService_)
+    {
+        log_w("No style service available for theme update");
+        return;
+    }
+
+    log_d("Updating theme colors for config component");
     
     const char* theme = styleService_->GetCurrentTheme();
     bool isNightTheme = (strcmp(theme, "Night") == 0);
@@ -173,6 +189,9 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         green = (uint8_t)(green * intensity);
         blue = (uint8_t)(blue * intensity);
         
+        log_d("Night theme color calculation - distance: %d, intensity: %.2f, red: %d, green: %d, blue: %d", 
+              distanceFromCenter, intensity, red, green, blue);
+        
         return lv_color_hex((red << 16) | (green << 8) | blue);
     }
     else
@@ -186,12 +205,16 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         if (intensity < 0.2f) intensity = 0.2f; // Minimum visibility
         
         gray = (uint8_t)(gray * intensity);
+        log_d("Day theme color calculation - distance: %d, intensity: %.2f, gray: %d", 
+              distanceFromCenter, intensity, gray);
         return lv_color_hex((gray << 16) | (gray << 8) | gray);
     }
 }
 
 void ConfigComponent::CreateUI()
 {
+    log_v("CreateUI() called");
+    
     // Note: Circular styling and background theme are now applied to container in Init()
 
     // Create title label (child of container, not screen)
@@ -241,6 +264,16 @@ void ConfigComponent::CreateUI()
 
 void ConfigComponent::UpdateMenuDisplay()
 {
+    log_v("UpdateMenuDisplay() called");
+    
+    if (menuItems_.empty() || menuLabels_.empty())
+    {
+        log_w("Cannot update menu display - empty menu items or labels");
+        return;
+    }
+
+    log_d("Updating menu display with current selection");
+
     // Update menu items with scrolling effect
     for (int i = 0; i < VISIBLE_ITEMS && i < static_cast<int>(menuLabels_.size()); ++i)
     {
@@ -251,6 +284,7 @@ void ConfigComponent::UpdateMenuDisplay()
         if (menuItemIndex >= 0 && menuItemIndex < static_cast<int>(menuItems_.size()))
         {
             lv_label_set_text(menuLabels_[i], menuItems_[menuItemIndex].label.c_str());
+            log_d("Menu item %d: menuItemIndex=%d, label=%s", i, menuItemIndex, menuItems_[menuItemIndex].label.c_str());
 
             // Calculate distance from center
             int distanceFromCenter = abs(i - CENTER_INDEX);
@@ -258,29 +292,7 @@ void ConfigComponent::UpdateMenuDisplay()
             // Apply fading effect based on distance from center
             if (i == CENTER_INDEX)
             {
-                // Center item - fully highlighted with bold styling
-                lv_obj_set_style_text_color(menuLabels_[i], GetThemeGradientColor(0, true), LV_PART_MAIN);
-                lv_obj_set_style_text_font(menuLabels_[i], &lv_font_montserrat_20, LV_PART_MAIN); // Larger font for selected
-                lv_obj_set_style_text_opa(menuLabels_[i], LV_OPA_100, LV_PART_MAIN);
-
-                // Enhanced background highlight for selected item with theme-appropriate colors
-                if (styleService_) {
-                    const char* theme = styleService_->GetCurrentTheme();
-                    if (strcmp(theme, "Night") == 0) {
-                        lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x4D1F1F), LV_PART_MAIN); // Dark red background
-                        lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x993333), LV_PART_MAIN); // Medium red border
-                    } else {
-                        lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN); // Gray background
-                        lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN); // Light gray border
-                    }
-                } else {
-                    lv_obj_set_style_bg_color(menuLabels_[i], lv_color_hex(0x555555), LV_PART_MAIN);
-                    lv_obj_set_style_border_color(menuLabels_[i], lv_color_hex(0x888888), LV_PART_MAIN);
-                }
-                lv_obj_set_style_bg_opa(menuLabels_[i], LV_OPA_70, LV_PART_MAIN); // More visible background
-                lv_obj_set_style_radius(menuLabels_[i], 6, LV_PART_MAIN); // Reduced radius for tighter look
-                lv_obj_set_style_pad_all(menuLabels_[i], 6, LV_PART_MAIN); // Reduced padding from 10 to 6
-                lv_obj_set_style_border_width(menuLabels_[i], 1, LV_PART_MAIN);
+                ApplyCenterItemStyle(menuLabels_[i]);
             }
             else
             {
@@ -336,4 +348,49 @@ void ConfigComponent::UpdateMenuDisplay()
             lv_obj_add_flag(menuLabels_[i], LV_OBJ_FLAG_HIDDEN);
         }
     }
+}
+
+void ConfigComponent::ApplyCenterItemStyle(lv_obj_t* label)
+{
+    if (!label) return;
+    
+    // Center item - fully highlighted with bold styling
+    lv_obj_set_style_text_color(label, GetThemeGradientColor(0, true), LV_PART_MAIN);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_20, LV_PART_MAIN);
+    lv_obj_set_style_text_opa(label, LV_OPA_100, LV_PART_MAIN);
+
+    // Enhanced background highlight
+    ApplyCenterItemBackground(label);
+    
+    lv_obj_set_style_bg_opa(label, LV_OPA_70, LV_PART_MAIN);
+    lv_obj_set_style_radius(label, 6, LV_PART_MAIN);
+    lv_obj_set_style_pad_all(label, 6, LV_PART_MAIN);
+    lv_obj_set_style_border_width(label, 1, LV_PART_MAIN);
+}
+
+void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
+{
+    if (!styleService_)
+    {
+        ApplyDefaultCenterBackground(label);
+        return;
+    }
+
+    const char* theme = styleService_->GetCurrentTheme();
+    if (strcmp(theme, "Night") == 0)
+    {
+        lv_obj_set_style_bg_color(label, lv_color_hex(0x4D1F1F), LV_PART_MAIN);
+        lv_obj_set_style_border_color(label, lv_color_hex(0x993333), LV_PART_MAIN);
+        return;
+    }
+
+    // Default day theme
+    lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);
+    lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
+}
+
+void ConfigComponent::ApplyDefaultCenterBackground(lv_obj_t* label)
+{
+    lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);
+    lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
 }

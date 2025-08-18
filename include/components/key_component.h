@@ -3,6 +3,7 @@
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"
 #include "utilities/types.h"
+#include "sensors/key_sensor.h"
 
 #include <lvgl.h>
 
@@ -35,7 +36,7 @@ class KeyComponent : public IComponent
 
     // Core Functionality Methods
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
-    void Refresh(const Reading &reading) override;
+    void SetColor(KeyState keyState);
 
   protected:
     // Protected Data Members

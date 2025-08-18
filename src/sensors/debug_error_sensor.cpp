@@ -1,17 +1,20 @@
 #include "sensors/debug_error_sensor.h"
 #include "managers/error_manager.h"
 #include <Arduino.h>
+#include <esp32-hal-log.h>
 
 // Constructors and Destructors
 DebugErrorSensor::DebugErrorSensor(IGpioProvider *gpioProvider)
     : gpioProvider_(gpioProvider), previousState_(false), initialized_(false), startupTime_(0)
 {
+    log_v("DebugErrorSensor() constructor called");
     log_d("Creating DebugErrorSensor for GPIO %d", gpio_pins::DEBUG_ERROR);
 }
 
 // Core Functionality Methods
 void DebugErrorSensor::Init()
 {
+    log_v("Init() called");
     log_d("Initializing DebugErrorSensor on GPIO %d", gpio_pins::DEBUG_ERROR);
 
     if (!gpioProvider_)
@@ -40,6 +43,7 @@ void DebugErrorSensor::Init()
 
 Reading DebugErrorSensor::GetReading()
 {
+    log_v("GetReading() called");
     if (!initialized_)
     {
         log_w("DebugErrorSensor not initialized");
@@ -62,14 +66,6 @@ Reading DebugErrorSensor::GetReading()
     delay(5);
     bool confirmedState = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
 
-    // Log pin readings for debugging
-    static unsigned long lastLogTime = 0;
-    if (millis() - lastLogTime > 5000 || currentState != previousState_)
-    { // Log every 5 seconds or on change
-        log_d("DebugErrorSensor GPIO %d: first=%s, confirmed=%s, previous=%s", gpio_pins::DEBUG_ERROR,
-              currentState ? "HIGH" : "LOW", confirmedState ? "HIGH" : "LOW", previousState_ ? "HIGH" : "LOW");
-        lastLogTime = millis();
-    }
 
     // Only proceed if both readings match
     if (currentState != confirmedState)
