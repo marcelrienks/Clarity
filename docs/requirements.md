@@ -590,7 +590,7 @@ protected:
 ### 3.1 Memory Management Requirements
 
 #### 3.1.1 ESP32 Memory Constraints
-**Critical Limitation**: ESP32-WROOM-32 has only ~300KB available RAM
+**Critical Limitation**: ESP32-WROOM-32 has 320KB total RAM, with ~250KB available after system overhead and OTA partitioning
 - All architecture decisions must account for memory constraints
 - Heap fragmentation prevention is mandatory
 - Dynamic allocation minimization required

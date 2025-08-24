@@ -14,7 +14,7 @@ This document outlines the implementation plan for adding single button input fu
 * Create separate input system (isolated from existing trigger functionality)
 * Design InputManager class for centralized button handling
 * Implement IInputHandler interface for panels to implement
-* Add timing logic to distinguish short press (<500ms) vs long press (>500ms)
+* Add timing logic to distinguish short press (50ms-2000ms) vs long press (2000ms-5000ms)
 
 ## Phase 2: Panel Input Integration
 
@@ -75,8 +75,8 @@ This document outlines the implementation plan for adding single button input fu
 ## Technical Considerations
 
 ### Button Timing
-* Short press: 50ms - 500ms (with debouncing)
-* Long press: >500ms
+* Short press: 50ms - 2000ms (with debouncing)
+* Long press: 2000ms - 5000ms
 * Maximum press time: 3000ms (auto-release)
 
 ### State Management

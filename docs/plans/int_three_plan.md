@@ -88,7 +88,7 @@ struct Interrupt {
 
 3. Create dummy implementation stubs that maintain existing behavior
 4. Update InterruptManager to coordinate PolledHandler and QueuedHandler
-5. Ensure factory pattern creates managers and providers only (no ComponentFactory)
+5. Ensure factory pattern creates managers and providers only (PanelManager handles panel creation directly)
 
 **Build/Test Verification**:
 - Project builds successfully with new interfaces and factory pattern
@@ -370,7 +370,7 @@ struct InterruptCallbacks {
 5. Add resource conflict detection and reporting
 
 **Build/Test Verification**:
-- ManagerFactory creates only managers and providers (no ComponentFactory)
+- ManagerFactory creates only managers and providers (PanelManager handles panel creation directly)
 - Each GPIO has exactly one sensor instance owned by PolledHandler/QueuedHandler/panels
 - Resource conflicts are detected and prevented
 - Trigger panels work correctly with direct GPIO reads for initial state
@@ -388,12 +388,12 @@ struct InterruptCallbacks {
 **Tasks**:
 1. Remove TriggerManager and associated legacy code
 2. Remove compatibility layers and feature flags
-3. Clean up unused interfaces and methods (including ComponentFactory)
+3. Clean up unused interfaces and methods (ensure PanelManager handles all panel creation)
 4. Update all references to use coordinated handler system exclusively
 5. Verify proper factory pattern implementation throughout codebase
 
 **Build/Test Verification**:
-- System builds cleanly without legacy code and ComponentFactory
+- System builds cleanly without legacy code and with simplified factory pattern
 - All functionality works correctly with coordinated handlers only
 - Proper factory pattern implemented throughout
 - No unused code or interfaces remain

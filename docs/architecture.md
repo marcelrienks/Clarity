@@ -102,7 +102,7 @@ struct Interrupt {
 ```
 
 #### Critical Memory Constraint
-**ESP32 Memory Limitation**: The ESP32-WROOM-32 has only ~300KB available RAM. Using `std::function` with lambda captures causes:
+**ESP32 Memory Limitation**: The ESP32-WROOM-32 has 320KB total RAM, with ~250KB available after system overhead and OTA partitioning. Using `std::function` with lambda captures causes:
 - Heap fragmentation leading to crashes
 - Memory overhead of ~3KB per std::function object
 - Unstable system behavior during LVGL operations
@@ -779,14 +779,14 @@ auto managerFactory = std::make_unique<ManagerFactory>(providerFactory.get());
 auto mockProviderFactory = std::make_unique<MockProviderFactory>();
 auto managerFactory = std::make_unique<ManagerFactory>(mockProviderFactory.get());
 
-// Generic factory usage
-auto panelFactory = std::make_unique<PanelFactory<IPanel>>();
-auto oilPanel = panelFactory->Create();
+// Direct manager creation usage
+auto panelManager = managerFactory->CreatePanelManager();
+auto oilPanel = panelManager->CreatePanel("OemOilPanel");
 ```
 
 ## Memory Management Architecture
 
-**Critical Constraint**: ESP32-WROOM-32 has only ~300KB available RAM, making memory management a first-class architectural concern.
+**Critical Constraint**: ESP32-WROOM-32 has 320KB total RAM, with ~250KB available after system overhead and OTA partitioning, making memory management a first-class architectural concern.
 
 ### Memory Optimization Requirements
 
@@ -853,7 +853,7 @@ using PanelName = FixedString<16>;
 ## Implementation Constraints
 
 ### ESP32-Specific Requirements
-1. **Memory Constraints**: All design decisions must account for 300KB RAM limit
+1. **Memory Constraints**: All design decisions must account for ~250KB available RAM limit
 2. **Single-Core Operation**: LVGL operations must not be interrupted by GPIO processing
 3. **Heap Management**: Minimize dynamic allocations to prevent fragmentation
 4. **Resource Cleanup**: Proper GPIO interrupt detachment in destructors

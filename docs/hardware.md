@@ -11,7 +11,7 @@ Clarity is designed for ESP32-based automotive gauge systems with a round displa
 - **Chip**: ESP32-WROOM-32 (4MB Flash)
 - **Architecture**: Dual-core Tensilica Xtensa LX6
 - **Clock Speed**: 240MHz
-- **RAM**: 320KB
+- **RAM**: 320KB total (250KB available after system overhead and OTA partitioning)
 
 ### Display
 - **Model**: Waveshare Round 1.28" LCD Display Module
