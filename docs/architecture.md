@@ -13,8 +13,8 @@ For detailed architectural diagrams, see:
 ## Pattern Structure
 
 ```
-InterruptManager → TriggerHandler → Sensors → GPIO
-                ↘ ActionHandler  ↗          
+InterruptManager → PolledHandler → GPIO Sensors → GPIO
+                ↘ QueuedHandler → Button Sensor ↗          
                                     
 DeviceProvider → Display → Panels → Components
                             ↓ ↑
@@ -164,7 +164,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 ```
 
 **Single Ownership Model**: Each GPIO has exactly one sensor instance to prevent resource conflicts:
-- TriggerHandler owns all trigger-related sensors
+- PolledHandler owns all GPIO sensors, QueuedHandler owns button sensor
 - Panels are display-only and must not create sensors
 - No sensor duplication across components
 
@@ -200,7 +200,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 ### Priority System
 - **CRITICAL (0)**: Errors, key security
 - **IMPORTANT (1)**: Lock status  
-- **NORMAL (2)**: Theme changes, button actions, preferences
+- **NORMAL (2)**: Theme changes, button interrupts, preferences
 
 ### Simplified Panel Restoration
 - **Effect-Based Logic**: Only LOAD_PANEL effects participate in restoration
@@ -210,12 +210,117 @@ Each GPIO pin must have exactly one dedicated sensor class:
 
 ## Available Panels
 
-- **Splash**: Startup animation with skip capability
-- **Oil**: Dual gauge monitoring (pressure/temperature) - creates own data sensors
-- **Key**: Key presence/absence indicator - display only, no sensors
-- **Lock**: Security status display - display only, no sensors
-- **Error**: Scrollable error list with acknowledgment - triggered by ErrorManager
-- **Config**: System configuration and preferences
+### Panel Types and Button Behaviors
+
+- **Splash Panel**: Startup animation with user control
+  - Short Press: Skip animation, load default panel immediately
+  - Long Press: Load config panel
+  - Auto-transition: After animation completion
+  
+- **Oil Panel** (OemOilPanel): Primary monitoring display
+  - Dual gauge monitoring (pressure/temperature) - creates own data sensors
+  - Short Press: No action (reserved for future functionality)
+  - Long Press: Load config panel
+  - Continuous: Animate pressure & temperature gauges
+  
+- **Key Panel**: Security key status indicator (Display-only)
+  - Visual indication: Green icon (key present) / Red icon (key not present)
+  - No sensor creation - receives state from PolledHandler
+  - Short Press: No action (status display only)
+  - Long Press: Load config panel
+  
+- **Lock Panel**: Vehicle security status (Display-only)
+  - Visual indication of lock engaged/disengaged state
+  - No sensor creation - receives state from PolledHandler
+  - Short Press: No action (status display only)
+  - Long Press: Load config panel
+  
+- **Error Panel**: System error management with navigation
+  - Scrollable error list with severity color-coding
+  - Error cycling and acknowledgment functionality
+  - Short Press: Cycle through errors (navigate to next error)
+  - Long Press: Clear all acknowledged errors
+  - Auto-restoration: When all errors viewed/acknowledged
+  
+- **Config Panel**: System configuration with hierarchical navigation
+  - Multi-level menu system with state persistence
+  - Theme settings, default panel selection, preferences
+  - Short Press: Navigate through current menu level options
+  - Long Press: Select highlighted option / Enter submenu / Apply setting
+  
+### Config Panel State Machine Architecture
+
+The Config Panel implements a hierarchical state machine for menu navigation:
+
+```cpp
+enum class ConfigState {
+    MAIN_MENU,        // Top-level menu: Theme, Default Panel, Exit
+    THEME_SUBMENU,    // Theme selection: Day, Night, Auto
+    PANEL_SUBMENU,    // Default panel selection: Oil, Splash, etc.
+    APPLYING_SETTING  // Transient state while applying changes
+};
+
+struct ConfigMenuOption {
+    const char* displayName;     // Text displayed on screen
+    ConfigState targetState;     // State when selected (NONE for actions)
+    void (*actionFunc)(void* context); // Function to execute (null for submenus)
+    bool requiresConfirmation;   // Whether to show confirmation dialog
+};
+
+class ConfigPanel {
+private:
+    ConfigState currentState_ = ConfigState::MAIN_MENU;
+    int selectedOption_ = 0;     // Currently highlighted option
+    int maxOptions_ = 0;         // Number of options in current menu
+    
+    // Main menu options
+    std::array<ConfigMenuOption, 3> mainMenuOptions_ = {
+        {"Theme Settings", ConfigState::THEME_SUBMENU, nullptr, false},
+        {"Default Panel", ConfigState::PANEL_SUBMENU, nullptr, false},
+        {"Exit", ConfigState::MAIN_MENU, &ConfigPanel::ExitToOilPanel, false}
+    };
+    
+    // Theme submenu options
+    std::array<ConfigMenuOption, 3> themeOptions_ = {
+        {"Day Theme", ConfigState::MAIN_MENU, &ConfigPanel::SetDayTheme, true},
+        {"Night Theme", ConfigState::MAIN_MENU, &ConfigPanel::SetNightTheme, true},
+        {"Back", ConfigState::MAIN_MENU, nullptr, false}
+    };
+    
+public:
+    // IActionService implementation
+    void (*GetShortPressFunction())(void* panelContext) override {
+        return &ConfigPanel::HandleShortPress;
+    }
+    void (*GetLongPressFunction())(void* panelContext) override {
+        return &ConfigPanel::HandleLongPress;
+    }
+    
+    // Static callback functions for universal button system
+    static void HandleShortPress(void* panelContext) {
+        auto* panel = static_cast<ConfigPanel*>(panelContext);
+        panel->NavigateToNextOption();
+    }
+    
+    static void HandleLongPress(void* panelContext) {
+        auto* panel = static_cast<ConfigPanel*>(panelContext);
+        panel->SelectCurrentOption();
+    }
+    
+    // Navigation and selection logic
+    void NavigateToNextOption();     // Cycle through current menu options
+    void SelectCurrentOption();      // Execute selected option or enter submenu
+    void SetDayTheme(void* context); // Apply day theme via StyleManager
+    void SetNightTheme(void* context); // Apply night theme via StyleManager
+    void ExitToOilPanel(void* context); // Return to Oil panel
+};
+```
+
+### Config Panel Integration Points
+- **StyleManager**: Theme changes applied immediately and persisted
+- **PreferenceManager**: Settings saved for persistence across reboots
+- **PanelManager**: Default panel preference used during startup
+- **Universal Button System**: Short/long press functions injected when panel loads
 
 ## Hardware Configuration
 
@@ -235,6 +340,231 @@ Each GPIO pin must have exactly one dedicated sensor class:
   - Oil pressure sensor - Continuous pressure monitoring
   - Oil temperature sensor - Continuous temperature monitoring
 
+## Error Panel State Management Architecture
+
+### Error Cycling and Auto-Restoration System
+
+The Error Panel manages error display, navigation, and automatic restoration:
+
+```cpp
+struct ErrorState {
+    std::vector<ErrorInfo> activeErrors;    // Current error queue from ErrorManager
+    int currentErrorIndex = 0;              // Currently displayed error
+    std::set<size_t> viewedErrors;          // Errors that have been viewed
+    bool allErrorsViewed = false;           // Flag for auto-restoration trigger
+};
+
+class ErrorPanel {
+private:
+    ErrorState errorState_;
+    
+public:
+    // IActionService implementation
+    void (*GetShortPressFunction())(void* panelContext) override {
+        return &ErrorPanel::HandleShortPress;
+    }
+    void (*GetLongPressFunction())(void* panelContext) override {
+        return &ErrorPanel::HandleLongPress;
+    }
+    
+    // Static callback functions for universal button system
+    static void HandleShortPress(void* panelContext) {
+        auto* panel = static_cast<ErrorPanel*>(panelContext);
+        panel->CycleToNextError();
+    }
+    
+    static void HandleLongPress(void* panelContext) {
+        auto* panel = static_cast<ErrorPanel*>(panelContext);
+        panel->ClearAllAcknowledgedErrors();
+    }
+    
+    // Error navigation and management
+    void CycleToNextError() {
+        if (!errorState_.activeErrors.empty()) {
+            // Mark current error as viewed
+            errorState_.viewedErrors.insert(errorState_.currentErrorIndex);
+            
+            // Move to next error
+            errorState_.currentErrorIndex = (errorState_.currentErrorIndex + 1) % errorState_.activeErrors.size();
+            
+            // Check if all errors have been viewed
+            CheckAutoRestorationCondition();
+            
+            UpdateDisplay();
+        }
+    }
+    
+    void ClearAllAcknowledgedErrors() {
+        // Clear all viewed errors from ErrorManager
+        ErrorManager::Instance().ClearViewedErrors(errorState_.viewedErrors);
+        
+        // Update local state
+        RefreshErrorState();
+        
+        // Trigger restoration if no errors remain
+        if (errorState_.activeErrors.empty()) {
+            TriggerAutoRestoration();
+        }
+    }
+    
+    void CheckAutoRestorationCondition() {
+        // Auto-restore when all errors have been viewed
+        if (errorState_.viewedErrors.size() >= errorState_.activeErrors.size()) {
+            errorState_.allErrorsViewed = true;
+            TriggerAutoRestoration();
+        }
+    }
+    
+    void TriggerAutoRestoration() {
+        // Notify ErrorManager that errors have been processed
+        ErrorManager::Instance().SetErrorPanelActive(false);
+        // This will cause error_occurred interrupt to deactivate
+        // Leading to automatic panel restoration via interrupt system
+    }
+};
+```
+
+### Error Panel Integration
+- **ErrorManager**: Provides error queue and acknowledgment tracking
+- **Auto-Restoration**: Triggered when all errors viewed or acknowledged
+- **Interrupt Integration**: error_occurred interrupt deactivation enables restoration
+- **Visual Feedback**: Color-coded errors by severity (Critical/Error/Warning)
+
+## Debug Error System Architecture
+
+### Development and Testing Support
+
+The debug error system enables testing and development of the error handling system:
+
+```cpp
+// Debug error sensor for development (GPIO 34)
+class DebugErrorSensor : public ISensor, public BaseSensor {
+private:
+    IGpioProvider* gpioProvider_;
+    bool previousState_ = false;
+    
+public:
+    DebugErrorSensor(IGpioProvider* gpio) : gpioProvider_(gpio) {}
+    
+    void Init() override {
+        if (gpioProvider_) {
+            gpioProvider_->SetPinMode(gpio_pins::DEBUG_ERROR, INPUT);
+            // Note: GPIO 34 is input-only, requires external pull-down
+        }
+    }
+    
+    Reading GetReading() override {
+        if (gpioProvider_) {
+            return gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
+        }
+        return false;
+    }
+    
+    bool HasStateChanged() {
+        bool currentState = std::get<bool>(GetReading());
+        return DetectChange(currentState, previousState_);
+    }
+    
+    bool GetDebugTriggerState() {
+        return std::get<bool>(GetReading());
+    }
+};
+
+// Debug error interrupt registration (development only)
+#ifdef CLARITY_DEBUG
+interruptManager.RegisterInterrupt({
+    .id = "debug_error_trigger",
+    .priority = Priority::CRITICAL,
+    .source = InterruptSource::POLLED,
+    .effect = InterruptEffect::CUSTOM_FUNCTION,
+    .evaluationFunc = DebugErrorTriggerActive,
+    .activateFunc = GenerateDebugError,
+    .deactivateFunc = nullptr,
+    .sensorContext = debugErrorSensor,
+    .serviceContext = errorManager
+});
+#endif
+
+// Static callback for debug error generation
+static void GenerateDebugError(void* context) {
+    auto* errorManager = static_cast<ErrorManager*>(context);
+    if (errorManager) {
+        errorManager->ReportError(ErrorLevel::ERROR, "DebugSystem", "Debug error triggered via GPIO 34");
+    }
+}
+```
+
+### Debug System Integration
+- **GPIO 34**: Input-only pin for debug error trigger (development only)
+- **Conditional Compilation**: Only active in CLARITY_DEBUG builds
+- **Error Generation**: Creates test errors for system validation
+- **Hardware Integration**: Requires external pull-down resistor
+
+## Universal Button System Architecture
+
+### Button Function Injection Pattern
+The universal button system enables all panels to respond to button input through a coordinated injection mechanism:
+
+```cpp
+// IActionService interface - all panels must implement
+class IActionService {
+public:
+    virtual ~IActionService() = default;
+    virtual void (*GetShortPressFunction())(void* panelContext) = 0;
+    virtual void (*GetLongPressFunction())(void* panelContext) = 0;
+    virtual void* GetPanelContext() = 0;
+};
+
+// Universal button interrupt with dynamic function injection
+struct UniversalButtonInterrupt {
+    const char* id;                                    // "universal_short_press" / "universal_long_press"
+    InterruptSource source = InterruptSource::QUEUED;
+    InterruptEffect effect = InterruptEffect::BUTTON_ACTION;
+    bool (*evaluationFunc)(void* context);           // HasShortPressEvent / HasLongPressEvent
+    void (*activateFunc)(void* context);             // ExecutePanelFunction - calls current panel's function
+    void* sensorContext;                              // ActionButtonSensor
+    void* serviceContext;                             // PanelManager
+    
+    // Runtime function injection from current panel
+    void (*currentPanelFunction)(void* panelContext); // Injected when panels switch
+    void* currentPanelContext;                        // Current panel instance
+};
+```
+
+### Function Injection Process
+1. **Panel Switch**: PanelManager loads new panel
+2. **Function Extraction**: Get functions from panel via IActionService interface
+3. **Interrupt Update**: Inject panel functions into universal button interrupts
+4. **Context Update**: Update panel context for function execution
+5. **Ready State**: Button interrupts now execute current panel's functions
+
+### Static Callback Implementation
+```cpp
+class UniversalButtonCallbacks {
+public:
+    // Universal execution functions that call injected panel functions
+    static void ExecutePanelShortPress(void* context) {
+        auto* panelManager = static_cast<PanelManager*>(context);
+        if (panelManager) {
+            auto* interrupt = panelManager->GetShortPressInterrupt();
+            if (interrupt && interrupt->currentPanelFunction) {
+                interrupt->currentPanelFunction(interrupt->currentPanelContext);
+            }
+        }
+    }
+    
+    static void ExecutePanelLongPress(void* context) {
+        auto* panelManager = static_cast<PanelManager*>(context);
+        if (panelManager) {
+            auto* interrupt = panelManager->GetLongPressInterrupt();
+            if (interrupt && interrupt->currentPanelFunction) {
+                interrupt->currentPanelFunction(interrupt->currentPanelContext);
+            }
+        }
+    }
+};
+```
+
 ## Key Interfaces
 
 ### Factory Interfaces
@@ -247,17 +577,18 @@ Each GPIO pin must have exactly one dedicated sensor class:
 - `IDeviceProvider`: Hardware device driver abstraction for low-level device communication
 
 ### Component Interfaces (MVP Pattern)
-- `IPanel`: Screen implementation interface with universal button functions
-  - `GetShortPressFunction()`: Returns panel's short press static function pointer
-  - `GetLongPressFunction()`: Returns panel's long press static function pointer
-  - `GetPanelContext()`: Returns panel instance for function context
+- `IPanel`: Screen implementation interface with lifecycle management
   - `Init/Load/Update`: Standard panel lifecycle methods
+  - Inherits from `IActionService` for universal button handling
+- `IActionService`: Universal button function interface for all panels
+  - `GetShortPressFunction()`: Returns panel's short press static function pointer
+  - `GetLongPressFunction()`: Returns panel's long press static function pointer  
+  - `GetPanelContext()`: Returns panel instance for function context
 - `IComponent`: UI element rendering interface for LVGL components
 - `ISensor`: Data acquisition interface with change detection support
 
 ### Service Interfaces
-- `IHandler`: Unified interface for interrupt processing (triggers and actions)
-- `IActionService`: Panel-specific action handling interface
+- `IHandler`: Unified interface for interrupt processing (POLLED and QUEUED interrupts)
 - `IManager`: Base manager interface for service lifecycle management
 
 ### Utility Interfaces
@@ -266,7 +597,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 
 ## Coordinated Interrupt Registration
 
-### POLLED Panel Loading Registration (replaces triggers)
+### POLLED Panel Loading Registration (GPIO state monitoring)
 ```cpp
 // Routed to PolledHandler by InterruptManager
 interruptManager.RegisterInterrupt({

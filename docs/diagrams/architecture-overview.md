@@ -6,12 +6,12 @@ This diagram shows the high-level component relationships in the Clarity system 
 
 - **Dual Factory Pattern**: ProviderFactory creates providers, ManagerFactory creates managers with dependency injection
 - **Interface-Based Factories**: IProviderFactory enables testability with mock provider injection
-- **Handler System**: IHandler interface with TriggerHandler and ActionHandler implementations  
+- **Handler System**: IHandler interface with PolledHandler and QueuedHandler implementations  
 - **Handler-Owned Sensors**: Handlers create and own their respective sensors internally
 - **Panel Self-Sufficiency**: Panels create their own components and data sensors internally
 - **Split Sensor Design**: Independent KeyPresentSensor and KeyNotPresentSensor classes
 - **Static Callbacks**: InterruptCallbacks utility with function pointers for ESP32 memory safety
-- **Display-Only Trigger Panels**: Key/Lock panels don't create sensors, only display state
+- **Display-Only GPIO Panels**: Key/Lock panels don't create sensors, only display state
 - **Hardware Abstraction**: Providers isolate hardware dependencies
 
 ```mermaid
@@ -199,11 +199,11 @@ graph TB
 - **ManagerFactory**: Creates all managers, receives IProviderFactory for dependency injection
 
 ### Managers
-- **InterruptManager**: Creates and coordinates TriggerHandler and ActionHandler during LVGL idle time
+- **InterruptManager**: Creates and coordinates PolledHandler and QueuedHandler during LVGL idle time
 - **PanelManager**: Creates panels on demand, manages lifecycle, switching, and restoration tracking
 - **StyleManager**: Theme management (Day/Night) based on LightsSensor
 - **PreferenceManager**: Persistent settings storage
-- **ErrorManager**: Error collection with trigger system integration
+- **ErrorManager**: Error collection with coordinated interrupt system integration
 
 ### Coordinated Handlers (IHandler Interface)
 - **PolledHandler**: Creates and owns GPIO sensors for state monitoring, manages POLLED interrupt processing with change detection, registers static callbacks with context parameters for effect-based execution
@@ -216,7 +216,7 @@ graph TB
 - **BaseSensor**: Provides change detection template for all sensors
 
 ### Panels (IPanel Interface)
-- **Trigger Panels**: Display-only, create own components but no sensors (Key, Lock)
+- **Display-Only Panels**: Display-only, create own components but no sensors (Key, Lock)
 - **Data Panels**: Create own sensors and components for data acquisition (Oil)
 - **Utility Panels**: Create own components for system functions (Splash, Error, Config)
 

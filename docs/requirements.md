@@ -56,50 +56,86 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 
 ### 2.2 Panel System
 
-#### 2.2.1 Available Panels
-1. **Splash Panel**: Startup animation and branding
-   - Auto-transitions to default panel after animation
-   - Skippable via button press
+#### 2.2.1 Available Panels with Button Behaviors
+
+1. **Splash Panel**: Startup animation with user control
+   - **Auto-transition**: To default panel after animation completion
+   - **Short Press**: Skip animation, load default panel immediately
+   - **Long Press**: Load config panel for system settings
+   - **Display**: Animated startup sequence with branding
    
 2. **Oil Panel** (OemOilPanel): Primary monitoring display
-   - Dual gauge display (pressure and temperature) positioned side-by-side
-   - 240x240px gauges with OEM styling
-   - Configurable units of measure with delta-based updates
-   - Smart caching and animation-based smooth transitions
+   - **Primary Function**: Dual gauge monitoring (pressure/temperature)
+   - **Display**: 240x240px gauges positioned side-by-side with OEM styling
+   - **Animation**: Continuous gauge needle animation reflecting sensor data
+   - **Units**: Configurable units of measure with delta-based smooth updates
+   - **Short Press**: No action (reserved for future functionality)
+   - **Long Press**: Load config panel for system configuration
+   - **Sensors**: Creates own OilPressureSensor and OilTemperatureSensor internally
    
 3. **Key Panel**: Security key status indicator (Display-only)
-   - Green icon when key present (triggered by KeyPresentSensor)
-   - Red icon when key not present (triggered by KeyNotPresentSensor)
-   - No sensor creation - receives state from TriggerHandler
+   - **Visual States**: Green icon (key present) / Red icon (key not present)
+   - **Trigger Source**: Activated by KeyPresentSensor/KeyNotPresentSensor via PolledHandler
+   - **Priority**: CRITICAL - overrides all other panels when active
+   - **Short Press**: No action (status display only)
+   - **Long Press**: Load config panel
+   - **Sensors**: None - display-only, receives state from interrupt system
    
-4. **Lock Panel**: Vehicle security status (Display-only)
-   - Visual indication of lock state
-   - No sensor creation - receives state from TriggerHandler
+4. **Lock Panel**: Vehicle security status indicator (Display-only)
+   - **Visual States**: Lock engaged/disengaged indication
+   - **Trigger Source**: Activated by LockSensor via PolledHandler
+   - **Priority**: IMPORTANT - overrides user panels but lower than key panels
+   - **Short Press**: No action (status display only)
+   - **Long Press**: Load config panel
+   - **Sensors**: None - display-only, receives state from interrupt system
    
-5. **Error Panel**: System error display
-   - Scrollable list of active errors
-   - Color-coded by severity (Critical/Error/Warning)
-   - Error acknowledgment functionality
+5. **Error Panel**: System error management with navigation
+   - **Primary Function**: Display and manage system errors with user interaction
+   - **Display**: Scrollable error list with severity color-coding (Critical/Error/Warning)
+   - **Navigation**: Cycle through multiple errors for review
+   - **Short Press**: Cycle to next error in queue (marks current error as viewed)
+   - **Long Press**: Clear all acknowledged/viewed errors
+   - **Auto-Restoration**: Automatically restore previous panel when all errors viewed
+   - **Priority**: CRITICAL - highest priority, overrides all other panels
+   - **State Management**: Tracks viewed errors and auto-restoration conditions
    
-6. **Config Panel**: System configuration
-   - Basic ConfigPanel with dummy implementation
-   - DynamicConfigPanel for full functionality
-   - Default panel selection
-   - Splash screen toggle
-   - Unit preferences (future)
+6. **Config Panel**: System configuration with hierarchical navigation
+   - **Architecture**: Multi-level state machine with menu hierarchy
+   - **Navigation**: Main Menu → Submenus → Option Selection → Application
+   - **Short Press**: Navigate through current menu level options
+   - **Long Press**: Select highlighted option / Enter submenu / Apply setting
+   - **Menu Structure**:
+     - **Main Menu**: Theme Settings, Default Panel, Exit
+     - **Theme Submenu**: Day Theme, Night Theme, Back
+     - **Panel Submenu**: Default panel selection options
+   - **Integration**: StyleManager (themes), PreferenceManager (persistence), PanelManager (defaults)
+   - **State Persistence**: Menu state maintained during navigation
 
-#### 2.2.2 Panel Switching
-- Automatic switching based on trigger priority
-- Manual switching via button input
-- Seamless transitions with proper cleanup
+#### 2.2.2 Panel Switching and Universal Button System
+
+**Automatic Panel Switching**:
+- **Priority-Based**: CRITICAL (Key/Error) > IMPORTANT (Lock) > User-driven (Oil)
+- **Trigger-Driven**: GPIO state changes automatically load appropriate panels
+- **Restoration**: Return to user-driven panel when all non-maintaining interrupts inactive
+
+**Universal Button System**:
+- **IActionService Interface**: All panels implement universal button functions
+- **Function Injection**: Panel's short/long press functions injected into QUEUED interrupts
+- **Dynamic Updates**: Button interrupts updated when panels switch
+- **Context Management**: Panel context passed to button functions for execution
+
+**Panel Lifecycle Management**:
+- **Seamless Transitions**: Proper cleanup and initialization during switching
+- **Memory Safety**: Panel creation/destruction managed by PanelManager
+- **State Preservation**: Theme and configuration state persists across switches
 
 ### 2.3 Interrupt System
 
 #### 2.3.1 Critical Constraint
 **INTERRUPTS CAN ONLY BE CHECKED DURING SYSTEM IDLE TIME**
 - No interrupt processing during LVGL operations
-- InterruptManager coordinates all interrupt sources
-- Ordered evaluation: Triggers first, then Actions if no triggers active
+- InterruptManager coordinates PolledHandler and QueuedHandler
+- Priority-based coordination across both handlers
 - Panel manager automatically manages idle/busy states
 - Individual panels can update state during animations
 
@@ -112,23 +148,16 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 - Memory-efficient design is mandatory for system stability
 
 #### 2.3.2 Architecture Overview
-**COORDINATED INTERRUPT SYSTEM WITH FUNCTION POINTERS**
+**COORDINATED INTERRUPT SYSTEM**
 
-The interrupt system uses InterruptManager to coordinate specialized handlers for different interrupt sources:
-
-- **Common Structure**: Single Interrupt struct handles all interrupt types with effect-based execution
-- **Function Pointer Architecture**: Static evaluation and execution function pointers with void* context
-- **Specialized Processing**: PolledHandler (GPIO state monitoring) and QueuedHandler (button event processing)
-- **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, CUSTOM_FUNCTION effects
-- **Coordinated Logic**: InterruptManager coordinates both handlers and eliminates redundant layers
-- **Change-Based Evaluation**: POLLED interrupts fire only on state transitions, not continuously
+For detailed architecture, see: **[Architecture Document](architecture.md)**
 
 **Key Components**:
 1. **InterruptManager**: Coordinates PolledHandler and QueuedHandler during idle time
-2. **PolledHandler**: Implements IHandler, manages POLLED interrupts (GPIO state monitoring)
-3. **QueuedHandler**: Implements IHandler, manages QUEUED interrupts (button event processing)
-4. **InterruptSource**: POLLED vs QUEUED evaluation types routed to appropriate handlers
-5. **InterruptEffect**: Effect-based execution categories for simplified restoration logic
+2. **PolledHandler**: GPIO state monitoring with change detection
+3. **QueuedHandler**: Button event processing with latest event handling
+4. **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, BUTTON_ACTION effects
+5. **Memory Safety**: Static function pointers with void* context parameters
 
 #### 2.3.3 POLLED Interrupts (replaces Triggers)
 
@@ -141,449 +170,80 @@ POLLED interrupts monitor GPIO state transitions and execute effects exactly onc
 - No repeated execution for maintained states
 - Eliminates performance issues from redundant operations
 
-**Interrupt with POLLED Source**:
-```cpp
-enum class InterruptEffect {
-    LOAD_PANEL,        // Load panel, participates in restoration (unless maintains)
-    SET_THEME,         // Set theme, always maintains (doesn't participate in restoration blocking)
-    SET_PREFERENCE,    // Set configuration value
-    BUTTON_ACTION      // Execute panel-specific button function (short/long press)
-};
+**Interrupt Structure**:
 
-struct Interrupt {
-    const char* id;                                    // Static string for memory efficiency
-    Priority priority;                                 // Processing priority
-    InterruptSource source;                           // POLLED or QUEUED evaluation
-    InterruptEffect effect;                           // LOAD_PANEL, SET_THEME, BUTTON_ACTION, etc.
-    bool (*evaluationFunc)(void* context);           // Checks current state (POLLED) or events (QUEUED)
-    void (*activateFunc)(void* context);             // Executes on interrupt activation
-    void (*deactivateFunc)(void* context);           // Executes on interrupt deactivation (optional)
-    void* sensorContext;                              // Sensor context for evaluation
-    void* serviceContext;                             // Service context for execution (PanelManager, etc.)
-    union {
-        struct { 
-            const char* panelName; 
-            bool trackForRestore; 
-            bool maintainWhenInactive;               // Theme interrupts maintain, panel interrupts don't
-        } panel;
-        struct { 
-            Theme theme; 
-            bool maintainWhenInactive;               // Always true for themes
-        } theme;
-        struct { 
-            const char* key; 
-            void* value; 
-        } preference;
-        struct {
-            void (*shortPressFunc)(void* panelContext); // Panel's short press function
-            void (*longPressFunc)(void* panelContext);  // Panel's long press function
-            void* panelContext;                          // Current panel instance
-        } buttonActions;
-    } data;                                           // Effect-specific data union
-    bool active;                                      // Current activation state
-    bool previouslyActive;                           // For state change detection
-    unsigned long lastEvaluation;                    // Performance tracking
-};
-```
-- State tracking handled internally by sensors using BaseSensor pattern
-- Context parameter provides sensor access without heap allocation
-- Effect-based execution enables simplified restoration logic
+For complete interrupt structure details, see: **[Architecture Document](architecture.md#coordinated-interrupt-system-architecture)**
 
 **Memory Safety Requirements**:
-- All callback functions must be static (no lambda captures)
-- Context passed via void* parameter to eliminate heap allocation
-- Static string literals for IDs to prevent string fragmentation
-- Function pointer arrays over std::vector to avoid dynamic allocation
+- Static function pointers with void* context parameters
+- No heap allocation during interrupt processing
+- ESP32-optimized memory patterns
 
-**Panel Restoration (Simplified)**:
-- PanelManager tracks the last user-driven panel (loaded by user action)
-- When ALL panel-loading interrupts become inactive, system returns to the tracked user-driven panel
-- Only LOAD_PANEL effect interrupts participate in restoration logic
-- SET_THEME effects never block or affect panel restoration
-- Restoration occurs when no LOAD_PANEL interrupts are active
+**Panel Restoration**:
+- Only non-maintaining interrupts block restoration
+- Theme changes always maintain and never block restoration
+- Restoration occurs when no panel-loading interrupts are active
 
-**Coordinated Processing Implementation**:
-- **InterruptManager**: Coordinates PolledHandler and QueuedHandler
-- **PolledHandler**: Manages POLLED interrupts for GPIO state monitoring
-- **QueuedHandler**: Manages QUEUED interrupts for button event processing
-- **Coordinated Processing**:
-  1. **Handler Evaluation**: Each handler evaluates its interrupts independently
-  2. **Priority Coordination**: InterruptManager compares highest priority interrupt from each handler
-  3. **Effect-Based Execution**: InterruptManager executes based on interrupt effect type
-  4. **Simplified Restoration**: Only panel-loading effects affect restoration
-- **Single Evaluation Rule**: Each handler evaluates its interrupts exactly once per processing cycle
-- **Cross-Handler Priority**: Highest priority interrupt across both handlers gets processed
-- **Effect-Based Logic**: Restoration based on interrupt effects rather than complex priority blocking
+For detailed restoration logic, see: **[Architecture Document](architecture.md#coordinated-interrupt-processing-system)**
 
-**POLLED Interrupt Registration Examples** (COORDINATED PATTERN):
-```cpp
-// POLLED panel-loading interrupt using KeyPresentSensor - routed to PolledHandler
-interruptManager.RegisterInterrupt({
-    .id = "key_present",
-    .priority = Priority::CRITICAL,
-    .source = InterruptSource::POLLED,
-    .effect = InterruptEffect::LOAD_PANEL,
-    .evaluationFunc = IsKeyPresent,              // Checks current key state (not change)
-    .activateFunc = LoadKeyPanel,                // Executes when key becomes present
-    .deactivateFunc = nullptr,                   // No deactivation needed
-    .sensorContext = keyPresentSensor,
-    .serviceContext = panelManager,
-    .data = { .panel = { "KEY", true, false } }  // Track restore, don't maintain when inactive
-});
+**Coordinated Processing**:
+For detailed processing flow, see: **[Application Flow Diagram](diagrams/application-flow.md)**
 
-// POLLED theme-setting interrupt (doesn't affect restoration) - routed to PolledHandler
-interruptManager.RegisterInterrupt({
-    .id = "lights_changed",
-    .priority = Priority::NORMAL,
-    .source = InterruptSource::POLLED,
-    .effect = InterruptEffect::SET_THEME,
-    .evaluationFunc = AreLightsOn,               // Checks current light state
-    .activateFunc = SetNightTheme,               // Executes when lights turn on
-    .deactivateFunc = nullptr,                   // No deactivation (other interrupt handles day)
-    .sensorContext = lightsSensor,
-    .serviceContext = styleManager,
-    .data = { .theme = { Theme::NIGHT, true } }  // Always maintain theme when inactive
-});
-```
+**Interrupt Registration Examples**:
+For complete registration patterns, see: **[Architecture Document](architecture.md#coordinated-interrupt-registration)**
 
-**Registered POLLED Interrupts**:
-- **key_present**: POLLED panel-loading interrupt using KeyPresentSensor (GPIO 25)
-- **key_not_present**: POLLED panel-loading interrupt using KeyNotPresentSensor (GPIO 26)
-- **lock_active**: POLLED panel-loading interrupt using LockSensor for lock engaged state
-- **lights_changed**: POLLED theme-setting interrupt using LightsSensor (theme change only)
-- **error_occurred**: POLLED panel-loading interrupt using ErrorManager state changes
+**Registered Interrupts**: See **[Architecture Document](architecture.md)** for complete interrupt list.
 
-**Sensor Change Detection Requirements**:
-All sensors implement change detection through the BaseSensor base class:
+**Sensor Change Detection**:
+All sensors inherit from BaseSensor for consistent change detection. For implementation details, see: **[Architecture Document](architecture.md#sensor-architecture)**
 
-```cpp
-class BaseSensor {
-protected:
-    bool initialized_ = false;
-    
-    template<typename T>
-    bool DetectChange(T currentValue, T& previousValue) {
-        if (!initialized_) {
-            previousValue = currentValue;
-            initialized_ = true;
-            return false; // No change on first read
-        }
-        
-        bool changed = (currentValue != previousValue);
-        previousValue = currentValue;
-        return changed;
-    }
-};
-```
+**Sensor Implementation**: See **[Architecture Document](architecture.md#sensor-architecture)** for complete patterns.
 
-**Implementation Notes**:
-- BaseSensor class provides change detection template
-- All trigger sensors inherit from BaseSensor
-- Independent initialization for each sensor instance
+**Sensor Ownership**:
+- **PolledHandler**: Creates and owns GPIO sensors for state monitoring
+- **QueuedHandler**: Creates and owns button sensor for event processing  
+- **Data Panels**: Create own data sensors internally
+- **Display-Only Panels**: Create only components, no sensors
 
-**Sensor Implementation Pattern**:
-- **State Tracking**: Each sensor tracks its previous state internally
-- **Change Detection**: Sensors provide HasStateChanged() methods
-- **Initialization**: Sensors set baseline state during Init() without triggering
-- **Consistency**: All sensors follow the same change detection pattern
+For complete ownership model, see: **[Architecture Document](architecture.md#memory-architecture)**
 
-**Sensor Ownership and Resource Management**:
+**Resource Management**: See **[Architecture Document](architecture.md#memory-architecture)** for complete ownership model and factory patterns.
 
-**CRITICAL ARCHITECTURE CONSTRAINT: PROPER FACTORY PATTERN WITH SINGLE SENSOR OWNERSHIP**
-- **Handler Sensor Creation**: TriggerHandler and ActionHandler create and own their respective sensors internally
-- **Panel Sensor Creation**: Data panels (OilPanel) create their own data sensors internally
-- **Display-Only Trigger Panels**: KeyPanel, LockPanel create components but NO sensors
-- **GPIO Resource Safety**: Each GPIO pin has exactly ONE sensor instance to prevent conflicts
+**Priority and Restoration**: See **[Architecture Document](architecture.md#coordinated-interrupt-processing-system)** for complete priority system and restoration logic.
 
-**Sensor Creation and Ownership Requirements**:
-1. **Build-Time Verification**: System must prevent multiple sensor instances for same GPIO
-2. **Resource Conflict Detection**: GPIO interrupt attachment conflicts must be avoided
-3. **Trigger Panel Restrictions**: Trigger panels forbidden from creating sensor instances
-4. **Specialized Handler Ownership**: PolledHandler owns GPIO sensors, QueuedHandler owns button sensor
-5. **Panel Ownership**: Data panels create and own their data sensors
-6. **Cleanup Requirements**: Sensors with GPIO interrupts must implement proper destructors
+**Processing Flow**: See **[Application Flow Diagram](diagrams/application-flow.md)** for detailed interrupt processing steps.
 
-**Sensor Resource Management Implementation**:
-- **Destructors**: KeyPresentSensor and KeyNotPresentSensor implement destructors with DetachInterrupt()
-- **DetachInterrupt**: Proper GPIO cleanup in sensor destructors
-- **Safe Cleanup**: Null pointer checks prevent crashes during cleanup
-- **No Resource Leaks**: Sensors properly release GPIO resources on destruction
+**Architecture Principles**: See **[Architecture Document](architecture.md)** for complete constraints and restoration logic.
 
-**Panel Implementation**:
-- **Trigger Panels**: KeyPanel, LockPanel are display-only - create components, use direct GPIO reads for initial state
-- **Data Panels**: OilPanel creates own OilPressure/Temperature sensors and components
-- **State Display**: Trigger panels read GPIO state directly via gpioProvider_->DigitalRead()
-- **No Trigger Panel Sensors**: No sensor instances created in trigger panels
+**Multi-Trigger Scenarios**: See **[Test Scenarios Document](scenario.md)** for complete behavior examples.
 
-**Factory Pattern Architecture**:
-```
- Main
-├── Creates ProviderFactory (implements IProviderFactory)
-│   ├── GpioProvider
-│   ├── DisplayProvider
-│   └── DeviceProvider
-└── Creates ManagerFactory (with IProviderFactory injected)
-    ├── Creates InterruptManager
-    │   ├── Creates PolledHandler (owns GPIO sensors)
-    │   │   ├── KeyPresentSensor (GPIO 25)
-    │   │   ├── KeyNotPresentSensor (GPIO 26)
-    │   │   ├── LockSensor (GPIO 27)
-    │   │   └── LightsSensor (GPIO 33)
-    │   └── Creates QueuedHandler (owns button sensor)
-    │       └── ActionButtonSensor (GPIO 32)
-    └── Creates PanelManager
-        └── Creates panels on demand (with providers injected)
-            ├── KeyPanel (display-only - creates components, no sensors)
-            ├── LockPanel (display-only - creates components, no sensors)  
-            └── OilPanel (creates own data sensors and components)
-```
+**Key Sensor Architecture**: See **[Architecture Document](architecture.md#sensor-architecture)** for complete split sensor design and implementation requirements.
 
-**Priority Levels**:
-- **CRITICAL (0)**: Highest priority (errors, key security)
-- **IMPORTANT (1)**: Security-related (lock status)
-- **NORMAL (2)**: Standard operations (theme changes, button actions, preferences)
+#### 2.3.4 QUEUED Interrupts
 
-**Effect-Based Restoration Logic**:
-- Only LOAD_PANEL effect interrupts participate in restoration logic
-- SET_THEME effects never block or affect panel restoration
-- SET_PREFERENCE effects never block or affect panel restoration
-- CUSTOM_FUNCTION effects never block or affect panel restoration
-- When no LOAD_PANEL interrupts are active, restore the user-driven panel
-- Simplified logic eliminates complex priority-based blocking scenarios
+**QUEUED Interrupt Architecture**: Handles button events with single latest event processing.
 
-**Coordinated Interrupt Processing**:
-1. InterruptManager calls PolledHandler::Process() and QueuedHandler::Process()
-2. Each handler evaluates its interrupts:
-   - PolledHandler: Calls evaluationFunc() to detect GPIO state changes
-   - QueuedHandler: Checks button event queue for pending actions
-3. InterruptManager coordinates highest priority interrupt across both handlers
-4. Effect-based execution based on interrupt effect type via InterruptManager
-5. Track panel-loading interrupt activity across both handlers for simplified restoration
-6. Return to user-driven panel when no LOAD_PANEL interrupts are active in either handler
+For complete implementation details, see: **[Architecture Document](architecture.md#queued-interrupts)**
 
-**Change Detection Flow**:
-1. **Sensor Read**: Each trigger evaluation reads current sensor state
-2. **Change Detection**: Sensor compares current state to previous state
-3. **Condition Check**: If change detected, check if target condition is met
-4. **Single Execution**: If conditions met, execute action exactly once
-5. **State Update**: Sensor updates its previous state for next evaluation
+**Universal Panel Button Functions**: All panels implement short/long press functions called via QUEUED interrupts.
 
-**Critical Architecture Constraints**:
+**Universal Panel Button Implementation**:
+Every panel implements the IActionService interface providing consistent button behavior across the system.
 
-**INDEPENDENT TRIGGERS** - All triggers are completely independent entities:
-- Multiple triggers can be active simultaneously
-- Triggers with same priority are processed in registration order
-- Last trigger to activate "wins" for panel display
-- Each trigger manages its own state independently
+**Button Hardware Configuration**:
+- **GPIO**: Single button on GPIO 32 with INPUT_PULLDOWN configuration
+- **Timing**: Short press (50ms-2000ms), Long press (2000ms-5000ms)
+- **Debouncing**: 50ms debounce time to prevent false triggers
+- **Processing**: QUEUED interrupts with latest event processing (not queue-based)
 
-**TRIGGER INDEPENDENCE** - Key architectural principles:
-1. No coupling between triggers (e.g., key_present and key_not_present are unrelated)
-2. Multiple triggers can share the same priority level
-3. When multiple same-priority triggers are active, all are processed
-4. Panel restoration occurs only when ALL triggers become inactive
+**Button Integration Flow**:
+1. **Button Press Detection**: ActionButtonSensor detects press type and duration
+2. **Event Queueing**: QueuedHandler receives latest button event (replaces previous)
+3. **Interrupt Evaluation**: Universal button interrupts evaluate for pending events
+4. **Function Execution**: Current panel's injected function executed with panel context
+5. **State Update**: Button event cleared after successful execution
 
-**RESTORATION LOGIC** - Critical requirement:
-- Uses priority-based blocking: CRITICAL and IMPORTANT triggers block restoration
-- NORMAL priority triggers (e.g., lights/theme) do NOT block restoration
-- When restoration is blocked, the blocking trigger's action is executed instead
-- Individual trigger deactivation does NOT immediately trigger restoration
-- This prevents panel flickering and ensures proper panel precedence
-
-**MULTI-TRIGGER SCENARIOS** - Change-based behaviors:
-
-Scenario 1 - Blocking trigger prevents restoration:
-1. Key inserted: key_present trigger fires once (loads key panel)
-2. Lock engaged: lock_active trigger fires once (loads lock panel)
-3. Key removed: key_present state changes but lock still active (lock blocks restoration)
-4. Lock disengaged: lock_active state changes, no blocking triggers (user panel restores)
-
-Scenario 2 - Non-blocking trigger allows restoration:
-1. Key inserted: key_present trigger fires once (loads key panel)
-2. Lights turned on: lights_state trigger fires once (changes theme only)
-3. Key removed: key_present state changes, lights don't block (user panel restores)
-4. Lights turned off: lights_state trigger fires once (changes theme back)
-
-Scenario 3 - Rapid state changes:
-1. Key inserted then immediately removed: Both triggers fire in sequence
-2. Lock engaged then immediately disengaged: Single trigger fires twice
-3. Lights rapidly toggled: Each state change fires trigger once
-4. System handles all changes without repeated actions
-
-**Performance Benefits**:
-- Theme setting: Reduced from ~60/sec to ~2/sec (only on actual changes)
-- Panel loading: Once per state transition instead of continuously
-- CPU usage: Consistent regardless of maintained trigger states
-- Memory usage: No fragmentation from repeated operations
-
-**Key Sensor Architecture - Split Sensor Design**:
-The key detection system implements **two completely independent sensor classes**, reflecting the hardware reality of separate GPIO detection mechanisms:
-
-**Sensor Class Architecture**:
-- **KeyPresentSensor**: Dedicated class managing GPIO 25 (KEY_PRESENT pin)
-- **KeyNotPresentSensor**: Dedicated class managing GPIO 26 (KEY_NOT_PRESENT pin)
-- **Independent Inheritance**: Each sensor inherits from `ISensor` and `BaseSensor` separately
-- **Isolated State Management**: Each sensor maintains its own change detection state
-- **Proper Cleanup**: Both sensors implement destructors with DetachInterrupt()
-
-**Hardware Interface**:
-- **GPIO 25 (KEY_PRESENT)**: KeyPresentSensor monitors for HIGH state indicating key presence
-- **GPIO 26 (KEY_NOT_PRESENT)**: KeyNotPresentSensor monitors for HIGH state indicating key absence
-- **GPIO State Logic**: Both pins LOW = no detection active, either pin HIGH = valid detection
-- **Pull-down Configuration**: Both pins use INPUT_PULLDOWN for stable readings
-
-**Critical Architecture Principle**: 
-**SENSOR INDEPENDENCE REQUIREMENT** - KeyPresentSensor and KeyNotPresentSensor are completely separate classes with no shared state, eliminating initialization conflicts and ensuring proper change detection for each GPIO pin independently.
-
-**Split Sensor Implementation Requirements**:
-1. **Independent Classes**: Each GPIO must have dedicated sensor class
-2. **Separate Initialization**: Each sensor has its own initialized_ flag
-3. **Individual Change Detection**: No shared state between sensor change tracking
-4. **Resource Isolation**: GPIO cleanup handled independently per sensor
-5. **Architectural Alignment**: Split design matches independent trigger system
-
-**Sensor Implementation Pattern**:
-```cpp
-// Independent sensor classes
-class KeyPresentSensor : public ISensor, public BaseSensor {
-    bool HasStateChanged();      // Independent change detection
-    bool GetKeyPresentState();   // GPIO 25 only
-private:
-    bool initialized_ = false;   // Independent initialization
-};
-
-class KeyNotPresentSensor : public ISensor, public BaseSensor {
-    bool HasStateChanged();         // Independent change detection  
-    bool GetKeyNotPresentState();   // GPIO 26 only
-private:
-    bool initialized_ = false;      // Independent initialization
-};
-```
-
-**State Validation Rules**:
-1. **Valid Detection States**: 
-   - Both sensors inactive: No key detection active
-   - KeyPresentSensor active: Key detected as present
-   - KeyNotPresentSensor active: Key detected as not present
-
-2. **Conflict Resolution**: 
-   - Both sensors active simultaneously: Hardware fault condition
-   - System prioritizes most recently activated sensor
-   - Logging captures conflicting states for diagnostics
-
-**Independent Trigger Implementation**:
-Each sensor integrates with completely separate triggers:
-- **key_present trigger**: Uses KeyPresentSensor change detection
-- **key_not_present trigger**: Uses KeyNotPresentSensor change detection
-- **Evaluation Pattern**: `sensor->HasStateChanged() && sensor->GetCurrentState()`
-- **Execution**: Each trigger loads KeyPanel with appropriate state
-- **Priority**: Both triggers have CRITICAL priority for immediate response
-
-#### 2.3.4 QUEUED Interrupts (replaces Actions)
-
-**QUEUED Interrupt Architecture**:
-QUEUED interrupts handle button events from a message queue and execute panel-specific behaviors:
-
-**Interrupt with QUEUED Source**:
-```cpp
-struct Interrupt {
-    const char* id;                                    // Static string for memory efficiency
-    Priority priority;                                 // Processing priority
-    InterruptSource source;                           // QUEUED for button event processing
-    InterruptEffect effect;                           // LOAD_PANEL, SET_PREFERENCE, BUTTON_ACTION
-    bool (*evaluationFunc)(void* context);           // Function pointer - no heap allocation
-    void (*executionFunc)(void* context);            // Function pointer - no heap allocation
-    void* context;                                    // Panel or handler context
-    union { /* effect-specific data */ } data;       // Union for memory efficiency
-};
-```
-
-**QueuedHandler Implementation**:
-- Implements IHandler interface
-- Manages list of QUEUED interrupts only
-- Owns ActionButtonSensor for GPIO 32 monitoring
-- Processes QUEUED interrupts by checking **single latest button event** (not a queue)
-- **Single Event Policy**: Maintains only the most recent button event, automatically discarding any previous unprocessed events
-- Marks available actions for InterruptManager coordination
-- Clears action state after execution
-
-```cpp
-class QueuedHandler {
-private:
-    std::optional<ButtonEvent> latestButtonEvent_;  // Only latest event, replaces previous
-    
-public:
-    void QueueButtonEvent(ButtonEvent event);       // Replaces any existing event
-    bool HasPendingButtonEvent() const;
-    void ClearButtonEvent();                        // Clears after processing
-};
-```
-
-**Input Detection**:
-The QueuedHandler monitors button hardware and updates action availability:
-- Monitors button state continuously via ActionButtonSensor
-- Detects press types (short/long) with debouncing
-- Queues button events for QUEUED interrupt evaluation
-- Event queue processed by QUEUED interrupt evaluation functions
-
-**QUEUED Interrupt Registration Examples - Universal Panel Functions**:
-```cpp
-// Universal short press button action - routed to QueuedHandler
-interruptManager.RegisterInterrupt({
-    .id = "universal_short_press",
-    .priority = Priority::NORMAL,
-    .source = InterruptSource::QUEUED,
-    .effect = InterruptEffect::BUTTON_ACTION,
-    .evaluationFunc = HasShortPressEvent,
-    .activateFunc = ExecutePanelShortPress,      // Calls current panel's short press function
-    .deactivateFunc = nullptr,
-    .sensorContext = actionButtonSensor,
-    .serviceContext = panelManager,              // Used to get current panel
-    .data = { .buttonActions = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
-});
-
-// Universal long press button action - routed to QueuedHandler
-interruptManager.RegisterInterrupt({
-    .id = "universal_long_press",
-    .priority = Priority::NORMAL,
-    .source = InterruptSource::QUEUED,
-    .effect = InterruptEffect::BUTTON_ACTION,
-    .evaluationFunc = HasLongPressEvent,
-    .activateFunc = ExecutePanelLongPress,       // Calls current panel's long press function
-    .deactivateFunc = nullptr,
-    .sensorContext = actionButtonSensor,
-    .serviceContext = panelManager,
-    .data = { .buttonActions = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
-});
-```
-
-**IActionService Interface**:
-All panels must implement `IActionService` which provides:
-- `GetShortPressAction()`: Returns Action struct with function pointer for short press handling
-- `GetLongPressAction()`: Returns Action struct with function pointer for long press handling
-- Panel-specific logic executed when actions are triggered
-
-**Hardware Configuration**:
-- Single push button on GPIO 32
-- Rising edge detection with debouncing
-- 3.3V pull-up configuration
-
-**Input Timing**:
-- **Short Press**: 50ms - 2000ms
-- **Long Press**: 2000ms - 5000ms
-- **Maximum Press**: 5100ms (timeout)
-- **Debounce Time**: 50ms
-
-**Panel-Specific Action Behaviors**:
-- **Oil Panel**: Short press: No action, Long press: Load config panel
-- **Splash Panel**: Short press: Skip animation, Long press: Load config panel
-- **Error Panel**: Short press: Cycle through errors, Long press: Clear all errors
-- **Config Panel**: Short press: Cycle through options, Long press: Select/edit option
-
-**QUEUED Interrupt Processing Rules**:
-- QUEUED interrupts processed by priority alongside POLLED interrupts
-- Highest priority interrupt (regardless of source) gets processed first
-- Button events queued and processed when their interrupt evaluates true
-- Panel context validated before executing panel-specific custom functions
+For complete input system details, see: **[Input System Documentation](input.md)**
 
 #### 2.3.5 Errors
 
@@ -669,32 +329,40 @@ struct ActionInterrupt {
 ```
 
 **Handler Implementations**:
-- **TriggerHandler**: Implements IHandler, manages trigger structs with phase-based processing
-- **ActionHandler**: Implements IHandler, manages action structs with button monitoring
-- **Registration**: Type-specific methods (RegisterTrigger/RegisterAction)
-- **Polymorphic Processing**: InterruptManager::Process() calls both handlers via IHandler*
+- **PolledHandler**: Implements IHandler, manages POLLED interrupts for GPIO state monitoring
+- **QueuedHandler**: Implements IHandler, manages QUEUED interrupts for button event processing
+- **Registration**: Unified Interrupt struct registration
+- **Coordinated Processing**: InterruptManager coordinates both handlers by priority
+
+For complete implementation details, see: **[Architecture Document](architecture.md#coordinated-interrupt-system-architecture)**
 
 #### 2.3.7 Registration Pattern
 
-Triggers and actions are registered at startup as struct instances:
+POLLED and QUEUED interrupts are registered at startup as struct instances:
 
 ```
-// Register triggers with TriggerHandler
-triggerHandler.RegisterTrigger({
-    id: "key_present",
-    priority: CRITICAL,
-    evaluationFunc: [gpio]() { return gpio->Read(KEY_PIN); },
-    executionFunc: [panel]() { panel->LoadPanel("key"); },
-    state: INIT
+// Register POLLED interrupt with PolledHandler (via InterruptManager)
+interruptManager.RegisterInterrupt({
+    .id = "key_present",
+    .priority = Priority::CRITICAL,
+    .source = InterruptSource::POLLED,
+    .effect = InterruptEffect::LOAD_PANEL,
+    .evaluationFunc = IsKeyPresent,
+    .activateFunc = LoadKeyPanel,
+    .sensorContext = keyPresentSensor,
+    .serviceContext = panelManager
 });
 
-// Register actions with ActionHandler
-actionHandler.RegisterAction({
-    id: "short_press",
-    priority: NORMAL,
-    evaluationFunc: [actionHandler]() { return actionHandler->HasPendingAction(SHORT_PRESS); },
-    executionFunc: [panel]() { panel->ExecuteShortPress(); },
-    actionType: SHORT_PRESS
+// Register QUEUED interrupt with QueuedHandler (via InterruptManager)
+interruptManager.RegisterInterrupt({
+    .id = "short_press",
+    .priority = Priority::NORMAL,
+    .source = InterruptSource::QUEUED,
+    .effect = InterruptEffect::BUTTON_ACTION,
+    .evaluationFunc = HasShortPressEvent,
+    .activateFunc = ExecutePanelShortPress,
+    .sensorContext = actionButtonSensor,
+    .serviceContext = panelManager
 });
 ```
 
@@ -703,7 +371,7 @@ actionHandler.RegisterAction({
 - **Actions**: short_press_action, long_press_action
 
 This approach provides:
-- Single handler per interrupt type (triggers vs actions)
+- Specialized handlers per interrupt source (POLLED vs QUEUED)
 - Direct struct registration without intermediate handler objects
 - Clear separation between trigger and action processing logic
 
@@ -714,26 +382,23 @@ InterruptManager coordinates both handlers through the unified IHandler interfac
 
 ```cpp
 void InterruptManager::CheckAllInterrupts() {
-    triggerHandler_->Process();  // IHandler* - processes trigger structs
-    actionHandler_->Process();   // IHandler* - processes action structs  
+    polledHandler_->Process();   // IHandler* - processes POLLED interrupts
+    queuedHandler_->Process();   // IHandler* - processes QUEUED interrupts  
 }
 ```
 
 **Handler-Specific Processing**:
-1. **TriggerHandler::Process()** (evaluated first):
-   - Iterates trigger structs by priority (highest first)
-   - Calls hasChangedFunc() on each trigger to detect state changes (once per cycle)
-   - If changed, calls getCurrentStateFunc() to determine activation/deactivation
-   - Executes trigger action for activation, or processes deactivation logic
-   - First trigger with changes gets processed, others ignored
-   - On deactivation: checks other triggers' current state for fallback
-   - NORMAL priority triggers never block restoration
+1. **PolledHandler::Process()** (GPIO state monitoring):
+   - Evaluates POLLED interrupts for state changes
+   - Marks active interrupts for InterruptManager coordination
    
-2. **ActionHandler::Process()** (evaluated second):
-   - Only processes if no triggers are currently active
-   - Checks action struct conditions via evaluationFunc()
-   - Executes first available action via executionFunc()
-   - Clears action state after execution
+2. **QueuedHandler::Process()** (button event processing):
+   - Evaluates QUEUED interrupts for latest button event
+   - Marks active interrupts for InterruptManager coordination
+   
+3. **InterruptManager coordination**:
+   - Compares highest priority interrupt from each handler
+   - Executes highest priority interrupt across both handlers
 
 **Architecture Benefits**:
 - **Polymorphic Processing**: InterruptManager treats both handlers identically
@@ -747,7 +412,7 @@ void InterruptManager::CheckAllInterrupts() {
 - **Memory Stability**: No fragmentation from repeated object creation/destruction
 - **Predictable Behavior**: Clear semantics for when actions execute
 - **System Stability**: Eliminates hanging caused by inconsistent trigger types
-- **Consistent Implementation**: All triggers follow identical change-detection pattern
+- **Consistent Implementation**: All POLLED interrupts follow identical change-detection pattern
 - **Easier Debugging**: State changes are explicit and trackable
 - **Reduced Power Consumption**: Less CPU usage during idle periods
 
@@ -798,11 +463,13 @@ protected:
 #### 2.3.11 Priority-Based Restoration Implementation
 **Blocking Trigger Detection**:
 ```cpp
-// Check if any blocking triggers are active
-bool HasBlockingTriggerActive() const {
-    for (const auto& trigger : triggers_) {
-        if (trigger.state == ACTIVE &&
-            (trigger.priority == CRITICAL || trigger.priority == IMPORTANT)) {
+// Check if any blocking panel-loading interrupts are active
+bool HasBlockingPanelInterruptActive() const {
+    for (const auto& interrupt : polledInterrupts_) {
+        if (interrupt.active &&
+            (interrupt.priority == CRITICAL || interrupt.priority == IMPORTANT) &&
+            interrupt.effect == InterruptEffect::LOAD_PANEL &&
+            !interrupt.data.panel.maintainWhenInactive) {
             return true;
         }
     }
@@ -812,10 +479,10 @@ bool HasBlockingTriggerActive() const {
 
 **Restoration Decision Logic**:
 When a panel-loading trigger deactivates:
-1. Check if any blocking triggers (CRITICAL/IMPORTANT) are active
-2. If yes: Execute the highest priority blocking trigger's action
+1. Check if any blocking panel-loading interrupts (CRITICAL/IMPORTANT) are active
+2. If yes: Execute the highest priority blocking interrupt's activation function
 3. If no: Restore the user-driven panel
-4. NORMAL priority triggers (lights) never affect this decision
+4. SET_THEME interrupts (lights) never participate in blocking logic
 
 **Example Flow**:
 - Key trigger deactivates while lock trigger is active
@@ -823,9 +490,33 @@ When a panel-loading trigger deactivates:
 - Lock trigger's execution function is called
 - Lock panel is loaded instead of restoring user panel
 
-### 2.4 Sensor System
+### 2.4 Development and Debug System
 
-#### 2.4.1 Sensor Architecture
+#### 2.4.1 Debug Error Trigger System
+**Purpose**: Enable testing and validation of error handling system during development.
+
+**Hardware Configuration**:
+- **GPIO 34**: Input-only pin for debug error trigger (development builds only)
+- **External Circuit**: Requires external pull-down resistor (GPIO 34 has no internal pull resistors)
+- **Activation**: HIGH signal triggers debug error generation
+
+**Debug Error Integration**:
+- **Conditional Compilation**: Only active in CLARITY_DEBUG builds
+- **Error Generation**: Creates test errors for system validation and error panel testing
+- **Interrupt Registration**: debug_error_trigger interrupt with CRITICAL priority
+- **Error Types**: Configurable error levels (WARNING/ERROR/CRITICAL) for comprehensive testing
+
+**Development Features**:
+- **Error Panel Testing**: Validate error cycling, acknowledgment, and auto-restoration
+- **Priority Testing**: Verify error interrupts override other panels correctly
+- **System Integration**: Test complete error workflow from detection to restoration
+- **Hardware Validation**: Verify GPIO interrupt handling and debouncing
+
+**Production Builds**: Debug error system completely excluded from release builds for memory optimization.
+
+### 2.5 Sensor System
+
+#### 2.5.1 Sensor Architecture
 
 **Sensor Class Hierarchy**:
 All sensors inherit from `ISensor` interface and `BaseSensor` for change detection:
@@ -845,7 +536,7 @@ protected:
 };
 ```
 
-#### 2.4.2 Sensor Types and Implementations
+#### 2.5.2 Sensor Types and Implementations
 
 **Digital Sensors**:
 - **KeyPresentSensor** (GPIO 25): Key present detection
@@ -870,26 +561,26 @@ protected:
 
 - **ActionButtonSensor** (GPIO 32): User input button
   - Debouncing and timing logic
-  - Owned by ActionHandler
+  - Owned by QueuedHandler
 
 **Analog Sensors**: ADC-based continuous measurements
 - **OilPressureSensor**: Pressure monitoring with unit conversion
 - **OilTemperatureSensor**: Temperature monitoring
 
-#### 2.4.2 Unit Management
+#### 2.5.3 Unit Management
 - Units of measure injected via SetTargetUnit() method
 - Sensors implement GetSupportedUnits() for validation
 - Sensors report readings in requested units via ConvertReading()
 - Panels control visual scales and ranges independently
 - OilPressureSensor supports Bar, PSI, kPa units
 
-### 2.5 Theme System
+### 2.6 Theme System
 
-#### 2.5.1 Available Themes
+#### 2.6.1 Available Themes
 - **Day Theme**: White/bright colors for daylight visibility
 - **Night Theme**: Red/dark colors for night vision
 
-#### 2.5.2 Theme Switching
+#### 2.6.2 Theme Switching
 - Automatic based on light sensor
 - Instant switching without panel reload
 - Theme persists across panel switches
@@ -1049,8 +740,8 @@ protected:
 ### 6.1 Manager Services
 - **PanelManager**: Panel lifecycle, switching, and restoration tracking
 - **InterruptManager**: Orchestrates interrupt checking during LVGL idle time
-  - **TriggerHandler**: Change-based trigger evaluation with phase processing
-  - **ActionHandler**: Button input management with panel action routing
+  - **PolledHandler**: GPIO state monitoring with change detection
+  - **QueuedHandler**: Button event processing with latest event handling
 - **StyleManager**: Theme management (Day/Night)
 - **PreferenceManager**: Persistent settings storage
 - **ErrorManager**: Error collection with change detection integration
@@ -1113,7 +804,7 @@ protected:
 ## 10. Document History
 
 - **Version 1.0**: Initial comprehensive PRD incorporating architecture, error handling, input system, scenarios, and sensor guidelines
-- **Version 1.1**: Updated after codebase review - corrected input timing, added ActionManager, updated ErrorManager implementation status, corrected panel names and configurations
+- **Version 1.1**: Updated after codebase review - corrected input timing, updated ErrorManager implementation status, corrected panel names and configurations
 - **Version 1.2**: Major architectural update - transition to change-based trigger system
   - Updated trigger architecture to use change-based evaluation instead of state-based
   - Added sensor change detection requirements and implementation patterns
@@ -1128,16 +819,16 @@ protected:
   - Modified trigger registration examples to use dedicated sensor classes
   - Enhanced sensor class hierarchy documentation with inheritance patterns
   - Improved architectural alignment with independent trigger design principle
-- **Version 1.4**: TriggerHandler architecture redesign - separation of concerns
-  - Separated change detection (`hasChangedFunc`) from state retrieval (`getCurrentStateFunc`)
-  - Implemented phase-based processing to prevent multiple evaluation corruption
-  - Added proper deactivation handling with priority-based restoration logic
-  - Enforced single evaluation rule: each trigger checked exactly once per cycle
-  - Updated trigger struct to support independent change and state functions
-  - Added comprehensive restoration logic for multi-trigger scenarios
+- **Version 1.4**: Coordinated interrupt architecture design
+  - Separated PolledHandler and QueuedHandler with central coordination
+  - Implemented effect-based execution with activate/deactivate functions
+  - Added maintenance-based restoration logic
+  - Enforced single evaluation rule: each interrupt processed exactly once per cycle
+  - Updated interrupt struct to support unified processing
+  - Added comprehensive restoration logic for multi-interrupt scenarios
 - **Version 1.5**: Sensor ownership and resource management clarification
   - Added critical architecture constraint for single sensor ownership
-  - Specified TriggerHandler as sole owner of trigger sensors
+  - Specified PolledHandler as owner of GPIO sensors, QueuedHandler as owner of button sensor
   - Eliminated sensor duplication in panels (display-only requirement)
   - Added destructor requirements for proper GPIO resource cleanup
   - Clarified panel responsibilities (trigger panels are display-only)

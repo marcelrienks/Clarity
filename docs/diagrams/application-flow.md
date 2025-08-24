@@ -1,17 +1,18 @@
 # Application Flow Diagram
 
-This diagram illustrates the complete application flow from startup through runtime operations, showing how the coordinated interrupt system processes interrupts through specialized PolledHandler and QueuedHandler with source-based evaluation and effect-based execution.
+This diagram illustrates the complete application flow from startup through runtime operations, showing the coordinated interrupt processing flow.
 
 ## Flow Overview
 
-- **Startup Sequence**: Manager creation, coordinated handlers creation with specialized sensor ownership
-- **Main Loop**: LVGL tasks with coordinated interrupt processing during idle time only
-- **Coordinated Processing**: InterruptManager coordinates PolledHandler and QueuedHandler by priority
-- **Effect-Based Restoration**: Only LOAD_PANEL effects participate in simplified restoration logic
-- **Source-Based Evaluation**: POLLED (GPIO state) and QUEUED (button events) processing
-- **Error Integration**: ErrorManager with CRITICAL priority POLLED interrupt integration
-- **Configuration Flow**: Preference setting via SET_PREFERENCE effect interrupts
-- **Theme Switching**: Light sensor triggers SET_THEME effect interrupts (non-blocking)
+- **Startup Sequence**: Service initialization and coordinated handler creation
+- **Main Loop**: LVGL tasks with interrupt processing during idle time only
+- **Coordinated Processing**: Priority-based interrupt coordination
+- **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, BUTTON_ACTION effects
+- **Panel Operations**: Lifecycle management and restoration
+- **Error Integration**: Critical priority error handling
+- **Theme Switching**: Non-blocking theme changes
+
+For detailed architecture, see: **[Architecture Document](../architecture.md)**
 
 ```mermaid
 flowchart TD
@@ -176,51 +177,49 @@ flowchart TD
 ## Key Flow Details
 
 ### Startup Sequence
-1. **Service Initialization**: Initialize core services and prepare system
-2. **Provider Creation**: ProviderFactory creates all hardware providers (GpioProvider, DisplayProvider, DeviceProvider)
-3. **Manager Creation**: ManagerFactory creates all managers with IProviderFactory dependency injected
-4. **Handler Creation**: InterruptManager creates PolledHandler and QueuedHandler
-5. **Sensor Creation**: PolledHandler owns GPIO sensors, QueuedHandler owns button sensor
-6. **Interrupt Registration**: Static callbacks registered to appropriate handlers (POLLED to PolledHandler, QUEUED to QueuedHandler)
-7. **Panel System**: PanelManager ready to create panels on demand with provider injection
-8. **Initial Display**: Splash panel loads with animation, creates own components
+1. **Service Initialization**: Core services and system preparation
+2. **Factory Creation**: ProviderFactory and ManagerFactory setup
+3. **Handler Creation**: InterruptManager creates specialized handlers
+4. **Sensor Creation**: Handlers create and own their sensors
+5. **Interrupt Registration**: Static callbacks registered to handlers
+6. **Panel System**: PanelManager ready for on-demand panel creation
+7. **Initial Display**: Splash panel loads with animation
 
-### Runtime Interrupt Processing
-1. **LVGL Idle Check**: Interrupts only processed when system idle
-2. **Coordinated Processing**: InterruptManager coordinates PolledHandler::Process() and QueuedHandler::Process()
-3. **Priority-Based Coordination**: Highest priority interrupt across both handlers processed first
-4. **Panel Updates**: All panel operations return to main loop
+### Runtime Processing
+1. **LVGL Idle Check**: Interrupts processed only during idle time
+2. **Coordinated Processing**: InterruptManager coordinates both handlers
+3. **Priority-Based Coordination**: Highest priority interrupt processed first
+4. **Panel Updates**: Operations return to main loop
 
-### Coordinated Interrupt Processing Steps
-1. **State Change Processing**: InterruptManager processes all interrupts for state changes via evaluationFunc(sensorContext)
-2. **Activate/Deactivate Execution**: Execute activateFunc(serviceContext) or deactivateFunc(serviceContext) based on state transitions
-3. **Priority-Based Coordination**: Find highest priority non-maintaining interrupt across all handlers
-4. **Maintenance-Based Restoration**: Only non-maintaining interrupts participate in restoration blocking logic
+### Interrupt Processing Steps
+1. **State Change Detection**: Evaluation functions check current states
+2. **Activate/Deactivate**: Execute functions based on state transitions
+3. **Priority Coordination**: Find highest priority active interrupt
+4. **Restoration Logic**: Non-maintaining interrupts block restoration
 
-### Priority-Based Maintenance System
-- **LOAD_PANEL Effects**: Usually don't maintain (maintainWhenInactive = false), participate in restoration blocking
-- **SET_THEME Effects**: Always maintain (maintainWhenInactive = true), never block restoration
-- **SET_PREFERENCE Effects**: Never maintain, never block restoration (immediate execution)
-- **BUTTON_ACTION Effects**: Never maintain, execute panel's injected short/long press functions
-- **Restoration Decision**: Only when NO non-maintaining interrupts active
-- **Universal Panel Functions**: Every panel provides short/long press function pointers that get injected into button interrupts
+### Maintenance System
+- **LOAD_PANEL Effects**: Usually don't maintain, participate in restoration blocking
+- **SET_THEME Effects**: Always maintain, never block restoration
+- **SET_PREFERENCE Effects**: Never maintain, immediate execution
+- **BUTTON_ACTION Effects**: Execute panel functions, never maintain
+- **Restoration Decision**: When no non-maintaining interrupts active
 
-### Error System Integration
-- **Error Reporting**: Components report errors to ErrorManager singleton
-- **POLLED Integration**: Error interrupt with CRITICAL priority and POLLED source
-- **Panel Override**: Error panel LOAD_PANEL effect takes precedence over all other panels
-- **User Interaction**: Error acknowledgment clears queue and triggers restoration logic
+### Error System
+- **Error Reporting**: Components report to ErrorManager
+- **Critical Priority**: Error interrupts override other panels
+- **User Interaction**: Error acknowledgment enables restoration
 
-### Memory Safety Patterns
-- **Static Callbacks**: All interrupt callbacks use function pointers with void* context
-- **Union-Based Data**: Effect-specific data stored in memory-efficient union structures
-- **Specialized Ownership**: GPIO sensors owned by PolledHandler, button sensor owned by QueuedHandler
-- **Change Detection**: BaseSensor prevents state corruption through templates
+### Memory Safety
+- **Static Callbacks**: Function pointers with void* context
+- **Union-Based Data**: Memory-efficient effect data storage
+- **Specialized Ownership**: Clear sensor ownership model
+- **Change Detection**: BaseSensor template prevents corruption
 
-### Performance Optimizations
-- **State Change Based Processing**: Interrupts only execute activate/deactivate functions when state actually changes
-- **Priority-Based Coordination**: Highest priority non-maintaining interrupt processed, maintaining ones run transparently
-- **Custom Function Injection**: Panel-specific functions injected via void* pointers for memory efficiency
-- **Maintenance-Based Restoration**: Clear maintenance rules eliminate complex restoration decision trees
-- **Universal Button System**: Single button interrupt system works with all panels via injected functions
-- **Idle Processing**: No interrupt overhead during LVGL operations
+### Performance Features
+- **Change-Based Processing**: Functions execute only on state transitions
+- **Priority Coordination**: Efficient highest-priority processing
+- **Function Injection**: Memory-efficient panel function calls
+- **Simplified Restoration**: Clear maintenance-based rules
+- **Idle Processing**: No overhead during LVGL operations
+
+For complete architecture details, see: **[Architecture Document](../architecture.md)**
