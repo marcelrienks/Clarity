@@ -1,11 +1,9 @@
 ## MVP:
 
-## Factory:
-
 ## State:
 Each individual panel is responsible for setting the state to BUSY or IDLE due to the panels being closer to the actual LVGL or Timer logic that consumes processing.
 
-## "Guard Clause" or "Early Return":
+## "Early Return":
 Ensure early validation and return or error handling
 
 ## Logging:

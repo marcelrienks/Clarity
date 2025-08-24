@@ -8,7 +8,7 @@ This document outlines the comprehensive error handling system design for the Cl
 
 ### Current System Pattern
 ```
-Device → PanelManager → Panels → Components
+DeviceProvider → PanelManager → Panels → Components
 ```
 
 ### Trigger System

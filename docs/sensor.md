@@ -10,7 +10,7 @@
   - These settings should be based on visual needs, not the sensor's measurement extent
 
 ### 2. Unit of Measure Injection
-- **Panel managers** will supply the sensor with the preferred unit of measure when the sensor is instantiated
+- **Panels** will supply the sensor with the preferred unit of measure when they create their sensors
 - The unit of measure will be injected during sensor initialization
 - This ensures sensors return readings in the format expected by the consuming panel
 
@@ -72,11 +72,11 @@
    - Support Celsius and Fahrenheit based on injected unit
    - Maintain accuracy in conversions
 
-### Phase 4: Update Panel Managers
+### Phase 4: Update Panels
 
 1. **OemOilPanel Updates**
    - Read pressure and temperature units from preferences
-   - Pass units to sensors during initialization
+   - Pass units to sensors during panel initialization
    - Remove any sensor-specific unit logic from panels
 
 2. **Component Updates**

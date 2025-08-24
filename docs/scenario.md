@@ -12,6 +12,10 @@ Full system test covering all triggers and transitions:
    - Key present → Key panel (green icon)
 5. **State Resolution**: Clear triggers → Return to oil panel
 6. **Day Mode**: Light sensor low → Theme changes to day (white)
+7. **Configuration**: Oil Panel Long press → Config Panel
+8. **Navigate Config**: Config panel → short press until theme setting
+9. **Set Config**: Config Panel change theme → Night
+10. **Exit Config**: Navigate to exit → Long Press
 
 ## Individual Scenarios
 
@@ -19,11 +23,11 @@ Full system test covering all triggers and transitions:
 - Default: Splash (day theme) → Oil panel
 - With sensors: Needles animate to sensor values
 - With triggers: Skip oil panel, load triggered panel
+- With triggers: Set theme before loading any panels
 
 ### Key Triggers
 - **Present**: Green icon, priority over oil panel
 - **Not Present**: Red icon, priority over oil panel
-- **Both Active**: Invalid state → Lock panel
 
 ### Lock Trigger
 - Takes priority over oil panel
