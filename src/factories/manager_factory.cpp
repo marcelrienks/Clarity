@@ -204,21 +204,20 @@ std::unique_ptr<ActionManager> ManagerFactory::createActionManager(IGpioProvider
     return manager;
 }
 
-std::unique_ptr<InterruptManager> ManagerFactory::createInterruptManager(IPanelService *panelService)
+InterruptManager* ManagerFactory::createInterruptManager()
 {
     log_v("createInterruptManager() called");
 
-    auto manager = std::make_unique<InterruptManager>(panelService);
+    InterruptManager* manager = &InterruptManager::Instance();
     if (!manager)
     {
-        log_e("ManagerFactory: Failed to create InterruptManager - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "InterruptManager allocation failed - out of memory");
+        log_e("ManagerFactory: Failed to get InterruptManager singleton instance");
         return nullptr;
     }
 
-    log_d("ManagerFactory: InterruptManager created successfully with panel service: %s",
-          panelService ? "provided" : "null");
+    log_d("ManagerFactory: Initializing InterruptManager singleton...");
+    manager->Init();
+    log_d("ManagerFactory: InterruptManager initialized successfully");
     return manager;
 }
 

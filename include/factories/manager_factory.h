@@ -70,10 +70,9 @@ class ManagerFactory
     /// @return Unique pointer to configured ActionManager instance or nullptr on failure
     static std::unique_ptr<ActionManager> createActionManager(IGpioProvider *gpio, IPanelService *panelService);
 
-    /// @brief Create InterruptManager with panel service dependency
-    /// @param panelService Panel service for trigger-driven state queries
-    /// @return Unique pointer to configured InterruptManager instance or nullptr on failure
-    static std::unique_ptr<InterruptManager> createInterruptManager(IPanelService *panelService = nullptr);
+    /// @brief Initialize InterruptManager singleton instance
+    /// @return Pointer to configured InterruptManager instance or nullptr on failure
+    static InterruptManager* createInterruptManager();
 
     /// @brief Create ErrorManager singleton instance
     /// @return Pointer to configured ErrorManager instance or nullptr on failure

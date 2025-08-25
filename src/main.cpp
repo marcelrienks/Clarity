@@ -22,7 +22,7 @@ std::unique_ptr<PreferenceManager> preferenceManager;
 std::unique_ptr<ActionManager> actionManager;
 std::unique_ptr<PanelManager> panelManager;
 std::unique_ptr<TriggerManager> triggerManager;
-std::unique_ptr<InterruptManager> interruptManager;
+InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
 bool initializeServices()
@@ -81,7 +81,7 @@ bool initializeServices()
     // Resolve circular dependency: ActionManager needs PanelService for UIState checking
     actionManager->SetPanelService(panelManager.get());
     triggerManager = ManagerFactory::createTriggerManager(gpioProvider.get(), panelManager.get(), styleManager.get());
-    interruptManager = ManagerFactory::createInterruptManager(panelManager.get());
+    interruptManager = ManagerFactory::createInterruptManager();
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created
@@ -130,7 +130,7 @@ void setup()
 
     Ticker::handleLvTasks();
     styleManager->InitializeStyles();
-    interruptManager->Init();
+    // InterruptManager is initialized by factory, just register legacy sources
     interruptManager->RegisterTriggerSource(triggerManager.get());
     interruptManager->RegisterActionSource(actionManager.get());
     Ticker::handleLvTasks();
@@ -163,13 +163,13 @@ void loop()
         log_d("Main loop running - count: %lu", loopCount);
     }
 
-    // Check interrupts only when UI is IDLE
+    // Process interrupts using new coordinated system
     if (interruptManager && panelManager)
     {
         UIState currentState = panelManager->GetUiState();
         if (currentState == UIState::IDLE)
         {
-            interruptManager->CheckAllInterrupts();
+            interruptManager->Process(); // New coordinated interrupt processing
         }
     }
     else if (!interruptManager)

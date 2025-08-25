@@ -1,99 +1,107 @@
 #pragma once
 
+#include "interfaces/i_handler.h"
 #include "interfaces/i_interrupt_service.h"
 #include "interfaces/i_panel_service.h"
-#include <memory>
+#include "utilities/types.h"
+#include "utilities/constants.h"
 #include <vector>
+#include <memory>
+#include <functional>
+
+#ifdef CLARITY_DEBUG
+    #include "esp32-hal-log.h"
+    #define LOG_TAG "InterruptManager"
+#else
+    #define log_v(...)
+    #define log_d(...)
+    #define log_w(...)
+    #define log_e(...)
+#endif
 
 /**
  * @class InterruptManager
- * @brief Centralized manager for interrupt sources with ordered evaluation
- *
- * @details This class coordinates checking of interrupt sources (triggers, inputs, etc.)
- * during idle time. It evaluates triggers first, then actions only if no triggers
- * are active, ensuring proper precedence in the interrupt handling system.
- *
- * @evaluation_order Triggers first, then actions if no triggers active
- * @idle_integration Designed to be called during LVGL idle time and animation gaps
- * @performance_optimized Skips sources that report no pending interrupts
+ * @brief Centralized interrupt coordination system
+ * 
+ * @details Manages interrupt registration, evaluation, and execution with priority-based
+ * processing. Coordinates between polled and queued interrupt sources to prevent
+ * conflicts and ensure deterministic behavior.
+ * 
+ * @architecture Singleton pattern with static registration for memory safety
+ * @memory_optimization Static interrupt array with fixed capacity (32 interrupts max)
+ * @timing Evaluation rate controlled by INTERRUPT_EVALUATION_INTERVAL_MS (50ms)
  */
 class InterruptManager
 {
-  public:
-    // Constructors and Destructors
-    InterruptManager(IPanelService *panelService = nullptr);
-    ~InterruptManager() = default;
-
-    // Disable copy/move to maintain singleton-like behavior
-    InterruptManager(const InterruptManager &) = delete;
-    InterruptManager &operator=(const InterruptManager &) = delete;
-
-    /**
-     * @brief Initialize the interrupt manager
-     * @details Sets up any necessary resources and prepares for interrupt checking
-     */
+public:
+    // Singleton access
+    static InterruptManager& Instance();
+    
+    // Core functionality
     void Init();
-
-    /**
-     * @brief Register a trigger interrupt source
-     * @param source Pointer to trigger source (must remain valid)
-     * @details Triggers are evaluated before actions
-     */
+    void Process();
+    
+    // Interrupt registration (new coordinated system)
+    bool RegisterInterrupt(const Interrupt& interrupt);
+    void UnregisterInterrupt(const char* id);
+    void ActivateInterrupt(const char* id);
+    void DeactivateInterrupt(const char* id);
+    
+    // Handler registration (for specialized processing)
+    void RegisterHandler(std::shared_ptr<IHandler> handler);
+    void UnregisterHandler(std::shared_ptr<IHandler> handler);
+    
+    // Legacy compatibility methods (Phase 2: maintain existing interface)
     void RegisterTriggerSource(IInterruptService *source);
-
-    /**
-     * @brief Register an action interrupt source
-     * @param source Pointer to action source (must remain valid)
-     * @details Actions are evaluated only if no triggers are active
-     */
     void RegisterActionSource(IInterruptService *source);
-
-    /**
-     * @brief Unregister a trigger interrupt source
-     * @param source Pointer to trigger source to remove
-     */
     void UnregisterTriggerSource(IInterruptService *source);
-
-    /**
-     * @brief Unregister an action interrupt source
-     * @param source Pointer to action source to remove
-     */
     void UnregisterActionSource(IInterruptService *source);
-
-    /**
-     * @brief Check interrupt sources in ordered evaluation
-     * @details Checks triggers first, then actions only if no triggers active.
-     * This is the main method called during idle time.
-     */
     void CheckAllInterrupts();
-
-
-    /**
-     * @brief Get the number of registered trigger sources
-     * @return Count of registered trigger sources
-     */
-    size_t GetTriggerSourceCount() const
-    {
-        return triggerSources_.size();
-    }
-
-    /**
-     * @brief Get the number of registered action sources
-     * @return Count of registered action sources
-     */
-    size_t GetActionSourceCount() const
-    {
-        return actionSources_.size();
-    }
-
-  private:
-    // Data members
+    
+    // Status queries
+    bool HasActiveInterrupts() const;
+    size_t GetInterruptCount() const;
+    size_t GetTriggerSourceCount() const { return triggerSources_.size(); }
+    size_t GetActionSourceCount() const { return actionSources_.size(); }
+    
+private:
+    InterruptManager() = default;
+    ~InterruptManager() = default;
+    InterruptManager(const InterruptManager&) = delete;
+    InterruptManager& operator=(const InterruptManager&) = delete;
+    
+    // New coordinated interrupt processing
+    void EvaluateInterrupts();
+    void ExecuteInterrupt(Interrupt& interrupt);
+    void ProcessHandlers();
+    
+    // Legacy processing
+    void ProcessLegacySources();
+    
+    // Helper methods
+    Interrupt* FindInterrupt(const char* id);
+    bool ShouldEvaluateInterrupt(const Interrupt& interrupt) const;
+    void UpdateLastEvaluation(Interrupt& interrupt);
+    
+    // Static storage for memory safety
+    static constexpr size_t MAX_INTERRUPTS = 32;
+    static constexpr size_t MAX_HANDLERS = 8;
+    static constexpr unsigned long INTERRUPT_EVALUATION_INTERVAL_MS = 50;
+    
+    // New coordinated interrupt system
+    Interrupt interrupts_[MAX_INTERRUPTS];
+    size_t interruptCount_ = 0;
+    std::vector<std::shared_ptr<IHandler>> handlers_;
+    
+    // Legacy compatibility
     std::vector<IInterruptService *> triggerSources_;
     std::vector<IInterruptService *> actionSources_;
-    IPanelService *panelService_;
-    bool initialized_;
-
+    IPanelService *panelService_ = nullptr;
+    
+    unsigned long lastEvaluationTime_ = 0;
+    bool initialized_ = false;
+    
     // Statistics (for debugging)
-    mutable unsigned long lastCheckTime_;
-    mutable unsigned long checkCount_;
+    mutable unsigned long lastCheckTime_ = 0;
+    mutable unsigned long checkCount_ = 0;
 };
