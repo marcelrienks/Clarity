@@ -6,17 +6,7 @@
 #include <Arduino.h>
 #include <cstring>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #ifndef LOG_TAG
-        #define LOG_TAG "ActionManager"
-    #endif
-#else
-    #define log_v(...)
-    #define log_d(...)
-    #define log_w(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, IPanelService *panelService)
     : buttonSensor_(buttonSensor), currentService_(nullptr), panelService_(panelService), buttonState_(ButtonState::IDLE), pressStartTime_(0),

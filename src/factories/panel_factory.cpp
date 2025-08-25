@@ -9,13 +9,7 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_style_service.h"
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #define LOG_TAG "PanelFactory"
-#else
-    #define log_d(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 PanelFactory& PanelFactory::Instance()
 {

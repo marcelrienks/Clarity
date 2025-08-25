@@ -101,7 +101,8 @@
       "Bash(apt list:*)",
       "Bash(sudo apt:*)",
       "Bash(sudo apt install:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(basename:*)"
     ],
     "deny": []
   }

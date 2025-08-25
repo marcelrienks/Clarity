@@ -4,15 +4,7 @@
 #include <Arduino.h>
 #include <cstring>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #define LOG_TAG "BaseSensor"
-#else
-    #define log_v(...)
-    #define log_d(...)
-    #define log_w(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 bool BaseSensor::RegisterPolledInterrupt(const char* id, Priority priority, InterruptEffect effect, 
                                        unsigned long intervalMs, void* data)

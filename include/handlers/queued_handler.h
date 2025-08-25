@@ -4,15 +4,7 @@
 #include "utilities/types.h"
 #include <vector>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #define LOG_TAG "QueuedHandler"
-#else
-    #define log_v(...)
-    #define log_d(...)
-    #define log_w(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 /**
  * @class QueuedHandler

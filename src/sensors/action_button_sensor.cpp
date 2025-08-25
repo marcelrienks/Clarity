@@ -1,14 +1,7 @@
 #include "sensors/action_button_sensor.h"
 #include <Arduino.h>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #ifndef LOG_TAG
-        #define LOG_TAG "ActionButtonSensor"
-    #endif
-#else
-    #define log_d(...)
-#endif
+#include "esp32-hal-log.h"
 
 // Constructors and Destructors
 

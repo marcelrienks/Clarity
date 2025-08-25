@@ -4,17 +4,7 @@
 #include "utilities/constants.h"
 #include <functional>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #ifndef LOG_TAG
-        #define LOG_TAG "BaseSensor"
-    #endif
-#else
-    #define log_v(...)
-    #define log_d(...)
-    #define log_w(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 /**
  * @class BaseSensor

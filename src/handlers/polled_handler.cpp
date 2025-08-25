@@ -4,15 +4,7 @@
 #include <algorithm>
 #include <cstring>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #define LOG_TAG "PolledHandler"
-#else
-    #define log_v(...)
-    #define log_d(...)
-    #define log_w(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 PolledHandler::PolledHandler() 
     : defaultInterval_(DEFAULT_EVALUATION_INTERVAL_MS)

@@ -5,16 +5,7 @@
 #include <Arduino.h>
 #include <cstring>
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #define LOG_TAG "InterruptManager"
-#else
-    #define log_v(...)
-    #define log_d(...)
-    #define log_w(...)
-    #define log_i(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 // Singleton implementation
 InterruptManager& InterruptManager::Instance()

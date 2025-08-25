@@ -8,13 +8,7 @@
 #include "components/config_component.h"
 #include "interfaces/i_style_service.h"
 
-#ifdef CLARITY_DEBUG
-    #include "esp32-hal-log.h"
-    #define LOG_TAG "ComponentFactory"
-#else
-    #define log_d(...)
-    #define log_e(...)
-#endif
+#include "esp32-hal-log.h"
 
 ComponentFactory& ComponentFactory::Instance()
 {
