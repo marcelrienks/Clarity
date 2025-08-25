@@ -3,7 +3,6 @@
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"
 #include "utilities/types.h"
-#include "sensors/key_sensor.h"
 
 #include <lvgl.h>
 
@@ -19,7 +18,7 @@
  * @ui_elements Key icon with conditional styling based on status
  * @positioning Supports all ComponentLocation alignment options
  *
- * @data_source Designed to work with KeySensor for status updates
+ * @data_source Receives key status data from interrupt system
  * @visual_states Normal, active, warning states with color changes
  * @icon_resource Uses lock-alt-solid icon from icon resources
  *

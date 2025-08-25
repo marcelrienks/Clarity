@@ -39,7 +39,7 @@
  * - Consistent Reading interface regardless of data source
  *
  * @implementations:
- * - KeySensor: Ignition key presence detection
+ * - KeyPresentSensor/KeyNotPresentSensor: Split key presence detection
  * - LockSensor: Vehicle lock status monitoring
  * - LightSensor: Ambient light level detection
  * - OilPressureSensor: Engine oil pressure monitoring

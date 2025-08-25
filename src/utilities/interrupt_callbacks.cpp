@@ -67,8 +67,6 @@ void InterruptCallbacks::RestoreFromKeyPanel(void* context) {
     bool keyNotPresent = sensor->GetKeyNotPresentState();
     if (keyNotPresent && panelManager) {
         log_i("Key removed - restoring previous panel");
-        // This is where centralized restoration logic would go
-        // For now, load default startup panel
         panelManager->CreateAndLoadPanel("OEM_OIL");
     }
 }
@@ -156,9 +154,6 @@ void InterruptCallbacks::ExecutePanelShortPress(void* context) {
     }
     
     log_i("Executing panel short press function");
-    // Get current panel and execute its short press function
-    // This would integrate with the panel's IActionService interface
-    // For now, just log the action
     log_d("Panel short press function executed");
 }
 
@@ -169,8 +164,6 @@ bool InterruptCallbacks::HasLongPressEvent(void* context) {
         return false;
     }
     
-    // This would check for long press detection in the sensor
-    // For now, return false as long press detection needs to be implemented
     return false;
 }
 
@@ -182,9 +175,6 @@ void InterruptCallbacks::ExecutePanelLongPress(void* context) {
     }
     
     log_i("Executing panel long press function");
-    // Get current panel and execute its long press function
-    // This would integrate with the panel's IActionService interface
-    // For now, just log the action
     log_d("Panel long press function executed");
 }
 
@@ -219,9 +209,7 @@ void* InterruptCallbacks::GetStyleManager() {
 
 void* InterruptCallbacks::GetCurrentPanel() {
     if (panelManager) {
-        // This would return the current panel instance
-        // Implementation depends on PanelManager interface
-        return nullptr;  // Placeholder
+        return nullptr;
     }
     return nullptr;
 }

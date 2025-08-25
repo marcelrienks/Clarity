@@ -18,8 +18,8 @@ class IComponentFactory;
  * @details This panel displays the key/ignition status using a centered key icon.
  * It provides a simple, clean interface for monitoring key presence or ignition state.
  *
- * @presenter_role Coordinates KeyComponent with KeySensor data
- * @data_source KeySensor providing boolean key status
+ * @presenter_role Coordinates KeyComponent with interrupt system data
+ * @data_source Key status from interrupt-driven architecture
  * @update_strategy Simple boolean state updates without animation
  *
  * @ui_layout:
