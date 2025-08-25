@@ -153,11 +153,12 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 For detailed architecture, see: **[Architecture Document](architecture.md)**
 
 **Key Components**:
-1. **InterruptManager**: Coordinates PolledHandler and QueuedHandler during idle time
+1. **InterruptManager**: Coordinates PolledHandler and QueuedHandler during idle time with centralized restoration logic
 2. **PolledHandler**: GPIO state monitoring with change detection
 3. **QueuedHandler**: Button event processing with latest event handling
 4. **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, BUTTON_ACTION effects
-5. **Memory Safety**: Static function pointers with void* context parameters
+5. **Memory Safety**: Static function pointers with void* context parameters (single execution function per interrupt)
+6. **Centralized Restoration**: All panel restoration logic handled in InterruptManager
 
 #### 2.3.3 POLLED Interrupts (replaces Triggers)
 
@@ -179,12 +180,14 @@ For complete interrupt structure details, see: **[Architecture Document](archite
 - No heap allocation during interrupt processing
 - ESP32-optimized memory patterns
 
-**Panel Restoration**:
-- Only non-maintaining interrupts block restoration
-- Theme changes always maintain and never block restoration
+**Centralized Panel Restoration**:
+- Only LOAD_PANEL effects participate in restoration logic
+- Theme changes (SET_THEME effects) never affect restoration
+- InterruptManager::HandleRestoration() manages all restoration decisions
 - Restoration occurs when no panel-loading interrupts are active
+- Single source of truth eliminates distributed restoration complexity
 
-For detailed restoration logic, see: **[Architecture Document](architecture.md#coordinated-interrupt-processing-system)**
+For detailed centralized restoration logic, see: **[Architecture Document](architecture.md#centralized-restoration-logic)**
 
 **Coordinated Processing**:
 For detailed processing flow, see: **[Application Flow Diagram](diagrams/application-flow.md)**
@@ -340,17 +343,17 @@ For complete implementation details, see: **[Architecture Document](architecture
 
 POLLED and QUEUED interrupts are registered at startup as struct instances:
 
-```
-// Register POLLED interrupt with PolledHandler (via InterruptManager)
+```cpp
+// Register POLLED interrupt with PolledHandler (via InterruptManager) - Centralized restoration
 interruptManager.RegisterInterrupt({
     .id = "key_present",
     .priority = Priority::CRITICAL,
     .source = InterruptSource::POLLED,
     .effect = InterruptEffect::LOAD_PANEL,
     .evaluationFunc = IsKeyPresent,
-    .activateFunc = LoadKeyPanel,
-    .sensorContext = keyPresentSensor,
-    .serviceContext = panelManager
+    .executionFunc = LoadKeyPanel,           // Single execution function
+    .context = keyPresentSensor
+    // Note: Restoration handled centrally by InterruptManager
 });
 
 // Register QUEUED interrupt with QueuedHandler (via InterruptManager)
@@ -360,9 +363,8 @@ interruptManager.RegisterInterrupt({
     .source = InterruptSource::QUEUED,
     .effect = InterruptEffect::BUTTON_ACTION,
     .evaluationFunc = HasShortPressEvent,
-    .activateFunc = ExecutePanelShortPress,
-    .sensorContext = actionButtonSensor,
-    .serviceContext = panelManager
+    .executionFunc = ExecutePanelShortPress, // Single execution function
+    .context = actionButtonSensor
 });
 ```
 
@@ -372,8 +374,10 @@ interruptManager.RegisterInterrupt({
 
 This approach provides:
 - Specialized handlers per interrupt source (POLLED vs QUEUED)
-- Direct struct registration without intermediate handler objects
-- Clear separation between trigger and action processing logic
+- Direct struct registration without intermediate handler objects  
+- Clear separation between interrupt execution and restoration logic
+- Centralized restoration in InterruptManager eliminates distributed callback complexity
+- Memory optimization through single execution function per interrupt
 
 #### 2.3.8 Evaluation Process
 
@@ -596,12 +600,14 @@ protected:
 - Dynamic allocation minimization required
 - Memory-efficient patterns must be used throughout
 
-#### 3.1.2 Static Callback Requirements
-**Mandatory Pattern**: All interrupt system callbacks must use static function pointers
+#### 3.1.2 Static Callback Requirements with Centralized Restoration
+**Mandatory Pattern**: All interrupt system callbacks must use static function pointers with centralized restoration
 - Eliminates `std::function` heap allocation overhead
 - Prevents lambda capture heap objects
 - Provides predictable memory usage
 - Prevents system crashes from heap fragmentation
+- **Memory Optimization**: Single execution function per interrupt saves 28 bytes total system memory
+- **Centralized Logic**: Restoration handled in InterruptManager reduces callback complexity
 
 #### 3.1.3 LVGL Buffer Optimization
 **Memory Usage**: Dual 60-line buffers consume 57.6KB (240×60×2×2 bytes)

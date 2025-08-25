@@ -6,9 +6,9 @@ This diagram illustrates the complete application flow from startup through runt
 
 - **Startup Sequence**: Service initialization and coordinated handler creation
 - **Main Loop**: LVGL tasks with interrupt processing during idle time only
-- **Coordinated Processing**: Priority-based interrupt coordination
-- **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, BUTTON_ACTION effects
-- **Panel Operations**: Lifecycle management and restoration
+- **Coordinated Processing**: Priority-based interrupt coordination with centralized restoration
+- **Hybrid Execution**: Single execution function per interrupt with centralized restoration logic
+- **Panel Operations**: Lifecycle management and centralized restoration
 - **Error Integration**: Critical priority error handling
 - **Theme Switching**: Non-blocking theme changes
 
@@ -37,20 +37,20 @@ flowchart TD
     
     %% Coordinated Interrupt Processing
     CoordinateProcessing[InterruptManager Coordinates Both Handlers]
-    ProcessPolled[PolledHandler::Process()]
-    ProcessQueued[QueuedHandler::Process()]
+    ProcessPolled[PolledHandler::Process() - Evaluate POLLED interrupts]
+    ProcessQueued[QueuedHandler::Process() - Evaluate QUEUED interrupts]
     
-    %% Coordinated Interrupt Flow
-    ProcessAllInterrupts[Process All Interrupts for State Changes]
-    CheckStateChanges[Check Each Interrupt: evaluationFunc(sensorContext)]
+    %% Hybrid Interrupt Flow with Centralized Restoration
+    ProcessAllInterrupts[Evaluate All Interrupts for State Changes]
+    CheckStateChanges[Check Each Interrupt: evaluationFunc(context)]
     StateChanged{State Changed?}
-    CheckNewState{New State Active?}
-    ExecuteActivate[activateFunc(serviceContext)]
-    ExecuteDeactivate[deactivateFunc(serviceContext)]
-    UpdateInterruptState[Update active/previouslyActive flags]
-    FindHighestPriority[Find Highest Priority Non-Maintaining Interrupt]
-    CheckMaintenance{Interrupt Maintains<br/>When Inactive?}
-    CheckRestoration{Any Non-Maintaining<br/>Interrupts Active?}
+    ExecuteInterrupt[executionFunc(context) - Single Execution]
+    UpdateInterruptState[Update active flags]
+    FindHighestPriorityAcrossHandlers[InterruptManager: Find Highest Priority Active Interrupt Across Both Handlers]
+    CheckInterruptDeactivated{Panel-Loading Interrupt<br/>Deactivated?}
+    CentralizedRestoration[InterruptManager::HandleRestoration()]
+    CheckActivePanelInterrupts{Any Active Panel-Loading<br/>Interrupts?}
+    ExecuteHighestPriority[Execute Highest Priority Panel Interrupt]
     LoadPanelEffect[LOAD_PANEL Effect]
     SetThemeEffect[SET_THEME Effect (Always Maintains)]
     SetPrefEffect[SET_PREFERENCE Effect]
@@ -103,33 +103,33 @@ flowchart TD
     ProcessInterrupts --> CoordinateProcessing
     CoordinateProcessing --> ProcessPolled
     CoordinateProcessing --> ProcessQueued
-    ProcessPolled --> GetHighestPolled
-    ProcessQueued --> GetHighestQueued
-    CoordinateProcessing --> ProcessAllInterrupts
+    ProcessPolled --> ProcessAllInterrupts
+    ProcessQueued --> ProcessAllInterrupts
     ProcessAllInterrupts --> CheckStateChanges
     CheckStateChanges --> StateChanged
-    StateChanged -->|Yes| CheckNewState
-    StateChanged -->|No| FindHighestPriority
-    CheckNewState -->|Active| ExecuteActivate
-    CheckNewState -->|Inactive| ExecuteDeactivate
-    ExecuteActivate --> UpdateInterruptState
-    ExecuteDeactivate --> UpdateInterruptState
-    UpdateInterruptState --> FindHighestPriority
-    FindHighestPriority --> CheckMaintenance
-    CheckMaintenance -->|Maintains| CheckRestoration
-    CheckMaintenance -->|Doesn't Maintain| LoadPanelEffect
-    CheckMaintenance -->|Doesn't Maintain| ButtonActionEffect
-    LoadPanelEffect --> CheckRestoration
+    StateChanged -->|Yes| ExecuteInterrupt
+    StateChanged -->|No| FindHighestPriorityAcrossHandlers
+    ExecuteInterrupt --> UpdateInterruptState
+    UpdateInterruptState --> CheckInterruptDeactivated
+    CheckInterruptDeactivated -->|Panel Interrupt Deactivated| CentralizedRestoration
+    CheckInterruptDeactivated -->|No Deactivation| FindHighestPriorityAcrossHandlers
+    FindHighestPriorityAcrossHandlers --> LoadPanelEffect
+    FindHighestPriorityAcrossHandlers --> SetThemeEffect
+    FindHighestPriorityAcrossHandlers --> SetPrefEffect
+    FindHighestPriorityAcrossHandlers --> ButtonActionEffect
+    LoadPanelEffect --> Loop
+    SetThemeEffect --> Loop
+    SetPrefEffect --> SavePreferences
     ButtonActionEffect --> ExecutePanelFunction
-    ExecutePanelFunction --> CheckRestoration
-    SetThemeEffect --> CheckRestoration
-    CheckRestoration -->|Yes| Loop
-    CheckRestoration -->|No| RestorePanel
+    ExecutePanelFunction --> Loop
+    CentralizedRestoration --> CheckActivePanelInterrupts
+    CheckActivePanelInterrupts -->|Yes| ExecuteHighestPriority
+    CheckActivePanelInterrupts -->|No| RestorePanel
+    ExecuteHighestPriority --> Loop
     RestorePanel --> Loop
     
     %% Connections - Panel Operations
     LoadPanelEffect --> PanelInit
-    CustomEffect --> PanelInit
     PanelInit --> CreateComponents
     CreateComponents --> PanelLoad
     PanelLoad --> PanelUpdate
@@ -141,12 +141,12 @@ flowchart TD
     
     %% Connections - Error Flow
     ErrorOccurs --> ErrorManager
-    ErrorManager -.->|POLLED by| POLLEDCheck
+    ErrorManager -.->|POLLED by| ProcessPolled
     ErrorAcknowledge --> ClearErrors
-    ClearErrors --> CheckRestoration
+    ClearErrors --> CentralizedRestoration
     
     %% Connections - Theme Flow
-    LightChange -.->|POLLED by| POLLEDCheck
+    LightChange -.->|POLLED by| ProcessPolled
     SetThemeEffect --> ThemeSwitch
     ThemeSwitch --> ApplyTheme
     ApplyTheme --> Loop
@@ -165,13 +165,13 @@ flowchart TD
     
     class Start,Setup,InitServices,CreateProviders,CreateManagers,CreateHandlers,CreateSensors,RegisterInterrupts,InitPanels,LoadSplash,StartLoop startup
     class Loop,LVGLTasks,ProcessInterrupts mainloop
-    class CoordinateProcessing,ProcessPolled,ProcessQueued,ProcessAllInterrupts,CheckStateChanges,ExecuteActivate,ExecuteDeactivate,UpdateInterruptState,FindHighestPriority interrupt
+    class CoordinateProcessing,ProcessPolled,ProcessQueued,ProcessAllInterrupts,CheckStateChanges,ExecuteInterrupt,UpdateInterruptState,FindHighestPriorityAcrossHandlers,CentralizedRestoration,ExecuteHighestPriority interrupt
     class LoadPanelEffect,SetThemeEffect,SetPrefEffect,ButtonActionEffect,ExecutePanelFunction effect
     class PanelInit,CreateComponents,PanelLoad,PanelUpdate panel
     class SavePreferences config
     class ErrorOccurs,ErrorManager,ErrorAcknowledge,ClearErrors error
     class LightChange,ThemeSwitch,ApplyTheme theme
-    class CheckIdle,StateChanged,CheckNewState,CheckMaintenance,CheckRestoration decision
+    class CheckIdle,StateChanged,CheckInterruptDeactivated,CheckActivePanelInterrupts decision
 ```
 
 ## Key Flow Details
@@ -193,16 +193,16 @@ flowchart TD
 
 ### Interrupt Processing Steps
 1. **State Change Detection**: Evaluation functions check current states
-2. **Activate/Deactivate**: Execute functions based on state transitions
+2. **Single Execution**: Execute function called once per state transition
 3. **Priority Coordination**: Find highest priority active interrupt
-4. **Restoration Logic**: Non-maintaining interrupts block restoration
+4. **Centralized Restoration**: InterruptManager::HandleRestoration() manages all restoration decisions
 
-### Maintenance System
-- **LOAD_PANEL Effects**: Usually don't maintain, participate in restoration blocking
-- **SET_THEME Effects**: Always maintain, never block restoration
-- **SET_PREFERENCE Effects**: Never maintain, immediate execution
-- **BUTTON_ACTION Effects**: Execute panel functions, never maintain
-- **Restoration Decision**: When no non-maintaining interrupts active
+### Centralized Restoration System
+- **LOAD_PANEL Effects**: Participate in centralized restoration logic
+- **SET_THEME Effects**: Never affect restoration decisions
+- **SET_PREFERENCE Effects**: Immediate execution, no restoration impact
+- **BUTTON_ACTION Effects**: Execute panel functions, no restoration impact
+- **Restoration Decision**: InterruptManager queries all active panel-loading interrupts centrally
 
 ### Error System
 - **Error Reporting**: Components report to ErrorManager
@@ -219,7 +219,8 @@ flowchart TD
 - **Change-Based Processing**: Functions execute only on state transitions
 - **Priority Coordination**: Efficient highest-priority processing
 - **Function Injection**: Memory-efficient panel function calls
-- **Simplified Restoration**: Clear maintenance-based rules
+- **Centralized Restoration**: Single restoration function eliminates distributed complexity
+- **Memory Optimization**: Single execution function saves 28 bytes total
 - **Idle Processing**: No overhead during LVGL operations
 
 For complete architecture details, see: **[Architecture Document](../architecture.md)**

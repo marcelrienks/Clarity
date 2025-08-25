@@ -84,7 +84,7 @@ struct Interrupt {
     InterruptSource source;                           // POLLED or QUEUED evaluation
     InterruptEffect effect;                           // What this interrupt does
     bool (*evaluationFunc)(void* context);           // Function pointer - no heap allocation
-    void (*executionFunc)(void* context);            // Function pointer - no heap allocation
+    void (*executionFunc)(void* context);            // Single execution function - simplified design
     void* context;                                    // Sensor or service context
     
     // Effect-specific data (union for memory efficiency)
@@ -99,6 +99,9 @@ struct Interrupt {
     bool active;                                      // Current activation state
     unsigned long lastEvaluation;                    // Performance tracking
 };
+
+// Memory Usage: ~29 bytes per interrupt (optimized from previous 33-byte design)
+// Total system overhead: ~203 bytes for 7 interrupts (vs 231 bytes with activate/deactivate functions)
 ```
 
 #### Critical Memory Constraint
@@ -110,21 +113,21 @@ struct Interrupt {
 **Solution**: Static callback pattern eliminates heap allocations and provides predictable memory usage.
 
 ### Coordinated Interrupt Processing System
-The coordinated system processes interrupts through specialized handlers with central coordination:
+The coordinated system processes interrupts through specialized handlers with centralized restoration logic:
 - **PolledHandler**: Manages GPIO state changes with sensors tracking previous state internally
 - **QueuedHandler**: Processes button events from message queue
-- **InterruptManager**: Coordinates both handlers, handles effect-based execution and restoration logic
+- **InterruptManager**: Coordinates both handlers, handles effect-based execution and **centralized restoration logic**
 - **Priority-based coordination**: Highest priority interrupt across both handlers gets processed
 
-#### Coordinated Processing Implementation
-**Specialized Architecture**: InterruptManager coordinates PolledHandler and QueuedHandler:
+#### Centralized Restoration Architecture
+**Hybrid Design**: InterruptManager coordinates PolledHandler and QueuedHandler with centralized restoration:
 
 1. **Handler Processing**: Each handler evaluates its interrupts and marks active ones
 2. **Priority Coordination**: InterruptManager compares highest priority interrupt from each handler
 3. **Effect-Based Execution**: InterruptManager executes based on interrupt effect (LOAD_PANEL, SET_THEME, etc.)
-4. **Simplified Restoration**: Only panel-loading effects participate in restoration logic
+4. **Centralized Restoration**: InterruptManager handles all restoration logic when panel-loading interrupts deactivate
 
-**Coordination Rule**: Each handler processes its interrupts, InterruptManager coordinates execution.
+**Key Architectural Decision**: Restoration logic centralized in InterruptManager rather than distributed across interrupt callbacks, reducing complexity and memory overhead.
 
 #### Change Detection for POLLED Interrupts
 **PolledHandler Processing**: GPIO state monitoring maintains change detection patterns:
@@ -132,6 +135,30 @@ The coordinated system processes interrupts through specialized handlers with ce
 - `evaluationFunc` calls sensor's `HasStateChanged()` method exactly once per cycle
 - Context parameter provides sensor access without heap allocation
 - Same change detection corruption prevention as before
+
+#### Centralized Restoration Logic
+**InterruptManager Restoration**: When panel-loading interrupts deactivate, restoration is handled centrally:
+
+```cpp
+void InterruptManager::HandleRestoration() {
+    // Check for any active panel-loading interrupts
+    auto* highestActive = GetHighestPriorityActivePanelInterrupt();
+    
+    if (highestActive) {
+        // Execute highest priority active panel interrupt
+        highestActive->executionFunc(highestActive->context);
+    } else {
+        // No blocking interrupts - restore user panel
+        RestoreUserPanel();
+    }
+}
+```
+
+**Benefits of Centralized Restoration**:
+- **Single Source of Truth**: All restoration decisions made in one location
+- **Memory Efficient**: Eliminates need for deactivate function pointers (saves 28 bytes total)
+- **Maintainable**: Clear separation between interrupt execution and system coordination
+- **Testable**: Restoration logic can be unit tested independently
 
 ### Sensor Architecture
 
@@ -170,7 +197,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 
 ## Managers
 
-- **InterruptManager**: Creates and coordinates PolledHandler and QueuedHandler during LVGL idle time
+- **InterruptManager**: Creates and coordinates PolledHandler and QueuedHandler during LVGL idle time with centralized restoration logic
 - **PanelManager**: Creates panels on demand, manages switching, lifecycle, and restoration tracking
 - **PreferenceManager**: Persistent settings
 - **StyleManager**: LVGL themes (Day/Night)
@@ -185,7 +212,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
    - Compare highest priority active interrupt from each handler
    - Execute highest priority interrupt across both handlers
    - Handle effect-based execution (LOAD_PANEL, SET_THEME, SET_PREFERENCE, CUSTOM_FUNCTION)
-   - Process simplified restoration logic
+   - Process centralized restoration logic when panel-loading interrupts deactivate
 
 2. **PolledHandler::Process()** (GPIO monitoring)
    - Evaluate POLLED interrupts for GPIO state changes via `evaluationFunc(context)`
@@ -202,11 +229,12 @@ Each GPIO pin must have exactly one dedicated sensor class:
 - **IMPORTANT (1)**: Lock status  
 - **NORMAL (2)**: Theme changes, button interrupts, preferences
 
-### Simplified Panel Restoration
+### Centralized Panel Restoration
 - **Effect-Based Logic**: Only LOAD_PANEL effects participate in restoration
-- **Cross-Handler Logic**: InterruptManager checks both handlers for active panel-loading interrupts
+- **Centralized Processing**: InterruptManager::HandleRestoration() manages all restoration decisions
+- **Priority Query**: System queries for highest priority active panel-loading interrupt
 - **Theme Independence**: SET_THEME effects never affect panel restoration
-- **Reduced Complexity**: No priority-based blocking, just effect-based logic
+- **Simplified Architecture**: Single restoration function eliminates distributed restoration logic
 
 ## Available Panels
 
@@ -599,31 +627,32 @@ public:
 
 ### POLLED Panel Loading Registration (GPIO state monitoring)
 ```cpp
-// Routed to PolledHandler by InterruptManager
+// Routed to PolledHandler by InterruptManager - Centralized restoration design
 interruptManager.RegisterInterrupt({
     .id = "key_present",
     .priority = Priority::CRITICAL,
     .source = InterruptSource::POLLED,
     .effect = InterruptEffect::LOAD_PANEL,
     .evaluationFunc = KeyPresentChanged,
-    .executionFunc = LoadKeyPanel,
+    .executionFunc = LoadKeyPanel,         // Single execution function
     .context = keyPresentSensor,
-    .data = { .panel = { "KEY", true } }  // trackForRestore = true
+    .data = { .panel = { "KEY", true } }   // trackForRestore = true
 });
+// Note: Restoration handled centrally by InterruptManager when interrupt deactivates
 ```
 
 ### POLLED Theme Setting Registration
 ```cpp
-// Routed to PolledHandler by InterruptManager
+// Routed to PolledHandler by InterruptManager - No restoration impact
 interruptManager.RegisterInterrupt({
     .id = "lights_changed", 
     .priority = Priority::NORMAL,
     .source = InterruptSource::POLLED,
     .effect = InterruptEffect::SET_THEME,
     .evaluationFunc = LightsChanged,
-    .executionFunc = SetThemeBasedOnLights,
+    .executionFunc = SetThemeBasedOnLights,    // Single execution function
     .context = lightsSensor,
-    .data = { .theme = Theme::NIGHT }  // Will be determined dynamically
+    .data = { .theme = Theme::NIGHT }          // Will be determined dynamically
 });
 ```
 
@@ -636,10 +665,8 @@ interruptManager.RegisterInterrupt({
     .source = InterruptSource::QUEUED,
     .effect = InterruptEffect::BUTTON_ACTION,
     .evaluationFunc = HasShortPressEvent,
-    .activateFunc = ExecutePanelShortPress,      // Calls current panel's short press function
-    .deactivateFunc = nullptr,
-    .sensorContext = actionButtonSensor,
-    .serviceContext = panelManager,              // Used to get current panel
+    .executionFunc = ExecutePanelShortPress,     // Single execution function
+    .context = actionButtonSensor,               // Simplified context handling
     .data = { .buttonActions = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
 });
 
@@ -650,9 +677,8 @@ interruptManager.RegisterInterrupt({
     .source = InterruptSource::QUEUED,
     .effect = InterruptEffect::BUTTON_ACTION,
     .evaluationFunc = HasLongPressEvent,
-    .activateFunc = ExecutePanelLongPress,       // Calls current panel's long press function
-    .deactivateFunc = nullptr,
-    .sensorContext = actionButtonSensor,
+    .executionFunc = ExecutePanelLongPress,      // Single execution function
+    .context = actionButtonSensor,               // Simplified context handling
     .serviceContext = panelManager,
     .data = { .buttonActions = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
 });
@@ -790,23 +816,27 @@ auto oilPanel = panelManager->CreatePanel("OemOilPanel");
 
 ### Memory Optimization Requirements
 
-#### 1. Static Callback System (Critical)
+#### 1. Static Callback System with Centralized Restoration (Critical)
 **Problem**: `std::function` with lambda captures causes heap fragmentation and system crashes.
-**Solution**: All interrupt callbacks must use static function pointers:
+**Solution**: All interrupt callbacks must use static function pointers with centralized restoration:
 
 ```cpp
-// Required pattern for all interrupt callbacks
+// Required pattern for all interrupt callbacks - simplified design
 struct InterruptCallbacks {
     static bool KeyPresentChanged(void* context) {
         auto* sensor = static_cast<KeyPresentSensor*>(context);
         return sensor && sensor->HasStateChanged();
     }
     
-    static bool KeyPresentState(void* context) {
-        auto* sensor = static_cast<KeyPresentSensor*>(context);
-        return sensor && sensor->GetKeyPresentState();
+    static void LoadKeyPanel(void* context) {
+        auto* panelManager = static_cast<PanelManager*>(context);
+        panelManager->LoadPanel("KEY");
+        // Note: No restoration logic here - handled by InterruptManager
     }
 };
+```
+
+**Memory Savings**: Centralized restoration eliminates need for deactivate function pointers, saving 4 bytes per interrupt (28 bytes total system savings).
 ```
 
 #### 2. LVGL Buffer Optimization

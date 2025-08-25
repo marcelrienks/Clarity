@@ -75,20 +75,20 @@ struct Interrupt {
     InterruptSource source;
     InterruptEffect effect;
     bool (*evaluationFunc)(void* context);
-    void (*activateFunc)(void* context);
-    void (*deactivateFunc)(void* context);
-    void* sensorContext;
-    void* serviceContext;
+    void (*executionFunc)(void* context);      // Single execution function - hybrid design
+    void* context;                             // Simplified context handling
     // Union for effect-specific data
     bool active;
-    bool previouslyActive;
     unsigned long lastEvaluation;
 };
+// Memory optimization: ~29 bytes per interrupt (saves 4 bytes vs activate/deactivate design)
+// Centralized restoration logic eliminates need for distributed deactivate callbacks
 ```
 
 3. Create dummy implementation stubs that maintain existing behavior
-4. Update InterruptManager to coordinate PolledHandler and QueuedHandler
-5. Ensure factory pattern creates managers and providers only (PanelManager handles panel creation directly)
+4. Update InterruptManager to coordinate PolledHandler and QueuedHandler with centralized restoration
+5. Implement centralized restoration logic in InterruptManager::HandleRestoration()
+6. Ensure factory pattern creates managers and providers only (PanelManager handles panel creation directly)
 
 **Build/Test Verification**:
 - Project builds successfully with new interfaces and factory pattern
@@ -221,8 +221,9 @@ private:
 
 2. Implement sensor creation in constructor with proper ownership
 3. Implement state change processing with extensive logging for verification
-4. Create test interrupt registrations using owned sensors
+4. Create test interrupt registrations using owned sensors (single executionFunc per interrupt)
 5. Implement priority-based interrupt coordination
+6. **Note**: No deactivate function implementation needed - restoration handled by InterruptManager
 
 **Build/Test Verification**:
 - PolledHandler compiles and instantiates without errors
@@ -240,9 +241,10 @@ private:
 **Tasks**:
 1. Create `include/handlers/queued_handler.h` implementing IHandler
 2. QueuedHandler constructor creates and owns ActionButtonSensor
-3. Create test interrupt registrations for button functionality
+3. Create test interrupt registrations for button functionality (single executionFunc per interrupt)
 4. Implement single latest button event processing (not a queue)
 5. Add comprehensive logging for interrupt processing
+6. **Note**: No deactivate function implementation needed - restoration handled by InterruptManager
 
 **Build/Test Verification**:
 - QueuedHandler compiles and processes interrupts correctly
@@ -264,18 +266,24 @@ private:
 1. Create `include/utilities/interrupt_callbacks.h`:
 ```cpp
 struct InterruptCallbacks {
-    // Key sensor callbacks
+    // Key sensor callbacks - hybrid design
     static bool KeyPresentChanged(void* context);
-    static bool KeyPresentState(void* context);
-    static void LoadKeyPanel(void* context);
+    static void LoadKeyPanel(void* context);      // Single execution function
     
+    // Lock sensor callbacks
+    static bool LockStateChanged(void* context);
+    static void LoadLockPanel(void* context);     // Single execution function
+    
+    // Note: No deactivate callbacks needed - restoration handled centrally
     // Add callbacks for all sensors/interrupts
 };
+// Memory savings: 28 bytes total (4 bytes × 7 interrupts) vs activate/deactivate design
 ```
 
-2. Update TriggerInterrupt and ActionInterrupt structs to use context parameters
-3. Create test registrations using static callbacks
-4. Add memory monitoring utilities
+2. Update Interrupt struct to use single executionFunc with context parameters
+3. Create test registrations using static callbacks (single execution function per interrupt)
+4. Add memory monitoring utilities to verify 28-byte memory savings
+5. Implement centralized restoration logic in InterruptManager
 
 **Build/Test Verification**:
 - Static callbacks compile and execute correctly
@@ -345,10 +353,12 @@ struct InterruptCallbacks {
 
 **Tasks**:
 1. Update InterruptManager to create PolledHandler and QueuedHandler
-2. Update InterruptManager to coordinate both handlers by priority
-3. Integrate universal button function injection with handler system
-4. Create feature flag to switch between old and new interrupt processing
-5. Add extensive comparison logging between old and new systems
+2. Update InterruptManager to coordinate both handlers by priority with centralized restoration
+3. Implement InterruptManager::HandleRestoration() for centralized restoration logic
+4. Integrate universal button function injection with handler system
+5. Create feature flag to switch between old and new interrupt processing
+6. Add extensive comparison logging between old and new systems
+7. Verify 28-byte memory savings from single execution function design
 
 **Build/Test Verification**:
 - Both old and new interrupt systems can run in parallel
@@ -508,19 +518,22 @@ Each phase includes specific manual testing procedures:
 - [ ] Interrupt processing time is consistent regardless of trigger states
 - [ ] CPU usage during idle periods is minimized
 - [ ] Change detection eliminates redundant operations
+- [ ] Memory savings of 28 bytes achieved through single execution function design
 
 ### Architecture Requirements (Final State)
 - [ ] PolledHandler and QueuedHandler implement IHandler interface
-- [ ] InterruptManager coordinates both handlers by priority
+- [ ] InterruptManager coordinates both handlers by priority with centralized restoration
+- [ ] InterruptManager::HandleRestoration() manages all panel restoration decisions
 - [ ] All sensors inherit from BaseSensor for change detection
 - [ ] All panels implement IActionService for universal button handling
 - [ ] KeyPresentSensor and KeyNotPresentSensor are independent classes
-- [ ] Function pointer architecture eliminates heap fragmentation
+- [ ] Function pointer architecture eliminates heap fragmentation (single executionFunc per interrupt)
 - [ ] State change processing prevents change detection corruption
 - [ ] Config panel implements hierarchical state machine navigation
 - [ ] Error panel implements cycling and auto-restoration logic
 - [ ] Universal button function injection works across all panels
 - [ ] Debug error system enables development testing (CLARITY_DEBUG only)
+- [ ] Centralized restoration logic eliminates distributed callback complexity
 
 ### Quality Requirements (Ongoing)
 - [ ] Code follows project naming standards consistently
@@ -576,16 +589,18 @@ Each phase includes specific manual testing procedures:
 
 ## Conclusion
 
-This implementation plan addresses the significant architectural gaps between the current codebase and the documented design. The handler-based interrupt architecture with function pointers is critical for ESP32 memory stability and system reliability. The phased approach minimizes risk while ensuring comprehensive testing at each stage.
+This implementation plan addresses the significant architectural gaps between the current codebase and the documented design. The handler-based interrupt architecture with centralized restoration and single execution functions is critical for ESP32 memory stability and system reliability. The phased approach minimizes risk while ensuring comprehensive testing at each stage.
 
 The most critical aspects are:
-1. Function pointer architecture for memory safety
-2. Split sensor design for resource conflict prevention  
-3. Coordinated interrupt processing for change detection accuracy
-4. Proper sensor ownership model for system stability
-5. InterruptManager coordination of specialized handlers
-6. Universal button system with panel function injection
-7. Panel state management for complex navigation and auto-restoration
-8. Complete scenario coverage including all integration test requirements
+1. **Hybrid interrupt design** with single execution function per interrupt for memory optimization
+2. **Centralized restoration logic** in InterruptManager eliminates distributed callback complexity
+3. Function pointer architecture for memory safety (saves 28 bytes total)
+4. Split sensor design for resource conflict prevention  
+5. Coordinated interrupt processing for change detection accuracy
+6. Proper sensor ownership model for system stability
+7. InterruptManager coordination of specialized handlers with centralized restoration
+8. Universal button system with panel function injection
+9. Panel state management for complex navigation and auto-restoration
+10. Complete scenario coverage including all integration test requirements
 
 Success depends on careful implementation of each phase with thorough testing before proceeding to the next stage. The final system will align with the documented architecture while maintaining the reliability and performance requirements of the ESP32 platform.
