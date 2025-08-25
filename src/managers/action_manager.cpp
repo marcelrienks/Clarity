@@ -132,7 +132,7 @@ void ActionManager::RegisterButtonInterrupts()
 void ActionManager::ProcessInputEvents()
 {
     log_v("ProcessInputEvents() called");
-    // Phase 5: Now called by interrupt system when button state changes
+    // Called by interrupt system when button state changes for efficiency
     if (!initialized_)
     {
         return;
@@ -200,7 +200,7 @@ void ActionManager::ProcessInputEvents()
             break;
     }
 
-    // Process any pending actions
+    // Process completed - button state handled
 }
 
 void ActionManager::HandlePressedState(unsigned long currentTime)
@@ -245,8 +245,8 @@ void ActionManager::ExecuteLongPressAction(unsigned long currentTime)
         return;
     }
     
-    // Phase 1: Simplified - just execute immediately for now
-    log_d("Executing long press action (Phase 1 simplified)");
+    // Execute immediately if UI state check fails as fallback
+    log_d("Executing long press action immediately");
     longPressFunc(currentService_->GetPanelContext());
 }
 
@@ -326,8 +326,8 @@ void ActionManager::HandleButtonRelease()
                     }
                     else
                     {
-                        // Phase 1: Simplified - just execute immediately for now
-                        log_d("Executing short press action (Phase 1 simplified)");
+                        // Execute immediately if UI state check fails as fallback
+                        log_d("Executing short press action immediately");
                         shortPressFunc(currentService_->GetPanelContext());
                     }
                 }
@@ -350,8 +350,8 @@ void ActionManager::HandleButtonRelease()
                     }
                     else
                     {
-                        // Phase 1: Simplified - just execute immediately for now
-                        log_d("Executing long press action on release (Phase 1 simplified)");
+                        // Execute immediately if UI state check fails as fallback
+                        log_d("Executing long press action on release immediately");
                         longPressFunc(currentService_->GetPanelContext());
                     }
                 }
@@ -424,11 +424,11 @@ unsigned long ActionManager::GetCurrentTime() const
 // Action Processing Methods
 
 /// @brief Process any pending actions if UIState allows
-/// @details Phase 1: Simplified - no action queuing for now
+/// @details Actions execute immediately for responsive user experience
 void ActionManager::ProcessPendingActions()
 {
     log_v("ProcessPendingActions() called");
-    // Phase 1: No action queuing - all actions execute immediately
+    // Actions execute immediately for responsive user experience
 }
 
 /// @brief Check if actions can be executed based on current UIState

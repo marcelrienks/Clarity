@@ -134,9 +134,7 @@ void setup()
 
     Ticker::handleLvTasks();
     styleManager->InitializeStyles();
-    // InterruptManager is initialized by factory, just register legacy sources
-    // Phase 4: TriggerManager now uses new interrupt system, no longer needs registration
-    // Phase 5: ActionManager now uses new interrupt system, no longer needs registration
+    // Interrupt system initialized by factory with all handlers
     Ticker::handleLvTasks();
 
     // Load startup panel
@@ -153,18 +151,18 @@ void setup()
 
     Ticker::handleLvTasks();
     
-    // Phase 6: Print initial interrupt system status
+    // Display complete system configuration for debugging
     if (interruptManager)
     {
         interruptManager->PrintSystemStatus();
     }
     
-    // Phase 6: Run comprehensive system tests (debug builds only)
+    // Execute comprehensive validation tests in debug builds
 #ifdef CLARITY_DEBUG
     log_i("Running interrupt system integration tests...");
     RunInterruptSystemTests();
     
-    // Print final system status after tests
+    // Verify system state after testing
     if (interruptManager)
     {
         log_i("=== Post-Test System Status ===");
@@ -187,7 +185,7 @@ void loop()
         log_d("Main loop running - count: %lu", loopCount);
     }
     
-    // Phase 6: Periodic interrupt system diagnostics (every 30 seconds)
+    // Periodic system health monitoring for debugging (every 30 seconds)
     static unsigned long lastDiagnosticTime = 0;
     static constexpr unsigned long DIAGNOSTIC_INTERVAL_MS = 30000;
     if (interruptManager && (millis() - lastDiagnosticTime) > DIAGNOSTIC_INTERVAL_MS)
@@ -201,13 +199,13 @@ void loop()
         lastDiagnosticTime = millis();
     }
 
-    // Process interrupts using new coordinated system
+    // Process interrupts when UI is not busy to avoid conflicts
     if (interruptManager && panelManager)
     {
         UIState currentState = panelManager->GetUiState();
         if (currentState == UIState::IDLE)
         {
-            interruptManager->Process(); // New coordinated interrupt processing
+            interruptManager->Process(); // Execute interrupt evaluation and handling
         }
     }
     else if (!interruptManager)

@@ -177,22 +177,22 @@ void TriggerManager::RegisterTriggerInterrupts()
 void TriggerManager::ProcessTriggerEvents()
 {
     log_v("ProcessTriggerEvents() called");
-    // Phase 4: ProcessTriggerEvents is now legacy - interrupts handle trigger processing
-    // Keep minimal functionality for backward compatibility
+    // Fallback processing method - interrupts handle most trigger processing
+    // Maintain for interface compatibility with legacy callers
     
-    // Only check debug error sensor for backward compatibility
+    // Debug error sensor requires explicit polling for error generation
     if (debugErrorSensor_)
     {
         static unsigned long debugCallCount = 0;
         debugCallCount++;
         if (debugCallCount % 10000 == 0)
         { // Log every 10000 calls to reduce noise
-            log_d("TriggerManager: Legacy ProcessTriggerEvents called %lu times", debugCallCount);
+            log_d("TriggerManager: Fallback processing called %lu times", debugCallCount);
         }
-        debugErrorSensor_->GetReading(); // This will trigger errors on rising edge
+        debugErrorSensor_->GetReading(); // Generate debug errors on rising edge
     }
     
-    // All other trigger processing is now handled by interrupt system
+    // Primary trigger processing handled by interrupt system for efficiency
 }
 
 GpioState TriggerManager::ReadAllSensorStates()

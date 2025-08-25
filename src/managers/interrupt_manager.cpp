@@ -3,7 +3,6 @@
 #include "handlers/polled_handler.h"
 #include "handlers/queued_handler.h"
 #include <Arduino.h>
-#include <algorithm>
 #include <cstring>
 
 #ifdef CLARITY_DEBUG
@@ -33,14 +32,10 @@ void InterruptManager::Init()
         return;
     }
 
-    // Initialize new coordinated system
+    // Initialize interrupt storage and timing
     interruptCount_ = 0;
     handlers_.clear();
     lastEvaluationTime_ = millis();
-    
-    // Initialize legacy compatibility
-    triggerSources_.clear();
-    actionSources_.clear();
     lastCheckTime_ = millis();
     checkCount_ = 0;
 
@@ -67,86 +62,11 @@ void InterruptManager::Init()
     }
 
     initialized_ = true;
-    log_i("InterruptManager initialized with coordinated interrupt system and handlers");
+    log_i("InterruptManager initialized with polled and queued interrupt handlers");
 }
 
-void InterruptManager::RegisterTriggerSource(IInterruptService *source)
-{
-    log_v("RegisterTriggerSource() called");
-    if (!source)
-    {
-        log_w("Attempted to register null trigger source");
-        return;
-    }
 
-    // Check if already registered
-    auto it = std::find(triggerSources_.begin(), triggerSources_.end(), source);
-    if (it != triggerSources_.end())
-    {
-        log_w("Trigger source already registered");
-        return;
-    }
-
-    triggerSources_.push_back(source);
-
-    log_d("Registered trigger source (total: %zu)", triggerSources_.size());
-}
-
-void InterruptManager::RegisterActionSource(IInterruptService *source)
-{
-    log_v("RegisterActionSource() called");
-    if (!source)
-    {
-        log_w("Attempted to register null action source");
-        return;
-    }
-
-    // Check if already registered
-    auto it = std::find(actionSources_.begin(), actionSources_.end(), source);
-    if (it != actionSources_.end())
-    {
-        log_w("Action source already registered");
-        return;
-    }
-
-    actionSources_.push_back(source);
-
-    log_d("Registered action source (total: %zu)", actionSources_.size());
-}
-
-void InterruptManager::UnregisterTriggerSource(IInterruptService *source)
-{
-    log_v("UnregisterTriggerSource() called");
-    if (!source)
-    {
-        return;
-    }
-
-    auto it = std::find(triggerSources_.begin(), triggerSources_.end(), source);
-    if (it != triggerSources_.end())
-    {
-        triggerSources_.erase(it);
-        log_d("Unregistered trigger source (remaining: %zu)", triggerSources_.size());
-    }
-}
-
-void InterruptManager::UnregisterActionSource(IInterruptService *source)
-{
-    log_v("UnregisterActionSource() called");
-    if (!source)
-    {
-        return;
-    }
-
-    auto it = std::find(actionSources_.begin(), actionSources_.end(), source);
-    if (it != actionSources_.end())
-    {
-        actionSources_.erase(it);
-        log_d("Unregistered action source (remaining: %zu)", actionSources_.size());
-    }
-}
-
-// New coordinated interrupt system methods
+// Core interrupt processing methods
 void InterruptManager::Process()
 {
     log_v("Process() called");
@@ -157,18 +77,15 @@ void InterruptManager::Process()
 
     unsigned long currentTime = millis();
     
-    // Evaluate coordinated interrupts at controlled intervals
+    // Control evaluation frequency to prevent CPU overload
     if (currentTime - lastEvaluationTime_ >= INTERRUPT_EVALUATION_INTERVAL_MS)
     {
         EvaluateInterrupts();
         lastEvaluationTime_ = currentTime;
     }
     
-    // Process specialized handlers
+    // Execute queued interrupt actions through registered handlers  
     ProcessHandlers();
-    
-    // Process legacy sources for backward compatibility
-    ProcessLegacySources();
 }
 
 bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
@@ -414,33 +331,6 @@ void InterruptManager::ProcessHandlers()
     }
 }
 
-void InterruptManager::ProcessLegacySources()
-{
-    log_v("ProcessLegacySources() called");
-    
-    checkCount_++;
-    unsigned long currentTime = millis();
-
-    // Process all trigger sources directly
-    for (IInterruptService *source : triggerSources_)
-    {
-        if (source)
-        {
-            source->Process();
-        }
-    }
-
-    // Process all action sources directly
-    for (IInterruptService *source : actionSources_)
-    {
-        if (source)
-        {
-            source->Process();
-        }
-    }
-
-    lastCheckTime_ = currentTime;
-}
 
 Interrupt* InterruptManager::FindInterrupt(const char* id)
 {
@@ -458,36 +348,36 @@ Interrupt* InterruptManager::FindInterrupt(const char* id)
 
 bool InterruptManager::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
 {
-    // Phase 6: Optimize evaluation frequency based on priority and type
+    // Optimize evaluation frequency based on priority to reduce CPU usage
     unsigned long currentTime = millis();
     unsigned long timeSinceLastEvaluation = currentTime - interrupt.lastEvaluation;
     
-    // Define minimum intervals based on priority and effect
+    // Set evaluation intervals based on priority for CPU efficiency
     unsigned long minInterval = 0;
     
     switch (interrupt.priority)
     {
         case Priority::CRITICAL:
-            minInterval = 10;  // Evaluate critical interrupts every 10ms
+            minInterval = 10;  // Fast response for error conditions and security
             break;
         case Priority::IMPORTANT:
-            minInterval = 25;  // Evaluate important interrupts every 25ms  
+            minInterval = 25;  // Balanced response for user input and sensors
             break;
         case Priority::NORMAL:
-            minInterval = 50;  // Evaluate normal interrupts every 50ms
+            minInterval = 50;  // Slower response for background tasks and themes
             break;
     }
     
-    // Button actions need higher frequency for responsiveness
+    // User input requires fast response for good UX
     if (interrupt.effect == InterruptEffect::BUTTON_ACTION)
     {
-        minInterval = std::min(minInterval, 15UL); // Max 15ms for button actions
+        minInterval = std::min(minInterval, 15UL); // Ensure responsive button handling
     }
     
-    // Theme changes can be less frequent
+    // UI changes can be evaluated less frequently to prevent flicker
     if (interrupt.effect == InterruptEffect::SET_THEME)
     {
-        minInterval = std::max(minInterval, 100UL); // Min 100ms for theme changes
+        minInterval = std::max(minInterval, 100UL); // Prevent rapid theme switching
     }
     
     return timeSinceLastEvaluation >= minInterval;
@@ -498,14 +388,8 @@ void InterruptManager::UpdateLastEvaluation(Interrupt& interrupt)
     interrupt.lastEvaluation = millis();
 }
 
-// Legacy compatibility methods
-void InterruptManager::CheckAllInterrupts()
-{
-    log_v("CheckAllInterrupts() called (legacy compatibility)");
-    Process(); // Delegate to new coordinated system
-}
 
-// Phase 6: System integration and diagnostics methods
+// System monitoring and diagnostic methods
 void InterruptManager::PrintSystemStatus() const
 {
     log_i("=== Interrupt System Status ===");
@@ -535,7 +419,7 @@ void InterruptManager::PrintSystemStatus() const
     log_i("--- Handler Status ---");
     log_i("  Polled Handler: %s", polledHandler_ ? "REGISTERED" : "NOT REGISTERED");
     log_i("  Queued Handler: %s", queuedHandler_ ? "REGISTERED" : "NOT REGISTERED");
-    log_i("  Custom Handlers: %d", handlers_.size() - 2); // Subtract default handlers
+    log_i("  Total Handlers: %d", handlers_.size());
     
     log_i("================================");
 }
@@ -551,15 +435,15 @@ void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& 
     totalExecutions = totalExecutions_;
 }
 
-// Phase 6: Performance optimization methods
+// Memory management and performance optimization
 void InterruptManager::OptimizeMemoryUsage()
 {
     log_v("OptimizeMemoryUsage() called");
     
-    // Compact the interrupt array to remove gaps
+    // Remove inactive interrupts to free memory
     CompactInterruptArray();
     
-    // Log optimization results
+    // Report optimization results for debugging
     log_d("Memory optimization complete - %d interrupts active", interruptCount_);
 }
 
