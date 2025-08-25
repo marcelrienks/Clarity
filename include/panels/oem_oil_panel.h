@@ -49,7 +49,7 @@ class IComponentFactory;
  * @context The components are currently set to 240x240 size in order to ensure
  * that they maintain a consistent appearance with OEM styling by being shown on either side of the screen.
  */
-class OemOilPanel : public IPanel, public IActionService
+class OemOilPanel : public IPanel
 {
   public:
     // Constructors and Destructors
@@ -70,15 +70,10 @@ class OemOilPanel : public IPanel, public IActionService
     /// @param preferenceService The preference service to use for configuration
     void SetPreferenceService(IPreferenceService *preferenceService);
 
-    // IActionService Interface Implementation
-    Action GetShortPressAction() override;
-    Action GetLongPressAction() override;
-
-    // IPanel override to provide action service
-    IActionService *GetInputService() override
-    {
-        return this;
-    }
+    // IActionService Interface Implementation (inherited through IPanel)
+    void (*GetShortPressFunction())(void* panelContext) override;
+    void (*GetLongPressFunction())(void* panelContext) override;
+    void* GetPanelContext() override;
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;

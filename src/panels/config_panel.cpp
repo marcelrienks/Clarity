@@ -138,6 +138,8 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 // IInputService Interface Implementation
 
+// Old Action interface methods (Phase 1 compatibility - commented out)
+/*
 Action ConfigPanel::GetShortPressAction()
 {
     log_v("GetShortPressAction() called");
@@ -171,6 +173,7 @@ Action ConfigPanel::GetLongPressAction()
     // Long press executes current option
     return Action([this]() { ExecuteCurrentOption(); });
 }
+*/
 
 // Manager injection method
 void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
@@ -538,4 +541,35 @@ void ConfigPanel::UpdateSubmenuItems()
         configComponent_->SetMenuItems(menuItems_);
         configComponent_->SetCurrentIndex(currentMenuIndex_);
     }
+}
+
+// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+
+static void ConfigPanelShortPress(void* panelContext)
+{
+    log_v("ConfigPanelShortPress() called");
+    // Phase 1: Simple stub - would cycle through menu options in full implementation
+    log_i("ConfigPanel short press detected - would cycle menu options");
+}
+
+static void ConfigPanelLongPress(void* panelContext)
+{
+    log_v("ConfigPanelLongPress() called");
+    // Phase 1: Simple stub - would select current option in full implementation
+    log_i("ConfigPanel long press detected - would select current option");
+}
+
+void (*ConfigPanel::GetShortPressFunction())(void* panelContext)
+{
+    return ConfigPanelShortPress;
+}
+
+void (*ConfigPanel::GetLongPressFunction())(void* panelContext)
+{
+    return ConfigPanelLongPress;
+}
+
+void* ConfigPanel::GetPanelContext()
+{
+    return this;
 }

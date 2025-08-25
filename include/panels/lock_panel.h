@@ -52,6 +52,11 @@ class LockPanel : public IPanel
     // Manager injection method (minimal implementation - panel has no actions)
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
 
+    // IActionService Interface Implementation (inherited through IPanel)
+    void (*GetShortPressFunction())(void* panelContext) override;
+    void (*GetLongPressFunction())(void* panelContext) override;
+    void* GetPanelContext() override;
+
   private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);

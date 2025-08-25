@@ -39,7 +39,7 @@ class IComponentFactory;
  * animations for smooth transitions and automatically proceeds to the main
  * application panel when animation completes.
  */
-class SplashPanel : public IPanel, public IActionService
+class SplashPanel : public IPanel
 {
   public:
     // Constructors and Destructors
@@ -59,15 +59,10 @@ class SplashPanel : public IPanel, public IActionService
     // Preference service injection
     void SetPreferenceService(IPreferenceService *preferenceService);
 
-    // IActionService Interface Implementation - Action-based (no animation interruption)
-    Action GetShortPressAction() override;
-    Action GetLongPressAction() override;
-
-    // IPanel override to provide input service
-    IActionService *GetInputService() override
-    {
-        return this;
-    }
+    // IActionService Interface Implementation (inherited through IPanel)
+    void (*GetShortPressFunction())(void* panelContext) override;
+    void (*GetLongPressFunction())(void* panelContext) override;
+    void* GetPanelContext() override;
 
   private:
     // Private Data Members

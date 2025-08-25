@@ -119,7 +119,5 @@ class ActionManager : public IInterruptService, public IActionManager
     bool initialized_;
     std::string currentPanelName_;
 
-    // Single pending action (only the latest one is kept)
-    Action pendingAction_;
-    unsigned long pendingActionTimestamp_;
+    // Phase 1: Pending action logic removed for simplicity
 };

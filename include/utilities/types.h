@@ -191,3 +191,58 @@ struct Action
         return execute != nullptr;
     }
 };
+
+//=============================================================================
+// COORDINATED INTERRUPT SYSTEM
+// Memory-optimized interrupt structure for ESP32 with centralized restoration
+//=============================================================================
+
+/// @struct Interrupt
+/// @brief Unified interrupt structure for coordinated handler system with memory optimization
+///
+/// @details Memory-optimized interrupt design for ESP32 constraints with centralized restoration:
+/// - Static function pointers prevent heap fragmentation (critical for ESP32)
+/// - Single execution function per interrupt saves 4 bytes per interrupt (28 bytes total)
+/// - Union-based effect data for memory efficiency
+/// - Centralized restoration logic eliminates distributed callback complexity
+///
+/// @memory_usage ~29 bytes per interrupt (optimized from 33-byte activate/deactivate design)
+/// @total_system_overhead ~203 bytes for 7 interrupts (vs 231 bytes with dual functions)
+///
+/// @esp32_constraint ESP32-WROOM-32 has ~250KB available RAM after system overhead
+/// Using std::function with lambda captures causes heap fragmentation and crashes
+///
+/// @restoration_design Centralized restoration in InterruptManager eliminates need for
+/// deactivate function pointers, reducing memory usage and complexity
+struct Interrupt
+{
+    const char* id;                                    ///< Static string for memory efficiency
+    Priority priority;                                 ///< Processing priority  
+    InterruptSource source;                           ///< POLLED or QUEUED evaluation
+    InterruptEffect effect;                           ///< What this interrupt does
+    bool (*evaluationFunc)(void* context);           ///< Function pointer - no heap allocation
+    void (*executionFunc)(void* context);            ///< Single execution function - simplified design
+    void* context;                                    ///< Sensor or service context
+    
+    // Effect-specific data (union for memory efficiency)
+    union {
+        struct { 
+            const char* panelName; 
+            bool trackForRestore; 
+        } panel;                                      ///< LOAD_PANEL data
+        struct { 
+            const char* theme; 
+        } theme;                                      ///< SET_THEME data
+        struct { 
+            const char* key; 
+            void* value; 
+        } preference;                                 ///< SET_PREFERENCE data
+        struct { 
+            void (*customFunc)(void* ctx); 
+        } custom;                                     ///< BUTTON_ACTION/custom data
+    } data;
+    
+    // Runtime state
+    bool active = false;                              ///< Current activation state
+    unsigned long lastEvaluation = 0;               ///< Performance tracking
+};

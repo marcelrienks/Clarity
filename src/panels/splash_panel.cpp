@@ -164,8 +164,8 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     lv_timer_del(fadeOutTimer);
 }
 
-// IInputService Interface Implementation
-
+// Old IInputService Interface Implementation (Phase 1 compatibility - commented out)
+/*
 Action SplashPanel::GetShortPressAction()
 {
     log_v("GetShortPressAction() called");
@@ -193,6 +193,7 @@ Action SplashPanel::GetLongPressAction()
     log_w("SplashPanel: PanelService not available, returning no action");
     return Action(nullptr);
 }
+*/
 
 // Manager injection method
 void SplashPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
@@ -219,4 +220,34 @@ int SplashPanel::GetAnimationTime() const
     int animTime = (preferenceService_->GetConfig().splashDuration - _DISPLAY_TIME) / 2;
 
     return animTime;
+}
+
+// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+
+static void SplashPanelShortPress(void* panelContext)
+{
+    log_v("SplashPanelShortPress() called");
+    // Phase 1: Minimal stub - no action during splash screen
+}
+
+static void SplashPanelLongPress(void* panelContext)
+{
+    log_v("SplashPanelLongPress() called");
+    // Phase 1: Simple stub - long press functionality will be implemented in later phases
+    log_i("SplashPanel long press detected - would load config panel");
+}
+
+void (*SplashPanel::GetShortPressFunction())(void* panelContext)
+{
+    return SplashPanelShortPress;
+}
+
+void (*SplashPanel::GetLongPressFunction())(void* panelContext)
+{
+    return SplashPanelLongPress;
+}
+
+void* SplashPanel::GetPanelContext()
+{
+    return this;
 }

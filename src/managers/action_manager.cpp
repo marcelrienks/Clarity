@@ -17,8 +17,7 @@
 
 ActionManager::ActionManager(std::shared_ptr<ActionButtonSensor> buttonSensor, IPanelService *panelService)
     : buttonSensor_(buttonSensor), currentService_(nullptr), panelService_(panelService), buttonState_(ButtonState::IDLE), pressStartTime_(0),
-      debounceStartTime_(0), lastButtonState_(false), initialized_(false), pendingAction_(nullptr),
-      pendingActionTimestamp_(0)
+      debounceStartTime_(0), lastButtonState_(false), initialized_(false)
 {
     log_v("ActionManager() constructor called");
 }
@@ -154,8 +153,8 @@ void ActionManager::ExecuteLongPressAction(unsigned long currentTime)
 {
     if (!currentService_) return;
     
-    Action action = currentService_->GetLongPressAction();
-    if (!action.IsValid()) return;
+    auto longPressFunc = currentService_->GetLongPressFunction();
+    if (!longPressFunc) return;
     
     log_i("Long press detected after %lu ms (started at %lu ms)", 
           currentTime - pressStartTime_, pressStartTime_);
@@ -163,15 +162,13 @@ void ActionManager::ExecuteLongPressAction(unsigned long currentTime)
     if (CanExecuteActions())
     {
         log_d("Executing long press action immediately");
-        action.execute();
+        longPressFunc(currentService_->GetPanelContext());
         return;
     }
     
-    // Store the action for later processing (overwrites any pending action)
-    pendingAction_ = std::move(action);
-    pendingActionTimestamp_ = currentTime;
-    log_d("Long press action queued for later");
-    ProcessPendingActions();
+    // Phase 1: Simplified - just execute immediately for now
+    log_d("Executing long press action (Phase 1 simplified)");
+    longPressFunc(currentService_->GetPanelContext());
 }
 
 void ActionManager::RegisterPanel(IActionService *service, const char *panelName)
@@ -238,22 +235,21 @@ void ActionManager::HandleButtonRelease()
 
             if (currentService_)
             {
-                // Get action from current panel
-                Action action = currentService_->GetShortPressAction();
-                if (action.IsValid())
+                // Get function pointer from current panel
+                auto shortPressFunc = currentService_->GetShortPressFunction();
+                if (shortPressFunc)
                 {
                     // Check if actions can be executed based on UIState
                     if (CanExecuteActions())
                     {
                         log_d("Executing short press action immediately");
-                        action.execute();
+                        shortPressFunc(currentService_->GetPanelContext());
                     }
                     else
                     {
-                        // Store the action for later processing
-                        pendingAction_ = std::move(action);
-                        pendingActionTimestamp_ = currentTime;
-                        log_d("Short press action queued for later");
+                        // Phase 1: Simplified - just execute immediately for now
+                        log_d("Executing short press action (Phase 1 simplified)");
+                        shortPressFunc(currentService_->GetPanelContext());
                     }
                 }
             }
@@ -265,19 +261,19 @@ void ActionManager::HandleButtonRelease()
 
             if (currentService_)
             {
-                Action action = currentService_->GetLongPressAction();
-                if (action.IsValid())
+                auto longPressFunc = currentService_->GetLongPressFunction();
+                if (longPressFunc)
                 {
                     if (CanExecuteActions())
                     {
                         log_d("Executing long press action on release");
-                        action.execute();
+                        longPressFunc(currentService_->GetPanelContext());
                     }
                     else
                     {
-                        pendingAction_ = std::move(action);
-                        pendingActionTimestamp_ = currentTime;
-                        log_d("Long press action queued for later");
+                        // Phase 1: Simplified - just execute immediately for now
+                        log_d("Executing long press action on release (Phase 1 simplified)");
+                        longPressFunc(currentService_->GetPanelContext());
                     }
                 }
             }
@@ -349,38 +345,11 @@ unsigned long ActionManager::GetCurrentTime() const
 // Action Processing Methods
 
 /// @brief Process any pending actions if UIState allows
-/// @details Executes queued actions when UIState returns to IDLE
-/// Actions expire after INPUT_TIMEOUT_MS (3 seconds)
+/// @details Phase 1: Simplified - no action queuing for now
 void ActionManager::ProcessPendingActions()
 {
     log_v("ProcessPendingActions() called");
-    if (!pendingAction_.IsValid())
-    {
-        return;
-    }
-
-    unsigned long currentTime = GetCurrentTime();
-
-    // Check if pending action has expired
-    if (currentTime - pendingActionTimestamp_ > INPUT_TIMEOUT_MS)
-    {
-        log_d("Pending action expired, discarding");
-        pendingAction_ = Action(nullptr);
-        pendingActionTimestamp_ = 0;
-        return;
-    }
-
-    // Check if actions can now be executed based on UIState
-    if (currentService_ && CanExecuteActions())
-    {
-        log_d("Executing queued action");
-
-        pendingAction_.execute();
-
-        // Clear the pending action after processing
-        pendingAction_ = Action(nullptr);
-        pendingActionTimestamp_ = 0;
-    }
+    // Phase 1: No action queuing - all actions execute immediately
 }
 
 /// @brief Check if actions can be executed based on current UIState

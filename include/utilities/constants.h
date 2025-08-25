@@ -112,6 +112,31 @@ enum class TriggerPriority
     NORMAL = 2     ///< Non-critical triggers (theme changes, settings)
 };
 
+/// @brief Priority levels for coordinated interrupt system
+/// @details Same numeric values as TriggerPriority for compatibility
+enum class Priority
+{
+    CRITICAL = 0,  ///< Critical interrupts (key presence, errors, safety)
+    IMPORTANT = 1, ///< Important interrupts (lock state, system modes)
+    NORMAL = 2     ///< Non-critical interrupts (theme changes, button actions, preferences)
+};
+
+/// @brief Interrupt source types for coordinated handler system
+enum class InterruptSource
+{
+    POLLED,     ///< GPIO state monitoring (managed by PolledHandler)
+    QUEUED      ///< Button event processing (managed by QueuedHandler)
+};
+
+/// @brief Interrupt effect types for simplified execution logic
+enum class InterruptEffect
+{
+    LOAD_PANEL,        ///< Panel switching with restoration tracking
+    SET_THEME,         ///< Theme changes (non-blocking for restoration)
+    SET_PREFERENCE,    ///< Configuration changes
+    BUTTON_ACTION      ///< Panel-specific button functions (QUEUED only)
+};
+
 /// @brief Trigger execution state enumeration
 enum class TriggerExecutionState
 {

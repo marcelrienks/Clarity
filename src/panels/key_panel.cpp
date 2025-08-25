@@ -155,3 +155,32 @@ void KeyPanel::SetManagers(IPanelService *panelService, IStyleService *styleServ
         styleService_ = styleService;
     }
 }
+
+// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+
+static void KeyPanelShortPress(void* panelContext)
+{
+    log_v("KeyPanelShortPress() called");
+    // Phase 1: Display-only panel, no action for short press
+}
+
+static void KeyPanelLongPress(void* panelContext)
+{
+    log_v("KeyPanelLongPress() called");
+    // Phase 1: Simple stub - would load config panel in full implementation
+}
+
+void (*KeyPanel::GetShortPressFunction())(void* panelContext)
+{
+    return KeyPanelShortPress;
+}
+
+void (*KeyPanel::GetLongPressFunction())(void* panelContext)
+{
+    return KeyPanelLongPress;
+}
+
+void* KeyPanel::GetPanelContext()
+{
+    return this;
+}

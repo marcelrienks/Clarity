@@ -145,3 +145,32 @@ void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleSer
         styleService_ = styleService;
     }
 }
+
+// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+
+static void LockPanelShortPress(void* panelContext)
+{
+    log_v("LockPanelShortPress() called");
+    // Phase 1: Display-only panel, no action for short press
+}
+
+static void LockPanelLongPress(void* panelContext)
+{
+    log_v("LockPanelLongPress() called");
+    // Phase 1: Simple stub - would load config panel in full implementation
+}
+
+void (*LockPanel::GetShortPressFunction())(void* panelContext)
+{
+    return LockPanelShortPress;
+}
+
+void (*LockPanel::GetLongPressFunction())(void* panelContext)
+{
+    return LockPanelLongPress;
+}
+
+void* LockPanel::GetPanelContext()
+{
+    return this;
+}

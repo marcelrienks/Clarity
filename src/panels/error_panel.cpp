@@ -208,8 +208,8 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     }
 }
 
-// IInputService Interface Implementation
-
+// Old Action interface methods (Phase 1 compatibility - commented out)
+/*
 Action ErrorPanel::GetShortPressAction()
 {
     log_v("GetShortPressAction() called");
@@ -255,6 +255,7 @@ Action ErrorPanel::GetLongPressAction()
             currentErrors_.clear();
         });
 }
+*/
 
 
 // Manager injection method
@@ -268,4 +269,35 @@ void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleSe
     {
         styleService_ = styleService;
     }
+}
+
+// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+
+static void ErrorPanelShortPress(void* panelContext)
+{
+    log_v("ErrorPanelShortPress() called");
+    // Phase 1: Simple stub - would cycle through errors in full implementation
+    log_i("ErrorPanel short press detected - would cycle to next error");
+}
+
+static void ErrorPanelLongPress(void* panelContext)
+{
+    log_v("ErrorPanelLongPress() called");
+    // Phase 1: Simple stub - would clear all errors in full implementation
+    log_i("ErrorPanel long press detected - would clear all errors");
+}
+
+void (*ErrorPanel::GetShortPressFunction())(void* panelContext)
+{
+    return ErrorPanelShortPress;
+}
+
+void (*ErrorPanel::GetLongPressFunction())(void* panelContext)
+{
+    return ErrorPanelLongPress;
+}
+
+void* ErrorPanel::GetPanelContext()
+{
+    return this;
 }

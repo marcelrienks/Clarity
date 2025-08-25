@@ -229,7 +229,8 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     // Register input service if panel implements it (using composition approach)
     if (actionManager_)
     {
-        IActionService *actionService = panel_->GetInputService();
+        // All panels now inherit from IActionService through IPanel
+        IActionService *actionService = panel_.get();
         if (actionService)
         {
             log_i("Panel %s implements IActionService, registering for actions", currentPanel);

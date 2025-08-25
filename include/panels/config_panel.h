@@ -44,7 +44,7 @@
  * @context This is a placeholder implementation for Phase 3.
  * Full functionality will be added in Phase 4 with actual settings.
  */
-class ConfigPanel : public IPanel, public IActionService
+class ConfigPanel : public IPanel
 {
   public:
     // Constructors and Destructors
@@ -61,15 +61,10 @@ class ConfigPanel : public IPanel, public IActionService
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
     void SetPreferenceService(IPreferenceService *preferenceService);
 
-    // IActionService Interface Implementation
-    Action GetShortPressAction() override;
-    Action GetLongPressAction() override;
-
-    // IPanel override to provide input service
-    IActionService *GetInputService() override
-    {
-        return this;
-    }
+    // IActionService Interface Implementation (inherited through IPanel)
+    void (*GetShortPressFunction())(void* panelContext) override;
+    void (*GetLongPressFunction())(void* panelContext) override;
+    void* GetPanelContext() override;
 
   private:
     // Menu state enum

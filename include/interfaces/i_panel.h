@@ -9,21 +9,25 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
+#include "interfaces/i_action_service.h"
 
 // Forward declarations
-class IActionService;
 class IPanelService;
 class IStyleService;
 
 /**
  * @interface IPanel
- * @brief Base interface for all screen panels in the Clarity system
+ * @brief Base interface for all screen panels with universal button handling
  *
  * @details This interface defines the contract for panels that manage complete
  * screens in the MVP architecture. Panels act as Presenters, coordinating
  * between sensors (models) and components (views) to create cohesive displays.
+ * All panels implement IActionService for consistent button input handling.
  *
  * @design_pattern Presenter in MVP - coordinates models and views
+ * @universal_button_system All panels inherit IActionService to provide
+ * static button function pointers for universal button interrupt injection
+ *
  * @lifecycle:
  * 1. init(): Initialize panel and create components
  * 2. load(): Setup UI and start async operations with callback
@@ -36,21 +40,27 @@ class IStyleService;
  * - PanelManager uses callbacks to coordinate panel switching
  *
  * @sensor_integration:
- * - Panels create and manage sensor instances
- * - Regular update() calls refresh sensor readings
- * - Sensor data passed to components via refresh() methods
+ * - Display-only panels (Key, Lock): Create only components, no sensors
+ * - Data panels (Oil): Create own data sensors and components
+ * - Trigger panels receive state from interrupt system via GPIO reads
+ *
+ * @button_integration:
+ * - All panels must implement IActionService methods
+ * - Panel functions injected into universal button interrupts when panel loads
+ * - Button events execute current panel's functions with panel context
  *
  * @implementations:
  * - SplashPanel: Startup branding screen
- * - OemOilPanel: Main oil monitoring dashboard
- * - KeyPanel: Key status display
- * - LockPanel: Lock status display
+ * - OemOilPanel: Main oil monitoring dashboard (creates own sensors)
+ * - KeyPanel: Key status display (display-only)
+ * - LockPanel: Lock status display (display-only)
+ * - ErrorPanel: Error display with navigation and auto-restoration
+ * - ConfigPanel: Configuration with hierarchical state machine
  *
- * @context This is the base interface for all screen panels.
- * Panels coordinate the entire screen experience, managing sensors
- * and components to create complete user interfaces.
+ * @context All panels coordinate complete screen experiences and provide
+ * consistent button handling through IActionService inheritance.
  */
-class IPanel
+class IPanel : public IActionService
 {
   public:
     // Destructors
@@ -71,12 +81,11 @@ class IPanel
     /// Uses stored providers injected via constructor
     virtual void Update(std::function<void()> callbackFunction) = 0;
 
-    /// @brief Get the input service interface if this panel supports input
-    /// @return Pointer to IActionService or nullptr if not supported
-    virtual IActionService *GetInputService()
-    {
-        return nullptr;
-    }
+    // Note: Button handling methods inherited from IActionService
+    // All panels must implement:
+    // - void (*GetShortPressFunction())(void* panelContext)
+    // - void (*GetLongPressFunction())(void* panelContext) 
+    // - void* GetPanelContext()
 
     /// @brief Set manager services for panels that need them
     /// @param panelService Service for panel switching

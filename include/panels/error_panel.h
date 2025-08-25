@@ -40,7 +40,7 @@ class IComponentFactory;
  * It automatically appears when errors occur and manages user acknowledgment
  * and dismissal workflows.
  */
-class ErrorPanel : public IPanel, public IActionService
+class ErrorPanel : public IPanel
 {
   public:
     // Constructors and Destructors
@@ -57,15 +57,10 @@ class ErrorPanel : public IPanel, public IActionService
     // Manager injection method
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
 
-    // IActionService Interface Implementation
-    Action GetShortPressAction() override;
-    Action GetLongPressAction() override;
-
-    // IPanel override to provide input service
-    IActionService *GetInputService() override
-    {
-        return this;
-    }
+    // IActionService Interface Implementation (inherited through IPanel)
+    void (*GetShortPressFunction())(void* panelContext) override;
+    void (*GetLongPressFunction())(void* panelContext) override;
+    void* GetPanelContext() override;
 
   private:
     // Static Methods

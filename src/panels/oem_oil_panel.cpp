@@ -336,6 +336,8 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_start(&temperatureAnimation_);
 }
 
+// Old Action interface methods (Phase 1 compatibility - commented out)
+/*
 /// @brief Get action for short button press
 /// @return NoAction - oil panel doesn't respond to short presses
 Action OemOilPanel::GetShortPressAction()
@@ -366,6 +368,7 @@ Action OemOilPanel::GetLongPressAction()
             panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
         });
 }
+*/
 
 /// @brief Manager injection method to prevent circular references
 /// @param panelService the panel manager instance
@@ -634,4 +637,34 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 
     log_v("MapTemperatureValue() returning: %d", mappedValue);
     return mappedValue;
+}
+
+// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+
+static void OemOilPanelShortPress(void* panelContext)
+{
+    log_v("OemOilPanelShortPress() called");
+    // Phase 1: No action for short press on oil panel
+}
+
+static void OemOilPanelLongPress(void* panelContext)
+{
+    log_v("OemOilPanelLongPress() called");
+    // Phase 1: Simple stub - would load config panel in full implementation
+    log_i("OemOilPanel long press detected - would load config panel");
+}
+
+void (*OemOilPanel::GetShortPressFunction())(void* panelContext)
+{
+    return OemOilPanelShortPress;
+}
+
+void (*OemOilPanel::GetLongPressFunction())(void* panelContext)
+{
+    return OemOilPanelLongPress;
+}
+
+void* OemOilPanel::GetPanelContext()
+{
+    return this;
 }
