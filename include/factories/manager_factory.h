@@ -57,9 +57,10 @@ class ManagerFactory
 
     // createActionManager method removed - button handling moved to handler-based system
 
-    /// @brief Initialize InterruptManager singleton instance
+    /// @brief Initialize InterruptManager singleton instance with GPIO provider
+    /// @param gpioProvider GPIO provider for handler sensor ownership
     /// @return Pointer to configured InterruptManager instance or nullptr on failure
-    static InterruptManager* createInterruptManager();
+    static InterruptManager* createInterruptManager(IGpioProvider* gpioProvider);
 
     /// @brief Create ErrorManager singleton instance
     /// @return Pointer to configured ErrorManager instance or nullptr on failure

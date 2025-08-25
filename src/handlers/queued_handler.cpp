@@ -1,5 +1,6 @@
 #include "handlers/queued_handler.h"
 #include "managers/error_manager.h"
+#include "sensors/action_button_sensor.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -12,11 +13,30 @@ QueuedHandler::QueuedInterruptEntry::QueuedInterruptEntry(const Interrupt* intr,
 {
 }
 
-QueuedHandler::QueuedHandler() 
-    : maxQueueSize_(DEFAULT_MAX_QUEUE_SIZE)
+QueuedHandler::QueuedHandler(IGpioProvider* gpioProvider) 
+    : maxQueueSize_(DEFAULT_MAX_QUEUE_SIZE),
+      gpioProvider_(gpioProvider)
 {
     log_v("QueuedHandler() constructor called");
     queuedInterrupts_.reserve(maxQueueSize_);
+    
+    // Create and initialize button sensor owned by this handler
+    if (gpioProvider_) {
+        log_d("Creating QueuedHandler-owned ActionButtonSensor");
+        
+        actionButtonSensor_ = std::make_unique<ActionButtonSensor>(gpioProvider_);
+        actionButtonSensor_->Init();
+        
+        log_i("QueuedHandler created and initialized ActionButtonSensor for button input");
+    } else {
+        log_e("QueuedHandler: GPIO provider is null - ActionButtonSensor not created");
+    }
+}
+
+QueuedHandler::~QueuedHandler() 
+{
+    log_d("QueuedHandler destructor - cleaning up ActionButtonSensor");
+    // Unique_ptr will automatically clean up sensor
 }
 
 void QueuedHandler::Process()

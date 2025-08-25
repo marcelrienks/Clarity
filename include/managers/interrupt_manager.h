@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_handler.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include "utilities/constants.h"
 #include <vector>
@@ -29,7 +30,7 @@ public:
     static InterruptManager& Instance();
     
     // Core functionality
-    void Init();
+    void Init(IGpioProvider* gpioProvider = nullptr);
     void Process();
     
     // Pure interrupt registration system
@@ -37,6 +38,7 @@ public:
     void UnregisterInterrupt(const char* id);
     void ActivateInterrupt(const char* id);
     void DeactivateInterrupt(const char* id);
+    void UpdateInterruptContext(const char* id, void* context);
     
     // Handler registration for specialized processing
     void RegisterHandler(std::shared_ptr<IHandler> handler);
@@ -65,6 +67,7 @@ private:
     void EvaluateInterrupts();
     void ExecuteInterrupt(Interrupt& interrupt);
     void ProcessHandlers();
+    void UpdateHandlerContexts();
     
     // Helper methods
     Interrupt* FindInterrupt(const char* id);

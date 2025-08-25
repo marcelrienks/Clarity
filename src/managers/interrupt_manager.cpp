@@ -14,7 +14,7 @@ InterruptManager& InterruptManager::Instance()
     return instance;
 }
 
-void InterruptManager::Init()
+void InterruptManager::Init(IGpioProvider* gpioProvider)
 {
     log_v("Init() called");
     if (initialized_)
@@ -30,30 +30,60 @@ void InterruptManager::Init()
     lastCheckTime_ = millis();
     checkCount_ = 0;
 
-    // Create and register default handlers
-    auto polledHandler = std::make_shared<PolledHandler>();
-    auto queuedHandler = std::make_shared<QueuedHandler>();
-    
-    if (polledHandler && queuedHandler)
-    {
-        RegisterHandler(polledHandler);
-        RegisterHandler(queuedHandler);
+    // Create and register default handlers with GPIO provider
+    if (gpioProvider) {
+        auto polledHandler = std::make_shared<PolledHandler>(gpioProvider);
+        auto queuedHandler = std::make_shared<QueuedHandler>(gpioProvider);
         
-        // Store references for direct access
-        polledHandler_ = polledHandler;
-        queuedHandler_ = queuedHandler;
-        
-        log_d("Registered default PolledHandler and QueuedHandler");
-    }
-    else
-    {
-        log_e("Failed to create default handlers");
+        if (polledHandler && queuedHandler)
+        {
+            RegisterHandler(polledHandler);
+            RegisterHandler(queuedHandler);
+            
+            // Store references for direct access
+            polledHandler_ = polledHandler;
+            queuedHandler_ = queuedHandler;
+            
+            log_d("Registered default PolledHandler and QueuedHandler with GPIO provider");
+        }
+        else
+        {
+            log_e("Failed to create default handlers with GPIO provider");
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager", 
+                                               "Failed to create default interrupt handlers");
+        }
+    } else {
+        log_e("Cannot create handlers - GPIO provider is null");
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager", 
-                                           "Failed to create default interrupt handlers");
+                                           "Cannot create handlers - GPIO provider is null");
     }
 
     initialized_ = true;
     log_i("InterruptManager initialized with polled and queued interrupt handlers");
+    
+    // Update interrupt contexts now that handlers have created sensors
+    UpdateHandlerContexts();
+}
+
+void InterruptManager::UpdateHandlerContexts()
+{
+    log_d("Updating interrupt contexts with handler-owned sensors");
+    
+    if (polledHandler_) {
+        // Set contexts to the actual sensor instances owned by handlers
+        UpdateInterruptContext("key_present", polledHandler_->GetKeyPresentSensor());
+        UpdateInterruptContext("key_not_present", polledHandler_->GetKeyNotPresentSensor());
+        UpdateInterruptContext("lock_state", polledHandler_->GetLockSensor());
+        UpdateInterruptContext("lights_state", polledHandler_->GetLightsSensor());
+        UpdateInterruptContext("error_occurred", &ErrorManager::Instance());
+        log_d("Updated polled interrupt contexts with actual sensor pointers");
+    }
+    
+    if (queuedHandler_) {
+        UpdateInterruptContext("universal_short_press", queuedHandler_->GetActionButtonSensor());
+        UpdateInterruptContext("universal_long_press", queuedHandler_->GetActionButtonSensor());
+        log_d("Updated queued interrupt contexts with ActionButtonSensor pointer");
+    }
 }
 
 
@@ -189,6 +219,22 @@ void InterruptManager::DeactivateInterrupt(const char* id)
     else
     {
         log_w("Interrupt '%s' not found for deactivation", id ? id : "null");
+    }
+}
+
+void InterruptManager::UpdateInterruptContext(const char* id, void* context)
+{
+    log_v("UpdateInterruptContext() called for: %s", id ? id : "null");
+    
+    Interrupt* interrupt = FindInterrupt(id);
+    if (interrupt)
+    {
+        interrupt->context = context;
+        log_d("Updated context for interrupt '%s'", id);
+    }
+    else
+    {
+        log_w("Interrupt '%s' not found for context update", id ? id : "null");
     }
 }
 

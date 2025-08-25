@@ -75,7 +75,7 @@ bool initializeServices()
     // Create PanelManager without ActionManager dependency
     panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
                                                       preferenceManager.get());
-    interruptManager = ManagerFactory::createInterruptManager();
+    interruptManager = ManagerFactory::createInterruptManager(gpioProvider.get());
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created

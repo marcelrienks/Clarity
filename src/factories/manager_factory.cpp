@@ -8,6 +8,7 @@
 #include "sensors/action_button_sensor.h"
 #include "sensors/debug_error_sensor.h"
 #include "utilities/types.h"
+#include "utilities/interrupt_callbacks.h"
 #include <esp32-hal-log.h>
 
 // Factory Methods
@@ -103,9 +104,16 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 
 // createActionManager method removed - button handling moved to handler-based system
 
-InterruptManager* ManagerFactory::createInterruptManager()
+InterruptManager* ManagerFactory::createInterruptManager(IGpioProvider* gpioProvider)
 {
     log_v("createInterruptManager() called");
+
+    if (!gpioProvider) {
+        log_e("ManagerFactory: Cannot create InterruptManager - GPIO provider is null");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
+                                                     "Cannot create InterruptManager - GpioProvider dependency is null");
+        return nullptr;
+    }
 
     InterruptManager* manager = &InterruptManager::Instance();
     if (!manager)
@@ -114,13 +122,13 @@ InterruptManager* ManagerFactory::createInterruptManager()
         return nullptr;
     }
 
-    log_d("ManagerFactory: Initializing InterruptManager singleton...");
-    manager->Init();
+    log_d("ManagerFactory: Initializing InterruptManager singleton with GPIO provider...");
+    manager->Init(gpioProvider);
     
     // Register all system interrupts after initialization
     RegisterSystemInterrupts(manager);
     
-    log_d("ManagerFactory: InterruptManager initialized successfully");
+    log_d("ManagerFactory: InterruptManager initialized successfully with GPIO provider");
     return manager;
 }
 
@@ -151,10 +159,108 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         return;
     }
     
-    // Note: Individual sensors (KeySensor, LockSensor, LightsSensor, DebugErrorSensor) 
-    // register their own interrupts during their Init() methods.
-    // The sensors are created and initialized by other parts of the system.
-    // No additional interrupt registration is needed here.
+    log_d("Registering all 7 system interrupts with static callbacks...");
     
-    log_d("System interrupt registration completed - sensors handle their own interrupts");
+    // Get handler sensors for context (they're created during handler initialization)
+    // We'll access them through the handlers themselves since they own the sensors
+    
+    // 1. Key Present Interrupt (POLLED, CRITICAL priority)
+    Interrupt keyPresentInterrupt = {
+        .id = "key_present",
+        .priority = Priority::CRITICAL,
+        .source = InterruptSource::POLLED,
+        .effect = InterruptEffect::LOAD_PANEL,
+        .evaluationFunc = InterruptCallbacks::KeyPresentChanged,
+        .executionFunc = InterruptCallbacks::LoadKeyPanel,
+        .context = nullptr,  // Will be set by handler when it registers
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(keyPresentInterrupt);
+    
+    // 2. Key Not Present Interrupt (POLLED, IMPORTANT priority)
+    Interrupt keyNotPresentInterrupt = {
+        .id = "key_not_present",
+        .priority = Priority::IMPORTANT,
+        .source = InterruptSource::POLLED,
+        .effect = InterruptEffect::LOAD_PANEL,
+        .evaluationFunc = InterruptCallbacks::KeyNotPresentChanged,
+        .executionFunc = InterruptCallbacks::RestoreFromKeyPanel,
+        .context = nullptr,  // Will be set by handler when it registers
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(keyNotPresentInterrupt);
+    
+    // 3. Lock State Interrupt (POLLED, IMPORTANT priority)
+    Interrupt lockStateInterrupt = {
+        .id = "lock_state",
+        .priority = Priority::IMPORTANT,
+        .source = InterruptSource::POLLED,
+        .effect = InterruptEffect::LOAD_PANEL,
+        .evaluationFunc = InterruptCallbacks::LockStateChanged,
+        .executionFunc = InterruptCallbacks::LoadLockPanel,
+        .context = nullptr,  // Will be set by handler when it registers
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(lockStateInterrupt);
+    
+    // 4. Lights State Interrupt (POLLED, NORMAL priority)
+    Interrupt lightsStateInterrupt = {
+        .id = "lights_state",
+        .priority = Priority::NORMAL,
+        .source = InterruptSource::POLLED,
+        .effect = InterruptEffect::SET_THEME,
+        .evaluationFunc = InterruptCallbacks::LightsStateChanged,
+        .executionFunc = InterruptCallbacks::SetThemeBasedOnLights,
+        .context = nullptr,  // Will be set by handler when it registers
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(lightsStateInterrupt);
+    
+    // 5. Error Occurred Interrupt (POLLED, CRITICAL priority)
+    Interrupt errorInterrupt = {
+        .id = "error_occurred",
+        .priority = Priority::CRITICAL,
+        .source = InterruptSource::POLLED,
+        .effect = InterruptEffect::LOAD_PANEL,
+        .evaluationFunc = InterruptCallbacks::ErrorOccurred,
+        .executionFunc = InterruptCallbacks::LoadErrorPanel,
+        .context = nullptr,  // Context will be ErrorManager instance
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(errorInterrupt);
+    
+    // 6. Short Press Interrupt (QUEUED, IMPORTANT priority)
+    Interrupt shortPressInterrupt = {
+        .id = "universal_short_press",
+        .priority = Priority::IMPORTANT,
+        .source = InterruptSource::QUEUED,
+        .effect = InterruptEffect::BUTTON_ACTION,
+        .evaluationFunc = InterruptCallbacks::HasShortPressEvent,
+        .executionFunc = InterruptCallbacks::ExecutePanelShortPress,
+        .context = nullptr,  // Will be set by handler when it registers
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(shortPressInterrupt);
+    
+    // 7. Long Press Interrupt (QUEUED, NORMAL priority) 
+    Interrupt longPressInterrupt = {
+        .id = "universal_long_press",
+        .priority = Priority::NORMAL,
+        .source = InterruptSource::QUEUED,
+        .effect = InterruptEffect::BUTTON_ACTION,
+        .evaluationFunc = InterruptCallbacks::HasLongPressEvent,
+        .executionFunc = InterruptCallbacks::ExecutePanelLongPress,
+        .context = nullptr,  // Will be set by handler when it registers
+        .active = true,
+        .lastEvaluation = 0
+    };
+    interruptManager->RegisterInterrupt(longPressInterrupt);
+    
+    log_i("Successfully registered 7 system interrupts with static callbacks");
 }

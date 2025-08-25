@@ -1,8 +1,13 @@
 #pragma once
 
 #include "interfaces/i_handler.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include <vector>
+#include <memory>
+
+// Forward declarations for sensors
+class ActionButtonSensor;
 
 #include "esp32-hal-log.h"
 
@@ -21,8 +26,8 @@
 class QueuedHandler : public IHandler
 {
 public:
-    QueuedHandler();
-    ~QueuedHandler() = default;
+    QueuedHandler(IGpioProvider* gpioProvider);
+    ~QueuedHandler();  // Non-default destructor needed for unique_ptr with incomplete types
     
     // IHandler interface
     void Process() override;
@@ -31,6 +36,9 @@ public:
     bool QueueInterrupt(const Interrupt* interrupt);
     void ClearQueue();
     void SetMaxQueueSize(size_t maxSize);
+    
+    // Sensor access for interrupt context
+    ActionButtonSensor* GetActionButtonSensor() const { return actionButtonSensor_.get(); }
     
     // Status
     size_t GetQueuedCount() const;
@@ -57,4 +65,8 @@ private:
     
     std::vector<QueuedInterruptEntry> queuedInterrupts_;
     size_t maxQueueSize_;
+    
+    // Handler-owned sensor for button input
+    IGpioProvider* gpioProvider_;
+    std::unique_ptr<ActionButtonSensor> actionButtonSensor_;
 };

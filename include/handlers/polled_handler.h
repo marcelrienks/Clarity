@@ -1,8 +1,16 @@
 #pragma once
 
 #include "interfaces/i_handler.h"
+#include "interfaces/i_gpio_provider.h"
 #include "utilities/types.h"
 #include <vector>
+#include <memory>
+
+// Forward declarations for sensors
+class KeyPresentSensor;
+class KeyNotPresentSensor;
+class LockSensor;
+class LightsSensor;
 
 #include "esp32-hal-log.h"
 
@@ -20,8 +28,8 @@
 class PolledHandler : public IHandler
 {
 public:
-    PolledHandler();
-    ~PolledHandler() = default;
+    PolledHandler(IGpioProvider* gpioProvider);
+    ~PolledHandler();  // Non-default destructor needed for unique_ptr with incomplete types
     
     // IHandler interface
     void Process() override;
@@ -30,6 +38,12 @@ public:
     void RegisterInterrupt(const Interrupt* interrupt);
     void UnregisterInterrupt(const char* id);
     void SetEvaluationInterval(unsigned long intervalMs);
+    
+    // Sensor access for interrupt context
+    KeyPresentSensor* GetKeyPresentSensor() const { return keyPresentSensor_.get(); }
+    KeyNotPresentSensor* GetKeyNotPresentSensor() const { return keyNotPresentSensor_.get(); }
+    LockSensor* GetLockSensor() const { return lockSensor_.get(); }
+    LightsSensor* GetLightsSensor() const { return lightsSensor_.get(); }
     
     // Status
     size_t GetInterruptCount() const;
@@ -54,4 +68,11 @@ private:
     
     std::vector<PolledInterruptRef> polledInterrupts_;
     unsigned long defaultInterval_;
+    
+    // Handler-owned sensors for GPIO monitoring
+    IGpioProvider* gpioProvider_;
+    std::unique_ptr<KeyPresentSensor> keyPresentSensor_;
+    std::unique_ptr<KeyNotPresentSensor> keyNotPresentSensor_;
+    std::unique_ptr<LockSensor> lockSensor_;
+    std::unique_ptr<LightsSensor> lightsSensor_;
 };

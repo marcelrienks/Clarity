@@ -1,16 +1,50 @@
 #include "handlers/polled_handler.h"
 #include "managers/error_manager.h"
+#include "sensors/key_present_sensor.h"
+#include "sensors/key_not_present_sensor.h"
+#include "sensors/lock_sensor.h"
+#include "sensors/lights_sensor.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
 
 #include "esp32-hal-log.h"
 
-PolledHandler::PolledHandler() 
-    : defaultInterval_(DEFAULT_EVALUATION_INTERVAL_MS)
+PolledHandler::PolledHandler(IGpioProvider* gpioProvider) 
+    : defaultInterval_(DEFAULT_EVALUATION_INTERVAL_MS),
+      gpioProvider_(gpioProvider)
 {
     log_v("PolledHandler() constructor called");
     polledInterrupts_.reserve(MAX_POLLED_INTERRUPTS);
+    
+    // Create and initialize GPIO sensors owned by this handler
+    if (gpioProvider_) {
+        log_d("Creating PolledHandler-owned GPIO sensors");
+        
+        // Create split key sensors
+        keyPresentSensor_ = std::make_unique<KeyPresentSensor>(gpioProvider_);
+        keyNotPresentSensor_ = std::make_unique<KeyNotPresentSensor>(gpioProvider_);
+        
+        // Create other GPIO sensors
+        lockSensor_ = std::make_unique<LockSensor>(gpioProvider_);
+        lightsSensor_ = std::make_unique<LightsSensor>(gpioProvider_);
+        
+        // Initialize all sensors
+        keyPresentSensor_->Init();
+        keyNotPresentSensor_->Init();
+        lockSensor_->Init();
+        lightsSensor_->Init();
+        
+        log_i("PolledHandler created and initialized 4 GPIO sensors: KeyPresent, KeyNotPresent, Lock, Lights");
+    } else {
+        log_e("PolledHandler: GPIO provider is null - sensors not created");
+    }
+}
+
+PolledHandler::~PolledHandler() 
+{
+    log_d("PolledHandler destructor - cleaning up 4 GPIO sensors");
+    // Unique_ptr will automatically clean up sensors
 }
 
 void PolledHandler::Process()
