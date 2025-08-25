@@ -28,11 +28,25 @@ void KeySensor::Init()
     gpioProvider_->PinMode(gpio_pins::KEY_PRESENT, INPUT_PULLDOWN);
     gpioProvider_->PinMode(gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN);
 
-    // Attach interrupts for immediate state change detection
-    gpioProvider_->AttachInterrupt(gpio_pins::KEY_PRESENT, nullptr, CHANGE);
-    gpioProvider_->AttachInterrupt(gpio_pins::KEY_NOT_PRESENT, nullptr, CHANGE);
+    // Register coordinated interrupts instead of direct GPIO interrupts
+    bool polledRegistered = RegisterPolledInterrupt(
+        "key_state_monitor",          // Unique ID
+        Priority::IMPORTANT,          // Important priority for key changes
+        InterruptEffect::LOAD_PANEL,  // Could trigger panel changes
+        150                          // 150ms polling for responsive key detection
+    );
     
-    log_i("KeySensor initialization completed on GPIO %d and %d", gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
+    if (polledRegistered)
+    {
+        log_d("Registered polled interrupt for key state monitoring");
+    }
+    else
+    {
+        log_w("Failed to register polled interrupt for key sensor");
+    }
+    
+    log_i("KeySensor initialization completed on GPIO %d and %d with coordinated interrupts", 
+          gpio_pins::KEY_PRESENT, gpio_pins::KEY_NOT_PRESENT);
 }
 
 /// @brief Get the current key reading
@@ -76,4 +90,47 @@ KeyState KeySensor::readKeyState()
     }
 
     return KeyState::Inactive; // Both pins LOW
+}
+
+bool KeySensor::HasStateChanged()
+{
+    log_v("HasStateChanged() called");
+    
+    KeyState currentState = readKeyState();
+    bool changed = DetectChange(currentState, previousKeyState_);
+    
+    if (changed)
+    {
+        log_d("Key state changed from %d to %d", static_cast<int>(previousKeyState_), static_cast<int>(currentState));
+    }
+    
+    return changed;
+}
+
+void KeySensor::OnInterruptTriggered()
+{
+    log_v("OnInterruptTriggered() called");
+    
+    KeyState currentState = readKeyState();
+    log_i("Key sensor interrupt triggered - current state: %s", 
+          currentState == KeyState::Present ? "Present" : 
+          currentState == KeyState::NotPresent ? "NotPresent" : "Inactive");
+    
+    // Example custom behavior based on key state
+    switch (currentState)
+    {
+        case KeyState::Present:
+            log_i("Key inserted - system could activate panels");
+            // Could trigger specific panel loading, theme changes, etc.
+            break;
+            
+        case KeyState::NotPresent:
+            log_i("Key removed - system could enter standby mode");
+            // Could trigger security panels, screen locking, etc.
+            break;
+            
+        case KeyState::Inactive:
+            log_d("Key state inactive - no specific action");
+            break;
+    }
 }

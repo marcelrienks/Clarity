@@ -3,6 +3,7 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
+#include "sensors/base_sensor.h"
 #include "utilities/types.h"
 
 #include <random>
@@ -32,7 +33,7 @@
  * the vehicle monitoring system and feeds data to KeyWidget for display.
  * Currently implemented with simulated data for testing.
  */
-class KeySensor : public ISensor
+class KeySensor : public ISensor, public BaseSensor
 {
   public:
     // Constructors and Destructors
@@ -45,9 +46,17 @@ class KeySensor : public ISensor
     /// @brief Get current key state directly (for panels)
     /// @return Current KeyState based on GPIO readings
     KeyState GetKeyState();
+    
+    // BaseSensor interface
+    bool HasStateChanged() override;
+
+protected:
+    // Custom interrupt behavior
+    void OnInterruptTriggered() override;
 
   private:
     IGpioProvider *gpioProvider_;
+    KeyState previousKeyState_ = KeyState::Inactive;
 
     /// @brief Read GPIO pins and determine key state
     /// @return KeyState based on GPIO pin readings

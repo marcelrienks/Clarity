@@ -1,5 +1,7 @@
 #include "managers/interrupt_manager.h"
 #include "managers/error_manager.h"
+#include "handlers/polled_handler.h"
+#include "handlers/queued_handler.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -42,8 +44,30 @@ void InterruptManager::Init()
     lastCheckTime_ = millis();
     checkCount_ = 0;
 
+    // Create and register default handlers
+    auto polledHandler = std::make_shared<PolledHandler>();
+    auto queuedHandler = std::make_shared<QueuedHandler>();
+    
+    if (polledHandler && queuedHandler)
+    {
+        RegisterHandler(polledHandler);
+        RegisterHandler(queuedHandler);
+        
+        // Store references for direct access
+        polledHandler_ = polledHandler;
+        queuedHandler_ = queuedHandler;
+        
+        log_d("Registered default PolledHandler and QueuedHandler");
+    }
+    else
+    {
+        log_e("Failed to create default handlers");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager", 
+                                           "Failed to create default interrupt handlers");
+    }
+
     initialized_ = true;
-    log_i("InterruptManager initialized with coordinated interrupt system");
+    log_i("InterruptManager initialized with coordinated interrupt system and handlers");
 }
 
 void InterruptManager::RegisterTriggerSource(IInterruptService *source)
@@ -176,7 +200,21 @@ bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
     interrupts_[interruptCount_] = interrupt;
     interrupts_[interruptCount_].active = true;
     interrupts_[interruptCount_].lastEvaluation = 0;
+    
+    // Route interrupt to appropriate handler
+    Interrupt* registeredInterrupt = &interrupts_[interruptCount_];
     interruptCount_++;
+    
+    if (interrupt.source == InterruptSource::POLLED && polledHandler_)
+    {
+        polledHandler_->RegisterInterrupt(registeredInterrupt);
+        log_d("Routed polled interrupt '%s' to PolledHandler", interrupt.id);
+    }
+    else if (interrupt.source == InterruptSource::QUEUED && queuedHandler_)
+    {
+        // Queued interrupts are handled differently - they get queued when triggered
+        log_d("Registered queued interrupt '%s' for QueuedHandler processing", interrupt.id);
+    }
     
     log_d("Registered interrupt '%s' (total: %d)", interrupt.id, interruptCount_);
     return true;
@@ -192,6 +230,14 @@ void InterruptManager::UnregisterInterrupt(const char* id)
     {
         if (interrupts_[i].id && strcmp(interrupts_[i].id, id) == 0)
         {
+            // Unregister from handlers based on source type
+            if (interrupts_[i].source == InterruptSource::POLLED && polledHandler_)
+            {
+                polledHandler_->UnregisterInterrupt(id);
+                log_d("Unregistered polled interrupt '%s' from PolledHandler", id);
+            }
+            // Queued interrupts don't need explicit handler unregistration
+            
             // Move last interrupt to this position to avoid gaps
             if (i < interruptCount_ - 1)
             {
@@ -326,6 +372,26 @@ void InterruptManager::ExecuteInterrupt(Interrupt& interrupt)
 {
     log_v("ExecuteInterrupt() called for: %s", interrupt.id ? interrupt.id : "unknown");
     
+    // Handle queued interrupts by routing to QueuedHandler
+    if (interrupt.source == InterruptSource::QUEUED && queuedHandler_)
+    {
+        if (queuedHandler_->QueueInterrupt(&interrupt))
+        {
+            log_d("Queued interrupt '%s' for deferred execution", interrupt.id);
+        }
+        else
+        {
+            log_w("Failed to queue interrupt '%s' - executing immediately", interrupt.id);
+            // Fallback to immediate execution if queueing fails
+            if (interrupt.executionFunc && interrupt.context)
+            {
+                interrupt.executionFunc(interrupt.context);
+            }
+        }
+        return;
+    }
+    
+    // Handle immediate execution (polled interrupts)
     if (interrupt.executionFunc && interrupt.context)
     {
         log_d("Executing interrupt '%s' with effect %d", interrupt.id, static_cast<int>(interrupt.effect));

@@ -1,17 +1,32 @@
 #pragma once
 
+#include "utilities/types.h"
+#include "utilities/constants.h"
+#include <functional>
+
+#ifdef CLARITY_DEBUG
+    #include "esp32-hal-log.h"
+    #define LOG_TAG "BaseSensor"
+#else
+    #define log_v(...)
+    #define log_d(...)
+    #define log_w(...)
+    #define log_e(...)
+#endif
+
 /**
  * @class BaseSensor
- * @brief Base class providing consistent change detection for all sensors
+ * @brief Base class providing consistent change detection and interrupt registration for all sensors
  *
  * @details This base class implements the change detection pattern required by
  * the coordinated interrupt system. All sensors must inherit from BaseSensor
  * to ensure consistent change detection behavior and prevent corruption from
- * multiple evaluations per cycle.
+ * multiple evaluations per cycle. Phase 3 adds interrupt registration capabilities.
  *
  * @design_pattern Template method pattern for change detection
  * @change_detection Prevents corruption through single evaluation per cycle
  * @memory_safe Designed for ESP32 memory constraints with minimal overhead
+ * @interrupt_support Provides helper methods for registering sensor interrupts
  *
  * @architecture_requirement All sensors in the system must inherit from BaseSensor
  * to provide consistent change detection patterns for the interrupt system.
@@ -19,8 +34,9 @@
  * @usage_pattern:
  * 1. Sensor inherits from both ISensor and BaseSensor
  * 2. Sensor implements HasStateChanged() method using DetectChange template
- * 3. Interrupt evaluation calls HasStateChanged() exactly once per cycle
- * 4. Change detection prevents corruption from multiple calls
+ * 3. Sensor optionally registers interrupts using RegisterInterrupt methods
+ * 4. Interrupt evaluation calls HasStateChanged() exactly once per cycle
+ * 5. Change detection prevents corruption from multiple calls
  *
  * @prevention Eliminates change detection corruption that occurs when
  * HasStateChanged() is called multiple times per evaluation cycle.
@@ -29,6 +45,10 @@
  * ```cpp
  * class KeyPresentSensor : public ISensor, public BaseSensor {
  * public:
+ *     void Init() override {
+ *         RegisterPolledInterrupt("key_present", Priority::IMPORTANT, 
+ *                                InterruptEffect::LOAD_PANEL, 200);
+ *     }
  *     bool HasStateChanged() {
  *         bool currentState = std::get<bool>(GetReading());
  *         return DetectChange(currentState, previousState_);
@@ -82,4 +102,63 @@ protected:
 
 public:
     virtual ~BaseSensor() = default;
+    
+    /**
+     * @brief Register a polled interrupt for this sensor
+     * @param id Unique identifier for the interrupt
+     * @param priority Interrupt priority level
+     * @param effect Type of interrupt effect
+     * @param intervalMs Polling interval in milliseconds
+     * @param data Additional interrupt data (optional)
+     * @return true if interrupt was registered successfully
+     */
+    bool RegisterPolledInterrupt(const char* id, Priority priority, InterruptEffect effect, 
+                                unsigned long intervalMs = 200, void* data = nullptr);
+    
+    /**
+     * @brief Register a queued interrupt for this sensor
+     * @param id Unique identifier for the interrupt
+     * @param priority Interrupt priority level
+     * @param effect Type of interrupt effect
+     * @param data Additional interrupt data (optional)
+     * @return true if interrupt was registered successfully
+     */
+    bool RegisterQueuedInterrupt(const char* id, Priority priority, InterruptEffect effect, 
+                                void* data = nullptr);
+    
+    /**
+     * @brief Unregister an interrupt by ID
+     * @param id Interrupt identifier to unregister
+     */
+    void UnregisterInterrupt(const char* id);
+    
+    /**
+     * @brief Check if this sensor has state changes (must be implemented by derived classes)
+     * @return true if sensor state has changed since last evaluation
+     * @note This method should use DetectChange template for consistency
+     */
+    virtual bool HasStateChanged() { return false; }
+
+protected:
+    /**
+     * @brief Static evaluation function for sensor interrupts
+     * @param context Pointer to the sensor instance
+     * @return true if sensor has changed state
+     */
+    static bool EvaluateSensorChange(void* context);
+    
+    /**
+     * @brief Static execution function for sensor interrupts - must be overridden
+     * @param context Pointer to the sensor instance
+     */
+    static void ExecuteSensorAction(void* context);
+    
+    /**
+     * @brief Virtual method for sensor-specific interrupt execution (override in derived classes)
+     * @details This method is called when the interrupt condition is met
+     * Default implementation does nothing - sensors should override for specific behavior
+     */
+    virtual void OnInterruptTriggered() { 
+        log_d("BaseSensor interrupt triggered for sensor - no specific action defined"); 
+    }
 };

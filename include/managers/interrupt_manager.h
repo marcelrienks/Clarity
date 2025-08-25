@@ -93,6 +93,10 @@ private:
     size_t interruptCount_ = 0;
     std::vector<std::shared_ptr<IHandler>> handlers_;
     
+    // Direct references to default handlers for routing
+    std::shared_ptr<class PolledHandler> polledHandler_;
+    std::shared_ptr<class QueuedHandler> queuedHandler_;
+    
     // Legacy compatibility
     std::vector<IInterruptService *> triggerSources_;
     std::vector<IInterruptService *> actionSources_;
