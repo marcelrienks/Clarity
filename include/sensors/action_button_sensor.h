@@ -3,6 +3,7 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
+#include "sensors/base_sensor.h"
 #include "utilities/types.h"
 
 /**
@@ -30,7 +31,7 @@
  * @consistency Follows same pattern as KeySensor, LockSensor, etc.
  * @dependency_injection Uses IGpioProvider for hardware abstraction
  */
-class ActionButtonSensor : public ISensor
+class ActionButtonSensor : public ISensor, public BaseSensor
 {
   public:
     // Constructors and Destructors
@@ -43,7 +44,19 @@ class ActionButtonSensor : public ISensor
     /// @brief Get current button state directly (for ActionManager)
     /// @return true if button is currently pressed, false otherwise
     bool IsButtonPressed();
+    
+    // BaseSensor interface
+    bool HasStateChanged() override;
+
+  protected:
+    // Custom interrupt behavior
+    void OnInterruptTriggered() override;
 
   private:
     IGpioProvider *gpioProvider_;
+    bool previousButtonState_ = false;
+    
+    /// @brief Read GPIO pin and determine button state
+    /// @return Button state based on GPIO pin reading
+    bool readButtonState();
 };

@@ -2,8 +2,8 @@
 
 #include "interfaces/i_action_manager.h"
 #include "interfaces/i_action_service.h"
-#include "interfaces/i_interrupt_service.h"
 #include "interfaces/i_panel_service.h"
+#include "managers/interrupt_manager.h"
 #include "sensors/action_button_sensor.h"
 #include "utilities/types.h"
 #include <functional>
@@ -20,13 +20,13 @@
  * action-based approach where panels provide action objects that InputManager
  * executes when appropriate, supporting queuing during animations.
  *
- * @architecture Implements IInterruptService for unified interrupt handling
+ * @architecture Uses coordinated interrupt system for button state monitoring
  * @gpio_pin GPIO 32 with pull-down resistor (3.3V when pressed)
  * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms, Timeout: >5000ms
  * @debouncing 50ms debounce window to prevent false triggers
- * @priority 50 (lower than triggers, higher than background tasks)
+ * @interrupt_driven Button state changes trigger coordinated interrupts
  */
-class ActionManager : public IInterruptService, public IActionManager
+class ActionManager : public IActionManager
 {
   public:
     // Constructors and Destructors
@@ -43,13 +43,6 @@ class ActionManager : public IInterruptService, public IActionManager
      */
     void Init();
 
-    // IInterruptService Interface Implementation
-
-    /**
-     * @brief Process input events (IInterruptService interface)
-     * @details Called by InterruptManager during idle time
-     */
-    void Process() override { ProcessInputEvents(); }
 
     /**
      * @brief Register a panel as the current action handler
@@ -70,7 +63,12 @@ class ActionManager : public IInterruptService, public IActionManager
     void SetPanelService(IPanelService *panelService);
 
   private:
+    // Static callback functions for interrupt system
+    static bool EvaluateButtonChange(void* context);
+    static void ExecuteButtonAction(void* context);
+    
     // Internal processing methods
+    void RegisterButtonInterrupts();
     void ProcessInputEvents();
     void HandlePressedState(unsigned long currentTime);
     bool ShouldTriggerLongPress(unsigned long currentTime);

@@ -1,5 +1,6 @@
 #include "managers/action_manager.h"
 #include "managers/error_manager.h"
+#include "managers/interrupt_manager.h"
 #include "utilities/types.h"
 #include "utilities/constants.h"
 #include <Arduino.h>
@@ -7,7 +8,9 @@
 
 #ifdef CLARITY_DEBUG
     #include "esp32-hal-log.h"
-    #define LOG_TAG "ActionManager"
+    #ifndef LOG_TAG
+        #define LOG_TAG "ActionManager"
+    #endif
 #else
     #define log_v(...)
     #define log_d(...)
@@ -38,8 +41,11 @@ void ActionManager::Init()
         return;
     }
 
-    // Initialize the button sensor
+    // Initialize the button sensor (will register its own interrupts)
     buttonSensor_->Init();
+
+    // Register ActionManager interrupts for button state monitoring
+    RegisterButtonInterrupts();
 
     // Initialize state
     lastButtonState_ = IsButtonPressed();
@@ -48,12 +54,85 @@ void ActionManager::Init()
     log_i("Initial button state: %s", lastButtonState_ ? "PRESSED" : "RELEASED");
 
     initialized_ = true;
-    log_i("ActionManager initialized");
+    log_i("ActionManager initialized with interrupt-based button monitoring");
+}
+
+// Static callback functions for interrupt system
+bool ActionManager::EvaluateButtonChange(void* context)
+{
+    log_v("EvaluateButtonChange() called");
+    
+    if (!context)
+    {
+        log_e("Null context in button interrupt evaluation");
+        return false;
+    }
+    
+    auto* manager = static_cast<ActionManager*>(context);
+    if (!manager->initialized_)
+    {
+        return false;
+    }
+    
+    // Check if button state has changed
+    bool currentButtonState = manager->IsButtonPressed();
+    bool stateChanged = currentButtonState != manager->lastButtonState_;
+    
+    if (stateChanged)
+    {
+        log_d("Button state change detected: %s -> %s", 
+              manager->lastButtonState_ ? "PRESSED" : "RELEASED",
+              currentButtonState ? "PRESSED" : "RELEASED");
+    }
+    
+    return stateChanged;
+}
+
+void ActionManager::ExecuteButtonAction(void* context)
+{
+    log_v("ExecuteButtonAction() called");
+    
+    if (!context)
+    {
+        log_e("Null context in button interrupt execution");
+        return;
+    }
+    
+    auto* manager = static_cast<ActionManager*>(context);
+    manager->ProcessInputEvents(); // Use existing button logic
+}
+
+void ActionManager::RegisterButtonInterrupts()
+{
+    log_v("RegisterButtonInterrupts() called");
+    
+    // Register a polled interrupt for button state monitoring
+    Interrupt buttonInterrupt = {};
+    buttonInterrupt.id = "button_state_monitor";
+    buttonInterrupt.priority = Priority::IMPORTANT;
+    buttonInterrupt.source = InterruptSource::POLLED;
+    buttonInterrupt.effect = InterruptEffect::BUTTON_ACTION;
+    buttonInterrupt.evaluationFunc = EvaluateButtonChange;
+    buttonInterrupt.executionFunc = ExecuteButtonAction;
+    buttonInterrupt.context = this;
+    buttonInterrupt.active = true;
+    buttonInterrupt.lastEvaluation = 0;
+    
+    bool registered = InterruptManager::Instance().RegisterInterrupt(buttonInterrupt);
+    if (registered)
+    {
+        log_d("Registered button monitoring interrupt successfully");
+    }
+    else
+    {
+        log_e("Failed to register button monitoring interrupt");
+    }
 }
 
 void ActionManager::ProcessInputEvents()
 {
     log_v("ProcessInputEvents() called");
+    // Phase 5: Now called by interrupt system when button state changes
     if (!initialized_)
     {
         return;
