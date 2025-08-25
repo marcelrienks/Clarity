@@ -17,61 +17,61 @@ For detailed architecture, see: **[Architecture Document](../architecture.md)**
 ```mermaid
 flowchart TD
     %% Startup Flow
-    Start([ESP32 Startup])
-    Setup[setup()]
+    Start[ESP32 Startup]
+    Setup[setup]
     InitServices[Initialize Services]
     CreateProviders[Create Providers via ProviderFactory]
-    CreateManagers[Create Managers via ManagerFactory<br/>with IProviderFactory injected]
-    CreateHandlers[InterruptManager Creates PolledHandler & QueuedHandler]
-    CreateSensors[Handlers Create & Own Specialized Sensors]
-    RegisterInterrupts[Register Interrupts (POLLED to PolledHandler, QUEUED to QueuedHandler)]
+    CreateManagers[Create Managers via ManagerFactory with IProviderFactory injected]
+    CreateHandlers[InterruptManager Creates PolledHandler and QueuedHandler]
+    CreateSensors[Handlers Create and Own Specialized Sensors]
+    RegisterInterrupts[Register Interrupts - POLLED to PolledHandler, QUEUED to QueuedHandler]
     InitPanels[Initialize Panel System]
     LoadSplash[Load Splash Panel]
     StartLoop[Start Main Loop]
     
     %% Main Loop Flow
-    Loop[loop()]
-    LVGLTasks[lv_task_handler()]
+    Loop[loop]
+    LVGLTasks[lv_task_handler]
     CheckIdle{System Idle?}
-    ProcessInterrupts[InterruptManager::Process()]
+    ProcessInterrupts[InterruptManager Process]
     
     %% Coordinated Interrupt Processing
     CoordinateProcessing[InterruptManager Coordinates Both Handlers]
-    ProcessPolled[PolledHandler::Process() - Evaluate POLLED interrupts]
-    ProcessQueued[QueuedHandler::Process() - Evaluate QUEUED interrupts]
+    ProcessPolled[PolledHandler Process - Evaluate POLLED interrupts]
+    ProcessQueued[QueuedHandler Process - Evaluate QUEUED interrupts]
     
     %% Hybrid Interrupt Flow with Centralized Restoration
     ProcessAllInterrupts[Evaluate All Interrupts for State Changes]
-    CheckStateChanges[Check Each Interrupt: evaluationFunc(context)]
+    CheckStateChanges[Check Each Interrupt - evaluationFunc with context]
     StateChanged{State Changed?}
-    ExecuteInterrupt[executionFunc(context) - Single Execution]
+    ExecuteInterrupt[executionFunc with context - Single Execution]
     UpdateInterruptState[Update active flags]
     FindHighestPriorityAcrossHandlers[InterruptManager: Find Highest Priority Active Interrupt Across Both Handlers]
-    CheckInterruptDeactivated{Panel-Loading Interrupt<br/>Deactivated?}
-    CentralizedRestoration[InterruptManager::HandleRestoration()]
-    CheckActivePanelInterrupts{Any Active Panel-Loading<br/>Interrupts?}
+    CheckInterruptDeactivated{Panel-Loading Interrupt Deactivated?}
+    CentralizedRestoration[InterruptManager HandleRestoration]
+    CheckActivePanelInterrupts{Any Active Panel-Loading Interrupts?}
     ExecuteHighestPriority[Execute Highest Priority Panel Interrupt]
     LoadPanelEffect[LOAD_PANEL Effect]
-    SetThemeEffect[SET_THEME Effect (Always Maintains)]
+    SetThemeEffect[SET_THEME Effect - Always Maintains]
     SetPrefEffect[SET_PREFERENCE Effect]
     ButtonActionEffect[BUTTON_ACTION Effect]
-    ExecutePanelFunction[Execute Panel's Short/Long Press Function]
+    ExecutePanelFunction[Execute Panel Short/Long Press Function]
     RestorePanel[Restore User Panel]
     
     %% Panel Operations
-    PanelInit[Panel::Init()]
-    CreateComponents[Panel Creates<br/>Components & Sensors]
-    PanelLoad[Panel::Load()]
-    PanelUpdate[Panel::Update()]
+    PanelInit[Panel Init]
+    CreateComponents[Panel Creates Components and Sensors]
+    PanelLoad[Panel Load]
+    PanelUpdate[Panel Update]
     
     %% Configuration Flow
-    ConfigShortPress[Short Press:<br/>Cycle Options]
-    ConfigLongPress[Long Press:<br/>Save & Apply]
+    ConfigShortPress[Short Press - Cycle Options]
+    ConfigLongPress[Long Press - Save and Apply]
     SavePreferences[Save to PreferenceManager]
     
     %% Error Flow
     ErrorOccurs[Error Occurs]
-    ErrorManager[ErrorManager::ReportError()]
+    ErrorManager[ErrorManager ReportError]
     ErrorTrigger[Error Trigger Evaluates]
     LoadErrorPanel[Load Error Panel]
     ErrorAcknowledge[User Acknowledges Errors]
@@ -79,7 +79,7 @@ flowchart TD
     
     %% Theme Flow
     LightChange[Light Sensor Change]
-    ThemeSwitch[StyleManager::SetTheme()]
+    ThemeSwitch[StyleManager SetTheme]
     ApplyTheme[Apply to All Panels]
     
     %% Connections - Startup
