@@ -5,12 +5,12 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
 #include "sensors/action_button_sensor.h"
 #include "sensors/debug_error_sensor.h"
 #include "sensors/key_sensor.h"
 #include "sensors/lights_sensor.h"
 #include "sensors/lock_sensor.h"
+#include "providers/gpio_provider.h"
 #include "utilities/types.h"
 #include <esp32-hal-log.h>
 
@@ -92,62 +92,6 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
     return manager;
 }
 
-std::unique_ptr<TriggerManager> ManagerFactory::createTriggerManager(IGpioProvider *gpio, IPanelService *panelService,
-                                                                     IStyleService *styleService)
-{
-    log_v("createTriggerManager() called");
-
-    if (!gpio)
-    {
-        log_e("ManagerFactory: Cannot create TriggerManager - IGpioProvider is null");
-        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "Cannot create TriggerManager - GpioProvider dependency is null");
-        return nullptr;
-    }
-    if (!panelService)
-    {
-        log_e("ManagerFactory: Cannot create TriggerManager - IPanelService is null");
-        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "Cannot create TriggerManager - PanelService dependency is null");
-        return nullptr;
-    }
-    if (!styleService)
-    {
-        log_e("ManagerFactory: Cannot create TriggerManager - IStyleService is null");
-        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "Cannot create TriggerManager - StyleService dependency is null");
-        return nullptr;
-    }
-
-    // Create sensors that TriggerManager needs
-    auto keySensor = std::make_shared<KeySensor>(gpio);
-    auto lockSensor = std::make_shared<LockSensor>(gpio);
-    auto lightSensor = std::make_shared<LightsSensor>(gpio);
-    auto debugErrorSensor = std::make_shared<DebugErrorSensor>(gpio);
-
-    if (!keySensor || !lockSensor || !lightSensor || !debugErrorSensor)
-    {
-        log_e("ManagerFactory: Failed to create sensors for TriggerManager");
-        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "TriggerManager sensor allocation failed - out of memory");
-        return nullptr;
-    }
-
-    auto manager = std::make_unique<TriggerManager>(keySensor, lockSensor, lightSensor, debugErrorSensor, panelService,
-                                                    styleService);
-    if (!manager)
-    {
-        log_e("ManagerFactory: Failed to create TriggerManager - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "TriggerManager allocation failed - out of memory");
-        return nullptr;
-    }
-
-    log_d("ManagerFactory: Initializing TriggerManager with sensors...");
-    manager->Init();
-    log_d("ManagerFactory: TriggerManager created successfully");
-    return manager;
-}
 
 std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
 {
@@ -217,6 +161,10 @@ InterruptManager* ManagerFactory::createInterruptManager()
 
     log_d("ManagerFactory: Initializing InterruptManager singleton...");
     manager->Init();
+    
+    // Register all system interrupts after initialization
+    RegisterSystemInterrupts(manager);
+    
     log_d("ManagerFactory: InterruptManager initialized successfully");
     return manager;
 }
@@ -234,4 +182,179 @@ ErrorManager *ManagerFactory::createErrorManager()
 
     log_d("ManagerFactory: ErrorManager created successfully");
     return errorManager;
+}
+
+// Static callback functions for interrupt system
+static bool EvaluateLightsChange(void* context)
+{
+    log_v("EvaluateLightsChange() called");
+    auto* sensor = static_cast<LightsSensor*>(context);
+    if (!sensor)
+    {
+        log_e("Null sensor in lights interrupt evaluation");
+        return false;
+    }
+    return sensor->HasStateChanged();
+}
+
+static void ExecuteLightsTheme(void* context)
+{
+    log_v("ExecuteLightsTheme() called");
+    auto* sensor = static_cast<LightsSensor*>(context);
+    if (!sensor)
+    {
+        log_e("Null sensor in lights interrupt execution");
+        return;
+    }
+    
+    // Get current lights state and set appropriate theme
+    bool lightsOn = sensor->GetLightsState();
+    const char* newTheme = lightsOn ? Themes::DAY : Themes::NIGHT;
+    
+    // Apply theme change through StyleManager
+    // TODO: We need access to StyleManager here - this needs to be passed differently
+    log_i("Lights changed - would set theme to %s (lights %s)", newTheme, lightsOn ? "ON" : "OFF");
+}
+
+static bool EvaluateKeyChange(void* context)
+{
+    log_v("EvaluateKeyChange() called");
+    auto* sensor = static_cast<KeySensor*>(context);
+    if (!sensor)
+    {
+        log_e("Null sensor in key interrupt evaluation");
+        return false;
+    }
+    return sensor->HasStateChanged();
+}
+
+static void ExecuteKeyPanel(void* context)
+{
+    log_v("ExecuteKeyPanel() called");
+    // For now, just log - we'll need PanelService access
+    log_i("Key state changed - would load KEY panel");
+}
+
+static bool EvaluateLockChange(void* context)
+{
+    log_v("EvaluateLockChange() called");
+    auto* sensor = static_cast<LockSensor*>(context);
+    if (!sensor)
+    {
+        log_e("Null sensor in lock interrupt evaluation");
+        return false;
+    }
+    return sensor->HasStateChanged();
+}
+
+static void ExecuteLockPanel(void* context)
+{
+    log_v("ExecuteLockPanel() called");
+    // For now, just log - we'll need PanelService access
+    log_i("Lock state changed - would load LOCK panel");
+}
+
+// Private helper function to register all system interrupts
+void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager)
+{
+    log_v("RegisterSystemInterrupts() called");
+    
+    if (!interruptManager)
+    {
+        log_e("Cannot register interrupts - InterruptManager is null");
+        return;
+    }
+    
+    // Create GPIO provider for sensors
+    auto gpioProvider = std::make_unique<GpioProvider>();
+    if (!gpioProvider)
+    {
+        log_e("Failed to create GPIO provider for interrupt sensors");
+        return;
+    }
+    
+    // Create sensors for interrupt registration
+    auto keySensor = std::make_shared<KeySensor>(gpioProvider.get());
+    auto lockSensor = std::make_shared<LockSensor>(gpioProvider.get());
+    auto lightsSensor = std::make_shared<LightsSensor>(gpioProvider.get());
+    auto debugErrorSensor = std::make_shared<DebugErrorSensor>(gpioProvider.get());
+    
+    if (!keySensor || !lockSensor || !lightsSensor || !debugErrorSensor)
+    {
+        log_e("Failed to create sensors for interrupt registration");
+        return;
+    }
+    
+    // Initialize sensors
+    keySensor->Init();
+    lockSensor->Init();
+    lightsSensor->Init();
+    debugErrorSensor->Init();
+    
+    // Register lights interrupt (this was the missing piece!)
+    Interrupt lightsInterrupt = {};
+    lightsInterrupt.id = "lights_state";
+    lightsInterrupt.priority = Priority::NORMAL;
+    lightsInterrupt.source = InterruptSource::POLLED;
+    lightsInterrupt.effect = InterruptEffect::SET_THEME;
+    lightsInterrupt.evaluationFunc = EvaluateLightsChange;
+    lightsInterrupt.executionFunc = ExecuteLightsTheme;
+    lightsInterrupt.context = lightsSensor.get();
+    lightsInterrupt.active = false;
+    
+    bool lightsRegistered = interruptManager->RegisterInterrupt(lightsInterrupt);
+    if (lightsRegistered)
+    {
+        log_i("Registered lights interrupt successfully");
+    }
+    else
+    {
+        log_e("Failed to register lights interrupt");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ManagerFactory", 
+                                           "Failed to register lights interrupt");
+    }
+    
+    // Register key present interrupt
+    Interrupt keyPresentInterrupt = {};
+    keyPresentInterrupt.id = "key_present";
+    keyPresentInterrupt.priority = Priority::CRITICAL;
+    keyPresentInterrupt.source = InterruptSource::POLLED;
+    keyPresentInterrupt.effect = InterruptEffect::LOAD_PANEL;
+    keyPresentInterrupt.evaluationFunc = EvaluateKeyChange;
+    keyPresentInterrupt.executionFunc = ExecuteKeyPanel;
+    keyPresentInterrupt.context = keySensor.get();
+    keyPresentInterrupt.active = false;
+    
+    bool keyRegistered = interruptManager->RegisterInterrupt(keyPresentInterrupt);
+    if (keyRegistered)
+    {
+        log_i("Registered key interrupt successfully");
+    }
+    else
+    {
+        log_e("Failed to register key interrupt");
+    }
+    
+    // Register lock interrupt
+    Interrupt lockInterrupt = {};
+    lockInterrupt.id = "lock_state";
+    lockInterrupt.priority = Priority::IMPORTANT;
+    lockInterrupt.source = InterruptSource::POLLED;
+    lockInterrupt.effect = InterruptEffect::LOAD_PANEL;
+    lockInterrupt.evaluationFunc = EvaluateLockChange;
+    lockInterrupt.executionFunc = ExecuteLockPanel;
+    lockInterrupt.context = lockSensor.get();
+    lockInterrupt.active = false;
+    
+    bool lockRegistered = interruptManager->RegisterInterrupt(lockInterrupt);
+    if (lockRegistered)
+    {
+        log_i("Registered lock interrupt successfully");
+    }
+    else
+    {
+        log_e("Failed to register lock interrupt");
+    }
+    
+    log_d("System interrupt registration completed");
 }

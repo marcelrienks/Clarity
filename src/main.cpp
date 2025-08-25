@@ -6,10 +6,10 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
 #include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
+#include "sensors/key_sensor.h"
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
@@ -21,7 +21,6 @@ std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
 std::unique_ptr<ActionManager> actionManager;
 std::unique_ptr<PanelManager> panelManager;
-std::unique_ptr<TriggerManager> triggerManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
@@ -80,13 +79,12 @@ bool initializeServices()
                                                       actionManager.get(), preferenceManager.get());
     // Resolve circular dependency: ActionManager needs PanelService for UIState checking
     actionManager->SetPanelService(panelManager.get());
-    triggerManager = ManagerFactory::createTriggerManager(gpioProvider.get(), panelManager.get(), styleManager.get());
     interruptManager = ManagerFactory::createInterruptManager();
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created
     bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && styleManager && preferenceManager &&
-                              actionManager && panelManager && triggerManager && interruptManager && errorManager;
+                              actionManager && panelManager && interruptManager && errorManager;
 
     if (!allServicesCreated)
     {
@@ -106,8 +104,6 @@ bool initializeServices()
             ErrorManager::Instance().ReportCriticalError("Main", "ActionManager creation failed");
         if (!panelManager)
             ErrorManager::Instance().ReportCriticalError("Main", "PanelManager creation failed");
-        if (!triggerManager)
-            ErrorManager::Instance().ReportCriticalError("Main", "TriggerManager creation failed");
         if (!interruptManager)
             ErrorManager::Instance().ReportCriticalError("Main", "InterruptManager creation failed");
         return false;
@@ -133,14 +129,27 @@ void setup()
     // Interrupt system initialized by factory with all handlers
     Ticker::handleLvTasks();
 
-    // Load startup panel
-    const char *startupPanel = triggerManager->GetStartupPanelOverride();
-    if (startupPanel)
+    // Load startup panel - check for key override
+    // Create temporary key sensor to check startup state
+    auto tempKeySensor = std::make_shared<KeySensor>(gpioProvider.get());
+    if (tempKeySensor)
     {
-        panelManager->CreateAndLoadPanel(startupPanel);
+        tempKeySensor->Init();
+        KeyState keyState = tempKeySensor->GetKeyState();
+        if (keyState == KeyState::Present)
+        {
+            log_i("Key present at startup - loading KEY panel");
+            panelManager->CreateAndLoadPanel(PanelNames::KEY);
+        }
+        else
+        {
+            auto config = preferenceManager->GetConfig();
+            panelManager->CreateAndLoadPanel(config.panelName.c_str());
+        }
     }
     else
     {
+        log_e("Failed to create temporary key sensor for startup check");
         auto config = preferenceManager->GetConfig();
         panelManager->CreateAndLoadPanel(config.panelName.c_str());
     }

@@ -6,14 +6,12 @@
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
-#include "interfaces/i_trigger_service.h"
 #include <Arduino.h>
 #include <memory>
 
 // Forward declarations
 class PanelManager;
 class StyleManager;
-class TriggerManager;
 class PreferenceManager;
 class ActionManager;
 class InterruptManager;
@@ -52,13 +50,6 @@ class ManagerFactory
     /// @return Unique pointer to configured StyleManager instance or nullptr on failure
     static std::unique_ptr<StyleManager> createStyleManager(const char *theme = nullptr);
 
-    /// @brief Create TriggerManager with injected sensor dependencies
-    /// @param gpio GPIO provider for creating sensors
-    /// @param panelService Panel service for loading panels
-    /// @param styleService Style service for theme management
-    /// @return Unique pointer to configured TriggerManager instance or nullptr on failure
-    static std::unique_ptr<TriggerManager> createTriggerManager(IGpioProvider *gpio, IPanelService *panelService,
-                                                                IStyleService *styleService);
 
     /// @brief Create PreferenceManager (no dependencies currently)
     /// @return Unique pointer to configured PreferenceManager instance or nullptr on failure
@@ -79,6 +70,9 @@ class ManagerFactory
     static class ErrorManager *createErrorManager();
 
   private:
+    /// @brief Register all system interrupts with InterruptManager
+    /// @param interruptManager The InterruptManager instance to register with
+    static void RegisterSystemInterrupts(InterruptManager* interruptManager);
     // Private constructor to prevent instantiation
     ManagerFactory() = delete;
     ~ManagerFactory() = delete;

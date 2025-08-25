@@ -9,7 +9,6 @@
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
-#include "managers/trigger_manager.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "utilities/types.h"
