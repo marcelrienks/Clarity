@@ -3,6 +3,7 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
+#include "sensors/base_sensor.h"
 #include "utilities/types.h"
 
 /**
@@ -32,7 +33,7 @@
  * developers to manually trigger errors using DIP switch 8 to test
  * the error handling system without actual system errors.
  */
-class DebugErrorSensor : public ISensor
+class DebugErrorSensor : public ISensor, public BaseSensor
 {
   public:
     // Constructors and Destructors
@@ -41,10 +42,21 @@ class DebugErrorSensor : public ISensor
     // Core Functionality Methods
     void Init() override;
     Reading GetReading() override;
+    
+    // BaseSensor interface
+    bool HasStateChanged() override;
+
+  protected:
+    // Custom interrupt behavior
+    void OnInterruptTriggered() override;
 
   private:
     IGpioProvider *gpioProvider_;
     bool previousState_;        // Track previous pin state for edge detection
     bool initialized_;          // Flag to track initialization
     unsigned long startupTime_; // Time when sensor was initialized (for grace period)
+    
+    /// @brief Read GPIO pin state
+    /// @return Current pin state
+    bool readPinState();
 };

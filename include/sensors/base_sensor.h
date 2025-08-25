@@ -6,7 +6,9 @@
 
 #ifdef CLARITY_DEBUG
     #include "esp32-hal-log.h"
-    #define LOG_TAG "BaseSensor"
+    #ifndef LOG_TAG
+        #define LOG_TAG "BaseSensor"
+    #endif
 #else
     #define log_v(...)
     #define log_d(...)

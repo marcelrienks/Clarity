@@ -11,7 +11,9 @@
 
 #ifdef CLARITY_DEBUG
     #include "esp32-hal-log.h"
-    #define LOG_TAG "InterruptManager"
+    #ifndef LOG_TAG
+        #define LOG_TAG "InterruptManager"
+    #endif
 #else
     #define log_v(...)
     #define log_d(...)

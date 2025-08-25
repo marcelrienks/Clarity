@@ -1,6 +1,7 @@
 #include "managers/trigger_manager.h"
 #include "hardware/gpio_pins.h"
 #include "managers/error_manager.h"
+#include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
@@ -61,7 +62,7 @@ void TriggerManager::Init()
         return;
     }
 
-    log_d("Initializing sensor-based trigger system...");
+    log_d("Initializing interrupt-based trigger system...");
 
     // Initialize sensors (they handle their own GPIO setup)
     keySensor_->Init();
@@ -69,34 +70,129 @@ void TriggerManager::Init()
     lightSensor_->Init();
     debugErrorSensor_->Init();
 
+    // Register interrupts for each trigger instead of polling
+    RegisterTriggerInterrupts();
+
     // Read current sensor states and initialize triggers
     InitializeTriggersFromSensors();
 
     initialized_ = true;
-    log_i("TriggerManager initialization completed - sensors initialized and triggers ready");
+    log_i("TriggerManager initialization completed - interrupt-based triggers registered");
+}
+
+// Static callback functions for interrupt system
+bool TriggerManager::EvaluateTriggerChange(void* context)
+{
+    log_v("EvaluateTriggerChange() called");
+    
+    if (!context)
+    {
+        log_e("Null context in trigger interrupt evaluation");
+        return false;
+    }
+    
+    auto* manager = static_cast<TriggerManager*>(context);
+    
+    // Check if any sensor states have changed
+    GpioState currentState = manager->ReadAllSensorStates();
+    
+    // Compare with last known state (simplified check for any change)
+    for (const auto& trigger : manager->triggers_)
+    {
+        bool currentTriggerState = false;
+        
+        if (strcmp(trigger.triggerId, TriggerIds::KEY_PRESENT) == 0)
+        {
+            currentTriggerState = currentState.keyPresent;
+        }
+        else if (strcmp(trigger.triggerId, TriggerIds::KEY_NOT_PRESENT) == 0)
+        {
+            currentTriggerState = currentState.keyNotPresent;
+        }
+        else if (strcmp(trigger.triggerId, TriggerIds::LOCK_STATE) == 0)
+        {
+            currentTriggerState = currentState.lockState;
+        }
+        else if (strcmp(trigger.triggerId, TriggerIds::LIGHTS_STATE) == 0)
+        {
+            currentTriggerState = currentState.lightsState;
+        }
+        else if (strcmp(trigger.triggerId, TriggerIds::ERROR_OCCURRED) == 0)
+        {
+            currentTriggerState = ErrorManager::Instance().ShouldTriggerErrorPanel();
+        }
+        
+        TriggerExecutionState newState = currentTriggerState ? TriggerExecutionState::ACTIVE : TriggerExecutionState::INACTIVE;
+        if (trigger.currentState != newState)
+        {
+            log_d("Trigger state change detected for %s", trigger.triggerId);
+            return true; // State change detected
+        }
+    }
+    
+    return false; // No changes
+}
+
+void TriggerManager::ExecuteTriggerAction(void* context)
+{
+    log_v("ExecuteTriggerAction() called");
+    
+    if (!context)
+    {
+        log_e("Null context in trigger interrupt execution");
+        return;
+    }
+    
+    auto* manager = static_cast<TriggerManager*>(context);
+    manager->CheckSensorChanges(); // Use existing logic to process changes
+}
+
+void TriggerManager::RegisterTriggerInterrupts()
+{
+    log_v("RegisterTriggerInterrupts() called");
+    
+    // Register a single polled interrupt for all trigger monitoring
+    Interrupt triggerInterrupt = {};
+    triggerInterrupt.id = "trigger_monitor";
+    triggerInterrupt.priority = Priority::IMPORTANT;
+    triggerInterrupt.source = InterruptSource::POLLED;
+    triggerInterrupt.effect = InterruptEffect::LOAD_PANEL;
+    triggerInterrupt.evaluationFunc = EvaluateTriggerChange;
+    triggerInterrupt.executionFunc = ExecuteTriggerAction;
+    triggerInterrupt.context = this;
+    triggerInterrupt.active = true;
+    triggerInterrupt.lastEvaluation = 0;
+    
+    bool registered = InterruptManager::Instance().RegisterInterrupt(triggerInterrupt);
+    if (registered)
+    {
+        log_d("Registered trigger monitoring interrupt successfully");
+    }
+    else
+    {
+        log_e("Failed to register trigger monitoring interrupt");
+    }
 }
 
 void TriggerManager::ProcessTriggerEvents()
 {
     log_v("ProcessTriggerEvents() called");
-    // Sensor-based polling - check for state changes
-    CheckSensorChanges();
-
-    // Check for error conditions
-    CheckErrorTrigger();
-
-    // Check debug error sensor (it handles error generation internally)
-    // Temporarily remove #ifdef to ensure it's being called
+    // Phase 4: ProcessTriggerEvents is now legacy - interrupts handle trigger processing
+    // Keep minimal functionality for backward compatibility
+    
+    // Only check debug error sensor for backward compatibility
     if (debugErrorSensor_)
     {
         static unsigned long debugCallCount = 0;
         debugCallCount++;
-        if (debugCallCount % 5000 == 0)
-        { // Log every 5000 calls to reduce noise
-            log_d("TriggerManager: DebugErrorSensor called %lu times", debugCallCount);
+        if (debugCallCount % 10000 == 0)
+        { // Log every 10000 calls to reduce noise
+            log_d("TriggerManager: Legacy ProcessTriggerEvents called %lu times", debugCallCount);
         }
         debugErrorSensor_->GetReading(); // This will trigger errors on rising edge
     }
+    
+    // All other trigger processing is now handled by interrupt system
 }
 
 GpioState TriggerManager::ReadAllSensorStates()

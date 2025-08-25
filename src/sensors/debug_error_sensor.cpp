@@ -36,9 +36,26 @@ void DebugErrorSensor::Init()
     previousState_ = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
     startupTime_ = millis(); // Record startup time for grace period
     initialized_ = true;
+    
+    // Register coordinated interrupts for debug error detection
+    bool polledRegistered = RegisterPolledInterrupt(
+        "debug_error_monitor",        // Unique ID
+        Priority::CRITICAL,           // Critical priority for error triggers
+        InterruptEffect::LOAD_PANEL,  // Errors trigger error panel
+        300                          // 300ms polling for debug error detection
+    );
+    
+    if (polledRegistered)
+    {
+        log_d("Registered polled interrupt for debug error monitoring");
+    }
+    else
+    {
+        log_w("Failed to register polled interrupt for debug error sensor");
+    }
 
-    log_d("DebugErrorSensor initialized on GPIO %d, initial state: %s", gpio_pins::DEBUG_ERROR,
-          previousState_ ? "HIGH" : "LOW");
+    log_d("DebugErrorSensor initialized on GPIO %d with coordinated interrupts, initial state: %s", 
+          gpio_pins::DEBUG_ERROR, previousState_ ? "HIGH" : "LOW");
 }
 
 Reading DebugErrorSensor::GetReading()
@@ -95,4 +112,80 @@ Reading DebugErrorSensor::GetReading()
 
     // Return current confirmed state
     return confirmedState;
+}
+
+bool DebugErrorSensor::readPinState()
+{
+    log_v("readPinState() called");
+    if (!initialized_) return false;
+    
+    // Use the same debouncing logic as GetReading
+    bool currentState = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
+    delay(5);
+    bool confirmedState = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
+    
+    // Only return if both readings match
+    if (currentState == confirmedState)
+    {
+        return confirmedState;
+    }
+    
+    // Return previous stable state if readings don't match
+    return previousState_;
+}
+
+bool DebugErrorSensor::HasStateChanged()
+{
+    log_v("HasStateChanged() called");
+    
+    if (!initialized_) return false;
+    
+    // Ignore input during startup grace period
+    const unsigned long STARTUP_GRACE_PERIOD_MS = 1000;
+    if (millis() - startupTime_ < STARTUP_GRACE_PERIOD_MS)
+    {
+        return false;
+    }
+    
+    bool currentState = readPinState();
+    
+    // Only detect rising edges (LOW to HIGH transition)
+    bool changed = !previousState_ && currentState;
+    
+    if (changed)
+    {
+        log_d("Debug error state changed - rising edge detected: LOW -> HIGH");
+    }
+    
+    return changed;
+}
+
+void DebugErrorSensor::OnInterruptTriggered()
+{
+    log_v("OnInterruptTriggered() called");
+    
+    bool currentState = readPinState();
+    log_i("Debug error sensor interrupt triggered - current state: %s", 
+          currentState ? "HIGH" : "LOW");
+    
+    // Generate test errors on rising edge
+    if (!previousState_ && currentState)
+    {
+        log_i("Debug error trigger activated via interrupt - generating test errors");
+        
+        // Generate three test errors for error panel testing
+        ErrorManager::Instance().ReportWarning("DebugTestInterrupt", 
+                                               "Test warning from interrupt-based debug error sensor");
+        
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTestInterrupt",
+                                             "Test error from interrupt-based debug error sensor");
+        
+        ErrorManager::Instance().ReportCriticalError("DebugTestInterrupt", 
+                                                     "Test critical error from interrupt-based debug error sensor");
+        
+        log_i("Debug errors generated via interrupt: 1 WARNING, 1 ERROR, 1 CRITICAL");
+        
+        // Update previous state
+        previousState_ = currentState;
+    }
 }

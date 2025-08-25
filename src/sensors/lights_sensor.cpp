@@ -21,7 +21,24 @@ void LightsSensor::Init()
 
     gpioProvider_->PinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
     
-    log_i("LightsSensor initialization completed on GPIO %d", gpio_pins::LIGHTS);
+    // Register coordinated interrupts instead of direct GPIO interrupts
+    bool polledRegistered = RegisterPolledInterrupt(
+        "lights_state_monitor",       // Unique ID
+        Priority::NORMAL,             // Normal priority for theme changes
+        InterruptEffect::SET_THEME,   // Lights affect theme switching
+        250                          // 250ms polling for lights detection
+    );
+    
+    if (polledRegistered)
+    {
+        log_d("Registered polled interrupt for lights state monitoring");
+    }
+    else
+    {
+        log_w("Failed to register polled interrupt for lights sensor");
+    }
+    
+    log_i("LightsSensor initialization completed on GPIO %d with coordinated interrupts", gpio_pins::LIGHTS);
 }
 
 /// @brief Get the current lights reading
@@ -53,4 +70,48 @@ bool LightsSensor::GetLightsState()
     }
 
     return lightsOn;
+}
+
+bool LightsSensor::readLightsState()
+{
+    log_v("readLightsState() called");
+    return gpioProvider_->DigitalRead(gpio_pins::LIGHTS);
+}
+
+bool LightsSensor::HasStateChanged()
+{
+    log_v("HasStateChanged() called");
+    
+    bool currentState = readLightsState();
+    bool changed = DetectChange(currentState, previousLightsState_);
+    
+    if (changed)
+    {
+        log_d("Lights state changed from %s to %s", 
+              previousLightsState_ ? "ON" : "OFF",
+              currentState ? "ON" : "OFF");
+    }
+    
+    return changed;
+}
+
+void LightsSensor::OnInterruptTriggered()
+{
+    log_v("OnInterruptTriggered() called");
+    
+    bool currentState = readLightsState();
+    log_i("Lights sensor interrupt triggered - current state: %s", 
+          currentState ? "ON" : "OFF");
+    
+    // Example custom behavior based on lights state
+    if (currentState)
+    {
+        log_i("Lights turned on - system could switch to night theme");
+        // Could trigger night theme, adjust brightness, etc.
+    }
+    else
+    {
+        log_i("Lights turned off - system could switch to day theme");
+        // Could trigger day theme, increase brightness, etc.
+    }
 }

@@ -24,7 +24,24 @@ void LockSensor::Init()
     }
     gpioProvider_->PinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
     
-    log_i("LockSensor initialization completed on GPIO %d", gpio_pins::LOCK);
+    // Register coordinated interrupts instead of direct GPIO interrupts
+    bool polledRegistered = RegisterPolledInterrupt(
+        "lock_state_monitor",         // Unique ID
+        Priority::IMPORTANT,          // Important priority for lock changes
+        InterruptEffect::LOAD_PANEL,  // Could trigger panel changes
+        200                          // 200ms polling for lock detection
+    );
+    
+    if (polledRegistered)
+    {
+        log_d("Registered polled interrupt for lock state monitoring");
+    }
+    else
+    {
+        log_w("Failed to register polled interrupt for lock sensor");
+    }
+    
+    log_i("LockSensor initialization completed on GPIO %d with coordinated interrupts", gpio_pins::LOCK);
 }
 
 /// @brief Get the current lock status reading
@@ -47,4 +64,48 @@ Reading LockSensor::GetReading()
     }
 
     return Reading{isLockEngaged};
+}
+
+bool LockSensor::readLockState()
+{
+    log_v("readLockState() called");
+    return gpioProvider_->DigitalRead(gpio_pins::LOCK);
+}
+
+bool LockSensor::HasStateChanged()
+{
+    log_v("HasStateChanged() called");
+    
+    bool currentState = readLockState();
+    bool changed = DetectChange(currentState, previousLockState_);
+    
+    if (changed)
+    {
+        log_d("Lock state changed from %s to %s", 
+              previousLockState_ ? "engaged" : "disengaged",
+              currentState ? "engaged" : "disengaged");
+    }
+    
+    return changed;
+}
+
+void LockSensor::OnInterruptTriggered()
+{
+    log_v("OnInterruptTriggered() called");
+    
+    bool currentState = readLockState();
+    log_i("Lock sensor interrupt triggered - current state: %s", 
+          currentState ? "engaged" : "disengaged");
+    
+    // Example custom behavior based on lock state
+    if (currentState)
+    {
+        log_i("Lock engaged - system could activate security panels");
+        // Could trigger specific panel loading, theme changes, etc.
+    }
+    else
+    {
+        log_i("Lock disengaged - system could enter normal mode");
+        // Could trigger different panels, unlock features, etc.
+    }
 }

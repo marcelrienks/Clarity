@@ -1,7 +1,6 @@
 #pragma once
 
 #include "hardware/gpio_pins.h"
-#include "interfaces/i_interrupt_service.h"
 #include "utilities/types.h"
 
 /// @brief Consolidated GPIO state structure for single-read pattern
@@ -20,26 +19,28 @@ struct GpioState
 #include "sensors/key_sensor.h"
 #include "sensors/lights_sensor.h"
 #include "sensors/lock_sensor.h"
+#include "managers/interrupt_manager.h"
 #include <functional>
 #include <memory>
 #include <vector>
 
 /**
  * @class TriggerManager
- * @brief Simplified direct GPIO polling trigger manager with mapping-based architecture
+ * @brief Coordinated interrupt-based trigger manager using new interrupt system
  *
  * @architecture:
- * - Direct GPIO polling and UI management
- * - Static trigger mappings replace dynamic trigger objects
+ * - Phase 4: Converted to use coordinated interrupt system
+ * - Registers sensor interrupts instead of polling in Process()
+ * - Static trigger mappings with interrupt-based evaluation
  *
- * @key_simplifications:
- * 1. Direct GPIO polling - no interrupts or queues
- * 2. Pin change detection via state comparison
- * 3. Static TriggerMapping array instead of objects
- * 4. Priority evaluation from lowest to highest (highest priority action wins)
- * 5. No cross-core communication needed
+ * @key_improvements:
+ * 1. Event-driven via coordinated interrupts instead of polling
+ * 2. Automatic sensor state change detection via BaseSensor
+ * 3. Priority-based interrupt processing
+ * 4. Memory-safe static interrupt registration
+ * 5. Maintains backward compatibility
  */
-class TriggerManager : public ITriggerService, public IInterruptService
+class TriggerManager : public ITriggerService
 {
   public:
     // Startup panel override method
@@ -57,19 +58,17 @@ class TriggerManager : public ITriggerService, public IInterruptService
     void Init() override;
     void ProcessTriggerEvents() override;
 
-    // IInterruptService Interface Implementation
-
-    /**
-     * @brief Process trigger events (IInterruptService interface)
-     * @details Called by InterruptManager during idle time
-     */
-    void Process() override { ProcessTriggerEvents(); }
 
     // Trigger Management
     void AddTrigger(const std::string &triggerName, ISensor *sensor, std::function<void()> callback) override;
     bool HasTrigger(const std::string &triggerName) const override;
 
   private:
+    // Static callback functions for interrupt system
+    static bool EvaluateTriggerChange(void* context);
+    static void ExecuteTriggerAction(void* context);
+    
+    void RegisterTriggerInterrupts();
     void InitializeTriggersFromSensors();
     bool ValidateSensors();
     void InitializeAllTriggers(const GpioState& state);

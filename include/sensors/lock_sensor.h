@@ -3,6 +3,7 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
+#include "sensors/base_sensor.h"
 #include "utilities/types.h"
 
 #include <random>
@@ -32,7 +33,7 @@
  * the vehicle monitoring system and feeds data to LockWidget for display.
  * Currently implemented with simulated data for testing.
  */
-class LockSensor : public ISensor
+class LockSensor : public ISensor, public BaseSensor
 {
   public:
     // Constructors and Destructors
@@ -41,7 +42,19 @@ class LockSensor : public ISensor
     // Core Functionality Methods
     void Init() override;
     Reading GetReading() override;
+    
+    // BaseSensor interface
+    bool HasStateChanged() override;
+
+  protected:
+    // Custom interrupt behavior
+    void OnInterruptTriggered() override;
 
   private:
     IGpioProvider *gpioProvider_;
+    bool previousLockState_ = false;
+    
+    /// @brief Read GPIO pin and determine lock state
+    /// @return Lock state based on GPIO pin reading
+    bool readLockState();
 };

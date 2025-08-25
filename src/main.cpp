@@ -131,7 +131,7 @@ void setup()
     Ticker::handleLvTasks();
     styleManager->InitializeStyles();
     // InterruptManager is initialized by factory, just register legacy sources
-    interruptManager->RegisterTriggerSource(triggerManager.get());
+    // Phase 4: TriggerManager now uses new interrupt system, no longer needs registration
     interruptManager->RegisterActionSource(actionManager.get());
     Ticker::handleLvTasks();
 
