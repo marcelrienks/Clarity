@@ -4,7 +4,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
+#include "utilities/constants.h"
 #include <algorithm>
 #include <esp32-hal-log.h>
 
@@ -164,36 +164,6 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     lv_timer_del(fadeOutTimer);
 }
 
-// Old IInputService Interface Implementation (Phase 1 compatibility - commented out)
-/*
-Action SplashPanel::GetShortPressAction()
-{
-    log_v("GetShortPressAction() called");
-
-    // Short press during splash: Skip animation (future enhancement)
-    return Action(nullptr);
-}
-
-Action SplashPanel::GetLongPressAction()
-{
-    log_v("GetLongPressAction() called");
-
-    // Long press during splash: Switch to CONFIG panel
-
-    // Return an action that directly calls PanelService interface
-    if (panelService_)
-    {
-        return Action(
-            [this]()
-            {
-                panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
-            });
-    }
-
-    log_w("SplashPanel: PanelService not available, returning no action");
-    return Action(nullptr);
-}
-*/
 
 // Manager injection method
 void SplashPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
@@ -222,19 +192,24 @@ int SplashPanel::GetAnimationTime() const
     return animTime;
 }
 
-// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+// IActionService Interface Implementation
 
 static void SplashPanelShortPress(void* panelContext)
 {
     log_v("SplashPanelShortPress() called");
-    // Phase 1: Minimal stub - no action during splash screen
+    // No action during splash screen animation
 }
 
 static void SplashPanelLongPress(void* panelContext)
 {
     log_v("SplashPanelLongPress() called");
-    // Phase 1: Simple stub - long press functionality will be implemented in later phases
-    log_i("SplashPanel long press detected - would load config panel");
+    
+    auto* panel = static_cast<SplashPanel*>(panelContext);
+    if (panel)
+    {
+        // Call public method to handle the long press
+        panel->HandleLongPress();
+    }
 }
 
 void (*SplashPanel::GetShortPressFunction())(void* panelContext)
@@ -250,4 +225,17 @@ void (*SplashPanel::GetLongPressFunction())(void* panelContext)
 void* SplashPanel::GetPanelContext()
 {
     return this;
+}
+
+void SplashPanel::HandleLongPress()
+{
+    if (panelService_)
+    {
+        log_i("SplashPanel long press - loading config panel");
+        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+    }
+    else
+    {
+        log_w("SplashPanel: Cannot load config panel - panelService not available");
+    }
 }

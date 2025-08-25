@@ -1,7 +1,6 @@
 #include "panels/config_panel.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
 #include "utilities/types.h"
 #include <Arduino.h>
 #include <algorithm>
@@ -543,20 +542,28 @@ void ConfigPanel::UpdateSubmenuItems()
     }
 }
 
-// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+// IActionService Interface Implementation
 
 static void ConfigPanelShortPress(void* panelContext)
 {
     log_v("ConfigPanelShortPress() called");
-    // Phase 1: Simple stub - would cycle through menu options in full implementation
-    log_i("ConfigPanel short press detected - would cycle menu options");
+    auto* panel = static_cast<ConfigPanel*>(panelContext);
+    
+    if (panel)
+    {
+        panel->HandleShortPress();
+    }
 }
 
 static void ConfigPanelLongPress(void* panelContext)
 {
     log_v("ConfigPanelLongPress() called");
-    // Phase 1: Simple stub - would select current option in full implementation
-    log_i("ConfigPanel long press detected - would select current option");
+    auto* panel = static_cast<ConfigPanel*>(panelContext);
+    
+    if (panel)
+    {
+        panel->HandleLongPress();
+    }
 }
 
 void (*ConfigPanel::GetShortPressFunction())(void* panelContext)
@@ -572,4 +579,30 @@ void (*ConfigPanel::GetLongPressFunction())(void* panelContext)
 void* ConfigPanel::GetPanelContext()
 {
     return this;
+}
+
+void ConfigPanel::HandleShortPress()
+{
+    if (menuItems_.empty())
+    {
+        log_w("ConfigPanel: Cannot cycle menu - no menu items");
+        return;
+    }
+    
+    // Cycle to next menu item
+    currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
+    log_i("ConfigPanel: Cycled to menu item %zu: %s", currentMenuIndex_, 
+          menuItems_[currentMenuIndex_].label.c_str());
+    
+    // Update the UI
+    if (configComponent_)
+    {
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
+    }
+}
+
+void ConfigPanel::HandleLongPress()
+{
+    log_i("ConfigPanel: Executing current option at index %zu", currentMenuIndex_);
+    ExecuteCurrentOption();
 }

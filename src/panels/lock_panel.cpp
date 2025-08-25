@@ -3,6 +3,7 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/error_manager.h"
+#include "utilities/constants.h"
 #include <esp32-hal-log.h>
 #include <variant>
 
@@ -146,18 +147,24 @@ void LockPanel::SetManagers(IPanelService *panelService, IStyleService *styleSer
     }
 }
 
-// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+// IActionService Interface Implementation
 
 static void LockPanelShortPress(void* panelContext)
 {
     log_v("LockPanelShortPress() called");
-    // Phase 1: Display-only panel, no action for short press
+    // Display-only panel, no action for short press
 }
 
 static void LockPanelLongPress(void* panelContext)
 {
     log_v("LockPanelLongPress() called");
-    // Phase 1: Simple stub - would load config panel in full implementation
+    
+    auto* panel = static_cast<LockPanel*>(panelContext);
+    if (panel)
+    {
+        // Call public method to handle the long press
+        panel->HandleLongPress();
+    }
 }
 
 void (*LockPanel::GetShortPressFunction())(void* panelContext)
@@ -173,4 +180,17 @@ void (*LockPanel::GetLongPressFunction())(void* panelContext)
 void* LockPanel::GetPanelContext()
 {
     return this;
+}
+
+void LockPanel::HandleLongPress()
+{
+    if (panelService_)
+    {
+        log_i("LockPanel long press - loading config panel");
+        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+    }
+    else
+    {
+        log_w("LockPanel: Cannot load config panel - panelService not available");
+    }
 }

@@ -74,6 +74,9 @@ class OemOilPanel : public IPanel
     void (*GetShortPressFunction())(void* panelContext) override;
     void (*GetLongPressFunction())(void* panelContext) override;
     void* GetPanelContext() override;
+    
+    // Public action handler
+    void HandleLongPress();
 
     // Static Data Members
     static constexpr int32_t _animation_duration = 750;

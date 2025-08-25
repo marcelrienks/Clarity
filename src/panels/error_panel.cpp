@@ -3,7 +3,6 @@
 #include "factories/component_factory.h"
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
-#include "managers/trigger_manager.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
@@ -271,20 +270,36 @@ void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleSe
     }
 }
 
-// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+// IActionService Interface Implementation
 
 static void ErrorPanelShortPress(void* panelContext)
 {
     log_v("ErrorPanelShortPress() called");
-    // Phase 1: Simple stub - would cycle through errors in full implementation
-    log_i("ErrorPanel short press detected - would cycle to next error");
+    auto* panel = static_cast<ErrorPanel*>(panelContext);
+    
+    if (panel)
+    {
+        panel->HandleShortPress();
+    }
+    else
+    {
+        log_w("ErrorPanel: Cannot cycle errors - invalid context");
+    }
 }
 
 static void ErrorPanelLongPress(void* panelContext)
 {
     log_v("ErrorPanelLongPress() called");
-    // Phase 1: Simple stub - would clear all errors in full implementation
-    log_i("ErrorPanel long press detected - would clear all errors");
+    auto* panel = static_cast<ErrorPanel*>(panelContext);
+    
+    if (panel)
+    {
+        panel->HandleLongPress();
+    }
+    else
+    {
+        log_w("ErrorPanel: Cannot execute long press - invalid context");
+    }
 }
 
 void (*ErrorPanel::GetShortPressFunction())(void* panelContext)
@@ -300,4 +315,34 @@ void (*ErrorPanel::GetLongPressFunction())(void* panelContext)
 void* ErrorPanel::GetPanelContext()
 {
     return this;
+}
+
+void ErrorPanel::HandleShortPress()
+{
+    if (errorComponent_)
+    {
+        log_i("ErrorPanel: Cycling to next error");
+        auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+        errorComp->CycleToNextError();
+    }
+    else
+    {
+        log_w("ErrorPanel: Cannot cycle errors - component not available");
+    }
+}
+
+void ErrorPanel::HandleLongPress()
+{
+    log_i("ErrorPanel: Clearing all errors and returning to previous panel");
+    ErrorManager::Instance().ClearAllErrors();
+    
+    // Return to previous panel
+    if (panelService_)
+    {
+        const char* restorationPanel = panelService_->GetRestorationPanel();
+        if (restorationPanel)
+        {
+            panelService_->CreateAndLoadPanel(restorationPanel, true);
+        }
+    }
 }

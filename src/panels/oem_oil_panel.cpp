@@ -1,10 +1,10 @@
 #include "panels/oem_oil_panel.h"
 #include "factories/component_factory.h"
 #include "interfaces/i_component_factory.h"
-#include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
+#include "utilities/constants.h"
 
 // Constructors and Destructors
 
@@ -639,19 +639,24 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     return mappedValue;
 }
 
-// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+// IActionService Interface Implementation
 
 static void OemOilPanelShortPress(void* panelContext)
 {
     log_v("OemOilPanelShortPress() called");
-    // Phase 1: No action for short press on oil panel
+    // No action for short press on oil panel
 }
 
 static void OemOilPanelLongPress(void* panelContext)
 {
     log_v("OemOilPanelLongPress() called");
-    // Phase 1: Simple stub - would load config panel in full implementation
-    log_i("OemOilPanel long press detected - would load config panel");
+    auto* panel = static_cast<OemOilPanel*>(panelContext);
+    
+    if (panel)
+    {
+        // Call public method to handle the long press
+        panel->HandleLongPress();
+    }
 }
 
 void (*OemOilPanel::GetShortPressFunction())(void* panelContext)
@@ -667,4 +672,17 @@ void (*OemOilPanel::GetLongPressFunction())(void* panelContext)
 void* OemOilPanel::GetPanelContext()
 {
     return this;
+}
+
+void OemOilPanel::HandleLongPress()
+{
+    if (panelService_)
+    {
+        log_i("OemOilPanel long press - loading config panel");
+        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+    }
+    else
+    {
+        log_w("OemOilPanel: Cannot load config panel - panelService not available");
+    }
 }

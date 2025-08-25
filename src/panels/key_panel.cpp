@@ -3,6 +3,7 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
+#include "utilities/constants.h"
 #include <Arduino.h>
 #include <variant>
 
@@ -156,18 +157,24 @@ void KeyPanel::SetManagers(IPanelService *panelService, IStyleService *styleServ
     }
 }
 
-// New IActionService Interface Implementation (Phase 1 compatibility stubs)
+// IActionService Interface Implementation
 
 static void KeyPanelShortPress(void* panelContext)
 {
     log_v("KeyPanelShortPress() called");
-    // Phase 1: Display-only panel, no action for short press
+    // Display-only panel, no action for short press
 }
 
 static void KeyPanelLongPress(void* panelContext)
 {
     log_v("KeyPanelLongPress() called");
-    // Phase 1: Simple stub - would load config panel in full implementation
+    
+    auto* panel = static_cast<KeyPanel*>(panelContext);
+    if (panel)
+    {
+        // Call public method to handle the long press
+        panel->HandleLongPress();
+    }
 }
 
 void (*KeyPanel::GetShortPressFunction())(void* panelContext)
@@ -183,4 +190,17 @@ void (*KeyPanel::GetLongPressFunction())(void* panelContext)
 void* KeyPanel::GetPanelContext()
 {
     return this;
+}
+
+void KeyPanel::HandleLongPress()
+{
+    if (panelService_)
+    {
+        log_i("KeyPanel long press - loading config panel");
+        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+    }
+    else
+    {
+        log_w("KeyPanel: Cannot load config panel - panelService not available");
+    }
 }

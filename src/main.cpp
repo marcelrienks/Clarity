@@ -13,10 +13,6 @@
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
-#ifdef CLARITY_DEBUG
-#include "tests/interrupt_system_test.h"
-#endif
-
 // Global services - factory-created instances
 std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<GpioProvider> gpioProvider;
@@ -156,19 +152,6 @@ void setup()
     {
         interruptManager->PrintSystemStatus();
     }
-    
-    // Execute comprehensive validation tests in debug builds
-#ifdef CLARITY_DEBUG
-    log_i("Running interrupt system integration tests...");
-    RunInterruptSystemTests();
-    
-    // Verify system state after testing
-    if (interruptManager)
-    {
-        log_i("=== Post-Test System Status ===");
-        interruptManager->PrintSystemStatus();
-    }
-#endif
     
     log_i("Clarity application started successfully");
 }

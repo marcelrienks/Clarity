@@ -56,6 +56,9 @@ class KeyPanel : public IPanel
     void (*GetShortPressFunction())(void* panelContext) override;
     void (*GetLongPressFunction())(void* panelContext) override;
     void* GetPanelContext() override;
+    
+    // Public action handler
+    void HandleLongPress();
 
   private:
     // Static Methods

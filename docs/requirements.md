@@ -32,13 +32,13 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
   - LVGL-based visual components
   - No business logic
   - Responsible for display scales and visual representation
-  - Trigger panels (Key, Lock) are display-only without sensors
+  - Interrupt-driven panels (Key, Lock) are display-only without sensors
   
 - **Presenters (Panels)**: Business logic and orchestration
   - Coordinate components for display
   - Implement lifecycle: init → load → update
   - Handle panel-specific input behaviors via IActionService
-  - Trigger panels receive state from interrupt system, don't read sensors
+  - Interrupt-driven panels receive state from interrupt system, don't read sensors
   - Data panels (Oil) create their own data sensors
 
 #### 2.1.2 Dependency Injection
@@ -75,7 +75,7 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
    
 3. **Key Panel**: Security key status indicator (Display-only)
    - **Visual States**: Green icon (key present) / Red icon (key not present)
-   - **Trigger Source**: Activated by KeyPresentSensor/KeyNotPresentSensor via PolledHandler
+   - **Interrupt Source**: Activated by KeyPresentSensor/KeyNotPresentSensor via PolledHandler
    - **Priority**: CRITICAL - overrides all other panels when active
    - **Short Press**: No action (status display only)
    - **Long Press**: Load config panel
@@ -83,7 +83,7 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
    
 4. **Lock Panel**: Vehicle security status indicator (Display-only)
    - **Visual States**: Lock engaged/disengaged indication
-   - **Trigger Source**: Activated by LockSensor via PolledHandler
+   - **Interrupt Source**: Activated by LockSensor via PolledHandler
    - **Priority**: IMPORTANT - overrides user panels but lower than key panels
    - **Short Press**: No action (status display only)
    - **Long Press**: Load config panel
@@ -115,7 +115,7 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 
 **Automatic Panel Switching**:
 - **Priority-Based**: CRITICAL (Key/Error) > IMPORTANT (Lock) > User-driven (Oil)
-- **Trigger-Driven**: GPIO state changes automatically load appropriate panels
+- **Interrupt-Driven**: GPIO state changes automatically load appropriate panels
 - **Restoration**: Return to user-driven panel when all non-maintaining interrupts inactive
 
 **Universal Button System**:
@@ -160,7 +160,7 @@ For detailed architecture, see: **[Architecture Document](architecture.md)**
 5. **Memory Safety**: Static function pointers with void* context parameters (single execution function per interrupt)
 6. **Centralized Restoration**: All panel restoration logic handled in InterruptManager
 
-#### 2.3.3 POLLED Interrupts (replaces Triggers)
+#### 2.3.3 POLLED Interrupts
 
 **POLLED Interrupt Architecture**:
 POLLED interrupts monitor GPIO state transitions and execute effects exactly once per change:
@@ -284,15 +284,15 @@ interruptManager.RegisterInterrupt({
 **Error Service Architecture**:
 - **Global ErrorManager**: Singleton service for error collection and management
 - **Bounded Error Queue**: Max 10 errors with FIFO replacement when full
-- **Error Trigger Integration**: ErrorManager state checked by error trigger evaluation
+- **Error Interrupt Integration**: ErrorManager state checked by error interrupt evaluation
 - **No Try-Catch**: Preserve Arduino crash reporting in main loops
 
 **Error Lifecycle**:
 1. **Error Occurrence**: Component reports error to ErrorManager
-2. **Trigger Evaluation**: Error trigger evaluates true when errors pending
-3. **Panel Loading**: Error trigger executes, loads ErrorPanel with CRITICAL priority
-4. **User Interaction**: User acknowledges/dismisses errors via panel actions
-5. **Trigger Deactivation**: When no errors remain, trigger evaluates false
+2. **Interrupt Evaluation**: Error interrupt evaluates true when errors pending
+3. **Panel Loading**: Error interrupt executes, loads ErrorPanel with CRITICAL priority
+4. **User Interaction**: User acknowledges/dismisses errors via panel interactions
+5. **Interrupt Deactivation**: When no errors remain, interrupt evaluates false
 6. **Panel Restoration**: System returns to previous user-driven panel
 
 #### 2.3.6 Handler Architecture
@@ -306,28 +306,31 @@ public:
 };
 ```
 
-**Base Interrupt Constructs**:
-All interrupts are structs with function pointers for evaluation and execution.
+**Unified Interrupt Structure**:
+All interrupts use a common struct with function pointers for evaluation and execution.
 
-**Trigger Struct Implementation**:
+**Interrupt Struct Implementation**:
 ```cpp
-struct TriggerInterrupt {
-    const char* id;  // Static string for memory efficiency
-    TriggerPriority priority;
-    bool (*hasChangedFunc)();      // Function pointer - no heap allocation
-    bool (*getCurrentStateFunc)();  // Function pointer - no heap allocation
-    void (*executionFunc)();       // Function pointer - no heap allocation
-};
-```
-
-**Action Struct Implementation**:
-```cpp
-struct ActionInterrupt {
-    const char* id;  // Static string for memory efficiency
-    Priority priority;
-    bool (*evaluationFunc)();      // Function pointer - no heap allocation
-    void (*executionFunc)();       // Function pointer - no heap allocation
-    ActionType actionType;                     // SHORT_PRESS, LONG_PRESS
+struct Interrupt {
+    const char* id;                                    // Static string for memory efficiency
+    Priority priority;                                 // Processing priority
+    InterruptSource source;                           // POLLED or QUEUED evaluation
+    InterruptEffect effect;                           // What this interrupt does
+    bool (*evaluationFunc)(void* context);           // Function pointer - no heap allocation
+    void (*executionFunc)(void* context);            // Single execution function
+    void* context;                                    // Sensor or service context
+    
+    // Effect-specific data (union for memory efficiency)
+    union {
+        struct { const char* panelName; bool trackForRestore; } panel;     // LOAD_PANEL data
+        struct { Theme theme; } theme;                                     // SET_THEME data
+        struct { const char* key; void* value; } preference;               // SET_PREFERENCE data
+        struct { void (*customFunc)(void* ctx); } custom;                  // CUSTOM_FUNCTION data
+    } data;
+    
+    // Runtime state
+    bool active;                                      // Current activation state
+    unsigned long lastEvaluation;                    // Performance tracking
 };
 ```
 
@@ -369,8 +372,8 @@ interruptManager.RegisterInterrupt({
 ```
 
 **Registered Interrupts**:
-- **Triggers**: key_present, key_not_present, lock_state, lights_state, error_occurred
-- **Actions**: short_press_action, long_press_action
+- **POLLED**: key_present, key_not_present, lock_state, lights_state, error_occurred
+- **QUEUED**: short_press_action, long_press_action
 
 This approach provides:
 - Specialized handlers per interrupt source (POLLED vs QUEUED)
@@ -407,15 +410,15 @@ void InterruptManager::CheckAllInterrupts() {
 **Architecture Benefits**:
 - **Polymorphic Processing**: InterruptManager treats both handlers identically
 - **Type Safety**: Registration methods remain type-specific outside interface
-- **Precedence**: Trigger processing always occurs before action processing
+- **Precedence**: POLLED processing always occurs before QUEUED processing
 - **Testability**: Single IHandler interface simplifies mocking
 
 #### 2.3.9 Benefits of Change-Based Architecture
-- **Performance Optimization**: Actions execute once per change instead of repeatedly
+- **Performance Optimization**: Interrupts execute once per change instead of repeatedly
 - **CPU Efficiency**: Eliminates unnecessary repeated operations during steady states
 - **Memory Stability**: No fragmentation from repeated object creation/destruction
-- **Predictable Behavior**: Clear semantics for when actions execute
-- **System Stability**: Eliminates hanging caused by inconsistent trigger types
+- **Predictable Behavior**: Clear semantics for when interrupts execute
+- **System Stability**: Eliminates hanging caused by inconsistent interrupt types
 - **Consistent Implementation**: All POLLED interrupts follow identical change-detection pattern
 - **Easier Debugging**: State changes are explicit and trackable
 - **Reduced Power Consumption**: Less CPU usage during idle periods

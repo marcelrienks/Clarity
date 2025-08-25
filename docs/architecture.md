@@ -23,7 +23,7 @@ DeviceProvider → Display → Panels → Components
 
 ### MVP Mapping
 - **Models**: Sensors - hardware data acquisition with change detection
-- **Views**: Components - UI rendering (display-only for trigger panels)
+- **Views**: Components - UI rendering (display-only for interrupt-driven panels)
 - **Presenters**: Panels - orchestration and business logic
 
 ## Core Layers
@@ -34,7 +34,7 @@ Hardware abstraction for display (GC9A01) and LVGL integration.
 ### Panels (Presenters)
 - Coordinate components for display
 - Handle lifecycle: init → load → update
-- Trigger panels (Key, Lock) are display-only
+- Interrupt-driven panels (Key, Lock) are display-only
 - Data panels (Oil) create their own data sensors
 - Implement IActionService for button handling
 
@@ -379,7 +379,7 @@ struct ErrorState {
     std::vector<ErrorInfo> activeErrors;    // Current error queue from ErrorManager
     int currentErrorIndex = 0;              // Currently displayed error
     std::set<size_t> viewedErrors;          // Errors that have been viewed
-    bool allErrorsViewed = false;           // Flag for auto-restoration trigger
+    bool allErrorsViewed = false;           // Flag for auto-restoration activation
 };
 
 class ErrorPanel {
@@ -429,9 +429,9 @@ public:
         // Update local state
         RefreshErrorState();
         
-        // Trigger restoration if no errors remain
+        // Initiate restoration if no errors remain
         if (errorState_.activeErrors.empty()) {
-            TriggerAutoRestoration();
+            InitiateAutoRestoration();
         }
     }
     
@@ -439,11 +439,11 @@ public:
         // Auto-restore when all errors have been viewed
         if (errorState_.viewedErrors.size() >= errorState_.activeErrors.size()) {
             errorState_.allErrorsViewed = true;
-            TriggerAutoRestoration();
+            InitiateAutoRestoration();
         }
     }
     
-    void TriggerAutoRestoration() {
+    void InitiateAutoRestoration() {
         // Notify ErrorManager that errors have been processed
         ErrorManager::Instance().SetErrorPanelActive(false);
         // This will cause error_occurred interrupt to deactivate
@@ -454,7 +454,7 @@ public:
 
 ### Error Panel Integration
 - **ErrorManager**: Provides error queue and acknowledgment tracking
-- **Auto-Restoration**: Triggered when all errors viewed or acknowledged
+- **Auto-Restoration**: Initiated when all errors viewed or acknowledged
 - **Interrupt Integration**: error_occurred interrupt deactivation enables restoration
 - **Visual Feedback**: Color-coded errors by severity (Critical/Error/Warning)
 
@@ -493,7 +493,7 @@ public:
         return DetectChange(currentState, previousState_);
     }
     
-    bool GetDebugTriggerState() {
+    bool GetDebugInterruptState() {
         return std::get<bool>(GetReading());
     }
 };
@@ -505,7 +505,7 @@ interruptManager.RegisterInterrupt({
     .priority = Priority::CRITICAL,
     .source = InterruptSource::POLLED,
     .effect = InterruptEffect::CUSTOM_FUNCTION,
-    .evaluationFunc = DebugErrorTriggerActive,
+    .evaluationFunc = DebugErrorInterruptActive,
     .activateFunc = GenerateDebugError,
     .deactivateFunc = nullptr,
     .sensorContext = debugErrorSensor,
@@ -517,13 +517,13 @@ interruptManager.RegisterInterrupt({
 static void GenerateDebugError(void* context) {
     auto* errorManager = static_cast<ErrorManager*>(context);
     if (errorManager) {
-        errorManager->ReportError(ErrorLevel::ERROR, "DebugSystem", "Debug error triggered via GPIO 34");
+        errorManager->ReportError(ErrorLevel::ERROR, "DebugSystem", "Debug error activated via GPIO 34");
     }
 }
 ```
 
 ### Debug System Integration
-- **GPIO 34**: Input-only pin for debug error trigger (development only)
+- **GPIO 34**: Input-only pin for debug error interrupt (development only)
 - **Conditional Compilation**: Only active in CLARITY_DEBUG builds
 - **Error Generation**: Creates test errors for system validation
 - **Hardware Integration**: Requires external pull-down resistor
@@ -752,7 +752,7 @@ Evolution to specialized handler system with central coordination:
 
 5. **Specialized Ownership**: PolledHandler owns GPIO sensors, QueuedHandler owns button sensor, preventing resource conflicts
 
-6. **Display-Only Panels**: Trigger panels don't create sensors, eliminating duplication and simplifying architecture
+6. **Display-Only Panels**: Interrupt-driven panels don't create sensors, eliminating duplication and simplifying architecture
 
 ## Service Architecture
 
@@ -893,7 +893,7 @@ using PanelName = FixedString<16>;
 **Enforcement**:
 - Handlers create and own their sensors internally
 - Data panels create their own data sensors
-- Trigger panels are display-only (no sensor creation)
+- Interrupt-driven panels are display-only (no sensor creation)
 - Build-time verification of single ownership
 
 ### Change Detection Implementation

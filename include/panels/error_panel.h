@@ -61,6 +61,10 @@ class ErrorPanel : public IPanel
     void (*GetShortPressFunction())(void* panelContext) override;
     void (*GetLongPressFunction())(void* panelContext) override;
     void* GetPanelContext() override;
+    
+    // Public action handlers
+    void HandleShortPress();
+    void HandleLongPress();
 
   private:
     // Static Methods
