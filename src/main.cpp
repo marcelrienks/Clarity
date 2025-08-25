@@ -13,6 +13,10 @@
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
+#ifdef CLARITY_DEBUG
+#include "tests/interrupt_system_test.h"
+#endif
+
 // Global services - factory-created instances
 std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<GpioProvider> gpioProvider;
@@ -148,6 +152,26 @@ void setup()
     }
 
     Ticker::handleLvTasks();
+    
+    // Phase 6: Print initial interrupt system status
+    if (interruptManager)
+    {
+        interruptManager->PrintSystemStatus();
+    }
+    
+    // Phase 6: Run comprehensive system tests (debug builds only)
+#ifdef CLARITY_DEBUG
+    log_i("Running interrupt system integration tests...");
+    RunInterruptSystemTests();
+    
+    // Print final system status after tests
+    if (interruptManager)
+    {
+        log_i("=== Post-Test System Status ===");
+        interruptManager->PrintSystemStatus();
+    }
+#endif
+    
     log_i("Clarity application started successfully");
 }
 
@@ -161,6 +185,20 @@ void loop()
     if (loopCount % 1000 == 0)
     {
         log_d("Main loop running - count: %lu", loopCount);
+    }
+    
+    // Phase 6: Periodic interrupt system diagnostics (every 30 seconds)
+    static unsigned long lastDiagnosticTime = 0;
+    static constexpr unsigned long DIAGNOSTIC_INTERVAL_MS = 30000;
+    if (interruptManager && (millis() - lastDiagnosticTime) > DIAGNOSTIC_INTERVAL_MS)
+    {
+        log_i("=== Periodic System Diagnostics ===");
+        size_t interruptCount = interruptManager->GetRegisteredInterruptCount();
+        size_t totalEvals, totalExecs;
+        interruptManager->GetInterruptStatistics(totalEvals, totalExecs);
+        log_i("Interrupts: %d registered, %lu evaluations, %lu executions", 
+              interruptCount, totalEvals, totalExecs);
+        lastDiagnosticTime = millis();
     }
 
     // Process interrupts using new coordinated system

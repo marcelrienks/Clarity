@@ -353,6 +353,7 @@ void InterruptManager::EvaluateInterrupts()
                 
             if (ShouldEvaluateInterrupt(interrupt))
             {
+                ++totalEvaluations_; // Track evaluation count
                 if (interrupt.evaluationFunc(interrupt.context))
                 {
                     ExecuteInterrupt(interrupt);
@@ -371,6 +372,7 @@ void InterruptManager::EvaluateInterrupts()
 void InterruptManager::ExecuteInterrupt(Interrupt& interrupt)
 {
     log_v("ExecuteInterrupt() called for: %s", interrupt.id ? interrupt.id : "unknown");
+    ++totalExecutions_; // Track execution count
     
     // Handle queued interrupts by routing to QueuedHandler
     if (interrupt.source == InterruptSource::QUEUED && queuedHandler_)
@@ -456,9 +458,39 @@ Interrupt* InterruptManager::FindInterrupt(const char* id)
 
 bool InterruptManager::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
 {
-    // For now, evaluate all active interrupts
-    // In future phases, this can be optimized with timing intervals
-    return true;
+    // Phase 6: Optimize evaluation frequency based on priority and type
+    unsigned long currentTime = millis();
+    unsigned long timeSinceLastEvaluation = currentTime - interrupt.lastEvaluation;
+    
+    // Define minimum intervals based on priority and effect
+    unsigned long minInterval = 0;
+    
+    switch (interrupt.priority)
+    {
+        case Priority::CRITICAL:
+            minInterval = 10;  // Evaluate critical interrupts every 10ms
+            break;
+        case Priority::IMPORTANT:
+            minInterval = 25;  // Evaluate important interrupts every 25ms  
+            break;
+        case Priority::NORMAL:
+            minInterval = 50;  // Evaluate normal interrupts every 50ms
+            break;
+    }
+    
+    // Button actions need higher frequency for responsiveness
+    if (interrupt.effect == InterruptEffect::BUTTON_ACTION)
+    {
+        minInterval = std::min(minInterval, 15UL); // Max 15ms for button actions
+    }
+    
+    // Theme changes can be less frequent
+    if (interrupt.effect == InterruptEffect::SET_THEME)
+    {
+        minInterval = std::max(minInterval, 100UL); // Min 100ms for theme changes
+    }
+    
+    return timeSinceLastEvaluation >= minInterval;
 }
 
 void InterruptManager::UpdateLastEvaluation(Interrupt& interrupt)
@@ -471,5 +503,104 @@ void InterruptManager::CheckAllInterrupts()
 {
     log_v("CheckAllInterrupts() called (legacy compatibility)");
     Process(); // Delegate to new coordinated system
+}
+
+// Phase 6: System integration and diagnostics methods
+void InterruptManager::PrintSystemStatus() const
+{
+    log_i("=== Interrupt System Status ===");
+    log_i("Total Registered Interrupts: %d/%d", interruptCount_, MAX_INTERRUPTS);
+    log_i("Total Handlers: %d/%d", handlers_.size(), MAX_HANDLERS);
+    log_i("Total Evaluations: %lu", totalEvaluations_);
+    log_i("Total Executions: %lu", totalExecutions_);
+    log_i("Last Evaluation Time: %lu ms", lastEvaluationTime_);
+    
+    log_i("--- Registered Interrupts ---");
+    for (size_t i = 0; i < interruptCount_; ++i)
+    {
+        const Interrupt& interrupt = interrupts_[i];
+        const char* priorityStr = interrupt.priority == Priority::CRITICAL ? "CRITICAL" :
+                                 interrupt.priority == Priority::IMPORTANT ? "IMPORTANT" : "NORMAL";
+        const char* sourceStr = interrupt.source == InterruptSource::POLLED ? "POLLED" : "QUEUED";
+        const char* effectStr = interrupt.effect == InterruptEffect::LOAD_PANEL ? "LOAD_PANEL" :
+                               interrupt.effect == InterruptEffect::SET_THEME ? "SET_THEME" :
+                               interrupt.effect == InterruptEffect::SET_PREFERENCE ? "SET_PREFERENCE" : "BUTTON_ACTION";
+        
+        log_i("  [%d] %s: %s/%s/%s %s", 
+              i, interrupt.id ? interrupt.id : "null", 
+              priorityStr, sourceStr, effectStr,
+              interrupt.active ? "ACTIVE" : "INACTIVE");
+    }
+    
+    log_i("--- Handler Status ---");
+    log_i("  Polled Handler: %s", polledHandler_ ? "REGISTERED" : "NOT REGISTERED");
+    log_i("  Queued Handler: %s", queuedHandler_ ? "REGISTERED" : "NOT REGISTERED");
+    log_i("  Custom Handlers: %d", handlers_.size() - 2); // Subtract default handlers
+    
+    log_i("================================");
+}
+
+size_t InterruptManager::GetRegisteredInterruptCount() const
+{
+    return interruptCount_;
+}
+
+void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const
+{
+    totalEvaluations = totalEvaluations_;
+    totalExecutions = totalExecutions_;
+}
+
+// Phase 6: Performance optimization methods
+void InterruptManager::OptimizeMemoryUsage()
+{
+    log_v("OptimizeMemoryUsage() called");
+    
+    // Compact the interrupt array to remove gaps
+    CompactInterruptArray();
+    
+    // Log optimization results
+    log_d("Memory optimization complete - %d interrupts active", interruptCount_);
+}
+
+void InterruptManager::CompactInterruptArray()
+{
+    log_v("CompactInterruptArray() called");
+    
+    size_t writeIndex = 0;
+    for (size_t readIndex = 0; readIndex < interruptCount_; ++readIndex)
+    {
+        // Only keep active interrupts with valid IDs
+        if (interrupts_[readIndex].active && interrupts_[readIndex].id)
+        {
+            if (writeIndex != readIndex)
+            {
+                // Move interrupt to fill gap
+                interrupts_[writeIndex] = interrupts_[readIndex];
+                log_d("Moved interrupt %s from index %d to %d", 
+                      interrupts_[writeIndex].id, readIndex, writeIndex);
+            }
+            ++writeIndex;
+        }
+        else
+        {
+            log_d("Removed inactive interrupt at index %d", readIndex);
+        }
+    }
+    
+    // Update count and clear remaining slots
+    size_t oldCount = interruptCount_;
+    interruptCount_ = writeIndex;
+    
+    // Clear unused slots
+    for (size_t i = interruptCount_; i < oldCount; ++i)
+    {
+        memset(&interrupts_[i], 0, sizeof(Interrupt));
+    }
+    
+    if (oldCount != interruptCount_)
+    {
+        log_i("Compacted interrupt array: %d -> %d interrupts", oldCount, interruptCount_);
+    }
 }
 

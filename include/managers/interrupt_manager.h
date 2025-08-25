@@ -53,6 +53,15 @@ public:
     void RegisterHandler(std::shared_ptr<IHandler> handler);
     void UnregisterHandler(std::shared_ptr<IHandler> handler);
     
+    // Phase 6: System integration and diagnostics
+    void PrintSystemStatus() const;
+    size_t GetRegisteredInterruptCount() const;
+    void GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const;
+    
+    // Phase 6: Performance optimization
+    void OptimizeMemoryUsage();
+    void CompactInterruptArray();
+    
     // Legacy compatibility methods (Phase 2: maintain existing interface)
     void RegisterTriggerSource(IInterruptService *source);
     void RegisterActionSource(IInterruptService *source);
@@ -107,7 +116,12 @@ private:
     unsigned long lastEvaluationTime_ = 0;
     bool initialized_ = false;
     
-    // Statistics (for debugging)
+    // Statistics (for debugging and monitoring)
     mutable unsigned long lastCheckTime_ = 0;
     mutable unsigned long checkCount_ = 0;
+    
+    // Phase 6: Enhanced performance monitoring
+    mutable size_t totalEvaluations_ = 0;
+    mutable size_t totalExecutions_ = 0;
+    mutable unsigned long lastDiagnosticTime_ = 0;
 };
