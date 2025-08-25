@@ -2,7 +2,7 @@
 #include "interfaces/i_action_service.h"
 #include "interfaces/i_panel_factory.h"
 #include "interfaces/i_component_factory.h"
-#include "managers/action_manager.h"
+// ActionManager include removed - button handling moved to handler-based system
 #include "managers/error_manager.h"
 #include "panels/config_panel.h"
 #include "panels/oem_oil_panel.h"
@@ -30,20 +30,20 @@ void PanelManager::Init()
 // Constructors and Destructors
 
 PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IActionManager *actionManager, IPreferenceService *preferenceService,
+                           IPreferenceService *preferenceService,
                            IPanelFactory* panelFactory, IComponentFactory* componentFactory)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), actionManager_(actionManager),
+    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       preferenceService_(preferenceService), panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
     log_v("PanelManager() constructor called");
-    if (!display || !gpio || !styleService || !actionManager || !preferenceService)
+    if (!display || !gpio || !styleService || !preferenceService)
     {
-        log_e("PanelManager requires all dependencies: display, gpio, styleService, actionManager, and "
+        log_e("PanelManager requires all dependencies: display, gpio, styleService, and "
               "preferenceService");
         ErrorManager::Instance().ReportCriticalError(
             "PanelManager",
-            "Missing required dependencies - display, gpio, styleService, actionManager, or preferenceService is null");
+            "Missing required dependencies - display, gpio, styleService, or preferenceService is null");
         // In a real embedded system, you might want to handle this more gracefully
         return;
     }
@@ -162,11 +162,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     {
         log_d("Cleaning up existing panel before creating new one");
 
-        // Unregister input service if current panel implements it
-        if (actionManager_)
-        {
-            actionManager_->ClearPanel();
-        }
+        // ActionManager removed - button handling moved to handler-based system
 
         panel_.reset();
     }
@@ -226,20 +222,17 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     currentPanelStr_ = panelName;
     currentPanel = currentPanelStr_.c_str();
 
-    // Register input service if panel implements it (using composition approach)
-    if (actionManager_)
+    // ActionManager removed - button handling moved to handler-based system
+    // TODO: Register panel button functions with QueuedHandler when implemented
+    IActionService *actionService = panel_.get();
+    if (actionService)
     {
-        // All panels now inherit from IActionService through IPanel
-        IActionService *actionService = panel_.get();
-        if (actionService)
-        {
-            log_i("Panel %s implements IActionService, registering for actions", currentPanel);
-            actionManager_->RegisterPanel(actionService, currentPanel);
-        }
-        else
-        {
-            log_d("Panel %s does not implement IActionService", panelName);
-        }
+        log_i("Panel %s implements IActionService - button functions ready for handler registration", currentPanel);
+        // Button function registration will be handled by QueuedHandler in future implementation
+    }
+    else
+    {
+        log_d("Panel %s does not implement IActionService", panelName);
     }
 
     // Set BUSY before loading panel

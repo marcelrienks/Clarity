@@ -38,11 +38,11 @@ class ManagerFactory
     /// @param display Display provider for UI operations
     /// @param gpio GPIO provider for hardware access
     /// @param styleService Style service for UI theming
-    /// @param actionManager Action manager interface for button handling
     /// @param preferenceService Preference service for configuration settings
     /// @return Unique pointer to configured PanelManager instance or nullptr on failure
+    /// @note ActionManager dependency removed - button handling moved to handler-based system
     static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider *display, IGpioProvider *gpio,
-                                                            IStyleService *styleService, IActionManager *actionManager,
+                                                            IStyleService *styleService, 
                                                             IPreferenceService *preferenceService);
 
     /// @brief Create StyleManager with optional theme
@@ -55,11 +55,7 @@ class ManagerFactory
     /// @return Unique pointer to configured PreferenceManager instance or nullptr on failure
     static std::unique_ptr<PreferenceManager> createPreferenceManager();
 
-    /// @brief Create ActionManager with injected sensor dependencies
-    /// @param gpio GPIO provider for creating ActionButtonSensor
-    /// @param panelService Panel service for triggering panel switches (can be nullptr)
-    /// @return Unique pointer to configured ActionManager instance or nullptr on failure
-    static std::unique_ptr<ActionManager> createActionManager(IGpioProvider *gpio, IPanelService *panelService);
+    // createActionManager method removed - button handling moved to handler-based system
 
     /// @brief Initialize InterruptManager singleton instance
     /// @return Pointer to configured InterruptManager instance or nullptr on failure

@@ -1,6 +1,6 @@
 #include "main.h"
 #include "factories/manager_factory.h"
-#include "managers/action_manager.h"
+// ActionManager include removed - button handling moved to handler-based system
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
@@ -9,7 +9,6 @@
 #include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
-#include "sensors/key_sensor.h"
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
@@ -19,7 +18,7 @@ std::unique_ptr<GpioProvider> gpioProvider;
 std::unique_ptr<LvglDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
-std::unique_ptr<ActionManager> actionManager;
+// ActionManager removed - button handling moved to handler-based system
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
@@ -73,18 +72,15 @@ bool initializeServices()
     // Initialize StyleManager with user's theme preference
     const char *userTheme = preferenceManager->GetConfig().theme.c_str();
     styleManager = ManagerFactory::createStyleManager(userTheme);
-    // Create ActionManager with nullptr first, then update after PanelManager is created
-    actionManager = ManagerFactory::createActionManager(gpioProvider.get(), nullptr);
+    // Create PanelManager without ActionManager dependency
     panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
-                                                      actionManager.get(), preferenceManager.get());
-    // Resolve circular dependency: ActionManager needs PanelService for UIState checking
-    actionManager->SetPanelService(panelManager.get());
+                                                      preferenceManager.get());
     interruptManager = ManagerFactory::createInterruptManager();
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created
     bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && styleManager && preferenceManager &&
-                              actionManager && panelManager && interruptManager && errorManager;
+                              panelManager && interruptManager && errorManager;
 
     if (!allServicesCreated)
     {
@@ -100,8 +96,7 @@ bool initializeServices()
             ErrorManager::Instance().ReportCriticalError("Main", "StyleManager creation failed");
         if (!preferenceManager)
             ErrorManager::Instance().ReportCriticalError("Main", "PreferenceManager creation failed");
-        if (!actionManager)
-            ErrorManager::Instance().ReportCriticalError("Main", "ActionManager creation failed");
+        // ActionManager removed - button handling moved to handler-based system
         if (!panelManager)
             ErrorManager::Instance().ReportCriticalError("Main", "PanelManager creation failed");
         if (!interruptManager)
@@ -129,30 +124,10 @@ void setup()
     // Interrupt system initialized by factory with all handlers
     Ticker::handleLvTasks();
 
-    // Load startup panel - check for key override
-    // Create temporary key sensor to check startup state
-    auto tempKeySensor = std::make_shared<KeySensor>(gpioProvider.get());
-    if (tempKeySensor)
-    {
-        tempKeySensor->Init();
-        KeyState keyState = tempKeySensor->GetKeyState();
-        if (keyState == KeyState::Present)
-        {
-            log_i("Key present at startup - loading KEY panel");
-            panelManager->CreateAndLoadPanel(PanelNames::KEY);
-        }
-        else
-        {
-            auto config = preferenceManager->GetConfig();
-            panelManager->CreateAndLoadPanel(config.panelName.c_str());
-        }
-    }
-    else
-    {
-        log_e("Failed to create temporary key sensor for startup check");
-        auto config = preferenceManager->GetConfig();
-        panelManager->CreateAndLoadPanel(config.panelName.c_str());
-    }
+    // Load startup panel from configuration
+    // Note: Key override logic handled by interrupt system after startup
+    auto config = preferenceManager->GetConfig();
+    panelManager->CreateAndLoadPanel(config.panelName.c_str());
 
     Ticker::handleLvTasks();
     

@@ -68,7 +68,7 @@ class ActionManager : public IActionManager
     static void ExecuteButtonAction(void* context);
     
     // Internal processing methods
-    void RegisterButtonInterrupts();
+    // RegisterButtonInterrupts removed - ActionButtonSensor handles its own interrupt registration
     void ProcessInputEvents();
     void HandlePressedState(unsigned long currentTime);
     bool ShouldTriggerLongPress(unsigned long currentTime);

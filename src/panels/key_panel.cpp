@@ -11,8 +11,7 @@
 KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                    IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
-      keySensor_(std::make_shared<KeySensor>(gpio))
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
     log_v("KeyPanel constructor called");
     // Component will be created during load() method
@@ -56,9 +55,9 @@ void KeyPanel::Init()
     }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    // Initialize sensor and get current key state
-    keySensor_->Init();
-    currentKeyState_ = keySensor_->GetKeyState();
+    // Note: KeyPanel is display-only, state comes from interrupt system
+    // Since this panel is only loaded when a key is present, display "present" state
+    currentKeyState_ = KeyState::Present;
     
     log_i("KeyPanel initialization completed");
 }

@@ -6,7 +6,6 @@
 #include "interfaces/i_panel.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
-#include "sensors/key_sensor.h"
 #include "utilities/types.h"
 
 // Forward declarations
@@ -72,7 +71,6 @@ class KeyPanel : public IPanel
     IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> keyComponent_;
-    std::shared_ptr<KeySensor> keySensor_;
     ComponentLocation centerLocation_;
     KeyState currentKeyState_ = KeyState::Inactive;
 };

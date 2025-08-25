@@ -34,8 +34,9 @@ void ActionManager::Init()
     // Initialize the button sensor (will register its own interrupts)
     buttonSensor_->Init();
 
-    // Register ActionManager interrupts for button state monitoring
-    RegisterButtonInterrupts();
+    // Note: ActionButtonSensor registers its own "button_state_monitor" interrupt
+    // ActionManager responds to button state changes via that existing interrupt
+    // No additional interrupt registration needed to avoid duplication
 
     // Initialize state
     lastButtonState_ = IsButtonPressed();
@@ -92,32 +93,9 @@ void ActionManager::ExecuteButtonAction(void* context)
     manager->ProcessInputEvents(); // Use existing button logic
 }
 
-void ActionManager::RegisterButtonInterrupts()
-{
-    log_v("RegisterButtonInterrupts() called");
-    
-    // Register a polled interrupt for button state monitoring
-    Interrupt buttonInterrupt = {};
-    buttonInterrupt.id = "button_state_monitor";
-    buttonInterrupt.priority = Priority::IMPORTANT;
-    buttonInterrupt.source = InterruptSource::POLLED;
-    buttonInterrupt.effect = InterruptEffect::BUTTON_ACTION;
-    buttonInterrupt.evaluationFunc = EvaluateButtonChange;
-    buttonInterrupt.executionFunc = ExecuteButtonAction;
-    buttonInterrupt.context = this;
-    buttonInterrupt.active = true;
-    buttonInterrupt.lastEvaluation = 0;
-    
-    bool registered = InterruptManager::Instance().RegisterInterrupt(buttonInterrupt);
-    if (registered)
-    {
-        log_d("Registered button monitoring interrupt successfully");
-    }
-    else
-    {
-        log_e("Failed to register button monitoring interrupt");
-    }
-}
+// Note: RegisterButtonInterrupts method removed to prevent duplicate interrupt registration
+// ActionButtonSensor handles its own interrupt registration during Init()
+// ActionManager processes button events through the sensor's existing interrupt system
 
 void ActionManager::ProcessInputEvents()
 {

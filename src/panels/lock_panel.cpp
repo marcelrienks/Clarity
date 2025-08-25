@@ -11,8 +11,7 @@
 LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                      IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
-      lockSensor_(std::make_shared<LockSensor>(gpio))
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
     log_v("LockPanel constructor called");
     // Component will be created during load() method
@@ -31,10 +30,6 @@ LockPanel::~LockPanel()
         lockComponent_.reset();
     }
 
-    if (lockSensor_)
-    {
-        lockSensor_.reset();
-    }
 }
 
 // Core Functionality Methods
@@ -61,8 +56,9 @@ void LockPanel::Init()
     }
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
-    lockSensor_->Init();
-    isLockEngaged_ = false;
+    // Note: LockPanel is display-only, state comes from interrupt system
+    // Since this panel is only loaded when lock state changes, assume engaged
+    isLockEngaged_ = true;
     
     log_i("LockPanel initialization completed");
 }
