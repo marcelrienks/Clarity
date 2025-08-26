@@ -4,6 +4,7 @@
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
+#include "interfaces/i_device_provider.h"
 
 // Screen
 #define SCREEN_WIDTH 240
@@ -46,7 +47,7 @@
  * @context This is the main hardware interface that all panels and components
  * render to. The display is 240x240 pixels with a round form factor.
  */
-class DeviceProvider : public lgfx::LGFX_Device
+class DeviceProvider : public lgfx::LGFX_Device, public IDeviceProvider
 {
   public:
     // Constructors and Destructors
@@ -55,7 +56,11 @@ class DeviceProvider : public lgfx::LGFX_Device
     DeviceProvider &operator=(const DeviceProvider &) = delete;
 
     // Core Functionality Methods
-    void prepare();
+    void prepare() override;
+
+    // IDeviceProvider interface methods
+    lv_obj_t* GetScreen() const override;
+    bool IsReady() const override;
 
     // Public Data Members
     lv_obj_t *screen;

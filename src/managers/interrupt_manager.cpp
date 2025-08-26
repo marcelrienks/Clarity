@@ -19,6 +19,7 @@ extern std::unique_ptr<StyleManager> styleManager;
 InterruptManager& InterruptManager::Instance()
 {
     static InterruptManager instance;
+    log_d("InterruptManager::Instance() returning singleton reference");
     return instance;
 }
 
@@ -38,6 +39,13 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
     lastCheckTime_ = millis();
     checkCount_ = 0;
 
+    // Store GPIO provider for later handler creation to avoid circular dependency
+    gpioProvider_ = gpioProvider;
+    
+    // Mark as initialized before creating handlers to prevent circular dependency
+    // during sensor initialization when they call RegisterInterrupt()
+    initialized_ = true;
+    
     // Create and register default handlers with GPIO provider
     if (gpioProvider) {
         auto polledHandler = std::make_shared<PolledHandler>(gpioProvider);
@@ -66,7 +74,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
                                            "Cannot create handlers - GPIO provider is null");
     }
 
-    initialized_ = true;
     log_i("InterruptManager initialized with polled and queued interrupt handlers");
     
     // NOTE: Interrupt contexts are now set directly during registration in
@@ -98,7 +105,32 @@ void InterruptManager::UpdateHandlerContexts()
 // Core interrupt processing methods
 void InterruptManager::Process()
 {
-    log_v("Process() called");
+    log_d("InterruptManager::Process() called - entry");
+    
+    // === EARLY MEMORY CORRUPTION DETECTION ===
+    static int process_call_count = 0;
+    process_call_count++;
+    
+    // Check memory every 10 calls to avoid log spam
+    if (process_call_count % 10 == 1) {
+        log_d("=== INTERRUPT PROCESS MEMORY CHECK (call #%d) ===", process_call_count);
+        log_d("Free heap at Process() entry: %d bytes", ESP.getFreeHeap());
+        log_d("Largest free block: %d bytes", ESP.getMaxAllocHeap());
+        
+        // Validate this pointer
+        log_d("InterruptManager validation:");
+        log_d("  this pointer: %p", this);
+        log_d("  initialized_: %s", initialized_ ? "true" : "false");
+        log_d("  interruptCount_: %d", interruptCount_);
+        
+        // Stack and memory integrity check
+        static const uint32_t PROCESS_PATTERN = 0xFEEDFACE;
+        uint32_t process_test = PROCESS_PATTERN;
+        if (process_test != PROCESS_PATTERN) {
+            log_e("PROCESS MEMORY CORRUPTION: Pattern 0x%08X != 0x%08X!", process_test, PROCESS_PATTERN);
+        }
+    }
+    
     if (!initialized_)
     {
         return;
@@ -114,7 +146,9 @@ void InterruptManager::Process()
     }
     
     // Execute queued interrupt actions through registered handlers  
+    log_d("InterruptManager::Process() about to call ProcessHandlers()");
     ProcessHandlers();
+    log_d("InterruptManager::Process() completed successfully");
 }
 
 bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
@@ -643,8 +677,45 @@ void InterruptManager::LoadPanelFromInterrupt(const Interrupt& interrupt)
         return;
     }
     
+    // === MEMORY CORRUPTION DETECTION IN INTERRUPT CONTEXT ===
+    log_d("=== INTERRUPT MEMORY VALIDATION ===");
+    log_d("Free heap before panel load: %d bytes", ESP.getFreeHeap());
+    log_d("Largest free block: %d bytes", ESP.getMaxAllocHeap());
+    
+    // Validate panelManager pointer
+    log_d("PanelManager validation:");
+    log_d("  panelManager pointer: %p", panelManager.get());
+    
+    // Validate panel name string
+    log_d("Panel name validation:");
+    log_d("  panelName pointer: %p", panelName);
+    log_d("  panelName string: '%s'", panelName ? panelName : "NULL");
+    log_d("  panelName length: %d", panelName ? strlen(panelName) : 0);
+    
+    // Memory integrity check
+    static const uint32_t INTERRUPT_PATTERN = 0xCAFEBABE;
+    uint32_t interrupt_test = INTERRUPT_PATTERN;
+    log_d("Interrupt context memory test: 0x%08X", interrupt_test);
+    if (interrupt_test != INTERRUPT_PATTERN) {
+        log_e("INTERRUPT MEMORY CORRUPTION: Pattern 0x%08X != 0x%08X!", interrupt_test, INTERRUPT_PATTERN);
+    }
+    
+    // Check stack integrity (rough check)
+    volatile uint32_t stack_marker = 0x12345678;
+    log_d("Stack marker: 0x%08X at %p", stack_marker, &stack_marker);
+
     log_i("Loading panel '%s' triggered by interrupt '%s'", panelName, interrupt.id);
+    
+    // Call with memory tracking
     panelManager->CreateAndLoadPanel(panelName, true);  // Mark as trigger-driven
+    
+    log_d("=== POST-INTERRUPT PANEL LOAD ===");
+    log_d("Free heap after panel load: %d bytes", ESP.getFreeHeap());
+    
+    // Verify stack marker wasn't corrupted
+    if (stack_marker != 0x12345678) {
+        log_e("STACK CORRUPTION: Stack marker changed from 0x12345678 to 0x%08X!", stack_marker);
+    }
 }
 
 void InterruptManager::CheckForRestoration(const Interrupt& interrupt)

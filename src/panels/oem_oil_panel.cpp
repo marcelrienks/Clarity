@@ -156,9 +156,70 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
     // Initialize needle positions to match current values (prevents animation jumps)
     oemOilPressureComponent_->SetValue(currentOilPressureValue_);
     oemOilTemperatureComponent_->SetValue(currentOilTemperatureValue_);
+    
+    // === MEMORY CORRUPTION DEBUGGING ===
+    log_d("=== PRE-SCREEN_LOAD MEMORY VALIDATION ===");
+    
+    // Log heap status before critical operation
+    log_d("Free heap before lv_screen_load: %d bytes", ESP.getFreeHeap());
+    log_d("Largest free block: %d bytes", ESP.getMaxAllocHeap());
+    
+    // Validate screen object pointer and basic properties
+    log_d("Screen object validation:");
+    log_d("  screen_ pointer: %p", screen_);
+    if (screen_) {
+        log_d("  screen_ valid: checking basic LVGL object properties...");
+        // Check if LVGL object is valid by accessing safe properties
+        lv_obj_t* parent = lv_obj_get_parent(screen_);
+        log_d("  screen_ parent: %p", parent);
+        
+        // Check object coordinates (safe to read)
+        lv_coord_t x = lv_obj_get_x(screen_);
+        lv_coord_t y = lv_obj_get_y(screen_);
+        log_d("  screen_ position: (%d, %d)", x, y);
+        
+        // Check object size
+        lv_coord_t w = lv_obj_get_width(screen_);
+        lv_coord_t h = lv_obj_get_height(screen_);
+        log_d("  screen_ size: %dx%d", w, h);
+    } else {
+        log_e("  screen_ is NULL! Memory corruption detected!");
+    }
+    
+    // Validate component pointers
+    log_d("Component validation:");
+    log_d("  oemOilPressureComponent_: %p", oemOilPressureComponent_.get());
+    log_d("  oemOilTemperatureComponent_: %p", oemOilTemperatureComponent_.get());
+    
+    // Check if 'this' pointer is still valid
+    log_d("Object integrity check:");
+    log_d("  this pointer: %p", this);
+    log_d("  currentOilPressureValue_: %d", currentOilPressureValue_);
+    log_d("  currentOilTemperatureValue_: %d", currentOilTemperatureValue_);
+    
+    log_d("OemOilPanel::Load: About to call lv_obj_add_event_cb");
     lv_obj_add_event_cb(screen_, OemOilPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
+    log_d("OemOilPanel::Load: lv_obj_add_event_cb completed");
+    
+    // Final validation before the critical call
+    log_d("=== FINAL PRE-LOAD VALIDATION ===");
+    log_d("Free heap just before lv_screen_load: %d bytes", ESP.getFreeHeap());
+    
+    // Memory pattern check - write and verify a pattern
+    static const uint32_t MEMORY_PATTERN = 0xDEADBEEF;
+    uint32_t test_pattern = MEMORY_PATTERN;
+    log_d("Memory pattern test: wrote 0x%08X", test_pattern);
+    if (test_pattern != MEMORY_PATTERN) {
+        log_e("MEMORY CORRUPTION: Pattern changed from 0x%08X to 0x%08X!", MEMORY_PATTERN, test_pattern);
+    }
 
+    log_d("OemOilPanel::Load: About to call lv_screen_load");
     lv_screen_load(screen_);
+    log_d("OemOilPanel::Load: lv_screen_load completed");
+    
+    // Post-load validation
+    log_d("=== POST-SCREEN_LOAD VALIDATION ===");
+    log_d("Free heap after lv_screen_load: %d bytes", ESP.getFreeHeap());
 
     if (styleService_)
     {

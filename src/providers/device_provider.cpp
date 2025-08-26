@@ -106,6 +106,17 @@ void DeviceProvider::prepare()
     log_i("DeviceProvider hardware initialization completed successfully");
 }
 
+// IDeviceProvider interface methods
+lv_obj_t* DeviceProvider::GetScreen() const
+{
+    return screen;
+}
+
+bool DeviceProvider::IsReady() const
+{
+    return screen != nullptr;
+}
+
 // Static Methods
 /// @brief Static Display Flush Wrapper function for LVGL display driver
 /// @param display LVGL display object

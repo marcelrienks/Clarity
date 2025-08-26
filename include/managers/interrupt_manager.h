@@ -123,4 +123,7 @@ private:
     void (*currentShortPressFunc_)(void* context) = nullptr;
     void (*currentLongPressFunc_)(void* context) = nullptr;
     void* currentPanelContext_ = nullptr;
+    
+    // GPIO provider reference (stored to avoid circular dependency during initialization)
+    IGpioProvider* gpioProvider_ = nullptr;
 };

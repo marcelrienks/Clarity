@@ -103,7 +103,8 @@
       "Bash(sudo apt install:*)",
       "Bash(git add:*)",
       "Bash(basename:*)",
-      "Bash(xtensa-esp32-elf-g++:*)"
+      "Bash(xtensa-esp32-elf-g++:*)",
+      "Bash(pio.exe check:*)"
     ],
     "deny": []
   }

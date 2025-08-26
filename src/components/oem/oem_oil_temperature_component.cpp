@@ -73,13 +73,17 @@ bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 /// @return The mapped value.
 int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 {
-    log_v("map_value_for_display() called");
+    log_v("map_value_for_display() called with value=%d", value);
     // Maps the value from the original scale (0-120) to the normal scale (120-0).
     // LVGL 9.3 has a bug that does allow setting a reverse scale 120-0, but it cannot animate the needle using that.
     // This method is used to map the value from the original scale (0-120) to the normal scale (120-0).
 
     // Map from [0,120] to [120,0] reverse the scale
-    int32_t mappedValue = OemOilTemperatureComponent::get_scale_max() - value;
+    int32_t max_val = get_scale_max();
+    log_v("map_value_for_display: max_val=%d", max_val);
+    
+    int32_t mappedValue = max_val - value;
+    log_v("map_value_for_display: returning mapped value=%d", mappedValue);
 
     return mappedValue;
 }
@@ -89,9 +93,23 @@ int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) const
 {
     log_v("setup_danger_zone() called");
+    
+    if (!section) {
+        log_e("setup_danger_zone: section is null");
+        return;
+    }
+    
     // Danger zone: map correct danger zone to reversed danger zone (hack to solve reversed scale in LVGL 9.3)
-    lv_scale_section_set_range(section, map_value_for_display(OemOilTemperatureComponent::get_scale_max()),
-                               map_value_for_display(OemOilTemperatureComponent::get_danger_zone()));
+    int32_t max_val = get_scale_max();
+    int32_t danger_val = get_danger_zone();
+    int32_t mapped_max = map_value_for_display(max_val);
+    int32_t mapped_danger = map_value_for_display(danger_val);
+    
+    log_d("setup_danger_zone: max=%d, danger=%d, mapped_max=%d, mapped_danger=%d", 
+          max_val, danger_val, mapped_max, mapped_danger);
+    
+    lv_scale_section_set_range(section, mapped_max, mapped_danger);
+    log_d("setup_danger_zone: lv_scale_section_set_range completed");
 }
 
 /// @brief Gets the Y offset for the oil temperature icon.

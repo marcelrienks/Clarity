@@ -2,6 +2,7 @@
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
 #include "providers/device_provider.h"
+#include "interfaces/i_device_provider.h"
 #include "managers/error_manager.h"
 #include <Arduino.h>
 
@@ -90,7 +91,8 @@ std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
     if (s_deviceProvider)
     {
         log_d("Returning existing DeviceProvider instance");
-        return std::move(s_deviceProvider);
+        std::unique_ptr<IDeviceProvider> provider = std::move(s_deviceProvider);
+        return provider;
     }
     
     try
@@ -108,7 +110,8 @@ std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
             }
             
             log_d("Successfully created and prepared DeviceProvider");
-            return provider;
+            std::unique_ptr<IDeviceProvider> deviceProvider = std::move(provider);
+            return deviceProvider;
         }
         else
         {

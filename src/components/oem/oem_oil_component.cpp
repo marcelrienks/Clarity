@@ -1,6 +1,7 @@
 #include "components/oem/oem_oil_component.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h" // For MAIN_DEFAULT, ITEMS_DEFAULT, INDICATOR_DEFAULT constants
+#include <Arduino.h>
 #include <cstring>
 #include <esp32-hal-log.h>
 #include <math.h>
@@ -155,22 +156,68 @@ void OemOilComponent::Refresh(const Reading &reading)
 /// @param value
 void OemOilComponent::SetValue(int32_t value)
 {
+    log_d("SetValue() called with value=%d", value);
 
     // Allow derived classes to map values if needed (e.g., for reversed scales)
     int32_t mappedValue = map_value_for_display(value);
+    log_d("SetValue: mappedValue=%d", mappedValue);
 
     // Update all three needle sections for smooth tapered appearance
+    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleLine_");
     lv_scale_set_line_needle_value(scale_, needleLine_, NEEDLE_LENGTH, mappedValue);             // Full length (tip)
+    log_d("SetValue: needleLine_ completed");
+    
+    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleMiddle_");
     lv_scale_set_line_needle_value(scale_, needleMiddle_, (NEEDLE_LENGTH * 2) / 3, mappedValue); // 2/3 length (middle)
+    log_d("SetValue: needleMiddle_ completed");
+    
+    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleBase_");
     lv_scale_set_line_needle_value(scale_, needleBase_, NEEDLE_LENGTH / 3, mappedValue);         // 1/3 length (base)
+    log_d("SetValue: needleBase_ completed");
 
     // Update highlight lines for 3D effect
+    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleHighlightLine_");
     lv_scale_set_line_needle_value(scale_, needleHighlightLine_, NEEDLE_LENGTH - 2,
                                    mappedValue); // Slightly shorter for highlight effect
+    log_d("SetValue: needleHighlightLine_ completed");
+    
+    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleHighlightMiddle_");
     lv_scale_set_line_needle_value(scale_, needleHighlightMiddle_, ((NEEDLE_LENGTH * 2) / 3) - 2,
                                    mappedValue); // 2/3 length highlight
+    log_d("SetValue: needleHighlightMiddle_ completed");
+    
+    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleHighlightBase_");
     lv_scale_set_line_needle_value(scale_, needleHighlightBase_, (NEEDLE_LENGTH / 3) - 2,
                                    mappedValue); // 1/3 length highlight
+    log_d("SetValue: needleHighlightBase_ completed");
+    
+    log_d("SetValue: All needle operations completed successfully");
+    
+    // === MEMORY CORRUPTION CHECK AFTER LVGL OPERATIONS ===
+    log_d("=== POST-NEEDLE MEMORY VALIDATION ===");
+    log_d("Free heap after needle operations: %d bytes", ESP.getFreeHeap());
+    
+    // Validate critical object pointers after LVGL operations
+    log_d("LVGL object validation after SetValue:");
+    log_d("  scale_ pointer: %p", scale_);
+    log_d("  needleLine_ pointer: %p", needleLine_);
+    log_d("  needleMiddle_ pointer: %p", needleMiddle_);
+    log_d("  needleBase_ pointer: %p", needleBase_);
+    
+    // Check if LVGL objects are still valid
+    if (scale_) {
+        lv_coord_t scale_x = lv_obj_get_x(scale_);
+        lv_coord_t scale_y = lv_obj_get_y(scale_);
+        log_d("  scale_ position after operations: (%d, %d)", scale_x, scale_y);
+    }
+    
+    // Memory pattern check in component context
+    static const uint32_t COMPONENT_PATTERN = 0xBEEFCAFE;
+    uint32_t component_test = COMPONENT_PATTERN;
+    log_d("Component memory test: 0x%08X", component_test);
+    if (component_test != COMPONENT_PATTERN) {
+        log_e("COMPONENT MEMORY CORRUPTION: Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
+    }
 }
 
 /// @brief Maps the value for display on the oil component.
