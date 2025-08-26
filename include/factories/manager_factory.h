@@ -1,6 +1,5 @@
 #pragma once
 
-#include "interfaces/i_action_manager.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel_service.h"
@@ -13,7 +12,6 @@
 class PanelManager;
 class StyleManager;
 class PreferenceManager;
-class ActionManager;
 class InterruptManager;
 
 /**

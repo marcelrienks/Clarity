@@ -1,5 +1,4 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
-#include "interfaces/i_action_manager.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"

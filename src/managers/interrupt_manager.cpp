@@ -260,15 +260,14 @@ void InterruptManager::UpdateButtonInterrupts(void (*shortPressFunc)(void* conte
 {
     log_v("UpdateButtonInterrupts() called");
     
-    // Update the execution functions for universal button interrupts
-    UpdateInterruptFunction("universal_short_press", shortPressFunc);
-    UpdateInterruptFunction("universal_long_press", longPressFunc);
-    
-    // Update contexts to point to the panel
-    UpdateInterruptContext("universal_short_press", panelContext);
-    UpdateInterruptContext("universal_long_press", panelContext);
+    // Store the injected panel functions for use in ExecuteButtonAction
+    currentShortPressFunc_ = shortPressFunc;
+    currentLongPressFunc_ = longPressFunc;
+    currentPanelContext_ = panelContext;
     
     log_d("Updated universal button interrupts with panel functions and context");
+    log_d("Short press function: %p, Long press function: %p, Panel context: %p", 
+          reinterpret_cast<void*>(shortPressFunc), reinterpret_cast<void*>(longPressFunc), panelContext);
 }
 
 void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
@@ -700,13 +699,27 @@ void InterruptManager::ExecuteButtonAction(const Interrupt& interrupt)
 {
     log_v("ExecuteButtonAction() called for: %s", interrupt.id);
     
-    // Button actions are now handled through the universal button system
-    // The actual button function is injected via UpdateButtonInterrupts()
-    // For now, just log that the button action was triggered
-    log_i("Button action triggered for interrupt '%s'", interrupt.id);
+    // Determine which button function to execute based on interrupt ID
+    bool isShortPress = (interrupt.id && strcmp(interrupt.id, "universal_short_press") == 0);
+    bool isLongPress = (interrupt.id && strcmp(interrupt.id, "universal_long_press") == 0);
     
-    // TODO: In future, this could trigger the injected panel function
-    // but current design handles this through QueuedHandler processing
+    if (isShortPress && currentShortPressFunc_)
+    {
+        log_d("Executing injected short press function with panel context");
+        currentShortPressFunc_(currentPanelContext_);
+    }
+    else if (isLongPress && currentLongPressFunc_)
+    {
+        log_d("Executing injected long press function with panel context");
+        currentLongPressFunc_(currentPanelContext_);
+    }
+    else
+    {
+        log_w("No function injected for button interrupt '%s' (short: %p, long: %p)", 
+              interrupt.id, 
+              reinterpret_cast<void*>(currentShortPressFunc_), 
+              reinterpret_cast<void*>(currentLongPressFunc_));
+    }
 }
 
 void InterruptManager::HandleRestoration()

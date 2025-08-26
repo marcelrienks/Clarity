@@ -118,4 +118,9 @@ private:
     mutable size_t totalEvaluations_ = 0;
     mutable size_t totalExecutions_ = 0;
     mutable unsigned long lastDiagnosticTime_ = 0;
+    
+    // Universal button function injection storage
+    void (*currentShortPressFunc_)(void* context) = nullptr;
+    void (*currentLongPressFunc_)(void* context) = nullptr;
+    void* currentPanelContext_ = nullptr;
 };

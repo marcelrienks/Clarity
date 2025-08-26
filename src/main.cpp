@@ -1,6 +1,5 @@
 #include "main.h"
 #include "factories/manager_factory.h"
-// ActionManager include removed - button handling moved to handler-based system
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
@@ -9,6 +8,7 @@
 #include "providers/device_provider.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
+#include "utilities/constants.h"  // For PanelNames
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
@@ -18,7 +18,6 @@ std::unique_ptr<GpioProvider> gpioProvider;
 std::unique_ptr<LvglDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
-// ActionManager removed - button handling moved to handler-based system
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
@@ -179,6 +178,31 @@ void loop()
     else if (!interruptManager)
     {
         log_e("interruptManager is null!");
+    }
+
+    // Check for error panel trigger - must be processed when UI is IDLE to avoid conflicts
+    static bool errorPanelTriggered = false;  // Track if error panel was already triggered
+    if (errorManager && panelManager && panelManager->GetUiState() == UIState::IDLE)
+    {
+        bool shouldTriggerError = errorManager->ShouldTriggerErrorPanel();
+        const char* currentPanel = panelManager->GetCurrentPanel();
+        bool isCurrentlyErrorPanel = currentPanel && strcmp(currentPanel, PanelNames::ERROR) == 0;
+        
+        // Trigger error panel if needed and not already triggered
+        if (shouldTriggerError && !errorPanelTriggered && !isCurrentlyErrorPanel)
+        {
+            log_i("Error trigger detected - loading ErrorPanel");
+            panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);  // Mark as trigger-driven
+            errorManager->SetErrorPanelActive(true);
+            errorPanelTriggered = true;
+        }
+        // Reset trigger state when no longer needed
+        else if (!shouldTriggerError && errorPanelTriggered)
+        {
+            log_d("Error trigger cleared - resetting error panel state");
+            errorManager->SetErrorPanelActive(false);
+            errorPanelTriggered = false;
+        }
     }
 
     // Update panel state only when IDLE - allows loading and animations to complete

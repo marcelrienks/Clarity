@@ -93,8 +93,16 @@ InterruptResult InterruptCallbacks::ShortPressProcess(void* context) {
     
     bool hasEvent = sensor->HasStateChanged();
     if (hasEvent) {
-        log_d("Button short press event detected");
-        return InterruptResult::EXECUTE_EFFECT;
+        // For now, any button state change can trigger short press action
+        // The ActionManager will handle timing logic for short vs long press
+        auto reading = sensor->GetReading();
+        if (std::holds_alternative<int32_t>(reading)) {
+            int32_t pressed = std::get<int32_t>(reading);
+            if (pressed == 0) { // Button released - trigger action
+                log_d("Button released - executing short press effect");
+                return InterruptResult::EXECUTE_EFFECT;
+            }
+        }
     }
     return InterruptResult::NO_ACTION;
 }
@@ -106,7 +114,10 @@ InterruptResult InterruptCallbacks::LongPressProcess(void* context) {
         return InterruptResult::NO_ACTION;
     }
     
-    // For now, long press is not implemented - always return NO_ACTION
+    // For now, long press detection is handled by ActionManager
+    // This interrupt callback is not used in the current design
+    // The ActionManager directly calls panel functions based on timing
+    log_v("LongPressProcess called but not implemented - ActionManager handles timing");
     return InterruptResult::NO_ACTION;
 }
 

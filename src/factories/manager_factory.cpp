@@ -1,5 +1,4 @@
 #include "factories/manager_factory.h"
-#include "managers/action_manager.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
@@ -45,7 +44,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
                                                      "Cannot create PanelManager - StyleService dependency is null");
         return nullptr;
     }
-    // ActionManager dependency removed - button handling moved to handler-based system
+    
     if (!preferenceService)
     {
         log_e("ManagerFactory: Cannot create PanelManager - IPreferenceService is null");
@@ -106,8 +105,6 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     log_d("ManagerFactory: PreferenceManager created successfully");
     return manager;
 }
-
-// createActionManager method removed - button handling moved to handler-based system
 
 InterruptManager* ManagerFactory::createInterruptManager(IGpioProvider* gpioProvider)
 {
