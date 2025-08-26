@@ -23,8 +23,7 @@ bool BaseSensor::RegisterPolledInterrupt(const char* id, Priority priority, Inte
     interrupt.priority = priority;
     interrupt.source = InterruptSource::POLLED;
     interrupt.effect = effect;
-    interrupt.evaluationFunc = EvaluateSensorChange;
-    interrupt.executionFunc = ExecuteSensorAction;
+    interrupt.processFunc = ProcessSensorInterrupt;
     interrupt.context = this;
     interrupt.active = true;
     interrupt.lastEvaluation = 0;
@@ -84,8 +83,7 @@ bool BaseSensor::RegisterQueuedInterrupt(const char* id, Priority priority, Inte
     interrupt.priority = priority;
     interrupt.source = InterruptSource::QUEUED;
     interrupt.effect = effect;
-    interrupt.evaluationFunc = EvaluateSensorChange;
-    interrupt.executionFunc = ExecuteSensorAction;
+    interrupt.processFunc = ProcessSensorInterrupt;
     interrupt.context = this;
     interrupt.active = true;
     interrupt.lastEvaluation = 0;
@@ -142,31 +140,24 @@ void BaseSensor::UnregisterInterrupt(const char* id)
     log_d("Unregistered interrupt '%s' for sensor", id);
 }
 
-// Static callback functions
-bool BaseSensor::EvaluateSensorChange(void* context)
+// Memory-optimized single callback function
+InterruptResult BaseSensor::ProcessSensorInterrupt(void* context)
 {
-    log_v("EvaluateSensorChange() called");
+    log_v("ProcessSensorInterrupt() called");
     
     if (!context)
     {
-        log_e("Null context in sensor interrupt evaluation");
-        return false;
+        log_e("Null context in sensor interrupt processing");
+        return InterruptResult::NO_ACTION;
     }
     
     auto* sensor = static_cast<BaseSensor*>(context);
-    return sensor->HasStateChanged();
-}
-
-void BaseSensor::ExecuteSensorAction(void* context)
-{
-    log_v("ExecuteSensorAction() called");
-    
-    if (!context)
+    if (sensor->HasStateChanged())
     {
-        log_e("Null context in sensor interrupt execution");
-        return;
+        log_d("Sensor state changed - triggering interrupt action");
+        sensor->OnInterruptTriggered();
+        return InterruptResult::EXECUTE_EFFECT;
     }
     
-    auto* sensor = static_cast<BaseSensor*>(context);
-    sensor->OnInterruptTriggered();
+    return InterruptResult::NO_ACTION;
 }

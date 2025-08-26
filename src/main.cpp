@@ -72,10 +72,11 @@ bool initializeServices()
     // Initialize StyleManager with user's theme preference
     const char *userTheme = preferenceManager->GetConfig().theme.c_str();
     styleManager = ManagerFactory::createStyleManager(userTheme);
-    // Create PanelManager without ActionManager dependency
-    panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
-                                                      preferenceManager.get());
+    // Create InterruptManager first so it can be injected into PanelManager
     interruptManager = ManagerFactory::createInterruptManager(gpioProvider.get());
+    // Create PanelManager with InterruptManager for button function injection
+    panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
+                                                      preferenceManager.get(), interruptManager);
     errorManager = ManagerFactory::createErrorManager();
 
     // Verify all critical services were created

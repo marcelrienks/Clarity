@@ -133,17 +133,11 @@ public:
 
 protected:
     /**
-     * @brief Static evaluation function for sensor interrupts
+     * @brief Memory-optimized static processing function for sensor interrupts
      * @param context Pointer to the sensor instance
-     * @return true if sensor has changed state
+     * @return InterruptResult indicating whether to execute the interrupt effect
      */
-    static bool EvaluateSensorChange(void* context);
-    
-    /**
-     * @brief Static execution function for sensor interrupts - must be overridden
-     * @param context Pointer to the sensor instance
-     */
-    static void ExecuteSensorAction(void* context);
+    static InterruptResult ProcessSensorInterrupt(void* context);
     
     /**
      * @brief Virtual method for sensor-specific interrupt execution (override in derived classes)

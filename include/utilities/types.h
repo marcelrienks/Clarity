@@ -197,17 +197,25 @@ struct Action
 // Memory-optimized interrupt structure for ESP32 with centralized restoration
 //=============================================================================
 
+/// @enum InterruptResult
+/// @brief Result of interrupt processing function
+enum class InterruptResult
+{
+    NO_ACTION = 0,    ///< No action needed, interrupt condition not met
+    EXECUTE_EFFECT    ///< Execute the interrupt's effect (condition is met)
+};
+
 /// @struct Interrupt
-/// @brief Unified interrupt structure for coordinated handler system with memory optimization
+/// @brief Memory-optimized interrupt structure for coordinated handler system
 ///
-/// @details Memory-optimized interrupt design for ESP32 constraints with centralized restoration:
+/// @details Optimized interrupt design achieving 29-byte structure size:
+/// - Single processing function (saves 4 bytes vs dual function design)
 /// - Static function pointers prevent heap fragmentation (critical for ESP32)
-/// - Single execution function per interrupt saves 4 bytes per interrupt (28 bytes total)
 /// - Union-based effect data for memory efficiency
 /// - Centralized restoration logic eliminates distributed callback complexity
 ///
-/// @memory_usage ~29 bytes per interrupt (optimized from 33-byte activate/deactivate design)
-/// @total_system_overhead ~203 bytes for 7 interrupts (vs 231 bytes with dual functions)
+/// @memory_usage Exactly 29 bytes per interrupt (8 bytes saved vs 37-byte dual function design)
+/// @total_system_overhead 203 bytes for 7 interrupts (vs 259 bytes with dual functions)
 ///
 /// @esp32_constraint ESP32-WROOM-32 has ~250KB available RAM after system overhead
 /// Using std::function with lambda captures causes heap fragmentation and crashes
@@ -220,8 +228,7 @@ struct Interrupt
     Priority priority;                                 ///< Processing priority  
     InterruptSource source;                           ///< POLLED or QUEUED evaluation
     InterruptEffect effect;                           ///< What this interrupt does
-    bool (*evaluationFunc)(void* context);           ///< Function pointer - no heap allocation
-    void (*executionFunc)(void* context);            ///< Single execution function - simplified design
+    InterruptResult (*processFunc)(void* context);   ///< Single function - evaluate AND signal execution
     void* context;                                    ///< Sensor or service context
     
     // Effect-specific data (union for memory efficiency)

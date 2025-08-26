@@ -1,5 +1,8 @@
 #pragma once
 
+// Only include debug error sensor in debug builds
+#ifdef CLARITY_DEBUG
+
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
@@ -60,3 +63,5 @@ class DebugErrorSensor : public ISensor, public BaseSensor
     /// @return Current pin state
     bool readPinState();
 };
+
+#endif // CLARITY_DEBUG

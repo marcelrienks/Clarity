@@ -40,6 +40,12 @@ public:
     void DeactivateInterrupt(const char* id);
     void UpdateInterruptContext(const char* id, void* context);
     
+    // Universal button system - function injection
+    void UpdateInterruptFunction(const char* id, void (*newFunc)(void* context));
+    void UpdateButtonInterrupts(void (*shortPressFunc)(void* context), 
+                               void (*longPressFunc)(void* context), 
+                               void* panelContext);
+    
     // Handler registration for specialized processing
     void RegisterHandler(std::shared_ptr<IHandler> handler);
     void UnregisterHandler(std::shared_ptr<IHandler> handler);
@@ -57,6 +63,10 @@ public:
     bool HasActiveInterrupts() const;
     size_t GetInterruptCount() const;
     
+    // Handler access for context initialization
+    class PolledHandler* GetPolledHandler() const { return polledHandler_.get(); }
+    class QueuedHandler* GetQueuedHandler() const { return queuedHandler_.get(); }
+    
 private:
     InterruptManager() = default;
     ~InterruptManager() = default;
@@ -66,6 +76,7 @@ private:
     // Coordinated interrupt processing
     void EvaluateInterrupts();
     void ExecuteInterrupt(Interrupt& interrupt);
+    void ExecuteByEffect(const Interrupt& interrupt);
     void ProcessHandlers();
     void UpdateHandlerContexts();
     
@@ -73,6 +84,14 @@ private:
     Interrupt* FindInterrupt(const char* id);
     bool ShouldEvaluateInterrupt(const Interrupt& interrupt) const;
     void UpdateLastEvaluation(Interrupt& interrupt);
+    
+    // Effect-specific execution methods
+    void LoadPanelFromInterrupt(const Interrupt& interrupt);
+    void CheckForRestoration(const Interrupt& interrupt);
+    void HandleRestoration();
+    void ApplyThemeFromInterrupt(const Interrupt& interrupt);
+    void ApplyPreferenceFromInterrupt(const Interrupt& interrupt);
+    void ExecuteButtonAction(const Interrupt& interrupt);
     
     // Static storage for memory safety
     static constexpr size_t MAX_INTERRUPTS = 32;

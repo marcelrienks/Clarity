@@ -12,41 +12,23 @@
  * safety on ESP32.
  *
  * @architecture_requirement Static function pointers for ESP32 memory safety
- * @memory_optimization Single execution function per interrupt (28 bytes saved)
- * @callback_pattern Each sensor type has evaluation and execution functions
+ * @memory_optimization Single processing function per interrupt (4 bytes saved per interrupt)
+ * @callback_pattern Each interrupt has single process function (evaluate + signal execution)
  *
  * @context_parameter All functions receive void* context pointing to sensor instance
- * The context parameter allows static functions to access sensor state for
- * evaluation and execute appropriate actions.
+ * The context parameter allows static functions to access sensor state and return
+ * whether execution should proceed via InterruptResult.
  */
 struct InterruptCallbacks {
     
-    // Key Present Sensor Callbacks
-    static bool KeyPresentChanged(void* context);
-    static void LoadKeyPanel(void* context);
-    
-    // Key Not Present Sensor Callbacks  
-    static bool KeyNotPresentChanged(void* context);
-    static void RestoreFromKeyPanel(void* context);
-    
-    // Lock Sensor Callbacks
-    static bool LockStateChanged(void* context);
-    static void LoadLockPanel(void* context);
-    
-    // Lights Sensor Callbacks (Theme switching)
-    static bool LightsStateChanged(void* context);
-    static void SetThemeBasedOnLights(void* context);
-    
-    // Button Input Callbacks (Universal button system)
-    static bool HasShortPressEvent(void* context);
-    static void ExecutePanelShortPress(void* context);
-    
-    static bool HasLongPressEvent(void* context);
-    static void ExecutePanelLongPress(void* context);
-    
-    // Error System Callbacks
-    static bool ErrorOccurred(void* context);
-    static void LoadErrorPanel(void* context);
+    // Memory-optimized single-function callbacks (evaluate + signal execution)
+    static InterruptResult KeyPresentProcess(void* context);
+    static InterruptResult KeyNotPresentProcess(void* context);
+    static InterruptResult LockStateProcess(void* context);
+    static InterruptResult LightsStateProcess(void* context);
+    static InterruptResult ShortPressProcess(void* context);
+    static InterruptResult LongPressProcess(void* context);
+    static InterruptResult ErrorOccurredProcess(void* context);
     
 private:
     // Helper functions for panel management

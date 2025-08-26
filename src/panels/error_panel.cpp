@@ -176,10 +176,23 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
         }
     }
 
-    // If no errors remain, trigger restoration to previous panel
+    // If no errors remain, trigger auto-restoration to previous panel
     if (currentErrors_.empty() && panelLoaded_)
     {
+        log_i("ErrorPanel: No errors remaining - triggering auto-restoration");
         ErrorManager::Instance().SetErrorPanelActive(false);
+        
+        // Auto-restore to previous panel
+        if (panelService_)
+        {
+            const char* restorationPanel = panelService_->GetRestorationPanel();
+            if (restorationPanel)
+            {
+                log_i("ErrorPanel: Auto-restoring to panel '%s'", restorationPanel);
+                panelService_->CreateAndLoadPanel(restorationPanel, true);
+                return; // Exit early to prevent callback execution on replaced panel
+            }
+        }
     }
 
 

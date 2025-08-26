@@ -1,3 +1,6 @@
+// Only compile debug error sensor in debug builds
+#ifdef CLARITY_DEBUG
+
 #include "sensors/debug_error_sensor.h"
 #include "managers/error_manager.h"
 #include <Arduino.h>
@@ -189,3 +192,5 @@ void DebugErrorSensor::OnInterruptTriggered()
         previousState_ = currentState;
     }
 }
+
+#endif // CLARITY_DEBUG

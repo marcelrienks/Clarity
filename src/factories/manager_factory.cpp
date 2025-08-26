@@ -5,8 +5,12 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
+#include "handlers/polled_handler.h"
+#include "handlers/queued_handler.h"
 #include "sensors/action_button_sensor.h"
+#ifdef CLARITY_DEBUG
 #include "sensors/debug_error_sensor.h"
+#endif
 #include "utilities/types.h"
 #include "utilities/interrupt_callbacks.h"
 #include <esp32-hal-log.h>
@@ -15,7 +19,8 @@
 
 std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio,
                                                                  IStyleService *styleService,
-                                                                 IPreferenceService *preferenceService)
+                                                                 IPreferenceService *preferenceService,
+                                                                 InterruptManager *interruptManager)
 {
     log_v("createPanelManager() called");
 
@@ -49,7 +54,7 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
         return nullptr;
     }
 
-    auto panelManager = std::make_unique<PanelManager>(display, gpio, styleService, preferenceService);
+    auto panelManager = std::make_unique<PanelManager>(display, gpio, styleService, preferenceService, interruptManager);
     if (!panelManager)
     {
         log_e("ManagerFactory: Failed to create PanelManager - allocation failed");
@@ -125,6 +130,9 @@ InterruptManager* ManagerFactory::createInterruptManager(IGpioProvider* gpioProv
     log_d("ManagerFactory: Initializing InterruptManager singleton with GPIO provider...");
     manager->Init(gpioProvider);
     
+    // IMPORTANT: InterruptManager::Init() creates handlers which own the sensors
+    // We must register interrupts AFTER Init() completes so contexts are available
+    
     // Register all system interrupts after initialization
     RegisterSystemInterrupts(manager);
     
@@ -161,8 +169,14 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
     
     log_d("Registering all 7 system interrupts with static callbacks...");
     
-    // Get handler sensors for context (they're created during handler initialization)
-    // We'll access them through the handlers themselves since they own the sensors
+    // Get the handlers from InterruptManager to access their sensors
+    auto* polledHandler = interruptManager->GetPolledHandler();
+    auto* queuedHandler = interruptManager->GetQueuedHandler();
+    
+    if (!polledHandler || !queuedHandler) {
+        log_e("Cannot register interrupts - handlers not initialized");
+        return;
+    }
     
     // 1. Key Present Interrupt (POLLED, CRITICAL priority)
     Interrupt keyPresentInterrupt = {
@@ -170,9 +184,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::CRITICAL,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::KeyPresentChanged,
-        .executionFunc = InterruptCallbacks::LoadKeyPanel,
-        .context = nullptr,  // Will be set by handler when it registers
+        .processFunc = InterruptCallbacks::KeyPresentProcess,
+        .context = polledHandler->GetKeyPresentSensor(),  // Direct sensor context
+        .data = {},  // Union data initialized empty
         .active = true,
         .lastEvaluation = 0
     };
@@ -184,9 +198,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::KeyNotPresentChanged,
-        .executionFunc = InterruptCallbacks::RestoreFromKeyPanel,
-        .context = nullptr,  // Will be set by handler when it registers
+        .processFunc = InterruptCallbacks::KeyNotPresentProcess,
+        .context = polledHandler->GetKeyNotPresentSensor(),  // Direct sensor context
+        .data = {},
         .active = true,
         .lastEvaluation = 0
     };
@@ -198,9 +212,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::LockStateChanged,
-        .executionFunc = InterruptCallbacks::LoadLockPanel,
-        .context = nullptr,  // Will be set by handler when it registers
+        .processFunc = InterruptCallbacks::LockStateProcess,
+        .context = polledHandler->GetLockSensor(),  // Direct sensor context
+        .data = {},
         .active = true,
         .lastEvaluation = 0
     };
@@ -212,9 +226,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::NORMAL,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::SET_THEME,
-        .evaluationFunc = InterruptCallbacks::LightsStateChanged,
-        .executionFunc = InterruptCallbacks::SetThemeBasedOnLights,
-        .context = nullptr,  // Will be set by handler when it registers
+        .processFunc = InterruptCallbacks::LightsStateProcess,
+        .context = polledHandler->GetLightsSensor(),  // Direct sensor context
+        .data = {},
         .active = true,
         .lastEvaluation = 0
     };
@@ -226,9 +240,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::CRITICAL,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::ErrorOccurred,
-        .executionFunc = InterruptCallbacks::LoadErrorPanel,
-        .context = nullptr,  // Context will be ErrorManager instance
+        .processFunc = InterruptCallbacks::ErrorOccurredProcess,
+        .context = &ErrorManager::Instance(),  // Direct ErrorManager context
+        .data = {},
         .active = true,
         .lastEvaluation = 0
     };
@@ -240,9 +254,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::QUEUED,
         .effect = InterruptEffect::BUTTON_ACTION,
-        .evaluationFunc = InterruptCallbacks::HasShortPressEvent,
-        .executionFunc = InterruptCallbacks::ExecutePanelShortPress,
-        .context = nullptr,  // Will be set by handler when it registers
+        .processFunc = InterruptCallbacks::ShortPressProcess,
+        .context = queuedHandler->GetActionButtonSensor(),  // Direct sensor context
+        .data = {},
         .active = true,
         .lastEvaluation = 0
     };
@@ -254,9 +268,9 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .priority = Priority::NORMAL,
         .source = InterruptSource::QUEUED,
         .effect = InterruptEffect::BUTTON_ACTION,
-        .evaluationFunc = InterruptCallbacks::HasLongPressEvent,
-        .executionFunc = InterruptCallbacks::ExecutePanelLongPress,
-        .context = nullptr,  // Will be set by handler when it registers
+        .processFunc = InterruptCallbacks::LongPressProcess,
+        .context = queuedHandler->GetActionButtonSensor(),  // Direct sensor context
+        .data = {},
         .active = true,
         .lastEvaluation = 0
     };

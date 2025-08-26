@@ -11,6 +11,9 @@ class KeyPresentSensor;
 class KeyNotPresentSensor;
 class LockSensor;
 class LightsSensor;
+#ifdef CLARITY_DEBUG
+class DebugErrorSensor;
+#endif
 
 #include "esp32-hal-log.h"
 
@@ -33,6 +36,7 @@ public:
     
     // IHandler interface
     void Process() override;
+    const Interrupt* GetHighestPriorityActiveInterrupt() override;
     
     // Configuration
     void RegisterInterrupt(const Interrupt* interrupt);
@@ -44,6 +48,9 @@ public:
     KeyNotPresentSensor* GetKeyNotPresentSensor() const { return keyNotPresentSensor_.get(); }
     LockSensor* GetLockSensor() const { return lockSensor_.get(); }
     LightsSensor* GetLightsSensor() const { return lightsSensor_.get(); }
+#ifdef CLARITY_DEBUG
+    DebugErrorSensor* GetDebugErrorSensor() const { return debugErrorSensor_.get(); }
+#endif
     
     // Status
     size_t GetInterruptCount() const;
@@ -75,4 +82,7 @@ private:
     std::unique_ptr<KeyNotPresentSensor> keyNotPresentSensor_;
     std::unique_ptr<LockSensor> lockSensor_;
     std::unique_ptr<LightsSensor> lightsSensor_;
+#ifdef CLARITY_DEBUG
+    std::unique_ptr<DebugErrorSensor> debugErrorSensor_;
+#endif
 };

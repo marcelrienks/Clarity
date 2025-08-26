@@ -56,13 +56,14 @@
 class StyleManager;
 class IPanelFactory;
 class IComponentFactory;
+class InterruptManager;
 
 class PanelManager : public IPanelService
 {
   public:
     // Constructors and Destructors
     PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                 IPreferenceService *preferenceService,
+                 IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr,
                  IPanelFactory* panelFactory = nullptr, IComponentFactory* componentFactory = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
@@ -87,6 +88,10 @@ class PanelManager : public IPanelService
 
     /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel() override;
+    
+    /// @brief Update universal button interrupts with current panel's functions
+    /// @param panel The panel to extract button functions from
+    void UpdatePanelButtonFunctions(IPanel* panel);
 
     // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
@@ -157,6 +162,7 @@ class PanelManager : public IPanelService
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
     // IActionManager removed - button handling moved to handler-based system
+    InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
     IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
     IPanelFactory *panelFactory_ = nullptr;           ///< Panel factory for creating panels
     IComponentFactory *componentFactory_ = nullptr;   ///< Component factory for dependency injection

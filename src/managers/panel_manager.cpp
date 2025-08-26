@@ -4,6 +4,7 @@
 #include "interfaces/i_component_factory.h"
 // ActionManager include removed - button handling moved to handler-based system
 #include "managers/error_manager.h"
+#include "managers/interrupt_manager.h"
 #include "panels/config_panel.h"
 #include "panels/oem_oil_panel.h"
 #include "panels/splash_panel.h"
@@ -30,10 +31,11 @@ void PanelManager::Init()
 // Constructors and Destructors
 
 PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IPreferenceService *preferenceService,
+                           IPreferenceService *preferenceService, InterruptManager* interruptManager,
                            IPanelFactory* panelFactory, IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      preferenceService_(preferenceService), panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
+      preferenceService_(preferenceService), interruptManager_(interruptManager),
+      panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
 {
     log_v("PanelManager() constructor called");
@@ -222,18 +224,8 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     currentPanelStr_ = panelName;
     currentPanel = currentPanelStr_.c_str();
 
-    // ActionManager removed - button handling moved to handler-based system
-    // TODO: Register panel button functions with QueuedHandler when implemented
-    IActionService *actionService = panel_.get();
-    if (actionService)
-    {
-        log_i("Panel %s implements IActionService - button functions ready for handler registration", currentPanel);
-        // Button function registration will be handled by QueuedHandler in future implementation
-    }
-    else
-    {
-        log_d("Panel %s does not implement IActionService", panelName);
-    }
+    // Update universal button interrupts with this panel's functions
+    UpdatePanelButtonFunctions(panel_.get());
 
     // Set BUSY before loading panel
     SetUiState(UIState::BUSY);
@@ -332,4 +324,40 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
 {
     log_v("TriggerPanelSwitchCallback() called for trigger: %s", triggerId);
     SetUiState(UIState::IDLE);
+}
+
+/// @brief Update universal button interrupts with current panel's functions
+void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
+{
+    log_v("UpdatePanelButtonFunctions() called");
+    
+    if (!panel || !interruptManager_)
+    {
+        log_w("Cannot update button functions - panel or InterruptManager is null");
+        return;
+    }
+    
+    // Try to cast panel to IActionService to get button functions
+    IActionService* actionService = dynamic_cast<IActionService*>(panel);
+    if (!actionService)
+    {
+        log_d("Panel does not implement IActionService - no button functions to update");
+        return;
+    }
+    
+    // Extract button functions from panel
+    void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
+    void (*longPressFunc)(void* context) = actionService->GetLongPressFunction();
+    void* panelContext = actionService->GetPanelContext();
+    
+    if (!shortPressFunc || !longPressFunc)
+    {
+        log_w("Panel provided null button functions");
+        return;
+    }
+    
+    // Inject functions into universal button interrupts
+    interruptManager_->UpdateButtonInterrupts(shortPressFunc, longPressFunc, panelContext);
+    
+    log_i("Updated universal button interrupts with functions from panel");
 }

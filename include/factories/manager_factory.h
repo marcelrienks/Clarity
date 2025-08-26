@@ -39,11 +39,13 @@ class ManagerFactory
     /// @param gpio GPIO provider for hardware access
     /// @param styleService Style service for UI theming
     /// @param preferenceService Preference service for configuration settings
+    /// @param interruptManager Interrupt manager for button function injection
     /// @return Unique pointer to configured PanelManager instance or nullptr on failure
     /// @note ActionManager dependency removed - button handling moved to handler-based system
     static std::unique_ptr<PanelManager> createPanelManager(IDisplayProvider *display, IGpioProvider *gpio,
                                                             IStyleService *styleService, 
-                                                            IPreferenceService *preferenceService);
+                                                            IPreferenceService *preferenceService,
+                                                            InterruptManager *interruptManager);
 
     /// @brief Create StyleManager with optional theme
     /// @param theme Initial theme to apply (defaults to DAY theme)

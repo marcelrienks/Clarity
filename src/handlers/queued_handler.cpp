@@ -81,6 +81,52 @@ void QueuedHandler::Process()
     }
 }
 
+const Interrupt* QueuedHandler::GetHighestPriorityActiveInterrupt()
+{
+    log_v("GetHighestPriorityActiveInterrupt() called");
+    
+    if (queuedInterrupts_.empty())
+    {
+        log_v("No queued interrupts found");
+        return nullptr;
+    }
+    
+    const Interrupt* highestPriority = nullptr;
+    int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
+    
+    // Remove expired entries first to get accurate results
+    const_cast<QueuedHandler*>(this)->RemoveExpiredEntries();
+    
+    for (const auto& entry : queuedInterrupts_)
+    {
+        if (entry.interrupt && entry.interrupt->active)
+        {
+            // For queued interrupts, check if they're ready to execute
+            if (CanExecuteInterrupt(entry.interrupt))
+            {
+                int priorityValue = static_cast<int>(entry.interrupt->priority);
+                if (priorityValue < lowestPriorityValue)
+                {
+                    lowestPriorityValue = priorityValue;
+                    highestPriority = entry.interrupt;
+                }
+            }
+        }
+    }
+    
+    if (highestPriority)
+    {
+        log_d("Highest priority queued interrupt: '%s' (priority %d)", 
+              highestPriority->id, static_cast<int>(highestPriority->priority));
+    }
+    else
+    {
+        log_v("No active queued interrupts ready to execute");
+    }
+    
+    return highestPriority;
+}
+
 bool QueuedHandler::QueueInterrupt(const Interrupt* interrupt)
 {
     log_v("QueueInterrupt() called");
@@ -186,18 +232,19 @@ void QueuedHandler::ProcessQueuedInterrupt(const QueuedInterruptEntry& entry)
     log_v("ProcessQueuedInterrupt() called for: %s", 
           entry.interrupt->id ? entry.interrupt->id : "unknown");
     
-    if (!entry.interrupt->evaluationFunc || !entry.interrupt->executionFunc)
+    if (!entry.interrupt->processFunc)
     {
-        log_w("Invalid interrupt functions for '%s'", 
+        log_w("Invalid interrupt process function for '%s'", 
               entry.interrupt->id ? entry.interrupt->id : "unknown");
         return;
     }
     
-    // Evaluate the condition before executing
-    if (entry.interrupt->evaluationFunc(entry.interrupt->context))
+    // Process the interrupt (evaluate and potentially signal execution)
+    InterruptResult result = entry.interrupt->processFunc(entry.interrupt->context);
+    if (result == InterruptResult::EXECUTE_EFFECT)
     {
-        log_d("Queued interrupt '%s' condition met - executing", entry.interrupt->id);
-        entry.interrupt->executionFunc(entry.interrupt->context);
+        log_d("Queued interrupt '%s' condition met - signaling for execution", entry.interrupt->id);
+        // Note: Actual execution is now handled centrally by InterruptManager via ExecuteByEffect()
     }
     else
     {

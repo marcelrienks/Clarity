@@ -1,11 +1,19 @@
 #include "managers/interrupt_manager.h"
 #include "managers/error_manager.h"
+#include "managers/panel_manager.h"
+#include "managers/style_manager.h"
 #include "handlers/polled_handler.h"
 #include "handlers/queued_handler.h"
+#include "sensors/lights_sensor.h"
+#include "utilities/constants.h"
 #include <Arduino.h>
 #include <cstring>
 
 #include "esp32-hal-log.h"
+
+// External references to global managers (defined in main.cpp)
+extern std::unique_ptr<PanelManager> panelManager;
+extern std::unique_ptr<StyleManager> styleManager;
 
 // Singleton implementation
 InterruptManager& InterruptManager::Instance()
@@ -61,8 +69,8 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
     initialized_ = true;
     log_i("InterruptManager initialized with polled and queued interrupt handlers");
     
-    // Update interrupt contexts now that handlers have created sensors
-    UpdateHandlerContexts();
+    // NOTE: Interrupt contexts are now set directly during registration in
+    // ManagerFactory::RegisterSystemInterrupts(), eliminating the null context window
 }
 
 void InterruptManager::UpdateHandlerContexts()
@@ -113,7 +121,7 @@ bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
 {
     log_v("RegisterInterrupt() called for interrupt: %s", interrupt.id ? interrupt.id : "null");
     
-    if (!interrupt.id || !interrupt.evaluationFunc || !interrupt.executionFunc)
+    if (!interrupt.id || !interrupt.processFunc)
     {
         log_e("Invalid interrupt registration - missing required fields");
         return false;
@@ -238,6 +246,31 @@ void InterruptManager::UpdateInterruptContext(const char* id, void* context)
     }
 }
 
+void InterruptManager::UpdateInterruptFunction(const char* id, void (*newFunc)(void* context))
+{
+    log_w("UpdateInterruptFunction() is deprecated with single-function interrupt design");
+    log_w("Interrupt functions are now updated via button interrupt mechanism");
+    // This method is kept for interface compatibility but is no longer functional
+    // The single processFunc cannot be updated dynamically as it combines evaluation and execution
+}
+
+void InterruptManager::UpdateButtonInterrupts(void (*shortPressFunc)(void* context), 
+                                             void (*longPressFunc)(void* context), 
+                                             void* panelContext)
+{
+    log_v("UpdateButtonInterrupts() called");
+    
+    // Update the execution functions for universal button interrupts
+    UpdateInterruptFunction("universal_short_press", shortPressFunc);
+    UpdateInterruptFunction("universal_long_press", longPressFunc);
+    
+    // Update contexts to point to the panel
+    UpdateInterruptContext("universal_short_press", panelContext);
+    UpdateInterruptContext("universal_long_press", panelContext);
+    
+    log_d("Updated universal button interrupts with panel functions and context");
+}
+
 void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
 {
     log_v("RegisterHandler() called");
@@ -292,34 +325,63 @@ size_t InterruptManager::GetInterruptCount() const
 // Private implementation methods
 void InterruptManager::EvaluateInterrupts()
 {
-    log_v("EvaluateInterrupts() called");
+    log_v("EvaluateInterrupts() called - using cross-handler priority coordination");
     
-    // Sort by priority (CRITICAL = 0, IMPORTANT = 1, NORMAL = 2)
-    // Process in priority order
-    for (int priority = 0; priority <= 2; ++priority)
+    // Get the highest priority active interrupt from each handler
+    const Interrupt* polledHighest = polledHandler_ ? polledHandler_->GetHighestPriorityActiveInterrupt() : nullptr;
+    const Interrupt* queuedHighest = queuedHandler_ ? queuedHandler_->GetHighestPriorityActiveInterrupt() : nullptr;
+    
+    // Determine which interrupt has the highest priority across both handlers
+    const Interrupt* globalHighest = nullptr;
+    
+    if (polledHighest && queuedHighest)
     {
-        for (size_t i = 0; i < interruptCount_; ++i)
+        // Both handlers have active interrupts - compare priorities
+        int polledPriority = static_cast<int>(polledHighest->priority);
+        int queuedPriority = static_cast<int>(queuedHighest->priority);
+        
+        if (polledPriority <= queuedPriority) // Lower number = higher priority
         {
-            Interrupt& interrupt = interrupts_[i];
-            
-            if (!interrupt.active || static_cast<int>(interrupt.priority) != priority)
-                continue;
-                
-            if (ShouldEvaluateInterrupt(interrupt))
-            {
-                ++totalEvaluations_; // Track evaluation count
-                if (interrupt.evaluationFunc(interrupt.context))
-                {
-                    ExecuteInterrupt(interrupt);
-                    // High priority interrupts can preempt lower ones
-                    if (interrupt.priority == Priority::CRITICAL)
-                    {
-                        return;
-                    }
-                }
-                UpdateLastEvaluation(interrupt);
-            }
+            globalHighest = polledHighest;
+            log_d("Cross-handler priority: Polled interrupt '%s' (priority %d) selected over queued '%s' (priority %d)",
+                  polledHighest->id, polledPriority, queuedHighest->id, queuedPriority);
         }
+        else
+        {
+            globalHighest = queuedHighest;
+            log_d("Cross-handler priority: Queued interrupt '%s' (priority %d) selected over polled '%s' (priority %d)",
+                  queuedHighest->id, queuedPriority, polledHighest->id, polledPriority);
+        }
+    }
+    else if (polledHighest)
+    {
+        globalHighest = polledHighest;
+        log_d("Cross-handler priority: Only polled interrupt '%s' (priority %d) active", 
+              polledHighest->id, static_cast<int>(polledHighest->priority));
+    }
+    else if (queuedHighest)
+    {
+        globalHighest = queuedHighest;
+        log_d("Cross-handler priority: Only queued interrupt '%s' (priority %d) active", 
+              queuedHighest->id, static_cast<int>(queuedHighest->priority));
+    }
+    else
+    {
+        log_v("Cross-handler priority: No active interrupts from either handler");
+        return;
+    }
+    
+    // Execute the highest priority interrupt across all handlers
+    if (globalHighest)
+    {
+        log_i("Executing global highest priority interrupt: '%s' (priority %d)", 
+              globalHighest->id, static_cast<int>(globalHighest->priority));
+        
+        ++totalEvaluations_;
+        // Cast away const since we need to update execution statistics
+        Interrupt* mutableInterrupt = const_cast<Interrupt*>(globalHighest);
+        ExecuteInterrupt(*mutableInterrupt);
+        UpdateLastEvaluation(*mutableInterrupt);
     }
 }
 
@@ -338,20 +400,45 @@ void InterruptManager::ExecuteInterrupt(Interrupt& interrupt)
         else
         {
             log_w("Failed to queue interrupt '%s' - executing immediately", interrupt.id);
-            // Fallback to immediate execution if queueing fails
-            if (interrupt.executionFunc && interrupt.context)
-            {
-                interrupt.executionFunc(interrupt.context);
-            }
+            // Fallback to immediate effect-based execution if queueing fails
+            ExecuteByEffect(interrupt);
         }
         return;
     }
     
-    // Handle immediate execution (polled interrupts)
-    if (interrupt.executionFunc && interrupt.context)
+    // Handle immediate execution (polled interrupts) - now using effect-based routing
+    log_d("Executing interrupt '%s' with effect %d", interrupt.id, static_cast<int>(interrupt.effect));
+    ExecuteByEffect(interrupt);
+}
+
+void InterruptManager::ExecuteByEffect(const Interrupt& interrupt)
+{
+    log_v("ExecuteByEffect() called for interrupt '%s' with effect %d", 
+          interrupt.id, static_cast<int>(interrupt.effect));
+    
+    switch (interrupt.effect)
     {
-        log_d("Executing interrupt '%s' with effect %d", interrupt.id, static_cast<int>(interrupt.effect));
-        interrupt.executionFunc(interrupt.context);
+        case InterruptEffect::LOAD_PANEL:
+            LoadPanelFromInterrupt(interrupt);
+            CheckForRestoration(interrupt);
+            break;
+            
+        case InterruptEffect::SET_THEME:
+            ApplyThemeFromInterrupt(interrupt);
+            break;
+            
+        case InterruptEffect::SET_PREFERENCE:
+            ApplyPreferenceFromInterrupt(interrupt);
+            break;
+            
+        case InterruptEffect::BUTTON_ACTION:
+            ExecuteButtonAction(interrupt);
+            break;
+            
+        default:
+            log_w("Unknown interrupt effect: %d", static_cast<int>(interrupt.effect));
+            // No fallback execution - all effects must be handled explicitly
+            break;
     }
 }
 
@@ -522,6 +609,187 @@ void InterruptManager::CompactInterruptArray()
     if (oldCount != interruptCount_)
     {
         log_i("Compacted interrupt array: %d -> %d interrupts", oldCount, interruptCount_);
+    }
+}
+
+// Effect-specific execution methods
+void InterruptManager::LoadPanelFromInterrupt(const Interrupt& interrupt)
+{
+    log_v("LoadPanelFromInterrupt() called for: %s", interrupt.id);
+    
+    if (!panelManager)
+    {
+        log_e("Cannot load panel - PanelManager is null");
+        return;
+    }
+    
+    // Determine panel name based on interrupt ID
+    const char* panelName = nullptr;
+    
+    if (strcmp(interrupt.id, "key_present") == 0)
+    {
+        panelName = PanelNames::KEY;
+    }
+    else if (strcmp(interrupt.id, "lock_state") == 0)
+    {
+        panelName = PanelNames::LOCK;
+    }
+    else if (strcmp(interrupt.id, "error_occurred") == 0)
+    {
+        panelName = PanelNames::ERROR;
+    }
+    else
+    {
+        log_w("Unknown panel loading interrupt: %s", interrupt.id);
+        return;
+    }
+    
+    log_i("Loading panel '%s' triggered by interrupt '%s'", panelName, interrupt.id);
+    panelManager->CreateAndLoadPanel(panelName, true);  // Mark as trigger-driven
+}
+
+void InterruptManager::CheckForRestoration(const Interrupt& interrupt)
+{
+    log_v("CheckForRestoration() called for: %s", interrupt.id);
+    
+    // Check if this is a panel-loading interrupt that might trigger restoration
+    if (interrupt.effect != InterruptEffect::LOAD_PANEL)
+    {
+        return; // Only panel-loading interrupts participate in restoration
+    }
+    
+    // Delegate to centralized restoration logic
+    HandleRestoration();
+}
+
+void InterruptManager::ApplyThemeFromInterrupt(const Interrupt& interrupt)
+{
+    log_v("ApplyThemeFromInterrupt() called for: %s", interrupt.id);
+    
+    if (!styleManager)
+    {
+        log_e("Cannot apply theme - StyleManager is null");
+        return;
+    }
+    
+    // Theme changes are determined by lights sensor context
+    if (strcmp(interrupt.id, "lights_state") == 0)
+    {
+        // Get lights sensor from context and determine theme
+        if (interrupt.context)
+        {
+            LightsSensor* sensor = static_cast<LightsSensor*>(interrupt.context);
+            bool lightsOn = sensor->GetLightsState();
+            const char* newTheme = lightsOn ? "NIGHT" : "DAY";
+            log_i("Lights %s - switching to %s theme", lightsOn ? "ON" : "OFF", newTheme);
+            styleManager->SetTheme(newTheme);
+        }
+    }
+}
+
+void InterruptManager::ApplyPreferenceFromInterrupt(const Interrupt& interrupt)
+{
+    log_v("ApplyPreferenceFromInterrupt() called for: %s", interrupt.id);
+    
+    // TODO: Implement preference updates via interrupt system
+    // This would handle configuration changes triggered by sensors or conditions
+    log_d("Preference update for interrupt '%s' - placeholder implementation", interrupt.id);
+}
+
+void InterruptManager::ExecuteButtonAction(const Interrupt& interrupt)
+{
+    log_v("ExecuteButtonAction() called for: %s", interrupt.id);
+    
+    // Button actions are now handled through the universal button system
+    // The actual button function is injected via UpdateButtonInterrupts()
+    // For now, just log that the button action was triggered
+    log_i("Button action triggered for interrupt '%s'", interrupt.id);
+    
+    // TODO: In future, this could trigger the injected panel function
+    // but current design handles this through QueuedHandler processing
+}
+
+void InterruptManager::HandleRestoration()
+{
+    log_v("HandleRestoration() called");
+    
+    if (!panelManager)
+    {
+        log_e("Cannot handle restoration - PanelManager is null");
+        return;
+    }
+    
+    // Find the highest priority active panel-loading interrupt
+    const Interrupt* highestPriorityActive = nullptr;
+    int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
+    
+    for (size_t i = 0; i < interruptCount_; ++i)
+    {
+        const Interrupt& interrupt = interrupts_[i];
+        
+        // Only consider active panel-loading interrupts
+        if (!interrupt.active || interrupt.effect != InterruptEffect::LOAD_PANEL)
+            continue;
+        
+        // Check if this interrupt's condition is currently true
+        if (interrupt.processFunc && 
+            interrupt.processFunc(interrupt.context) == InterruptResult::EXECUTE_EFFECT)
+        {
+            int priorityValue = static_cast<int>(interrupt.priority);
+            if (priorityValue < lowestPriorityValue)
+            {
+                lowestPriorityValue = priorityValue;
+                highestPriorityActive = &interrupt;
+            }
+        }
+    }
+    
+    if (highestPriorityActive)
+    {
+        // There's an active panel-loading interrupt - ensure its panel is loaded
+        const char* currentPanel = panelManager->GetCurrentPanel();
+        const char* requiredPanel = nullptr;
+        
+        // Determine required panel based on interrupt ID
+        if (strcmp(highestPriorityActive->id, "key_present") == 0)
+            requiredPanel = PanelNames::KEY;
+        else if (strcmp(highestPriorityActive->id, "lock_state") == 0)
+            requiredPanel = PanelNames::LOCK;
+        else if (strcmp(highestPriorityActive->id, "error_occurred") == 0)
+            requiredPanel = PanelNames::ERROR;
+        
+        if (requiredPanel && currentPanel && strcmp(currentPanel, requiredPanel) != 0)
+        {
+            log_i("Restoration: Loading priority panel '%s' for active interrupt '%s'", 
+                  requiredPanel, highestPriorityActive->id);
+            panelManager->CreateAndLoadPanel(requiredPanel, true);
+        }
+        else if (requiredPanel)
+        {
+            log_d("Restoration: Priority panel '%s' already loaded for interrupt '%s'", 
+                  requiredPanel, highestPriorityActive->id);
+        }
+    }
+    else
+    {
+        // No active panel-loading interrupts - restore to user's last panel
+        const char* currentPanel = panelManager->GetCurrentPanel();
+        const char* restorationPanel = panelManager->GetRestorationPanel();
+        
+        // Only restore if current panel is trigger-driven and different from restoration panel
+        if (panelManager->IsCurrentPanelTriggerDriven() && 
+            currentPanel && restorationPanel && 
+            strcmp(currentPanel, restorationPanel) != 0)
+        {
+            log_i("Restoration: No active triggers - restoring to user panel '%s' from trigger panel '%s'", 
+                  restorationPanel, currentPanel);
+            panelManager->CreateAndLoadPanel(restorationPanel, true);
+        }
+        else
+        {
+            log_d("Restoration: No restoration needed - current panel '%s' is appropriate", 
+                  currentPanel ? currentPanel : "null");
+        }
     }
 }
 

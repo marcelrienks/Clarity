@@ -4,6 +4,9 @@
 #include "sensors/key_not_present_sensor.h"
 #include "sensors/lock_sensor.h"
 #include "sensors/lights_sensor.h"
+#ifdef CLARITY_DEBUG
+#include "sensors/debug_error_sensor.h"
+#endif
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -29,13 +32,23 @@ PolledHandler::PolledHandler(IGpioProvider* gpioProvider)
         lockSensor_ = std::make_unique<LockSensor>(gpioProvider_);
         lightsSensor_ = std::make_unique<LightsSensor>(gpioProvider_);
         
+#ifdef CLARITY_DEBUG
+        // Create debug error sensor (debug builds only)
+        debugErrorSensor_ = std::make_unique<DebugErrorSensor>(gpioProvider_);
+#endif
+        
         // Initialize all sensors
         keyPresentSensor_->Init();
         keyNotPresentSensor_->Init();
         lockSensor_->Init();
         lightsSensor_->Init();
         
+#ifdef CLARITY_DEBUG
+        debugErrorSensor_->Init();
+        log_i("PolledHandler created and initialized 5 GPIO sensors: KeyPresent, KeyNotPresent, Lock, Lights, DebugError (debug build)");
+#else
         log_i("PolledHandler created and initialized 4 GPIO sensors: KeyPresent, KeyNotPresent, Lock, Lights");
+#endif
     } else {
         log_e("PolledHandler: GPIO provider is null - sensors not created");
     }
@@ -43,7 +56,11 @@ PolledHandler::PolledHandler(IGpioProvider* gpioProvider)
 
 PolledHandler::~PolledHandler() 
 {
+#ifdef CLARITY_DEBUG
+    log_d("PolledHandler destructor - cleaning up 5 GPIO sensors (including debug sensor)");
+#else
     log_d("PolledHandler destructor - cleaning up 4 GPIO sensors");
+#endif
     // Unique_ptr will automatically clean up sensors
 }
 
@@ -60,6 +77,44 @@ void PolledHandler::Process()
             EvaluateInterrupt(ref);
         }
     }
+}
+
+const Interrupt* PolledHandler::GetHighestPriorityActiveInterrupt()
+{
+    log_v("GetHighestPriorityActiveInterrupt() called");
+    
+    const Interrupt* highestPriority = nullptr;
+    int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
+    
+    for (auto& ref : polledInterrupts_)
+    {
+        if (ref.interrupt && ref.interrupt->active)
+        {
+            // Check if interrupt's condition is currently true
+            if (ref.interrupt->processFunc && 
+                ref.interrupt->processFunc(ref.interrupt->context) == InterruptResult::EXECUTE_EFFECT)
+            {
+                int priorityValue = static_cast<int>(ref.interrupt->priority);
+                if (priorityValue < lowestPriorityValue)
+                {
+                    lowestPriorityValue = priorityValue;
+                    highestPriority = ref.interrupt;
+                }
+            }
+        }
+    }
+    
+    if (highestPriority)
+    {
+        log_d("Highest priority polled interrupt: '%s' (priority %d)", 
+              highestPriority->id, static_cast<int>(highestPriority->priority));
+    }
+    else
+    {
+        log_v("No active polled interrupts found");
+    }
+    
+    return highestPriority;
 }
 
 void PolledHandler::RegisterInterrupt(const Interrupt* interrupt)
@@ -162,20 +217,21 @@ void PolledHandler::EvaluateInterrupt(PolledInterruptRef& ref)
 {
     log_v("EvaluateInterrupt() called for: %s", ref.interrupt->id ? ref.interrupt->id : "unknown");
     
-    if (!ref.interrupt->evaluationFunc || !ref.interrupt->executionFunc)
+    if (!ref.interrupt->processFunc)
     {
-        log_w("Invalid interrupt functions for '%s'", ref.interrupt->id ? ref.interrupt->id : "unknown");
+        log_w("Invalid interrupt process function for '%s'", ref.interrupt->id ? ref.interrupt->id : "unknown");
         return;
     }
     
     // Update evaluation timestamp first to prevent rapid re-evaluation
     ref.lastEvaluation = millis();
     
-    // Evaluate the condition
-    if (ref.interrupt->evaluationFunc(ref.interrupt->context))
+    // Process the interrupt (evaluate and potentially signal execution)
+    InterruptResult result = ref.interrupt->processFunc(ref.interrupt->context);
+    if (result == InterruptResult::EXECUTE_EFFECT)
     {
-        log_d("Polled interrupt '%s' condition met - executing", ref.interrupt->id);
-        ref.interrupt->executionFunc(ref.interrupt->context);
+        log_d("Polled interrupt '%s' condition met - signaling for execution", ref.interrupt->id);
+        // Note: Actual execution is now handled centrally by InterruptManager via ExecuteByEffect()
     }
 }
 

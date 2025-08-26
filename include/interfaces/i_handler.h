@@ -1,5 +1,7 @@
 #pragma once
 
+#include "utilities/types.h"
+
 /**
  * @interface IHandler
  * @brief Base interface for coordinated interrupt handlers in the Clarity system
@@ -40,4 +42,13 @@ public:
      * InterruptManager for priority-based execution.
      */
     virtual void Process() = 0;
+    
+    /**
+     * @brief Get the highest priority active interrupt from this handler
+     * @details Used by InterruptManager for cross-handler priority coordination.
+     * Only returns interrupts that are currently active and whose evaluation
+     * function returns true.
+     * @return Pointer to highest priority active interrupt, or nullptr if none active
+     */
+    virtual const struct Interrupt* GetHighestPriorityActiveInterrupt() = 0;
 };
