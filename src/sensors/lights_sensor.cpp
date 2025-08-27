@@ -21,6 +21,10 @@ void LightsSensor::Init()
 
     gpioProvider_->PinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
     
+    // Initialize the sensor state to avoid false change detection
+    previousLightsState_ = readLightsState();
+    log_d("Lights sensor initial state: %s", previousLightsState_ ? "ON" : "OFF");
+    
     // Register coordinated interrupts instead of direct GPIO interrupts
     bool polledRegistered = RegisterPolledInterrupt(
         "lights_state_monitor",       // Unique ID
@@ -83,12 +87,13 @@ bool LightsSensor::HasStateChanged()
     log_v("HasStateChanged() called");
     
     bool currentState = readLightsState();
+    bool previousState = previousLightsState_; // Save before DetectChange modifies it
     bool changed = DetectChange(currentState, previousLightsState_);
     
     if (changed)
     {
         log_d("Lights state changed from %s to %s", 
-              previousLightsState_ ? "ON" : "OFF",
+              previousState ? "ON" : "OFF",
               currentState ? "ON" : "OFF");
     }
     

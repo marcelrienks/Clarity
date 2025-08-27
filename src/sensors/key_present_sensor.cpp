@@ -59,7 +59,7 @@ bool KeyPresentSensor::HasStateChanged()
     
     if (changed) {
         log_i("KeyPresentSensor state changed: %s -> %s", 
-              previousState_ ? "NOT_PRESENT" : "PRESENT",
+              previousState_ ? "PRESENT" : "NOT_PRESENT",
               currentState ? "PRESENT" : "NOT_PRESENT");
     }
     

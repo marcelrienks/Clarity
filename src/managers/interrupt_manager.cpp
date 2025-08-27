@@ -663,6 +663,11 @@ void InterruptManager::LoadPanelFromInterrupt(const Interrupt& interrupt)
     {
         panelName = PanelNames::KEY;
     }
+    else if (strcmp(interrupt.id, "key_not_present") == 0)
+    {
+        // Load key panel with red icon indication
+        panelName = PanelNames::KEY;
+    }
     else if (strcmp(interrupt.id, "lock_state") == 0)
     {
         panelName = PanelNames::LOCK;
@@ -750,7 +755,7 @@ void InterruptManager::ApplyThemeFromInterrupt(const Interrupt& interrupt)
         {
             LightsSensor* sensor = static_cast<LightsSensor*>(interrupt.context);
             bool lightsOn = sensor->GetLightsState();
-            const char* newTheme = lightsOn ? "NIGHT" : "DAY";
+            const char* newTheme = lightsOn ? Themes::NIGHT : Themes::DAY;
             log_i("Lights %s - switching to %s theme", lightsOn ? "ON" : "OFF", newTheme);
             styleManager->SetTheme(newTheme);
         }
@@ -836,6 +841,8 @@ void InterruptManager::HandleRestoration()
         
         // Determine required panel based on interrupt ID
         if (strcmp(highestPriorityActive->id, "key_present") == 0)
+            requiredPanel = PanelNames::KEY;
+        else if (strcmp(highestPriorityActive->id, "key_not_present") == 0)
             requiredPanel = PanelNames::KEY;
         else if (strcmp(highestPriorityActive->id, "lock_state") == 0)
             requiredPanel = PanelNames::LOCK;

@@ -149,12 +149,14 @@ void StyleManager::SetTheme(const char *theme)
     lv_style_set_line_width(&gaugeDangerSectionStyle, 5);
     lv_style_set_line_color(&gaugeDangerSectionStyle, colours.gaugeDanger);
 
-    // lv_obj_t *current_screen = lv_scr_act();
-    // if (current_screen != nullptr) {
-    //     ApplyThemeToScreen(current_screen);
-    //     // Force LVGL to refresh the display
-    //     lv_obj_invalidate(current_screen);
-    // }
+    lv_obj_t *current_screen = lv_scr_act();
+    if (current_screen != nullptr) {
+        ApplyThemeToScreen(current_screen);
+        // Force complete refresh of all child objects recursively
+        lv_obj_refresh_style(current_screen, LV_PART_ANY, LV_STYLE_PROP_ANY);
+        // Force LVGL to refresh the display
+        lv_obj_invalidate(current_screen);
+    }
 }
 
 // Accessor Methods
