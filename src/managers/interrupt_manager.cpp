@@ -141,7 +141,18 @@ void InterruptManager::Process()
     // Control evaluation frequency to prevent CPU overload
     if (currentTime - lastEvaluationTime_ >= INTERRUPT_EVALUATION_INTERVAL_MS)
     {
-        EvaluateInterrupts();
+        // Clear exclusion group tracking from previous cycle
+        executedGroups_.clear();
+        
+        // Phase 1: Evaluate all interrupts (single evaluation per cycle)
+        EvaluateAllInterrupts();
+        
+        // Phase 2: Execute interrupts based on rules
+        ExecuteInterruptsWithRules();
+        
+        // Phase 3: Clear state changes for next cycle
+        ClearStateChanges();
+        
         lastEvaluationTime_ = currentTime;
     }
     
@@ -882,5 +893,140 @@ void InterruptManager::HandleRestoration()
                   currentPanel ? currentPanel : "null");
         }
     }
+}
+
+void InterruptManager::EvaluateAllInterrupts()
+{
+    log_v("EvaluateAllInterrupts() called");
+    
+    // Evaluate all registered interrupts
+    for (size_t i = 0; i < interruptCount_; ++i)
+    {
+        Interrupt& interrupt = interrupts_[i];
+        
+        if (!interrupt.active || !interrupt.processFunc)
+        {
+            log_d("NEW ARCHITECTURE: Skipping interrupt '%s' - active:%s, processFunc:%p", 
+                  interrupt.id ? interrupt.id : "null", 
+                  interrupt.active ? "true" : "false",
+                  interrupt.processFunc);
+            continue;
+        }
+        
+        log_d("NEW ARCHITECTURE: Evaluating interrupt '%s'", interrupt.id ? interrupt.id : "null");
+            
+        if (ShouldEvaluateInterrupt(interrupt))
+        {
+            log_d("NEW ARCHITECTURE: Should evaluate interrupt '%s' - proceeding", interrupt.id);
+            // Evaluate once and cache result
+            InterruptResult result = interrupt.processFunc(interrupt.context);
+            interrupt.stateChanged = (result == InterruptResult::EXECUTE_EFFECT);
+            interrupt.lastEvaluation = millis();
+            
+            log_d("NEW ARCHITECTURE: Interrupt '%s' result:%d, stateChanged:%s", 
+                  interrupt.id, static_cast<int>(result), 
+                  interrupt.stateChanged ? "true" : "false");
+            
+            if (interrupt.stateChanged)
+            {
+                log_i("NEW ARCHITECTURE: Interrupt '%s' state changed - marked for execution", interrupt.id);
+            }
+        }
+        else
+        {
+            log_d("NEW ARCHITECTURE: Interrupt '%s' should not be evaluated yet", interrupt.id);
+        }
+    }
+}
+
+void InterruptManager::ExecuteInterruptsWithRules()
+{
+    log_i("NEW ARCHITECTURE: ExecuteInterruptsWithRules() called");
+    
+    // Sort interrupts by priority for execution order
+    // Since we're using a static array, we'll iterate in priority order
+    for (int priority = 0; priority <= 2; ++priority) // CRITICAL=0, IMPORTANT=1, NORMAL=2
+    {
+        for (size_t i = 0; i < interruptCount_; ++i)
+        {
+            Interrupt& interrupt = interrupts_[i];
+            
+            if (interrupt.stateChanged && 
+                static_cast<int>(interrupt.priority) == priority &&
+                CanExecute(interrupt))
+            {
+                log_i("NEW ARCHITECTURE: Executing interrupt '%s' (priority %d, mode %d)", 
+                      interrupt.id, priority, static_cast<int>(interrupt.executionMode));
+                      
+                ExecuteInterrupt(interrupt);
+                ++totalExecutions_;
+                
+                // Track exclusion group if applicable
+                if (interrupt.executionMode == InterruptExecutionMode::EXCLUSIVE && 
+                    interrupt.exclusionGroup)
+                {
+                    executedGroups_.push_back(interrupt.exclusionGroup);
+                }
+            }
+        }
+    }
+}
+
+bool InterruptManager::CanExecute(const Interrupt& interrupt) const
+{
+    log_d("NEW ARCHITECTURE: CanExecute() called for interrupt '%s'", interrupt.id);
+    
+    switch (interrupt.executionMode)
+    {
+        case InterruptExecutionMode::ALWAYS:
+            log_i("NEW ARCHITECTURE: Interrupt '%s' has ALWAYS mode - can execute", interrupt.id);
+            return true;
+            
+        case InterruptExecutionMode::EXCLUSIVE:
+            if (interrupt.exclusionGroup && IsGroupExecuted(interrupt.exclusionGroup))
+            {
+                log_d("Interrupt '%s' blocked - exclusion group '%s' already executed", 
+                      interrupt.id, interrupt.exclusionGroup);
+                return false;
+            }
+            return true;
+            
+        case InterruptExecutionMode::CONDITIONAL:
+            if (interrupt.canExecuteInContext)
+            {
+                bool canExecute = interrupt.canExecuteInContext(currentContext_);
+                log_d("Interrupt '%s' conditional check returned: %s", 
+                      interrupt.id, canExecute ? "true" : "false");
+                return canExecute;
+            }
+            return true;
+            
+        default:
+            return true;
+    }
+}
+
+void InterruptManager::ClearStateChanges()
+{
+    log_v("ClearStateChanges() called");
+    
+    for (size_t i = 0; i < interruptCount_; ++i)
+    {
+        interrupts_[i].stateChanged = false;
+    }
+}
+
+bool InterruptManager::IsGroupExecuted(const char* group) const
+{
+    if (!group) return false;
+    
+    for (const auto& executedGroup : executedGroups_)
+    {
+        if (executedGroup && strcmp(executedGroup, group) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 

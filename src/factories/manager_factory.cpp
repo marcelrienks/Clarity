@@ -183,8 +183,12 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::LOAD_PANEL,
         .processFunc = InterruptCallbacks::KeyPresentProcess,
         .context = polledHandler->GetKeyPresentSensor(),  // Direct sensor context
+        .executionMode = InterruptExecutionMode::EXCLUSIVE,
+        .exclusionGroup = "key_states",
+        .canExecuteInContext = nullptr,
         .data = {},  // Union data initialized empty
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(keyPresentInterrupt);
@@ -197,8 +201,12 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::LOAD_PANEL,
         .processFunc = InterruptCallbacks::KeyNotPresentProcess,
         .context = polledHandler->GetKeyNotPresentSensor(),  // Direct sensor context
+        .executionMode = InterruptExecutionMode::EXCLUSIVE,
+        .exclusionGroup = "key_states",
+        .canExecuteInContext = nullptr,
         .data = {},
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(keyNotPresentInterrupt);
@@ -211,13 +219,17 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::LOAD_PANEL,
         .processFunc = InterruptCallbacks::LockStateProcess,
         .context = polledHandler->GetLockSensor(),  // Direct sensor context
+        .executionMode = InterruptExecutionMode::EXCLUSIVE,
+        .exclusionGroup = "key_states",
+        .canExecuteInContext = nullptr,
         .data = {},
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(lockStateInterrupt);
     
-    // 4. Lights State Interrupt (POLLED, NORMAL priority)
+    // 4. Lights State Interrupt (POLLED, NORMAL priority) - ALWAYS executes
     Interrupt lightsStateInterrupt = {
         .id = "lights_state",
         .priority = Priority::NORMAL,
@@ -225,8 +237,12 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::SET_THEME,
         .processFunc = InterruptCallbacks::LightsStateProcess,
         .context = polledHandler->GetLightsSensor(),  // Direct sensor context
+        .executionMode = InterruptExecutionMode::ALWAYS,  // Always execute for theme changes
+        .exclusionGroup = nullptr,
+        .canExecuteInContext = nullptr,
         .data = {},
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(lightsStateInterrupt);
@@ -239,13 +255,17 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::LOAD_PANEL,
         .processFunc = InterruptCallbacks::ErrorOccurredProcess,
         .context = &ErrorManager::Instance(),  // Direct ErrorManager context
+        .executionMode = InterruptExecutionMode::EXCLUSIVE,
+        .exclusionGroup = nullptr,
+        .canExecuteInContext = nullptr,
         .data = {},
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(errorInterrupt);
     
-    // 6. Short Press Interrupt (QUEUED, IMPORTANT priority)
+    // 6. Short Press Interrupt (QUEUED, IMPORTANT priority) - CONDITIONAL based on panel
     Interrupt shortPressInterrupt = {
         .id = "universal_short_press",
         .priority = Priority::IMPORTANT,
@@ -253,13 +273,17 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::BUTTON_ACTION,
         .processFunc = InterruptCallbacks::ShortPressProcess,
         .context = queuedHandler->GetActionButtonSensor(),  // Direct sensor context
+        .executionMode = InterruptExecutionMode::CONDITIONAL,
+        .exclusionGroup = nullptr,
+        .canExecuteInContext = nullptr,  // TODO: Add context check for config panel restriction
         .data = {},
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(shortPressInterrupt);
     
-    // 7. Long Press Interrupt (QUEUED, NORMAL priority) 
+    // 7. Long Press Interrupt (QUEUED, NORMAL priority) - CONDITIONAL based on panel
     Interrupt longPressInterrupt = {
         .id = "universal_long_press",
         .priority = Priority::NORMAL,
@@ -267,8 +291,12 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .effect = InterruptEffect::BUTTON_ACTION,
         .processFunc = InterruptCallbacks::LongPressProcess,
         .context = queuedHandler->GetActionButtonSensor(),  // Direct sensor context
+        .executionMode = InterruptExecutionMode::CONDITIONAL,
+        .exclusionGroup = nullptr,
+        .canExecuteInContext = nullptr,  // TODO: Add context check for config panel restriction
         .data = {},
         .active = true,
+        .stateChanged = false,
         .lastEvaluation = 0
     };
     interruptManager->RegisterInterrupt(longPressInterrupt);

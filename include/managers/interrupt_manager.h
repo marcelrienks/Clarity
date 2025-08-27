@@ -80,10 +80,20 @@ private:
     void ProcessHandlers();
     void UpdateHandlerContexts();
     
+    // New single-list architecture methods
+    void EvaluateAllInterrupts();
+    void ExecuteInterruptsWithRules();
+    bool CanExecute(const Interrupt& interrupt) const;
+    void ClearStateChanges();
+    bool IsGroupExecuted(const char* group) const;
+    
     // Helper methods
     Interrupt* FindInterrupt(const char* id);
     bool ShouldEvaluateInterrupt(const Interrupt& interrupt) const;
     void UpdateLastEvaluation(Interrupt& interrupt);
+    
+    // Context management
+    void SetCurrentContext(void* context) { currentContext_ = context; }
     
     // Effect-specific execution methods
     void LoadPanelFromInterrupt(const Interrupt& interrupt);
@@ -106,6 +116,12 @@ private:
     // Direct references to default handlers for routing
     std::shared_ptr<class PolledHandler> polledHandler_;
     std::shared_ptr<class QueuedHandler> queuedHandler_;
+    
+    // Exclusion group tracking for current cycle
+    std::vector<const char*> executedGroups_;
+    
+    // Current context for conditional execution checks
+    void* currentContext_ = nullptr;
     
     unsigned long lastEvaluationTime_ = 0;
     bool initialized_ = false;

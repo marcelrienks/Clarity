@@ -205,6 +205,15 @@ enum class InterruptResult
     EXECUTE_EFFECT    ///< Execute the interrupt's effect (condition is met)
 };
 
+/// @enum InterruptExecutionMode
+/// @brief Defines how an interrupt can execute relative to others
+enum class InterruptExecutionMode
+{
+    ALWAYS,      ///< Always executes when triggered (e.g., lights for theme)
+    EXCLUSIVE,   ///< Only one interrupt from exclusion group can execute per cycle
+    CONDITIONAL  ///< Execution depends on context check
+};
+
 /// @struct Interrupt
 /// @brief Memory-optimized interrupt structure for coordinated handler system
 ///
@@ -231,6 +240,11 @@ struct Interrupt
     InterruptResult (*processFunc)(void* context);   ///< Single function - evaluate AND signal execution
     void* context;                                    ///< Sensor or service context
     
+    // Execution control fields
+    InterruptExecutionMode executionMode = InterruptExecutionMode::EXCLUSIVE; ///< How this interrupt executes
+    const char* exclusionGroup = nullptr;             ///< Group name for EXCLUSIVE mode (e.g., "key_states")
+    bool (*canExecuteInContext)(void* currentContext) = nullptr; ///< For CONDITIONAL mode
+    
     // Effect-specific data (union for memory efficiency)
     union {
         struct { 
@@ -251,5 +265,6 @@ struct Interrupt
     
     // Runtime state
     bool active = false;                              ///< Current activation state
+    bool stateChanged = false;                        ///< Cached evaluation result for this cycle
     unsigned long lastEvaluation = 0;               ///< Performance tracking
 };
