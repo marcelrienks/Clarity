@@ -81,50 +81,54 @@ void QueuedHandler::Process()
     }
 }
 
-const Interrupt* QueuedHandler::GetHighestPriorityActiveInterrupt()
+void QueuedHandler::RegisterInterrupt(struct Interrupt* interrupt)
 {
-    log_v("GetHighestPriorityActiveInterrupt() called");
+    log_v("HYBRID QUEUED: RegisterInterrupt() called");
     
-    if (queuedInterrupts_.empty())
+    if (!interrupt)
     {
-        log_v("No queued interrupts found");
-        return nullptr;
+        log_w("Cannot register null interrupt");
+        return;
     }
     
-    const Interrupt* highestPriority = nullptr;
-    int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
-    
-    // Remove expired entries first to get accurate results
-    const_cast<QueuedHandler*>(this)->RemoveExpiredEntries();
-    
-    for (const auto& entry : queuedInterrupts_)
+    if (!interrupt->id)
     {
-        if (entry.interrupt && entry.interrupt->active)
-        {
-            // For queued interrupts, check if they're ready to execute
-            if (CanExecuteInterrupt(entry.interrupt))
-            {
-                int priorityValue = static_cast<int>(entry.interrupt->priority);
-                if (priorityValue < lowestPriorityValue)
-                {
-                    lowestPriorityValue = priorityValue;
-                    highestPriority = entry.interrupt;
-                }
-            }
-        }
+        log_w("Cannot register interrupt with null ID");
+        return;
     }
     
-    if (highestPriority)
+    if (interrupt->source != InterruptSource::QUEUED)
     {
-        log_d("Highest priority queued interrupt: '%s' (priority %d)", 
-              highestPriority->id, static_cast<int>(highestPriority->priority));
+        log_w("Interrupt '%s' is not a QUEUED interrupt", interrupt->id);
+        return;
+    }
+    
+    // For QueuedHandler, we don't store interrupts permanently like PolledHandler
+    // Instead, interrupts are queued dynamically when they need to be processed
+    log_d("HYBRID QUEUED: Interrupt '%s' registered with QueuedHandler (queued on demand)", interrupt->id);
+}
+
+void QueuedHandler::UnregisterInterrupt(const char* id)
+{
+    log_v("HYBRID QUEUED: UnregisterInterrupt() called for: %s", id ? id : "null");
+    
+    if (!id) return;
+    
+    // Remove any queued instances of this interrupt
+    auto it = std::remove_if(queuedInterrupts_.begin(), queuedInterrupts_.end(),
+        [id](const QueuedInterruptEntry& entry) {
+            return entry.interrupt && entry.interrupt->id && strcmp(entry.interrupt->id, id) == 0;
+        });
+    
+    if (it != queuedInterrupts_.end())
+    {
+        queuedInterrupts_.erase(it, queuedInterrupts_.end());
+        log_d("HYBRID QUEUED: Removed queued instances of interrupt '%s'", id);
     }
     else
     {
-        log_v("No active queued interrupts ready to execute");
+        log_d("HYBRID QUEUED: No queued instances of interrupt '%s' found", id);
     }
-    
-    return highestPriority;
 }
 
 bool QueuedHandler::QueueInterrupt(const Interrupt* interrupt)

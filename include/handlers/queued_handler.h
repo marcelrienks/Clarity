@@ -31,7 +31,8 @@ public:
     
     // IHandler interface
     void Process() override;
-    const Interrupt* GetHighestPriorityActiveInterrupt() override;
+    void RegisterInterrupt(struct Interrupt* interrupt) override;
+    void UnregisterInterrupt(const char* id) override;
     
     // Queue management
     bool QueueInterrupt(const Interrupt* interrupt);

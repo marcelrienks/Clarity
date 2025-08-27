@@ -7,6 +7,7 @@
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "managers/error_manager.h"
+#include "managers/interrupt_manager.h"
 #include "utilities/constants.h"  // For PanelNames
 #include <esp32-hal-log.h>
 
@@ -28,6 +29,11 @@ InterruptResult InterruptCallbacks::KeyPresentProcess(void* context) {
         if (keyPresent) {
             log_d("Key present state changed - key detected");
             return InterruptResult::EXECUTE_EFFECT;
+        } else {
+            log_d("Key present state changed - key removed, deactivating interrupt");
+            // Explicitly deactivate this interrupt when key is removed
+            InterruptManager::Instance().DeactivateInterrupt("key_present");
+            return InterruptResult::NO_ACTION;
         }
     }
     return InterruptResult::NO_ACTION;
@@ -46,6 +52,11 @@ InterruptResult InterruptCallbacks::KeyNotPresentProcess(void* context) {
         if (keyNotPresent) {
             log_d("Key not present state changed - key removed");
             return InterruptResult::EXECUTE_EFFECT;
+        } else {
+            log_d("Key not present state changed - key inserted, deactivating interrupt");
+            // Explicitly deactivate this interrupt when key is inserted
+            InterruptManager::Instance().DeactivateInterrupt("key_not_present");
+            return InterruptResult::NO_ACTION;
         }
     }
     return InterruptResult::NO_ACTION;
@@ -64,6 +75,11 @@ InterruptResult InterruptCallbacks::LockStateProcess(void* context) {
         if (lockEngaged) {
             log_d("Lock state changed - lock engaged");
             return InterruptResult::EXECUTE_EFFECT;
+        } else {
+            log_d("Lock state changed - lock disengaged, deactivating interrupt");
+            // Explicitly deactivate this interrupt when lock is disengaged
+            InterruptManager::Instance().DeactivateInterrupt("lock_state");
+            return InterruptResult::NO_ACTION;
         }
     }
     return InterruptResult::NO_ACTION;

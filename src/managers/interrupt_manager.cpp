@@ -5,6 +5,9 @@
 #include "handlers/polled_handler.h"
 #include "handlers/queued_handler.h"
 #include "sensors/lights_sensor.h"
+#include "sensors/lock_sensor.h"
+#include "sensors/key_present_sensor.h"
+#include "sensors/key_not_present_sensor.h"
 #include "utilities/constants.h"
 #include <Arduino.h>
 #include <cstring>
@@ -138,28 +141,11 @@ void InterruptManager::Process()
 
     unsigned long currentTime = millis();
     
-    // Control evaluation frequency to prevent CPU overload
-    if (currentTime - lastEvaluationTime_ >= INTERRUPT_EVALUATION_INTERVAL_MS)
-    {
-        // Clear exclusion group tracking from previous cycle
-        executedGroups_.clear();
-        
-        // Phase 1: Evaluate all interrupts (single evaluation per cycle)
-        EvaluateAllInterrupts();
-        
-        // Phase 2: Execute interrupts based on rules
-        ExecuteInterruptsWithRules();
-        
-        // Phase 3: Clear state changes for next cycle
-        ClearStateChanges();
-        
-        lastEvaluationTime_ = currentTime;
-    }
-    
-    // Execute queued interrupt actions through registered handlers  
-    log_d("InterruptManager::Process() about to call ProcessHandlers()");
+    // HYBRID ARCHITECTURE: Let each handler process its own interrupts exclusively
+    // This eliminates race conditions and ensures single evaluation per interrupt
+    log_d("HYBRID: InterruptManager delegating to handlers using hybrid architecture");
     ProcessHandlers();
-    log_d("InterruptManager::Process() completed successfully");
+    log_d("HYBRID: InterruptManager completed handler processing");
 }
 
 bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
@@ -268,6 +254,9 @@ void InterruptManager::DeactivateInterrupt(const char* id)
     {
         interrupt->active = false;
         log_d("Deactivated interrupt '%s'", id);
+        
+        // When an interrupt is deactivated, check if we should restore or execute another interrupt
+        HandleRestoration();
     }
     else
     {
@@ -366,68 +355,24 @@ size_t InterruptManager::GetInterruptCount() const
     return interruptCount_;
 }
 
-// Private implementation methods
-void InterruptManager::EvaluateInterrupts()
+void InterruptManager::ExecuteEffect(const Interrupt& interrupt)
 {
-    log_v("EvaluateInterrupts() called - using cross-handler priority coordination");
+    log_v("ExecuteEffect() called for interrupt '%s' with effect %d", 
+          interrupt.id, static_cast<int>(interrupt.effect));
     
-    // Get the highest priority active interrupt from each handler
-    const Interrupt* polledHighest = polledHandler_ ? polledHandler_->GetHighestPriorityActiveInterrupt() : nullptr;
-    const Interrupt* queuedHighest = queuedHandler_ ? queuedHandler_->GetHighestPriorityActiveInterrupt() : nullptr;
-    
-    // Determine which interrupt has the highest priority across both handlers
-    const Interrupt* globalHighest = nullptr;
-    
-    if (polledHighest && queuedHighest)
-    {
-        // Both handlers have active interrupts - compare priorities
-        int polledPriority = static_cast<int>(polledHighest->priority);
-        int queuedPriority = static_cast<int>(queuedHighest->priority);
-        
-        if (polledPriority <= queuedPriority) // Lower number = higher priority
-        {
-            globalHighest = polledHighest;
-            log_d("Cross-handler priority: Polled interrupt '%s' (priority %d) selected over queued '%s' (priority %d)",
-                  polledHighest->id, polledPriority, queuedHighest->id, queuedPriority);
-        }
-        else
-        {
-            globalHighest = queuedHighest;
-            log_d("Cross-handler priority: Queued interrupt '%s' (priority %d) selected over polled '%s' (priority %d)",
-                  queuedHighest->id, queuedPriority, polledHighest->id, polledPriority);
-        }
-    }
-    else if (polledHighest)
-    {
-        globalHighest = polledHighest;
-        log_d("Cross-handler priority: Only polled interrupt '%s' (priority %d) active", 
-              polledHighest->id, static_cast<int>(polledHighest->priority));
-    }
-    else if (queuedHighest)
-    {
-        globalHighest = queuedHighest;
-        log_d("Cross-handler priority: Only queued interrupt '%s' (priority %d) active", 
-              queuedHighest->id, static_cast<int>(queuedHighest->priority));
-    }
-    else
-    {
-        log_v("Cross-handler priority: No active interrupts from either handler");
-        return;
-    }
-    
-    // Execute the highest priority interrupt across all handlers
-    if (globalHighest)
-    {
-        log_i("Executing global highest priority interrupt: '%s' (priority %d)", 
-              globalHighest->id, static_cast<int>(globalHighest->priority));
-        
-        ++totalEvaluations_;
-        // Cast away const since we need to update execution statistics
-        Interrupt* mutableInterrupt = const_cast<Interrupt*>(globalHighest);
-        ExecuteInterrupt(*mutableInterrupt);
-        UpdateLastEvaluation(*mutableInterrupt);
-    }
+    // Delegate to the private ExecuteByEffect method
+    ExecuteByEffect(interrupt);
 }
+
+void InterruptManager::CheckRestoration()
+{
+    log_v("CheckRestoration() called");
+    
+    // Delegate to the private HandleRestoration method
+    HandleRestoration();
+}
+
+// Private implementation methods
 
 void InterruptManager::ExecuteInterrupt(Interrupt& interrupt)
 {
@@ -681,7 +626,21 @@ void InterruptManager::LoadPanelFromInterrupt(const Interrupt& interrupt)
     }
     else if (strcmp(interrupt.id, "lock_state") == 0)
     {
-        panelName = PanelNames::LOCK;
+        // Only load lock panel if lock is actually engaged
+        if (interrupt.context)
+        {
+            LockSensor* sensor = static_cast<LockSensor*>(interrupt.context);
+            bool lockEngaged = std::get<bool>(sensor->GetReading());
+            if (lockEngaged)
+            {
+                panelName = PanelNames::LOCK;
+            }
+            else
+            {
+                log_d("Lock disengaged - skipping panel load, allowing restoration logic to handle");
+                return; // Don't load panel, let restoration handle it
+            }
+        }
     }
     else if (strcmp(interrupt.id, "error_occurred") == 0)
     {
@@ -819,7 +778,9 @@ void InterruptManager::HandleRestoration()
         return;
     }
     
-    // Find the highest priority active panel-loading interrupt
+    // HYBRID ARCHITECTURE: Check for pending interrupts that were just processed
+    // Instead of calling processFunc (which can be stateful), check if any interrupts
+    // have stateChanged flag set, indicating they should be processed
     const Interrupt* highestPriorityActive = nullptr;
     int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
     
@@ -831,15 +792,43 @@ void InterruptManager::HandleRestoration()
         if (!interrupt.active || interrupt.effect != InterruptEffect::LOAD_PANEL)
             continue;
         
-        // Check if this interrupt's condition is currently true
-        if (interrupt.processFunc && 
-            interrupt.processFunc(interrupt.context) == InterruptResult::EXECUTE_EFFECT)
+        // HYBRID ARCHITECTURE: Check if interrupt trigger condition is actually true
+        // We need to verify the actual trigger state, not just stateChanged flag
+        bool actuallyTriggered = false;
+        
+        // Check the actual trigger condition for each interrupt type
+        if (strcmp(interrupt.id, "lock_state") == 0 && interrupt.context)
+        {
+            LockSensor* sensor = static_cast<LockSensor*>(interrupt.context);
+            bool lockEngaged = std::get<bool>(sensor->GetReading());
+            actuallyTriggered = lockEngaged; // Only triggered when lock is engaged
+            log_i("HYBRID RESTORATION: Lock interrupt - engaged: %s, actuallyTriggered: %s", 
+                  lockEngaged ? "true" : "false", actuallyTriggered ? "true" : "false");
+        }
+        else if (strcmp(interrupt.id, "key_present") == 0 && interrupt.context)
+        {
+            KeyPresentSensor* sensor = static_cast<KeyPresentSensor*>(interrupt.context);
+            actuallyTriggered = sensor->GetKeyPresentState();
+        }
+        else if (strcmp(interrupt.id, "key_not_present") == 0 && interrupt.context)
+        {
+            KeyNotPresentSensor* sensor = static_cast<KeyNotPresentSensor*>(interrupt.context);
+            actuallyTriggered = sensor->GetKeyNotPresentState();
+        }
+        else if (strcmp(interrupt.id, "error_occurred") == 0)
+        {
+            actuallyTriggered = ErrorManager::Instance().HasPendingErrors();
+        }
+        
+        if (actuallyTriggered)
         {
             int priorityValue = static_cast<int>(interrupt.priority);
             if (priorityValue < lowestPriorityValue)
             {
                 lowestPriorityValue = priorityValue;
                 highestPriorityActive = &interrupt;
+                log_i("HYBRID RESTORATION: Found active interrupt '%s' with priority %d", 
+                      interrupt.id, priorityValue);
             }
         }
     }

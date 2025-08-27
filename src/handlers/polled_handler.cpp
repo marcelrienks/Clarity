@@ -1,5 +1,6 @@
 #include "handlers/polled_handler.h"
 #include "managers/error_manager.h"
+#include "managers/interrupt_manager.h"
 #include "sensors/key_present_sensor.h"
 #include "sensors/key_not_present_sensor.h"
 #include "sensors/lock_sensor.h"
@@ -66,60 +67,96 @@ PolledHandler::~PolledHandler()
 
 void PolledHandler::Process()
 {
-    log_v("Process() called");
+    log_v("HYBRID POLLED: Process() called - using three-phase approach");
     
-    unsigned long currentTime = millis();
+    // Phase 1: Evaluate all interrupts once and cache results
+    EvaluateAllInterrupts();
     
-    for (auto& ref : polledInterrupts_)
-    {
-        if (ref.interrupt && ref.interrupt->active && ShouldEvaluate(ref))
-        {
-            EvaluateInterrupt(ref);
-        }
-    }
+    // Phase 2: Execute highest priority interrupt with exclusion rules
+    ExecuteHighestPriorityInterrupt();
+    
+    // Phase 3: Clear cached state for next cycle
+    ClearStateChanges();
 }
 
-const Interrupt* PolledHandler::GetHighestPriorityActiveInterrupt()
+// ===== HYBRID ARCHITECTURE IMPLEMENTATION =====
+
+void PolledHandler::EvaluateAllInterrupts()
 {
-    log_v("GetHighestPriorityActiveInterrupt() called");
+    log_v("HYBRID POLLED: EvaluateAllInterrupts() called");
     
-    const Interrupt* highestPriority = nullptr;
-    int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
-    
-    for (auto& ref : polledInterrupts_)
+    for (auto& interrupt : polledInterrupts_)
     {
-        if (ref.interrupt && ref.interrupt->active)
+        if (!interrupt || !interrupt->active || !interrupt->processFunc)
+            continue;
+            
+        if (ShouldEvaluateInterrupt(*interrupt))
         {
-            // Check if interrupt's condition is currently true
-            if (ref.interrupt->processFunc && 
-                ref.interrupt->processFunc(ref.interrupt->context) == InterruptResult::EXECUTE_EFFECT)
+            // Single evaluation per cycle - cache the result
+            InterruptResult result = interrupt->processFunc(interrupt->context);
+            interrupt->stateChanged = (result == InterruptResult::EXECUTE_EFFECT);
+            interrupt->lastEvaluation = millis();
+            
+            if (interrupt->stateChanged)
             {
-                int priorityValue = static_cast<int>(ref.interrupt->priority);
-                if (priorityValue < lowestPriorityValue)
-                {
-                    lowestPriorityValue = priorityValue;
-                    highestPriority = ref.interrupt;
-                }
+                log_i("HYBRID POLLED: Interrupt '%s' state changed - marked for execution", interrupt->id);
             }
         }
     }
-    
-    if (highestPriority)
-    {
-        log_d("Highest priority polled interrupt: '%s' (priority %d)", 
-              highestPriority->id, static_cast<int>(highestPriority->priority));
-    }
-    else
-    {
-        log_v("No active polled interrupts found");
-    }
-    
-    return highestPriority;
 }
 
-void PolledHandler::RegisterInterrupt(const Interrupt* interrupt)
+void PolledHandler::ExecuteHighestPriorityInterrupt()
 {
-    log_v("RegisterInterrupt() called");
+    log_v("HYBRID POLLED: ExecuteHighestPriorityInterrupt() called");
+    
+    // Clear exclusion group tracking for this cycle
+    executedGroups_.clear();
+    
+    // Process interrupts by priority order
+    for (int priority = 0; priority <= 2; ++priority) // CRITICAL=0, IMPORTANT=1, NORMAL=2
+    {
+        for (auto& interrupt : polledInterrupts_)
+        {
+            if (!interrupt || !interrupt->stateChanged)
+                continue;
+                
+            if (static_cast<int>(interrupt->priority) == priority && CanExecute(*interrupt))
+            {
+                log_i("HYBRID POLLED: Executing interrupt '%s' (priority %d, mode %d)", 
+                      interrupt->id, priority, static_cast<int>(interrupt->executionMode));
+                      
+                ExecuteInterrupt(*interrupt);
+                
+                // Track exclusion group if applicable
+                if (interrupt->executionMode == InterruptExecutionMode::EXCLUSIVE && 
+                    interrupt->exclusionGroup)
+                {
+                    executedGroups_.push_back(interrupt->exclusionGroup);
+                }
+                
+                // Only execute one interrupt per priority level per cycle
+                break;
+            }
+        }
+    }
+}
+
+void PolledHandler::ClearStateChanges()
+{
+    log_v("HYBRID POLLED: ClearStateChanges() called");
+    
+    for (auto& interrupt : polledInterrupts_)
+    {
+        if (interrupt)
+        {
+            interrupt->stateChanged = false;
+        }
+    }
+}
+
+void PolledHandler::RegisterInterrupt(struct Interrupt* interrupt)
+{
+    log_v("HYBRID POLLED: RegisterInterrupt() called");
     
     if (!interrupt)
     {
@@ -142,23 +179,22 @@ void PolledHandler::RegisterInterrupt(const Interrupt* interrupt)
     if (polledInterrupts_.size() >= MAX_POLLED_INTERRUPTS)
     {
         log_e("Cannot register interrupt - maximum polled capacity reached (%d)", MAX_POLLED_INTERRUPTS);
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PolledHandler", 
-                                           "Maximum polled interrupt capacity exceeded");
         return;
     }
     
     // Check for duplicate registration
-    for (const auto& ref : polledInterrupts_)
+    for (const auto& existing : polledInterrupts_)
     {
-        if (ref.interrupt && ref.interrupt->id && strcmp(ref.interrupt->id, interrupt->id) == 0)
+        if (existing && existing->id && strcmp(existing->id, interrupt->id) == 0)
         {
             log_w("Polled interrupt '%s' already registered", interrupt->id);
             return;
         }
     }
     
-    polledInterrupts_.emplace_back(interrupt, defaultInterval_);
-    log_d("Registered polled interrupt '%s' (total: %d)", interrupt->id, polledInterrupts_.size());
+    // Take exclusive ownership of this interrupt
+    polledInterrupts_.push_back(interrupt);
+    log_d("HYBRID POLLED: Registered interrupt '%s' (total: %d)", interrupt->id, polledInterrupts_.size());
 }
 
 void PolledHandler::UnregisterInterrupt(const char* id)
@@ -168,8 +204,8 @@ void PolledHandler::UnregisterInterrupt(const char* id)
     if (!id) return;
     
     auto it = std::remove_if(polledInterrupts_.begin(), polledInterrupts_.end(),
-        [id](const PolledInterruptRef& ref) {
-            return ref.interrupt && ref.interrupt->id && strcmp(ref.interrupt->id, id) == 0;
+        [id](const Interrupt* interrupt) {
+            return interrupt && interrupt->id && strcmp(interrupt->id, id) == 0;
         });
     
     if (it != polledInterrupts_.end())
@@ -199,11 +235,11 @@ bool PolledHandler::HasPendingEvaluations() const
 {
     unsigned long currentTime = millis();
     
-    for (const auto& ref : polledInterrupts_)
+    for (const auto& interrupt : polledInterrupts_)
     {
-        if (ref.interrupt && ref.interrupt->active)
+        if (interrupt && interrupt->active)
         {
-            if (currentTime - ref.lastEvaluation >= ref.evaluationInterval)
+            if (ShouldEvaluateInterrupt(*interrupt))
             {
                 return true;
             }
@@ -213,30 +249,101 @@ bool PolledHandler::HasPendingEvaluations() const
     return false;
 }
 
-void PolledHandler::EvaluateInterrupt(PolledInterruptRef& ref)
+// ===== HYBRID ARCHITECTURE HELPER METHODS =====
+
+bool PolledHandler::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
 {
-    log_v("EvaluateInterrupt() called for: %s", ref.interrupt->id ? ref.interrupt->id : "unknown");
+    // Optimize evaluation frequency based on priority to reduce CPU usage
+    unsigned long currentTime = millis();
+    unsigned long timeSinceLastEvaluation = currentTime - interrupt.lastEvaluation;
     
-    if (!ref.interrupt->processFunc)
+    // Set evaluation intervals based on priority for CPU efficiency
+    unsigned long minInterval = 0;
+    
+    switch (interrupt.priority)
     {
-        log_w("Invalid interrupt process function for '%s'", ref.interrupt->id ? ref.interrupt->id : "unknown");
-        return;
+        case Priority::CRITICAL:
+            minInterval = 10;  // Fast response for error conditions and security
+            break;
+        case Priority::IMPORTANT:
+            minInterval = 25;  // Balanced response for user input and sensors
+            break;
+        case Priority::NORMAL:
+            minInterval = 50;  // Slower response for background tasks and themes
+            break;
     }
     
-    // Update evaluation timestamp first to prevent rapid re-evaluation
-    ref.lastEvaluation = millis();
-    
-    // Process the interrupt (evaluate and potentially signal execution)
-    InterruptResult result = ref.interrupt->processFunc(ref.interrupt->context);
-    if (result == InterruptResult::EXECUTE_EFFECT)
+    // User input requires fast response for good UX
+    if (interrupt.effect == InterruptEffect::BUTTON_ACTION)
     {
-        log_d("Polled interrupt '%s' condition met - signaling for execution", ref.interrupt->id);
-        // Note: Actual execution is now handled centrally by InterruptManager via ExecuteByEffect()
+        minInterval = std::min(minInterval, 15UL); // Ensure responsive button handling
+    }
+    
+    // UI changes can be evaluated less frequently to prevent flicker
+    if (interrupt.effect == InterruptEffect::SET_THEME)
+    {
+        minInterval = std::max(minInterval, 100UL); // Prevent rapid theme switching
+    }
+    
+    return timeSinceLastEvaluation >= minInterval;
+}
+
+bool PolledHandler::CanExecute(const Interrupt& interrupt) const
+{
+    log_d("HYBRID POLLED: CanExecute() called for interrupt '%s'", interrupt.id);
+    
+    switch (interrupt.executionMode)
+    {
+        case InterruptExecutionMode::ALWAYS:
+            log_i("HYBRID POLLED: Interrupt '%s' has ALWAYS mode - can execute", interrupt.id);
+            return true;
+            
+        case InterruptExecutionMode::EXCLUSIVE:
+            if (interrupt.exclusionGroup && IsGroupExecuted(interrupt.exclusionGroup))
+            {
+                log_d("HYBRID POLLED: Interrupt '%s' blocked - exclusion group '%s' already executed", 
+                      interrupt.id, interrupt.exclusionGroup);
+                return false;
+            }
+            return true;
+            
+        case InterruptExecutionMode::CONDITIONAL:
+            if (interrupt.canExecuteInContext)
+            {
+                // For now, we don't have context in PolledHandler, so default to true
+                bool canExecute = interrupt.canExecuteInContext(nullptr);
+                log_d("HYBRID POLLED: Interrupt '%s' conditional check returned: %s", 
+                      interrupt.id, canExecute ? "true" : "false");
+                return canExecute;
+            }
+            return true;
+            
+        default:
+            return true;
     }
 }
 
-bool PolledHandler::ShouldEvaluate(const PolledInterruptRef& ref) const
+bool PolledHandler::IsGroupExecuted(const char* group) const
 {
-    unsigned long currentTime = millis();
-    return (currentTime - ref.lastEvaluation) >= ref.evaluationInterval;
+    if (!group) return false;
+    
+    for (const auto& executedGroup : executedGroups_)
+    {
+        if (executedGroup && strcmp(executedGroup, group) == 0)
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
+void PolledHandler::ExecuteInterrupt(Interrupt& interrupt)
+{
+    log_i("HYBRID POLLED: ExecuteInterrupt() called for: %s", interrupt.id);
+    
+    // Delegate to InterruptManager's public ExecuteEffect method
+    InterruptManager& manager = InterruptManager::Instance();
+    manager.ExecuteEffect(interrupt);
+    
+    log_d("HYBRID POLLED: Effect execution completed for interrupt '%s'", interrupt.id);
 }

@@ -67,6 +67,12 @@ public:
     class PolledHandler* GetPolledHandler() const { return polledHandler_.get(); }
     class QueuedHandler* GetQueuedHandler() const { return queuedHandler_.get(); }
     
+    // Public effect execution for handlers
+    void ExecuteEffect(const Interrupt& interrupt);
+    
+    // Public restoration checking for handlers
+    void CheckRestoration();
+    
 private:
     InterruptManager() = default;
     ~InterruptManager() = default;
@@ -74,7 +80,6 @@ private:
     InterruptManager& operator=(const InterruptManager&) = delete;
     
     // Coordinated interrupt processing
-    void EvaluateInterrupts();
     void ExecuteInterrupt(Interrupt& interrupt);
     void ExecuteByEffect(const Interrupt& interrupt);
     void ProcessHandlers();

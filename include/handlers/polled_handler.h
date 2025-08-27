@@ -19,14 +19,16 @@ class DebugErrorSensor;
 
 /**
  * @class PolledHandler
- * @brief Handles polled interrupts with timing-based evaluation
+ * @brief Handles polled interrupts using hybrid single-evaluation architecture
  * 
- * @details Processes interrupts that need periodic evaluation at controlled intervals.
- * Optimized for sensors, button debouncing, and other time-sensitive operations.
+ * @details Processes polled interrupts with three-phase approach:
+ * 1. EvaluateAllInterrupts() - Call processFunc once per interrupt and cache results
+ * 2. ExecuteHighestPriorityInterrupt() - Execute based on priority and exclusion rules
+ * 3. ClearStateChanges() - Reset cached state for next cycle
  * 
- * @timing Configurable evaluation intervals per interrupt
- * @memory_safe Uses references to external interrupt array (no duplication)
- * @performance Skips evaluation if minimum interval hasn't elapsed
+ * @architecture Eliminates race conditions by owning interrupts exclusively
+ * @timing Configurable evaluation intervals per interrupt  
+ * @execution_rules Supports ALWAYS, EXCLUSIVE, and CONDITIONAL interrupt modes
  */
 class PolledHandler : public IHandler
 {
@@ -36,11 +38,8 @@ public:
     
     // IHandler interface
     void Process() override;
-    const Interrupt* GetHighestPriorityActiveInterrupt() override;
-    
-    // Configuration
-    void RegisterInterrupt(const Interrupt* interrupt);
-    void UnregisterInterrupt(const char* id);
+    void RegisterInterrupt(struct Interrupt* interrupt) override;
+    void UnregisterInterrupt(const char* id) override;
     void SetEvaluationInterval(unsigned long intervalMs);
     
     // Sensor access for interrupt context
@@ -57,23 +56,20 @@ public:
     bool HasPendingEvaluations() const;
     
 private:
-    struct PolledInterruptRef
-    {
-        const Interrupt* interrupt;
-        unsigned long lastEvaluation;
-        unsigned long evaluationInterval;
-        
-        PolledInterruptRef(const Interrupt* intr, unsigned long interval = 100) 
-            : interrupt(intr), lastEvaluation(0), evaluationInterval(interval) {}
-    };
-    
-    void EvaluateInterrupt(PolledInterruptRef& ref);
-    bool ShouldEvaluate(const PolledInterruptRef& ref) const;
+    // Hybrid architecture methods
+    void EvaluateAllInterrupts();
+    void ExecuteHighestPriorityInterrupt();
+    void ClearStateChanges();
+    bool CanExecute(const Interrupt& interrupt) const;
+    bool ShouldEvaluateInterrupt(const Interrupt& interrupt) const;
+    void ExecuteInterrupt(Interrupt& interrupt);
+    bool IsGroupExecuted(const char* group) const;
     
     static constexpr size_t MAX_POLLED_INTERRUPTS = 16;
     static constexpr unsigned long DEFAULT_EVALUATION_INTERVAL_MS = 100;
     
-    std::vector<PolledInterruptRef> polledInterrupts_;
+    std::vector<Interrupt*> polledInterrupts_;
+    std::vector<const char*> executedGroups_; // Track exclusion groups
     unsigned long defaultInterval_;
     
     // Handler-owned sensors for GPIO monitoring

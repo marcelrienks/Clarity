@@ -4,30 +4,31 @@
 
 /**
  * @interface IHandler
- * @brief Base interface for coordinated interrupt handlers in the Clarity system
+ * @brief Base interface for hybrid interrupt handlers with single-evaluation processing
  *
  * @details This interface defines the contract for specialized interrupt handlers
- * that process different types of interrupt sources. Handlers are coordinated by
- * InterruptManager which calls Process() during idle time to evaluate and execute
- * interrupts based on priority.
+ * that use a three-phase processing approach: evaluate all → execute highest priority → reset state.
+ * This eliminates race conditions and double-evaluation issues while maintaining handler separation.
  *
- * @design_pattern Strategy pattern - Different handlers for different interrupt sources
- * @coordination InterruptManager coordinates multiple handlers by priority
- * @timing All processing occurs during LVGL idle time only
+ * @design_pattern Hybrid Strategy + Template Method pattern
+ * @architecture Each handler implements single-evaluation priority processing:
+ * 1. EvaluateAllInterrupts() - Call processFunc once per interrupt and cache results
+ * 2. ExecuteHighestPriorityInterrupt() - Execute based on priority and exclusion rules  
+ * 3. ClearStateChanges() - Reset cached state for next cycle
  *
  * @implementations:
- * - PolledHandler: GPIO state monitoring with change detection
- * - QueuedHandler: Button event processing with latest event handling
+ * - PolledHandler: GPIO state monitoring with cached evaluation
+ * - QueuedHandler: Button event processing with queued execution
  *
- * @architecture Benefits of coordinated handler system:
- * - Specialized processing for POLLED vs QUEUED interrupt sources
- * - Priority-based coordination across different handler types
- * - Polymorphic processing through unified IHandler interface
- * - Clear separation of concerns between GPIO monitoring and button events
- * - Testable design with mockable handler interfaces
+ * @benefits:
+ * - No race conditions: each handler owns its interrupts exclusively
+ * - Single evaluation: sensors evaluated exactly once per cycle
+ * - Priority processing: highest priority interrupt executed first
+ * - Exclusion rules: ALWAYS, EXCLUSIVE, CONDITIONAL execution modes
+ * - Clean state management: reset between cycles
  *
- * @context This interface enables InterruptManager to coordinate multiple
- * specialized handlers while maintaining type safety and clear responsibilities.
+ * @context This hybrid approach combines the handler separation of the old system
+ * with the single-evaluation logic of the new architecture.
  */
 class IHandler
 {
@@ -35,20 +36,25 @@ public:
     virtual ~IHandler() = default;
 
     /**
-     * @brief Process interrupts for this handler type
-     * @details Called by InterruptManager during idle time to evaluate
-     * and mark active interrupts. Each handler processes its specific
-     * interrupt sources (POLLED or QUEUED) and coordinates with
-     * InterruptManager for priority-based execution.
+     * @brief Process interrupts using hybrid three-phase approach
+     * @details Implements: evaluate all → execute highest priority → reset state
+     * This eliminates race conditions and ensures single evaluation per cycle.
+     * Each handler processes only its registered interrupts exclusively.
      */
     virtual void Process() = 0;
     
     /**
-     * @brief Get the highest priority active interrupt from this handler
-     * @details Used by InterruptManager for cross-handler priority coordination.
-     * Only returns interrupts that are currently active and whose evaluation
-     * function returns true.
-     * @return Pointer to highest priority active interrupt, or nullptr if none active
+     * @brief Register an interrupt with this handler
+     * @param interrupt Pointer to interrupt structure (handler takes ownership)
+     * @details Handler will process this interrupt using the three-phase approach.
+     * Interrupt will be exclusively owned by this handler to prevent race conditions.
      */
-    virtual const struct Interrupt* GetHighestPriorityActiveInterrupt() = 0;
+    virtual void RegisterInterrupt(struct Interrupt* interrupt) = 0;
+    
+    /**
+     * @brief Unregister an interrupt from this handler
+     * @param id Interrupt ID to remove
+     * @details Removes interrupt from handler's processing list.
+     */
+    virtual void UnregisterInterrupt(const char* id) = 0;
 };

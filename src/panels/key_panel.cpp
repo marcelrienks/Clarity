@@ -3,6 +3,10 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
+#include "managers/interrupt_manager.h"
+#include "handlers/polled_handler.h"
+#include "sensors/key_present_sensor.h"
+#include "sensors/key_not_present_sensor.h"
 #include "utilities/constants.h"
 #include <Arduino.h>
 #include <variant>
@@ -56,8 +60,8 @@ void KeyPanel::Init()
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Note: KeyPanel is display-only, state comes from interrupt system
-    // Since this panel is only loaded when a key is present, display "present" state
-    currentKeyState_ = KeyState::Present;
+    // Determine current key state by checking which sensor is currently active
+    currentKeyState_ = DetermineCurrentKeyState();
     
     log_i("KeyPanel initialization completed");
 }
@@ -202,4 +206,39 @@ void KeyPanel::HandleLongPress()
     {
         log_w("KeyPanel: Cannot load config panel - panelService not available");
     }
+}
+
+KeyState KeyPanel::DetermineCurrentKeyState()
+{
+    log_v("DetermineCurrentKeyState() called");
+    
+    // Access the sensors through InterruptManager to check their current states
+    InterruptManager& interruptManager = InterruptManager::Instance();
+    auto polledHandler = interruptManager.GetPolledHandler();
+    
+    if (!polledHandler)
+    {
+        log_w("DetermineCurrentKeyState: PolledHandler not available, defaulting to Inactive");
+        return KeyState::Inactive;
+    }
+    
+    // Check key present sensor
+    auto keyPresentSensor = polledHandler->GetKeyPresentSensor();
+    if (keyPresentSensor && keyPresentSensor->GetKeyPresentState())
+    {
+        log_d("DetermineCurrentKeyState: Key present sensor is active - setting Present state");
+        return KeyState::Present;
+    }
+    
+    // Check key not present sensor
+    auto keyNotPresentSensor = polledHandler->GetKeyNotPresentSensor();
+    if (keyNotPresentSensor && keyNotPresentSensor->GetKeyNotPresentState())
+    {
+        log_d("DetermineCurrentKeyState: Key not present sensor is active - setting NotPresent state");
+        return KeyState::NotPresent;
+    }
+    
+    // If neither sensor is active, default to inactive
+    log_d("DetermineCurrentKeyState: No sensor active - setting Inactive state");
+    return KeyState::Inactive;
 }

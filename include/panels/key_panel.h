@@ -62,6 +62,9 @@ class KeyPanel : public IPanel
   private:
     // Static Methods
     static void ShowPanelCompletionCallback(lv_event_t *event);
+    
+    // Helper methods
+    KeyState DetermineCurrentKeyState();
 
     // Instance Data Members
     IGpioProvider *gpioProvider_;
