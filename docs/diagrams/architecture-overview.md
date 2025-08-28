@@ -21,98 +21,103 @@ This diagram shows the high-level component relationships in the Clarity system 
 ---
 config:
   layout: elk
-  theme: mc
+  theme: default
+  elk:
+    algorithm: layered
+    direction: DOWN
 ---
-flowchart TB
- subgraph subGraph0["Main Application"]
+flowchart TD
+    %% Main Application Entry
+    subgraph MainApp ["Main Application"]
         Main["main.cpp"]
-  end
- subgraph Factories["Factories"]
+    end
+    
+    %% Factory Layer
+    subgraph FactoryLayer ["Factories"]
         ProviderFactory["ProviderFactory"]
         ManagerFactory["ManagerFactory"]
-  end
- subgraph subGraph2["Core Managers"]
-        InterruptManager["InterruptManager"]
-        PanelManager["PanelManager"]
-        StyleManager["StyleManager"]
-        PreferenceManager["PreferenceManager"]
+    end
+    
+    %% Core Managers Layer
+    subgraph CoreManagers ["Core Managers"]
         ErrorManager["ErrorManager"]
-  end
- subgraph subGraph3["Interrupt Handlers"]
-        PolledHandler["PolledHandler"]
-        QueuedHandler["QueuedHandler"]
-  end
- subgraph subGraph4["GPIO Sensors"]
-        KeyPresentSensor["KeyPresentSensor<br>GPIO-25"]
-        KeyNotPresentSensor["KeyNotPresentSensor<br>GPIO-26"]
-        LockSensor["LockSensor<br>GPIO-27"]
-        LightsSensor["LightsSensor<br>GPIO-33"]
-        ActionButtonSensor["ButtonSensor<br>GPIO-32"]
-  end
- subgraph Panels["Panels"]
+        InterruptManager["InterruptManager<br/>8-Step Flow"]
+        PreferenceManager["PreferenceManager"]
+        StyleManager["StyleManager"]  
+        PanelManager["PanelManager"]
+    end
+    
+    %% Panels Layer
+    subgraph PanelsLayer ["Panels"]
+        ConfigPanel["ConfigPanel"]
         SplashPanel["SplashPanel"]
         OilPanel["OilPanel"]
         KeyPanel["KeyPanel"]
         LockPanel["LockPanel"]
         ErrorPanel["ErrorPanel"]
-        ConfigPanel["ConfigPanel"]
-  end
- subgraph subGraph6["Hardware Providers"]
+    end
+    
+    %% Interrupt Handlers Layer
+    subgraph InterruptHandlers ["Interrupt Handlers"]
+        QueuedHandler["QueuedHandler<br/>Button Timing Logic"]
+        PolledHandler["PolledHandler<br/>GPIO Processing"]
+    end
+    
+    %% GPIO Sensors Layer
+    subgraph GPIOSensors ["GPIO Sensors"]
+        ActionButtonSensor["ActionButtonSensor<br/>GPIO-32"]
+        KeyPresentSensor["KeyPresentSensor<br/>GPIO-25"]
+        KeyNotPresentSensor["KeyNotPresentSensor<br/>GPIO-26"]
+        LockSensor["LockSensor<br/>GPIO-27"]
+        LightsSensor["LightsSensor<br/>GPIO-33"]
+    end
+    
+    %% Hardware Providers Layer
+    subgraph HardwareProviders ["Hardware Providers"]
+        DeviceProvider["DeviceProvider"]
         GpioProvider["GpioProvider"]
         DisplayProvider["DisplayProvider"]
-        DeviceProvider["DeviceProvider"]
-  end
-    Main --> ProviderFactory & ManagerFactory
+    end
+    
+    %% Connection Flow - Top to Bottom
+    MainApp --> FactoryLayer
+    FactoryLayer --> CoreManagers
+    CoreManagers --> PanelsLayer
+    CoreManagers --> InterruptHandlers
+    InterruptHandlers --> GPIOSensors
+    GPIOSensors --> HardwareProviders
+    
+    %% Internal Factory Connections
     ProviderFactory --> GpioProvider & DisplayProvider & DeviceProvider
-    ManagerFactory --> InterruptManager & PanelManager & StyleManager & PreferenceManager & ErrorManager
-    InterruptManager --> PolledHandler & QueuedHandler
-    PolledHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
+    ManagerFactory --> ErrorManager & InterruptManager & PreferenceManager & StyleManager & PanelManager
+    
+    %% Interrupt Manager 8-Step Flow
+    InterruptManager --> QueuedHandler & PolledHandler
     QueuedHandler --> ActionButtonSensor
-    PanelManager --> SplashPanel & OilPanel & KeyPanel & LockPanel & ErrorPanel & ConfigPanel
-    KeyPresentSensor --> GpioProvider
-    KeyNotPresentSensor --> GpioProvider
-    LockSensor --> GpioProvider
-    LightsSensor --> GpioProvider
-    ActionButtonSensor --> GpioProvider
-    SplashPanel --> DisplayProvider
-    OilPanel --> DisplayProvider
-    KeyPanel --> DisplayProvider
-    LockPanel --> DisplayProvider
-    ErrorPanel --> DisplayProvider
-    ConfigPanel --> DisplayProvider
-    InterruptManager -. Button Timing Logic .-> ActionButtonSensor
-    InterruptManager -. Polled Processing .-> PolledHandler
-    InterruptManager -. Queued Processing .-> QueuedHandler
-     ProviderFactory:::factory
-     ManagerFactory:::factory
-     InterruptManager:::manager
-     PanelManager:::manager
-     StyleManager:::manager
-     PreferenceManager:::manager
-     ErrorManager:::manager
-     PolledHandler:::handler
-     QueuedHandler:::handler
-     KeyPresentSensor:::sensor
-     KeyNotPresentSensor:::sensor
-     LockSensor:::sensor
-     LightsSensor:::sensor
-     ActionButtonSensor:::sensor
-     SplashPanel:::panel
-     OilPanel:::panel
-     KeyPanel:::panel
-     LockPanel:::panel
-     ErrorPanel:::panel
-     ConfigPanel:::panel
-     GpioProvider:::provider
-     DisplayProvider:::provider
-     DeviceProvider:::provider
-    classDef factory fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
-    classDef manager fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef handler fill:#ffecb3,stroke:#f57f17,stroke-width:2px
-    classDef sensor fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef panel fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef provider fill:#e0f2f1,stroke:#00796b,stroke-width:2px
-
+    PolledHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
+    
+    %% Panel Manager Connections
+    PanelManager --> ConfigPanel & SplashPanel & OilPanel & KeyPanel & LockPanel & ErrorPanel
+    
+    %% Hardware Dependencies
+    PanelsLayer --> DisplayProvider
+    
+    %% Styling to Match Screenshot
+    classDef mainapp fill:#fff2cc,stroke:#d6b656,stroke-width:2px
+    classDef factory fill:#fff2cc,stroke:#d6b656,stroke-width:2px
+    classDef manager fill:#fff2cc,stroke:#d6b656,stroke-width:2px
+    classDef panel fill:#ffe6cc,stroke:#d79b00,stroke-width:2px
+    classDef handler fill:#fff2cc,stroke:#d6b656,stroke-width:2px
+    classDef sensor fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
+    classDef provider fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
+    
+    class MainApp mainapp
+    class FactoryLayer factory
+    class CoreManagers manager
+    class PanelsLayer panel
+    class InterruptHandlers handler
+    class GPIOSensors sensor
+    class HardwareProviders provider
 ```
 
 ## Component Responsibilities

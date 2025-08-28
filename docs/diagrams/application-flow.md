@@ -5,8 +5,10 @@ This diagram illustrates the complete application flow from startup through runt
 ## Flow Overview
 
 - **Startup Sequence**: Service initialization and coordinated handler creation
-- **Main Loop**: LVGL tasks with separate interrupt evaluation and execution phases
-- **Evaluation Model**: Queued interrupts evaluated every loop, polled interrupts evaluated only during idle
+- **Main Loop Integration**: LVGL tasks, interrupt processing, and panel management work together
+- **Interrupt Processing**: Continuous interrupt evaluation with idle-only execution phases
+- **Panel Management**: Updates, transitions, and rendering integrated with main loop
+- **Evaluation Model**: Queued interrupts evaluated continuously, polled interrupts evaluated only during idle
 - **Execution Model**: All interrupt execution happens only during UI idle state
 - **Coordinated Processing**: Priority-based interrupt coordination with centralized restoration
 - **Hybrid Execution**: Single execution function per interrupt with centralized restoration logic
@@ -17,104 +19,126 @@ This diagram illustrates the complete application flow from startup through runt
 For detailed architecture, see: **[Architecture Document](../architecture.md)**
 
 ```mermaid
+---
+config:
+  layout: elk
+  theme: default
+  elk:
+    algorithm: layered
+    direction: DOWN
+---
 flowchart TD
-    %% Startup Flow
-    Start[ESP32 Startup]
-    Setup[setup]
-    InitServices[Initialize Services]
-    CreateProviders[Create Providers via ProviderFactory]
-    CreateManagers[Create Managers via ManagerFactory]
-    CreateHandlers[InterruptManager Creates PolledHandler and QueuedHandler]
-    CreateSensors[Handlers Create and Own Specialized Sensors]
-    RegisterInterrupts[Register Interrupts]
-    InitPanels[Initialize Panel System]
-    LoadSplash[Load Splash Panel]
-    StartLoop[Start Main Loop]
+    %% Startup Sequence Layer
+    subgraph StartupLayer ["System Startup"]
+        InitServices["Initialize Services"]
+        CreateFactories["Create Factories"]
+        CreateManagers["Create Managers"]
+        CreateHandlers["Create Interrupt Handlers"]
+        CreateSensors["Create & Register Sensors"]
+        InitPanels["Initialize Panel System"]
+        LoadPanel["Load Panel"]
+    end
     
-    %% Main Loop - 8 Step Flow
-    Step1[Step 1: Main Loop Start]
-    Step2[Step 2: Main LVGL Tasks]
-    Step3[Step 3: InterruptManager Evaluate Queued - ALWAYS]
-    Step4[Step 4: InterruptManager Post Queued - ALWAYS]
-    Step5{Step 5: InterruptManager If Idle?}
-    Step6[Step 6: InterruptManager Evaluate and Action Polled - IDLE ONLY]
-    Step7{Step 7: InterruptManager If Queue Action? - IDLE ONLY}
-    Step8[Step 8: Main Loop End]
+    %% Interrupt Processing
+    subgraph InterruptProcessing ["Interrupt Processing"]
+        EvalQueue["Evaluate and Queue Interrupts"]
+        IsIdle{"If Idle?"}
+        EvalPolled["Evaluate and Action Polled Interrupts"]
+        InterruptsActioned{"If Interrupts Actioned?"}
+    end
     
-    %% Queue Action Execution
-    ExecuteQueuedAction[Execute Queued Action]
+    %% Main Loop
+    subgraph MainLoop ["Main Loop"]
+        LVGLTasks["LVGL Tasks"]
+        ContinueMainLoop["Continue Main Loop"]
+    end
+    
+    %% Panel Management
+    subgraph PanelManagement ["Panel Management"]
+        PanelUpdates["Panel Updates"]
+        PanelTransitions["Panel Transitions"]
+        PanelRendering["Panel Rendering"]
+    end
     
     %% Button Processing Detail
-    ButtonPressStart[Button Press Start]
-    ButtonRelease[Button Release]
-    CalcDuration[Calculate Press Duration]
-    ShortPress[Short Press: 50ms-2000ms]
-    LongPress[Long Press: 2000ms-5000ms]
-    FlagForProcessing[Flag for Processing]
+    subgraph ButtonProcessing ["Button Processing Logic"]
+        ButtonPressStart["Button Press Detected"]
+        ButtonRelease["Button Release Detected"]
+        CalcDuration["Calculate Press Duration"]
+        ShortPressDetected["Short Press: 50ms-2000ms"]
+        LongPressDetected["Long Press: 2000ms-5000ms"]
+        FlagProcessing["Flag for Processing"]
+    end
     
-    %% Panel Effects
-    LoadPanel[Load Panel - Polled Interrupts]
-    SetTheme[Set Theme - Polled Interrupts]
-    ExecuteShortPress[Execute Short Press Function]
-    ExecuteLongPress[Execute Long Press Function]
+    %% Interrupt Effects Layer
+    subgraph InterruptEffects ["Interrupt Effects"]
+        ExecuteQueued["Execute Queued Action"]
+        ExecuteShortPress["Execute Short Press Function"]
+        ExecuteLongPress["Execute Long Press Function"]
+        LoadPanel["Load Panel Effect"]
+        SetTheme["Set Theme Effect"]
+    end
     
-    %% Startup Connections
-    Start --> Setup
-    Setup --> InitServices
-    InitServices --> CreateProviders
-    CreateProviders --> CreateManagers
+    %% Startup Flow
+    InitServices --> CreateFactories
+    CreateFactories --> CreateManagers
     CreateManagers --> CreateHandlers
     CreateHandlers --> CreateSensors
-    CreateSensors --> RegisterInterrupts
-    RegisterInterrupts --> InitPanels
-    InitPanels --> LoadSplash
-    LoadSplash --> StartLoop
+    CreateSensors --> InitPanels
+    InitPanels --> LoadPanel
+    LoadPanel --> LVGLTasks
     
-    %% Main Loop Connections - 8 Step Flow
-    StartLoop --> Step1
-    Step1 --> Step2
-    Step2 --> Step3
-    Step3 --> Step4
-    Step4 --> Step5
-    Step5 -->|UI Idle| Step6
-    Step5 -->|UI Busy| Step8
-    Step6 --> Step7
-    Step7 -->|Queue Action Needed| ExecuteQueuedAction
-    Step7 -->|No Queue Action| Step8
-    ExecuteQueuedAction --> Step8
-    Step8 --> Step1
+    %% Main Loop Flow
+    LVGLTasks --> EvalQueue
+    ContinueMainLoop --> LVGLTasks
     
-    %% Button Processing Connections - Step 3 Always Runs
-    Step3 --> ButtonPressStart
-    Step3 --> ButtonRelease
+    %% Interrupt Processing Flow
+    EvalQueue --> IsIdle
+    IsIdle -->|"UI Idle"| EvalPolled
+    IsIdle -->|"UI Busy"| ContinueMainLoop
+    EvalPolled --> InterruptsActioned
+    InterruptsActioned -->|"True"| ContinueMainLoop
+    InterruptsActioned -->|"False"| ContinueMainLoop
+    ContinueMainLoop --> EvalQueue
+    
+    %% Button Processing Integration
+    EvalQueue --> ButtonPressStart
+    EvalQueue --> ButtonRelease
     ButtonRelease --> CalcDuration
-    CalcDuration --> ShortPress
-    CalcDuration --> LongPress
-    ShortPress --> FlagForProcessing
-    LongPress --> FlagForProcessing
-    FlagForProcessing --> Step4
+    CalcDuration --> ShortPressDetected
+    CalcDuration --> LongPressDetected
+    ShortPressDetected --> FlagProcessing
+    LongPressDetected --> FlagProcessing
+    FlagProcessing --> IsIdle
     
-    %% Queue Action Execution - Step 7 Conditional
-    ExecuteQueuedAction --> ExecuteShortPress
-    ExecuteQueuedAction --> ExecuteLongPress
+    %% Interrupt Effects Execution
+    EvalPolled --> LoadPanelEffect["Load Panel Effect"]
+    EvalPolled --> SetTheme
+    EvalPolled --> ExecuteShortPress
+    EvalPolled --> ExecuteLongPress
     
-    %% Polled Effect Connections - Step 6 Idle Only
-    Step6 --> LoadPanel
-    Step6 --> SetTheme
+    %% Panel Management Integration
+    LVGLTasks --> PanelUpdates
+    PanelUpdates --> PanelTransitions
+    PanelTransitions --> PanelRendering
+    LoadPanelEffect --> PanelUpdates
     
-    %% Styling
-    classDef startup fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef mainloop fill:#f1f8e9,stroke:#689f38,stroke-width:2px
-    classDef button fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef effect fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:3px
+    %% Styling to Match Architecture Overview
+    classDef startup fill:#fff2cc,stroke:#d6b656,stroke-width:2px
+    classDef interrupt fill:#fff2cc,stroke:#d6b656,stroke-width:2px  
+    classDef mainloop fill:#d5e8d4,stroke:#82b366,stroke-width:2px
+    classDef panel fill:#f8cecc,stroke:#b85450,stroke-width:2px
+    classDef button fill:#ffe6cc,stroke:#d79b00,stroke-width:2px
+    classDef effects fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
+    classDef decision fill:#fff2cc,stroke:#d6b656,stroke-width:3px
     
-    class Start,Setup,InitServices,CreateProviders,CreateManagers,CreateHandlers,CreateSensors,RegisterInterrupts,InitPanels,LoadSplash,StartLoop startup
-    class Step1,Step2,Step3,Step4,Step6,Step8 mainloop
-    class ButtonPressStart,ButtonRelease,CalcDuration,ShortPress,LongPress,FlagForProcessing button
-    class ExecuteQueuedAction,ExecuteShortPress,ExecuteLongPress button
-    class LoadPanel,SetTheme effect
-    class Step5,Step7 decision
+    class StartupLayer startup
+    class InterruptProcessing interrupt
+    class MainLoop mainloop
+    class PanelManagement panel
+    class ButtonProcessing button
+    class InterruptEffects effects
+    class IsIdle,InterruptsActioned decision
 ```
 
 ## Key Flow Details
@@ -126,33 +150,29 @@ flowchart TD
 4. **Sensor Creation**: Handlers create and own their sensors
 5. **Interrupt Registration**: Static callbacks registered to handlers
 6. **Panel System**: PanelManager ready for on-demand panel creation
-7. **Initial Display**: Splash panel loads with animation
+7. **Initial Display**: Panel loads and main loop begins
 
 ### Runtime Processing
-**Exact 8-Step Main Loop Flow**:
+**Main Loop with Integrated Interrupt Processing**:
 
-1. **Main Loop Start**: Begin new iteration
-2. **Main: LVGL Tasks**: Process UI updates and rendering
-3. **InterruptManager: Evaluate Queued** (ALWAYS): 
+1. **Evaluate and Queue Interrupts**: 
    - Detect button press start/release events
    - Calculate press duration on release
    - Determine short (50ms-2000ms) vs long press (2000ms-5000ms)
-4. **InterruptManager: Post Queued** (ALWAYS):
-   - Flag button events for processing during idle time
-5. **InterruptManager: If Idle**: Check UI state
-   - **If UI NOT Idle**: Skip to step 8 (ensures button detection continues)
-   - **If UI IS Idle**: Continue to step 6
-6. **InterruptManager: Evaluate and Action Polled** (IDLE ONLY):
+   - Queue button events for processing
+2. **Check UI Idle State**: 
+   - **If UI NOT Idle**: Exit interrupt processing and continue main loop
+   - **If UI IS Idle**: Continue to polled interrupt evaluation
+3. **Evaluate and Action Polled Interrupts** (IDLE ONLY):
    - Check GPIO sensors (key, lock, lights, errors)
    - Execute polled interrupts (load panels, set themes)
-7. **InterruptManager: If Queue Action** (IDLE ONLY):
-   - **If Queue Action Needed**: Execute appropriate button function (short/long press)
-   - **If No Queue Action**: Skip to step 8
-8. **Main: Loop End**: Complete iteration, return to step 1
+4. **Check if Interrupts Actioned**: 
+   - **If Interrupts Actioned**: Exit interrupt processing and continue main loop
+   - **If No Interrupts Actioned**: Exit interrupt processing and continue main loop
 
 **Key Architecture Benefits**:
-- **Steps 3-4 ALWAYS execute**: Button presses never missed regardless of UI state
-- **Steps 6-7 IDLE ONLY**: Protects UI performance during animations/rendering
+- **Continuous Evaluation**: Button presses never missed regardless of UI state
+- **Idle-Only Execution**: Protects UI performance during animations/rendering
 - **Proper timing**: Accurate button press duration measurement
 - **Clean separation**: Evaluation (always) vs execution (idle only)
 
