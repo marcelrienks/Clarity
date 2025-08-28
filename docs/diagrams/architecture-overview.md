@@ -18,181 +18,101 @@ This diagram shows the high-level component relationships in the Clarity system 
 - **Hardware Abstraction**: Providers isolate hardware dependencies
 
 ```mermaid
-graph TB
-    %% Main Application
-    Main[main.cpp]
-    
-    %% Factories (Interface-based)
-    ProviderFactory[ProviderFactory<br/>implements IProviderFactory]
-    ManagerFactory[ManagerFactory<br/>future: implements IManagerFactory]
-    
-    %% Core Managers (IManager interface)
-    InterruptManager[InterruptManager<br/>implements IManager<br/>8-Step Flow with Button Timing]
-    PanelManager[PanelManager<br/>implements IManager]
-    StyleManager[StyleManager<br/>implements IManager]
-    PreferenceManager[PreferenceManager<br/>implements IManager]
-    ErrorManager[ErrorManager<br/>implements IManager]
-    
-    %% Coordinated Handlers (IHandler implementations)  
-    PolledHandler[PolledHandler<br/>implements IHandler<br/>GPIO state monitoring - IDLE ONLY]
-    QueuedHandler[QueuedHandler<br/>implements IHandler<br/>Button timing & execution - ALWAYS + IDLE]
-    
-    %% Sensors (Models - ISensor + BaseSensor)
-    KeyPresentSensor[KeyPresentSensor<br/>implements ISensor<br/>GPIO 25]
-    KeyNotPresentSensor[KeyNotPresentSensor<br/>implements ISensor<br/>GPIO 26]
-    LockSensor[LockSensor<br/>implements ISensor<br/>GPIO 27]
-    LightsSensor[LightsSensor<br/>implements ISensor<br/>GPIO 33]
-    ActionButtonSensor[ActionButtonSensor<br/>implements ISensor<br/>GPIO 32 - State Only]
-    OilPressureSensor[OilPressureSensor<br/>implements ISensor<br/>ADC]
-    OilTemperatureSensor[OilTemperatureSensor<br/>implements ISensor<br/>ADC]
-    BaseSensor[BaseSensor<br/>Change Detection Template]
-    
-    %% Panels (Presenters - IPanel implementations)
-    SplashPanel[SplashPanel<br/>implements IPanel]
-    OilPanel[OilPanel<br/>implements IPanel]
-    KeyPanel[KeyPanel<br/>implements IPanel<br/>Display Only]
-    LockPanel[LockPanel<br/>implements IPanel<br/>Display Only]
-    ErrorPanel[ErrorPanel<br/>implements IPanel]
-    ConfigPanel[ConfigPanel<br/>implements IPanel]
-    
-    %% Components (Views - IComponent implementations)
-    OilGaugeComponent[OilGaugeComponent<br/>implements IComponent]
-    SplashComponent[SplashComponent<br/>implements IComponent]
-    KeyStatusComponent[KeyStatusComponent<br/>implements IComponent]
-    LockStatusComponent[LockStatusComponent<br/>implements IComponent]
-    ErrorListComponent[ErrorListComponent<br/>implements IComponent]
-    ConfigListComponent[ConfigListComponent<br/>implements IComponent]
-    
-    %% Providers (Hardware Abstraction)
-    GpioProvider[GpioProvider<br/>implements IGpioProvider]
-    DisplayProvider[DisplayProvider<br/>implements IDisplayProvider]
-    DeviceProvider[DeviceProvider<br/>implements IDeviceProvider<br/>Hardware Driver]
-    
-    %% Utilities
-    Types[types.h<br/>Structs & Enums]
-    InterruptCallbacks[InterruptCallbacks<br/>Static Functions]
-    
-    %% Main Creates Both Factories
-    Main --> ProviderFactory
-    Main --> ManagerFactory
-    
-    %% Provider Factory Creates Providers
-    ProviderFactory --> GpioProvider
-    ProviderFactory --> DisplayProvider
-    ProviderFactory --> DeviceProvider
-    
-    %% Manager Factory Creates Managers (with injected providers)
-    ManagerFactory --> InterruptManager
-    ManagerFactory --> PanelManager
-    ManagerFactory --> StyleManager
-    ManagerFactory --> PreferenceManager
-    ManagerFactory --> ErrorManager
-    
-    %% Provider Dependencies
-    DisplayProvider --> DeviceProvider
-    
-    %% Factory Dependency Injection
-    Main -.->|injects IProviderFactory| ManagerFactory
-    
-    %% Managers Create Their Dependencies
-    InterruptManager --> PolledHandler
-    InterruptManager --> QueuedHandler
-    
-    %% Specialized Handlers Create and Own Their Sensors
-    PolledHandler --> KeyPresentSensor
-    PolledHandler --> KeyNotPresentSensor
-    PolledHandler --> LockSensor
-    PolledHandler --> LightsSensor
+---
+config:
+  layout: elk
+  theme: mc
+---
+flowchart TB
+ subgraph subGraph0["Main Application"]
+        Main["main.cpp"]
+  end
+ subgraph Factories["Factories"]
+        ProviderFactory["ProviderFactory"]
+        ManagerFactory["ManagerFactory"]
+  end
+ subgraph subGraph2["Core Managers"]
+        InterruptManager["InterruptManager"]
+        PanelManager["PanelManager"]
+        StyleManager["StyleManager"]
+        PreferenceManager["PreferenceManager"]
+        ErrorManager["ErrorManager"]
+  end
+ subgraph subGraph3["Interrupt Handlers"]
+        PolledHandler["PolledHandler"]
+        QueuedHandler["QueuedHandler"]
+  end
+ subgraph subGraph4["GPIO Sensors"]
+        KeyPresentSensor["KeyPresentSensor<br>GPIO-25"]
+        KeyNotPresentSensor["KeyNotPresentSensor<br>GPIO-26"]
+        LockSensor["LockSensor<br>GPIO-27"]
+        LightsSensor["LightsSensor<br>GPIO-33"]
+        ActionButtonSensor["ButtonSensor<br>GPIO-32"]
+  end
+ subgraph Panels["Panels"]
+        SplashPanel["SplashPanel"]
+        OilPanel["OilPanel"]
+        KeyPanel["KeyPanel"]
+        LockPanel["LockPanel"]
+        ErrorPanel["ErrorPanel"]
+        ConfigPanel["ConfigPanel"]
+  end
+ subgraph subGraph6["Hardware Providers"]
+        GpioProvider["GpioProvider"]
+        DisplayProvider["DisplayProvider"]
+        DeviceProvider["DeviceProvider"]
+  end
+    Main --> ProviderFactory & ManagerFactory
+    ProviderFactory --> GpioProvider & DisplayProvider & DeviceProvider
+    ManagerFactory --> InterruptManager & PanelManager & StyleManager & PreferenceManager & ErrorManager
+    InterruptManager --> PolledHandler & QueuedHandler
+    PolledHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
     QueuedHandler --> ActionButtonSensor
-    
-    %% Panel Manager Creates Panels On Demand
-    PanelManager --> SplashPanel
-    PanelManager --> OilPanel
-    PanelManager --> KeyPanel
-    PanelManager --> LockPanel
-    PanelManager --> ErrorPanel
-    PanelManager --> ConfigPanel
-    
-    %% Panels Create Their Own Components and Data Sensors
-    OilPanel --> OilPressureSensor
-    OilPanel --> OilTemperatureSensor
-    OilPanel --> OilGaugeComponent
-    SplashPanel --> SplashComponent
-    KeyPanel --> KeyStatusComponent
-    LockPanel --> LockStatusComponent
-    ErrorPanel --> ErrorListComponent
-    ConfigPanel --> ConfigListComponent
-    
-    %% Hardware Dependencies
+    PanelManager --> SplashPanel & OilPanel & KeyPanel & LockPanel & ErrorPanel & ConfigPanel
     KeyPresentSensor --> GpioProvider
     KeyNotPresentSensor --> GpioProvider
     LockSensor --> GpioProvider
     LightsSensor --> GpioProvider
     ActionButtonSensor --> GpioProvider
-    OilPressureSensor --> GpioProvider
-    OilTemperatureSensor --> GpioProvider
-    
-    %% Panel Provider Dependencies
-    SplashPanel -.->|uses| DisplayProvider
-    OilPanel -.->|uses| DisplayProvider
-    OilPanel -.->|uses| GpioProvider
-    KeyPanel -.->|uses| DisplayProvider
-    KeyPanel -.->|uses| GpioProvider
-    LockPanel -.->|uses| DisplayProvider
-    LockPanel -.->|uses| GpioProvider
-    ErrorPanel -.->|uses| DisplayProvider
-    ConfigPanel -.->|uses| DisplayProvider
-    
-    %% Inheritance
-    KeyPresentSensor --> BaseSensor
-    KeyNotPresentSensor --> BaseSensor
-    LockSensor --> BaseSensor
-    LightsSensor --> BaseSensor
-    ActionButtonSensor --> BaseSensor
-    OilPressureSensor --> BaseSensor
-    OilTemperatureSensor --> BaseSensor
-    
-    %% Static Callbacks and Context
-    PolledHandler -.->|registers POLLED interrupts with context| InterruptCallbacks
-    QueuedHandler -.->|registers QUEUED interrupts with context| InterruptCallbacks
-    InterruptCallbacks --> Types
-    
-    %% Manager Dependencies and Provider Injection
-    ManagerFactory -.->|gets providers from| ProviderFactory
-    PanelManager -.->|injects providers to| SplashPanel
-    PanelManager -.->|injects providers to| OilPanel
-    PanelManager -.->|injects providers to| KeyPanel
-    PanelManager -.->|injects providers to| LockPanel
-    PanelManager -.->|injects providers to| ErrorPanel
-    PanelManager -.->|injects providers to| ConfigPanel
-    PreferenceManager -.->|provides config to| PanelManager
-    PreferenceManager -.->|provides config to| OilPanel
-    
-    %% Coordinated Interrupt System Integration
-    PolledHandler -.->|SET_THEME effects via| StyleManager
-    PolledHandler -.->|LOAD_PANEL effects via| PanelManager
-    QueuedHandler -.->|LOAD_PANEL effects via| PanelManager
-    QueuedHandler -.->|SET_PREFERENCE effects via| PreferenceManager
-    ErrorManager -.->|POLLED by| PolledHandler
-    
-    %% Styling
+    SplashPanel --> DisplayProvider
+    OilPanel --> DisplayProvider
+    KeyPanel --> DisplayProvider
+    LockPanel --> DisplayProvider
+    ErrorPanel --> DisplayProvider
+    ConfigPanel --> DisplayProvider
+    InterruptManager -. Button Timing Logic .-> ActionButtonSensor
+    InterruptManager -. Polled Processing .-> PolledHandler
+    InterruptManager -. Queued Processing .-> QueuedHandler
+     ProviderFactory:::factory
+     ManagerFactory:::factory
+     InterruptManager:::manager
+     PanelManager:::manager
+     StyleManager:::manager
+     PreferenceManager:::manager
+     ErrorManager:::manager
+     PolledHandler:::handler
+     QueuedHandler:::handler
+     KeyPresentSensor:::sensor
+     KeyNotPresentSensor:::sensor
+     LockSensor:::sensor
+     LightsSensor:::sensor
+     ActionButtonSensor:::sensor
+     SplashPanel:::panel
+     OilPanel:::panel
+     KeyPanel:::panel
+     LockPanel:::panel
+     ErrorPanel:::panel
+     ConfigPanel:::panel
+     GpioProvider:::provider
+     DisplayProvider:::provider
+     DeviceProvider:::provider
     classDef factory fill:#e1f5fe,stroke:#0277bd,stroke-width:2px
     classDef manager fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef handler fill:#ffecb3,stroke:#f57f17,stroke-width:2px
     classDef sensor fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
     classDef panel fill:#fce4ec,stroke:#c2185b,stroke-width:2px
-    classDef component fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef provider fill:#e0f2f1,stroke:#00796b,stroke-width:2px
-    classDef utility fill:#f5f5f5,stroke:#616161,stroke-width:2px
-    
-    class ProviderFactory,ManagerFactory factory
-    class InterruptManager,PanelManager,StyleManager,PreferenceManager,ErrorManager manager
-    class PolledHandler,QueuedHandler handler
-    class KeyPresentSensor,KeyNotPresentSensor,LockSensor,LightsSensor,ActionButtonSensor,OilPressureSensor,OilTemperatureSensor,BaseSensor sensor
-    class SplashPanel,OilPanel,KeyPanel,LockPanel,ErrorPanel,ConfigPanel panel
-    class OilGaugeComponent,SplashComponent,KeyStatusComponent,LockStatusComponent,ErrorListComponent,ConfigListComponent component
-    class GpioProvider,DisplayProvider,DeviceProvider provider
-    class Types,InterruptCallbacks utility
+
 ```
 
 ## Component Responsibilities
