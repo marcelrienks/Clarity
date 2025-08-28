@@ -85,7 +85,14 @@ private:
     void ProcessHandlers();
     void UpdateHandlerContexts();
     
-    // New single-list architecture methods
+    // 8-step interrupt flow methods
+    void EvaluateQueuedInterrupts();
+    void PostQueuedInterrupts();
+    bool IsUIIdle() const;
+    void EvaluateAndActionPolledInterrupts();
+    void ProcessQueuedInterruptActions();
+    
+    // Legacy single-list architecture methods (to be removed)
     void EvaluateAllInterrupts();
     void ExecuteInterruptsWithRules();
     bool CanExecute(const Interrupt& interrupt) const;
@@ -147,4 +154,10 @@ private:
     
     // GPIO provider reference (stored to avoid circular dependency during initialization)
     IGpioProvider* gpioProvider_ = nullptr;
+    
+    // 8-step flow state tracking
+    bool queuedInterruptsNeedProcessing_ = false;
+    unsigned long buttonPressStartTime_ = 0;
+    bool buttonCurrentlyPressed_ = false;
+    bool isLongPress_ = false; // Track if the queued press is long or short
 };

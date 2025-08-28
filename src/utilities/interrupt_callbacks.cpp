@@ -101,52 +101,40 @@ InterruptResult InterruptCallbacks::LightsStateProcess(void* context) {
 }
 
 InterruptResult InterruptCallbacks::ShortPressProcess(void* context) {
-    ActionButtonSensor* sensor = static_cast<ActionButtonSensor*>(context);
-    if (!sensor) {
-        log_w("ShortPressProcess: Invalid sensor context");
-        return InterruptResult::NO_ACTION;
-    }
-    
-    bool hasEvent = sensor->HasStateChanged();
-    if (hasEvent) {
-        // For now, any button state change can trigger short press action
-        // The ActionManager will handle timing logic for short vs long press
-        auto reading = sensor->GetReading();
-        if (std::holds_alternative<int32_t>(reading)) {
-            int32_t pressed = std::get<int32_t>(reading);
-            if (pressed == 0) { // Button released - trigger action
-                log_d("Button released - executing short press effect");
-                return InterruptResult::EXECUTE_EFFECT;
-            }
-        }
-    }
-    return InterruptResult::NO_ACTION;
+    log_v("ShortPressProcess: Callback triggered by InterruptManager 8-step flow");
+    // The InterruptManager already determined this is a short press
+    // Just signal that the effect should be executed
+    return InterruptResult::EXECUTE_EFFECT;
 }
 
 InterruptResult InterruptCallbacks::LongPressProcess(void* context) {
-    ActionButtonSensor* sensor = static_cast<ActionButtonSensor*>(context);
-    if (!sensor) {
-        log_w("LongPressProcess: Invalid sensor context");
-        return InterruptResult::NO_ACTION;
-    }
-    
-    // For now, long press detection is handled by ActionManager
-    // This interrupt callback is not used in the current design
-    // The ActionManager directly calls panel functions based on timing
-    log_v("LongPressProcess called but not implemented - ActionManager handles timing");
-    return InterruptResult::NO_ACTION;
+    log_v("LongPressProcess: Callback triggered by InterruptManager 8-step flow");
+    // The InterruptManager already determined this is a long press
+    // Just signal that the effect should be executed
+    return InterruptResult::EXECUTE_EFFECT;
 }
 
 InterruptResult InterruptCallbacks::ErrorOccurredProcess(void* context) {
     // Context would be ErrorManager or error sensor
     log_v("ErrorOccurredProcess: Checking for error conditions");
     
-    // Check ErrorManager for new errors
-    bool hasNewErrors = ErrorManager::Instance().HasPendingErrors();
-    if (hasNewErrors) {
-        log_d("New errors detected");
+    static size_t lastErrorCount = 0;
+    auto& errorManager = ErrorManager::Instance();
+    
+    // Get current error count
+    size_t currentErrorCount = errorManager.GetErrorQueue().size();
+    bool hasErrors = errorManager.HasPendingErrors();
+    
+    // Only trigger if we have errors AND the count has increased (new errors)
+    if (hasErrors && currentErrorCount > lastErrorCount) {
+        log_d("New errors detected - count increased from %d to %d", lastErrorCount, currentErrorCount);
+        lastErrorCount = currentErrorCount;
         return InterruptResult::EXECUTE_EFFECT;
     }
+    
+    // Update the count even if we don't trigger (for when errors are cleared)
+    lastErrorCount = currentErrorCount;
+    
     return InterruptResult::NO_ACTION;
 }
 

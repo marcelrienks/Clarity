@@ -8,6 +8,7 @@
 #include "sensors/lock_sensor.h"
 #include "sensors/key_present_sensor.h"
 #include "sensors/key_not_present_sensor.h"
+#include "sensors/action_button_sensor.h"
 #include "utilities/constants.h"
 #include <Arduino.h>
 #include <cstring>
@@ -105,47 +106,144 @@ void InterruptManager::UpdateHandlerContexts()
 }
 
 
-// Core interrupt processing methods
+// Core interrupt processing methods - implements 8-step flow
 void InterruptManager::Process()
 {
-    log_d("InterruptManager::Process() called - entry");
-    
-    // === EARLY MEMORY CORRUPTION DETECTION ===
-    static int process_call_count = 0;
-    process_call_count++;
-    
-    // Check memory every 10 calls to avoid log spam
-    if (process_call_count % 10 == 1) {
-        log_d("=== INTERRUPT PROCESS MEMORY CHECK (call #%d) ===", process_call_count);
-        log_d("Free heap at Process() entry: %d bytes", ESP.getFreeHeap());
-        log_d("Largest free block: %d bytes", ESP.getMaxAllocHeap());
-        
-        // Validate this pointer
-        log_d("InterruptManager validation:");
-        log_d("  this pointer: %p", this);
-        log_d("  initialized_: %s", initialized_ ? "true" : "false");
-        log_d("  interruptCount_: %d", interruptCount_);
-        
-        // Stack and memory integrity check
-        static const uint32_t PROCESS_PATTERN = 0xFEEDFACE;
-        uint32_t process_test = PROCESS_PATTERN;
-        if (process_test != PROCESS_PATTERN) {
-            log_e("PROCESS MEMORY CORRUPTION: Pattern 0x%08X != 0x%08X!", process_test, PROCESS_PATTERN);
-        }
-    }
+    log_v("InterruptManager::Process() called - 8-step flow entry");
     
     if (!initialized_)
     {
         return;
     }
 
+    // Step 3: InterruptManager: Evaluate Queued (ALWAYS)
+    EvaluateQueuedInterrupts();
+    
+    // Step 4: InterruptManager: Post Queued (ALWAYS) 
+    PostQueuedInterrupts();
+    
+    // Step 5: InterruptManager: If Idle (check UI state)
+    if (!IsUIIdle()) {
+        log_v("UI not idle - skipping polled evaluation and execution");
+        return; // Skip to step 8 (loop end)
+    }
+    
+    // Step 6: InterruptManager: Evaluate and Action Polled (IDLE ONLY)
+    EvaluateAndActionPolledInterrupts();
+    
+    // Step 7: InterruptManager: If Queue Action (IDLE ONLY)
+    ProcessQueuedInterruptActions();
+    
+    log_v("InterruptManager::Process() completed 8-step flow");
+}
+
+// 8-step flow implementation methods
+
+void InterruptManager::EvaluateQueuedInterrupts()
+{
+    log_v("Step 3: EvaluateQueuedInterrupts() called");
+    
+    if (!queuedHandler_ || !queuedHandler_->GetActionButtonSensor()) {
+        return;
+    }
+    
+    ActionButtonSensor* buttonSensor = queuedHandler_->GetActionButtonSensor();
+    bool currentButtonState = buttonSensor->IsButtonPressed();
     unsigned long currentTime = millis();
     
-    // HYBRID ARCHITECTURE: Let each handler process its own interrupts exclusively
-    // This eliminates race conditions and ensures single evaluation per interrupt
-    log_d("HYBRID: InterruptManager delegating to handlers using hybrid architecture");
-    ProcessHandlers();
-    log_d("HYBRID: InterruptManager completed handler processing");
+    // Detect button press start (rising edge)
+    if (currentButtonState && !buttonCurrentlyPressed_) {
+        buttonPressStartTime_ = currentTime;
+        buttonCurrentlyPressed_ = true;
+        log_d("Button press started at %lu ms", buttonPressStartTime_);
+    }
+    // Detect button release (falling edge) 
+    else if (!currentButtonState && buttonCurrentlyPressed_) {
+        unsigned long pressDuration = currentTime - buttonPressStartTime_;
+        buttonCurrentlyPressed_ = false;
+        
+        log_d("Button released after %lu ms", pressDuration);
+        
+        // Determine press type and queue for processing
+        if (pressDuration >= 50 && pressDuration < 2000) {
+            // Short press: 50ms to 2000ms
+            log_i("Short press detected (%lu ms)", pressDuration);
+            queuedInterruptsNeedProcessing_ = true;
+            isLongPress_ = false;
+        } else if (pressDuration >= 2000 && pressDuration < 5000) {
+            // Long press: 2000ms to 5000ms  
+            log_i("Long press detected (%lu ms)", pressDuration);
+            queuedInterruptsNeedProcessing_ = true;
+            isLongPress_ = true;
+        }
+        // Ignore presses outside valid ranges (debouncing)
+    }
+}
+
+void InterruptManager::PostQueuedInterrupts()
+{
+    log_v("Step 4: PostQueuedInterrupts() called");
+    
+    if (queuedInterruptsNeedProcessing_) {
+        log_d("Queued interrupts flagged for processing during idle time");
+        // Button events are already queued by evaluation step
+        // This step just confirms they're ready for processing
+    }
+}
+
+bool InterruptManager::IsUIIdle() const
+{
+    log_v("Step 5: IsUIIdle() called");
+    
+    // For now, assume UI is always idle since we're called from LVGL idle callback
+    // In a more sophisticated implementation, this could check LVGL task queue
+    return true;
+}
+
+void InterruptManager::EvaluateAndActionPolledInterrupts()
+{
+    log_v("Step 6: EvaluateAndActionPolledInterrupts() called");
+    
+    if (!polledHandler_) {
+        return;
+    }
+    
+    // Let the polled handler evaluate and execute its interrupts
+    polledHandler_->Process();
+}
+
+void InterruptManager::ProcessQueuedInterruptActions()
+{
+    log_v("Step 7: ProcessQueuedInterruptActions() called");
+    
+    if (!queuedInterruptsNeedProcessing_) {
+        return;
+    }
+    
+    if (!queuedHandler_ || !queuedHandler_->GetActionButtonSensor()) {
+        queuedInterruptsNeedProcessing_ = false;
+        return;
+    }
+    
+    // Execute the appropriate button action based on stored press type
+    if (isLongPress_) {
+        // Long press action
+        Interrupt* longPressInterrupt = FindInterrupt("universal_long_press");
+        if (longPressInterrupt) {
+            log_i("Executing queued long press action");
+            ExecuteButtonAction(*longPressInterrupt);
+        }
+    } else {
+        // Short press action  
+        Interrupt* shortPressInterrupt = FindInterrupt("universal_short_press");
+        if (shortPressInterrupt) {
+            log_i("Executing queued short press action");
+            ExecuteButtonAction(*shortPressInterrupt);
+        }
+    }
+    
+    // Clear the processing flag
+    queuedInterruptsNeedProcessing_ = false;
 }
 
 bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)

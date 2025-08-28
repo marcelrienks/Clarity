@@ -1,6 +1,7 @@
 #include "components/error_component.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
+#include <algorithm>
 
 // Constructors and Destructors
 ErrorComponent::ErrorComponent(IStyleService *styleService)
@@ -55,7 +56,7 @@ void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location,
     // Create the internal UI structure for single error display
     CreateSingleErrorUI(errorContainer_);
 
-    // Initial update with current errors
+    // Initial update with current errors - fetch and sort immediately
     UpdateErrorDisplay();
 }
 
@@ -65,7 +66,8 @@ void ErrorComponent::Refresh(const Reading &reading)
 
     // For single error display, we'll update directly from ErrorManager rather than using Reading
     // This allows us to get the complete error queue information and maintain current position
-    UpdateErrorDisplay();
+    // Note: Don't call UpdateErrorDisplay() here during initialization - let the panel control the display
+    // UpdateErrorDisplay();
 }
 
 // Error-specific methods
@@ -74,6 +76,13 @@ void ErrorComponent::UpdateErrorDisplay()
     log_v("UpdateErrorDisplay() called");
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
+    
+    // Sort errors by severity (CRITICAL first, WARNING last)
+    std::sort(newErrors.begin(), newErrors.end(), 
+        [](const ErrorInfo& a, const ErrorInfo& b) {
+            return static_cast<int>(a.level) > static_cast<int>(b.level);
+        });
+    
     UpdateErrorDisplay(newErrors);
 }
 
@@ -84,11 +93,37 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
     // Store current error state
     currentErrors_ = errors;
 
-    // Reset button press counter when new errors arrive
-    buttonPressCount_ = 0;
-
     // Ensure current index is valid
     if (currentErrorIndex_ >= currentErrors_.size())
+    {
+        currentErrorIndex_ = 0;
+    }
+
+    // Display the current error
+    DisplayCurrentError();
+
+    // Update container border color based on current error level
+    if (!currentErrors_.empty() && currentErrorIndex_ < currentErrors_.size())
+    {
+        ErrorLevel currentLevel = currentErrors_[currentErrorIndex_].level;
+        lv_color_t borderColor = StyleUtils::GetErrorColor(currentLevel);
+        lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
+    }
+}
+
+void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, size_t currentIndex)
+{
+    log_v("UpdateErrorDisplay() called with %zu errors, current index %zu", errors.size(), currentIndex);
+
+    // Store current error state
+    currentErrors_ = errors;
+    
+    // Set the current index
+    if (currentIndex < currentErrors_.size())
+    {
+        currentErrorIndex_ = currentIndex;
+    }
+    else
     {
         currentErrorIndex_ = 0;
     }
@@ -130,7 +165,7 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_obj_align(errorLevelLabel_, LV_ALIGN_TOP_MID, 0, 5);
     lv_obj_set_style_text_font(errorLevelLabel_, &lv_font_montserrat_24, 0); // Large font
     lv_obj_set_style_text_color(errorLevelLabel_, lv_color_white(), 0);
-    lv_label_set_text(errorLevelLabel_, "ERROR");
+    lv_label_set_text(errorLevelLabel_, "LOADING");  // Temporary until errors load
 
     // Create error source label
     errorSourceLabel_ = lv_label_create(errorContentArea_);
@@ -147,7 +182,7 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_obj_set_style_text_color(errorMessageLabel_, lv_color_white(), 0);
     lv_obj_set_style_text_align(errorMessageLabel_, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_long_mode(errorMessageLabel_, LV_LABEL_LONG_WRAP); // Multi-line text
-    lv_label_set_text(errorMessageLabel_, "No errors");
+    lv_label_set_text(errorMessageLabel_, "Loading errors...");
 
     // Create navigation indicator at bottom
     navigationIndicator_ = lv_label_create(parent);
@@ -190,15 +225,15 @@ void ErrorComponent::DisplayCurrentError()
     // Update message - can display full message now with wrapping
     lv_label_set_text(errorMessageLabel_, currentError.message.c_str());
 
-    // Update navigation indicator based on whether we're on the last error
+    // Update navigation indicator based on current error index
     if (currentErrors_.size() == 1)
     {
         // Single error - always show exit
         lv_label_set_text(navigationIndicator_, "Press to exit");
     }
-    else if (buttonPressCount_ >= (currentErrors_.size() - 1))
+    else if (currentErrorIndex_ >= (currentErrors_.size() - 1))
     {
-        // On last error or beyond - show exit
+        // On last error - show exit
         lv_label_set_text(navigationIndicator_, "Press to exit");
     }
     else
@@ -210,38 +245,18 @@ void ErrorComponent::DisplayCurrentError()
 
 void ErrorComponent::CycleToNextError()
 {
-    log_v("CycleToNextError() called");
-    if (currentErrors_.empty())
-    {
-        return;
-    }
-
-    // Check if we should exit (when user presses on last error)
-    if (buttonPressCount_ >= (currentErrors_.size() - 1))
-    {
-        ErrorManager::Instance().ClearAllErrors();
-        ErrorManager::Instance().SetErrorPanelActive(false);
-        // The trigger system will handle restoring to the appropriate panel
-        return;
-    }
-
-    // Increment button press count
-    buttonPressCount_++;
-
-    // Move to next error
-    currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-    DisplayCurrentError();
-
-    // Update border color for new current error
-    lv_color_t borderColor = StyleUtils::GetErrorColor(currentErrors_[currentErrorIndex_].level);
-    lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
+    log_v("CycleToNextError() called - deprecated method, ErrorPanel now handles cycling");
+    // This method is deprecated - ErrorPanel now handles all cycling logic
+    // via HandleShortPress() -> AdvanceToNextError() -> UpdateErrorDisplay()
+    log_w("ErrorComponent::CycleToNextError() is deprecated - use ErrorPanel button handling instead");
 }
 
 void ErrorComponent::HandleCycleButtonPress()
 {
-    log_v("HandleCycleButtonPress() called");
-    // Public interface method to be called from GPIO button handling
-    CycleToNextError();
+    log_v("HandleCycleButtonPress() called - deprecated method, ErrorPanel now handles cycling");
+    // This method is deprecated - ErrorPanel now handles all button logic
+    // via HandleShortPress() -> AdvanceToNextError() -> UpdateErrorDisplay()
+    log_w("ErrorComponent::HandleCycleButtonPress() is deprecated - use ErrorPanel button handling instead");
 }
 
 // Helper Methods

@@ -4,13 +4,14 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include <Arduino.h>
+#include <algorithm>
 
 // Constructors and Destructors
 ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                        IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
-      panelLoaded_(false), previousTheme_(nullptr)
+      panelLoaded_(false), previousTheme_(nullptr), currentErrorIndex_(0)
 {
     log_v("ErrorPanel constructor called");
 }
@@ -170,9 +171,21 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
     if (errorsChanged)
     {
         currentErrors_ = newErrors;
+        
+        // Sort errors by severity (CRITICAL first, WARNING last)
+        SortErrorsBySeverity();
+        
+        // Start from first error (highest severity)
+        currentErrorIndex_ = 0;
+        
+        // Tell component to display all errors with current index
         if (errorComponent_)
         {
-            errorComponent_->Refresh(Reading{}); // Component will fetch errors internally
+            auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+            if (!currentErrors_.empty())
+            {
+                errorComp->UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+            }
         }
     }
 
@@ -332,16 +345,33 @@ void* ErrorPanel::GetPanelContext()
 
 void ErrorPanel::HandleShortPress()
 {
-    if (errorComponent_)
+    log_i("ErrorPanel: Manual cycling to next error");
+    
+    if (currentErrors_.empty())
     {
-        log_i("ErrorPanel: Cycling to next error");
-        auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
-        errorComp->CycleToNextError();
+        return;
     }
-    else
+    
+    // Move to next error or exit if we've reached the end
+    if (currentErrorIndex_ >= currentErrors_.size() - 1)
     {
-        log_w("ErrorPanel: Cannot cycle errors - component not available");
+        // Reached last error - clear all and return to previous panel
+        log_i("ErrorPanel: Reached last error - clearing and returning to previous panel");
+        ErrorManager::Instance().ClearAllErrors();
+        
+        if (panelService_)
+        {
+            const char* restorationPanel = panelService_->GetRestorationPanel();
+            if (restorationPanel)
+            {
+                panelService_->CreateAndLoadPanel(restorationPanel, true);
+            }
+        }
+        return;
     }
+    
+    // Advance to next error
+    AdvanceToNextError();
 }
 
 void ErrorPanel::HandleLongPress()
@@ -358,4 +388,37 @@ void ErrorPanel::HandleLongPress()
             panelService_->CreateAndLoadPanel(restorationPanel, true);
         }
     }
+}
+
+// Auto-cycling implementation
+void ErrorPanel::SortErrorsBySeverity()
+{
+    log_v("SortErrorsBySeverity() called");
+    
+    // Sort errors: CRITICAL (2) first, ERROR (1) middle, WARNING (0) last
+    std::sort(currentErrors_.begin(), currentErrors_.end(), 
+        [](const ErrorInfo& a, const ErrorInfo& b) {
+            return static_cast<int>(a.level) > static_cast<int>(b.level);
+        });
+    
+    log_d("Sorted %zu errors by severity (CRITICAL -> ERROR -> WARNING)", currentErrors_.size());
+}
+
+
+void ErrorPanel::AdvanceToNextError()
+{
+    if (currentErrors_.empty())
+        return;
+        
+    // Move to next error
+    currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+    
+    // Update the component to display the new current error
+    if (errorComponent_)
+    {
+        auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+        errorComp->UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+    }
+    
+    log_d("Advanced to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
 }

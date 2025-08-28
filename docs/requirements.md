@@ -153,12 +153,17 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 For detailed architecture, see: **[Architecture Document](architecture.md)**
 
 **Key Components**:
-1. **InterruptManager**: Coordinates PolledHandler and QueuedHandler during idle time with centralized restoration logic
+1. **InterruptManager**: Coordinates PolledHandler and QueuedHandler with evaluation/execution separation
 2. **PolledHandler**: GPIO state monitoring with change detection
 3. **QueuedHandler**: Button event processing with latest event handling
 4. **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, BUTTON_ACTION effects
 5. **Memory Safety**: Static function pointers with void* context parameters (single execution function per interrupt)
 6. **Centralized Restoration**: All panel restoration logic handled in InterruptManager
+
+**Critical Processing Model**:
+- **Queued Interrupt Evaluation**: Happens on EVERY main loop iteration to detect button state changes
+- **Polled Interrupt Evaluation**: Only happens during UI IDLE state
+- **All Interrupt Execution**: Only happens during UI IDLE state (polled before queued)
 
 #### 2.3.3 POLLED Interrupts
 

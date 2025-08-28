@@ -49,6 +49,7 @@ class ErrorComponent : public IComponent
     // Error-specific methods
     void UpdateErrorDisplay();
     void UpdateErrorDisplay(const std::vector<ErrorInfo> &errors);
+    void UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, size_t currentIndex);
     void CycleToNextError(); // Navigate to next error in queue (cycles back to first after last)
 
     // GPIO Integration interface - to be called when button is pressed

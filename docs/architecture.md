@@ -60,6 +60,13 @@ InterruptManager: Central coordination of interrupt processing
 └── QueuedHandler: Manages QUEUED interrupts (button event processing)
 ```
 
+### Interrupt Evaluation vs Execution Model
+The system separates interrupt evaluation (checking if state changed) from interrupt execution (running the actual effect):
+
+- **Queued Interrupt Evaluation**: Happens on EVERY main loop iteration to detect button state changes
+- **Polled Interrupt Evaluation**: Only happens during UI IDLE state  
+- **All Interrupt Execution**: Only happens during UI IDLE state, with polled interrupts processed before queued interrupts
+
 ### Common Interrupt Data Structure
 
 #### Memory-Optimized Design
@@ -205,23 +212,44 @@ Each GPIO pin must have exactly one dedicated sensor class:
 
 ## Coordinated Interrupt Processing Flow
 
+### Main Loop Processing Model
+The interrupt system follows a precise 8-step sequence in every main loop iteration:
+
+**Exact Main Loop Flow**:
+1. **Main Loop Start**: Begin new iteration
+2. **Main: LVGL Tasks**: Process UI updates and rendering  
+3. **InterruptManager: Evaluate Queued**: Always check button state changes
+4. **InterruptManager: Post Queued**: Queue button events if state changed
+5. **InterruptManager: If Idle**: Check if UI is in idle state
+   - **If NOT Idle**: Skip to step 8 (ensures button detection continues during UI operations)
+   - **If Idle**: Continue to step 6
+6. **InterruptManager: Evaluate and Action Polled**: Check GPIO sensors and execute polled interrupts
+7. **InterruptManager: If Queue Action**: Check if queued interrupt needs execution and execute if needed
+8. **Main: Loop End**: Complete iteration, return to step 1
+
+**Key Benefits**:
+- **Button presses never missed**: Steps 3-4 always execute regardless of UI state
+- **UI performance protected**: Steps 6-7 only execute during UI idle state
+- **Immediate responsiveness**: Button events queued immediately for execution when safe
+
 ### Multi-Handler Processing
 1. **InterruptManager::Process()** (coordination processing)
-   - Call PolledHandler::Process() to evaluate GPIO state changes
-   - Call QueuedHandler::Process() to evaluate latest button event
-   - Compare highest priority active interrupt from each handler
-   - Execute highest priority interrupt across both handlers
+   - Always evaluate queued interrupts to detect button state changes
+   - If UI is IDLE:
+     - Call PolledHandler::Process() to evaluate GPIO state changes
+     - Execute highest priority polled interrupt (if any)
+     - Execute most recent queued interrupt (if any and no polled interrupt executed)
    - Handle effect-based execution (LOAD_PANEL, SET_THEME, SET_PREFERENCE, CUSTOM_FUNCTION)
    - Process centralized restoration logic when panel-loading interrupts deactivate
 
-2. **PolledHandler::Process()** (GPIO monitoring)
+2. **PolledHandler::Process()** (GPIO monitoring - IDLE only)
    - Evaluate POLLED interrupts for GPIO state changes via `evaluationFunc(context)`
    - Mark active interrupts for InterruptManager coordination
 
 3. **QueuedHandler::Process()** (button events)
-   - Evaluate QUEUED interrupts for **single latest button event** (not a queue)
+   - **Evaluation Phase** (every loop): Check for button state changes and queue events
+   - **Execution Phase** (IDLE only): Process the single latest button event
    - **Latest Event Only**: Maintains only the most recent button event, discarding any previous unprocessed events
-   - Mark active interrupts for InterruptManager coordination
    - Clear button event after processing
 
 ### Priority System

@@ -48,10 +48,10 @@ class DebugErrorSensor : public ISensor, public BaseSensor
     
     // BaseSensor interface
     bool HasStateChanged() override;
-
-  protected:
-    // Custom interrupt behavior
-    void OnInterruptTriggered() override;
+    void OnInterruptTriggered() override;  // Made public for polled handler access
+    
+    // Get startup time for grace period checking
+    unsigned long GetStartupTime() const { return startupTime_; }
 
   private:
     IGpioProvider *gpioProvider_;

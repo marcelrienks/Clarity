@@ -5,7 +5,9 @@ This diagram illustrates the complete application flow from startup through runt
 ## Flow Overview
 
 - **Startup Sequence**: Service initialization and coordinated handler creation
-- **Main Loop**: LVGL tasks with interrupt processing during idle time only
+- **Main Loop**: LVGL tasks with separate interrupt evaluation and execution phases
+- **Evaluation Model**: Queued interrupts evaluated every loop, polled interrupts evaluated only during idle
+- **Execution Model**: All interrupt execution happens only during UI idle state
 - **Coordinated Processing**: Priority-based interrupt coordination with centralized restoration
 - **Hybrid Execution**: Single execution function per interrupt with centralized restoration logic
 - **Panel Operations**: Lifecycle management and centralized restoration
@@ -30,15 +32,15 @@ flowchart TD
     StartLoop[Start Main Loop]
     
     %% Main Loop Flow
-    Loop[loop]
-    LVGLTasks[lv_task_handler]
-    CheckIdle{System Idle?}
-    ProcessInterrupts[InterruptManager Process]
-    
-    %% Coordinated Interrupt Processing
-    CoordinateProcessing[InterruptManager Coordinates Both Handlers]
-    ProcessPolled[PolledHandler Process - Evaluate POLLED interrupts]
-    ProcessQueued[QueuedHandler Process - Evaluate QUEUED interrupts]
+    LoopStart[Main Loop Start]
+    LVGLTasks[Main: LVGL Tasks]
+    EvaluateQueued[InterruptManager: Evaluate Queued]
+    PostQueued[InterruptManager: Post Queued]
+    CheckIdle{InterruptManager: If Idle?}
+    EvaluateActionPolled[InterruptManager: Evaluate and Action Polled]
+    CheckQueueAction{InterruptManager: If Queue Action?}
+    ActionQueued[InterruptManager: Action Queued]
+    LoopEnd[Main: Loop End]
     
     %% Hybrid Interrupt Flow with Centralized Restoration
     ProcessAllInterrupts[Evaluate All Interrupts for State Changes]
@@ -95,12 +97,18 @@ flowchart TD
     LoadSplash --> StartLoop
     
     %% Connections - Main Loop
-    StartLoop --> Loop
-    Loop --> LVGLTasks
-    LVGLTasks --> CheckIdle
-    CheckIdle -->|Yes| ProcessInterrupts
-    CheckIdle -->|No| Loop
-    ProcessInterrupts --> CoordinateProcessing
+    StartLoop --> LoopStart
+    LoopStart --> LVGLTasks
+    LVGLTasks --> EvaluateQueued
+    EvaluateQueued --> PostQueued
+    PostQueued --> CheckIdle
+    CheckIdle -->|Yes| EvaluateActionPolled
+    EvaluateActionPolled --> CheckQueueAction
+    CheckQueueAction -->|Yes| ActionQueued
+    CheckQueueAction -->|No| LoopEnd
+    ActionQueued --> LoopEnd
+    CheckIdle -->|No| LoopEnd
+    LoopEnd --> LoopStart
     CoordinateProcessing --> ProcessPolled
     CoordinateProcessing --> ProcessQueued
     ProcessPolled --> ProcessAllInterrupts
@@ -164,14 +172,14 @@ flowchart TD
     classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:3px
     
     class Start,Setup,InitServices,CreateProviders,CreateManagers,CreateHandlers,CreateSensors,RegisterInterrupts,InitPanels,LoadSplash,StartLoop startup
-    class Loop,LVGLTasks,ProcessInterrupts mainloop
+    class LoopStart,LVGLTasks,EvaluateQueued,PostQueued,EvaluateActionPolled,ActionQueued,LoopEnd mainloop
     class CoordinateProcessing,ProcessPolled,ProcessQueued,ProcessAllInterrupts,CheckStateChanges,ExecuteInterrupt,UpdateInterruptState,FindHighestPriorityAcrossHandlers,CentralizedRestoration,ExecuteHighestPriority interrupt
     class LoadPanelEffect,SetThemeEffect,SetPrefEffect,ButtonActionEffect,ExecutePanelFunction effect
     class PanelInit,CreateComponents,PanelLoad,PanelUpdate panel
     class SavePreferences config
     class ErrorOccurs,ErrorManager,ErrorAcknowledge,ClearErrors error
     class LightChange,ThemeSwitch,ApplyTheme theme
-    class CheckIdle,StateChanged,CheckInterruptDeactivated,CheckActivePanelInterrupts decision
+    class CheckIdle,CheckQueueAction,StateChanged,CheckInterruptDeactivated,CheckActivePanelInterrupts decision
 ```
 
 ## Key Flow Details
@@ -186,10 +194,20 @@ flowchart TD
 7. **Initial Display**: Splash panel loads with animation
 
 ### Runtime Processing
-1. **LVGL Idle Check**: Interrupts processed only during idle time
-2. **Coordinated Processing**: InterruptManager coordinates both handlers
-3. **Priority-Based Coordination**: Highest priority interrupt processed first
-4. **Panel Updates**: Operations return to main loop
+**Exact Main Loop Flow Sequence**:
+
+1. **Main Loop Start**: Begin new loop iteration
+2. **Main: LVGL Tasks**: Process UI updates and rendering
+3. **InterruptManager: Evaluate Queued**: Always check button state changes 
+4. **InterruptManager: Post Queued**: Queue button events if state changed
+5. **InterruptManager: If Idle**: Check if UI is in idle state
+   - **If UI NOT Idle**: Skip to step 8 (Loop End)
+   - **If UI IS Idle**: Continue to step 6
+6. **InterruptManager: Evaluate and Action Polled**: Check GPIO sensors and execute polled interrupts
+7. **InterruptManager: If Queue Action**: Check if queued interrupt needs execution
+   - **If Queue Action Needed**: Execute queued interrupt
+   - **If No Queue Action**: Skip queued execution  
+8. **Main: Loop End**: Complete loop iteration, return to step 1
 
 ### Interrupt Processing Steps
 1. **State Change Detection**: Evaluation functions check current states

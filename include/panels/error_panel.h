@@ -82,5 +82,10 @@ class ErrorPanel : public IPanel
     bool panelLoaded_;                               // Track panel load state
     std::vector<ErrorInfo> currentErrors_;           // Cache of current error state
     const char *previousTheme_;                      // Store previous theme to restore on exit
-    // Note: currentErrorIndex_ removed - ErrorComponent manages its own index
+    
+    // Error cycling functionality
+    size_t currentErrorIndex_;                       // Index of currently displayed error
+    
+    void SortErrorsBySeverity();                    // Sort errors by severity (CRITICAL first, WARNING last)
+    void AdvanceToNextError();                      // Move to next error and update component
 };

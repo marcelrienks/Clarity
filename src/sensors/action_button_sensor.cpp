@@ -1,4 +1,5 @@
 #include "sensors/action_button_sensor.h"
+#include "managers/interrupt_manager.h"
 #include <Arduino.h>
 
 #include "esp32-hal-log.h"
@@ -28,24 +29,7 @@ void ActionButtonSensor::Init()
     log_i("GPIO %d initial state after configuration: %s", gpio_pins::INPUT_BUTTON,
           initialState ? "HIGH (pressed)" : "LOW (released)");
     
-    // Register coordinated interrupts for button press detection
-    bool polledRegistered = RegisterPolledInterrupt(
-        "button_state_monitor",       // Unique ID
-        Priority::IMPORTANT,          // Important priority for user input
-        InterruptEffect::BUTTON_ACTION, // Button actions
-        50                           // 50ms polling for responsive button detection
-    );
-    
-    if (polledRegistered)
-    {
-        log_d("Registered polled interrupt for button state monitoring");
-    }
-    else
-    {
-        log_w("Failed to register polled interrupt for action button sensor");
-    }
-    
-    log_i("ActionButtonSensor initialization completed on GPIO %d with coordinated interrupts", gpio_pins::INPUT_BUTTON);
+    log_i("ActionButtonSensor initialization completed on GPIO %d", gpio_pins::INPUT_BUTTON);
 }
 
 /// @brief Get the current button state as a sensor reading
@@ -92,12 +76,6 @@ bool ActionButtonSensor::HasStateChanged()
 
 void ActionButtonSensor::OnInterruptTriggered()
 {
-    log_v("OnInterruptTriggered() called");
-    
-    bool currentState = readButtonState();
-    log_i("Button sensor interrupt triggered - current state: %s", 
-          currentState ? "PRESSED" : "RELEASED");
-    
-    // Notify ActionManager about button state change
-    // This will be handled by the ActionManager's interrupt callback
+    // This method is no longer used - button timing is handled by InterruptManager
+    log_d("OnInterruptTriggered() deprecated - button handling moved to InterruptManager 8-step flow");
 }

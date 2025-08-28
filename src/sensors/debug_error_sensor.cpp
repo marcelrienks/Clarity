@@ -127,12 +127,17 @@ bool DebugErrorSensor::readPinState()
     delay(5);
     bool confirmedState = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
     
+    log_v("readPinState: First read=%s, Second read=%s", 
+          currentState ? "HIGH" : "LOW", confirmedState ? "HIGH" : "LOW");
+    
     // Only return if both readings match
     if (currentState == confirmedState)
     {
         return confirmedState;
     }
     
+    log_v("readPinState: Readings don't match, returning previous state=%s", 
+          previousState_ ? "HIGH" : "LOW");
     // Return previous stable state if readings don't match
     return previousState_;
 }
@@ -141,23 +146,39 @@ bool DebugErrorSensor::HasStateChanged()
 {
     log_v("HasStateChanged() called");
     
-    if (!initialized_) return false;
+    if (!initialized_) {
+        log_v("HasStateChanged: Not initialized, returning false");
+        return false;
+    }
     
     // Ignore input during startup grace period
     const unsigned long STARTUP_GRACE_PERIOD_MS = 1000;
-    if (millis() - startupTime_ < STARTUP_GRACE_PERIOD_MS)
+    unsigned long currentTime = millis();
+    if (currentTime - startupTime_ < STARTUP_GRACE_PERIOD_MS)
     {
+        log_v("HasStateChanged: Still in grace period (%lu ms remaining)", 
+              STARTUP_GRACE_PERIOD_MS - (currentTime - startupTime_));
         return false;
     }
     
     bool currentState = readPinState();
+    log_v("HasStateChanged: Previous=%s, Current=%s", 
+          previousState_ ? "HIGH" : "LOW", currentState ? "HIGH" : "LOW");
     
     // Only detect rising edges (LOW to HIGH transition)
     bool changed = !previousState_ && currentState;
     
     if (changed)
     {
-        log_d("Debug error state changed - rising edge detected: LOW -> HIGH");
+        log_i("Debug error state changed - rising edge detected: LOW -> HIGH on GPIO %d", gpio_pins::DEBUG_ERROR);
+        // Update previous state immediately to prevent re-triggering
+        previousState_ = currentState;
+    }
+    else if (previousState_ && !currentState)
+    {
+        // Falling edge detected - update state but don't trigger
+        log_d("Debug error state changed - falling edge detected: HIGH -> LOW on GPIO %d", gpio_pins::DEBUG_ERROR);
+        previousState_ = currentState;
     }
     
     return changed;
@@ -167,30 +188,19 @@ void DebugErrorSensor::OnInterruptTriggered()
 {
     log_v("OnInterruptTriggered() called");
     
-    bool currentState = readPinState();
-    log_i("Debug error sensor interrupt triggered - current state: %s", 
-          currentState ? "HIGH" : "LOW");
+    log_i("Debug error trigger activated via interrupt - generating test errors");
     
-    // Generate test errors on rising edge
-    if (!previousState_ && currentState)
-    {
-        log_i("Debug error trigger activated via interrupt - generating test errors");
-        
-        // Generate three test errors for error panel testing
-        ErrorManager::Instance().ReportWarning("DebugTestInterrupt", 
-                                               "Test warning from interrupt-based debug error sensor");
-        
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTestInterrupt",
-                                             "Test error from interrupt-based debug error sensor");
-        
-        ErrorManager::Instance().ReportCriticalError("DebugTestInterrupt", 
-                                                     "Test critical error from interrupt-based debug error sensor");
-        
-        log_i("Debug errors generated via interrupt: 1 WARNING, 1 ERROR, 1 CRITICAL");
-        
-        // Update previous state
-        previousState_ = currentState;
-    }
+    // Generate three test errors for error panel testing
+    ErrorManager::Instance().ReportWarning("DebugTest", 
+                                           "Test warning from debug error sensor");
+    
+    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
+                                         "Test error from debug error sensor");
+    
+    ErrorManager::Instance().ReportCriticalError("DebugTest", 
+                                                 "Test critical error from debug error sensor");
+    
+    log_i("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL");
 }
 
 #endif // CLARITY_DEBUG

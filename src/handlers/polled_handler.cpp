@@ -8,6 +8,7 @@
 #ifdef CLARITY_DEBUG
 #include "sensors/debug_error_sensor.h"
 #endif
+#include "hardware/gpio_pins.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -85,6 +86,29 @@ void PolledHandler::EvaluateAllInterrupts()
 {
     log_v("HYBRID POLLED: EvaluateAllInterrupts() called");
     
+#ifdef CLARITY_DEBUG
+    // Debug: Direct check of GPIO 34 state
+    if (debugErrorSensor_ && gpioProvider_) {
+        bool gpio34State = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
+        log_d("DEBUG: Direct GPIO 34 read = %s", gpio34State ? "HIGH" : "LOW");
+    }
+#endif
+    
+    // In debug builds, check the debug error sensor state directly
+#ifdef CLARITY_DEBUG
+    if (debugErrorSensor_) {
+        // Check if it's been past the grace period
+        if (millis() - debugErrorSensor_->GetStartupTime() >= 1000) {
+            bool hasChanged = debugErrorSensor_->HasStateChanged();
+            if (hasChanged) {
+                log_i("DEBUG: Debug error sensor state changed - triggering OnInterruptTriggered");
+                debugErrorSensor_->OnInterruptTriggered();
+            }
+        }
+    }
+#endif
+    
+    log_d("HYBRID POLLED: Evaluating %zu interrupts", polledInterrupts_.size());
     for (auto& interrupt : polledInterrupts_)
     {
         if (!interrupt || !interrupt->active || !interrupt->processFunc)
@@ -92,6 +116,7 @@ void PolledHandler::EvaluateAllInterrupts()
             
         if (ShouldEvaluateInterrupt(*interrupt))
         {
+            log_v("Evaluating interrupt: %s", interrupt->id);
             // Single evaluation per cycle - cache the result
             InterruptResult result = interrupt->processFunc(interrupt->context);
             interrupt->stateChanged = (result == InterruptResult::EXECUTE_EFFECT);
