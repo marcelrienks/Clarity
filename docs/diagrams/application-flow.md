@@ -23,68 +23,42 @@ flowchart TD
     Setup[setup]
     InitServices[Initialize Services]
     CreateProviders[Create Providers via ProviderFactory]
-    CreateManagers[Create Managers via ManagerFactory with IProviderFactory injected]
+    CreateManagers[Create Managers via ManagerFactory]
     CreateHandlers[InterruptManager Creates PolledHandler and QueuedHandler]
     CreateSensors[Handlers Create and Own Specialized Sensors]
-    RegisterInterrupts[Register Interrupts - POLLED to PolledHandler, QUEUED to QueuedHandler]
+    RegisterInterrupts[Register Interrupts]
     InitPanels[Initialize Panel System]
     LoadSplash[Load Splash Panel]
     StartLoop[Start Main Loop]
     
-    %% Main Loop Flow
-    LoopStart[Main Loop Start]
-    LVGLTasks[Main: LVGL Tasks]
-    EvaluateQueued[InterruptManager: Evaluate Queued]
-    PostQueued[InterruptManager: Post Queued]
-    CheckIdle{InterruptManager: If Idle?}
-    EvaluateActionPolled[InterruptManager: Evaluate and Action Polled]
-    CheckQueueAction{InterruptManager: If Queue Action?}
-    ActionQueued[InterruptManager: Action Queued]
-    LoopEnd[Main: Loop End]
+    %% Main Loop - 8 Step Flow
+    Step1[Step 1: Main Loop Start]
+    Step2[Step 2: Main LVGL Tasks]
+    Step3[Step 3: InterruptManager Evaluate Queued - ALWAYS]
+    Step4[Step 4: InterruptManager Post Queued - ALWAYS]
+    Step5{Step 5: InterruptManager If Idle?}
+    Step6[Step 6: InterruptManager Evaluate and Action Polled - IDLE ONLY]
+    Step7{Step 7: InterruptManager If Queue Action? - IDLE ONLY}
+    Step8[Step 8: Main Loop End]
     
-    %% Hybrid Interrupt Flow with Centralized Restoration
-    ProcessAllInterrupts[Evaluate All Interrupts for State Changes]
-    CheckStateChanges[Check Each Interrupt - evaluationFunc with context]
-    StateChanged{State Changed?}
-    ExecuteInterrupt[executionFunc with context - Single Execution]
-    UpdateInterruptState[Update active flags]
-    FindHighestPriorityAcrossHandlers[InterruptManager: Find Highest Priority Active Interrupt Across Both Handlers]
-    CheckInterruptDeactivated{Panel-Loading Interrupt Deactivated?}
-    CentralizedRestoration[InterruptManager HandleRestoration]
-    CheckActivePanelInterrupts{Any Active Panel-Loading Interrupts?}
-    ExecuteHighestPriority[Execute Highest Priority Panel Interrupt]
-    LoadPanelEffect[LOAD_PANEL Effect]
-    SetThemeEffect[SET_THEME Effect - Always Maintains]
-    SetPrefEffect[SET_PREFERENCE Effect]
-    ButtonActionEffect[BUTTON_ACTION Effect]
-    ExecutePanelFunction[Execute Panel Short/Long Press Function]
-    RestorePanel[Restore User Panel]
+    %% Queue Action Execution
+    ExecuteQueuedAction[Execute Queued Action]
     
-    %% Panel Operations
-    PanelInit[Panel Init]
-    CreateComponents[Panel Creates Components and Sensors]
-    PanelLoad[Panel Load]
-    PanelUpdate[Panel Update]
+    %% Button Processing Detail
+    ButtonPressStart[Button Press Start]
+    ButtonRelease[Button Release]
+    CalcDuration[Calculate Press Duration]
+    ShortPress[Short Press: 50ms-2000ms]
+    LongPress[Long Press: 2000ms-5000ms]
+    FlagForProcessing[Flag for Processing]
     
-    %% Configuration Flow
-    ConfigShortPress[Short Press - Cycle Options]
-    ConfigLongPress[Long Press - Save and Apply]
-    SavePreferences[Save to PreferenceManager]
+    %% Panel Effects
+    LoadPanel[Load Panel - Polled Interrupts]
+    SetTheme[Set Theme - Polled Interrupts]
+    ExecuteShortPress[Execute Short Press Function]
+    ExecuteLongPress[Execute Long Press Function]
     
-    %% Error Flow
-    ErrorOccurs[Error Occurs]
-    ErrorManager[ErrorManager ReportError]
-    ErrorTrigger[Error Trigger Evaluates]
-    LoadErrorPanel[Load Error Panel]
-    ErrorAcknowledge[User Acknowledges Errors]
-    ClearErrors[Clear Error Queue]
-    
-    %% Theme Flow
-    LightChange[Light Sensor Change]
-    ThemeSwitch[StyleManager SetTheme]
-    ApplyTheme[Apply to All Panels]
-    
-    %% Connections - Startup
+    %% Startup Connections
     Start --> Setup
     Setup --> InitServices
     InitServices --> CreateProviders
@@ -96,90 +70,51 @@ flowchart TD
     InitPanels --> LoadSplash
     LoadSplash --> StartLoop
     
-    %% Connections - Main Loop
-    StartLoop --> LoopStart
-    LoopStart --> LVGLTasks
-    LVGLTasks --> EvaluateQueued
-    EvaluateQueued --> PostQueued
-    PostQueued --> CheckIdle
-    CheckIdle -->|Yes| EvaluateActionPolled
-    EvaluateActionPolled --> CheckQueueAction
-    CheckQueueAction -->|Yes| ActionQueued
-    CheckQueueAction -->|No| LoopEnd
-    ActionQueued --> LoopEnd
-    CheckIdle -->|No| LoopEnd
-    LoopEnd --> LoopStart
-    CoordinateProcessing --> ProcessPolled
-    CoordinateProcessing --> ProcessQueued
-    ProcessPolled --> ProcessAllInterrupts
-    ProcessQueued --> ProcessAllInterrupts
-    ProcessAllInterrupts --> CheckStateChanges
-    CheckStateChanges --> StateChanged
-    StateChanged -->|Yes| ExecuteInterrupt
-    StateChanged -->|No| FindHighestPriorityAcrossHandlers
-    ExecuteInterrupt --> UpdateInterruptState
-    UpdateInterruptState --> CheckInterruptDeactivated
-    CheckInterruptDeactivated -->|Panel Interrupt Deactivated| CentralizedRestoration
-    CheckInterruptDeactivated -->|No Deactivation| FindHighestPriorityAcrossHandlers
-    FindHighestPriorityAcrossHandlers --> LoadPanelEffect
-    FindHighestPriorityAcrossHandlers --> SetThemeEffect
-    FindHighestPriorityAcrossHandlers --> SetPrefEffect
-    FindHighestPriorityAcrossHandlers --> ButtonActionEffect
-    LoadPanelEffect --> Loop
-    SetThemeEffect --> Loop
-    SetPrefEffect --> SavePreferences
-    ButtonActionEffect --> ExecutePanelFunction
-    ExecutePanelFunction --> Loop
-    CentralizedRestoration --> CheckActivePanelInterrupts
-    CheckActivePanelInterrupts -->|Yes| ExecuteHighestPriority
-    CheckActivePanelInterrupts -->|No| RestorePanel
-    ExecuteHighestPriority --> Loop
-    RestorePanel --> Loop
+    %% Main Loop Connections - 8 Step Flow
+    StartLoop --> Step1
+    Step1 --> Step2
+    Step2 --> Step3
+    Step3 --> Step4
+    Step4 --> Step5
+    Step5 -->|UI Idle| Step6
+    Step5 -->|UI Busy| Step8
+    Step6 --> Step7
+    Step7 -->|Queue Action Needed| ExecuteQueuedAction
+    Step7 -->|No Queue Action| Step8
+    ExecuteQueuedAction --> Step8
+    Step8 --> Step1
     
-    %% Connections - Panel Operations
-    LoadPanelEffect --> PanelInit
-    PanelInit --> CreateComponents
-    CreateComponents --> PanelLoad
-    PanelLoad --> PanelUpdate
-    PanelUpdate --> Loop
+    %% Button Processing Connections - Step 3 Always Runs
+    Step3 --> ButtonPressStart
+    Step3 --> ButtonRelease
+    ButtonRelease --> CalcDuration
+    CalcDuration --> ShortPress
+    CalcDuration --> LongPress
+    ShortPress --> FlagForProcessing
+    LongPress --> FlagForProcessing
+    FlagForProcessing --> Step4
     
-    %% Connections - Configuration
-    SetPrefEffect --> SavePreferences
-    SavePreferences --> Loop
+    %% Queue Action Execution - Step 7 Conditional
+    ExecuteQueuedAction --> ExecuteShortPress
+    ExecuteQueuedAction --> ExecuteLongPress
     
-    %% Connections - Error Flow
-    ErrorOccurs --> ErrorManager
-    ErrorManager -.->|POLLED by| ProcessPolled
-    ErrorAcknowledge --> ClearErrors
-    ClearErrors --> CentralizedRestoration
-    
-    %% Connections - Theme Flow
-    LightChange -.->|POLLED by| ProcessPolled
-    SetThemeEffect --> ThemeSwitch
-    ThemeSwitch --> ApplyTheme
-    ApplyTheme --> Loop
+    %% Polled Effect Connections - Step 6 Idle Only
+    Step6 --> LoadPanel
+    Step6 --> SetTheme
     
     %% Styling
     classDef startup fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef mainloop fill:#f1f8e9,stroke:#689f38,stroke-width:2px
-    classDef interrupt fill:#fff8e1,stroke:#f57c00,stroke-width:2px
-    classDef unified fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef button fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef effect fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef panel fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef config fill:#e0f2f1,stroke:#00796b,stroke-width:2px
-    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-    classDef theme fill:#f9fbe7,stroke:#827717,stroke-width:2px
     classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:3px
     
     class Start,Setup,InitServices,CreateProviders,CreateManagers,CreateHandlers,CreateSensors,RegisterInterrupts,InitPanels,LoadSplash,StartLoop startup
-    class LoopStart,LVGLTasks,EvaluateQueued,PostQueued,EvaluateActionPolled,ActionQueued,LoopEnd mainloop
-    class CoordinateProcessing,ProcessPolled,ProcessQueued,ProcessAllInterrupts,CheckStateChanges,ExecuteInterrupt,UpdateInterruptState,FindHighestPriorityAcrossHandlers,CentralizedRestoration,ExecuteHighestPriority interrupt
-    class LoadPanelEffect,SetThemeEffect,SetPrefEffect,ButtonActionEffect,ExecutePanelFunction effect
-    class PanelInit,CreateComponents,PanelLoad,PanelUpdate panel
-    class SavePreferences config
-    class ErrorOccurs,ErrorManager,ErrorAcknowledge,ClearErrors error
-    class LightChange,ThemeSwitch,ApplyTheme theme
-    class CheckIdle,CheckQueueAction,StateChanged,CheckInterruptDeactivated,CheckActivePanelInterrupts decision
+    class Step1,Step2,Step3,Step4,Step6,Step8 mainloop
+    class ButtonPressStart,ButtonRelease,CalcDuration,ShortPress,LongPress,FlagForProcessing button
+    class ExecuteQueuedAction,ExecuteShortPress,ExecuteLongPress button
+    class LoadPanel,SetTheme effect
+    class Step5,Step7 decision
 ```
 
 ## Key Flow Details
@@ -194,20 +129,32 @@ flowchart TD
 7. **Initial Display**: Splash panel loads with animation
 
 ### Runtime Processing
-**Exact Main Loop Flow Sequence**:
+**Exact 8-Step Main Loop Flow**:
 
-1. **Main Loop Start**: Begin new loop iteration
+1. **Main Loop Start**: Begin new iteration
 2. **Main: LVGL Tasks**: Process UI updates and rendering
-3. **InterruptManager: Evaluate Queued**: Always check button state changes 
-4. **InterruptManager: Post Queued**: Queue button events if state changed
-5. **InterruptManager: If Idle**: Check if UI is in idle state
-   - **If UI NOT Idle**: Skip to step 8 (Loop End)
+3. **InterruptManager: Evaluate Queued** (ALWAYS): 
+   - Detect button press start/release events
+   - Calculate press duration on release
+   - Determine short (50ms-2000ms) vs long press (2000ms-5000ms)
+4. **InterruptManager: Post Queued** (ALWAYS):
+   - Flag button events for processing during idle time
+5. **InterruptManager: If Idle**: Check UI state
+   - **If UI NOT Idle**: Skip to step 8 (ensures button detection continues)
    - **If UI IS Idle**: Continue to step 6
-6. **InterruptManager: Evaluate and Action Polled**: Check GPIO sensors and execute polled interrupts
-7. **InterruptManager: If Queue Action**: Check if queued interrupt needs execution
-   - **If Queue Action Needed**: Execute queued interrupt
-   - **If No Queue Action**: Skip queued execution  
-8. **Main: Loop End**: Complete loop iteration, return to step 1
+6. **InterruptManager: Evaluate and Action Polled** (IDLE ONLY):
+   - Check GPIO sensors (key, lock, lights, errors)
+   - Execute polled interrupts (load panels, set themes)
+7. **InterruptManager: If Queue Action** (IDLE ONLY):
+   - **If Queue Action Needed**: Execute appropriate button function (short/long press)
+   - **If No Queue Action**: Skip to step 8
+8. **Main: Loop End**: Complete iteration, return to step 1
+
+**Key Architecture Benefits**:
+- **Steps 3-4 ALWAYS execute**: Button presses never missed regardless of UI state
+- **Steps 6-7 IDLE ONLY**: Protects UI performance during animations/rendering
+- **Proper timing**: Accurate button press duration measurement
+- **Clean separation**: Evaluation (always) vs execution (idle only)
 
 ### Interrupt Processing Steps
 1. **State Change Detection**: Evaluation functions check current states

@@ -1,16 +1,18 @@
 # Architecture Overview Diagram
 
-This diagram shows the high-level component relationships in the Clarity system after implementing the handler-based interrupt architecture with centralized restoration and hybrid function pointer design.
+This diagram shows the high-level component relationships in the Clarity system with the implemented 8-step interrupt flow and button timing differentiation.
 
 ## Key Architectural Elements
 
+- **8-Step Interrupt Flow**: InterruptManager implements precise main loop flow with evaluation/execution separation
+- **Button Timing Logic**: Built-in short press (50ms-2000ms) and long press (2000ms-5000ms) differentiation
+- **Always vs Idle Processing**: Queued evaluation always runs, polled evaluation only during UI idle
 - **Dual Factory Pattern**: ProviderFactory creates providers, ManagerFactory creates managers with dependency injection
 - **Interface-Based Factories**: IProviderFactory enables testability with mock provider injection
-- **Hybrid Interrupt System**: IHandler interface with centralized restoration logic in InterruptManager
 - **Handler-Owned Sensors**: Handlers create and own their respective sensors internally
 - **Panel Self-Sufficiency**: Panels create their own components and data sensors internally
 - **Split Sensor Design**: Independent KeyPresentSensor and KeyNotPresentSensor classes
-- **Static Callbacks**: InterruptCallbacks utility with single execution function per interrupt (28-byte memory savings)
+- **Static Callbacks**: InterruptCallbacks utility with single execution function per interrupt
 - **Centralized Restoration**: InterruptManager::HandleRestoration() manages all panel restoration decisions
 - **Display-Only GPIO Panels**: Key/Lock panels don't create sensors, only display state
 - **Hardware Abstraction**: Providers isolate hardware dependencies
@@ -25,22 +27,22 @@ graph TB
     ManagerFactory[ManagerFactory<br/>future: implements IManagerFactory]
     
     %% Core Managers (IManager interface)
-    InterruptManager[InterruptManager<br/>implements IManager]
+    InterruptManager[InterruptManager<br/>implements IManager<br/>8-Step Flow with Button Timing]
     PanelManager[PanelManager<br/>implements IManager]
     StyleManager[StyleManager<br/>implements IManager]
     PreferenceManager[PreferenceManager<br/>implements IManager]
     ErrorManager[ErrorManager<br/>implements IManager]
     
     %% Coordinated Handlers (IHandler implementations)  
-    PolledHandler[PolledHandler<br/>implements IHandler<br/>GPIO state monitoring]
-    QueuedHandler[QueuedHandler<br/>implements IHandler<br/>Button event processing]
+    PolledHandler[PolledHandler<br/>implements IHandler<br/>GPIO state monitoring - IDLE ONLY]
+    QueuedHandler[QueuedHandler<br/>implements IHandler<br/>Button timing & execution - ALWAYS + IDLE]
     
     %% Sensors (Models - ISensor + BaseSensor)
     KeyPresentSensor[KeyPresentSensor<br/>implements ISensor<br/>GPIO 25]
     KeyNotPresentSensor[KeyNotPresentSensor<br/>implements ISensor<br/>GPIO 26]
     LockSensor[LockSensor<br/>implements ISensor<br/>GPIO 27]
     LightsSensor[LightsSensor<br/>implements ISensor<br/>GPIO 33]
-    ActionButtonSensor[ActionButtonSensor<br/>implements ISensor<br/>GPIO 32]
+    ActionButtonSensor[ActionButtonSensor<br/>implements ISensor<br/>GPIO 32 - State Only]
     OilPressureSensor[OilPressureSensor<br/>implements ISensor<br/>ADC]
     OilTemperatureSensor[OilTemperatureSensor<br/>implements ISensor<br/>ADC]
     BaseSensor[BaseSensor<br/>Change Detection Template]
@@ -200,21 +202,21 @@ graph TB
 - **ManagerFactory**: Creates all managers, receives IProviderFactory for dependency injection
 
 ### Managers
-- **InterruptManager**: Creates and coordinates PolledHandler and QueuedHandler during LVGL idle time with centralized restoration logic
+- **InterruptManager**: Implements 8-step interrupt flow with evaluation/execution separation, manages button press timing (50ms-2000ms short, 2000ms-5000ms long), coordinates PolledHandler and QueuedHandler with centralized restoration logic
 - **PanelManager**: Creates panels on demand, manages lifecycle, switching, and restoration tracking
 - **StyleManager**: Theme management (Day/Night) based on LightsSensor
 - **PreferenceManager**: Persistent settings storage
 - **ErrorManager**: Error collection with coordinated interrupt system integration
 
 ### Coordinated Handlers (IHandler Interface)
-- **PolledHandler**: Creates and owns GPIO sensors for state monitoring, manages POLLED interrupt processing with change detection, registers static callbacks with single execution function per interrupt
-- **QueuedHandler**: Creates and owns button sensor for event processing, manages QUEUED interrupt processing with event queue evaluation, registers static callbacks with single execution function per interrupt
-- **Centralized Restoration**: Both handlers coordinate through InterruptManager::HandleRestoration() for panel restoration decisions
+- **PolledHandler**: Creates and owns GPIO sensors for state monitoring, processes POLLED interrupts during UI IDLE time only, manages GPIO state changes and panel loading effects
+- **QueuedHandler**: Creates and owns button sensor, provides button state to InterruptManager for timing logic, executes queued button actions during UI IDLE time only
+- **Centralized Processing**: InterruptManager handles button press detection and timing logic directly, handlers focus on their specialized interrupt types
 
 ### Sensors (ISensor + BaseSensor)
 - **GPIO Interrupt Sensors**: Created and owned by PolledHandler for GPIO state monitoring (Key, Lock, Lights sensors)
-- **Button Interrupt Sensor**: Created and owned by QueuedHandler for button input processing
-- **Data Sensors**: Created by data panels for continuous measurement
+- **Button State Sensor**: Created and owned by QueuedHandler, provides GPIO state only - timing logic handled by InterruptManager
+- **Data Sensors**: Created by data panels for continuous measurement (Oil pressure, temperature)
 - **BaseSensor**: Provides change detection template for all sensors
 
 ### Panels (IPanel Interface)
@@ -223,14 +225,15 @@ graph TB
 - **Utility Panels**: Create own components for system functions (Splash, Error, Config)
 
 ### Critical Architecture Constraints
+- **8-Step Interrupt Flow**: Precise main loop sequence with evaluation/execution separation for optimal UI performance
+- **Button Timing Integration**: Built-in press duration measurement (50ms-2000ms short, 2000ms-5000ms long) in InterruptManager
+- **Always vs Idle Processing**: Queued interrupt evaluation (button detection) runs every loop, polled evaluation only during UI idle
 - **Interface-Based Design**: All major components implement interfaces for testability and loose coupling
 - **Dual Factory Pattern**: Separate factories for providers (ProviderFactory) and managers (ManagerFactory)
 - **Dependency Injection**: IProviderFactory interface enables test mocking and clean separation
 - **Generic Factory Support**: Template-based IFactory<T> for type-safe component creation
-- **Hybrid Interrupt Architecture**: InterruptManager coordinates PolledHandler and QueuedHandler with centralized restoration logic
 - **Centralized Restoration**: InterruptManager::HandleRestoration() eliminates distributed restoration complexity
-- **Effect-Based Execution**: Interrupts categorized by effect (LOAD_PANEL, SET_THEME, etc.) for simplified logic
+- **Effect-Based Execution**: Interrupts categorized by effect (LOAD_PANEL, SET_THEME, BUTTON_ACTION) for simplified logic
 - **Specialized Ownership**: PolledHandler owns GPIO sensors, QueuedHandler owns button sensor
-- **Single Execution Function**: All interrupt callbacks use single executionFunc with void* context (28-byte memory savings)
-- **Memory Safety**: Designed for ESP32 300KB RAM constraint with union-based data structures and memory optimization
-- **Change Detection**: POLLED interrupts fire on state transitions only
+- **Memory Safety**: Designed for ESP32 320KB RAM constraint with optimized data structures
+- **Change Detection**: POLLED interrupts fire on state transitions only, button timing handled by InterruptManager
