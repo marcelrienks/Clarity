@@ -534,10 +534,8 @@ interruptManager.RegisterInterrupt({
     .source = InterruptSource::POLLED,
     .effect = InterruptEffect::CUSTOM_FUNCTION,
     .evaluationFunc = DebugErrorInterruptActive,
-    .activateFunc = GenerateDebugError,
-    .deactivateFunc = nullptr,
-    .sensorContext = debugErrorSensor,
-    .serviceContext = errorManager
+    .executionFunc = GenerateDebugError,
+    .context = debugErrorSensor
 });
 #endif
 
@@ -559,7 +557,12 @@ static void GenerateDebugError(void* context) {
 ## Universal Button System Architecture
 
 ### Button Function Injection Pattern
-The universal button system enables all panels to respond to button input through a coordinated injection mechanism:
+The universal button system enables all panels to respond to button input through a coordinated injection mechanism with precise timing control:
+
+**Button Hardware Configuration**:
+- **GPIO**: Single button on GPIO 32 with INPUT_PULLDOWN configuration
+- **Timing**: Short press (50ms-2000ms), Long press (2000ms-5000ms)
+- **Debouncing**: 50ms debounce time to prevent false triggers
 
 ```cpp
 // IActionService interface - all panels must implement
@@ -807,7 +810,7 @@ public:
 };
 ```
 
-#### ManagerFactory (future: implements IManagerFactory)
+#### ManagerFactory (implements IManagerFactory)
 - Creates all system managers (Interrupt, Panel, Style, Preference, Error)
 - Receives IProviderFactory instance for dependency injection
 - Passes providers to managers as needed
@@ -962,8 +965,6 @@ The system has been designed with a coordinated interrupt architecture that uses
 - **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, CUSTOM_FUNCTION effects
 - **Simplified Restoration**: Effect-based logic eliminates complex priority blocking
 - **Eliminated Redundancy**: Direct coordination removes unnecessary UnifiedInterruptHandler layer
-
-This coordinated approach is documented in detail in the plans/interrupt-consolidation-plan.md.
 
 ## Testing Limitations
 

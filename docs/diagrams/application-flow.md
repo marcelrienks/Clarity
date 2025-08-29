@@ -209,6 +209,6 @@ flowchart TB
 - **Continuous Evaluation**: Queued interrupts always evaluated for responsiveness
 - **Efficient Flow**: Main loop integrates LVGL, interrupts, errors, and panels
 - **Clean Architecture**: Clear separation between evaluation and execution phases
-- **Memory Optimized**: Single execution function reduces memory overhead
+- **Memory Optimized**: Single execution function reduces memory overhead (ESP32 320KB RAM constraint)
 
 For complete architecture details, see: **[Architecture Document](../architecture.md)**

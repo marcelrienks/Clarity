@@ -79,7 +79,7 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
    - **Priority**: CRITICAL - overrides all other panels when active
    - **Short Press**: No action (status display only)
    - **Long Press**: Load config panel
-   - **Sensors**: None - display-only, receives state from interrupt system
+   - **Sensors**: None - display-only, receives state from interrupt handlers that own GPIO sensors
    
 4. **Lock Panel**: Vehicle security status indicator (Display-only)
    - **Visual States**: Lock engaged/disengaged indication
@@ -87,7 +87,7 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
    - **Priority**: IMPORTANT - overrides user panels but lower than key panels
    - **Short Press**: No action (status display only)
    - **Long Press**: Load config panel
-   - **Sensors**: None - display-only, receives state from interrupt system
+   - **Sensors**: None - display-only, receives state from interrupt handlers that own GPIO sensors
    
 5. **Error Panel**: System error management with navigation
    - **Primary Function**: Display and manage system errors with user interaction
@@ -208,10 +208,10 @@ All sensors inherit from BaseSensor for consistent change detection. For impleme
 **Sensor Implementation**: See **[Architecture Document](architecture.md#sensor-architecture)** for complete patterns.
 
 **Sensor Ownership**:
-- **PolledHandler**: Creates and owns GPIO sensors for state monitoring
-- **QueuedHandler**: Creates and owns button sensor for event processing  
-- **Data Panels**: Create own data sensors internally
-- **Display-Only Panels**: Create only components, no sensors
+- **PolledHandler**: Creates and owns GPIO sensors for state monitoring (Key, Lock, Lights sensors)
+- **QueuedHandler**: Creates and owns button sensor for event processing (ActionButtonSensor)  
+- **Data Panels**: Create own data sensors internally (Oil pressure/temperature sensors)
+- **Display-Only Panels**: Create only components, no sensors (receive state from handlers)
 
 For complete ownership model, see: **[Architecture Document](architecture.md#memory-architecture)**
 
