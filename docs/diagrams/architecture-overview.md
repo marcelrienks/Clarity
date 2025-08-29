@@ -1,10 +1,10 @@
 # Architecture Overview Diagram
 
-This diagram shows the high-level component relationships in the Clarity system with the implemented 8-step interrupt flow and button timing differentiation.
+This diagram shows the high-level component relationships in the Clarity system with the implemented interrupt flow and button timing differentiation.
 
 ## Key Architectural Elements
 
-- **8-Step Interrupt Flow**: InterruptManager implements precise main loop flow with evaluation/execution separation
+- **Interrupt Flow**: InterruptManager implements precise main loop flow with evaluation/execution separation
 - **Button Timing Logic**: Built-in short press (50ms-2000ms) and long press (2000ms-5000ms) differentiation
 - **Always vs Idle Processing**: Queued evaluation always runs, polled evaluation only during UI idle
 - **Dual Factory Pattern**: ProviderFactory creates providers, ManagerFactory creates managers with dependency injection
@@ -41,7 +41,7 @@ flowchart TD
     %% Core Managers Layer
     subgraph CoreManagers ["Core Managers"]
         ErrorManager["ErrorManager"]
-        InterruptManager["InterruptManager<br/>8-Step Flow"]
+        InterruptManager["InterruptManager<br/>Coordinated Flow"]
         PreferenceManager["PreferenceManager"]
         StyleManager["StyleManager"]  
         PanelManager["PanelManager"]
@@ -91,7 +91,7 @@ flowchart TD
     ProviderFactory --> GpioProvider & DisplayProvider & DeviceProvider
     ManagerFactory --> ErrorManager & InterruptManager & PreferenceManager & StyleManager & PanelManager
     
-    %% Interrupt Manager 8-Step Flow
+    %% Interrupt Manager Coordinated Flow
     InterruptManager --> QueuedHandler & PolledHandler
     QueuedHandler --> ActionButtonSensor
     PolledHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
@@ -127,7 +127,7 @@ flowchart TD
 - **ManagerFactory**: Creates all managers, receives IProviderFactory for dependency injection
 
 ### Managers
-- **InterruptManager**: Implements 8-step interrupt flow with evaluation/execution separation, manages button press timing (50ms-2000ms short, 2000ms-5000ms long), coordinates PolledHandler and QueuedHandler with centralized restoration logic
+- **InterruptManager**: Implements interrupt flow with evaluation/execution separation, manages button press timing (50ms-2000ms short, 2000ms-5000ms long), coordinates PolledHandler and QueuedHandler with centralized restoration logic
 - **PanelManager**: Creates panels on demand, manages lifecycle, switching, and restoration tracking
 - **StyleManager**: Theme management (Day/Night) based on LightsSensor
 - **PreferenceManager**: Persistent settings storage
@@ -150,7 +150,7 @@ flowchart TD
 - **Utility Panels**: Create own components for system functions (Splash, Error, Config)
 
 ### Critical Architecture Constraints
-- **8-Step Interrupt Flow**: Precise main loop sequence with evaluation/execution separation for optimal UI performance
+- **Interrupt Flow**: Precise main loop sequence with evaluation/execution separation for optimal UI performance
 - **Button Timing Integration**: Built-in press duration measurement (50ms-2000ms short, 2000ms-5000ms long) in InterruptManager
 - **Always vs Idle Processing**: Queued interrupt evaluation (button detection) runs every loop, polled evaluation only during UI idle
 - **Interface-Based Design**: All major components implement interfaces for testability and loose coupling

@@ -85,7 +85,7 @@ private:
     void ProcessHandlers();
     void UpdateHandlerContexts();
     
-    // 8-step interrupt flow methods
+    // Interrupt flow methods
     void EvaluateQueuedInterrupts();
     void PostQueuedInterrupts();
     bool IsUIIdle() const;
@@ -155,7 +155,7 @@ private:
     // GPIO provider reference (stored to avoid circular dependency during initialization)
     IGpioProvider* gpioProvider_ = nullptr;
     
-    // 8-step flow state tracking
+    // Flow state tracking
     bool queuedInterruptsNeedProcessing_ = false;
     unsigned long buttonPressStartTime_ = 0;
     bool buttonCurrentlyPressed_ = false;

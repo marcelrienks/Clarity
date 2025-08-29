@@ -213,7 +213,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 ## Coordinated Interrupt Processing Flow
 
 ### Main Loop Processing Model
-The interrupt system follows a precise 8-step sequence in every main loop iteration:
+The interrupt system follows a precise sequence in every main loop iteration:
 
 **Exact Main Loop Flow**:
 1. **Main Loop Start**: Begin new iteration

@@ -101,14 +101,14 @@ InterruptResult InterruptCallbacks::LightsStateProcess(void* context) {
 }
 
 InterruptResult InterruptCallbacks::ShortPressProcess(void* context) {
-    log_v("ShortPressProcess: Callback triggered by InterruptManager 8-step flow");
+    log_v("ShortPressProcess: Callback triggered by InterruptManager interrupt flow");
     // The InterruptManager already determined this is a short press
     // Just signal that the effect should be executed
     return InterruptResult::EXECUTE_EFFECT;
 }
 
 InterruptResult InterruptCallbacks::LongPressProcess(void* context) {
-    log_v("LongPressProcess: Callback triggered by InterruptManager 8-step flow");
+    log_v("LongPressProcess: Callback triggered by InterruptManager interrupt flow");
     // The InterruptManager already determined this is a long press
     // Just signal that the effect should be executed
     return InterruptResult::EXECUTE_EFFECT;

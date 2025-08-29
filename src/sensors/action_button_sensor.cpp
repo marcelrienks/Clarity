@@ -77,5 +77,5 @@ bool ActionButtonSensor::HasStateChanged()
 void ActionButtonSensor::OnInterruptTriggered()
 {
     // This method is no longer used - button timing is handled by InterruptManager
-    log_d("OnInterruptTriggered() deprecated - button handling moved to InterruptManager 8-step flow");
+    log_d("OnInterruptTriggered() deprecated - button handling moved to InterruptManager interrupt flow");
 }

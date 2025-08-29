@@ -106,10 +106,10 @@ void InterruptManager::UpdateHandlerContexts()
 }
 
 
-// Core interrupt processing methods - implements 8-step flow
+// Core interrupt processing methods - implements interrupt flow
 void InterruptManager::Process()
 {
-    log_v("InterruptManager::Process() called - 8-step flow entry");
+    log_v("InterruptManager::Process() called - interrupt flow entry");
     
     if (!initialized_)
     {
@@ -134,10 +134,10 @@ void InterruptManager::Process()
     // Step 7: InterruptManager: If Queue Action (IDLE ONLY)
     ProcessQueuedInterruptActions();
     
-    log_v("InterruptManager::Process() completed 8-step flow");
+    log_v("InterruptManager::Process() completed interrupt flow");
 }
 
-// 8-step flow implementation methods
+// Interrupt flow implementation methods
 
 void InterruptManager::EvaluateQueuedInterrupts()
 {
