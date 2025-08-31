@@ -4,31 +4,34 @@
 
 /**
  * @file interrupt_callbacks.h
- * @brief Static callback functions for interrupt system
+ * @brief Static callback functions for simplified interrupt system
  *
- * @details Static callback functions with separated evaluation and execution.
+ * @details Static callback functions for single-purpose interrupts.
+ * Each function performs one specific action when the interrupt is triggered.
  * Static function pointers are used to prevent heap fragmentation and ensure
  * memory safety on ESP32.
  */
 struct InterruptCallbacks {
     
-    // Evaluation functions - check if interrupt condition is met
-    static bool KeyPresentEvaluate(void* context);
-    static bool KeyNotPresentEvaluate(void* context);
-    static bool LockStateEvaluate(void* context);
-    static bool LightsStateEvaluate(void* context);
-    static bool ShortPressEvaluate(void* context);
-    static bool LongPressEvaluate(void* context);
-    static bool ErrorOccurredEvaluate(void* context);
+    // Panel loading interrupts
+    static void KeyPresentActivate(void* context);
+    static void KeyNotPresentActivate(void* context);
     
-    // Execution functions - perform the interrupt action
-    static void KeyPresentExecute(void* context);
-    static void KeyNotPresentExecute(void* context);
-    static void LockStateExecute(void* context);
-    static void LightsStateExecute(void* context);
-    static void ShortPressExecute(void* context);
-    static void LongPressExecute(void* context);
-    static void ErrorOccurredExecute(void* context);
+    // Lock state interrupts - activation and deactivation
+    static void LockEngagedActivate(void* context);
+    static void LockDisengagedActivate(void* context);
+    
+    // Lights state interrupts - activation and deactivation  
+    static void LightsOnActivate(void* context);
+    static void LightsOffActivate(void* context);
+    
+    // Error state interrupts - activation and deactivation
+    static void ErrorOccurredActivate(void* context);
+    static void ErrorClearedActivate(void* context);
+    
+    // Button action interrupts
+    static void ShortPressActivate(void* context);
+    static void LongPressActivate(void* context);
     
 private:
     // Helper functions for panel management

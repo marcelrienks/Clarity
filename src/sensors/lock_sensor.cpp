@@ -69,9 +69,32 @@ bool LockSensor::HasStateChanged()
         log_d("Lock state changed from %s to %s", 
               previousLockState_ ? "engaged" : "disengaged",
               currentState ? "engaged" : "disengaged");
+              
+        // In simplified system, determine which interrupt should be triggered
+        if (currentState) 
+        {
+            // Lock is now engaged - trigger lock_engaged interrupt
+            log_d("Lock engaged - should trigger 'lock_engaged' interrupt");
+            triggerInterruptId_ = "lock_engaged";
+        }
+        else 
+        {
+            // Lock is now disengaged - trigger lock_disengaged interrupt  
+            log_d("Lock disengaged - should trigger 'lock_disengaged' interrupt");
+            triggerInterruptId_ = "lock_disengaged";
+        }
+    }
+    else
+    {
+        triggerInterruptId_ = nullptr; // No interrupt to trigger
     }
     
     return changed;
+}
+
+const char* LockSensor::GetTriggerInterruptId() const
+{
+    return triggerInterruptId_;
 }
 
 void LockSensor::OnInterruptTriggered()

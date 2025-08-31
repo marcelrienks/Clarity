@@ -65,6 +65,9 @@ class ButtonSensor : public ISensor, public BaseSensor
     
     // BaseSensor interface
     bool HasStateChanged() override;
+    
+    // Simplified interrupt system
+    const char* GetTriggerInterruptId() const;
 
   protected:
     // Custom interrupt behavior
@@ -84,6 +87,7 @@ class ButtonSensor : public ISensor, public BaseSensor
     // Action detection
     ButtonAction detectedAction_ = ButtonAction::NONE;
     bool actionReady_ = false;
+    const char* triggerInterruptId_ = nullptr;  // ID of interrupt to trigger on action
     
     /// @brief Read GPIO pin and determine button state
     /// @return Button state based on GPIO pin reading

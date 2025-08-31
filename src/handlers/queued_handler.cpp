@@ -41,44 +41,49 @@ QueuedHandler::~QueuedHandler()
 
 void QueuedHandler::Process()
 {
-    log_v("Process() called");
+    log_v("SIMPLIFIED QUEUED: Process() called");
     
-    if (queuedInterrupts_.empty())
+    // In simplified system, check button sensor for state changes
+    CheckButtonSensorStateChange();
+}
+
+void QueuedHandler::CheckButtonSensorStateChange()
+{
+    log_v("CheckButtonSensorStateChange() called");
+    
+    if (buttonSensor_ && buttonSensor_->HasStateChanged())
     {
-        return;
-    }
-    
-    // Remove expired entries first
-    RemoveExpiredEntries();
-    
-    // Process interrupts in queue order (FIFO), but respect priority
-    auto it = queuedInterrupts_.begin();
-    while (it != queuedInterrupts_.end())
-    {
-        const auto& entry = *it;
-        
-        if (CanExecuteInterrupt(entry.interrupt))
+        const char* triggerId = buttonSensor_->GetTriggerInterruptId();
+        if (triggerId)
         {
-            log_d("Processing queued interrupt '%s'", entry.interrupt->id ? entry.interrupt->id : "unknown");
-            ProcessQueuedInterrupt(entry);
-            it = queuedInterrupts_.erase(it);
-        }
-        else
-        {
-            // Check for critical interrupts that should be processed immediately
-            if (entry.interrupt->priority == Priority::CRITICAL)
-            {
-                log_d("Processing critical queued interrupt '%s' immediately", 
-                      entry.interrupt->id ? entry.interrupt->id : "unknown");
-                ProcessQueuedInterrupt(entry);
-                it = queuedInterrupts_.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
+            log_d("Button sensor changed - triggering interrupt: %s", triggerId);
+            TriggerInterruptByID(triggerId);
         }
     }
+}
+
+void QueuedHandler::TriggerInterruptByID(const char* interruptId)
+{
+    log_v("TriggerInterruptByID(%s) called", interruptId);
+    
+    // Find the interrupt with matching ID in our registered interrupts
+    for (auto& interrupt : queuedInterrupts_)
+    {
+        if (interrupt.interrupt && interrupt.interrupt->IsActive() && 
+            interrupt.interrupt->id && strcmp(interrupt.interrupt->id, interruptId) == 0)
+        {
+            log_i("SIMPLIFIED QUEUED: Executing interrupt '%s' directly", interruptId);
+            
+            // Execute the interrupt directly
+            if (interrupt.interrupt->execute)
+            {
+                interrupt.interrupt->execute(interrupt.interrupt->context);
+            }
+            return;
+        }
+    }
+    
+    log_w("Could not find active interrupt with ID: %s", interruptId);
 }
 
 void QueuedHandler::RegisterInterrupt(struct Interrupt* interrupt)
@@ -236,23 +241,16 @@ void QueuedHandler::ProcessQueuedInterrupt(const QueuedInterruptEntry& entry)
     log_v("ProcessQueuedInterrupt() called for: %s", 
           entry.interrupt->id ? entry.interrupt->id : "unknown");
     
-    if (!entry.interrupt->evaluationFunc || !entry.interrupt->executionFunc)
+    if (!entry.interrupt->execute)
     {
-        log_w("Invalid interrupt functions for '%s'", 
+        log_w("Invalid interrupt execute function for '%s'", 
               entry.interrupt->id ? entry.interrupt->id : "unknown");
         return;
     }
     
-    // Evaluate the interrupt condition
-    if (entry.interrupt->evaluationFunc(entry.interrupt->context))
-    {
-        log_d("Queued interrupt '%s' condition met - executing", entry.interrupt->id);
-        entry.interrupt->executionFunc(entry.interrupt->context);
-    }
-    else
-    {
-        log_d("Queued interrupt '%s' condition not met - skipping", entry.interrupt->id);
-    }
+    // Execute the interrupt directly in simplified system
+    log_d("Executing queued interrupt '%s'", entry.interrupt->id);
+    entry.interrupt->execute(entry.interrupt->context);
 }
 
 bool QueuedHandler::HasExpired(const QueuedInterruptEntry& entry) const

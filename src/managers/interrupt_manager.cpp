@@ -151,7 +151,8 @@ void InterruptManager::EvaluateQueuedInterrupts()
             continue;
         
         // Call evaluation function to check if state changed
-        if (interrupt.evaluationFunc && interrupt.evaluationFunc(interrupt.context))
+        // In simplified system, interrupts are triggered by sensors, not evaluated here
+        if (interrupt.NeedsExecution())
         {
             interrupt.SetNeedsExecution(true);
             log_d("Queued interrupt '%s' needs execution", interrupt.id);
@@ -172,7 +173,8 @@ void InterruptManager::EvaluatePolledInterrupts()
             continue;
         
         // Call evaluation function to check if state changed
-        if (interrupt.evaluationFunc && interrupt.evaluationFunc(interrupt.context))
+        // In simplified system, interrupts are triggered by sensors, not evaluated here
+        if (interrupt.NeedsExecution())
         {
             interrupt.SetNeedsExecution(true);
             log_d("Polled interrupt '%s' needs execution", interrupt.id);
@@ -206,11 +208,11 @@ void InterruptManager::ExecutePolledInterrupts()
         if (interrupt.source != InterruptSource::POLLED || !interrupt.NeedsExecution())
             continue;
         
-        // Execute the interrupt
-        if (interrupt.executionFunc)
+        // Execute the interrupt directly
+        if (interrupt.execute)
         {
             log_d("Executing polled interrupt '%s'", interrupt.id);
-            ExecuteByEffect(interrupt);
+            interrupt.execute(interrupt.context);
             interrupt.SetNeedsExecution(false);
             totalExecutions_++;
         }
@@ -229,11 +231,11 @@ void InterruptManager::ExecuteQueuedInterrupts()
         if (interrupt.source != InterruptSource::QUEUED || !interrupt.NeedsExecution())
             continue;
         
-        // Execute the interrupt
-        if (interrupt.executionFunc)
+        // Execute the interrupt directly
+        if (interrupt.execute)
         {
             log_d("Executing queued interrupt '%s'", interrupt.id);
-            ExecuteByEffect(interrupt);
+            interrupt.execute(interrupt.context);
             interrupt.SetNeedsExecution(false);
             totalExecutions_++;
         }
@@ -251,7 +253,7 @@ bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
 {
     log_v("RegisterInterrupt() called for interrupt: %s", interrupt.id ? interrupt.id : "null");
     
-    if (!interrupt.id || !interrupt.evaluationFunc || !interrupt.executionFunc)
+    if (!interrupt.id || !interrupt.execute)
     {
         log_e("Invalid interrupt registration - missing required fields");
         return false;
@@ -358,30 +360,14 @@ void InterruptManager::UpdateInterruptContext(const char* id, void* context)
     }
 }
 
-void InterruptManager::UpdateInterruptEvaluation(const char* id, bool (*evaluationFunc)(void*))
-{
-    log_v("UpdateInterruptEvaluation() called for: %s", id ? id : "null");
-    
-    Interrupt* interrupt = FindInterrupt(id);
-    if (interrupt)
-    {
-        interrupt->evaluationFunc = evaluationFunc;
-        log_d("Updated evaluation function for interrupt '%s'", id);
-    }
-    else
-    {
-        log_w("Interrupt '%s' not found for evaluation update", id ? id : "null");
-    }
-}
-
-void InterruptManager::UpdateInterruptExecution(const char* id, void (*executionFunc)(void*))
+void InterruptManager::UpdateInterruptExecution(const char* id, void (*execute)(void*))
 {
     log_v("UpdateInterruptExecution() called for: %s", id ? id : "null");
     
     Interrupt* interrupt = FindInterrupt(id);
     if (interrupt)
     {
-        interrupt->executionFunc = executionFunc;
+        interrupt->execute = execute;
         log_d("Updated execution function for interrupt '%s'", id);
     }
     else
@@ -459,11 +445,13 @@ size_t InterruptManager::GetInterruptCount() const
 
 void InterruptManager::ExecuteEffect(const Interrupt& interrupt)
 {
-    log_v("ExecuteEffect() called for interrupt '%s' with effect %d", 
-          interrupt.id, static_cast<int>(interrupt.effect));
+    log_v("ExecuteEffect() called for interrupt '%s'", interrupt.id);
     
-    // Delegate to the private ExecuteByEffect method
-    ExecuteByEffect(interrupt);
+    // In simplified system, execute the interrupt directly
+    if (interrupt.execute)
+    {
+        interrupt.execute(interrupt.context);
+    }
 }
 
 void InterruptManager::CheckRestoration()
@@ -476,31 +464,16 @@ void InterruptManager::CheckRestoration()
 
 void InterruptManager::ExecuteByEffect(const Interrupt& interrupt)
 {
-    log_v("ExecuteByEffect() called for interrupt '%s' with effect %d", 
-          interrupt.id, static_cast<int>(interrupt.effect));
+    log_v("ExecuteByEffect() called for interrupt '%s'", interrupt.id);
     
-    switch (interrupt.effect)
+    // In simplified system, execute the interrupt directly through its callback
+    if (interrupt.execute)
     {
-        case InterruptEffect::LOAD_PANEL:
-            LoadPanelFromInterrupt(interrupt);
-            break;
-            
-        case InterruptEffect::SET_THEME:
-            ApplyThemeFromInterrupt(interrupt);
-            break;
-            
-        case InterruptEffect::SET_PREFERENCE:
-            ApplyPreferenceFromInterrupt(interrupt);
-            break;
-            
-        case InterruptEffect::BUTTON_ACTION:
-            ExecuteButtonAction(interrupt);
-            break;
-            
-        default:
-            log_w("Unknown interrupt effect: %d", static_cast<int>(interrupt.effect));
-            // No fallback execution - all effects must be handled explicitly
-            break;
+        interrupt.execute(interrupt.context);
+    }
+    else
+    {
+        log_w("No execute function for interrupt '%s'", interrupt.id);
     }
 }
 
@@ -552,13 +525,12 @@ void InterruptManager::PrintSystemStatus() const
         const char* priorityStr = interrupt.priority == Priority::CRITICAL ? "CRITICAL" :
                                  interrupt.priority == Priority::IMPORTANT ? "IMPORTANT" : "NORMAL";
         const char* sourceStr = interrupt.source == InterruptSource::POLLED ? "POLLED" : "QUEUED";
-        const char* effectStr = interrupt.effect == InterruptEffect::LOAD_PANEL ? "LOAD_PANEL" :
-                               interrupt.effect == InterruptEffect::SET_THEME ? "SET_THEME" :
-                               interrupt.effect == InterruptEffect::SET_PREFERENCE ? "SET_PREFERENCE" : "BUTTON_ACTION";
+        // In simplified system, effect is not used
+        const char* blockingStr = interrupt.blocking ? "BLOCKING" : "NON_BLOCKING";
         
         log_i("  [%d] %s: %s/%s/%s %s", 
               i, interrupt.id ? interrupt.id : "null", 
-              priorityStr, sourceStr, effectStr,
+              priorityStr, sourceStr, blockingStr,
               interrupt.IsActive() ? "ACTIVE" : "INACTIVE");
     }
     
@@ -804,11 +776,8 @@ void InterruptManager::HandleRestoration()
     {
         const Interrupt& interrupt = interrupts_[i];
         
-        // Only check panel-loading interrupts that track restoration
-        if (!interrupt.IsActive() || interrupt.effect != InterruptEffect::LOAD_PANEL)
-            continue;
-            
-        if (!interrupt.data.panel.trackForRestore)
+        // Only check blocking interrupts in simplified system
+        if (!interrupt.IsActive() || !interrupt.blocking)
             continue;
         
         // If we have an active restoration-tracking interrupt, no restoration needed

@@ -65,6 +65,10 @@ private:
     void ExecuteInterrupt(Interrupt& interrupt);
     bool IsGroupExecuted(const char* group) const;
     
+    // Simplified interrupt system methods
+    void CheckSensorStateChanges();
+    void TriggerInterruptByID(const char* interruptId);
+    
     static constexpr size_t MAX_POLLED_INTERRUPTS = 16;
     static constexpr unsigned long DEFAULT_EVALUATION_INTERVAL_MS = 100;
     

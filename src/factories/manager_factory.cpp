@@ -175,100 +175,135 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         return;
     }
     
-    // 1. Key Present Interrupt (POLLED, CRITICAL priority)
+    // 1. Key Present Interrupt - Single purpose: Load KEY panel and save restoration point
     Interrupt keyPresentInterrupt = {
         .id = TriggerIds::KEY_PRESENT,
         .priority = Priority::CRITICAL,
         .source = InterruptSource::POLLED,
-        .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::KeyPresentEvaluate,
-        .executionFunc = InterruptCallbacks::KeyPresentExecute,
+        .execute = InterruptCallbacks::KeyPresentActivate,
         .context = polledHandler->GetKeyPresentSensor(),
-        .data = {.panel = {.panelName = PanelNames::KEY, .trackForRestore = true}},
+        .data = {.panelName = PanelNames::KEY},
+        .blocking = false,  // Key panel doesn't block restoration
         .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(keyPresentInterrupt);
     
-    // 2. Key Not Present Interrupt (POLLED, IMPORTANT priority)
+    // 2. Key Not Present Interrupt - Single purpose: Load KEY panel and save restoration point  
     Interrupt keyNotPresentInterrupt = {
         .id = TriggerIds::KEY_NOT_PRESENT,
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::POLLED,
-        .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::KeyNotPresentEvaluate,
-        .executionFunc = InterruptCallbacks::KeyNotPresentExecute,
+        .execute = InterruptCallbacks::KeyNotPresentActivate,
         .context = polledHandler->GetKeyNotPresentSensor(),
-        .data = {.panel = {.panelName = PanelNames::KEY, .trackForRestore = true}},
+        .data = {.panelName = PanelNames::KEY},
+        .blocking = false,  // Key panel doesn't block restoration
         .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(keyNotPresentInterrupt);
     
-    // 3. Lock State Interrupt (POLLED, IMPORTANT priority)
-    Interrupt lockStateInterrupt = {
-        .id = TriggerIds::LOCK_STATE,
+    // 3. Lock Engaged Interrupt - Single purpose: Load LOCK panel and save restoration point
+    Interrupt lockEngagedInterrupt = {
+        .id = "lock_engaged",
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::POLLED,
-        .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::LockStateEvaluate,
-        .executionFunc = InterruptCallbacks::LockStateExecute,
+        .execute = InterruptCallbacks::LockEngagedActivate,
         .context = polledHandler->GetLockSensor(),
-        .data = {.panel = {.panelName = PanelNames::LOCK, .trackForRestore = true}},
+        .data = {.panelName = PanelNames::LOCK},
+        .blocking = true,  // Lock panel blocks restoration
         .flags = InterruptFlags::NONE
     };
-    interruptManager->RegisterInterrupt(lockStateInterrupt);
+    interruptManager->RegisterInterrupt(lockEngagedInterrupt);
     
-    // 4. Lights State Interrupt (POLLED, NORMAL priority)
-    Interrupt lightsStateInterrupt = {
-        .id = TriggerIds::LIGHTS_STATE,
+    // 4. Lock Disengaged Interrupt - Single purpose: Restore to previous panel if no other blocking interrupts
+    Interrupt lockDisengagedInterrupt = {
+        .id = "lock_disengaged",
+        .priority = Priority::IMPORTANT,
+        .source = InterruptSource::POLLED,
+        .execute = InterruptCallbacks::LockDisengagedActivate,
+        .context = polledHandler->GetLockSensor(),
+        .data = {.panelName = nullptr},  // No panel to load, just restore
+        .blocking = false,  // Deactivation doesn't block
+        .flags = InterruptFlags::NONE
+    };
+    interruptManager->RegisterInterrupt(lockDisengagedInterrupt);
+    
+    // 5. Lights On Interrupt - Single purpose: Set NIGHT theme
+    Interrupt lightsOnInterrupt = {
+        .id = "lights_on",
         .priority = Priority::NORMAL,
         .source = InterruptSource::POLLED,
-        .effect = InterruptEffect::SET_THEME,
-        .evaluationFunc = InterruptCallbacks::LightsStateEvaluate,
-        .executionFunc = InterruptCallbacks::LightsStateExecute,
+        .execute = InterruptCallbacks::LightsOnActivate,
         .context = polledHandler->GetLightsSensor(),
-        .data = {.theme = {}},
-        .flags = InterruptFlags::ALWAYS_EXECUTE
-    };
-    interruptManager->RegisterInterrupt(lightsStateInterrupt);
-    
-    Interrupt errorInterrupt = {
-        .id = TriggerIds::ERROR_OCCURRED,
-        .priority = Priority::CRITICAL,
-        .source = InterruptSource::POLLED,
-        .effect = InterruptEffect::LOAD_PANEL,
-        .evaluationFunc = InterruptCallbacks::ErrorOccurredEvaluate,
-        .executionFunc = InterruptCallbacks::ErrorOccurredExecute,
-        .context = &ErrorManager::Instance(),
-        .data = {.panel = {.panelName = PanelNames::ERROR, .trackForRestore = true}},
+        .data = {.theme = Themes::NIGHT},
+        .blocking = false,  // Theme change doesn't block
         .flags = InterruptFlags::NONE
     };
-    interruptManager->RegisterInterrupt(errorInterrupt);
+    interruptManager->RegisterInterrupt(lightsOnInterrupt);
     
+    // 6. Lights Off Interrupt - Single purpose: Set DAY theme
+    Interrupt lightsOffInterrupt = {
+        .id = "lights_off",
+        .priority = Priority::NORMAL,
+        .source = InterruptSource::POLLED,
+        .execute = InterruptCallbacks::LightsOffActivate,
+        .context = polledHandler->GetLightsSensor(),
+        .data = {.theme = Themes::DAY},
+        .blocking = false,  // Theme change doesn't block
+        .flags = InterruptFlags::NONE
+    };
+    interruptManager->RegisterInterrupt(lightsOffInterrupt);
+    
+    // 7. Error Occurred Interrupt - Single purpose: Load ERROR panel and save restoration point
+    Interrupt errorOccurredInterrupt = {
+        .id = "error_occurred",
+        .priority = Priority::CRITICAL,
+        .source = InterruptSource::POLLED,
+        .execute = InterruptCallbacks::ErrorOccurredActivate,
+        .context = &ErrorManager::Instance(),
+        .data = {.panelName = PanelNames::ERROR},
+        .blocking = true,  // Error panel blocks restoration
+        .flags = InterruptFlags::NONE
+    };
+    interruptManager->RegisterInterrupt(errorOccurredInterrupt);
+    
+    // 8. Error Cleared Interrupt - Single purpose: Restore to previous panel if no other blocking interrupts
+    Interrupt errorClearedInterrupt = {
+        .id = "error_cleared",
+        .priority = Priority::CRITICAL,
+        .source = InterruptSource::POLLED,
+        .execute = InterruptCallbacks::ErrorClearedActivate,
+        .context = &ErrorManager::Instance(),
+        .data = {.panelName = nullptr},  // No panel to load, just restore
+        .blocking = false,  // Deactivation doesn't block
+        .flags = InterruptFlags::NONE
+    };
+    interruptManager->RegisterInterrupt(errorClearedInterrupt);
+    
+    // 9. Short Press Interrupt - Single purpose: Execute short press action
     Interrupt shortPressInterrupt = {
-        .id = TriggerIds::SHORT_PRESS,
+        .id = "short_press",
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::QUEUED,
-        .effect = InterruptEffect::BUTTON_ACTION,
-        .evaluationFunc = InterruptCallbacks::ShortPressEvaluate,
-        .executionFunc = InterruptCallbacks::ShortPressExecute,
+        .execute = InterruptCallbacks::ShortPressActivate,
         .context = queuedHandler->GetButtonSensor(),
-        .data = {.button = {.action = ButtonAction::SHORT_PRESS}},
+        .data = {.action = ButtonAction::SHORT_PRESS},
+        .blocking = false,  // Button actions don't block
         .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(shortPressInterrupt);
     
+    // 10. Long Press Interrupt - Single purpose: Execute long press action
     Interrupt longPressInterrupt = {
-        .id = TriggerIds::LONG_PRESS,
+        .id = "long_press",
         .priority = Priority::NORMAL,
         .source = InterruptSource::QUEUED,
-        .effect = InterruptEffect::BUTTON_ACTION,
-        .evaluationFunc = InterruptCallbacks::LongPressEvaluate,
-        .executionFunc = InterruptCallbacks::LongPressExecute,
+        .execute = InterruptCallbacks::LongPressActivate,
         .context = queuedHandler->GetButtonSensor(),
-        .data = {.button = {.action = ButtonAction::LONG_PRESS}},
+        .data = {.action = ButtonAction::LONG_PRESS},
+        .blocking = false,  // Button actions don't block
         .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(longPressInterrupt);
     
-    log_i("Successfully registered 7 system interrupts");
+    log_i("Successfully registered 10 simplified system interrupts");
 }

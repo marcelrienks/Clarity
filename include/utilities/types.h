@@ -198,43 +198,35 @@ struct Action
 //=============================================================================
 
 /// @struct Interrupt
-/// @brief Interrupt structure with evaluation/execution separation
+/// @brief Simplified single-purpose interrupt structure
 ///
-/// @details Optimized interrupt design with proper separation of concerns:
-/// - Separate evaluation and execution functions for clarity
+/// @details Streamlined interrupt design with single responsibility:
+/// - Single execution function for clarity and simplicity
 /// - Static function pointers prevent heap fragmentation (critical for ESP32)
-/// - Union-based effect data for memory efficiency
-/// - Simplified restoration logic through active state tracking
+/// - Blocking flag for restoration control
+/// - Direct mapping to sensor state changes (HIGH/LOW)
 ///
-/// @memory_usage 32 bytes aligned (29 bytes actual + padding)
+/// @memory_usage Optimized for ESP32 memory constraints
 struct Interrupt
 {
     const char* id;                                   ///< Static string identifier
     Priority priority;                                ///< Processing priority enum
-    InterruptSource source;                           ///< POLLED or QUEUED evaluation
-    InterruptEffect effect;                           ///< What this interrupt does
+    InterruptSource source;                           ///< POLLED or QUEUED
     
-    // Separated evaluation and execution functions
-    bool (*evaluationFunc)(void* context);            ///< Check if state changed
-    void (*executionFunc)(void* context);             ///< Execute the action
+    // Single execution function - one interrupt, one purpose
+    void (*execute)(void* context);                   ///< Execute the interrupt action
     void* context;                                     ///< Sensor or service context
     
-    // Effect-specific data (union for memory efficiency)
-    union EffectData {
-        struct { 
-            const char* panelName; 
-            bool trackForRestore; 
-        } panel;                                       ///< LOAD_PANEL data
-        struct { 
-            const char* theme; 
-        } theme;                                       ///< SET_THEME data
-        struct { 
-            ButtonAction action;
-        } button;                                      ///< BUTTON_ACTION data
+    // Interrupt-specific data
+    union Data {
+        const char* panelName;                        ///< Panel to load
+        const char* theme;                            ///< Theme to set
+        ButtonAction action;                          ///< Button action to perform
     } data;
     
-    // Runtime state
-    InterruptFlags flags;                              ///< Type-safe bit flags for interrupt state
+    // Control flags
+    bool blocking;                                    ///< If true, prevents restoration when active
+    InterruptFlags flags;                             ///< Runtime state flags
     
     // Helper methods for flag management
     bool IsActive() const { 
@@ -251,16 +243,4 @@ struct Interrupt
         if (needs) flags |= InterruptFlags::NEEDS_EXECUTION;
         else flags &= ~InterruptFlags::NEEDS_EXECUTION;
     }
-    bool HasStateChanged() const { 
-        return (flags & InterruptFlags::STATE_CHANGED) != InterruptFlags::NONE; 
-    }
-    void SetStateChanged(bool changed) {
-        if (changed) flags |= InterruptFlags::STATE_CHANGED;
-        else flags &= ~InterruptFlags::STATE_CHANGED;
-    }
-    
-    // Evaluation timing
-    unsigned long lastEvaluation = 0;  ///< Last evaluation timestamp
-    unsigned long GetLastEvaluation() const { return lastEvaluation; }
-    void SetLastEvaluation(unsigned long time) { lastEvaluation = time; }
 };

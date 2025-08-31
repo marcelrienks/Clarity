@@ -45,6 +45,9 @@ class LockSensor : public ISensor, public BaseSensor
     
     // BaseSensor interface
     bool HasStateChanged() override;
+    
+    // Simplified interrupt system
+    const char* GetTriggerInterruptId() const;
 
   protected:
     // Custom interrupt behavior
@@ -53,6 +56,7 @@ class LockSensor : public ISensor, public BaseSensor
   private:
     IGpioProvider *gpioProvider_;
     bool previousLockState_ = false;
+    const char* triggerInterruptId_ = nullptr;  // ID of interrupt to trigger on state change
     
     /// @brief Read GPIO pin and determine lock state
     /// @return Lock state based on GPIO pin reading

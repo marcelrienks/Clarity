@@ -81,7 +81,19 @@ bool ButtonSensor::HasStateChanged()
     log_v("HasStateChanged() called");
     
     ProcessButtonState();
+    
+    // If no action is ready, clear the interrupt ID
+    if (!actionReady_)
+    {
+        triggerInterruptId_ = nullptr;
+    }
+    
     return actionReady_;
+}
+
+const char* ButtonSensor::GetTriggerInterruptId() const
+{
+    return triggerInterruptId_;
 }
 
 void ButtonSensor::ProcessButtonState()
@@ -109,6 +121,18 @@ void ButtonSensor::ProcessButtonState()
             actionReady_ = true;
             log_i("Button action detected: %s", 
                   action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
+                  
+            // In simplified system, determine which interrupt should be triggered
+            if (action == ButtonAction::SHORT_PRESS)
+            {
+                log_d("Short press detected - should trigger 'short_press' interrupt");
+                triggerInterruptId_ = "short_press";
+            }
+            else if (action == ButtonAction::LONG_PRESS)
+            {
+                log_d("Long press detected - should trigger 'long_press' interrupt");
+                triggerInterruptId_ = "long_press";
+            }
         }
     }
     else if (currentState && currentButtonState_)

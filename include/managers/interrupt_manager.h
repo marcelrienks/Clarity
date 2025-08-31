@@ -39,8 +39,7 @@ public:
     void ActivateInterrupt(const char* id);
     void DeactivateInterrupt(const char* id);
     void UpdateInterruptContext(const char* id, void* context);
-    void UpdateInterruptEvaluation(const char* id, bool (*evaluationFunc)(void*));
-    void UpdateInterruptExecution(const char* id, void (*executionFunc)(void*));
+    void UpdateInterruptExecution(const char* id, void (*execute)(void*));
     
     // Button system - function injection
     void UpdateButtonInterrupts(void (*shortPressFunc)(void* context), 

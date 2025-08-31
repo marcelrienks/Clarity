@@ -80,9 +80,32 @@ bool LightsSensor::HasStateChanged()
         log_d("Lights state changed from %s to %s", 
               previousState ? "ON" : "OFF",
               currentState ? "ON" : "OFF");
+              
+        // In simplified system, determine which interrupt should be triggered
+        if (currentState) 
+        {
+            // Lights are now on - trigger lights_on interrupt
+            log_d("Lights on - should trigger 'lights_on' interrupt");
+            triggerInterruptId_ = "lights_on";
+        }
+        else 
+        {
+            // Lights are now off - trigger lights_off interrupt  
+            log_d("Lights off - should trigger 'lights_off' interrupt");
+            triggerInterruptId_ = "lights_off";
+        }
+    }
+    else
+    {
+        triggerInterruptId_ = nullptr; // No interrupt to trigger
     }
     
     return changed;
+}
+
+const char* LightsSensor::GetTriggerInterruptId() const
+{
+    return triggerInterruptId_;
 }
 
 void LightsSensor::OnInterruptTriggered()

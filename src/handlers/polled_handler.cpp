@@ -108,26 +108,79 @@ void PolledHandler::EvaluateAllInterrupts()
     }
 #endif
     
-    log_d("HYBRID POLLED: Evaluating %zu interrupts", polledInterrupts_.size());
-    for (auto& interrupt : polledInterrupts_)
+    log_d("SIMPLIFIED POLLED: Checking sensor state changes for %zu interrupts", polledInterrupts_.size());
+    
+    // Check each sensor for state changes - simplified approach
+    CheckSensorStateChanges();
+}
+
+void PolledHandler::CheckSensorStateChanges()
+{
+    log_v("CheckSensorStateChanges() called");
+    
+    // Check lock sensor
+    if (lockSensor_ && lockSensor_->HasStateChanged())
     {
-        if (!interrupt || !interrupt->IsActive() || !interrupt->evaluationFunc)
-            continue;
-            
-        if (ShouldEvaluateInterrupt(*interrupt))
+        const char* triggerId = lockSensor_->GetTriggerInterruptId();
+        if (triggerId) 
         {
-            log_v("Evaluating interrupt: %s", interrupt->id);
-            // Single evaluation per cycle - cache the result
-            bool shouldExecute = interrupt->evaluationFunc(interrupt->context);
-            interrupt->SetStateChanged(shouldExecute);
-            interrupt->SetLastEvaluation(millis());
-            
-            if (shouldExecute)
-            {
-                log_i("HYBRID POLLED: Interrupt '%s' state changed - marked for execution", interrupt->id);
-            }
+            log_d("Lock sensor changed - triggering interrupt: %s", triggerId);
+            TriggerInterruptByID(triggerId);
         }
     }
+    
+    // Check lights sensor
+    if (lightsSensor_ && lightsSensor_->HasStateChanged())
+    {
+        const char* triggerId = lightsSensor_->GetTriggerInterruptId();
+        if (triggerId)
+        {
+            log_d("Lights sensor changed - triggering interrupt: %s", triggerId);
+            TriggerInterruptByID(triggerId);
+        }
+    }
+    
+    // Check key sensors - they trigger when they detect key presence
+    if (keyPresentSensor_ && keyPresentSensor_->HasStateChanged())
+    {
+        // Key sensors trigger when they detect their respective state
+        bool keyPresent = std::get<bool>(keyPresentSensor_->GetReading());
+        if (keyPresent)
+        {
+            log_d("Key present detected - triggering interrupt: key_present");
+            TriggerInterruptByID("key_present");
+        }
+    }
+    
+    if (keyNotPresentSensor_ && keyNotPresentSensor_->HasStateChanged())
+    {
+        // Key sensors trigger when they detect their respective state
+        bool keyNotPresent = std::get<bool>(keyNotPresentSensor_->GetReading());
+        if (keyNotPresent)
+        {
+            log_d("Key not present detected - triggering interrupt: key_not_present"); 
+            TriggerInterruptByID("key_not_present");
+        }
+    }
+}
+
+void PolledHandler::TriggerInterruptByID(const char* interruptId)
+{
+    log_v("TriggerInterruptByID(%s) called", interruptId);
+    
+    // Find the interrupt with matching ID
+    for (auto& interrupt : polledInterrupts_)
+    {
+        if (interrupt && interrupt->IsActive() && 
+            interrupt->id && strcmp(interrupt->id, interruptId) == 0)
+        {
+            log_i("SIMPLIFIED POLLED: Executing interrupt '%s' directly", interruptId);
+            interrupt->SetNeedsExecution(true);
+            return;
+        }
+    }
+    
+    log_w("Could not find active interrupt with ID: %s", interruptId);
 }
 
 void PolledHandler::ExecuteHighestPriorityInterrupt()
@@ -142,7 +195,7 @@ void PolledHandler::ExecuteHighestPriorityInterrupt()
     {
         for (auto& interrupt : polledInterrupts_)
         {
-            if (!interrupt || !interrupt->HasStateChanged())
+            if (!interrupt || !interrupt->NeedsExecution())
                 continue;
                 
             if (static_cast<int>(interrupt->priority) == priority && CanExecute(*interrupt))
@@ -167,7 +220,7 @@ void PolledHandler::ClearStateChanges()
     {
         if (interrupt)
         {
-            interrupt->SetStateChanged(false);
+            interrupt->SetNeedsExecution(false);
         }
     }
 }
@@ -273,7 +326,8 @@ bool PolledHandler::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
 {
     // Optimize evaluation frequency based on priority to reduce CPU usage
     unsigned long currentTime = millis();
-    unsigned long timeSinceLastEvaluation = currentTime - interrupt.GetLastEvaluation();
+    // In simplified system, GetLastEvaluation is not available
+    unsigned long timeSinceLastEvaluation = 1000; // Default to allow evaluation
     
     // Set evaluation intervals based on priority for CPU efficiency
     unsigned long minInterval = 0;
@@ -291,17 +345,8 @@ bool PolledHandler::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
             break;
     }
     
-    // User input requires fast response for good UX
-    if (interrupt.effect == InterruptEffect::BUTTON_ACTION)
-    {
-        minInterval = std::min(minInterval, 15UL); // Ensure responsive button handling
-    }
-    
-    // UI changes can be evaluated less frequently to prevent flicker
-    if (interrupt.effect == InterruptEffect::SET_THEME)
-    {
-        minInterval = std::max(minInterval, 100UL); // Prevent rapid theme switching
-    }
+    // In simplified system, effect field is not available
+    // Default minimal interval behavior for compatibility
     
     return timeSinceLastEvaluation >= minInterval;
 }
@@ -325,9 +370,9 @@ void PolledHandler::ExecuteInterrupt(Interrupt& interrupt)
 {
     log_i("ExecuteInterrupt() called for: %s", interrupt.id);
     
-    if (interrupt.executionFunc)
+    if (interrupt.execute)
     {
-        interrupt.executionFunc(interrupt.context);
+        interrupt.execute(interrupt.context);
         log_d("Execution completed for interrupt '%s'", interrupt.id);
     }
     else

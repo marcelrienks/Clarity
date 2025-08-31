@@ -15,141 +15,186 @@
 extern std::unique_ptr<PanelManager> panelManager;
 extern std::unique_ptr<StyleManager> styleManager;
 
-// Evaluation functions - check if interrupt condition is met
+// Global variable for tracking previous panel (as per simplified plan)
+static std::string savedUserPanel = "";
 
-bool InterruptCallbacks::KeyPresentEvaluate(void* context) {
-    KeyPresentSensor* sensor = static_cast<KeyPresentSensor*>(context);
-    if (!sensor) return false;
+//=============================================================================
+// PANEL LOADING INTERRUPTS
+//=============================================================================
+
+void InterruptCallbacks::KeyPresentActivate(void* context) {
+    log_i("KeyPresentActivate() - Loading KEY panel");
     
-    bool changed = sensor->HasStateChanged();
-    if (changed && sensor->GetKeyPresentState()) {
-        log_d("Key present detected");
-        return true;
+    // Save current user panel for restoration
+    const char* currentPanel = panelManager->GetCurrentPanel();
+    if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
+        savedUserPanel = currentPanel;
+        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
-    return false;
+    
+    // Load KEY panel as trigger-driven
+    panelManager->CreateAndLoadPanel(PanelNames::KEY, true);
 }
 
-bool InterruptCallbacks::KeyNotPresentEvaluate(void* context) {
-    KeyNotPresentSensor* sensor = static_cast<KeyNotPresentSensor*>(context);
-    if (!sensor) return false;
+void InterruptCallbacks::KeyNotPresentActivate(void* context) {
+    log_i("KeyNotPresentActivate() - Loading KEY panel");
     
-    bool changed = sensor->HasStateChanged();
-    if (changed && sensor->GetKeyNotPresentState()) {
-        log_d("Key not present detected");
-        return true;
+    // Save current user panel for restoration  
+    const char* currentPanel = panelManager->GetCurrentPanel();
+    if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
+        savedUserPanel = currentPanel;
+        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
-    return false;
+    
+    // Load KEY panel as trigger-driven
+    panelManager->CreateAndLoadPanel(PanelNames::KEY, true);
 }
 
-bool InterruptCallbacks::LockStateEvaluate(void* context) {
-    LockSensor* sensor = static_cast<LockSensor*>(context);
-    if (!sensor) return false;
+//=============================================================================
+// LOCK STATE INTERRUPTS
+//=============================================================================
+
+void InterruptCallbacks::LockEngagedActivate(void* context) {
+    log_i("LockEngagedActivate() - Loading LOCK panel");
     
-    bool changed = sensor->HasStateChanged();
-    if (changed) {
-        bool lockEngaged = std::get<bool>(sensor->GetReading());
-        if (lockEngaged) {
-            log_d("Lock engaged detected");
-            return true;
-        }
+    // Save current user panel for restoration
+    const char* currentPanel = panelManager->GetCurrentPanel();
+    if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
+        savedUserPanel = currentPanel;
+        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
-    return false;
+    
+    // Load LOCK panel as trigger-driven
+    panelManager->CreateAndLoadPanel(PanelNames::LOCK, true);
 }
 
-bool InterruptCallbacks::LightsStateEvaluate(void* context) {
-    LightsSensor* sensor = static_cast<LightsSensor*>(context);
-    if (!sensor) return false;
+void InterruptCallbacks::LockDisengagedActivate(void* context) {
+    log_i("LockDisengagedActivate() - Checking for restoration");
     
-    bool changed = sensor->HasStateChanged();
-    if (changed) {
-        log_d("Lights state changed");
-        return true;
+    // Check if any blocking interrupts are active
+    bool hasBlockingInterrupts = InterruptManager::Instance().HasActiveInterrupts();
+    
+    if (!hasBlockingInterrupts && !savedUserPanel.empty()) {
+        log_i("No blocking interrupts - restoring to '%s'", savedUserPanel.c_str());
+        panelManager->CreateAndLoadPanel(savedUserPanel.c_str(), false); // Load as user-driven
+        savedUserPanel.clear(); // Clear after restoration
+    } else if (hasBlockingInterrupts) {
+        log_d("Cannot restore - blocking interrupts still active");
+    } else {
+        log_d("No saved panel to restore to");
     }
-    return false;
 }
 
-bool InterruptCallbacks::ShortPressEvaluate(void* context) {
+//=============================================================================
+// LIGHTS STATE INTERRUPTS  
+//=============================================================================
+
+void InterruptCallbacks::LightsOnActivate(void* context) {
+    log_i("LightsOnActivate() - Setting NIGHT theme");
+    styleManager->ApplyTheme(Themes::NIGHT);
+}
+
+void InterruptCallbacks::LightsOffActivate(void* context) {
+    log_i("LightsOffActivate() - Setting DAY theme");
+    styleManager->ApplyTheme(Themes::DAY);
+}
+
+//=============================================================================
+// ERROR STATE INTERRUPTS
+//=============================================================================
+
+void InterruptCallbacks::ErrorOccurredActivate(void* context) {
+    log_i("ErrorOccurredActivate() - Loading ERROR panel");
+    
+    // Save current user panel for restoration
+    const char* currentPanel = panelManager->GetCurrentPanel();
+    if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
+        savedUserPanel = currentPanel;
+        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
+    }
+    
+    // Load ERROR panel as trigger-driven
+    panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);
+}
+
+void InterruptCallbacks::ErrorClearedActivate(void* context) {
+    log_i("ErrorClearedActivate() - Checking for restoration");
+    
+    // Check if any blocking interrupts are active
+    bool hasBlockingInterrupts = InterruptManager::Instance().HasActiveInterrupts();
+    
+    if (!hasBlockingInterrupts && !savedUserPanel.empty()) {
+        log_i("No blocking interrupts - restoring to '%s'", savedUserPanel.c_str());
+        panelManager->CreateAndLoadPanel(savedUserPanel.c_str(), false); // Load as user-driven
+        savedUserPanel.clear(); // Clear after restoration
+    } else if (hasBlockingInterrupts) {
+        log_d("Cannot restore - blocking interrupts still active");
+    } else {
+        log_d("No saved panel to restore to");
+    }
+}
+
+//=============================================================================
+// BUTTON ACTION INTERRUPTS
+//=============================================================================
+
+void InterruptCallbacks::ShortPressActivate(void* context) {
+    log_i("ShortPressActivate() - Executing short press action");
+    
     ButtonSensor* sensor = static_cast<ButtonSensor*>(context);
-    if (!sensor) return false;
-    
-    ButtonAction action = sensor->GetButtonAction();
-    if (action == ButtonAction::SHORT_PRESS) {
-        log_d("Short press detected");
-        return true;
+    if (!sensor) {
+        log_w("Short press context is null");
+        return;
     }
-    return false;
+    
+    // Get current panel to determine action
+    const char* currentPanel = panelManager->GetCurrentPanel();
+    if (!currentPanel) {
+        log_w("No current panel for short press action");
+        return;
+    }
+    
+    // Execute panel-specific short press action
+    if (strcmp(currentPanel, PanelNames::OIL) == 0) {
+        log_d("Short press on OIL panel - cycling to next panel");
+        panelManager->CreateAndLoadPanel(PanelNames::WATER, false);
+    } else if (strcmp(currentPanel, PanelNames::WATER) == 0) {
+        log_d("Short press on WATER panel - cycling to OIL panel");
+        panelManager->CreateAndLoadPanel(PanelNames::OIL, false);
+    }
+    // Key, Lock, and Error panels don't respond to button presses (trigger-driven only)
+    
+    // Clear the action from sensor
+    sensor->ClearButtonAction();
 }
 
-bool InterruptCallbacks::LongPressEvaluate(void* context) {
+void InterruptCallbacks::LongPressActivate(void* context) {
+    log_i("LongPressActivate() - Executing long press action");
+    
     ButtonSensor* sensor = static_cast<ButtonSensor*>(context);
-    if (!sensor) return false;
+    if (!sensor) {
+        log_w("Long press context is null");
+        return;
+    }
     
-    ButtonAction action = sensor->GetButtonAction();
-    if (action == ButtonAction::LONG_PRESS) {
-        log_d("Long press detected");
-        return true;
+    // Long press toggles between day/night theme
+    const char* currentTheme = styleManager->GetCurrentTheme();
+    if (strcmp(currentTheme, Themes::DAY) == 0) {
+        log_d("Long press - switching from DAY to NIGHT theme");
+        styleManager->ApplyTheme(Themes::NIGHT);
+    } else {
+        log_d("Long press - switching from NIGHT to DAY theme");
+        styleManager->ApplyTheme(Themes::DAY);
     }
-    return false;
-}
-
-bool InterruptCallbacks::ErrorOccurredEvaluate(void* context) {
-    ErrorManager* errorManager = static_cast<ErrorManager*>(context);
-    if (!errorManager) return false;
     
-    return errorManager->HasPendingErrors();
+    // Clear the action from sensor
+    sensor->ClearButtonAction();
 }
 
-// Execution functions - perform the interrupt action
+//=============================================================================
+// HELPER FUNCTIONS
+//=============================================================================
 
-void InterruptCallbacks::KeyPresentExecute(void* context) {
-    if (panelManager) {
-        panelManager->CreateAndLoadPanel(PanelNames::KEY, true);
-        log_i("Loaded KEY panel for key present");
-    }
-}
-
-void InterruptCallbacks::KeyNotPresentExecute(void* context) {
-    if (panelManager) {
-        panelManager->CreateAndLoadPanel(PanelNames::KEY, true);
-        log_i("Loaded KEY panel for key not present");
-    }
-}
-
-void InterruptCallbacks::LockStateExecute(void* context) {
-    if (panelManager) {
-        panelManager->CreateAndLoadPanel(PanelNames::LOCK, true);
-        log_i("Loaded LOCK panel for lock state");
-    }
-}
-
-void InterruptCallbacks::LightsStateExecute(void* context) {
-    LightsSensor* sensor = static_cast<LightsSensor*>(context);
-    if (!sensor || !styleManager) return;
-    
-    bool lightsOn = std::get<bool>(sensor->GetReading());
-    const char* theme = lightsOn ? Themes::NIGHT : Themes::DAY;
-    styleManager->SetTheme(theme);
-    log_i("Set theme to %s based on lights state", theme);
-}
-
-void InterruptCallbacks::ShortPressExecute(void* context) {
-    // Button action execution is handled by InterruptManager's button system
-    log_d("Short press action executed");
-}
-
-void InterruptCallbacks::LongPressExecute(void* context) {
-    // Button action execution is handled by InterruptManager's button system
-    log_d("Long press action executed");
-}
-
-void InterruptCallbacks::ErrorOccurredExecute(void* context) {
-    if (panelManager) {
-        panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);
-        log_i("Loaded ERROR panel for error condition");
-    }
-}
-
-// Helper functions
 void* InterruptCallbacks::GetPanelManager() {
     return panelManager.get();
 }
@@ -159,5 +204,5 @@ void* InterruptCallbacks::GetStyleManager() {
 }
 
 void* InterruptCallbacks::GetCurrentPanel() {
-    return panelManager ? const_cast<char*>(panelManager->GetCurrentPanel()) : nullptr;
+    return const_cast<char*>(panelManager->GetCurrentPanel());
 }

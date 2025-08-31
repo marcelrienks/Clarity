@@ -62,6 +62,10 @@ private:
     void RemoveExpiredEntries();
     bool CanExecuteInterrupt(const Interrupt* interrupt) const;
     
+    // Simplified interrupt system methods
+    void CheckButtonSensorStateChange();
+    void TriggerInterruptByID(const char* interruptId);
+    
     static constexpr size_t DEFAULT_MAX_QUEUE_SIZE = 8;
     static constexpr unsigned long DEFAULT_TIMEOUT_MS = 5000;
     
