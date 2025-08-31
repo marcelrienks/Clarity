@@ -68,7 +68,7 @@ private:
     std::vector<QueuedInterruptEntry> queuedInterrupts_;
     size_t maxQueueSize_;
     
-    // Handler-owned sensor for button input
+    // Handler-owned sensor
     IGpioProvider* gpioProvider_;
     std::unique_ptr<ButtonSensor> buttonSensor_;
 };

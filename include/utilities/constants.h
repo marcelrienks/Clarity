@@ -222,7 +222,54 @@ struct TriggerIds
     static constexpr const char *LOCK_STATE = "lock_state";           ///< Lock state trigger ID
     static constexpr const char *LIGHTS_STATE = "lights_state";       ///< Lights state trigger ID
     static constexpr const char *ERROR_OCCURRED = "error_occurred";   ///< Error occurred trigger ID
+    static constexpr const char *SHORT_PRESS = "universal_short_press"; ///< Short press button ID
+    static constexpr const char *LONG_PRESS = "universal_long_press";   ///< Long press button ID
 };
+
+/// @enum class InterruptFlags
+/// @brief Type-safe bit flag enumeration for interrupt state management
+///
+/// @details Provides type-safe flag operations for interrupt state tracking.
+/// Uses enum class for type safety while supporting bitwise operations.
+enum class InterruptFlags : uint8_t
+{
+    NONE = 0x00,           ///< No flags set
+    ACTIVE = 0x01,         ///< Interrupt is active (bit 0)
+    NEEDS_EXECUTION = 0x02,///< Needs execution (bit 1) 
+    STATE_CHANGED = 0x04,  ///< State has changed (bit 2)
+    ALWAYS_EXECUTE = 0x08  ///< Always execute regardless of state (bit 3)
+};
+
+/// @brief Bitwise OR operator for InterruptFlags
+constexpr InterruptFlags operator|(InterruptFlags lhs, InterruptFlags rhs) {
+    return static_cast<InterruptFlags>(
+        static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs)
+    );
+}
+
+/// @brief Bitwise AND operator for InterruptFlags  
+constexpr InterruptFlags operator&(InterruptFlags lhs, InterruptFlags rhs) {
+    return static_cast<InterruptFlags>(
+        static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)
+    );
+}
+
+/// @brief Bitwise NOT operator for InterruptFlags
+constexpr InterruptFlags operator~(InterruptFlags flags) {
+    return static_cast<InterruptFlags>(~static_cast<uint8_t>(flags));
+}
+
+/// @brief Bitwise OR-assign operator for InterruptFlags
+constexpr InterruptFlags& operator|=(InterruptFlags& lhs, InterruptFlags rhs) {
+    lhs = lhs | rhs;
+    return lhs;
+}
+
+/// @brief Bitwise AND-assign operator for InterruptFlags  
+constexpr InterruptFlags& operator&=(InterruptFlags& lhs, InterruptFlags rhs) {
+    lhs = lhs & rhs;
+    return lhs;
+}
 
 /// @struct JsonDocNames
 /// @brief JSON field names for configuration serialization

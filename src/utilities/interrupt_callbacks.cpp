@@ -3,139 +3,150 @@
 #include "sensors/key_not_present_sensor.h"
 #include "sensors/lock_sensor.h" 
 #include "sensors/lights_sensor.h"
-#include "sensors/action_button_sensor.h"
+#include "sensors/button_sensor.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
-#include "utilities/constants.h"  // For PanelNames
+#include "utilities/constants.h"
 #include <esp32-hal-log.h>
 
 // External references to global managers (defined in main.cpp)
 extern std::unique_ptr<PanelManager> panelManager;
 extern std::unique_ptr<StyleManager> styleManager;
 
-// Memory-optimized single-function callbacks
-InterruptResult InterruptCallbacks::KeyPresentProcess(void* context) {
+// Evaluation functions - check if interrupt condition is met
+
+bool InterruptCallbacks::KeyPresentEvaluate(void* context) {
     KeyPresentSensor* sensor = static_cast<KeyPresentSensor*>(context);
-    if (!sensor) {
-        log_w("KeyPresentProcess: Invalid sensor context");
-        return InterruptResult::NO_ACTION;
-    }
+    if (!sensor) return false;
     
     bool changed = sensor->HasStateChanged();
-    if (changed) {
-        bool keyPresent = sensor->GetKeyPresentState();
-        if (keyPresent) {
-            log_d("Key present state changed - key detected");
-            return InterruptResult::EXECUTE_EFFECT;
-        } else {
-            log_d("Key present state changed - key removed, deactivating interrupt");
-            // Explicitly deactivate this interrupt when key is removed
-            InterruptManager::Instance().DeactivateInterrupt("key_present");
-            return InterruptResult::NO_ACTION;
-        }
+    if (changed && sensor->GetKeyPresentState()) {
+        log_d("Key present detected");
+        return true;
     }
-    return InterruptResult::NO_ACTION;
+    return false;
 }
 
-InterruptResult InterruptCallbacks::KeyNotPresentProcess(void* context) {
+bool InterruptCallbacks::KeyNotPresentEvaluate(void* context) {
     KeyNotPresentSensor* sensor = static_cast<KeyNotPresentSensor*>(context);
-    if (!sensor) {
-        log_w("KeyNotPresentProcess: Invalid sensor context");
-        return InterruptResult::NO_ACTION;
-    }
+    if (!sensor) return false;
     
     bool changed = sensor->HasStateChanged();
-    if (changed) {
-        bool keyNotPresent = sensor->GetKeyNotPresentState();
-        if (keyNotPresent) {
-            log_d("Key not present state changed - key removed");
-            return InterruptResult::EXECUTE_EFFECT;
-        } else {
-            log_d("Key not present state changed - key inserted, deactivating interrupt");
-            // Explicitly deactivate this interrupt when key is inserted
-            InterruptManager::Instance().DeactivateInterrupt("key_not_present");
-            return InterruptResult::NO_ACTION;
-        }
+    if (changed && sensor->GetKeyNotPresentState()) {
+        log_d("Key not present detected");
+        return true;
     }
-    return InterruptResult::NO_ACTION;
+    return false;
 }
 
-InterruptResult InterruptCallbacks::LockStateProcess(void* context) {
+bool InterruptCallbacks::LockStateEvaluate(void* context) {
     LockSensor* sensor = static_cast<LockSensor*>(context);
-    if (!sensor) {
-        log_w("LockStateProcess: Invalid sensor context");
-        return InterruptResult::NO_ACTION;
-    }
+    if (!sensor) return false;
     
     bool changed = sensor->HasStateChanged();
     if (changed) {
         bool lockEngaged = std::get<bool>(sensor->GetReading());
         if (lockEngaged) {
-            log_d("Lock state changed - lock engaged");
-            return InterruptResult::EXECUTE_EFFECT;
-        } else {
-            log_d("Lock state changed - lock disengaged, deactivating interrupt");
-            // Explicitly deactivate this interrupt when lock is disengaged
-            InterruptManager::Instance().DeactivateInterrupt("lock_state");
-            return InterruptResult::NO_ACTION;
+            log_d("Lock engaged detected");
+            return true;
         }
     }
-    return InterruptResult::NO_ACTION;
+    return false;
 }
 
-InterruptResult InterruptCallbacks::LightsStateProcess(void* context) {
+bool InterruptCallbacks::LightsStateEvaluate(void* context) {
     LightsSensor* sensor = static_cast<LightsSensor*>(context);
-    if (!sensor) {
-        log_w("LightsStateProcess: Invalid sensor context");
-        return InterruptResult::NO_ACTION;
-    }
+    if (!sensor) return false;
     
     bool changed = sensor->HasStateChanged();
     if (changed) {
-        log_d("Lights state changed - theme change needed");
-        return InterruptResult::EXECUTE_EFFECT;
+        log_d("Lights state changed");
+        return true;
     }
-    return InterruptResult::NO_ACTION;
+    return false;
 }
 
-InterruptResult InterruptCallbacks::ShortPressProcess(void* context) {
-    log_v("ShortPressProcess: Callback triggered by InterruptManager interrupt flow");
-    // The InterruptManager already determined this is a short press
-    // Just signal that the effect should be executed
-    return InterruptResult::EXECUTE_EFFECT;
-}
-
-InterruptResult InterruptCallbacks::LongPressProcess(void* context) {
-    log_v("LongPressProcess: Callback triggered by InterruptManager interrupt flow");
-    // The InterruptManager already determined this is a long press
-    // Just signal that the effect should be executed
-    return InterruptResult::EXECUTE_EFFECT;
-}
-
-InterruptResult InterruptCallbacks::ErrorOccurredProcess(void* context) {
-    // Context would be ErrorManager or error sensor
-    log_v("ErrorOccurredProcess: Checking for error conditions");
+bool InterruptCallbacks::ShortPressEvaluate(void* context) {
+    ButtonSensor* sensor = static_cast<ButtonSensor*>(context);
+    if (!sensor) return false;
     
-    static size_t lastErrorCount = 0;
-    auto& errorManager = ErrorManager::Instance();
-    
-    // Get current error count
-    size_t currentErrorCount = errorManager.GetErrorQueue().size();
-    bool hasErrors = errorManager.HasPendingErrors();
-    
-    // Only trigger if we have errors AND the count has increased (new errors)
-    if (hasErrors && currentErrorCount > lastErrorCount) {
-        log_d("New errors detected - count increased from %d to %d", lastErrorCount, currentErrorCount);
-        lastErrorCount = currentErrorCount;
-        return InterruptResult::EXECUTE_EFFECT;
+    ButtonAction action = sensor->GetButtonAction();
+    if (action == ButtonAction::SHORT_PRESS) {
+        log_d("Short press detected");
+        return true;
     }
+    return false;
+}
+
+bool InterruptCallbacks::LongPressEvaluate(void* context) {
+    ButtonSensor* sensor = static_cast<ButtonSensor*>(context);
+    if (!sensor) return false;
     
-    // Update the count even if we don't trigger (for when errors are cleared)
-    lastErrorCount = currentErrorCount;
+    ButtonAction action = sensor->GetButtonAction();
+    if (action == ButtonAction::LONG_PRESS) {
+        log_d("Long press detected");
+        return true;
+    }
+    return false;
+}
+
+bool InterruptCallbacks::ErrorOccurredEvaluate(void* context) {
+    ErrorManager* errorManager = static_cast<ErrorManager*>(context);
+    if (!errorManager) return false;
     
-    return InterruptResult::NO_ACTION;
+    return errorManager->HasPendingErrors();
+}
+
+// Execution functions - perform the interrupt action
+
+void InterruptCallbacks::KeyPresentExecute(void* context) {
+    if (panelManager) {
+        panelManager->CreateAndLoadPanel(PanelNames::KEY, true);
+        log_i("Loaded KEY panel for key present");
+    }
+}
+
+void InterruptCallbacks::KeyNotPresentExecute(void* context) {
+    if (panelManager) {
+        panelManager->CreateAndLoadPanel(PanelNames::KEY, true);
+        log_i("Loaded KEY panel for key not present");
+    }
+}
+
+void InterruptCallbacks::LockStateExecute(void* context) {
+    if (panelManager) {
+        panelManager->CreateAndLoadPanel(PanelNames::LOCK, true);
+        log_i("Loaded LOCK panel for lock state");
+    }
+}
+
+void InterruptCallbacks::LightsStateExecute(void* context) {
+    LightsSensor* sensor = static_cast<LightsSensor*>(context);
+    if (!sensor || !styleManager) return;
+    
+    bool lightsOn = std::get<bool>(sensor->GetReading());
+    const char* theme = lightsOn ? Themes::NIGHT : Themes::DAY;
+    styleManager->SetTheme(theme);
+    log_i("Set theme to %s based on lights state", theme);
+}
+
+void InterruptCallbacks::ShortPressExecute(void* context) {
+    // Button action execution is handled by InterruptManager's button system
+    log_d("Short press action executed");
+}
+
+void InterruptCallbacks::LongPressExecute(void* context) {
+    // Button action execution is handled by InterruptManager's button system
+    log_d("Long press action executed");
+}
+
+void InterruptCallbacks::ErrorOccurredExecute(void* context) {
+    if (panelManager) {
+        panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);
+        log_i("Loaded ERROR panel for error condition");
+    }
 }
 
 // Helper functions
@@ -148,8 +159,5 @@ void* InterruptCallbacks::GetStyleManager() {
 }
 
 void* InterruptCallbacks::GetCurrentPanel() {
-    if (panelManager) {
-        return nullptr;
-    }
-    return nullptr;
+    return panelManager ? const_cast<char*>(panelManager->GetCurrentPanel()) : nullptr;
 }

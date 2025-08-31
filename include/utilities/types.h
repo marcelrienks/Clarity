@@ -210,7 +210,7 @@ struct Action
 struct Interrupt
 {
     const char* id;                                   ///< Static string identifier
-    uint8_t priority;                                 ///< Processing priority (0-255)
+    Priority priority;                                ///< Processing priority enum
     InterruptSource source;                           ///< POLLED or QUEUED evaluation
     InterruptEffect effect;                           ///< What this interrupt does
     
@@ -234,17 +234,33 @@ struct Interrupt
     } data;
     
     // Runtime state
-    uint8_t flags;                                     ///< Bit flags: active(0), needsExecution(1), etc.
+    InterruptFlags flags;                              ///< Type-safe bit flags for interrupt state
     
     // Helper methods for flag management
-    bool IsActive() const { return flags & 0x01; }
+    bool IsActive() const { 
+        return (flags & InterruptFlags::ACTIVE) != InterruptFlags::NONE; 
+    }
     void SetActive(bool active) { 
-        if (active) flags |= 0x01; 
-        else flags &= ~0x01; 
+        if (active) flags |= InterruptFlags::ACTIVE; 
+        else flags &= ~InterruptFlags::ACTIVE; 
     }
-    bool NeedsExecution() const { return flags & 0x02; }
+    bool NeedsExecution() const { 
+        return (flags & InterruptFlags::NEEDS_EXECUTION) != InterruptFlags::NONE; 
+    }
     void SetNeedsExecution(bool needs) {
-        if (needs) flags |= 0x02;
-        else flags &= ~0x02;
+        if (needs) flags |= InterruptFlags::NEEDS_EXECUTION;
+        else flags &= ~InterruptFlags::NEEDS_EXECUTION;
     }
+    bool HasStateChanged() const { 
+        return (flags & InterruptFlags::STATE_CHANGED) != InterruptFlags::NONE; 
+    }
+    void SetStateChanged(bool changed) {
+        if (changed) flags |= InterruptFlags::STATE_CHANGED;
+        else flags &= ~InterruptFlags::STATE_CHANGED;
+    }
+    
+    // Evaluation timing
+    unsigned long lastEvaluation = 0;  ///< Last evaluation timestamp
+    unsigned long GetLastEvaluation() const { return lastEvaluation; }
+    void SetLastEvaluation(unsigned long time) { lastEvaluation = time; }
 };

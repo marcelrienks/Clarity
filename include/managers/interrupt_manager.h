@@ -103,6 +103,7 @@ private:
     void LoadPanelFromInterrupt(const Interrupt& interrupt);
     void HandleRestoration();
     void ApplyThemeFromInterrupt(const Interrupt& interrupt);
+    void ApplyPreferenceFromInterrupt(const Interrupt& interrupt);
     void ExecuteButtonAction(const Interrupt& interrupt);
     
     // Static storage for memory safety

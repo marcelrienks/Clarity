@@ -6,7 +6,7 @@
 #include "managers/style_manager.h"
 #include "handlers/polled_handler.h"
 #include "handlers/queued_handler.h"
-#include "sensors/action_button_sensor.h"
+#include "sensors/button_sensor.h"
 #ifdef CLARITY_DEBUG
 #include "sensors/debug_error_sensor.h"
 #endif
@@ -164,7 +164,7 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         return;
     }
     
-    log_d("Registering all 7 system interrupts with static callbacks...");
+    log_d("Registering all 7 system interrupts...");
     
     // Get the handlers from InterruptManager to access their sensors
     auto* polledHandler = interruptManager->GetPolledHandler();
@@ -177,129 +177,98 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
     
     // 1. Key Present Interrupt (POLLED, CRITICAL priority)
     Interrupt keyPresentInterrupt = {
-        .id = "key_present",
+        .id = TriggerIds::KEY_PRESENT,
         .priority = Priority::CRITICAL,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .processFunc = InterruptCallbacks::KeyPresentProcess,
-        .context = polledHandler->GetKeyPresentSensor(),  // Direct sensor context
-        .executionMode = InterruptExecutionMode::EXCLUSIVE,
-        .exclusionGroup = "key_states",
-        .canExecuteInContext = nullptr,
-        .data = {},  // Union data initialized empty
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::KeyPresentEvaluate,
+        .executionFunc = InterruptCallbacks::KeyPresentExecute,
+        .context = polledHandler->GetKeyPresentSensor(),
+        .data = {.panel = {.panelName = PanelNames::KEY, .trackForRestore = true}},
+        .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(keyPresentInterrupt);
     
     // 2. Key Not Present Interrupt (POLLED, IMPORTANT priority)
     Interrupt keyNotPresentInterrupt = {
-        .id = "key_not_present",
+        .id = TriggerIds::KEY_NOT_PRESENT,
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .processFunc = InterruptCallbacks::KeyNotPresentProcess,
-        .context = polledHandler->GetKeyNotPresentSensor(),  // Direct sensor context
-        .executionMode = InterruptExecutionMode::EXCLUSIVE,
-        .exclusionGroup = "key_states",
-        .canExecuteInContext = nullptr,
-        .data = {},
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::KeyNotPresentEvaluate,
+        .executionFunc = InterruptCallbacks::KeyNotPresentExecute,
+        .context = polledHandler->GetKeyNotPresentSensor(),
+        .data = {.panel = {.panelName = PanelNames::KEY, .trackForRestore = true}},
+        .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(keyNotPresentInterrupt);
     
     // 3. Lock State Interrupt (POLLED, IMPORTANT priority)
     Interrupt lockStateInterrupt = {
-        .id = "lock_state",
+        .id = TriggerIds::LOCK_STATE,
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .processFunc = InterruptCallbacks::LockStateProcess,
-        .context = polledHandler->GetLockSensor(),  // Direct sensor context
-        .executionMode = InterruptExecutionMode::EXCLUSIVE,
-        .exclusionGroup = "key_states",
-        .canExecuteInContext = nullptr,
-        .data = {},
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::LockStateEvaluate,
+        .executionFunc = InterruptCallbacks::LockStateExecute,
+        .context = polledHandler->GetLockSensor(),
+        .data = {.panel = {.panelName = PanelNames::LOCK, .trackForRestore = true}},
+        .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(lockStateInterrupt);
     
-    // 4. Lights State Interrupt (POLLED, NORMAL priority) - ALWAYS executes
+    // 4. Lights State Interrupt (POLLED, NORMAL priority)
     Interrupt lightsStateInterrupt = {
-        .id = "lights_state",
+        .id = TriggerIds::LIGHTS_STATE,
         .priority = Priority::NORMAL,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::SET_THEME,
-        .processFunc = InterruptCallbacks::LightsStateProcess,
-        .context = polledHandler->GetLightsSensor(),  // Direct sensor context
-        .executionMode = InterruptExecutionMode::ALWAYS,  // Always execute for theme changes
-        .exclusionGroup = nullptr,
-        .canExecuteInContext = nullptr,
-        .data = {},
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::LightsStateEvaluate,
+        .executionFunc = InterruptCallbacks::LightsStateExecute,
+        .context = polledHandler->GetLightsSensor(),
+        .data = {.theme = {}},
+        .flags = InterruptFlags::ALWAYS_EXECUTE
     };
     interruptManager->RegisterInterrupt(lightsStateInterrupt);
     
-    // 5. Error Occurred Interrupt (POLLED, CRITICAL priority)
     Interrupt errorInterrupt = {
-        .id = "error_occurred",
+        .id = TriggerIds::ERROR_OCCURRED,
         .priority = Priority::CRITICAL,
         .source = InterruptSource::POLLED,
         .effect = InterruptEffect::LOAD_PANEL,
-        .processFunc = InterruptCallbacks::ErrorOccurredProcess,
-        .context = &ErrorManager::Instance(),  // Direct ErrorManager context
-        .executionMode = InterruptExecutionMode::EXCLUSIVE,
-        .exclusionGroup = nullptr,
-        .canExecuteInContext = nullptr,
-        .data = {},
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::ErrorOccurredEvaluate,
+        .executionFunc = InterruptCallbacks::ErrorOccurredExecute,
+        .context = &ErrorManager::Instance(),
+        .data = {.panel = {.panelName = PanelNames::ERROR, .trackForRestore = true}},
+        .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(errorInterrupt);
     
-    // 6. Short Press Interrupt (QUEUED, IMPORTANT priority) - CONDITIONAL based on panel
     Interrupt shortPressInterrupt = {
-        .id = "universal_short_press",
+        .id = TriggerIds::SHORT_PRESS,
         .priority = Priority::IMPORTANT,
         .source = InterruptSource::QUEUED,
         .effect = InterruptEffect::BUTTON_ACTION,
-        .processFunc = InterruptCallbacks::ShortPressProcess,
-        .context = queuedHandler->GetButtonSensor(),  // Direct sensor context
-        .executionMode = InterruptExecutionMode::CONDITIONAL,
-        .exclusionGroup = nullptr,
-        .canExecuteInContext = nullptr,  // TODO: Add context check for config panel restriction
-        .data = {},
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::ShortPressEvaluate,
+        .executionFunc = InterruptCallbacks::ShortPressExecute,
+        .context = queuedHandler->GetButtonSensor(),
+        .data = {.button = {.action = ButtonAction::SHORT_PRESS}},
+        .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(shortPressInterrupt);
     
-    // 7. Long Press Interrupt (QUEUED, NORMAL priority) - CONDITIONAL based on panel
     Interrupt longPressInterrupt = {
-        .id = "universal_long_press",
+        .id = TriggerIds::LONG_PRESS,
         .priority = Priority::NORMAL,
         .source = InterruptSource::QUEUED,
         .effect = InterruptEffect::BUTTON_ACTION,
-        .processFunc = InterruptCallbacks::LongPressProcess,
-        .context = queuedHandler->GetButtonSensor(),  // Direct sensor context
-        .executionMode = InterruptExecutionMode::CONDITIONAL,
-        .exclusionGroup = nullptr,
-        .canExecuteInContext = nullptr,  // TODO: Add context check for config panel restriction
-        .data = {},
-        .active = true,
-        .stateChanged = false,
-        .lastEvaluation = 0
+        .evaluationFunc = InterruptCallbacks::LongPressEvaluate,
+        .executionFunc = InterruptCallbacks::LongPressExecute,
+        .context = queuedHandler->GetButtonSensor(),
+        .data = {.button = {.action = ButtonAction::LONG_PRESS}},
+        .flags = InterruptFlags::NONE
     };
     interruptManager->RegisterInterrupt(longPressInterrupt);
     
-    log_i("Successfully registered 7 system interrupts with static callbacks");
+    log_i("Successfully registered 7 system interrupts");
 }

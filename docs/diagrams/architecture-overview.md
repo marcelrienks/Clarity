@@ -65,7 +65,7 @@ flowchart TD
     
     %% GPIO Sensors Layer
     subgraph GPIOSensors ["GPIO Sensors"]
-        ActionButtonSensor["ActionButtonSensor<br/>GPIO-32"]
+        ButtonSensor["ButtonSensor<br/>GPIO-32"]
         KeyPresentSensor["KeyPresentSensor<br/>GPIO-25"]
         KeyNotPresentSensor["KeyNotPresentSensor<br/>GPIO-26"]
         LockSensor["LockSensor<br/>GPIO-27"]
@@ -93,7 +93,7 @@ flowchart TD
     
     %% Interrupt Manager Coordinated Flow
     InterruptManager --> QueuedHandler & PolledHandler
-    QueuedHandler --> ActionButtonSensor
+    QueuedHandler --> ButtonSensor
     PolledHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
     
     %% Panel Manager Connections
@@ -140,7 +140,7 @@ flowchart TD
 
 ### Sensors (ISensor + BaseSensor)
 - **GPIO Interrupt Sensors**: Created and owned by PolledHandler for GPIO state monitoring (Key, Lock, Lights sensors)
-- **Button State Sensor**: Created and owned by QueuedHandler, provides GPIO state only - timing logic handled by InterruptManager
+- **Button State Sensor**: Created and owned by QueuedHandler, provides GPIO state and timing logic
 - **Data Sensors**: Created by data panels for continuous measurement (Oil pressure, temperature)
 - **BaseSensor**: Provides change detection template for all sensors
 

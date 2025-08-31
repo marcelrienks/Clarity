@@ -236,23 +236,22 @@ void QueuedHandler::ProcessQueuedInterrupt(const QueuedInterruptEntry& entry)
     log_v("ProcessQueuedInterrupt() called for: %s", 
           entry.interrupt->id ? entry.interrupt->id : "unknown");
     
-    if (!entry.interrupt->processFunc)
+    if (!entry.interrupt->evaluationFunc || !entry.interrupt->executionFunc)
     {
-        log_w("Invalid interrupt process function for '%s'", 
+        log_w("Invalid interrupt functions for '%s'", 
               entry.interrupt->id ? entry.interrupt->id : "unknown");
         return;
     }
     
-    // Process the interrupt (evaluate and potentially signal execution)
-    InterruptResult result = entry.interrupt->processFunc(entry.interrupt->context);
-    if (result == InterruptResult::EXECUTE_EFFECT)
+    // Evaluate the interrupt condition
+    if (entry.interrupt->evaluationFunc(entry.interrupt->context))
     {
-        log_d("Queued interrupt '%s' condition met - signaling for execution", entry.interrupt->id);
-        // Note: Actual execution is now handled centrally by InterruptManager via ExecuteByEffect()
+        log_d("Queued interrupt '%s' condition met - executing", entry.interrupt->id);
+        entry.interrupt->executionFunc(entry.interrupt->context);
     }
     else
     {
-        log_d("Queued interrupt '%s' condition not met - skipping execution", entry.interrupt->id);
+        log_d("Queued interrupt '%s' condition not met - skipping", entry.interrupt->id);
     }
 }
 

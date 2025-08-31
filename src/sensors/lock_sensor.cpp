@@ -24,22 +24,7 @@ void LockSensor::Init()
     }
     gpioProvider_->PinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
     
-    // Register coordinated interrupts instead of direct GPIO interrupts
-    bool polledRegistered = RegisterPolledInterrupt(
-        "lock_state_monitor",         // Unique ID
-        Priority::IMPORTANT,          // Important priority for lock changes
-        InterruptEffect::LOAD_PANEL,  // Could trigger panel changes
-        200                          // 200ms polling for lock detection
-    );
-    
-    if (polledRegistered)
-    {
-        log_d("Registered polled interrupt for lock state monitoring");
-    }
-    else
-    {
-        log_w("Failed to register polled interrupt for lock sensor");
-    }
+    // Interrupt registration is now handled centrally in ManagerFactory
     
     log_i("LockSensor initialization completed on GPIO %d with coordinated interrupts", gpio_pins::LOCK);
 }

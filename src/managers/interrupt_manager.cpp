@@ -78,8 +78,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 
     log_i("InterruptManager initialized with polled and queued interrupt handlers");
     
-    // NOTE: Interrupt contexts are now set directly during registration in
-    // ManagerFactory::RegisterSystemInterrupts(), eliminating the null context window
 }
 
 void InterruptManager::UpdateHandlerContexts()
@@ -125,7 +123,6 @@ void InterruptManager::Process()
     log_v("InterruptManager::Process() completed");
 }
 
-// Phase 1: Evaluation - check all interrupts for state changes
 void InterruptManager::EvaluateInterrupts()
 {
     log_v("EvaluateInterrupts() - checking all interrupt conditions");
@@ -183,7 +180,6 @@ void InterruptManager::EvaluatePolledInterrupts()
     }
 }
 
-// Phase 2: Execution - execute interrupts that need action
 void InterruptManager::ExecuteInterrupts()
 {
     log_v("ExecuteInterrupts() - executing pending interrupts");
@@ -448,7 +444,7 @@ bool InterruptManager::HasActiveInterrupts() const
 {
     for (size_t i = 0; i < interruptCount_; ++i)
     {
-        if (interrupts_[i].active)
+        if (interrupts_[i].IsActive())
         {
             return true;
         }
@@ -476,34 +472,6 @@ void InterruptManager::CheckRestoration()
     
     // Delegate to the private HandleRestoration method
     HandleRestoration();
-}
-
-// Private implementation methods
-
-void InterruptManager::ExecuteInterrupt(Interrupt& interrupt)
-{
-    log_v("ExecuteInterrupt() called for: %s", interrupt.id ? interrupt.id : "unknown");
-    ++totalExecutions_; // Track execution count
-    
-    // Handle queued interrupts by routing to QueuedHandler
-    if (interrupt.source == InterruptSource::QUEUED && queuedHandler_)
-    {
-        if (queuedHandler_->QueueInterrupt(&interrupt))
-        {
-            log_d("Queued interrupt '%s' for deferred execution", interrupt.id);
-        }
-        else
-        {
-            log_w("Failed to queue interrupt '%s' - executing immediately", interrupt.id);
-            // Fallback to immediate effect-based execution if queueing fails
-            ExecuteByEffect(interrupt);
-        }
-        return;
-    }
-    
-    // Handle immediate execution (polled interrupts) - now using effect-based routing
-    log_d("Executing interrupt '%s' with effect %d", interrupt.id, static_cast<int>(interrupt.effect));
-    ExecuteByEffect(interrupt);
 }
 
 void InterruptManager::ExecuteByEffect(const Interrupt& interrupt)
@@ -564,47 +532,7 @@ Interrupt* InterruptManager::FindInterrupt(const char* id)
     return nullptr;
 }
 
-bool InterruptManager::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
-{
-    // Optimize evaluation frequency based on priority to reduce CPU usage
-    unsigned long currentTime = millis();
-    unsigned long timeSinceLastEvaluation = currentTime - interrupt.lastEvaluation;
-    
-    // Set evaluation intervals based on priority for CPU efficiency
-    unsigned long minInterval = 0;
-    
-    switch (interrupt.priority)
-    {
-        case Priority::CRITICAL:
-            minInterval = 10;  // Fast response for error conditions and security
-            break;
-        case Priority::IMPORTANT:
-            minInterval = 25;  // Balanced response for user input and sensors
-            break;
-        case Priority::NORMAL:
-            minInterval = 50;  // Slower response for background tasks and themes
-            break;
-    }
-    
-    // User input requires fast response for good UX
-    if (interrupt.effect == InterruptEffect::BUTTON_ACTION)
-    {
-        minInterval = std::min(minInterval, 15UL); // Ensure responsive button handling
-    }
-    
-    // UI changes can be evaluated less frequently to prevent flicker
-    if (interrupt.effect == InterruptEffect::SET_THEME)
-    {
-        minInterval = std::max(minInterval, 100UL); // Prevent rapid theme switching
-    }
-    
-    return timeSinceLastEvaluation >= minInterval;
-}
 
-void InterruptManager::UpdateLastEvaluation(Interrupt& interrupt)
-{
-    interrupt.lastEvaluation = millis();
-}
 
 
 // System monitoring and diagnostic methods
@@ -631,7 +559,7 @@ void InterruptManager::PrintSystemStatus() const
         log_i("  [%d] %s: %s/%s/%s %s", 
               i, interrupt.id ? interrupt.id : "null", 
               priorityStr, sourceStr, effectStr,
-              interrupt.active ? "ACTIVE" : "INACTIVE");
+              interrupt.IsActive() ? "ACTIVE" : "INACTIVE");
     }
     
     log_i("--- Handler Status ---");
@@ -673,7 +601,7 @@ void InterruptManager::CompactInterruptArray()
     for (size_t readIndex = 0; readIndex < interruptCount_; ++readIndex)
     {
         // Only keep active interrupts with valid IDs
-        if (interrupts_[readIndex].active && interrupts_[readIndex].id)
+        if (interrupts_[readIndex].IsActive() && interrupts_[readIndex].id)
         {
             if (writeIndex != readIndex)
             {
@@ -798,20 +726,6 @@ void InterruptManager::LoadPanelFromInterrupt(const Interrupt& interrupt)
     }
 }
 
-// CheckForRestoration removed - restoration simplified
-{
-    log_v("CheckForRestoration() called for: %s", interrupt.id);
-    
-    // Check if this is a panel-loading interrupt that might trigger restoration
-    if (interrupt.effect != InterruptEffect::LOAD_PANEL)
-    {
-        return; // Only panel-loading interrupts participate in restoration
-    }
-    
-    // Delegate to centralized restoration logic
-    HandleRestoration();
-}
-
 void InterruptManager::ApplyThemeFromInterrupt(const Interrupt& interrupt)
 {
     log_v("ApplyThemeFromInterrupt() called for: %s", interrupt.id);
@@ -875,7 +789,7 @@ void InterruptManager::ExecuteButtonAction(const Interrupt& interrupt)
 
 void InterruptManager::HandleRestoration()
 {
-    log_v("HandleRestoration() called - simplified logic");
+    log_v("HandleRestoration() called");
     
     if (!panelManager)
     {
@@ -907,127 +821,8 @@ void InterruptManager::HandleRestoration()
     if (!hasActiveRestorationTrigger && panelManager->IsCurrentPanelTriggerDriven())
     {
         log_i("No active restoration triggers - restoring to previous panel");
-        panelManager->RestorePreviousPanel();
+        // TODO: Implement panel restoration logic
+        log_d("Panel restoration needed but method not yet implemented");
     }
-}
-
-// Legacy methods removed - using new evaluation/execution separation
-        }
-        
-        log_d("NEW ARCHITECTURE: Evaluating interrupt '%s'", interrupt.id ? interrupt.id : "null");
-            
-        if (ShouldEvaluateInterrupt(interrupt))
-        {
-            log_d("NEW ARCHITECTURE: Should evaluate interrupt '%s' - proceeding", interrupt.id);
-            // Evaluate once and cache result
-            InterruptResult result = interrupt.processFunc(interrupt.context);
-            interrupt.stateChanged = (result == InterruptResult::EXECUTE_EFFECT);
-            interrupt.lastEvaluation = millis();
-            
-            log_d("NEW ARCHITECTURE: Interrupt '%s' result:%d, stateChanged:%s", 
-                  interrupt.id, static_cast<int>(result), 
-                  interrupt.stateChanged ? "true" : "false");
-            
-            if (interrupt.stateChanged)
-            {
-                log_i("NEW ARCHITECTURE: Interrupt '%s' state changed - marked for execution", interrupt.id);
-            }
-        }
-        else
-        {
-            log_d("NEW ARCHITECTURE: Interrupt '%s' should not be evaluated yet", interrupt.id);
-        }
-    }
-}
-
-// ExecuteInterruptsWithRules removed - replaced by ExecuteInterrupts()
-{
-    log_i("NEW ARCHITECTURE: ExecuteInterruptsWithRules() called");
-    
-    // Sort interrupts by priority for execution order
-    // Since we're using a static array, we'll iterate in priority order
-    for (int priority = 0; priority <= 2; ++priority) // CRITICAL=0, IMPORTANT=1, NORMAL=2
-    {
-        for (size_t i = 0; i < interruptCount_; ++i)
-        {
-            Interrupt& interrupt = interrupts_[i];
-            
-            if (interrupt.stateChanged && 
-                static_cast<int>(interrupt.priority) == priority &&
-                CanExecute(interrupt))
-            {
-                log_i("NEW ARCHITECTURE: Executing interrupt '%s' (priority %d, mode %d)", 
-                      interrupt.id, priority, static_cast<int>(interrupt.executionMode));
-                      
-                ExecuteInterrupt(interrupt);
-                ++totalExecutions_;
-                
-                // Track exclusion group if applicable
-                if (interrupt.executionMode == InterruptExecutionMode::EXCLUSIVE && 
-                    interrupt.exclusionGroup)
-                {
-                    executedGroups_.push_back(interrupt.exclusionGroup);
-                }
-            }
-        }
-    }
-}
-
-// CanExecute removed - execution control simplified
-{
-    log_d("NEW ARCHITECTURE: CanExecute() called for interrupt '%s'", interrupt.id);
-    
-    switch (interrupt.executionMode)
-    {
-        case InterruptExecutionMode::ALWAYS:
-            log_i("NEW ARCHITECTURE: Interrupt '%s' has ALWAYS mode - can execute", interrupt.id);
-            return true;
-            
-        case InterruptExecutionMode::EXCLUSIVE:
-            if (interrupt.exclusionGroup && IsGroupExecuted(interrupt.exclusionGroup))
-            {
-                log_d("Interrupt '%s' blocked - exclusion group '%s' already executed", 
-                      interrupt.id, interrupt.exclusionGroup);
-                return false;
-            }
-            return true;
-            
-        case InterruptExecutionMode::CONDITIONAL:
-            if (interrupt.canExecuteInContext)
-            {
-                bool canExecute = interrupt.canExecuteInContext(currentContext_);
-                log_d("Interrupt '%s' conditional check returned: %s", 
-                      interrupt.id, canExecute ? "true" : "false");
-                return canExecute;
-            }
-            return true;
-            
-        default:
-            return true;
-    }
-}
-
-// ClearStateChanges removed - using NeedsExecution flag
-{
-    log_v("ClearStateChanges() called");
-    
-    for (size_t i = 0; i < interruptCount_; ++i)
-    {
-        interrupts_[i].stateChanged = false;
-    }
-}
-
-// IsGroupExecuted removed - exclusion groups deprecated
-{
-    if (!group) return false;
-    
-    for (const auto& executedGroup : executedGroups_)
-    {
-        if (executedGroup && strcmp(executedGroup, group) == 0)
-        {
-            return true;
-        }
-    }
-    return false;
 }
 

@@ -1,3 +1,4 @@
+* review InterruptFlags, they are int8, which apparently is efficient on esp32, confirm this and if so is there value in applying to all others?
 * Simplify trigger managers, execute trigger action function
 * review freeRTOS, specifically it's multitasking ability, and see if it would be beneficial for the interrupt system  
 Noting that I had previously used it for dual core, where one core monitored interrupts, and the other handled lvgl tasks, this became overley complex and unreliable due to keeping both cores in sync with regards to GPIO status, and the fact that it gave the app no overall benefit, as the lvgl core still checked the shared context only when it was idle, which is equivalent to current architecture where the app checks the current status during lvgl idle.

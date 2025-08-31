@@ -87,13 +87,13 @@ class ButtonSensor : public ISensor, public BaseSensor
     
     /// @brief Read GPIO pin and determine button state
     /// @return Button state based on GPIO pin reading
-    bool readButtonState();
+    bool ReadButtonState();
     
     /// @brief Process button state changes and detect actions
-    void processButtonState();
+    void ProcessButtonState();
     
     /// @brief Determine button action based on press duration
     /// @param duration Press duration in milliseconds
     /// @return ButtonAction type based on duration
-    ButtonAction determineAction(unsigned long duration);
+    ButtonAction DetermineAction(unsigned long duration);
 };

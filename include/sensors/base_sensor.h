@@ -95,34 +95,6 @@ protected:
 public:
     virtual ~BaseSensor() = default;
     
-    /**
-     * @brief Register a polled interrupt for this sensor
-     * @param id Unique identifier for the interrupt
-     * @param priority Interrupt priority level
-     * @param effect Type of interrupt effect
-     * @param intervalMs Polling interval in milliseconds
-     * @param data Additional interrupt data (optional)
-     * @return true if interrupt was registered successfully
-     */
-    bool RegisterPolledInterrupt(const char* id, Priority priority, InterruptEffect effect, 
-                                unsigned long intervalMs = 200, void* data = nullptr);
-    
-    /**
-     * @brief Register a queued interrupt for this sensor
-     * @param id Unique identifier for the interrupt
-     * @param priority Interrupt priority level
-     * @param effect Type of interrupt effect
-     * @param data Additional interrupt data (optional)
-     * @return true if interrupt was registered successfully
-     */
-    bool RegisterQueuedInterrupt(const char* id, Priority priority, InterruptEffect effect, 
-                                void* data = nullptr);
-    
-    /**
-     * @brief Unregister an interrupt by ID
-     * @param id Interrupt identifier to unregister
-     */
-    void UnregisterInterrupt(const char* id);
     
     /**
      * @brief Check if this sensor has state changes (must be implemented by derived classes)
@@ -132,12 +104,6 @@ public:
     virtual bool HasStateChanged() { return false; }
 
 protected:
-    /**
-     * @brief Memory-optimized static processing function for sensor interrupts
-     * @param context Pointer to the sensor instance
-     * @return InterruptResult indicating whether to execute the interrupt effect
-     */
-    static InterruptResult ProcessSensorInterrupt(void* context);
     
     /**
      * @brief Virtual method for sensor-specific interrupt execution (override in derived classes)

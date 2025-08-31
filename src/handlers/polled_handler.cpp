@@ -111,18 +111,18 @@ void PolledHandler::EvaluateAllInterrupts()
     log_d("HYBRID POLLED: Evaluating %zu interrupts", polledInterrupts_.size());
     for (auto& interrupt : polledInterrupts_)
     {
-        if (!interrupt || !interrupt->active || !interrupt->processFunc)
+        if (!interrupt || !interrupt->IsActive() || !interrupt->evaluationFunc)
             continue;
             
         if (ShouldEvaluateInterrupt(*interrupt))
         {
             log_v("Evaluating interrupt: %s", interrupt->id);
             // Single evaluation per cycle - cache the result
-            InterruptResult result = interrupt->processFunc(interrupt->context);
-            interrupt->stateChanged = (result == InterruptResult::EXECUTE_EFFECT);
-            interrupt->lastEvaluation = millis();
+            bool shouldExecute = interrupt->evaluationFunc(interrupt->context);
+            interrupt->SetStateChanged(shouldExecute);
+            interrupt->SetLastEvaluation(millis());
             
-            if (interrupt->stateChanged)
+            if (shouldExecute)
             {
                 log_i("HYBRID POLLED: Interrupt '%s' state changed - marked for execution", interrupt->id);
             }
@@ -142,22 +142,15 @@ void PolledHandler::ExecuteHighestPriorityInterrupt()
     {
         for (auto& interrupt : polledInterrupts_)
         {
-            if (!interrupt || !interrupt->stateChanged)
+            if (!interrupt || !interrupt->HasStateChanged())
                 continue;
                 
             if (static_cast<int>(interrupt->priority) == priority && CanExecute(*interrupt))
             {
-                log_i("HYBRID POLLED: Executing interrupt '%s' (priority %d, mode %d)", 
-                      interrupt->id, priority, static_cast<int>(interrupt->executionMode));
+                log_i("HYBRID POLLED: Executing interrupt '%s' (priority %d)", 
+                      interrupt->id, priority);
                       
                 ExecuteInterrupt(*interrupt);
-                
-                // Track exclusion group if applicable
-                if (interrupt->executionMode == InterruptExecutionMode::EXCLUSIVE && 
-                    interrupt->exclusionGroup)
-                {
-                    executedGroups_.push_back(interrupt->exclusionGroup);
-                }
                 
                 // Only execute one interrupt per priority level per cycle
                 break;
@@ -174,7 +167,7 @@ void PolledHandler::ClearStateChanges()
     {
         if (interrupt)
         {
-            interrupt->stateChanged = false;
+            interrupt->SetStateChanged(false);
         }
     }
 }
@@ -262,7 +255,7 @@ bool PolledHandler::HasPendingEvaluations() const
     
     for (const auto& interrupt : polledInterrupts_)
     {
-        if (interrupt && interrupt->active)
+        if (interrupt && interrupt->IsActive())
         {
             if (ShouldEvaluateInterrupt(*interrupt))
             {
@@ -280,7 +273,7 @@ bool PolledHandler::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
 {
     // Optimize evaluation frequency based on priority to reduce CPU usage
     unsigned long currentTime = millis();
-    unsigned long timeSinceLastEvaluation = currentTime - interrupt.lastEvaluation;
+    unsigned long timeSinceLastEvaluation = currentTime - interrupt.GetLastEvaluation();
     
     // Set evaluation intervals based on priority for CPU efficiency
     unsigned long minInterval = 0;
@@ -315,60 +308,30 @@ bool PolledHandler::ShouldEvaluateInterrupt(const Interrupt& interrupt) const
 
 bool PolledHandler::CanExecute(const Interrupt& interrupt) const
 {
-    log_d("HYBRID POLLED: CanExecute() called for interrupt '%s'", interrupt.id);
+    log_d("CanExecute() called for interrupt '%s'", interrupt.id);
     
-    switch (interrupt.executionMode)
+    // Check if interrupt has ALWAYS_EXECUTE flag
+    if ((interrupt.flags & InterruptFlags::ALWAYS_EXECUTE) != InterruptFlags::NONE)
     {
-        case InterruptExecutionMode::ALWAYS:
-            log_i("HYBRID POLLED: Interrupt '%s' has ALWAYS mode - can execute", interrupt.id);
-            return true;
-            
-        case InterruptExecutionMode::EXCLUSIVE:
-            if (interrupt.exclusionGroup && IsGroupExecuted(interrupt.exclusionGroup))
-            {
-                log_d("HYBRID POLLED: Interrupt '%s' blocked - exclusion group '%s' already executed", 
-                      interrupt.id, interrupt.exclusionGroup);
-                return false;
-            }
-            return true;
-            
-        case InterruptExecutionMode::CONDITIONAL:
-            if (interrupt.canExecuteInContext)
-            {
-                // For now, we don't have context in PolledHandler, so default to true
-                bool canExecute = interrupt.canExecuteInContext(nullptr);
-                log_d("HYBRID POLLED: Interrupt '%s' conditional check returned: %s", 
-                      interrupt.id, canExecute ? "true" : "false");
-                return canExecute;
-            }
-            return true;
-            
-        default:
-            return true;
+        log_d("Interrupt '%s' has ALWAYS_EXECUTE flag - can execute", interrupt.id);
+        return true;
     }
+    
+    return true;
 }
 
-bool PolledHandler::IsGroupExecuted(const char* group) const
-{
-    if (!group) return false;
-    
-    for (const auto& executedGroup : executedGroups_)
-    {
-        if (executedGroup && strcmp(executedGroup, group) == 0)
-        {
-            return true;
-        }
-    }
-    return false;
-}
 
 void PolledHandler::ExecuteInterrupt(Interrupt& interrupt)
 {
-    log_i("HYBRID POLLED: ExecuteInterrupt() called for: %s", interrupt.id);
+    log_i("ExecuteInterrupt() called for: %s", interrupt.id);
     
-    // Delegate to InterruptManager's public ExecuteEffect method
-    InterruptManager& manager = InterruptManager::Instance();
-    manager.ExecuteEffect(interrupt);
-    
-    log_d("HYBRID POLLED: Effect execution completed for interrupt '%s'", interrupt.id);
+    if (interrupt.executionFunc)
+    {
+        interrupt.executionFunc(interrupt.context);
+        log_d("Execution completed for interrupt '%s'", interrupt.id);
+    }
+    else
+    {
+        log_w("No execution function for interrupt '%s'", interrupt.id);
+    }
 }

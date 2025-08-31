@@ -124,7 +124,7 @@ flowchart TB
 2. **Service Initialization**: ManagerFactory creates all managers (Interrupt, Panel, Style, Preference, Error)
 3. **Handler Creation with Sensor Ownership**:
    - InterruptManager creates PolledHandler → owns GPIO sensors (Key, Lock, Lights)
-   - InterruptManager creates QueuedHandler → owns ActionButtonSensor
+   - InterruptManager creates QueuedHandler → owns ButtonSensor
 4. **Initialize Styles**: Setup visual styles and themes for the UI
 5. **Show Initial Panel**: 
    - PanelManager creates initial panel
@@ -149,7 +149,7 @@ flowchart TB
 **Interrupt Processing Flow**:
 - **Handler Ownership Model**:
   - PolledHandler owns all GPIO sensors (created during handler initialization)
-  - QueuedHandler owns ActionButtonSensor (created during handler initialization)
+  - QueuedHandler owns ButtonSensor (created during handler initialization)
 - **Queued Interrupt Handler**: 
   - Evaluates queued interrupts continuously
   - Executes button presses via single execution function when idle
@@ -197,7 +197,7 @@ flowchart TB
   - ManagerFactory uses dependency injection for testability
 - **Interrupt Handlers with Ownership**: 
   - PolledHandler owns GPIO sensors (created during initialization)
-  - QueuedHandler owns button sensor (created during initialization)
+  - QueuedHandler owns ButtonSensor (created during initialization)
 - **Panel Management**: Centralized panel creation, loading, and updates
 - **Self-Sufficient Panels**: Create own components, Key/Lock are display-only
 - **Style Management**: Theme setting and style retrieval for consistent UI

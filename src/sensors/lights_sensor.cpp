@@ -25,22 +25,7 @@ void LightsSensor::Init()
     previousLightsState_ = readLightsState();
     log_d("Lights sensor initial state: %s", previousLightsState_ ? "ON" : "OFF");
     
-    // Register coordinated interrupts instead of direct GPIO interrupts
-    bool polledRegistered = RegisterPolledInterrupt(
-        "lights_state_monitor",       // Unique ID
-        Priority::NORMAL,             // Normal priority for theme changes
-        InterruptEffect::SET_THEME,   // Lights affect theme switching
-        250                          // 250ms polling for lights detection
-    );
-    
-    if (polledRegistered)
-    {
-        log_d("Registered polled interrupt for lights state monitoring");
-    }
-    else
-    {
-        log_w("Failed to register polled interrupt for lights sensor");
-    }
+    // Interrupt registration is now handled centrally in ManagerFactory
     
     log_i("LightsSensor initialization completed on GPIO %d with coordinated interrupts", gpio_pins::LIGHTS);
 }

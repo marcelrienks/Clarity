@@ -40,22 +40,7 @@ void DebugErrorSensor::Init()
     startupTime_ = millis(); // Record startup time for grace period
     initialized_ = true;
     
-    // Register coordinated interrupts for debug error detection
-    bool polledRegistered = RegisterPolledInterrupt(
-        "debug_error_monitor",        // Unique ID
-        Priority::CRITICAL,           // Critical priority for error triggers
-        InterruptEffect::LOAD_PANEL,  // Errors trigger error panel
-        300                          // 300ms polling for debug error detection
-    );
-    
-    if (polledRegistered)
-    {
-        log_d("Registered polled interrupt for debug error monitoring");
-    }
-    else
-    {
-        log_w("Failed to register polled interrupt for debug error sensor");
-    }
+    // Interrupt registration is now handled centrally in ManagerFactory
 
     log_d("DebugErrorSensor initialized on GPIO %d with coordinated interrupts, initial state: %s", 
           gpio_pins::DEBUG_ERROR, previousState_ ? "HIGH" : "LOW");
