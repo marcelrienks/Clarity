@@ -39,9 +39,10 @@ public:
     void ActivateInterrupt(const char* id);
     void DeactivateInterrupt(const char* id);
     void UpdateInterruptContext(const char* id, void* context);
+    void UpdateInterruptEvaluation(const char* id, bool (*evaluationFunc)(void*));
+    void UpdateInterruptExecution(const char* id, void (*executionFunc)(void*));
     
-    // Universal button system - function injection
-    void UpdateInterruptFunction(const char* id, void (*newFunc)(void* context));
+    // Button system - function injection
     void UpdateButtonInterrupts(void (*shortPressFunc)(void* context), 
                                void (*longPressFunc)(void* context), 
                                void* panelContext);
@@ -79,85 +80,57 @@ private:
     InterruptManager(const InterruptManager&) = delete;
     InterruptManager& operator=(const InterruptManager&) = delete;
     
-    // Coordinated interrupt processing
-    void ExecuteInterrupt(Interrupt& interrupt);
+    // Interrupt processing - clean separation
+    void EvaluateInterrupts();
+    void ExecuteInterrupts();
     void ExecuteByEffect(const Interrupt& interrupt);
+    
+    // Handler coordination
     void ProcessHandlers();
     void UpdateHandlerContexts();
     
     // Interrupt flow methods
     void EvaluateQueuedInterrupts();
-    void PostQueuedInterrupts();
+    void EvaluatePolledInterrupts();
     bool IsUIIdle() const;
-    void EvaluateAndActionPolledInterrupts();
-    void ProcessQueuedInterruptActions();
-    
-    // Legacy single-list architecture methods (to be removed)
-    void EvaluateAllInterrupts();
-    void ExecuteInterruptsWithRules();
-    bool CanExecute(const Interrupt& interrupt) const;
-    void ClearStateChanges();
-    bool IsGroupExecuted(const char* group) const;
+    void ExecuteQueuedInterrupts();
+    void ExecutePolledInterrupts();
     
     // Helper methods
     Interrupt* FindInterrupt(const char* id);
-    bool ShouldEvaluateInterrupt(const Interrupt& interrupt) const;
-    void UpdateLastEvaluation(Interrupt& interrupt);
-    
-    // Context management
-    void SetCurrentContext(void* context) { currentContext_ = context; }
     
     // Effect-specific execution methods
     void LoadPanelFromInterrupt(const Interrupt& interrupt);
-    void CheckForRestoration(const Interrupt& interrupt);
     void HandleRestoration();
     void ApplyThemeFromInterrupt(const Interrupt& interrupt);
-    void ApplyPreferenceFromInterrupt(const Interrupt& interrupt);
     void ExecuteButtonAction(const Interrupt& interrupt);
     
     // Static storage for memory safety
     static constexpr size_t MAX_INTERRUPTS = 32;
     static constexpr size_t MAX_HANDLERS = 8;
-    static constexpr unsigned long INTERRUPT_EVALUATION_INTERVAL_MS = 50;
     
-    // Coordinated interrupt system
+    // Interrupt storage
     Interrupt interrupts_[MAX_INTERRUPTS];
     size_t interruptCount_ = 0;
-    std::vector<std::shared_ptr<IHandler>> handlers_;
     
-    // Direct references to default handlers for routing
+    // Handler management
+    std::vector<std::shared_ptr<IHandler>> handlers_;
     std::shared_ptr<class PolledHandler> polledHandler_;
     std::shared_ptr<class QueuedHandler> queuedHandler_;
     
-    // Exclusion group tracking for current cycle
-    std::vector<const char*> executedGroups_;
-    
-    // Current context for conditional execution checks
-    void* currentContext_ = nullptr;
-    
-    unsigned long lastEvaluationTime_ = 0;
+    // System state
     bool initialized_ = false;
+    unsigned long lastEvaluationTime_ = 0;
     
-    // Statistics (for debugging and monitoring)
-    mutable unsigned long lastCheckTime_ = 0;
-    mutable unsigned long checkCount_ = 0;
-    
-    // Phase 6: Enhanced performance monitoring
+    // Performance monitoring
     mutable size_t totalEvaluations_ = 0;
     mutable size_t totalExecutions_ = 0;
-    mutable unsigned long lastDiagnosticTime_ = 0;
     
-    // Universal button function injection storage
+    // Button function storage for dynamic dispatch
     void (*currentShortPressFunc_)(void* context) = nullptr;
     void (*currentLongPressFunc_)(void* context) = nullptr;
     void* currentPanelContext_ = nullptr;
     
-    // GPIO provider reference (stored to avoid circular dependency during initialization)
+    // GPIO provider reference
     IGpioProvider* gpioProvider_ = nullptr;
-    
-    // Flow state tracking
-    bool queuedInterruptsNeedProcessing_ = false;
-    unsigned long buttonPressStartTime_ = 0;
-    bool buttonCurrentlyPressed_ = false;
-    bool isLongPress_ = false; // Track if the queued press is long or short
 };

@@ -1,6 +1,6 @@
 #include "handlers/queued_handler.h"
 #include "managers/error_manager.h"
-#include "sensors/action_button_sensor.h"
+#include "sensors/button_sensor.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -22,20 +22,20 @@ QueuedHandler::QueuedHandler(IGpioProvider* gpioProvider)
     
     // Create and initialize button sensor owned by this handler
     if (gpioProvider_) {
-        log_d("Creating QueuedHandler-owned ActionButtonSensor");
+        log_d("Creating QueuedHandler-owned ButtonSensor");
         
-        actionButtonSensor_ = std::make_unique<ActionButtonSensor>(gpioProvider_);
-        actionButtonSensor_->Init();
+        buttonSensor_ = std::make_unique<ButtonSensor>(gpioProvider_);
+        buttonSensor_->Init();
         
-        log_i("QueuedHandler created and initialized ActionButtonSensor for button input");
+        log_i("QueuedHandler created and initialized ButtonSensor for button input");
     } else {
-        log_e("QueuedHandler: GPIO provider is null - ActionButtonSensor not created");
+        log_e("QueuedHandler: GPIO provider is null - ButtonSensor not created");
     }
 }
 
 QueuedHandler::~QueuedHandler() 
 {
-    log_d("QueuedHandler destructor - cleaning up ActionButtonSensor");
+    log_d("QueuedHandler destructor - cleaning up ButtonSensor");
     // Unique_ptr will automatically clean up sensor
 }
 

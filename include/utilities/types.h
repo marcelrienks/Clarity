@@ -197,74 +197,54 @@ struct Action
 // Memory-optimized interrupt structure for ESP32 with centralized restoration
 //=============================================================================
 
-/// @enum InterruptResult
-/// @brief Result of interrupt processing function
-enum class InterruptResult
-{
-    NO_ACTION = 0,    ///< No action needed, interrupt condition not met
-    EXECUTE_EFFECT    ///< Execute the interrupt's effect (condition is met)
-};
-
-/// @enum InterruptExecutionMode
-/// @brief Defines how an interrupt can execute relative to others
-enum class InterruptExecutionMode
-{
-    ALWAYS,      ///< Always executes when triggered (e.g., lights for theme)
-    EXCLUSIVE,   ///< Only one interrupt from exclusion group can execute per cycle
-    CONDITIONAL  ///< Execution depends on context check
-};
-
 /// @struct Interrupt
-/// @brief Memory-optimized interrupt structure for coordinated handler system
+/// @brief Interrupt structure with evaluation/execution separation
 ///
-/// @details Optimized interrupt design achieving 29-byte structure size:
-/// - Single processing function (saves 4 bytes vs dual function design)
+/// @details Optimized interrupt design with proper separation of concerns:
+/// - Separate evaluation and execution functions for clarity
 /// - Static function pointers prevent heap fragmentation (critical for ESP32)
 /// - Union-based effect data for memory efficiency
-/// - Centralized restoration logic eliminates distributed callback complexity
+/// - Simplified restoration logic through active state tracking
 ///
-/// @memory_usage Exactly 29 bytes per interrupt (8 bytes saved vs 37-byte dual function design)
-/// @total_system_overhead 203 bytes for 7 interrupts (vs 259 bytes with dual functions)
-///
-/// @esp32_constraint ESP32-WROOM-32 has ~250KB available RAM after system overhead
-/// Using std::function with lambda captures causes heap fragmentation and crashes
-///
-/// @restoration_design Centralized restoration in InterruptManager eliminates need for
-/// deactivate function pointers, reducing memory usage and complexity
+/// @memory_usage 32 bytes aligned (29 bytes actual + padding)
 struct Interrupt
 {
-    const char* id;                                    ///< Static string for memory efficiency
-    Priority priority;                                 ///< Processing priority  
+    const char* id;                                   ///< Static string identifier
+    uint8_t priority;                                 ///< Processing priority (0-255)
     InterruptSource source;                           ///< POLLED or QUEUED evaluation
     InterruptEffect effect;                           ///< What this interrupt does
-    InterruptResult (*processFunc)(void* context);   ///< Single function - evaluate AND signal execution
-    void* context;                                    ///< Sensor or service context
     
-    // Execution control fields
-    InterruptExecutionMode executionMode = InterruptExecutionMode::EXCLUSIVE; ///< How this interrupt executes
-    const char* exclusionGroup = nullptr;             ///< Group name for EXCLUSIVE mode (e.g., "key_states")
-    bool (*canExecuteInContext)(void* currentContext) = nullptr; ///< For CONDITIONAL mode
+    // Separated evaluation and execution functions
+    bool (*evaluationFunc)(void* context);            ///< Check if state changed
+    void (*executionFunc)(void* context);             ///< Execute the action
+    void* context;                                     ///< Sensor or service context
     
     // Effect-specific data (union for memory efficiency)
-    union {
+    union EffectData {
         struct { 
             const char* panelName; 
             bool trackForRestore; 
-        } panel;                                      ///< LOAD_PANEL data
+        } panel;                                       ///< LOAD_PANEL data
         struct { 
             const char* theme; 
-        } theme;                                      ///< SET_THEME data
+        } theme;                                       ///< SET_THEME data
         struct { 
-            const char* key; 
-            void* value; 
-        } preference;                                 ///< SET_PREFERENCE data
-        struct { 
-            void (*customFunc)(void* ctx); 
-        } custom;                                     ///< BUTTON_ACTION/custom data
+            ButtonAction action;
+        } button;                                      ///< BUTTON_ACTION data
     } data;
     
     // Runtime state
-    bool active = false;                              ///< Current activation state
-    bool stateChanged = false;                        ///< Cached evaluation result for this cycle
-    unsigned long lastEvaluation = 0;               ///< Performance tracking
+    uint8_t flags;                                     ///< Bit flags: active(0), needsExecution(1), etc.
+    
+    // Helper methods for flag management
+    bool IsActive() const { return flags & 0x01; }
+    void SetActive(bool active) { 
+        if (active) flags |= 0x01; 
+        else flags &= ~0x01; 
+    }
+    bool NeedsExecution() const { return flags & 0x02; }
+    void SetNeedsExecution(bool needs) {
+        if (needs) flags |= 0x02;
+        else flags &= ~0x02;
+    }
 };

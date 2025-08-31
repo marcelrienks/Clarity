@@ -7,7 +7,7 @@
 #include <memory>
 
 // Forward declarations for sensors
-class ActionButtonSensor;
+class ButtonSensor;
 
 #include "esp32-hal-log.h"
 
@@ -40,7 +40,7 @@ public:
     void SetMaxQueueSize(size_t maxSize);
     
     // Sensor access for interrupt context
-    ActionButtonSensor* GetActionButtonSensor() const { return actionButtonSensor_.get(); }
+    ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
     
     // Status
     size_t GetQueuedCount() const;
@@ -70,5 +70,5 @@ private:
     
     // Handler-owned sensor for button input
     IGpioProvider* gpioProvider_;
-    std::unique_ptr<ActionButtonSensor> actionButtonSensor_;
+    std::unique_ptr<ButtonSensor> buttonSensor_;
 };

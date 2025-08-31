@@ -137,6 +137,14 @@ enum class InterruptEffect
     BUTTON_ACTION      ///< Panel-specific button functions (QUEUED only)
 };
 
+/// @brief Button action types detected by timing
+enum class ButtonAction
+{
+    NONE = 0,          ///< No action detected
+    SHORT_PRESS = 1,   ///< Short press (50ms - 2000ms)
+    LONG_PRESS = 2     ///< Long press (2000ms - 5000ms)
+};
+
 /// @brief Trigger execution state enumeration
 enum class TriggerExecutionState
 {

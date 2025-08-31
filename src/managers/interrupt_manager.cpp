@@ -8,7 +8,7 @@
 #include "sensors/lock_sensor.h"
 #include "sensors/key_present_sensor.h"
 #include "sensors/key_not_present_sensor.h"
-#include "sensors/action_button_sensor.h"
+#include "sensors/button_sensor.h"
 #include "utilities/constants.h"
 #include <Arduino.h>
 #include <cstring>
@@ -40,8 +40,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
     interruptCount_ = 0;
     handlers_.clear();
     lastEvaluationTime_ = millis();
-    lastCheckTime_ = millis();
-    checkCount_ = 0;
 
     // Store GPIO provider for later handler creation to avoid circular dependency
     gpioProvider_ = gpioProvider;
@@ -99,158 +97,165 @@ void InterruptManager::UpdateHandlerContexts()
     }
     
     if (queuedHandler_) {
-        UpdateInterruptContext("universal_short_press", queuedHandler_->GetActionButtonSensor());
-        UpdateInterruptContext("universal_long_press", queuedHandler_->GetActionButtonSensor());
-        log_d("Updated queued interrupt contexts with ActionButtonSensor pointer");
+        UpdateInterruptContext("universal_short_press", queuedHandler_->GetButtonSensor());
+        UpdateInterruptContext("universal_long_press", queuedHandler_->GetButtonSensor());
+        log_d("Updated queued interrupt contexts with ButtonSensor pointer");
     }
 }
 
 
-// Core interrupt processing methods - implements interrupt flow
+// Core interrupt processing - clean separation of evaluation and execution
 void InterruptManager::Process()
 {
-    log_v("InterruptManager::Process() called - interrupt flow entry");
+    log_v("InterruptManager::Process() called");
     
     if (!initialized_)
     {
         return;
     }
 
-    // Step 3: InterruptManager: Evaluate Queued (ALWAYS)
-    EvaluateQueuedInterrupts();
+    // Phase 1: Evaluate all interrupts (check for state changes)
+    EvaluateInterrupts();
     
-    // Step 4: InterruptManager: Post Queued (ALWAYS) 
-    PostQueuedInterrupts();
-    
-    // Step 5: InterruptManager: If Idle (check UI state)
-    if (!IsUIIdle()) {
-        log_v("UI not idle - skipping polled evaluation and execution");
-        return; // Skip to step 8 (loop end)
+    // Phase 2: Execute interrupts that need action (only during idle)
+    if (IsUIIdle()) {
+        ExecuteInterrupts();
     }
     
-    // Step 6: InterruptManager: Evaluate and Action Polled (IDLE ONLY)
-    EvaluateAndActionPolledInterrupts();
-    
-    // Step 7: InterruptManager: If Queue Action (IDLE ONLY)
-    ProcessQueuedInterruptActions();
-    
-    log_v("InterruptManager::Process() completed interrupt flow");
+    log_v("InterruptManager::Process() completed");
 }
 
-// Interrupt flow implementation methods
+// Phase 1: Evaluation - check all interrupts for state changes
+void InterruptManager::EvaluateInterrupts()
+{
+    log_v("EvaluateInterrupts() - checking all interrupt conditions");
+    
+    // Always evaluate queued interrupts (button presses)
+    EvaluateQueuedInterrupts();
+    
+    // Evaluate polled interrupts only during idle
+    if (IsUIIdle()) {
+        EvaluatePolledInterrupts();
+    }
+    
+    totalEvaluations_++;
+}
 
 void InterruptManager::EvaluateQueuedInterrupts()
 {
-    log_v("Step 3: EvaluateQueuedInterrupts() called");
+    log_v("EvaluateQueuedInterrupts() - checking button interrupts");
     
-    if (!queuedHandler_ || !queuedHandler_->GetActionButtonSensor()) {
-        return;
-    }
-    
-    ActionButtonSensor* buttonSensor = queuedHandler_->GetActionButtonSensor();
-    bool currentButtonState = buttonSensor->IsButtonPressed();
-    unsigned long currentTime = millis();
-    
-    // Detect button press start (rising edge)
-    if (currentButtonState && !buttonCurrentlyPressed_) {
-        buttonPressStartTime_ = currentTime;
-        buttonCurrentlyPressed_ = true;
-        log_d("Button press started at %lu ms", buttonPressStartTime_);
-    }
-    // Detect button release (falling edge) 
-    else if (!currentButtonState && buttonCurrentlyPressed_) {
-        unsigned long pressDuration = currentTime - buttonPressStartTime_;
-        buttonCurrentlyPressed_ = false;
+    for (size_t i = 0; i < interruptCount_; i++)
+    {
+        Interrupt& interrupt = interrupts_[i];
         
-        log_d("Button released after %lu ms", pressDuration);
+        // Only process QUEUED interrupts that are active
+        if (interrupt.source != InterruptSource::QUEUED || !interrupt.IsActive())
+            continue;
         
-        // Determine press type and queue for processing
-        if (pressDuration >= 50 && pressDuration < 2000) {
-            // Short press: 50ms to 2000ms
-            log_i("Short press detected (%lu ms)", pressDuration);
-            queuedInterruptsNeedProcessing_ = true;
-            isLongPress_ = false;
-        } else if (pressDuration >= 2000 && pressDuration < 5000) {
-            // Long press: 2000ms to 5000ms  
-            log_i("Long press detected (%lu ms)", pressDuration);
-            queuedInterruptsNeedProcessing_ = true;
-            isLongPress_ = true;
+        // Call evaluation function to check if state changed
+        if (interrupt.evaluationFunc && interrupt.evaluationFunc(interrupt.context))
+        {
+            interrupt.SetNeedsExecution(true);
+            log_d("Queued interrupt '%s' needs execution", interrupt.id);
         }
-        // Ignore presses outside valid ranges (debouncing)
     }
 }
 
-void InterruptManager::PostQueuedInterrupts()
+void InterruptManager::EvaluatePolledInterrupts()
 {
-    log_v("Step 4: PostQueuedInterrupts() called");
+    log_v("EvaluatePolledInterrupts() - checking GPIO interrupts");
     
-    if (queuedInterruptsNeedProcessing_) {
-        log_d("Queued interrupts flagged for processing during idle time");
-        // Button events are already queued by evaluation step
-        // This step just confirms they're ready for processing
+    for (size_t i = 0; i < interruptCount_; i++)
+    {
+        Interrupt& interrupt = interrupts_[i];
+        
+        // Only process POLLED interrupts that are active
+        if (interrupt.source != InterruptSource::POLLED || !interrupt.IsActive())
+            continue;
+        
+        // Call evaluation function to check if state changed
+        if (interrupt.evaluationFunc && interrupt.evaluationFunc(interrupt.context))
+        {
+            interrupt.SetNeedsExecution(true);
+            log_d("Polled interrupt '%s' needs execution", interrupt.id);
+        }
+    }
+}
+
+// Phase 2: Execution - execute interrupts that need action
+void InterruptManager::ExecuteInterrupts()
+{
+    log_v("ExecuteInterrupts() - executing pending interrupts");
+    
+    // Execute polled interrupts first (higher priority)
+    ExecutePolledInterrupts();
+    
+    // Then execute queued interrupts
+    ExecuteQueuedInterrupts();
+    
+    // Check for panel restoration after all executions
+    HandleRestoration();
+}
+
+void InterruptManager::ExecutePolledInterrupts()
+{
+    log_v("ExecutePolledInterrupts() - executing GPIO-based interrupts");
+    
+    for (size_t i = 0; i < interruptCount_; i++)
+    {
+        Interrupt& interrupt = interrupts_[i];
+        
+        // Only execute POLLED interrupts that need execution
+        if (interrupt.source != InterruptSource::POLLED || !interrupt.NeedsExecution())
+            continue;
+        
+        // Execute the interrupt
+        if (interrupt.executionFunc)
+        {
+            log_d("Executing polled interrupt '%s'", interrupt.id);
+            ExecuteByEffect(interrupt);
+            interrupt.SetNeedsExecution(false);
+            totalExecutions_++;
+        }
+    }
+}
+
+void InterruptManager::ExecuteQueuedInterrupts()
+{
+    log_v("ExecuteQueuedInterrupts() - executing button interrupts");
+    
+    for (size_t i = 0; i < interruptCount_; i++)
+    {
+        Interrupt& interrupt = interrupts_[i];
+        
+        // Only execute QUEUED interrupts that need execution
+        if (interrupt.source != InterruptSource::QUEUED || !interrupt.NeedsExecution())
+            continue;
+        
+        // Execute the interrupt
+        if (interrupt.executionFunc)
+        {
+            log_d("Executing queued interrupt '%s'", interrupt.id);
+            ExecuteByEffect(interrupt);
+            interrupt.SetNeedsExecution(false);
+            totalExecutions_++;
+        }
     }
 }
 
 bool InterruptManager::IsUIIdle() const
 {
-    log_v("Step 5: IsUIIdle() called");
-    
-    // For now, assume UI is always idle since we're called from LVGL idle callback
-    // In a more sophisticated implementation, this could check LVGL task queue
+    // Check if UI is idle - for now always return true since we're called from LVGL idle
+    // In future, this could check LVGL task queue or animation state
     return true;
-}
-
-void InterruptManager::EvaluateAndActionPolledInterrupts()
-{
-    log_v("Step 6: EvaluateAndActionPolledInterrupts() called");
-    
-    if (!polledHandler_) {
-        return;
-    }
-    
-    // Let the polled handler evaluate and execute its interrupts
-    polledHandler_->Process();
-}
-
-void InterruptManager::ProcessQueuedInterruptActions()
-{
-    log_v("Step 7: ProcessQueuedInterruptActions() called");
-    
-    if (!queuedInterruptsNeedProcessing_) {
-        return;
-    }
-    
-    if (!queuedHandler_ || !queuedHandler_->GetActionButtonSensor()) {
-        queuedInterruptsNeedProcessing_ = false;
-        return;
-    }
-    
-    // Execute the appropriate button action based on stored press type
-    if (isLongPress_) {
-        // Long press action
-        Interrupt* longPressInterrupt = FindInterrupt("universal_long_press");
-        if (longPressInterrupt) {
-            log_i("Executing queued long press action");
-            ExecuteButtonAction(*longPressInterrupt);
-        }
-    } else {
-        // Short press action  
-        Interrupt* shortPressInterrupt = FindInterrupt("universal_short_press");
-        if (shortPressInterrupt) {
-            log_i("Executing queued short press action");
-            ExecuteButtonAction(*shortPressInterrupt);
-        }
-    }
-    
-    // Clear the processing flag
-    queuedInterruptsNeedProcessing_ = false;
 }
 
 bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
 {
     log_v("RegisterInterrupt() called for interrupt: %s", interrupt.id ? interrupt.id : "null");
     
-    if (!interrupt.id || !interrupt.processFunc)
+    if (!interrupt.id || !interrupt.evaluationFunc || !interrupt.executionFunc)
     {
         log_e("Invalid interrupt registration - missing required fields");
         return false;
@@ -273,23 +278,10 @@ bool InterruptManager::RegisterInterrupt(const Interrupt& interrupt)
     
     // Add interrupt to array
     interrupts_[interruptCount_] = interrupt;
-    interrupts_[interruptCount_].active = true;
-    interrupts_[interruptCount_].lastEvaluation = 0;
+    interrupts_[interruptCount_].SetActive(true);
+    interrupts_[interruptCount_].SetNeedsExecution(false);
     
-    // Route interrupt to appropriate handler
-    Interrupt* registeredInterrupt = &interrupts_[interruptCount_];
     interruptCount_++;
-    
-    if (interrupt.source == InterruptSource::POLLED && polledHandler_)
-    {
-        polledHandler_->RegisterInterrupt(registeredInterrupt);
-        log_d("Routed polled interrupt '%s' to PolledHandler", interrupt.id);
-    }
-    else if (interrupt.source == InterruptSource::QUEUED && queuedHandler_)
-    {
-        // Queued interrupts are handled differently - they get queued when triggered
-        log_d("Registered queued interrupt '%s' for QueuedHandler processing", interrupt.id);
-    }
     
     log_d("Registered interrupt '%s' (total: %d)", interrupt.id, interruptCount_);
     return true;
@@ -305,14 +297,6 @@ void InterruptManager::UnregisterInterrupt(const char* id)
     {
         if (interrupts_[i].id && strcmp(interrupts_[i].id, id) == 0)
         {
-            // Unregister from handlers based on source type
-            if (interrupts_[i].source == InterruptSource::POLLED && polledHandler_)
-            {
-                polledHandler_->UnregisterInterrupt(id);
-                log_d("Unregistered polled interrupt '%s' from PolledHandler", id);
-            }
-            // Queued interrupts don't need explicit handler unregistration
-            
             // Move last interrupt to this position to avoid gaps
             if (i < interruptCount_ - 1)
             {
@@ -334,7 +318,7 @@ void InterruptManager::ActivateInterrupt(const char* id)
     Interrupt* interrupt = FindInterrupt(id);
     if (interrupt)
     {
-        interrupt->active = true;
+        interrupt->SetActive(true);
         log_d("Activated interrupt '%s'", id);
     }
     else
@@ -350,7 +334,7 @@ void InterruptManager::DeactivateInterrupt(const char* id)
     Interrupt* interrupt = FindInterrupt(id);
     if (interrupt)
     {
-        interrupt->active = false;
+        interrupt->SetActive(false);
         log_d("Deactivated interrupt '%s'", id);
         
         // When an interrupt is deactivated, check if we should restore or execute another interrupt
@@ -378,12 +362,36 @@ void InterruptManager::UpdateInterruptContext(const char* id, void* context)
     }
 }
 
-void InterruptManager::UpdateInterruptFunction(const char* id, void (*newFunc)(void* context))
+void InterruptManager::UpdateInterruptEvaluation(const char* id, bool (*evaluationFunc)(void*))
 {
-    log_w("UpdateInterruptFunction() is deprecated with single-function interrupt design");
-    log_w("Interrupt functions are now updated via button interrupt mechanism");
-    // This method is kept for interface compatibility but is no longer functional
-    // The single processFunc cannot be updated dynamically as it combines evaluation and execution
+    log_v("UpdateInterruptEvaluation() called for: %s", id ? id : "null");
+    
+    Interrupt* interrupt = FindInterrupt(id);
+    if (interrupt)
+    {
+        interrupt->evaluationFunc = evaluationFunc;
+        log_d("Updated evaluation function for interrupt '%s'", id);
+    }
+    else
+    {
+        log_w("Interrupt '%s' not found for evaluation update", id ? id : "null");
+    }
+}
+
+void InterruptManager::UpdateInterruptExecution(const char* id, void (*executionFunc)(void*))
+{
+    log_v("UpdateInterruptExecution() called for: %s", id ? id : "null");
+    
+    Interrupt* interrupt = FindInterrupt(id);
+    if (interrupt)
+    {
+        interrupt->executionFunc = executionFunc;
+        log_d("Updated execution function for interrupt '%s'", id);
+    }
+    else
+    {
+        log_w("Interrupt '%s' not found for execution update", id ? id : "null");
+    }
 }
 
 void InterruptManager::UpdateButtonInterrupts(void (*shortPressFunc)(void* context), 
@@ -507,7 +515,6 @@ void InterruptManager::ExecuteByEffect(const Interrupt& interrupt)
     {
         case InterruptEffect::LOAD_PANEL:
             LoadPanelFromInterrupt(interrupt);
-            CheckForRestoration(interrupt);
             break;
             
         case InterruptEffect::SET_THEME:
@@ -791,7 +798,7 @@ void InterruptManager::LoadPanelFromInterrupt(const Interrupt& interrupt)
     }
 }
 
-void InterruptManager::CheckForRestoration(const Interrupt& interrupt)
+// CheckForRestoration removed - restoration simplified
 {
     log_v("CheckForRestoration() called for: %s", interrupt.id);
     
@@ -868,7 +875,7 @@ void InterruptManager::ExecuteButtonAction(const Interrupt& interrupt)
 
 void InterruptManager::HandleRestoration()
 {
-    log_v("HandleRestoration() called");
+    log_v("HandleRestoration() called - simplified logic");
     
     if (!panelManager)
     {
@@ -876,128 +883,35 @@ void InterruptManager::HandleRestoration()
         return;
     }
     
-    // HYBRID ARCHITECTURE: Check for pending interrupts that were just processed
-    // Instead of calling processFunc (which can be stateful), check if any interrupts
-    // have stateChanged flag set, indicating they should be processed
-    const Interrupt* highestPriorityActive = nullptr;
-    int lowestPriorityValue = 3; // Lower number = higher priority (CRITICAL=0, IMPORTANT=1, NORMAL=2)
+    // Simple restoration: Check if any restoration-triggering interrupts are active
+    bool hasActiveRestorationTrigger = false;
     
     for (size_t i = 0; i < interruptCount_; ++i)
     {
         const Interrupt& interrupt = interrupts_[i];
         
-        // Only consider active panel-loading interrupts
-        if (!interrupt.active || interrupt.effect != InterruptEffect::LOAD_PANEL)
+        // Only check panel-loading interrupts that track restoration
+        if (!interrupt.IsActive() || interrupt.effect != InterruptEffect::LOAD_PANEL)
+            continue;
+            
+        if (!interrupt.data.panel.trackForRestore)
             continue;
         
-        // HYBRID ARCHITECTURE: Check if interrupt trigger condition is actually true
-        // We need to verify the actual trigger state, not just stateChanged flag
-        bool actuallyTriggered = false;
-        
-        // Check the actual trigger condition for each interrupt type
-        if (strcmp(interrupt.id, "lock_state") == 0 && interrupt.context)
-        {
-            LockSensor* sensor = static_cast<LockSensor*>(interrupt.context);
-            bool lockEngaged = std::get<bool>(sensor->GetReading());
-            actuallyTriggered = lockEngaged; // Only triggered when lock is engaged
-            log_i("HYBRID RESTORATION: Lock interrupt - engaged: %s, actuallyTriggered: %s", 
-                  lockEngaged ? "true" : "false", actuallyTriggered ? "true" : "false");
-        }
-        else if (strcmp(interrupt.id, "key_present") == 0 && interrupt.context)
-        {
-            KeyPresentSensor* sensor = static_cast<KeyPresentSensor*>(interrupt.context);
-            actuallyTriggered = sensor->GetKeyPresentState();
-        }
-        else if (strcmp(interrupt.id, "key_not_present") == 0 && interrupt.context)
-        {
-            KeyNotPresentSensor* sensor = static_cast<KeyNotPresentSensor*>(interrupt.context);
-            actuallyTriggered = sensor->GetKeyNotPresentState();
-        }
-        else if (strcmp(interrupt.id, "error_occurred") == 0)
-        {
-            actuallyTriggered = ErrorManager::Instance().HasPendingErrors();
-        }
-        
-        if (actuallyTriggered)
-        {
-            int priorityValue = static_cast<int>(interrupt.priority);
-            if (priorityValue < lowestPriorityValue)
-            {
-                lowestPriorityValue = priorityValue;
-                highestPriorityActive = &interrupt;
-                log_i("HYBRID RESTORATION: Found active interrupt '%s' with priority %d", 
-                      interrupt.id, priorityValue);
-            }
-        }
+        // If we have an active restoration-tracking interrupt, no restoration needed
+        hasActiveRestorationTrigger = true;
+        log_d("Active restoration trigger found: %s", interrupt.id);
+        break;
     }
     
-    if (highestPriorityActive)
+    // If no restoration triggers are active and we're on a trigger panel, restore
+    if (!hasActiveRestorationTrigger && panelManager->IsCurrentPanelTriggerDriven())
     {
-        // There's an active panel-loading interrupt - ensure its panel is loaded
-        const char* currentPanel = panelManager->GetCurrentPanel();
-        const char* requiredPanel = nullptr;
-        
-        // Determine required panel based on interrupt ID
-        if (strcmp(highestPriorityActive->id, "key_present") == 0)
-            requiredPanel = PanelNames::KEY;
-        else if (strcmp(highestPriorityActive->id, "key_not_present") == 0)
-            requiredPanel = PanelNames::KEY;
-        else if (strcmp(highestPriorityActive->id, "lock_state") == 0)
-            requiredPanel = PanelNames::LOCK;
-        else if (strcmp(highestPriorityActive->id, "error_occurred") == 0)
-            requiredPanel = PanelNames::ERROR;
-        
-        if (requiredPanel && currentPanel && strcmp(currentPanel, requiredPanel) != 0)
-        {
-            log_i("Restoration: Loading priority panel '%s' for active interrupt '%s'", 
-                  requiredPanel, highestPriorityActive->id);
-            panelManager->CreateAndLoadPanel(requiredPanel, true);
-        }
-        else if (requiredPanel)
-        {
-            log_d("Restoration: Priority panel '%s' already loaded for interrupt '%s'", 
-                  requiredPanel, highestPriorityActive->id);
-        }
-    }
-    else
-    {
-        // No active panel-loading interrupts - restore to user's last panel
-        const char* currentPanel = panelManager->GetCurrentPanel();
-        const char* restorationPanel = panelManager->GetRestorationPanel();
-        
-        // Only restore if current panel is trigger-driven and different from restoration panel
-        if (panelManager->IsCurrentPanelTriggerDriven() && 
-            currentPanel && restorationPanel && 
-            strcmp(currentPanel, restorationPanel) != 0)
-        {
-            log_i("Restoration: No active triggers - restoring to user panel '%s' from trigger panel '%s'", 
-                  restorationPanel, currentPanel);
-            panelManager->CreateAndLoadPanel(restorationPanel, true);
-        }
-        else
-        {
-            log_d("Restoration: No restoration needed - current panel '%s' is appropriate", 
-                  currentPanel ? currentPanel : "null");
-        }
+        log_i("No active restoration triggers - restoring to previous panel");
+        panelManager->RestorePreviousPanel();
     }
 }
 
-void InterruptManager::EvaluateAllInterrupts()
-{
-    log_v("EvaluateAllInterrupts() called");
-    
-    // Evaluate all registered interrupts
-    for (size_t i = 0; i < interruptCount_; ++i)
-    {
-        Interrupt& interrupt = interrupts_[i];
-        
-        if (!interrupt.active || !interrupt.processFunc)
-        {
-            log_d("NEW ARCHITECTURE: Skipping interrupt '%s' - active:%s, processFunc:%p", 
-                  interrupt.id ? interrupt.id : "null", 
-                  interrupt.active ? "true" : "false",
-                  interrupt.processFunc);
-            continue;
+// Legacy methods removed - using new evaluation/execution separation
         }
         
         log_d("NEW ARCHITECTURE: Evaluating interrupt '%s'", interrupt.id ? interrupt.id : "null");
@@ -1026,7 +940,7 @@ void InterruptManager::EvaluateAllInterrupts()
     }
 }
 
-void InterruptManager::ExecuteInterruptsWithRules()
+// ExecuteInterruptsWithRules removed - replaced by ExecuteInterrupts()
 {
     log_i("NEW ARCHITECTURE: ExecuteInterruptsWithRules() called");
     
@@ -1059,7 +973,7 @@ void InterruptManager::ExecuteInterruptsWithRules()
     }
 }
 
-bool InterruptManager::CanExecute(const Interrupt& interrupt) const
+// CanExecute removed - execution control simplified
 {
     log_d("NEW ARCHITECTURE: CanExecute() called for interrupt '%s'", interrupt.id);
     
@@ -1093,7 +1007,7 @@ bool InterruptManager::CanExecute(const Interrupt& interrupt) const
     }
 }
 
-void InterruptManager::ClearStateChanges()
+// ClearStateChanges removed - using NeedsExecution flag
 {
     log_v("ClearStateChanges() called");
     
@@ -1103,7 +1017,7 @@ void InterruptManager::ClearStateChanges()
     }
 }
 
-bool InterruptManager::IsGroupExecuted(const char* group) const
+// IsGroupExecuted removed - exclusion groups deprecated
 {
     if (!group) return false;
     

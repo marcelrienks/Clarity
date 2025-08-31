@@ -272,7 +272,7 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .source = InterruptSource::QUEUED,
         .effect = InterruptEffect::BUTTON_ACTION,
         .processFunc = InterruptCallbacks::ShortPressProcess,
-        .context = queuedHandler->GetActionButtonSensor(),  // Direct sensor context
+        .context = queuedHandler->GetButtonSensor(),  // Direct sensor context
         .executionMode = InterruptExecutionMode::CONDITIONAL,
         .exclusionGroup = nullptr,
         .canExecuteInContext = nullptr,  // TODO: Add context check for config panel restriction
@@ -290,7 +290,7 @@ void ManagerFactory::RegisterSystemInterrupts(InterruptManager* interruptManager
         .source = InterruptSource::QUEUED,
         .effect = InterruptEffect::BUTTON_ACTION,
         .processFunc = InterruptCallbacks::LongPressProcess,
-        .context = queuedHandler->GetActionButtonSensor(),  // Direct sensor context
+        .context = queuedHandler->GetButtonSensor(),  // Direct sensor context
         .executionMode = InterruptExecutionMode::CONDITIONAL,
         .exclusionGroup = nullptr,
         .canExecuteInContext = nullptr,  // TODO: Add context check for config panel restriction
