@@ -147,16 +147,25 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
 {
     log_v("CreateAndLoadPanelDirect() called for: %s", panelName);
 
+    // If loading a trigger-driven panel, save the current panel for restoration
+    if (isTriggerDriven && !currentPanelIsTriggerDriven_ && currentPanel)
+    {
+        // Save the current non-trigger panel as the restoration target
+        restorationPanelStr_ = currentPanel;
+        restorationPanel = restorationPanelStr_.c_str();
+        log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel);
+    }
+    
     // Track current panel trigger state
     currentPanelIsTriggerDriven_ = isTriggerDriven;
 
-    // Track this as the last user-driven panel only
+    // If this is a user-driven panel load, clear restoration
     if (!isTriggerDriven)
     {
-        // Update restoration panel using std::string for memory safety
-        restorationPanelStr_ = panelName;
-        restorationPanel = restorationPanelStr_.c_str();
-        log_d("Restoration panel updated to: %s (user-driven)", restorationPanel);
+        // Clear restoration panel since user explicitly chose this panel
+        restorationPanelStr_.clear();
+        restorationPanel = nullptr;
+        log_d("User-driven panel load - clearing restoration panel");
     }
 
     // Clean up existing panel before creating new one

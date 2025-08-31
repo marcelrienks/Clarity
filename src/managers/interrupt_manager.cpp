@@ -820,9 +820,21 @@ void InterruptManager::HandleRestoration()
     // If no restoration triggers are active and we're on a trigger panel, restore
     if (!hasActiveRestorationTrigger && panelManager->IsCurrentPanelTriggerDriven())
     {
-        log_i("No active restoration triggers - restoring to previous panel");
-        // TODO: Implement panel restoration logic
-        log_d("Panel restoration needed but method not yet implemented");
+        // Get the restoration panel (the panel that was active before triggers activated)
+        const char* restorationPanel = panelManager->GetRestorationPanel();
+        const char* currentPanel = panelManager->GetCurrentPanel();
+        
+        if (restorationPanel && currentPanel && strcmp(currentPanel, restorationPanel) != 0)
+        {
+            log_i("No active triggers - restoring from '%s' back to '%s'", currentPanel, restorationPanel);
+            panelManager->CreateAndLoadPanel(restorationPanel, false);  // Load as user-driven
+        }
+        else if (!restorationPanel)
+        {
+            // This shouldn't happen in normal operation, but log it for debugging
+            log_w("No restoration panel tracked - cannot restore (current: %s)", 
+                  currentPanel ? currentPanel : "null");
+        }
     }
 }
 
