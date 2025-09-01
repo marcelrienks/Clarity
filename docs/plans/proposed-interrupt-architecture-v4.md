@@ -61,7 +61,7 @@ struct Trigger {
 Located in `include/types.h`:
 
 ```cpp
-enum class ButtonPress : uint8_t {
+enum class ActionPress : uint8_t {
     SHORT = 0,
     LONG = 1
 };
@@ -74,10 +74,10 @@ struct Action {
     
     // Event state
     bool hasTriggered;                       // Action pending execution
-    ButtonPress pressType;                   // SHORT or LONG press
+    ActionPress pressType;                   // SHORT or LONG press
     
     // No priority - Actions are processed in order
-    // No sensor association - managed by QueuedHandler
+    // No sensor association - managed by ActionHandler
     // No override logic - Actions cannot block each other
     
     // Execution method
@@ -154,7 +154,7 @@ private:
         for (auto& activeTrigger : triggers_) {
             if (activeTrigger.isActive && 
                 !activeTrigger.canBeOverriddenOnActivate &&
-                activeTrigger.priority >= candidate.priority &&
+                activeTrigger.priority > candidate.priority &&
                 &activeTrigger != &candidate) {
                 return &activeTrigger;
             }
@@ -170,7 +170,7 @@ private:
 class ActionHandler : public IHandler {
 private:
     std::vector<Action> actions_;
-    std::unique_ptr<ButtonSensor> buttonSensor_;  // Handler owns button sensor
+    std::unique_ptr<ActionButtonSensor> actionButtonSensor_;  // Handler owns action sensor
     
     // Button timing constants
     static constexpr uint32_t SHORT_PRESS_MIN_MS = 50;
@@ -181,13 +181,13 @@ private:
 public:
     void Evaluate() override {
         // Always evaluate button state (not just during idle)
-        if (buttonSensor_->HasStateChanged()) {
-            uint32_t pressDuration = buttonSensor_->GetPressDuration();
+        if (actionButtonSensor_->HasStateChanged()) {
+            uint32_t pressDuration = actionButtonSensor_->GetPressDuration();
             
             if (pressDuration >= SHORT_PRESS_MIN_MS && pressDuration < SHORT_PRESS_MAX_MS) {
-                QueueAction(ButtonPress::SHORT);
+                QueueAction(ActionPress::SHORT);
             } else if (pressDuration >= LONG_PRESS_MIN_MS && pressDuration <= LONG_PRESS_MAX_MS) {
-                QueueAction(ButtonPress::LONG);
+                QueueAction(ActionPress::LONG);
             }
         }
     }
@@ -203,11 +203,11 @@ public:
     }
     
 private:
-    void QueueAction(ButtonPress type) {
+    void QueueAction(ActionPress type) {
         // Find the appropriate action and mark it as triggered
         for (auto& action : actions_) {
-            if ((type == ButtonPress::SHORT && strcmp(action.id, "short_press") == 0) ||
-                (type == ButtonPress::LONG && strcmp(action.id, "long_press") == 0)) {
+            if ((type == ActionPress::SHORT && strcmp(action.id, "short_press") == 0) ||
+                (type == ActionPress::LONG && strcmp(action.id, "long_press") == 0)) {
                 action.hasTriggered = true;
                 action.pressType = type;
                 break;
@@ -287,13 +287,13 @@ std::vector<Action> systemActions = {
         .id = "short_press",
         .executeFunc = []() { PanelManager::Instance().HandleShortPress(); },
         .hasTriggered = false,
-        .pressType = ButtonPress::SHORT
+        .pressType = ActionPress::SHORT
     },
     {
         .id = "long_press",
         .executeFunc = []() { PanelManager::Instance().HandleLongPress(); },
         .hasTriggered = false,
-        .pressType = ButtonPress::LONG
+        .pressType = ActionPress::LONG
     }
 };
 ```
@@ -314,9 +314,9 @@ std::vector<Action> systemActions = {
 3. **Error Panel Display**:
    ```cpp
    void HandleExecutionError(const char* interruptId, const std::exception& e) {
-       ErrorManager::Instance().LogError(ErrorType::INTERRUPT_FAILURE, 
-                                        "Interrupt %s failed: %s", 
-                                        interruptId, e.what());
+       ErrorManager::Instance().ReportError(ErrorLevel::ERROR, 
+                                        "InterruptSystem", 
+                                        "Interrupt " + std::string(interruptId) + " failed: " + e.what());
        
        // Find and activate error trigger
        for (auto& trigger : triggers_) {
@@ -396,14 +396,8 @@ void loop() {
     // 1. LVGL tasks
     lv_task_handler();
     
-    // 2. Evaluate interrupts
-    actionHandler->Evaluate();     // Always evaluate button state
-    
-    if (IsUIIdle()) {
-        triggerHandler->Evaluate();  // Evaluate GPIO triggers
-        triggerHandler->Execute();   // Process state changes (priority-based)
-        actionHandler->Execute();    // Process button actions (in order)
-    }
+    // 2. Process interrupts (coordinated by InterruptManager)
+    interruptManager->Process();   // Handles action evaluation and idle-based execution
     
     // 3. Process errors
     errorManager->Process();
@@ -436,7 +430,7 @@ void loop() {
 
 ### Phase 3: Interrupt Migration
 1. Convert existing interrupts to Triggers
-2. Convert button handling to Actions
+2. Convert action handling to Actions
 3. Update InterruptManager coordination
 
 ### Phase 4: Testing

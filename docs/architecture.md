@@ -14,7 +14,7 @@ For detailed architectural diagrams, see:
 
 ```
 InterruptManager → TriggerHandler → GPIO Sensors → GPIO
-                ↘ ActionHandler → Button Sensor ↗          
+                ↘ ActionHandler → Action Sensor ↗          
                                     
 DeviceProvider → Display → Panels → Components
                             ↓ ↑
@@ -36,7 +36,7 @@ Hardware abstraction for display (GC9A01) and LVGL integration.
 - Handle lifecycle: init → load → update
 - Interrupt-driven panels (Key, Lock) are display-only
 - Data panels (Oil) create their own data sensors
-- Implement IActionService for button handling
+- Implement IActionService for action handling
 
 ### Components (Views)  
 - Render UI elements (gauges, indicators)
@@ -57,13 +57,13 @@ The interrupt system uses InterruptManager to coordinate two specialized handler
 ```
 InterruptManager: Central coordination of interrupt processing
 ├── TriggerHandler: Manages state-based Triggers (GPIO state monitoring)
-└── ActionHandler: Manages event-based Actions (button event processing)
+└── ActionHandler: Manages event-based Actions (action event processing)
 ```
 
 ### Interrupt Evaluation vs Execution Model
 The system separates interrupt evaluation (checking for events/state changes) from interrupt execution:
 
-- **Action Evaluation**: Happens on EVERY main loop iteration to detect button events
+- **Action Evaluation**: Happens on EVERY main loop iteration to detect action events
 - **Trigger Evaluation**: Only happens during UI IDLE state  
 - **All Execution**: Only happens during UI IDLE state, with Triggers processed before Actions
 - **Priority System**: Triggers use CRITICAL > IMPORTANT > NORMAL priorities with override logic
@@ -114,11 +114,11 @@ struct Trigger {
 ```
 
 #### Action Structure (Event-Based)
-Actions handle button events with single execution:
+Actions handle action events with single execution:
 
 ```cpp
 // Located in include/types.h
-enum class ButtonPress : uint8_t {
+enum class ActionPress : uint8_t {
     SHORT = 0,
     LONG = 1
 };
@@ -131,7 +131,7 @@ struct Action {
     
     // Event state
     bool hasTriggered;                       // Action pending execution
-    ButtonPress pressType;                   // SHORT or LONG press
+    ActionPress pressType;                   // SHORT or LONG press
     
     // No priority - Actions process in order
     // No sensor - managed by ActionHandler
@@ -150,6 +150,145 @@ struct Action {
 // Total system: ~80 bytes for 5 triggers + ~16 bytes for 2 actions = ~96 bytes total
 ```
 
+### Triggers vs Actions: Fundamental Differences
+
+While both Triggers and Actions are interrupt mechanisms with function pointers set during registration, they operate with fundamentally different behaviors and processing models:
+
+#### **Triggers (State-Based Interrupts)**
+
+**Core Behavior**:
+- **State Change Detection**: Triggers monitor GPIO sensor states and fire only when state transitions occur (HIGH ↔ LOW)
+- **Previous State Tracking**: Sensors must implement `HasStateChanged()` using BaseSensor's `DetectChange()` template to track previous state
+- **Dual Functions**: Each Trigger has both `activateFunc()` (executed on HIGH transition) and `deactivateFunc()` (executed on LOW transition)
+- **Polled During Idle**: Trigger evaluation only happens during UI idle time to prevent LVGL conflicts
+
+**Processing Flow**:
+1. **Idle Check**: TriggerHandler::Process() only runs when UI state == IDLE
+2. **State Polling**: For each Trigger, check `sensor->HasStateChanged()`
+3. **Change Detection**: If state changed, determine if transition is HIGH (activate) or LOW (deactivate)
+4. **Override Logic**: Before activation, check if any higher-priority non-overridable Triggers are active
+5. **Function Execution**: Execute appropriate activate/deactivate function based on state and override logic
+
+**State Management Requirements**:
+```cpp
+// Sensors must implement change detection via BaseSensor inheritance
+class KeyPresentSensor : public BaseSensor {
+private:
+    bool previousState_ = false;  // Track previous state for change detection
+    
+public:
+    bool HasStateChanged() {
+        bool currentState = std::get<bool>(GetReading());
+        return DetectChange(currentState, previousState_);  // BaseSensor template
+    }
+};
+```
+
+**Override Behavior (canBeOverriddenOnActivate Flag)**:
+
+The `canBeOverriddenOnActivate` flag determines whether a Trigger's activation can be blocked by higher-priority active Triggers:
+
+**Flag Values**:
+- **`canBeOverriddenOnActivate = false`**: This Trigger cannot be blocked during activation attempts
+- **`canBeOverriddenOnActivate = true`**: This Trigger can be blocked by active higher-priority Triggers
+
+**Override Logic Flow**:
+1. **Activation Request**: When a Trigger attempts activation (sensor goes HIGH)
+2. **Priority Check**: System searches for active Triggers with higher priority than the activating Trigger
+3. **Override Decision**: 
+   - If **blocking Trigger found**: The higher-priority active non-overridable Trigger's `activateFunc()` re-executes instead
+   - If **no blocking Trigger**: The requested Trigger's `activateFunc()` executes normally
+
+**Override Resolution Examples**:
+```cpp
+// CRITICAL priority Key Trigger (canBeOverriddenOnActivate = false)
+{
+    .id = "key_present",
+    .priority = Priority::CRITICAL,
+    .canBeOverriddenOnActivate = false,  // Cannot be overridden
+    .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::KEY); }
+}
+
+// NORMAL priority Lights Trigger (canBeOverriddenOnActivate = true)  
+{
+    .id = "lights_changed",
+    .priority = Priority::NORMAL,
+    .canBeOverriddenOnActivate = true,   // Can be overridden
+    .activateFunc = []() { StyleManager::Instance().SetTheme(Theme::NIGHT); }
+}
+
+// Scenario: Key Trigger active, Lights Trigger attempts activation
+// Result: Key Trigger (CRITICAL, non-overridable) blocks Lights activation
+// Action: Key Trigger's activateFunc() re-executes, maintaining Key panel
+```
+
+**Registration Pattern**:
+Critical system triggers (Key, Error) typically set `canBeOverriddenOnActivate = false` to ensure they cannot be blocked, while theme/preference triggers set `canBeOverriddenOnActivate = true` to allow higher-priority interruptions.
+
+#### **Actions (Event-Based Interrupts)**
+
+**Core Behavior**:
+- **Event Detection**: Actions monitor for discrete events (short/long press durations) from action input
+- **Queue-Based Processing**: Events are detected and queued immediately, but execution deferred to idle time
+- **Single Function**: Each Action has only `executeFunc()` - no dual state handling
+- **Continuous Evaluation**: Action evaluation happens every main loop iteration for responsiveness
+
+**Processing Flow**:
+1. **Continuous Evaluation**: ActionHandler evaluates action input state every main loop iteration
+2. **Event Detection**: Detect press duration (50ms-2000ms = SHORT, 2000ms-5000ms = LONG)
+3. **Queue Action**: If valid press detected, set `hasTriggered = true` and `pressType`
+4. **Idle Execution**: During UI idle, execute all queued Actions in registration order
+5. **Queue Clearing**: After execution, set `hasTriggered = false`
+
+**Timing Detection Requirements**:
+```cpp
+// ActionButtonSensor implements timing logic for press duration
+class ActionButtonSensor : public BaseSensor {
+private:
+    uint32_t pressStartTime_ = 0;
+    bool buttonPressed_ = false;
+    
+public:
+    uint32_t GetPressDuration() {
+        // Returns duration of completed press event
+        return pressEndTime_ - pressStartTime_;
+    }
+    
+    bool HasStateChanged() {
+        // Detects press start/end events for duration calculation
+        bool currentState = digitalRead(gpio_);
+        return DetectChange(currentState, previousState_);
+    }
+};
+```
+
+**Queue Management**:
+- **No Priority System**: Actions execute in registration order, not priority-based
+- **No Override Logic**: Actions cannot block each other - all queued Actions execute
+- **Event Flags**: Each Action maintains `hasTriggered` flag for pending execution
+
+#### **Key Behavioral Comparisons**
+
+| Aspect | Triggers (State-Based) | Actions (Event-Based) |
+|--------|------------------------|----------------------|
+| **Evaluation Timing** | Only during UI IDLE | Every main loop iteration |
+| **Execution Timing** | Only during UI IDLE | Only during UI IDLE |
+| **State Tracking** | Requires previous state tracking | No state persistence needed |
+| **Function Count** | Two (activate/deactivate) | One (execute) |
+| **Priority System** | Yes (CRITICAL > IMPORTANT > NORMAL) | No (registration order) |
+| **Override Logic** | Yes (canBeOverriddenOnActivate) | No (all queued Actions execute) |
+| **Sensor Association** | 1:1 with GPIO sensor | Managed by ActionHandler |
+| **Processing Model** | Immediate state-based execution | Queue-then-execute model |
+
+#### **Shared Characteristics**
+
+Both interrupt types share these common elements:
+- **Function Pointers**: Set during registration with static function addresses
+- **No Context Parameters**: Direct singleton manager calls eliminate context overhead
+- **Memory Efficient**: Static structures with minimal heap usage
+- **IDLE Execution**: Both execute only during UI idle state for LVGL compatibility
+- **Change Detection**: Both rely on change detection to trigger processing
+
 #### Critical Memory Constraint
 **ESP32 Memory Limitation**: The ESP32-WROOM-32 has 320KB total RAM, with ~250KB available after system overhead and OTA partitioning. Using `std::function` with lambda captures causes:
 - Heap fragmentation leading to crashes
@@ -161,7 +300,7 @@ struct Action {
 ### v4.0 Interrupt Processing System
 The system processes interrupts through specialized handlers based on behavior:
 - **TriggerHandler**: Manages GPIO state changes with priority-based override logic
-- **ActionHandler**: Processes button events with timing detection
+- **ActionHandler**: Processes action events with timing detection
 - **InterruptManager**: Coordinates both handlers with smart restoration logic
 
 #### Priority-Based Override System
@@ -208,11 +347,11 @@ class PanelManager {
 };
 ```
 
-#### Button Event Processing
+#### Action Event Processing
 **ActionHandler Timing**: Detects press duration for appropriate action:
 - **Short Press**: 50ms - 2000ms duration
 - **Long Press**: 2000ms - 5000ms duration
-- **Continuous Evaluation**: Always checks button state for responsiveness
+- **Continuous Evaluation**: Always checks action state for responsiveness
 - **Idle Execution**: Actions execute only during UI idle
 
 **v4.0 Benefits**:
@@ -230,7 +369,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 - **KeyNotPresentSensor** (GPIO 26): Independent class for key not present detection
 - **LockSensor** (GPIO 27): Lock status monitoring
 - **LightsSensor** (GPIO 33): Day/night detection (theme only)
-- **ActionButtonSensor** (GPIO 32): Button input with debouncing
+- **ActionButtonSensor** (GPIO 32): Action input with debouncing
 
 #### Sensor Independence Requirements
 **Architectural Principle**: KeyPresentSensor and KeyNotPresentSensor must be completely separate classes with:
@@ -254,7 +393,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 
 **v4.0 Ownership Model**: Each GPIO has exactly one sensor instance to prevent resource conflicts:
 - TriggerHandler owns all GPIO sensors (Key, Lock, Lights)
-- ActionHandler owns ButtonSensor
+- ActionHandler owns ActionButtonSensor
 - Panels are display-only and must not create sensors
 - No sensor duplication across components
 
@@ -274,27 +413,27 @@ The v4.0 architecture follows a precise sequence with Trigger/Action separation:
 **Exact Main Loop Flow**:
 1. **Main Loop Start**: Begin new iteration
 2. **Main: LVGL Tasks**: Process UI updates and rendering  
-3. **InterruptManager: Evaluate Actions**: Always check button events
-4. **InterruptManager: Queue Actions**: Queue button actions if detected
+3. **InterruptManager: Evaluate Actions**: Always check action events
+4. **InterruptManager: Queue Actions**: Queue action events if detected
 5. **InterruptManager: If Idle**: Check if UI is in idle state
-   - **If NOT Idle**: Skip to step 8 (ensures button detection continues)
+   - **If NOT Idle**: Skip to step 8 (ensures action detection continues)
    - **If Idle**: Continue to step 6
 6. **InterruptManager: Process Triggers**: Evaluate and execute state-based triggers with priority override
-7. **InterruptManager: Execute Actions**: Process queued button actions
+7. **InterruptManager: Execute Actions**: Process queued action events
 8. **Main: Loop End**: Complete iteration, return to step 1
 
 **v4.0 Benefits**:
-- **Button responsiveness**: Actions always evaluated regardless of UI state
+- **Action responsiveness**: Actions always evaluated regardless of UI state
 - **Smart priorities**: Triggers use CRITICAL > IMPORTANT > NORMAL with override logic
 - **Clean separation**: State-based vs event-based interrupts handled appropriately
 
 ### Handler Processing Model
 1. **InterruptManager::Process()** (v4.0 coordination)
-   - Always evaluate Actions for button events
+   - Always evaluate Actions for action events
    - If UI is IDLE:
      - Call TriggerHandler::Process() for GPIO state evaluation
      - Execute Triggers with priority-based override logic
-     - Execute pending Actions (button events)
+     - Execute pending Actions (action events)
    - Handle smart restoration when triggers deactivate
 
 2. **TriggerHandler::Process()** (GPIO states - IDLE only)
@@ -302,8 +441,8 @@ The v4.0 architecture follows a precise sequence with Trigger/Action separation:
    - Execute activate/deactivate functions based on state
    - Apply priority-based blocking logic
 
-3. **ActionHandler::Process()** (button events)
-   - **Evaluation Phase** (every loop): Detect button press durations
+3. **ActionHandler::Process()** (action events)
+   - **Evaluation Phase** (every loop): Detect action press durations
    - **Execution Phase** (IDLE only): Execute pending actions
    - **Timing Detection**: 50ms-2000ms short, 2000ms-5000ms long
 
@@ -321,7 +460,7 @@ The v4.0 architecture follows a precise sequence with Trigger/Action separation:
 
 ## Available Panels
 
-### Panel Types and Button Behaviors
+### Panel Types and Action Behaviors
 
 - **Splash Panel**: Startup animation with user control
   - Short Press: Skip animation, load default panel immediately
@@ -407,7 +546,7 @@ public:
         return &ConfigPanel::HandleLongPress;
     }
     
-    // Static callback functions for universal button system
+    // Static callback functions for universal action system
     static void HandleShortPress(void* panelContext) {
         auto* panel = static_cast<ConfigPanel*>(panelContext);
         panel->NavigateToNextOption();
@@ -431,7 +570,7 @@ public:
 - **StyleManager**: Theme changes applied immediately and persisted
 - **PreferenceManager**: Settings saved for persistence across reboots
 - **PanelManager**: Default panel preference used during startup
-- **Universal Button System**: Short/long press functions injected when panel loads
+- **Universal Action System**: Short/long press functions injected when panel loads
 
 ## Hardware Configuration
 
@@ -446,7 +585,7 @@ public:
   - KeyNotPresentSensor (GPIO 26) - Key not present detection
   - LockSensor (GPIO 27) - Vehicle lock status
   - LightsSensor (GPIO 33) - Day/night detection
-  - ActionButtonSensor (GPIO 32) - User input button
+  - ActionButtonSensor (GPIO 32) - User input sensor
 - **Analog Sensors** (ADC):
   - Oil pressure sensor - Continuous pressure monitoring
   - Oil temperature sensor - Continuous temperature monitoring
@@ -478,7 +617,7 @@ public:
         return &ErrorPanel::HandleLongPress;
     }
     
-    // Static callback functions for universal button system
+    // Static callback functions for universal action system
     static void HandleShortPress(void* panelContext) {
         auto* panel = static_cast<ErrorPanel*>(panelContext);
         panel->CycleToNextError();
@@ -609,13 +748,13 @@ static void GenerateDebugError(void* context) {
 - **Error Generation**: Creates test errors for system validation
 - **Hardware Integration**: Requires external pull-down resistor
 
-## Universal Button System Architecture
+## Universal Action System Architecture
 
-### Button Function Injection Pattern
-The universal button system enables all panels to respond to button input through a coordinated injection mechanism with precise timing control:
+### Action Function Injection Pattern
+The universal action system enables all panels to respond to action input through a coordinated injection mechanism with precise timing control:
 
-**Button Hardware Configuration**:
-- **GPIO**: Single button on GPIO 32 with INPUT_PULLDOWN configuration
+**Action Hardware Configuration**:
+- **GPIO**: Single action input on GPIO 32 with INPUT_PULLDOWN configuration
 - **Timing**: Short press (50ms-2000ms), Long press (2000ms-5000ms)
 - **Debouncing**: 50ms debounce time to prevent false triggers
 
@@ -629,11 +768,11 @@ public:
     virtual void* GetPanelContext() = 0;
 };
 
-// Universal button interrupt with dynamic function injection
-struct UniversalButtonInterrupt {
+// Universal action interrupt with dynamic function injection
+struct UniversalActionInterrupt {
     const char* id;                                    // "universal_short_press" / "universal_long_press"
     InterruptSource source = InterruptSource::QUEUED;
-    InterruptEffect effect = InterruptEffect::BUTTON_ACTION;
+    InterruptEffect effect = InterruptEffect::ACTION_EVENT;
     bool (*evaluationFunc)(void* context);           // HasShortPressEvent / HasLongPressEvent
     void (*activateFunc)(void* context);             // ExecutePanelFunction - calls current panel's function
     void* sensorContext;                              // ActionButtonSensor
@@ -648,13 +787,13 @@ struct UniversalButtonInterrupt {
 ### Function Injection Process
 1. **Panel Switch**: PanelManager loads new panel
 2. **Function Extraction**: Get functions from panel via IActionService interface
-3. **Interrupt Update**: Inject panel functions into universal button interrupts
+3. **Interrupt Update**: Inject panel functions into universal action interrupts
 4. **Context Update**: Update panel context for function execution
-5. **Ready State**: Button interrupts now execute current panel's functions
+5. **Ready State**: Action interrupts now execute current panel's functions
 
 ### Static Callback Implementation
 ```cpp
-class UniversalButtonCallbacks {
+class UniversalActionCallbacks {
 public:
     // Universal execution functions that call injected panel functions
     static void ExecutePanelShortPress(void* context) {
@@ -693,8 +832,8 @@ public:
 ### Component Interfaces (MVP Pattern)
 - `IPanel`: Screen implementation interface with lifecycle management
   - `Init/Load/Update`: Standard panel lifecycle methods
-  - Inherits from `IActionService` for universal button handling
-- `IActionService`: Universal button function interface for all panels
+  - Inherits from `IActionService` for universal action handling
+- `IActionService`: Universal action function interface for all panels
   - `GetShortPressFunction()`: Returns panel's short press static function pointer
   - `GetLongPressFunction()`: Returns panel's long press static function pointer  
   - `GetPanelContext()`: Returns panel instance for function context
@@ -742,18 +881,18 @@ interruptManager.RegisterInterrupt({
 });
 ```
 
-### QUEUED Universal Panel Button Registration (every panel has these)
+### QUEUED Universal Panel Action Registration (every panel has these)
 ```cpp
 // Universal short press - routed to QueuedHandler by InterruptManager
 interruptManager.RegisterInterrupt({
     .id = "universal_short_press",
     .priority = Priority::NORMAL,
     .source = InterruptSource::QUEUED,
-    .effect = InterruptEffect::BUTTON_ACTION,
+    .effect = InterruptEffect::ACTION_EVENT,
     .evaluationFunc = HasShortPressEvent,
     .executionFunc = ExecutePanelShortPress,     // Single execution function
     .context = actionButtonSensor,               // Simplified context handling
-    .data = { .buttonActions = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
+    .data = { .actionEvents = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
 });
 
 // Universal long press - routed to QueuedHandler by InterruptManager
@@ -761,12 +900,12 @@ interruptManager.RegisterInterrupt({
     .id = "universal_long_press",
     .priority = Priority::NORMAL,
     .source = InterruptSource::QUEUED,
-    .effect = InterruptEffect::BUTTON_ACTION,
+    .effect = InterruptEffect::ACTION_EVENT,
     .evaluationFunc = HasLongPressEvent,
     .executionFunc = ExecutePanelLongPress,      // Single execution function
     .context = actionButtonSensor,               // Simplified context handling
     .serviceContext = panelManager,
-    .data = { .buttonActions = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
+    .data = { .actionEvents = { nullptr, nullptr, nullptr } }  // Functions injected at runtime
 });
 ```
 
@@ -786,7 +925,7 @@ interruptManager.RegisterInterrupt({
     │   │   ├── KeyNotPresentSensor (GPIO 26)
     │   │   ├── LockSensor (GPIO 27)
     │   │   └── LightsSensor (GPIO 33)
-    │   └── Creates QueuedHandler (owns button sensor)
+    │   └── Creates ActionHandler (owns action sensor)
     │       └── ActionButtonSensor (GPIO 32)
     └── Creates PanelManager
         └── Creates panels on demand (with providers injected)
@@ -796,7 +935,7 @@ interruptManager.RegisterInterrupt({
 ```
 
 ### Resource Management
-- Single sensor instance per GPIO pin created by specialized handler (PolledHandler owns GPIO sensors, QueuedHandler owns button sensor)
+- Single sensor instance per GPIO pin created by specialized handler (TriggerHandler owns GPIO sensors, ActionHandler owns action sensor)
 - Proper destructors with DetachInterrupt() calls
 - No sensor duplication across components
 - Clear ownership boundaries with coordinated handler architecture
@@ -836,7 +975,7 @@ Evolution to specialized handler system with central coordination:
 
 4. **Split Sensor Design**: Independent sensor classes for each GPIO prevent initialization conflicts (e.g., KeyPresentSensor vs KeyNotPresentSensor)  
 
-5. **Specialized Ownership**: PolledHandler owns GPIO sensors, QueuedHandler owns button sensor, preventing resource conflicts
+5. **Specialized Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns action sensor, preventing resource conflicts
 
 6. **Display-Only Panels**: Interrupt-driven panels don't create sensors, eliminating duplication and simplifying architecture
 
@@ -916,7 +1055,7 @@ struct InterruptCallbacks {
     
     static void LoadKeyPanel(void* context) {
         auto* panelManager = static_cast<PanelManager*>(context);
-        panelManager->LoadPanel("KEY");
+        panelManager->LoadPanel(PanelType::KEY);
         // Note: No restoration logic here - handled by InterruptManager
     }
 };
@@ -1015,7 +1154,7 @@ protected:
 ### Coordinated Interrupt System
 The system has been designed with a coordinated interrupt architecture that uses specialized handlers with central coordination. This provides:
 
-- **Specialized Processing**: PolledHandler for GPIO monitoring, QueuedHandler for button events
+- **Specialized Processing**: TriggerHandler for GPIO monitoring, ActionHandler for action events
 - **Central Coordination**: InterruptManager coordinates both handlers and manages execution
 - **Effect-Based Execution**: LOAD_PANEL, SET_THEME, SET_PREFERENCE, CUSTOM_FUNCTION effects
 - **Simplified Restoration**: Effect-based logic eliminates complex priority blocking
