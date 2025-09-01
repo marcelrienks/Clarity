@@ -1,19 +1,20 @@
 # Architecture Overview Diagram
 
-This diagram shows the high-level component relationships in the Clarity system with the implemented interrupt flow and button timing differentiation.
+This diagram shows the high-level component relationships in the Clarity system with the v4.0 Trigger/Action interrupt architecture.
 
 ## Key Architectural Elements
 
-- **Interrupt Flow**: InterruptManager implements precise main loop flow with evaluation/execution separation
-- **Button Timing Logic**: Built-in short press (50ms-2000ms) and long press (2000ms-5000ms) differentiation
-- **Always vs Idle Processing**: Queued evaluation always runs, polled evaluation only during UI idle
+- **Trigger/Action Separation**: State-based Triggers (GPIO) vs event-based Actions (buttons)
+- **Dual-Function Triggers**: Each Trigger has activate/deactivate functions for state transitions
+- **Priority-Based Override**: Triggers have priority levels (CRITICAL > IMPORTANT > NORMAL) with blocking logic
+- **Button Timing Logic**: Actions handle short press (50ms-2000ms) and long press (2000ms-5000ms)
+- **Evaluation/Execution Split**: Actions evaluate always, execute when idle; Triggers evaluate/execute only when idle
 - **Dual Factory Pattern**: ProviderFactory creates providers, ManagerFactory creates managers with dependency injection
 - **Interface-Based Factories**: IProviderFactory enables testability with mock provider injection
-- **Handler-Owned Sensors**: Handlers create and own their respective sensors internally
+- **Handler-Owned Sensors**: TriggerHandler owns GPIO sensors, ActionHandler owns button sensor
 - **Panel Self-Sufficiency**: Panels create their own components and data sensors internally
 - **Split Sensor Design**: Independent KeyPresentSensor and KeyNotPresentSensor classes
-- **Static Callbacks**: InterruptCallbacks utility with single execution function per interrupt
-- **Centralized Restoration**: InterruptManager::HandleRestoration() manages all panel restoration decisions
+- **Smart Restoration**: Automatic return to last user-driven panel when triggers deactivate
 - **Display-Only GPIO Panels**: Key/Lock panels don't create sensors, only display state
 - **Hardware Abstraction**: Providers isolate hardware dependencies
 
@@ -22,87 +23,66 @@ This diagram shows the high-level component relationships in the Clarity system 
 config:
   layout: elk
   theme: default
-  elk:
-    algorithm: layered
-    direction: DOWN
+  elk: {}
 ---
 flowchart TD
-    %% Main Application Entry
-    subgraph MainApp ["Main Application"]
+ subgraph MainApp["Main Application"]
         Main["main.cpp"]
-    end
-    
-    %% Factory Layer
-    subgraph FactoryLayer ["Factories"]
+  end
+ subgraph FactoryLayer["Factories"]
         ProviderFactory["ProviderFactory"]
         ManagerFactory["ManagerFactory"]
-    end
-    
-    %% Core Managers Layer
-    subgraph CoreManagers ["Core Managers"]
+  end
+ subgraph CoreManagers["Core Managers"]
         ErrorManager["ErrorManager"]
-        InterruptManager["InterruptManager<br/>Coordinated Flow"]
+        InterruptManager["InterruptManager<br>Coordinated Flow"]
         PreferenceManager["PreferenceManager"]
-        StyleManager["StyleManager"]  
+        StyleManager["StyleManager"]
         PanelManager["PanelManager"]
-    end
-    
-    %% Panels Layer
-    subgraph PanelsLayer ["Panels"]
+  end
+ subgraph PanelsLayer["Panels"]
         ConfigPanel["ConfigPanel"]
         SplashPanel["SplashPanel"]
         OilPanel["OilPanel"]
         KeyPanel["KeyPanel"]
         LockPanel["LockPanel"]
         ErrorPanel["ErrorPanel"]
-    end
-    
-    %% Interrupt Handlers Layer
-    subgraph InterruptHandlers ["Interrupt Handlers"]
-        QueuedHandler["QueuedHandler<br/>Button Timing Logic"]
-        PolledHandler["PolledHandler<br/>GPIO Processing"]
-    end
-    
-    %% GPIO Sensors Layer
-    subgraph GPIOSensors ["GPIO Sensors"]
-        ButtonSensor["ButtonSensor<br/>GPIO-32"]
-        KeyPresentSensor["KeyPresentSensor<br/>GPIO-25"]
-        KeyNotPresentSensor["KeyNotPresentSensor<br/>GPIO-26"]
-        LockSensor["LockSensor<br/>GPIO-27"]
-        LightsSensor["LightsSensor<br/>GPIO-33"]
-    end
-    
-    %% Hardware Providers Layer
-    subgraph HardwareProviders ["Hardware Providers"]
+  end
+ subgraph InterruptHandlers["Interrupt Handlers"]
+        ActionHandler["ActionHandler<br>Events"]
+        TriggerHandler["TriggerHandler<br>States"]
+  end
+ subgraph GPIOSensors["GPIO Sensors"]
+        ButtonSensor["ButtonSensor<br>GPIO-32"]
+        KeyPresentSensor["KeyPresentSensor<br>GPIO-25"]
+        KeyNotPresentSensor["KeyNotPresentSensor<br>GPIO-26"]
+        LockSensor["LockSensor<br>GPIO-27"]
+        LightsSensor["LightsSensor<br>GPIO-33"]
+  end
+ subgraph HardwareProviders["Hardware Providers"]
         DeviceProvider["DeviceProvider"]
         GpioProvider["GpioProvider"]
         DisplayProvider["DisplayProvider"]
-    end
-    
-    %% Connection Flow - Top to Bottom
+  end
     MainApp --> FactoryLayer
     FactoryLayer --> CoreManagers
-    CoreManagers --> PanelsLayer
-    CoreManagers --> InterruptHandlers
+    CoreManagers --> PanelsLayer & InterruptHandlers
     InterruptHandlers --> GPIOSensors
     GPIOSensors --> HardwareProviders
-    
-    %% Internal Factory Connections
     ProviderFactory --> GpioProvider & DisplayProvider & DeviceProvider
     ManagerFactory --> ErrorManager & InterruptManager & PreferenceManager & StyleManager & PanelManager
-    
-    %% Interrupt Manager Coordinated Flow
-    InterruptManager --> QueuedHandler & PolledHandler
-    QueuedHandler --> ButtonSensor
-    PolledHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
-    
-    %% Panel Manager Connections
+    InterruptManager --> ActionHandler & TriggerHandler
+    ActionHandler --> ButtonSensor
+    TriggerHandler --> KeyPresentSensor & KeyNotPresentSensor & LockSensor & LightsSensor
     PanelManager --> ConfigPanel & SplashPanel & OilPanel & KeyPanel & LockPanel & ErrorPanel
-    
-    %% Hardware Dependencies
     PanelsLayer --> DisplayProvider
-    
-    %% Styling to Match Screenshot
+     MainApp:::mainapp
+     FactoryLayer:::factory
+     CoreManagers:::manager
+     PanelsLayer:::panel
+     InterruptHandlers:::handler
+     GPIOSensors:::sensor
+     HardwareProviders:::provider
     classDef mainapp fill:#fff2cc,stroke:#d6b656,stroke-width:2px
     classDef factory fill:#fff2cc,stroke:#d6b656,stroke-width:2px
     classDef manager fill:#fff2cc,stroke:#d6b656,stroke-width:2px
@@ -110,14 +90,11 @@ flowchart TD
     classDef handler fill:#fff2cc,stroke:#d6b656,stroke-width:2px
     classDef sensor fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
     classDef provider fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
-    
-    class MainApp mainapp
-    class FactoryLayer factory
-    class CoreManagers manager
-    class PanelsLayer panel
-    class InterruptHandlers handler
-    class GPIOSensors sensor
-    class HardwareProviders provider
+    style FactoryLayer fill:#E1BEE7
+    style CoreManagers fill:#BBDEFB
+    style PanelsLayer fill:#FFE0B2
+    style InterruptHandlers fill:#C8E6C9
+    style HardwareProviders fill:#FFCDD2
 ```
 
 ## Component Responsibilities
@@ -127,20 +104,20 @@ flowchart TD
 - **ManagerFactory**: Creates all managers, receives IProviderFactory for dependency injection
 
 ### Managers
-- **InterruptManager**: Implements interrupt flow with evaluation/execution separation, manages button press timing (50ms-2000ms short, 2000ms-5000ms long), coordinates PolledHandler and QueuedHandler with centralized restoration logic
-- **PanelManager**: Creates panels on demand, manages lifecycle, switching, and restoration tracking
-- **StyleManager**: Theme management (Day/Night) based on LightsSensor
+- **InterruptManager**: Coordinates TriggerHandler and ActionHandler, implements v4.0 Trigger/Action architecture with priority-based override logic and smart restoration
+- **PanelManager**: Creates panels on demand, manages lifecycle, switching, tracks last user-driven panel for restoration
+- **StyleManager**: Theme management (Day/Night) based on LightsSensor trigger
 - **PreferenceManager**: Persistent settings storage
-- **ErrorManager**: Error collection with coordinated interrupt system integration
+- **ErrorManager**: Error collection with trigger system integration
 
 ### Coordinated Handlers (IHandler Interface)
-- **PolledHandler**: Creates and owns GPIO sensors for state monitoring, processes POLLED interrupts during UI IDLE time only, manages GPIO state changes and panel loading effects
-- **QueuedHandler**: Creates and owns button sensor, provides button state to InterruptManager for timing logic, executes queued button actions during UI IDLE time only
-- **Centralized Processing**: InterruptManager handles button press detection and timing logic directly, handlers focus on their specialized interrupt types
+- **TriggerHandler**: Creates and owns GPIO sensors for state monitoring, processes Triggers with dual activate/deactivate functions, implements priority-based override logic, evaluates and executes only during UI IDLE
+- **ActionHandler**: Creates and owns button sensor, detects short (50ms-2000ms) and long (2000ms-5000ms) press events, evaluates always but executes only during UI IDLE
+- **Processing Model**: Actions evaluated continuously for responsiveness, both handlers execute only during idle for UI performance
 
 ### Sensors (ISensor + BaseSensor)
-- **GPIO Interrupt Sensors**: Created and owned by PolledHandler for GPIO state monitoring (Key, Lock, Lights sensors)
-- **Button State Sensor**: Created and owned by QueuedHandler, provides GPIO state and timing logic
+- **GPIO State Sensors**: Created and owned by TriggerHandler for GPIO state monitoring (Key, Lock, Lights sensors)
+- **Button Event Sensor**: Created and owned by ActionHandler, provides button press duration measurement
 - **Data Sensors**: Created by data panels for continuous measurement (Oil pressure, temperature)
 - **BaseSensor**: Provides change detection template for all sensors
 
@@ -150,15 +127,15 @@ flowchart TD
 - **Utility Panels**: Create own components for system functions (Splash, Error, Config)
 
 ### Critical Architecture Constraints
-- **Interrupt Flow**: Precise main loop sequence with evaluation/execution separation for optimal UI performance
-- **Button Timing Integration**: Built-in press duration measurement (50ms-2000ms short, 2000ms-5000ms long) in InterruptManager
-- **Always vs Idle Processing**: Queued interrupt evaluation (button detection) runs every loop, polled evaluation only during UI idle
+- **Trigger/Action Model**: State-based Triggers (GPIO) with dual functions vs event-based Actions (buttons) with single execution
+- **Priority Override System**: CRITICAL > IMPORTANT > NORMAL priorities with blocking logic for Triggers only
+- **Button Timing Integration**: ActionHandler detects press duration (50ms-2000ms short, 2000ms-5000ms long)
+- **Processing Separation**: Actions evaluate always for responsiveness, both handlers execute only during UI idle
 - **Interface-Based Design**: All major components implement interfaces for testability and loose coupling
 - **Dual Factory Pattern**: Separate factories for providers (ProviderFactory) and managers (ManagerFactory)
 - **Dependency Injection**: IProviderFactory interface enables test mocking and clean separation
-- **Generic Factory Support**: Template-based IFactory<T> for type-safe component creation
-- **Centralized Restoration**: InterruptManager::HandleRestoration() eliminates distributed restoration complexity
-- **Effect-Based Execution**: Interrupts categorized by effect (LOAD_PANEL, SET_THEME, BUTTON_ACTION) for simplified logic
-- **Specialized Ownership**: PolledHandler owns GPIO sensors, QueuedHandler owns button sensor
+- **Smart Restoration**: PanelManager tracks last user-driven panel, restores when triggers deactivate
+- **No Context Parameters**: Direct singleton manager calls eliminate need for context pointers
+- **Specialized Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns button sensor
 - **Memory Safety**: Designed for ESP32 320KB RAM constraint with optimized data structures
-- **Change Detection**: POLLED interrupts fire on state transitions only, button timing handled by InterruptManager
+- **State Change Detection**: Triggers fire on GPIO state transitions, Actions fire on button events
