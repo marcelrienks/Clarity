@@ -9,7 +9,7 @@ This diagram illustrates the complete application flow from startup through runt
 - **Handler Ownership**: TriggerHandler creates/owns GPIO sensors, ActionHandler creates/owns button sensor during initialization
 - **Trigger/Action Model**: State-based Triggers with dual functions, event-based Actions with single execution
 - **Panel Management**: Self-sufficient panels create own components, Key/Lock panels are display-only (no sensors)
-- **Evaluation Model**: Actions evaluated continuously for responsiveness, Triggers evaluated only during idle
+- **Evaluation Model**: Actions evaluated every main loop iteration for responsiveness, Triggers evaluated only during idle
 - **Execution Model**: Both handlers execute only during UI idle state, Triggers processed before Actions
 - **Dual-Function Triggers**: Each Trigger has activate/deactivate functions for state transitions
 - **Button Actions**: Short press (50ms-2000ms) and long press (2000ms-5000ms) events through ActionHandler
@@ -163,7 +163,7 @@ flowchart TB
   - TriggerHandler owns all GPIO sensors (created during handler initialization)
   - ActionHandler owns ButtonSensor (created during handler initialization)
 - **Action Handler (Events)**: 
-  - Evaluates button events continuously for responsiveness
+  - Evaluates button events every main loop iteration for responsiveness
   - Detects short (50ms-2000ms) and long (2000ms-5000ms) press durations
   - Executes button actions only when UI is idle
 - **Trigger Handler (States)**:

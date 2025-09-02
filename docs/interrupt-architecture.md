@@ -26,9 +26,9 @@ Located in `include/types.h`:
 class BaseSensor;
 
 enum class Priority : uint8_t {
-    NORMAL = 0,      // Lowest priority (e.g., lights)
+    CRITICAL = 2,    // Highest priority (e.g., key, errors) - numerically highest
     IMPORTANT = 1,   // Medium priority (e.g., lock)
-    CRITICAL = 2     // Highest priority (e.g., key, errors)
+    NORMAL = 0       // Lowest priority (e.g., lights) - numerically lowest
 };
 
 enum class TriggerType : uint8_t {
@@ -140,7 +140,7 @@ private:
     }
     
     void HandleActivation(Trigger& trigger) {
-        // Check for higher priority active triggers
+        // Check for higher priority active triggers (higher numeric value = higher priority)
         Trigger* higherPriorityTrigger = FindHigherPriorityActiveTrigger(trigger);
         
         if (!higherPriorityTrigger) {

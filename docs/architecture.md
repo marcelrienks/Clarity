@@ -70,7 +70,7 @@ InterruptManager: Central coordination of interrupt processing
 The system coordinates interrupt evaluation and execution through handlers:
 
 - **Trigger Evaluation**: TriggerHandler checks GPIO sensors for state changes during UI IDLE
-- **Action Evaluation**: ActionHandler monitors button sensor continuously for responsiveness  
+- **Action Evaluation**: ActionHandler monitors button sensor every main loop iteration for responsiveness  
 - **All Execution**: Only happens during UI IDLE state for LVGL compatibility
 - **Priority System**: CRITICAL > IMPORTANT > NORMAL with sophisticated blocking logic
 
@@ -144,7 +144,7 @@ Manages button sensor for user input:
 - ButtonSensor (GPIO 32)
 
 **Processing Model**:
-- Evaluates button state continuously for responsiveness
+- Evaluates button state every main loop iteration for responsiveness
 - Queues button events (short/long press) for later execution
 - Executes queued events only during UI IDLE state
 - Manages press duration detection (50ms-2000ms short, 2000ms-5000ms long)

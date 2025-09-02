@@ -198,7 +198,18 @@ Reading OilPressureSensor::GetReading() {
 
 // In src/managers/panel_manager.cpp
 std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName) {
-    // ... existing panel creation code ...
+    if (strcmp(panelName, PanelNames::SPLASH) == 0) {
+        return std::make_shared<SplashPanel>();
+    } else if (strcmp(panelName, PanelNames::OIL) == 0) {
+        return std::make_shared<OemOilPanel>();
+    } else if (strcmp(panelName, PanelNames::KEY) == 0) {
+        return std::make_shared<KeyPanel>();
+    } else if (strcmp(panelName, PanelNames::LOCK) == 0) {
+        return std::make_shared<LockPanel>();
+    } else if (strcmp(panelName, PanelNames::ERROR) == 0) {
+        return std::make_shared<ErrorPanel>();
+    } else if (strcmp(panelName, PanelNames::CONFIG) == 0) {
+        return std::make_shared<ConfigPanel>();
     } else {
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, 
             "PanelManager", std::string("Unknown panel type: ") + panelName);
@@ -216,12 +227,25 @@ Modify `src/main.cpp` to include error manager initialization:
 std::unique_ptr<ErrorManager> errorManager;
 
 void initializeServices() {
-    // ... existing service initialization ...
+    log_d("Initializing DeviceProvider...");
+    deviceProvider = std::make_unique<DeviceProvider>();
+    
+    log_d("Initializing StyleManager...");
+    styleManager = std::make_unique<StyleManager>();
     
     log_d("Initializing ErrorManager...");
     errorManager = std::make_unique<ErrorManager>();
     
-    // ... rest of initialization ...
+    log_d("Initializing PreferenceManager...");
+    preferenceManager = std::make_unique<PreferenceManager>();
+    
+    log_d("Initializing PanelManager...");
+    panelManager = std::make_unique<PanelManager>();
+    
+    log_d("Initializing InterruptManager...");
+    interruptManager = std::make_unique<InterruptManager>();
+    
+    log_d("Service initialization complete");
 }
 ```
 

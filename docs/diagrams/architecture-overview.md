@@ -118,7 +118,7 @@ flowchart TD
 ### Coordinated Handlers (IHandler Interface)
 - **TriggerHandler**: Creates and owns GPIO sensors for state monitoring, processes Triggers with dual activate/deactivate functions, implements priority-based override logic, evaluates and executes only during UI IDLE
 - **ActionHandler**: Creates and owns button sensor, detects short (50ms-2000ms) and long (2000ms-5000ms) press events, evaluates always but executes only during UI IDLE
-- **Processing Model**: Actions evaluated continuously for responsiveness, both handlers execute only during idle for UI performance
+- **Processing Model**: Actions evaluated every main loop iteration for responsiveness, both handlers execute only during idle for UI performance
 
 ### Sensors (ISensor + BaseSensor)
 - **GPIO State Sensors**: Created and owned by TriggerHandler for GPIO state monitoring (Key, Lock, Lights sensors)

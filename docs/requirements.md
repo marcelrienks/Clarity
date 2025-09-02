@@ -163,7 +163,7 @@ For detailed architecture, see: **[Architecture Document](architecture.md)**
 2. **TriggerHandler**: GPIO state monitoring with dual activate/deactivate functions and priority-based override logic
 3. **ActionHandler**: Button event processing with press duration detection and event queueing
 4. **Smart Restoration**: PanelManager tracks last user panel and handles intelligent restoration
-5. **Memory Safety**: Direct singleton calls eliminate context parameters (estimated memory usage - see Memory Analysis section)
+5. **Memory Safety**: Direct singleton calls eliminate context parameters (estimated memory usage - see section 3.1.2)
 6. **Priority Override**: CRITICAL > IMPORTANT > NORMAL with sophisticated blocking logic
 
 **Critical Processing Model**:
@@ -267,8 +267,9 @@ Triggers monitor GPIO state transitions and execute dual functions based on stat
 **Scenario 9: Key Present vs Key Not Present (Mutual Exclusion)**
 - These are physically exclusive states (same key, different GPIO pins)
 - Only one can be active at a time based on physical key position
-- Both are CRITICAL/PANEL, so last activated would win if both somehow active
-- In practice, one deactivates as the other activates
+- Both are CRITICAL priority (Priority::CRITICAL = 2), so no priority conflict
+- In practice, one deactivates as the other activates due to physical key state
+- Priority system handles this naturally without special "same priority" logic
 
 **Trigger State Truth Table**:
 
@@ -279,8 +280,8 @@ Triggers monitor GPIO state transitions and execute dual functions based on stat
 | Key Present only | CRITICAL | Key Panel | Single trigger active |
 | Lock + Key Present | IMP + CRIT | Key Panel | Higher priority (Key) displays |
 | Lock + Lights | IMP + NORM | Lock Panel | Different types, PANEL wins |
-| Key + Lock + Error | CRIT + IMP + CRIT | Error Panel | Last CRITICAL activated |
-| All triggers | All levels | Highest PANEL | Last activated among highest priority |
+| Key + Lock + Error | CRIT + IMP + CRIT | Error Panel | Last CRITICAL activation executed |
+| All triggers | All levels | Highest Priority Panel | Highest priority trigger's panel displays |
 
 **Deactivation Restoration Chain**:
 
@@ -293,17 +294,17 @@ Triggers monitor GPIO state transitions and execute dual functions based on stat
 | Any PANEL | Different type triggers | User Panel (no same-type active) |
 
 **Key Rules Summary**:
-1. **Last Activated Wins**: Among same priority, the most recently activated trigger's panel shows
-2. **Higher Priority Blocks**: Lower priority triggers can't execute activation when higher priority active
-3. **Type-Based Restoration**: Only same-type triggers participate in restoration chain
-4. **State Persistence**: Triggers remain active even when their functions are suppressed
-5. **User Panel Fallback**: When no PANEL triggers active, restore to last user-initiated panel
-6. **Type Isolation**: STYLE triggers (Lights) don't affect PANEL trigger restoration chains
-7. **Activation Order Matters**: The sequence of activation determines which panel shows among same priority
+1. **Higher Priority Blocks**: Lower priority triggers can't execute activation when higher priority active
+2. **Type-Based Restoration**: Only same-type triggers participate in restoration chain
+3. **State Persistence**: Triggers remain active even when their functions are suppressed
+4. **User Panel Fallback**: When no PANEL triggers active, restore to last user-initiated panel
+5. **Type Isolation**: STYLE triggers (Lights) don't affect PANEL trigger restoration chains
+6. **Same Priority Resolution**: With current 3-level priority system (CRITICAL=2, IMPORTANT=1, NORMAL=0), same priority conflicts are rare
+7. **Activation Execution**: Only one activation function executes at a time (highest priority non-blocked trigger)
 
 **Interrupt Structure**:
 
-For complete interrupt structure details, see: **[Architecture Document](architecture.md#coordinated-interrupt-system-architecture)**
+For complete interrupt structure details, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
 
 **Memory Safety Requirements**:
 - Static function pointers with void* context parameters
@@ -317,13 +318,13 @@ For complete interrupt structure details, see: **[Architecture Document](archite
 - When no blocking triggers, system restores to last user panel
 - Clean fallback eliminates distributed restoration complexity
 
-For detailed centralized restoration logic, see: **[Architecture Document](architecture.md#centralized-restoration-logic)**
+For complete restoration logic, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
 
 **Coordinated Processing**:
 For detailed processing flow, see: **[Application Flow Diagram](diagrams/application-flow.md)**
 
 **Interrupt Registration Examples**:
-For complete registration patterns, see: **[Architecture Document](architecture.md#coordinated-interrupt-registration)**
+For complete registration patterns, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
 
 **Registered Interrupts**: See **[Architecture Document](architecture.md)** for complete interrupt list.
 
@@ -356,7 +357,7 @@ For complete ownership model, see: **[Architecture Document](architecture.md#mem
 
 **Action Architecture (v4.0)**: Handles button events with press duration detection and single execution.
 
-For complete implementation details, see: **[Architecture Document](architecture.md#queued-interrupts)**
+For complete implementation details, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
 
 **Universal Panel Button Functions**: All panels implement short/long press functions called via Actions.
 
@@ -476,7 +477,7 @@ struct Action {
 - **Registration**: Separate Trigger and Action struct registration
 - **Coordinated Processing**: InterruptManager coordinates both handlers with smart restoration
 
-For complete implementation details, see: **[Architecture Document](architecture.md#coordinated-interrupt-system-architecture)**
+For complete implementation details, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
 
 #### 2.3.7 Registration Pattern
 
@@ -564,7 +565,7 @@ void InterruptManager::CheckAllInterrupts() {
 - **Theme Setting Frequency**: Maximum 2 executions per second (only on actual changes)
 - **Trigger Processing Time**: Consistent regardless of maintained trigger states
 - **CPU Usage During Idle**: Minimal processing overhead when no state changes occur
-- **Memory Usage**: Stable without fragmentation (see Memory Analysis section for detailed estimates)
+- **Memory Usage**: Stable without fragmentation (see section 3.1.2 for detailed estimates)
 
 **Change Detection Implementation Requirements**:
 

@@ -267,78 +267,55 @@ bool ShouldUpdate();
 
 ### General Guidelines
 
-1. **Be Descriptive**: Names should clearly indicate purpose
+1. **Be Descriptive**: Names should clearly indicate purpose and avoid ambiguity
    ```cpp
-   // Good
+   // Good - Clear purpose and context
    int oil_temperature_celsius;
    bool sensor_initialization_complete;
-   
-   // Bad  
-   int temp;
-   bool flag;
-   ```
-
-2. **Avoid Abbreviations**: Write out full words unless universally understood
-   ```cpp
-   // Good
    TriggerManager trigger_manager;
    std::string configuration_file_path;
    
-   // Acceptable abbreviations
-   int adc_value;  // ADC is widely understood
-   lv_obj_t* ui_object;  // LVGL convention
-   ```
-
-3. **Use Consistent Terminology**: Use the same terms throughout the codebase
-   ```cpp
-   // Consistent: Always use "sensor" not "detector"
-   OilTemperatureSensor
-   OilPressureSensor
-   LightsSensor
-   ```
-
-4. **Avoid Misleading Names**: Names should not imply different types or purposes
-   ```cpp
-   // Good
-   std::string panel_name;
-   int sensor_count;
-   
-   // Bad
+   // Bad - Unclear or overly abbreviated
+   int temp;
+   bool flag;
    std::string panel_name_string;  // Redundant type info
    int sensor_count_integer;       // Redundant type info
    ```
 
+2. **Use Consistent Terminology**: Maintain the same terms throughout the codebase
+   ```cpp
+   // Consistent sensor naming
+   OilTemperatureSensor, OilPressureSensor, LightsSensor
+   
+   // Consistent manager naming  
+   TriggerManager, PanelManager, StyleManager
+   
+   // Acceptable abbreviations (widely understood)
+   int adc_value;  // ADC is universally recognized
+   lv_obj_t* ui_object;  // LVGL library convention
+   ```
+
 ### Context-Specific Guidelines
 
-#### Sensor Classes
-- Use descriptive names indicating the measured quantity
-- Include unit information in variable names when ambiguous
+#### Architecture-Based Naming Patterns
 ```cpp
+// Sensor classes - indicate measured quantity
 class OilTemperatureSensor;
 class OilPressureSensor;
 int temperature_celsius;
 int pressure_bar;
-```
 
-#### Manager Classes  
-- Use "Manager" suffix for coordination classes
-```cpp
+// Manager classes - coordination and lifecycle
 class TriggerManager;
 class PanelManager;
 class StyleManager;
-```
 
-#### Component Classes
-- Use "Component" suffix for UI components
-```cpp
+// Component classes - UI element rendering
 class OilTemperatureComponent;
 class ClarityComponent;
 class ErrorListComponent;
-```
 
-#### Factory Classes
-- Use "Factory" suffix for object creation classes
-```cpp
+// Factory classes - object creation
 class UIFactory;
 class ManagerFactory;
 class ProviderFactory;
@@ -372,20 +349,26 @@ public:
 
 ## Tools and Enforcement
 
-### Code Review Checklist
+### Comprehensive Code Review Checklist
+**File and Type Naming:**
 - [ ] File names use lowercase_with_underscores
-- [ ] Class names use PascalCase
-- [ ] Function names use PascalCase  
-- [ ] Variables use lowercase_with_underscores
-- [ ] Member variables end with underscore
-- [ ] Constants use ALL_CAPS
-- [ ] Enums use PascalCase
-- [ ] Names are descriptive and unambiguous
+- [ ] Class names use PascalCase  
+- [ ] Interface names use PascalCase with `I` prefix
+- [ ] Enum classes and values use PascalCase
+- [ ] Struct names use PascalCase
 
-### Automated Checks
-Consider integrating linting tools that can enforce these naming conventions:
-- clang-tidy with naming checks
-- Custom naming convention rules in CI/CD
+**Function and Variable Naming:**
+- [ ] Function names use PascalCase
+- [ ] Local variables use lowercase_with_underscores
+- [ ] Member variables end with trailing underscore
+- [ ] Constants use ALL_CAPS
+- [ ] Boolean names read like questions (is_ready, has_error)
+
+**Architecture Compliance:**
+- [ ] Names are descriptive and unambiguous
+- [ ] Consistent terminology used throughout codebase
+- [ ] Architecture-specific suffixes applied correctly
+- [ ] No redundant type information in names
 
 ## Examples from Codebase
 
