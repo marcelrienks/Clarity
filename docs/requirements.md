@@ -867,15 +867,7 @@ Based on the current v3.0 implementation analysis:
 - Consistent coding standards (Google C++ Style Guide adapted)
 - Memory-efficient patterns throughout codebase
 
-### 3.7 Testability
-- Unit tests for all major components
-- Integration tests for panel transitions
-- Mock implementations for hardware dependencies
-- Test execution via PlatformIO Unity framework
-- Memory stress testing for heap corruption prevention
-- Change detection testing for sensor state management
-
-### 3.8 Extensibility
+### 3.7 Extensibility
 - Easy addition of new panels
 - Pluggable sensor architecture
 - Configurable trigger mappings
@@ -895,12 +887,6 @@ Based on the current v3.0 implementation analysis:
 - Wokwi emulator for local testing (square display limitation)
 - Custom partition scheme for OTA updates
 - Build environments: debug-local, debug-upload, release
-
-### 4.3 Testing Limitations
-- PlatformIO Unity framework constraints
-- Test files must be in root test directory
-- Build filters not applied to Unity tests
-- Wokwi displays image inverted horizontally
 
 ## 5. User Interface Requirements
 

@@ -23,137 +23,122 @@ config:
   elk: {}
 ---
 flowchart TD
-    InterruptMgr[InterruptManager Process]
-    
-    subgraph InterruptProcessing["Interrupt Processing"]
-        ActionEval[Action Evaluation<br/>ALWAYS]
-        IdleCheck{UI State<br/>== IDLE?}
-        TriggerProc[Trigger Processing<br/>IDLE ONLY]
-        ActionExec[Action Execution<br/>IDLE ONLY]
-    end
-    
-    subgraph ActionHandling["Action Handler Flow"]
-        ButtonSensor[ButtonSensor<br/>Check State]
-        ActionChanged{State<br/>Changed?}
-        TimingCheck[Check Press Duration]
-        ShortPress{50ms-2000ms<br/>SHORT?}
-        LongPress{2000ms-5000ms<br/>LONG?}
-        QueueShort[Queue Short Action<br/>hasTriggered = true]
-        QueueLong[Queue Long Action<br/>hasTriggered = true]
-    end
-    
-    subgraph ActionExecution["Action Execution (Idle Only)"]
-        ActionPending{Actions<br/>Queued?}
-        ExecuteAction[Execute Action Function<br/>Clear hasTriggered]
-        ActionComplete[Action Complete]
-    end
-    
-    subgraph TriggerHandling["Trigger Handler Flow"]
-        TriggerLoop[For Each Trigger]
-        SensorCheck[Check Sensor<br/>HasStateChanged]
-        TriggerChanged{State<br/>Changed?}
-        StateDirection{HIGH or<br/>LOW?}
-        ActivateFlow[Activation Flow]
-        DeactivateFlow[Deactivation Flow]
-    end
-    
-    subgraph ActivationFlow["Trigger Activation Flow"]
-        PriorityCheck{Higher Priority<br/>Active Trigger?}
-        ExecuteActivate[Execute Trigger<br/>activateFunc<br/>isActive = true]
-        SetActiveOnly[Set isActive = true<br/>No Function Execution]
-    end
-    
-    subgraph DeactivationFlow["Trigger Deactivation Flow"]
-        ExecuteDeactivate[Execute Trigger<br/>deactivateFunc<br/>isActive = false]
-        SameTypeCheck[Find Same Type<br/>Active Triggers]
-        SameTypeFound{Same Type<br/>Found?}
-        ReActivateSameType[Execute Highest Priority<br/>Same Type activateFunc]
-    end
-    
-    subgraph StateDetection["State Change Detection"]
-        BaseSensor[BaseSensor<br/>DetectChange Template]
-        PrevState[Previous State<br/>Tracking]
-        CurrentState[Current GPIO<br/>Reading]
-        StateComparison[Compare Current<br/>vs Previous]
-        UpdatePrevious[Update Previous<br/>State]
-    end
-    
-    %% Interrupt Manager Flow
-    InterruptMgr --> ActionEval
-    ActionEval --> IdleCheck
-    IdleCheck -->|Yes| TriggerProc
-    IdleCheck -->|No| Return1([Return])
-    TriggerProc --> ActionExec
-    ActionExec --> Return2([Return])
-    
-    %% Action Evaluation Flow
-    ActionEval --> ButtonSensor
+ subgraph InterruptProcessing["Interrupt Processing"]
+        ActionEval["Action Evaluation<br>ALWAYS"]
+        IdleCheck{"UI State<br>== IDLE?"}
+        TriggerProc["Trigger Processing<br>"]
+        ActionExec["Action Execution<br>IDLE ONLY"]
+  end
+ subgraph ActionHandling["Action Handler Flow"]
+        ButtonSensor["ButtonSensor<br>Check State"]
+        ActionChanged{"State<br>Changed?"}
+        TimingCheck["Check Press Duration"]
+        ShortPress{"50ms-2000ms<br>SHORT?"}
+        LongPress{"2000ms-5000ms<br>LONG?"}
+        QueueShort["Queue Short Action<br>hasTriggered = true"]
+        QueueLong["Queue Long Action<br>hasTriggered = true"]
+  end
+ subgraph ActionExecution["Action Execution (Idle Only)"]
+        ActionPending{"Actions<br>Queued?"}
+        ExecuteAction["Execute Action Function<br>Clear hasTriggered"]
+        ActionComplete["Action Complete"]
+  end
+ subgraph TriggerHandling["Trigger Handler Flow"]
+        TriggerLoop["For Each Trigger"]
+        SensorCheck["Check Sensor<br>HasStateChanged"]
+        TriggerChanged{"State<br>Changed?"}
+        StateDirection{"HIGH or<br>LOW?"}
+        ActivateFlow["Activation Flow"]
+        DeactivateFlow["Deactivation Flow"]
+  end
+ subgraph ActivationFlow["Trigger Activation Flow"]
+        PriorityCheck{"Higher Priority<br>Active Trigger?"}
+        ExecuteActivate["Execute Trigger<br>activateFunc<br>isActive = true"]
+        SetActiveOnly["Set isActive = true<br>No Function Execution"]
+  end
+ subgraph DeactivationFlow["Trigger Deactivation Flow"]
+        ExecuteDeactivate["Execute Trigger<br>deactivateFunc<br>isActive = false"]
+        SameTypeCheck["Find Same Type<br>Active Triggers"]
+        SameTypeFound{"Same Type<br>Found?"}
+        ReActivateSameType["Execute Highest Priority<br>Same Type activateFunc"]
+  end
+ subgraph StateDetection["State Change Detection"]
+        BaseSensor["BaseSensor<br>DetectChange Template"]
+        PrevState["Previous State<br>Tracking"]
+        CurrentState["Current GPIO<br>Reading"]
+        StateComparison["Compare Current<br>vs Previous"]
+        UpdatePrevious["Update Previous<br>State"]
+  end
+    InterruptMgr["InterruptManager Process"] --> ActionEval
+    ActionEval --> IdleCheck & ButtonSensor
+    IdleCheck -- Yes --> TriggerProc
+    TriggerProc --> ActionExec & TriggerLoop
     ButtonSensor --> ActionChanged
-    ActionChanged -->|Yes| TimingCheck
-    ActionChanged -->|No| IdleCheck
+    ActionChanged -- Yes --> TimingCheck
+    ActionChanged -- No --> IdleCheck
     TimingCheck --> ShortPress
-    ShortPress -->|Yes| QueueShort
-    ShortPress -->|No| LongPress
-    LongPress -->|Yes| QueueLong
-    LongPress -->|No| Return3([Return])
+    ShortPress -- Yes --> QueueShort
+    ShortPress -- No --> LongPress
+    LongPress -- Yes --> QueueLong
     QueueShort --> IdleCheck
     QueueLong --> IdleCheck
-    
-    %% Action Execution Flow  
     ActionExec --> ActionPending
-    ActionPending -->|Yes| ExecuteAction
-    ActionPending -->|No| Return4([Return])
+    ActionPending -- Yes --> ExecuteAction
     ExecuteAction --> ActionComplete
-    ActionComplete --> Return5([Return])
-    
-    %% Trigger Processing Flow
-    TriggerProc --> TriggerLoop
     TriggerLoop --> SensorCheck
-    SensorCheck --> TriggerChanged
-    TriggerChanged -->|Yes| StateDirection
-    TriggerChanged -->|No| Return6([Return])
-    StateDirection -->|HIGH| ActivateFlow
-    StateDirection -->|LOW| DeactivateFlow
-    
-    %% Activation Flow
+    SensorCheck --> TriggerChanged & BaseSensor
+    TriggerChanged -- Yes --> StateDirection
+    StateDirection -- HIGH --> ActivateFlow
+    StateDirection -- LOW --> DeactivateFlow
     ActivateFlow --> PriorityCheck
-    PriorityCheck -->|No| ExecuteActivate
-    PriorityCheck -->|Yes| SetActiveOnly
-    ExecuteActivate --> Return7([Return])
-    SetActiveOnly --> Return8([Return])
-    
-    %% Deactivation Flow
+    PriorityCheck -- No --> ExecuteActivate
+    PriorityCheck -- Yes --> SetActiveOnly
     DeactivateFlow --> ExecuteDeactivate
     ExecuteDeactivate --> SameTypeCheck
     SameTypeCheck --> SameTypeFound
-    SameTypeFound -->|Yes| ReActivateSameType
-    SameTypeFound -->|No| Return9([Return])
-    ReActivateSameType --> Return10([Return])
-    
-    %% State Detection Integration
-    SensorCheck --> BaseSensor
-    BaseSensor --> PrevState
-    BaseSensor --> CurrentState
+    SameTypeFound -- Yes --> ReActivateSameType
+    BaseSensor --> PrevState & CurrentState
     CurrentState --> StateComparison
     PrevState --> StateComparison
     StateComparison --> UpdatePrevious
     UpdatePrevious --> TriggerChanged
-    
-    %% Styling
+     InterruptMgr:::interrupt
+     ActionEval:::interrupt
+     IdleCheck:::decision
+     ButtonSensor:::action
+     ActionChanged:::decision
+     TimingCheck:::action
+     ShortPress:::decision
+     LongPress:::decision
+     QueueShort:::action
+     QueueLong:::action
+     ActionPending:::decision
+     ExecuteAction:::action
+     ActionComplete:::process
+     TriggerLoop:::trigger
+     SensorCheck:::trigger
+     TriggerChanged:::decision
+     StateDirection:::decision
+     ActivateFlow:::trigger
+     DeactivateFlow:::trigger
+     PriorityCheck:::decision
+     ExecuteActivate:::trigger
+     SetActiveOnly:::trigger
+     ExecuteDeactivate:::trigger
+     SameTypeCheck:::trigger
+     SameTypeFound:::decision
+     ReActivateSameType:::trigger
+     BaseSensor:::sensor
+     PrevState:::sensor
+     CurrentState:::sensor
+     StateComparison:::sensor
+     UpdatePrevious:::sensor
     classDef interrupt fill:#fff2cc,stroke:#d6b656,stroke-width:2px
     classDef action fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
     classDef trigger fill:#f8cecc,stroke:#b85450,stroke-width:2px
     classDef decision fill:#fff2cc,stroke:#d6b656,stroke-width:3px
     classDef process fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px
     classDef sensor fill:#ffe6cc,stroke:#d79b00,stroke-width:2px
-    
-    class InterruptMgr,ActionEval,InterruptProcessing interrupt
-    class ButtonSensor,TimingCheck,QueueShort,QueueLong,ExecuteAction,ActionHandling,ActionExecution action
-    class TriggerLoop,SensorCheck,ActivateFlow,DeactivateFlow,ExecuteActivate,ExecuteDeactivate,SetActiveOnly,SameTypeCheck,ReActivateSameType,TriggerHandling,ActivationFlow,DeactivationFlow trigger
-    class IdleCheck,ActionChanged,ShortPress,LongPress,TriggerChanged,StateDirection,PriorityCheck,SameTypeFound,ActionPending decision
-    class ActionComplete process
-    class BaseSensor,PrevState,CurrentState,StateComparison,UpdatePrevious,StateDetection sensor
-    
     style InterruptProcessing fill:#FFF8DC
     style ActionHandling fill:#F0E6FF
     style ActionExecution fill:#F0E6FF
