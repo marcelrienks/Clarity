@@ -1,5 +1,10 @@
 # Architecture Overview Diagram  
 
+**Related Documentation:**
+- **[Main Architecture](../architecture.md)** - Complete architectural documentation
+- **[Application Flow](application-flow.md)** - Runtime processing flows
+- **[Interrupt Flow](interrupt-handling-flow.md)** - Detailed interrupt processing
+
 This diagram shows the high-level component relationships in the Clarity system with the TriggerHandler/ActionHandler interrupt architecture.
 
 ## Key Architectural Elements
@@ -137,5 +142,5 @@ flowchart TD
 - **Smart Restoration**: PanelManager tracks last user-driven panel, restores when triggers deactivate
 - **No Context Parameters**: Direct singleton manager calls eliminate need for context pointers
 - **Specialized Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns button sensor
-- **Memory Safety**: Designed for ESP32 320KB RAM constraint with optimized data structures
+- **Memory Safety**: Designed for ESP32 memory constraints with optimized data structures
 - **State Change Detection**: Triggers fire on GPIO state transitions, Actions fire on button events

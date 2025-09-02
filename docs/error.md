@@ -1,5 +1,10 @@
 # Error Handling System Design
 
+**Related Documentation:**
+- **[Architecture](architecture.md)** - MVP pattern and system architecture
+- **[Requirements](requirements.md)** - Error handling requirements and integration
+- **[Interrupt Architecture](interrupt-architecture.md)** - Error trigger implementation
+
 ## Overview
 
 This document outlines the comprehensive error handling system design for the Clarity ESP32-based digital gauge system. The design integrates seamlessly with the existing MVP architecture while providing robust error collection, display, and recovery mechanisms.

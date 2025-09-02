@@ -1,5 +1,10 @@
 # Hardware Documentation
 
+**Related Documentation:**
+- **[Architecture](architecture.md)** - Software architecture and GPIO sensor mapping
+- **[Requirements](requirements.md)** - Hardware requirements and constraints
+- **[Patterns](patterns.md)** - Development patterns and practices
+
 ## Overview
 
 Clarity is designed for ESP32-based automotive gauge systems with a round display. This document details the intended hardware configuration and the Wokwi emulator setup used for development and testing.
@@ -53,7 +58,8 @@ Clarity is designed for ESP32-based automotive gauge systems with a round displa
 | Debug Error Sensor | GPIO 34 | INPUT       | None*       | Debug error trigger (dev only) |
 
 *GPIO 34 is an input-only pin without internal pull resistors. External pull-down required for stable operation.
-**Development Only**: Debug error sensor is only active in CLARITY_DEBUG builds for system testing.
+
+**Development Only**: Debug error sensor is only active in CLARITY_DEBUG builds for system testing. This feature is completely excluded from release builds to save memory and GPIO resources.
 
 ## Power Configuration
 - **Supply Voltage**: 3.3V (regulated from 12V automotive supply)

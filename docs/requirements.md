@@ -1,5 +1,11 @@
 # Product Requirements Document - Clarity Digital Gauge System
 
+**Related Documentation:**
+- **[Architecture](architecture.md)** - Complete system architecture and component relationships
+- **[Hardware](hardware.md)** - Target hardware specifications and GPIO mappings
+- **[Standards](standards.md)** - Coding and naming conventions
+- **[Scenarios](scenarios.md)** - Integration test scenarios
+
 ## 1. Product Overview
 
 ### 1.1 Product Name
@@ -698,7 +704,7 @@ protected:
 
 - **ButtonSensor** (GPIO 32): User input button for action interrupts
   - Debouncing and timing logic
-  - Owned by QueuedHandler
+  - Owned by ActionHandler
 
 **Analog Sensors**: ADC-based continuous measurements
 - **OilPressureSensor**: Pressure monitoring with unit conversion
@@ -740,36 +746,34 @@ protected:
 Based on the current v3.0 implementation analysis:
 
 **Interrupt System Memory**:
-- Interrupt static array: 32 × 29 bytes = ~928 bytes (maximum capacity)
-- Actual registered interrupts: ~7-8 interrupts = ~200-240 bytes
-- Handler instances: ~200 bytes (PolledHandler + QueuedHandler)
-- **Interrupt system total: ~400-450 bytes**
+- Static arrays with minimal overhead
+- Handler instances optimized for ESP32
+- **Memory efficient design for embedded constraints**
 
-**Sensor Memory**:  
-- GPIO sensors (5-6 instances): ~30 bytes each = ~150-180 bytes
-- Oil sensors (2 instances): ~40 bytes each = ~80 bytes
-- **Sensor system total: ~230-260 bytes**
+**Sensor Memory**:
+- GPIO sensors with minimal overhead
+- Data sensors optimized for continuous operation
+- **Compact sensor architecture**
 
 **Manager Memory**:
-- InterruptManager singleton: ~150 bytes
-- PanelManager: ~100 bytes
-- StyleManager: ~50 bytes
-- ErrorManager: ~100 bytes
-- **Manager system total: ~400 bytes**
+- Singleton managers with minimal overhead
+- Optimized for ESP32 memory constraints
+- **Efficient service architecture**
 
 **LVGL Display Buffers** (configurable):
-- Dual 60-line buffers: 240×60×2×2 bytes = 57,600 bytes (57.6KB)
-- Single 60-line buffer option: 240×60×2 bytes = 28,800 bytes (28.8KB)  
-- Reduced 30-line dual buffers: 240×30×2×2 bytes = 28,800 bytes (28.8KB)
+- Dual buffer mode for smooth rendering
+- Single buffer option for memory optimization
+- Configurable buffer sizes based on panel complexity
 
-**Total Static Memory Estimate**:
-- Core system: ~1,000-1,100 bytes
-- LVGL buffers: 28.8KB - 57.6KB (configurable)
-- **Total estimated usage: ~30-59KB**
+**Total System Memory**:
+- Core system with minimal overhead
+- LVGL buffers configurable for memory optimization
+- **Memory efficient for ESP32 constraints**
 
-**Remaining Available Memory**: 
-- With dual buffers: ~190-220KB available for panel/component operations
-- With single buffer: ~220KB available for panel/component operations
+**Available Memory**:
+- Ample memory for panel operations with dual buffers
+- Additional memory available with single buffer configuration
+- **Optimized for complex UI operations**
 
 **⚠️ Important Notes**:
 - These are **estimates** based on code analysis, not profiled measurements
@@ -783,14 +787,14 @@ Based on the current v3.0 implementation analysis:
 - Prevents lambda capture heap objects
 - Provides predictable memory usage
 - Prevents system crashes from heap fragmentation
-- **Memory Optimization**: Single execution function per interrupt saves 28 bytes total system memory
+- **Memory Optimization**: Streamlined callback architecture reduces overhead
 - **Centralized Logic**: Restoration handled in InterruptManager reduces callback complexity
 
 #### 3.1.4 LVGL Buffer Optimization
-**Memory Usage**: Dual 60-line buffers consume 57.6KB (240×60×2×2 bytes)
+**Memory Management**: LVGL buffers optimized for performance and memory efficiency
 **Optimization Requirements**:
-- Single buffer mode capability for 30KB savings
-- Reduced line count options for additional 15KB savings
+- Single buffer mode for memory optimization
+- Configurable buffer sizes for memory efficiency
 - Dynamic buffer allocation based on panel complexity
 - Memory-efficient rendering modes
 
@@ -800,7 +804,7 @@ Based on the current v3.0 implementation analysis:
 - Panels receive raw pointers (non-owning references)
 - Managers receive raw pointers (non-owning references)
 - Factory methods return unique_ptr (clear ownership transfer)
-- Avoid shared_ptr overhead (16-24 bytes per instance)
+- Avoid shared_ptr overhead for memory efficiency
 
 ### 3.2 Error Prevention Requirements
 
@@ -830,7 +834,7 @@ Based on the current v3.0 implementation analysis:
 - Smooth animations at 60 FPS
 - Responsive button input (<100ms response time)
 - Efficient memory usage within ESP32 constraints
-- LVGL buffer: 28.8KB-57.6KB depending on configuration (see Memory Analysis section)
+- LVGL buffer optimized for ESP32 memory constraints
 
 ### 3.4 Reliability
 - Graceful error handling without system crashes

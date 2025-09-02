@@ -10,7 +10,7 @@ This diagram illustrates detailed interrupt processing flow concepts.
 - **Priority and Type System**: Triggers use Priority (Critical/Important/Normal) and Type (Panel/Style/Function) for intelligent execution
 - **Queue-Based Actions**: Actions queue events immediately, execute during idle in registration order
 - **State Change Detection**: Triggers fire only on GPIO state transitions using BaseSensor change detection
-- **Memory Optimized**: Direct singleton calls eliminate context parameters (estimated ~96 bytes total system overhead)
+- **Memory Optimized**: Direct singleton calls eliminate context parameters for efficiency
 - **Handler Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns ButtonSensor
 
 For complete architecture details, see: **[Architecture Document](../architecture.md)**
@@ -269,7 +269,7 @@ public:
 - **Continuous Responsiveness**: Actions always evaluated for immediate event detection
 - **Idle Protection**: Both execution types respect UI idle state for LVGL compatibility
 - **Processing Priority**: Triggers process before Actions when both pending
-- **Memory Efficiency**: Static structures with direct singleton calls (estimated ~96 bytes total system)
+- **Memory Efficiency**: Static structures with direct singleton calls for ESP32 optimization
 
 ### Reliability Features
 - **State Consistency**: BaseSensor change detection prevents false triggers

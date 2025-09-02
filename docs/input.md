@@ -1,5 +1,10 @@
 # Input System Architecture
 
+**Related Documentation:**
+- **[Requirements](requirements.md)** - Button behavior requirements for each panel
+- **[Architecture](architecture.md)** - ActionHandler integration and IActionService interface
+- **[Hardware](hardware.md)** - Button hardware configuration and GPIO setup
+
 ## Overview
 The Clarity digital gauge system uses a single button input connected to GPIO 32 that provides different behaviors based on the current panel and press duration.
 

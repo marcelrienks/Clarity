@@ -1,5 +1,10 @@
 # Test Scenarios
 
+**Related Documentation:**
+- **[Requirements](requirements.md)** - Complete trigger scenarios and panel behaviors
+- **[Architecture](architecture.md)** - System components and interaction patterns
+- **[Interrupt Architecture](interrupt-architecture.md)** - Trigger priority and processing logic
+
 ## Full Integration Test
 
 Comprehensive system test covering all interrupts, effects, and panel transitions:

@@ -4,6 +4,12 @@
 
 MVP (Model-View-Presenter) pattern for ESP32 automotive gauges with layered architecture, interface-based design, and coordinated interrupt system using TriggerHandler/ActionHandler architecture with Trigger/Action separation.
 
+**Related Documentation:**
+- **[Requirements](requirements.md)** - Detailed functional and non-functional requirements
+- **[Hardware](hardware.md)** - Target hardware and GPIO pin mappings  
+- **[Interrupt Architecture](interrupt-architecture.md)** - Detailed Trigger/Action separation design
+- **[Standards](standards.md)** - Coding and naming conventions
+
 ## Visual Diagrams
 
 For detailed architectural diagrams, see:
@@ -111,7 +117,7 @@ struct Action {
 };
 ```
 
-**Memory Usage**: Approximately 40 bytes per trigger + 16 bytes per action (estimated ~300-400 bytes total)
+**Memory Efficiency**: Static structures with minimal overhead for ESP32 memory constraints
 
 ### Handler Architecture
 
@@ -201,7 +207,7 @@ protected:
 
 ## Managers
 
-- **InterruptManager**: Coordinates PolledHandler and QueuedHandler, manages interrupt registration
+- **InterruptManager**: Coordinates TriggerHandler and ActionHandler, manages interrupt registration
 - **PanelManager**: Creates panels on demand, manages switching and lifecycle
 - **PreferenceManager**: Persistent settings storage
 - **StyleManager**: LVGL themes (Day/Night) controlled by LightsSensor
@@ -279,21 +285,22 @@ void loop() {
 ### GPIO Mapping (Current Implementation)
 | GPIO | Sensor | Purpose | Handler |
 |------|--------|---------|---------|
-| **GPIO 32** | ButtonSensor | User input button (action interrupts) | QueuedHandler |
-| **GPIO 25** | KeyPresentSensor | Key present detection | PolledHandler |
-| **GPIO 26** | KeyNotPresentSensor | Key not present detection | PolledHandler |
-| **GPIO 27** | LockSensor | Vehicle lock status | PolledHandler |
-| **GPIO 33** | LightsSensor | Day/night detection | PolledHandler |
-| **GPIO 34** | DebugErrorSensor | Debug error trigger (dev only) | PolledHandler |
+| **GPIO 32** | ButtonSensor | User input button (action interrupts) | ActionHandler |
+| **GPIO 25** | KeyPresentSensor | Key present detection | TriggerHandler |
+| **GPIO 26** | KeyNotPresentSensor | Key not present detection | TriggerHandler |
+| **GPIO 27** | LockSensor | Vehicle lock status | TriggerHandler |
+| **GPIO 33** | LightsSensor | Day/night detection | TriggerHandler |
+| **GPIO 34** | DebugErrorSensor | Debug error trigger (dev only) | TriggerHandler |
 | **GPIO 36** | OilPressureSensor | Oil pressure (ADC) | OilPanel |
 | **GPIO 39** | OilTemperatureSensor | Oil temperature (ADC) | OilPanel |
 
 ## Memory Architecture
 
-### Memory Usage
-- **Trigger Storage**: Static array, ~300 bytes (8 triggers × ~40 bytes)
-- **Action Storage**: Static array, ~32 bytes (2 actions × ~16 bytes)  
+### Memory Efficiency
+- **Trigger Storage**: Static array with minimal overhead
+- **Action Storage**: Compact static array structure
 - **Handler Storage**: Two handler instances with owned sensors
+- **Memory Efficiency**: Optimized for ESP32 constraints
 - **Static Callbacks**: Function pointers only, no heap allocation
 
 ### Sensor Ownership Model

@@ -1,5 +1,11 @@
 # Interrupt Architecture - Trigger/Action Separation
 
+**Related Documentation:**
+- **[Architecture](architecture.md)** - Complete system architecture overview
+- **[Requirements](requirements.md)** - Functional requirements and trigger scenarios  
+- **[Application Flow](diagrams/application-flow.md)** - Runtime processing flow
+- **[Interrupt Flow](diagrams/interrupt-handling-flow.md)** - Detailed processing diagrams
+
 ## Executive Summary
 
 This document describes the interrupt architecture using a clear separation between **Triggers** (state-based interrupts from GPIO sensors) and **Actions** (event-based interrupts from buttons). This separation acknowledges the fundamental difference between persistent state changes and momentary events.

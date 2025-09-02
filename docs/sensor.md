@@ -1,5 +1,10 @@
 # Sensor Architecture
 
+**Related Documentation:**
+- **[Architecture](architecture.md)** - BaseSensor pattern and sensor ownership models
+- **[Requirements](requirements.md)** - Sensor requirements and change detection patterns
+- **[Hardware](hardware.md)** - GPIO pin assignments and ADC configuration
+
 ## Oil Pressure and Temperature Sensors
 
 ### 1. Panel and Component Responsibilities

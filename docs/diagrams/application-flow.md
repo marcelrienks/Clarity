@@ -230,6 +230,6 @@ flowchart TB
 - **Priority Override**: Sophisticated blocking logic prevents unnecessary panel switches
 - **Efficient Flow**: Main loop integrates LVGL, interrupts, errors, and panels
 - **Clean Architecture**: Clear Trigger/Action separation with appropriate complexity
-- **Memory Optimized**: Direct singleton calls eliminate context pointers (ESP32 320KB RAM constraint)
+- **Memory Optimized**: Direct singleton calls eliminate context pointers for ESP32 efficiency
 
 For complete architecture details, see: **[Architecture Document](../architecture.md)**
