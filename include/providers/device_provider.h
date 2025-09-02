@@ -74,7 +74,11 @@ class DeviceProvider : public lgfx::LGFX_Device, public IDeviceProvider
     lgfx::Light_PWM lightInstance_;
     lgfx::Bus_SPI busInstance_;
 
-    const static unsigned int LV_BUFFER_SIZE =
-        (SCREEN_WIDTH * 60 * sizeof(lv_color_t)); // Dual buffers at 1/4 screen height
+    // Optimized buffer configuration for memory efficiency
+    // Using 40 lines (1/6 of screen) reduces memory usage from ~57KB to ~38KB
+    // while maintaining smooth rendering performance
+    static constexpr unsigned int BUFFER_LINE_COUNT = 40; // Reduced from 60 for memory optimization
+    static constexpr unsigned int LV_BUFFER_SIZE = 
+        (SCREEN_WIDTH * BUFFER_LINE_COUNT * sizeof(lv_color_t));
     uint8_t lvBuffer_[2][LV_BUFFER_SIZE];
 };

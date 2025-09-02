@@ -236,6 +236,7 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
         {"Rate: " + std::to_string(config.updateRate) + "ms", [this]() { EnterSubmenu(MenuState::UpdateRateSubmenu); }},
         {"Press: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
         {"Temp: " + config.tempUnit, [this]() { EnterSubmenu(MenuState::TempUnitSubmenu); }},
+        {"Calibration", [this]() { EnterSubmenu(MenuState::CalibrationSubmenu); }},
         {"Exit", [this]()
          {
              // Save configuration before exiting
@@ -528,6 +529,77 @@ void ConfigPanel::UpdateSubmenuItems()
         }
         break;
 
+        case MenuState::CalibrationSubmenu:
+        {
+            title = "Sensor Calibration";
+            menuItems_ = {{"Pressure Offset", [this]() { EnterSubmenu(MenuState::PressureOffsetSubmenu); }},
+                          {"Pressure Scale", [this]() { EnterSubmenu(MenuState::PressureScaleSubmenu); }},
+                          {"Temp Offset", [this]() { EnterSubmenu(MenuState::TempOffsetSubmenu); }},
+                          {"Temp Scale", [this]() { EnterSubmenu(MenuState::TempScaleSubmenu); }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::PressureOffsetSubmenu:
+        {
+            title = "Pressure Offset";
+            char offsetStr[16];
+            snprintf(offsetStr, sizeof(offsetStr), "%.2f", config.pressureOffset);
+            menuItems_ = {{"Current: " + std::string(offsetStr), []() {}}, // Read-only display
+                          {"-1.0", [this]() { UpdateCalibration("pressure_offset", -1.0f); }},
+                          {"-0.1", [this]() { UpdateCalibration("pressure_offset", -0.1f); }},
+                          {"0.0", [this]() { UpdateCalibration("pressure_offset", 0.0f); }},
+                          {"+0.1", [this]() { UpdateCalibration("pressure_offset", 0.1f); }},
+                          {"+1.0", [this]() { UpdateCalibration("pressure_offset", 1.0f); }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::PressureScaleSubmenu:
+        {
+            title = "Pressure Scale";
+            char scaleStr[16];
+            snprintf(scaleStr, sizeof(scaleStr), "%.3f", config.pressureScale);
+            menuItems_ = {{"Current: " + std::string(scaleStr), []() {}}, // Read-only display
+                          {"0.900", [this]() { UpdateCalibration("pressure_scale", 0.900f); }},
+                          {"0.950", [this]() { UpdateCalibration("pressure_scale", 0.950f); }},
+                          {"1.000", [this]() { UpdateCalibration("pressure_scale", 1.000f); }},
+                          {"1.050", [this]() { UpdateCalibration("pressure_scale", 1.050f); }},
+                          {"1.100", [this]() { UpdateCalibration("pressure_scale", 1.100f); }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::TempOffsetSubmenu:
+        {
+            title = "Temperature Offset";
+            char offsetStr[16];
+            snprintf(offsetStr, sizeof(offsetStr), "%.1f", config.tempOffset);
+            menuItems_ = {{"Current: " + std::string(offsetStr), []() {}}, // Read-only display
+                          {"-5.0", [this]() { UpdateCalibration("temp_offset", -5.0f); }},
+                          {"-1.0", [this]() { UpdateCalibration("temp_offset", -1.0f); }},
+                          {"0.0", [this]() { UpdateCalibration("temp_offset", 0.0f); }},
+                          {"+1.0", [this]() { UpdateCalibration("temp_offset", 1.0f); }},
+                          {"+5.0", [this]() { UpdateCalibration("temp_offset", 5.0f); }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
+        case MenuState::TempScaleSubmenu:
+        {
+            title = "Temperature Scale";
+            char scaleStr[16];
+            snprintf(scaleStr, sizeof(scaleStr), "%.3f", config.tempScale);
+            menuItems_ = {{"Current: " + std::string(scaleStr), []() {}}, // Read-only display
+                          {"0.900", [this]() { UpdateCalibration("temp_scale", 0.900f); }},
+                          {"0.950", [this]() { UpdateCalibration("temp_scale", 0.950f); }},
+                          {"1.000", [this]() { UpdateCalibration("temp_scale", 1.000f); }},
+                          {"1.050", [this]() { UpdateCalibration("temp_scale", 1.050f); }},
+                          {"1.100", [this]() { UpdateCalibration("temp_scale", 1.100f); }},
+                          {"Back", [this]() { ExitSubmenu(); }}};
+        }
+        break;
+
         default:
             // Should not happen
             break;
@@ -605,4 +677,37 @@ void ConfigPanel::HandleLongPress()
 {
     log_i("ConfigPanel: Executing current option at index %zu", currentMenuIndex_);
     ExecuteCurrentOption();
+}
+
+void ConfigPanel::UpdateCalibration(const std::string& key, float value)
+{
+    log_v("UpdateCalibration() called for key: %s, value: %.3f", key.c_str(), value);
+    
+    if (!preferenceService_)
+        return;
+    
+    Configs cfg = preferenceService_->GetConfig();
+    
+    if (key == "pressure_offset")
+    {
+        cfg.pressureOffset = value;
+    }
+    else if (key == "pressure_scale")
+    {
+        cfg.pressureScale = value;
+    }
+    else if (key == "temp_offset")
+    {
+        cfg.tempOffset = value;
+    }
+    else if (key == "temp_scale")
+    {
+        cfg.tempScale = value;
+    }
+    
+    preferenceService_->SetConfig(cfg);
+    preferenceService_->SaveConfig();
+    
+    // Refresh the submenu to show updated values
+    UpdateSubmenuItems();
 }

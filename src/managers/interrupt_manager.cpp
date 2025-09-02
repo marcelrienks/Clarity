@@ -727,9 +727,22 @@ void InterruptManager::ApplyPreferenceFromInterrupt(const Interrupt& interrupt)
 {
     log_v("ApplyPreferenceFromInterrupt() called for: %s", interrupt.id);
     
-    // TODO: Implement preference updates via interrupt system
-    // This would handle configuration changes triggered by sensors or conditions
-    log_d("Preference update for interrupt '%s' - placeholder implementation", interrupt.id);
+    // Handle preference updates based on interrupt type
+    if (!interrupt.id || !interrupt.context) {
+        log_w("Invalid interrupt for preference update - missing ID or context");
+        return;
+    }
+    
+    // Configuration changes could be triggered by various sensors or system conditions
+    // For now, log the preference change request for future implementation
+    // when a PreferenceManager or ConfigManager is added to the system
+    log_d("Preference update requested by interrupt '%s' with context %p", 
+          interrupt.id, interrupt.context);
+    
+    // Future implementation would interact with a preference/config manager:
+    // if (preferenceManager) {
+    //     preferenceManager->UpdateFromInterrupt(interrupt.id, interrupt.context);
+    // }
 }
 
 void InterruptManager::ExecuteButtonAction(const Interrupt& interrupt)

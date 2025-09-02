@@ -138,6 +138,12 @@ struct Configs
     int updateRate = 500;             ///< Sensor update rate in milliseconds
     std::string pressureUnit = "Bar"; ///< Pressure unit (PSI, Bar, kPa)
     std::string tempUnit = "C";       ///< Temperature unit (C, F)
+    
+    // Sensor calibration settings
+    float pressureOffset = 0.0f;      ///< Pressure sensor offset correction
+    float pressureScale = 1.0f;       ///< Pressure sensor scaling factor
+    float tempOffset = 0.0f;          ///< Temperature sensor offset correction
+    float tempScale = 1.0f;           ///< Temperature sensor scaling factor
 };
 
 //=============================================================================

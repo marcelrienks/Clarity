@@ -10,6 +10,7 @@
 #include "managers/interrupt_manager.h"
 #include "utilities/constants.h"
 #include <esp32-hal-log.h>
+#include <cstring>
 
 // External references to global managers (defined in main.cpp)
 extern std::unique_ptr<PanelManager> panelManager;
@@ -91,12 +92,12 @@ void InterruptCallbacks::LockDisengagedActivate(void* context) {
 
 void InterruptCallbacks::LightsOnActivate(void* context) {
     log_i("LightsOnActivate() - Setting NIGHT theme");
-    styleManager->ApplyTheme(Themes::NIGHT);
+    styleManager->SetTheme(Themes::NIGHT);
 }
 
 void InterruptCallbacks::LightsOffActivate(void* context) {
     log_i("LightsOffActivate() - Setting DAY theme");
-    styleManager->ApplyTheme(Themes::DAY);
+    styleManager->SetTheme(Themes::DAY);
 }
 
 //=============================================================================
@@ -157,8 +158,8 @@ void InterruptCallbacks::ShortPressActivate(void* context) {
     // Execute panel-specific short press action
     if (strcmp(currentPanel, PanelNames::OIL) == 0) {
         log_d("Short press on OIL panel - cycling to next panel");
-        panelManager->CreateAndLoadPanel(PanelNames::WATER, false);
-    } else if (strcmp(currentPanel, PanelNames::WATER) == 0) {
+        panelManager->CreateAndLoadPanel(PanelNames::KEY, false);
+    } else if (strcmp(currentPanel, PanelNames::KEY) == 0) {
         log_d("Short press on WATER panel - cycling to OIL panel");
         panelManager->CreateAndLoadPanel(PanelNames::OIL, false);
     }
@@ -181,10 +182,10 @@ void InterruptCallbacks::LongPressActivate(void* context) {
     const char* currentTheme = styleManager->GetCurrentTheme();
     if (strcmp(currentTheme, Themes::DAY) == 0) {
         log_d("Long press - switching from DAY to NIGHT theme");
-        styleManager->ApplyTheme(Themes::NIGHT);
+        styleManager->SetTheme(Themes::NIGHT);
     } else {
         log_d("Long press - switching from NIGHT to DAY theme");
-        styleManager->ApplyTheme(Themes::DAY);
+        styleManager->SetTheme(Themes::DAY);
     }
     
     // Clear the action from sensor

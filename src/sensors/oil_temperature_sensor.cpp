@@ -15,6 +15,16 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
     currentReading_ = 0;
 }
 
+/// @brief Constructor for OilTemperatureSensor with preference service for calibration
+OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs)
+    : gpioProvider_(gpioProvider), preferenceService_(preferenceService), updateIntervalMs_(updateRateMs)
+{
+    log_v("OilTemperatureSensor() constructor with preference service called");
+    // Set default unit to Celsius
+    targetUnit_ = "C";
+    currentReading_ = 0;
+}
+
 // Core Functionality Methods
 
 /// @brief Initialize the oil temperature sensor hardware
@@ -111,15 +121,27 @@ int32_t OilTemperatureSensor::ReadRawValue()
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
     log_v("ConvertReading() called");
-    // Convert ADC value directly to requested temperature unit
+    
+    // Apply calibration if preference service is available
+    float calibratedValue = static_cast<float>(rawValue);
+    if (preferenceService_)
+    {
+        const Configs& config = preferenceService_->GetConfig();
+        calibratedValue = (calibratedValue * config.tempScale) + config.tempOffset;
+        log_v("Applied calibration: raw=%d, offset=%.1f, scale=%.3f, calibrated=%.1f", 
+              rawValue, config.tempOffset, config.tempScale, calibratedValue);
+    }
+    
+    // Convert calibrated ADC value to requested temperature unit
     // Base calibration: 0-4095 ADC = 0-120°C
+    int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
 
     if (targetUnit_ == "F")
     {
         // Direct conversion to Fahrenheit
         // ADC 0-4095 maps to 32-248°F (0-120°C converted)
         // Formula: F = (rawValue * (248-32) / 4095) + 32
-        return (rawValue *
+        return (calibratedRaw *
                 (SensorConstants::TEMPERATURE_MAX_FAHRENHEIT - SensorConstants::TEMPERATURE_MIN_FAHRENHEIT)) /
                    SensorHelper::ADC_MAX_VALUE +
                SensorConstants::TEMPERATURE_MIN_FAHRENHEIT;
@@ -128,6 +150,6 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
     {
         // Direct conversion to Celsius (default)
         // ADC 0-4095 maps to 0-120°C
-        return (rawValue * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
+        return (calibratedRaw * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
     }
 }

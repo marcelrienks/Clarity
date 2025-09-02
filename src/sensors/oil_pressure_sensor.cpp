@@ -15,6 +15,16 @@ OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, int updateRate
     currentReading_ = 0;
 }
 
+/// @brief Constructor for OilPressureSensor with preference service for calibration
+OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs)
+    : gpioProvider_(gpioProvider), preferenceService_(preferenceService), updateIntervalMs_(updateRateMs)
+{
+    log_v("OilPressureSensor() constructor with preference service called");
+    // Set default unit to Bar
+    targetUnit_ = "Bar";
+    currentReading_ = 0;
+}
+
 // Core Functionality Methods
 
 /// @brief Initialize the oil pressure sensor hardware
@@ -112,22 +122,34 @@ int32_t OilPressureSensor::ReadRawValue()
 int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 {
     log_v("ConvertReading() called");
-    // Convert ADC value to requested pressure unit
+    
+    // Apply calibration if preference service is available
+    float calibratedValue = static_cast<float>(rawValue);
+    if (preferenceService_)
+    {
+        const Configs& config = preferenceService_->GetConfig();
+        calibratedValue = (calibratedValue * config.pressureScale) + config.pressureOffset;
+        log_v("Applied calibration: raw=%d, offset=%.3f, scale=%.3f, calibrated=%.1f", 
+              rawValue, config.pressureOffset, config.pressureScale, calibratedValue);
+    }
+    
+    // Convert calibrated ADC value to requested pressure unit
     // Base calibration: 0-4095 ADC = 0-10 Bar
+    int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
 
     if (targetUnit_ == "PSI")
     {
         // Map 0-4095 ADC to 0-145 PSI (0-10 Bar equivalent)
-        return (rawValue * SensorConstants::PRESSURE_MAX_PSI) / SensorHelper::ADC_MAX_VALUE;
+        return (calibratedRaw * SensorConstants::PRESSURE_MAX_PSI) / SensorHelper::ADC_MAX_VALUE;
     }
     else if (targetUnit_ == "kPa")
     {
         // Map 0-4095 ADC to 0-1000 kPa (0-10 Bar equivalent)
-        return (rawValue * SensorConstants::PRESSURE_MAX_KPA) / SensorHelper::ADC_MAX_VALUE;
+        return (calibratedRaw * SensorConstants::PRESSURE_MAX_KPA) / SensorHelper::ADC_MAX_VALUE;
     }
     else
     {
         // Default Bar mapping: 0-4095 ADC to 0-10 Bar
-        return (rawValue * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
+        return (calibratedRaw * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
     }
 }

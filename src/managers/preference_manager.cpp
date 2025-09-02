@@ -106,6 +106,24 @@ void PreferenceManager::LoadConfig()
     {
         config.tempUnit = std::string(doc[JsonDocNames::TEMP_UNIT].as<const char *>());
     }
+
+    // Load calibration settings
+    if (!doc[JsonDocNames::PRESSURE_OFFSET].isNull())
+    {
+        config.pressureOffset = doc[JsonDocNames::PRESSURE_OFFSET].as<float>();
+    }
+    if (!doc[JsonDocNames::PRESSURE_SCALE].isNull())
+    {
+        config.pressureScale = doc[JsonDocNames::PRESSURE_SCALE].as<float>();
+    }
+    if (!doc[JsonDocNames::TEMP_OFFSET].isNull())
+    {
+        config.tempOffset = doc[JsonDocNames::TEMP_OFFSET].as<float>();
+    }
+    if (!doc[JsonDocNames::TEMP_SCALE].isNull())
+    {
+        config.tempScale = doc[JsonDocNames::TEMP_SCALE].as<float>();
+    }
 }
 
 /// @brief Save the current configuration to preferences_
@@ -126,6 +144,12 @@ void PreferenceManager::SaveConfig()
     doc[JsonDocNames::UPDATE_RATE] = config.updateRate;
     doc[JsonDocNames::PRESSURE_UNIT] = config.pressureUnit.c_str();
     doc[JsonDocNames::TEMP_UNIT] = config.tempUnit.c_str();
+    
+    // Serialize calibration settings
+    doc[JsonDocNames::PRESSURE_OFFSET] = config.pressureOffset;
+    doc[JsonDocNames::PRESSURE_SCALE] = config.pressureScale;
+    doc[JsonDocNames::TEMP_OFFSET] = config.tempOffset;
+    doc[JsonDocNames::TEMP_SCALE] = config.tempScale;
 
     // Serialize to JSON string
     String jsonString;
@@ -201,6 +225,14 @@ std::string PreferenceManager::GetPreference(const std::string &key) const
         return config.pressureUnit;
     if (key == "temp_unit")
         return config.tempUnit;
+    if (key == "pressure_offset")
+        return std::to_string(config.pressureOffset);
+    if (key == "pressure_scale")
+        return std::to_string(config.pressureScale);
+    if (key == "temp_offset")
+        return std::to_string(config.tempOffset);
+    if (key == "temp_scale")
+        return std::to_string(config.tempScale);
 
     log_w("Unknown preference key: %s", key.c_str());
     return "";
@@ -240,6 +272,22 @@ void PreferenceManager::SetPreference(const std::string &key, const std::string 
     {
         config.tempUnit = value;
     }
+    else if (key == "pressure_offset")
+    {
+        config.pressureOffset = std::stof(value);
+    }
+    else if (key == "pressure_scale")
+    {
+        config.pressureScale = std::stof(value);
+    }
+    else if (key == "temp_offset")
+    {
+        config.tempOffset = std::stof(value);
+    }
+    else if (key == "temp_scale")
+    {
+        config.tempScale = std::stof(value);
+    }
     else
     {
         log_w("Unknown preference key: %s", key.c_str());
@@ -253,7 +301,8 @@ bool PreferenceManager::HasPreference(const std::string &key) const
 {
     log_v("HasPreference() called");
     bool hasKey = (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
-                   key == "update_rate" || key == "pressure_unit" || key == "temp_unit");
+                   key == "update_rate" || key == "pressure_unit" || key == "temp_unit" ||
+                   key == "pressure_offset" || key == "pressure_scale" || key == "temp_offset" || key == "temp_scale");
     log_d("Checking preference key: %s, exists: %s", key.c_str(), hasKey ? "true" : "false");
     return hasKey;
 }

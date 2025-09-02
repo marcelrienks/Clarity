@@ -285,6 +285,10 @@ struct JsonDocNames
     static constexpr const char *UPDATE_RATE = "update_rate";         ///< Update rate setting
     static constexpr const char *PRESSURE_UNIT = "pressure_unit";     ///< Pressure unit setting
     static constexpr const char *TEMP_UNIT = "temp_unit";             ///< Temperature unit setting
+    static constexpr const char *PRESSURE_OFFSET = "pressure_offset"; ///< Pressure sensor offset calibration
+    static constexpr const char *PRESSURE_SCALE = "pressure_scale";   ///< Pressure sensor scale calibration
+    static constexpr const char *TEMP_OFFSET = "temp_offset";         ///< Temperature sensor offset calibration
+    static constexpr const char *TEMP_SCALE = "temp_scale";           ///< Temperature sensor scale calibration
 };
 
 //=============================================================================

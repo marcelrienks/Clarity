@@ -81,7 +81,12 @@ class ConfigPanel : public IPanel
         SplashSubmenu,
         SplashDurationSubmenu,
         PressureUnitSubmenu,
-        TempUnitSubmenu
+        TempUnitSubmenu,
+        CalibrationSubmenu,
+        PressureOffsetSubmenu,
+        PressureScaleSubmenu,
+        TempOffsetSubmenu,
+        TempScaleSubmenu
     };
 
     // Private methods
@@ -91,6 +96,7 @@ class ConfigPanel : public IPanel
     void EnterSubmenu(MenuState submenu);
     void ExitSubmenu();
     void UpdateSubmenuItems();
+    void UpdateCalibration(const std::string& key, float value);
 
     // Static callback
     static void ShowPanelCompletionCallback(lv_event_t *event);
