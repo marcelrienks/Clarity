@@ -6,7 +6,8 @@
       "Bash(git config:*)",
       "Read(/usr/local/**)",
       "Read(/Users/marcelrienks/.platformio/penv/bin/**)",
-      "Bash(~/.platformio/penv/bin/pio run -e debug-local)"
+      "Bash(~/.platformio/penv/bin/pio run -e debug-local)",
+      "Bash(find:*)"
     ],
     "deny": [],
     "ask": []
