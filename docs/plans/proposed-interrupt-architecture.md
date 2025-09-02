@@ -25,9 +25,16 @@ enum class Priority : uint8_t {
     CRITICAL = 2     // Highest priority (e.g., key, errors)
 };
 
+enum class TriggerType : uint8_t {
+    PANEL = 0,       // Panel switching triggers
+    STYLE = 1,       // Style/theme changing triggers
+    FUNCTION = 2     // Function execution triggers
+};
+
 struct Trigger {
     const char* id;                          // Unique identifier
     Priority priority;                       // Execution priority (CRITICAL > IMPORTANT > NORMAL)
+    TriggerType type;                        // Type classification (Panel, Style, Function)
     
     // Dual-state functions - no context needed
     void (*activateFunc)();                  // Execute when sensor goes ACTIVE
@@ -38,7 +45,7 @@ struct Trigger {
     
     // Override behavior - only applies to activation
     bool canBeOverriddenOnActivate;          // Can other triggers override activation?
-    bool isActive;                           // Currently active (set by activation only)
+    bool isActive;                           // Currently active (true after activate, false after deactivate)
     
     // Execution methods
     void ExecuteActivate() {
@@ -127,40 +134,55 @@ private:
     }
     
     void HandleActivation(Trigger& trigger) {
-        // Check if this activation can be overridden
-        Trigger* blockingTrigger = FindBlockingTrigger(trigger);
+        // Check for higher priority active triggers
+        Trigger* higherPriorityTrigger = FindHigherPriorityActiveTrigger(trigger);
         
-        if (blockingTrigger) {
-            // Re-execute the blocking trigger instead
-            log_d("Activation of '%s' blocked by '%s'", trigger.id, blockingTrigger->id);
-            blockingTrigger->ExecuteActivate();
-        } else {
+        if (!higherPriorityTrigger) {
             log_d("Executing activation for '%s'", trigger.id);
-            trigger.ExecuteActivate();
+            trigger.ExecuteActivate();  // Execute and set active
+        } else {
+            log_d("Activation of '%s' suppressed by higher priority '%s'", 
+                  trigger.id, higherPriorityTrigger->id);
+            trigger.isActive = true;     // Only mark active, don't execute
         }
     }
     
     void HandleDeactivation(Trigger& trigger) {
         log_d("Executing deactivation for '%s'", trigger.id);
-        trigger.ExecuteDeactivate();
+        trigger.ExecuteDeactivate();  // Execute and set inactive
+        
+        // Find highest priority active trigger of same type
+        Trigger* sameTypeTrigger = FindHighestPrioritySameTypeTrigger(trigger.type);
+        if (sameTypeTrigger) {
+            log_d("Re-activating same-type trigger '%s'", sameTypeTrigger->id);
+            sameTypeTrigger->ExecuteActivate();
+        }
     }
     
-    Trigger* FindBlockingTrigger(const Trigger& candidate) {
-        if (candidate.canBeOverriddenOnActivate) {
-            return nullptr; // This trigger allows overrides
-        }
-        
-        // Look for higher priority active triggers that cannot be overridden
+    Trigger* FindHigherPriorityActiveTrigger(const Trigger& candidate) {
+        // Look for any active trigger with higher priority
         for (auto& activeTrigger : triggers_) {
             if (activeTrigger.isActive && 
-                !activeTrigger.canBeOverriddenOnActivate &&
                 activeTrigger.priority > candidate.priority &&
                 &activeTrigger != &candidate) {
                 return &activeTrigger;
             }
         }
-        
         return nullptr;
+    }
+    
+    Trigger* FindHighestPrioritySameTypeTrigger(TriggerType type) {
+        Trigger* highestPriority = nullptr;
+        
+        for (auto& trigger : triggers_) {
+            if (trigger.isActive && trigger.type == type) {
+                if (!highestPriority || trigger.priority > highestPriority->priority) {
+                    highestPriority = &trigger;
+                }
+            }
+        }
+        
+        return highestPriority;
     }
 };
 ```
@@ -170,7 +192,7 @@ private:
 class ActionHandler : public IHandler {
 private:
     std::vector<Action> actions_;
-    std::unique_ptr<ActionButtonSensor> actionButtonSensor_;  // Handler owns action sensor
+    std::unique_ptr<ActionSensor> actionButtonSensor_;  // Handler owns action sensor
     
     // Button timing constants
     static constexpr uint32_t SHORT_PRESS_MIN_MS = 50;
@@ -227,6 +249,7 @@ std::vector<Trigger> systemTriggers = {
     {
         .id = "key_present",
         .priority = Priority::CRITICAL,
+        .type = TriggerType::PANEL,
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::KEY); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = keyPresentSensor.get(),
@@ -236,6 +259,7 @@ std::vector<Trigger> systemTriggers = {
     {
         .id = "key_not_present", 
         .priority = Priority::CRITICAL,
+        .type = TriggerType::PANEL,
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::KEY); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = keyNotPresentSensor.get(),
@@ -247,6 +271,7 @@ std::vector<Trigger> systemTriggers = {
     {
         .id = "lock",
         .priority = Priority::IMPORTANT,
+        .type = TriggerType::PANEL,
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::LOCK); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = lockSensor.get(),
@@ -258,6 +283,7 @@ std::vector<Trigger> systemTriggers = {
     {
         .id = "lights",
         .priority = Priority::NORMAL,
+        .type = TriggerType::STYLE,
         .activateFunc = []() { StyleManager::Instance().SetTheme(Theme::NIGHT); },
         .deactivateFunc = []() { StyleManager::Instance().SetTheme(Theme::DAY); },
         .sensor = lightsSensor.get(),
@@ -269,6 +295,7 @@ std::vector<Trigger> systemTriggers = {
     {
         .id = "error",
         .priority = Priority::CRITICAL,
+        .type = TriggerType::PANEL,
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::ERROR); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = errorSensor.get(),

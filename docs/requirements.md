@@ -177,6 +177,124 @@ Triggers monitor GPIO state transitions and execute dual functions based on stat
 - No repeated execution for maintained states
 - Eliminates performance issues from redundant operations
 
+**Priority and Type-Based Execution**:
+- **Activation Logic**: 
+  - If no higher-priority active triggers: Execute activateFunc(), set isActive = true
+  - If higher-priority trigger active: Only set isActive = true (suppress function execution)
+- **Deactivation Logic**:
+  - Always execute deactivateFunc(), set isActive = false
+  - Find highest-priority active trigger of same TriggerType
+  - If found, execute that trigger's activateFunc() for type-based restoration
+
+**Trigger Priority Hierarchy**:
+- **CRITICAL Priority**: 
+  - Key Present (PANEL type)
+  - Key Not Present (PANEL type)
+  - Error Occurred (PANEL type)
+- **IMPORTANT Priority**:
+  - Lock (PANEL type)
+- **NORMAL Priority**:
+  - Lights (STYLE type)
+- **Actions** (separate from triggers):
+  - Short Press (no priority - event-based)
+  - Long Press (no priority - event-based)
+
+**Trigger Interaction Rules and Scenarios**:
+
+**Scenario 1: Lock Active + Key Present Becomes Active**
+- Initial: Lock trigger active, Lock panel showing
+- Key Present sensor goes HIGH → Key Present trigger attempts activation
+- Key Present (CRITICAL) has higher priority than Lock (IMPORTANT)
+- Result: Key Present activateFunc() executes, Key panel displays
+- Both triggers remain active (Lock.isActive = true, KeyPresent.isActive = true)
+
+**Scenario 2: Lock Active + Key Present Active, Then Key Present Deactivates**
+- Initial: Both Lock and Key Present active, Key panel showing (last activated)
+- Key Present sensor goes LOW → Key Present trigger deactivates
+- System finds active same-type triggers (PANEL type): Lock is found
+- Result: Lock's activateFunc() executes, Lock panel displays
+- Final state: Lock.isActive = true, KeyPresent.isActive = false
+
+**Scenario 3: Multiple Triggers Activate in Sequence**
+- Step 1: Lights sensor HIGH → Lights trigger activates (NORMAL/STYLE), night theme applied
+- Step 2: Lock sensor HIGH → Lock trigger activates (IMPORTANT/PANEL), Lock panel displays
+- Step 3: Key Present sensor HIGH → Key Present activates (CRITICAL/PANEL), Key panel displays
+- All three triggers remain active with their respective states set
+
+**Scenario 4: Cascading Deactivation with Type-Based Restoration**
+- Initial: Key Present, Lock, and Error all active (all PANEL type), Error panel showing
+- Error clears → Error trigger deactivates
+- System finds highest priority active PANEL trigger: Key Present (CRITICAL)
+- Key Present's activateFunc() executes, Key panel displays
+- If Key Present then deactivates → Lock's activateFunc() executes (next highest PANEL)
+- If Lock then deactivates → No PANEL triggers active, restore to last user panel
+
+**Scenario 5: Different Type Triggers (No Interaction)**
+- Initial: Lights trigger active (NORMAL/STYLE), night theme applied
+- Lock trigger activates (IMPORTANT/PANEL) → Lock panel displays
+- Lights remains active, theme unchanged
+- Lock deactivates → No other PANEL triggers, restore to last user panel
+- Lights still active, theme remains night mode
+
+**Scenario 6: Priority Suppression During Activation**
+- Initial: Key Present active (CRITICAL/PANEL), Key panel showing
+- Lock sensor goes HIGH → Lock trigger attempts activation
+- Lock (IMPORTANT) has lower priority than active Key Present (CRITICAL)
+- Result: Lock.isActive set to true, but activateFunc() NOT executed
+- Key panel remains displayed (no visual change)
+
+**Scenario 7: Error Override Behavior**
+- Any state + Error occurs → Error trigger activates (CRITICAL/PANEL)
+- Error panel displays regardless of other active triggers
+- When error clears, system finds next highest priority PANEL trigger
+- Executes that trigger's activateFunc() or restores user panel if none
+
+**Scenario 8: Complex Multi-Trigger Interaction**
+- Initial: User viewing Oil panel
+- Step 1: Lock goes HIGH → Lock activates, Lock panel shows
+- Step 2: Key Present goes HIGH → Key Present activates, Key panel shows (Lock still active)
+- Step 3: Error occurs → Error activates, Error panel shows (Lock, Key Present still active)
+- Step 4: Error clears → Error deactivates, Key Present reactivates (highest PANEL), Key panel shows
+- Step 5: Key Present goes LOW → Key Present deactivates, Lock reactivates, Lock panel shows
+- Step 6: Lock goes LOW → Lock deactivates, restore to Oil panel (last user panel)
+
+**Scenario 9: Key Present vs Key Not Present (Mutual Exclusion)**
+- These are physically exclusive states (same key, different GPIO pins)
+- Only one can be active at a time based on physical key position
+- Both are CRITICAL/PANEL, so last activated would win if both somehow active
+- In practice, one deactivates as the other activates
+
+**Trigger State Truth Table**:
+
+| Active Triggers | Priority Levels | Current Panel | Explanation |
+|----------------|-----------------|---------------|-------------|
+| None | - | Last User Panel | Default state, user-driven navigation |
+| Lock only | IMPORTANT | Lock Panel | Single trigger active |
+| Key Present only | CRITICAL | Key Panel | Single trigger active |
+| Lock + Key Present | IMP + CRIT | Key Panel | Higher priority (Key) displays |
+| Lock + Lights | IMP + NORM | Lock Panel | Different types, PANEL wins |
+| Key + Lock + Error | CRIT + IMP + CRIT | Error Panel | Last CRITICAL activated |
+| All triggers | All levels | Highest PANEL | Last activated among highest priority |
+
+**Deactivation Restoration Chain**:
+
+| Deactivating Trigger | Other Active PANEL Triggers | Result |
+|---------------------|----------------------------|---------|
+| Error | Key Present, Lock | Key Panel (highest priority) |
+| Key Present | Lock | Lock Panel (next in chain) |
+| Lock | None | User Panel (fallback) |
+| Key Present | Error, Lock | Error Panel (if Error is CRITICAL) |
+| Any PANEL | Different type triggers | User Panel (no same-type active) |
+
+**Key Rules Summary**:
+1. **Last Activated Wins**: Among same priority, the most recently activated trigger's panel shows
+2. **Higher Priority Blocks**: Lower priority triggers can't execute activation when higher priority active
+3. **Type-Based Restoration**: Only same-type triggers participate in restoration chain
+4. **State Persistence**: Triggers remain active even when their functions are suppressed
+5. **User Panel Fallback**: When no PANEL triggers active, restore to last user-initiated panel
+6. **Type Isolation**: STYLE triggers (Lights) don't affect PANEL trigger restoration chains
+7. **Activation Order Matters**: The sequence of activation determines which panel shows among same priority
+
 **Interrupt Structure**:
 
 For complete interrupt structure details, see: **[Architecture Document](architecture.md#coordinated-interrupt-system-architecture)**
@@ -210,7 +328,7 @@ All sensors inherit from BaseSensor for consistent change detection. For impleme
 
 **Sensor Ownership (v4.0)**:
 - **TriggerHandler**: Creates and owns GPIO sensors for state monitoring (Key, Lock, Lights sensors)
-- **ActionHandler**: Creates and owns button sensor for event processing (ActionButtonSensor)  
+- **ActionHandler**: Creates and owns button sensor for event processing (ActionSensor)  
 - **Data Panels**: Create own data sensors internally (Oil pressure/temperature sensors)
 - **Display-Only Panels**: Create only components, no sensors (receive state from handlers)
 
@@ -224,7 +342,7 @@ For complete ownership model, see: **[Architecture Document](architecture.md#mem
 
 **Architecture Principles**: See **[Architecture Document](architecture.md)** for complete constraints and restoration logic.
 
-**Multi-Trigger Scenarios**: See **[Test Scenarios Document](scenario.md)** for complete behavior examples.
+**Multi-Trigger Scenarios**: Comprehensive trigger interaction scenarios and priority rules are documented above in the "Trigger Interaction Rules and Scenarios" section.
 
 **Key Sensor Architecture**: See **[Architecture Document](architecture.md#sensor-architecture)** for complete split sensor design and implementation requirements.
 
@@ -246,7 +364,7 @@ Every panel implements the IActionService interface providing consistent button 
 - **Processing**: Action-based interrupts with event flag processing
 
 **Button Integration Flow (v4.0)**:
-1. **Button Press Detection**: ActionButtonSensor detects press type and duration
+1. **Button Press Detection**: ActionSensor detects press type and duration
 2. **Event Processing**: ActionHandler receives button events and sets action flags
 3. **Action Evaluation**: Actions evaluate for pending button events
 4. **Function Execution**: Current panel's function executed via ActionHandler
@@ -272,10 +390,10 @@ Errors are integrated into the unified interrupt system as Triggers with CRITICA
 Trigger errorTrigger = {
     .id = "error_occurred",
     .priority = Priority::CRITICAL,
+    .type = TriggerType::PANEL,
     .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::ERROR); },
     .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
     .sensor = &errorSensor,
-    .canBeOverriddenOnActivate = false,
     .isActive = false
 };
 ```
@@ -318,17 +436,17 @@ Separate structures for Triggers (state-based) and Actions (event-based).
 struct Trigger {
     const char* id;                          // Unique identifier
     Priority priority;                       // Execution priority (CRITICAL > IMPORTANT > NORMAL)
+    TriggerType type;                        // Type classification (PANEL, STYLE, FUNCTION)
     
     // Dual-state functions - no context needed (singleton calls)
-    void (*activateFunc)();                  // Execute when sensor goes ACTIVE
-    void (*deactivateFunc)();                // Execute when sensor goes INACTIVE
+    void (*activateFunc)();                  // Execute when trigger should activate
+    void (*deactivateFunc)();                // Execute when trigger should deactivate
     
     // State association
     BaseSensor* sensor;                      // Associated sensor (1:1)
     
-    // Override behavior
-    bool canBeOverriddenOnActivate;          // Can other triggers override?
-    bool isActive;                           // Currently active
+    // State management
+    bool isActive;                           // Currently active (true after activate, false after deactivate)
 };
 ```
 
@@ -363,10 +481,10 @@ Triggers and Actions are registered at startup as separate struct instances:
 Trigger keyPresentTrigger = {
     .id = "key_present",
     .priority = Priority::CRITICAL,
+    .type = TriggerType::PANEL,
     .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::KEY); },
     .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
     .sensor = &keyPresentSensor,
-    .canBeOverriddenOnActivate = false,
     .isActive = false
 };
 
@@ -578,7 +696,7 @@ protected:
   - Methods: `GetLightsState()`, `HasStateChanged()`
   - No interrupt attachment - no destructor needed
 
-- **ActionButtonSensor** (GPIO 32): User input button
+- **ActionSensor** (GPIO 32): User input button
   - Debouncing and timing logic
   - Owned by QueuedHandler
 

@@ -81,33 +81,40 @@ enum class Priority : uint8_t {
     CRITICAL = 2     // Highest priority (e.g., key, errors)
 };
 
+enum class TriggerType : uint8_t {
+    PANEL = 0,       // Panel switching triggers
+    STYLE = 1,       // Style/theme changing triggers
+    FUNCTION = 2     // Function execution triggers
+};
+
 struct Trigger {
     const char* id;                          // Unique identifier
-    Priority priority;                       // Execution priority
+    Priority priority;                       // Execution priority (Critical > Important > Normal)
+    TriggerType type;                        // Type classification (Panel, Style, Function)
     
     // Dual-state functions - no context needed (singleton calls)
-    void (*activateFunc)();                  // Execute when sensor goes ACTIVE
-    void (*deactivateFunc)();                // Execute when sensor goes INACTIVE
+    void (*activateFunc)();                  // Execute when trigger should activate
+    void (*deactivateFunc)();                // Execute when trigger should deactivate
     
     // State association
     BaseSensor* sensor;                      // Associated sensor (1:1)
     
     // Override behavior
     bool canBeOverriddenOnActivate;          // Can other triggers override?
-    bool isActive;                           // Currently active
+    bool isActive;                           // Currently active (true after activate, false after deactivate)
     
     // Execution methods
     void ExecuteActivate() {
         if (activateFunc) {
             activateFunc();
-            isActive = true;
+            isActive = true;  // Set active AFTER executing activate function
         }
     }
     
     void ExecuteDeactivate() {
         if (deactivateFunc) {
             deactivateFunc();
-            isActive = false;
+            isActive = false;  // Set inactive AFTER executing deactivate function
         }
     }
 };
@@ -164,10 +171,15 @@ While both Triggers and Actions are interrupt mechanisms with function pointers 
 
 **Processing Flow**:
 1. **Idle Check**: TriggerHandler::Process() only runs when UI state == IDLE
-2. **State Polling**: For each Trigger, check `sensor->HasStateChanged()`
+2. **State Polling**: For each Trigger (sorted by priority), check `sensor->HasStateChanged()`
 3. **Change Detection**: If state changed, determine if transition is HIGH (activate) or LOW (deactivate)
-4. **Override Logic**: Before activation, check if any higher-priority non-overridable Triggers are active
-5. **Function Execution**: Execute appropriate activate/deactivate function based on state and override logic
+4. **Activation Logic**: 
+   - If no higher-priority active triggers exist: Execute `activateFunc()`, set `isActive = true`
+   - If higher-priority active trigger exists: Set `isActive = true` but do NOT execute function
+5. **Deactivation Logic**:
+   - Execute `deactivateFunc()`, set `isActive = false`
+   - Check for other active triggers of same type
+   - If found, execute highest priority same-type trigger's `activateFunc()`
 
 **State Management Requirements**:
 ```cpp
@@ -242,8 +254,8 @@ Critical system triggers (Key, Error) typically set `canBeOverriddenOnActivate =
 
 **Timing Detection Requirements**:
 ```cpp
-// ActionButtonSensor implements timing logic for press duration
-class ActionButtonSensor : public BaseSensor {
+// ActionSensor implements timing logic for press duration
+class ActionSensor : public BaseSensor {
 private:
     uint32_t pressStartTime_ = 0;
     bool buttonPressed_ = false;
@@ -303,27 +315,51 @@ The system processes interrupts through specialized handlers based on behavior:
 - **ActionHandler**: Processes action events with timing detection
 - **InterruptManager**: Coordinates both handlers with smart restoration logic
 
-#### Priority-Based Override System
-**Trigger Override Logic**: Higher priority non-overridable triggers can block lower priority triggers:
+#### Priority and Type-Based Trigger System
+**Trigger Activation Logic**: Triggers are managed by priority and type:
 
-1. **Trigger State Change**: GPIO sensor detects state transition
-2. **Override Check**: System checks if activation can be overridden
-3. **Blocking Detection**: Finds any active non-overridable triggers
-4. **Smart Execution**: Re-executes blocking trigger or allows new activation
+1. **Trigger State Change**: GPIO sensor detects state transition to HIGH (activation)
+2. **Priority Check**: Find any active triggers with higher priority
+3. **Activation Decision**: 
+   - If no higher-priority active triggers: Execute `activateFunc()`, set `isActive = true`
+   - If higher-priority trigger active: Set `isActive = true` only (no function execution)
+
+**Trigger Deactivation Logic**: Intelligent handling based on trigger type:
+
+1. **Trigger State Change**: GPIO sensor detects state transition to LOW (deactivation)
+2. **Execute Deactivation**: Run `deactivateFunc()`, set `isActive = false`
+3. **Same-Type Check**: Find other active triggers with same `TriggerType`
+4. **Type-Based Restoration**: Execute highest-priority same-type trigger's `activateFunc()`
 
 ```cpp
 void TriggerHandler::HandleActivation(Trigger& trigger) {
-    Trigger* blockingTrigger = FindBlockingTrigger(trigger);
+    // Check for higher priority active triggers
+    Trigger* higherPriorityTrigger = FindHigherPriorityActiveTrigger(trigger);
     
-    if (blockingTrigger) {
-        // Re-execute the blocking trigger instead
-        blockingTrigger->ExecuteActivate();
+    if (!higherPriorityTrigger) {
+        trigger.ExecuteActivate();  // Execute and set active
     } else {
-        // Execute new trigger activation
-        trigger.ExecuteActivate();
+        trigger.isActive = true;     // Only mark active, don't execute
+    }
+}
+
+void TriggerHandler::HandleDeactivation(Trigger& trigger) {
+    trigger.ExecuteDeactivate();  // Execute and set inactive
+    
+    // Find highest priority active trigger of same type
+    Trigger* sameTypeTrigger = FindHighestPrioritySameTypeTrigger(trigger.type);
+    if (sameTypeTrigger) {
+        sameTypeTrigger->ExecuteActivate();  // Re-activate same-type trigger
     }
 }
 ```
+
+**Example Scenario**: Lock and Key triggers (both Panel type):
+- Both triggers active, Key panel showing (higher priority)
+- Key trigger deactivates
+- System finds Lock trigger (same Panel type, still active)
+- Executes Lock trigger's `activateFunc()` to show Lock panel
+- Ensures correct panel is displayed based on active triggers
 
 #### Smart Panel Restoration
 **PanelManager Restoration**: Tracks last user-driven panel for intelligent restoration:
@@ -369,7 +405,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 - **KeyNotPresentSensor** (GPIO 26): Independent class for key not present detection
 - **LockSensor** (GPIO 27): Lock status monitoring
 - **LightsSensor** (GPIO 33): Day/night detection (theme only)
-- **ActionButtonSensor** (GPIO 32): Action input with debouncing
+- **ActionSensor** (GPIO 32): Action input with debouncing
 
 #### Sensor Independence Requirements
 **Architectural Principle**: KeyPresentSensor and KeyNotPresentSensor must be completely separate classes with:
@@ -393,7 +429,7 @@ Each GPIO pin must have exactly one dedicated sensor class:
 
 **v4.0 Ownership Model**: Each GPIO has exactly one sensor instance to prevent resource conflicts:
 - TriggerHandler owns all GPIO sensors (Key, Lock, Lights)
-- ActionHandler owns ActionButtonSensor
+- ActionHandler owns ActionSensor
 - Panels are display-only and must not create sensors
 - No sensor duplication across components
 
@@ -585,7 +621,7 @@ public:
   - KeyNotPresentSensor (GPIO 26) - Key not present detection
   - LockSensor (GPIO 27) - Vehicle lock status
   - LightsSensor (GPIO 33) - Day/night detection
-  - ActionButtonSensor (GPIO 32) - User input sensor
+  - ActionSensor (GPIO 32) - User input sensor
 - **Analog Sensors** (ADC):
   - Oil pressure sensor - Continuous pressure monitoring
   - Oil temperature sensor - Continuous temperature monitoring
@@ -775,7 +811,7 @@ struct UniversalActionInterrupt {
     InterruptEffect effect = InterruptEffect::ACTION_EVENT;
     bool (*evaluationFunc)(void* context);           // HasShortPressEvent / HasLongPressEvent
     void (*activateFunc)(void* context);             // ExecutePanelFunction - calls current panel's function
-    void* sensorContext;                              // ActionButtonSensor
+    void* sensorContext;                              // ActionSensor
     void* serviceContext;                             // PanelManager
     
     // Runtime function injection from current panel
@@ -926,7 +962,7 @@ interruptManager.RegisterInterrupt({
     │   │   ├── LockSensor (GPIO 27)
     │   │   └── LightsSensor (GPIO 33)
     │   └── Creates ActionHandler (owns action sensor)
-    │       └── ActionButtonSensor (GPIO 32)
+    │       └── ActionSensor (GPIO 32)
     └── Creates PanelManager
         └── Creates panels on demand (with providers injected)
             ├── KeyPanel (display-only - creates components, no sensors)

@@ -7,11 +7,11 @@ This diagram illustrates the detailed interrupt processing flow in the v4.0 Trig
 - **Dual Processing Model**: Separate evaluation and execution phases for Triggers vs Actions
 - **Continuous Action Evaluation**: ActionHandler evaluates every main loop iteration for responsiveness
 - **Idle-Only Trigger Processing**: TriggerHandler evaluates and executes only during UI IDLE state
-- **Priority Override System**: Triggers implement sophisticated blocking logic with canBeOverriddenOnActivate flag
+- **Priority and Type System**: Triggers use Priority (Critical/Important/Normal) and Type (Panel/Style/Function) for intelligent execution
 - **Queue-Based Actions**: Actions queue events immediately, execute during idle in registration order
 - **State Change Detection**: Triggers fire only on GPIO state transitions using BaseSensor change detection
-- **Memory Optimized**: Direct singleton calls eliminate context parameters (~96 bytes total system overhead)
-- **Handler Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns ActionButtonSensor
+- **Memory Optimized**: Direct singleton calls eliminate context parameters (estimated ~96 bytes total system overhead)
+- **Handler Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns ActionSensor
 
 For complete architecture details, see: **[Architecture Document](../architecture.md)**
 
@@ -23,14 +23,7 @@ config:
   elk: {}
 ---
 flowchart TD
-    subgraph MainLoop["Main Loop (every iteration)"]
-        Start([Loop Start])
-        LVGL[LVGL Tasks]
-        InterruptMgr[InterruptManager Process]
-        ErrorMgr[Error Manager Process]
-        PanelMgr[Panel Manager Update]
-        LoopEnd([Loop End])
-    end
+    InterruptMgr[InterruptManager Process]
     
     subgraph InterruptProcessing["Interrupt Processing"]
         ActionEval[Action Evaluation<br/>ALWAYS]
@@ -40,14 +33,13 @@ flowchart TD
     end
     
     subgraph ActionHandling["Action Handler Flow"]
-        ActionSensor[ActionButtonSensor<br/>Check State]
+        ActionSensor[ActionSensor<br/>Check State]
         ActionChanged{State<br/>Changed?}
         TimingCheck[Check Press Duration]
         ShortPress{50ms-2000ms<br/>SHORT?}
         LongPress{2000ms-5000ms<br/>LONG?}
         QueueShort[Queue Short Action<br/>hasTriggered = true]
         QueueLong[Queue Long Action<br/>hasTriggered = true]
-        ActionReturn[Return to Main]
     end
     
     subgraph ActionExecution["Action Execution (Idle Only)"]
@@ -63,21 +55,19 @@ flowchart TD
         StateDirection{HIGH or<br/>LOW?}
         ActivateFlow[Activation Flow]
         DeactivateFlow[Deactivation Flow]
-        TriggerComplete[Trigger Complete]
     end
     
     subgraph ActivationFlow["Trigger Activation Flow"]
-        OverrideCheck{canBeOverridden<br/>== true?}
-        FindBlocking[Find Higher Priority<br/>Active Triggers]
-        BlockingFound{Blocking<br/>Found?}
-        ReExecuteBlocking[Re-execute Blocking<br/>Trigger activateFunc]
-        ExecuteActivate[Execute New Trigger<br/>activateFunc<br/>isActive = true]
-        ActivateComplete[Activation Complete]
+        PriorityCheck{Higher Priority<br/>Active Trigger?}
+        ExecuteActivate[Execute Trigger<br/>activateFunc<br/>isActive = true]
+        SetActiveOnly[Set isActive = true<br/>No Function Execution]
     end
     
     subgraph DeactivationFlow["Trigger Deactivation Flow"]
         ExecuteDeactivate[Execute Trigger<br/>deactivateFunc<br/>isActive = false]
-        DeactivateComplete[Deactivation Complete]
+        SameTypeCheck[Find Same Type<br/>Active Triggers]
+        SameTypeFound{Same Type<br/>Found?}
+        ReActivateSameType[Execute Highest Priority<br/>Same Type activateFunc]
     end
     
     subgraph StateDetection["State Change Detection"]
@@ -88,21 +78,13 @@ flowchart TD
         UpdatePrevious[Update Previous<br/>State]
     end
     
-    %% Main Loop Flow
-    Start --> LVGL
-    LVGL --> InterruptMgr
-    InterruptMgr --> ErrorMgr
-    ErrorMgr --> PanelMgr
-    PanelMgr --> LoopEnd
-    LoopEnd --> Start
-    
     %% Interrupt Manager Flow
     InterruptMgr --> ActionEval
     ActionEval --> IdleCheck
     IdleCheck -->|Yes| TriggerProc
-    IdleCheck -->|No| ErrorMgr
+    IdleCheck -->|No| Return1([Return])
     TriggerProc --> ActionExec
-    ActionExec --> ErrorMgr
+    ActionExec --> Return2([Return])
     
     %% Action Evaluation Flow
     ActionEval --> ActionSensor
@@ -113,43 +95,40 @@ flowchart TD
     ShortPress -->|Yes| QueueShort
     ShortPress -->|No| LongPress
     LongPress -->|Yes| QueueLong
-    LongPress -->|No| ActionReturn
+    LongPress -->|No| Return3([Return])
     QueueShort --> IdleCheck
     QueueLong --> IdleCheck
-    ActionReturn --> IdleCheck
     
     %% Action Execution Flow  
     ActionExec --> ActionPending
     ActionPending -->|Yes| ExecuteAction
-    ActionPending -->|No| ErrorMgr
+    ActionPending -->|No| Return4([Return])
     ExecuteAction --> ActionComplete
-    ActionComplete --> ErrorMgr
+    ActionComplete --> Return5([Return])
     
     %% Trigger Processing Flow
     TriggerProc --> TriggerLoop
     TriggerLoop --> SensorCheck
     SensorCheck --> TriggerChanged
     TriggerChanged -->|Yes| StateDirection
-    TriggerChanged -->|No| TriggerComplete
+    TriggerChanged -->|No| Return6([Return])
     StateDirection -->|HIGH| ActivateFlow
     StateDirection -->|LOW| DeactivateFlow
-    TriggerComplete --> ActionExec
     
     %% Activation Flow
-    ActivateFlow --> OverrideCheck
-    OverrideCheck -->|No| ExecuteActivate
-    OverrideCheck -->|Yes| FindBlocking
-    FindBlocking --> BlockingFound
-    BlockingFound -->|Yes| ReExecuteBlocking
-    BlockingFound -->|No| ExecuteActivate
-    ReExecuteBlocking --> ActivateComplete
-    ExecuteActivate --> ActivateComplete
-    ActivateComplete --> TriggerComplete
+    ActivateFlow --> PriorityCheck
+    PriorityCheck -->|No| ExecuteActivate
+    PriorityCheck -->|Yes| SetActiveOnly
+    ExecuteActivate --> Return7([Return])
+    SetActiveOnly --> Return8([Return])
     
     %% Deactivation Flow
     DeactivateFlow --> ExecuteDeactivate
-    ExecuteDeactivate --> DeactivateComplete
-    DeactivateComplete --> TriggerComplete
+    ExecuteDeactivate --> SameTypeCheck
+    SameTypeCheck --> SameTypeFound
+    SameTypeFound -->|Yes| ReActivateSameType
+    SameTypeFound -->|No| Return9([Return])
+    ReActivateSameType --> Return10([Return])
     
     %% State Detection Integration
     SensorCheck --> BaseSensor
@@ -161,7 +140,6 @@ flowchart TD
     UpdatePrevious --> TriggerChanged
     
     %% Styling
-    classDef mainloop fill:#d5e8d4,stroke:#82b366,stroke-width:2px
     classDef interrupt fill:#fff2cc,stroke:#d6b656,stroke-width:2px
     classDef action fill:#e1d5e7,stroke:#9673a6,stroke-width:2px
     classDef trigger fill:#f8cecc,stroke:#b85450,stroke-width:2px
@@ -169,15 +147,13 @@ flowchart TD
     classDef process fill:#dae8fc,stroke:#6c8ebf,stroke-width:2px
     classDef sensor fill:#ffe6cc,stroke:#d79b00,stroke-width:2px
     
-    class Start,LVGL,ErrorMgr,PanelMgr,LoopEnd mainloop
     class InterruptMgr,ActionEval,InterruptProcessing interrupt
     class ActionSensor,TimingCheck,QueueShort,QueueLong,ExecuteAction,ActionHandling,ActionExecution action
-    class TriggerLoop,SensorCheck,ActivateFlow,DeactivateFlow,ExecuteActivate,ExecuteDeactivate,TriggerHandling,ActivationFlow,DeactivationFlow trigger
-    class IdleCheck,ActionChanged,ShortPress,LongPress,TriggerChanged,StateDirection,OverrideCheck,BlockingFound,ActionPending decision
-    class ReExecuteBlocking,ActionComplete,TriggerComplete,ActivateComplete,DeactivateComplete process
+    class TriggerLoop,SensorCheck,ActivateFlow,DeactivateFlow,ExecuteActivate,ExecuteDeactivate,SetActiveOnly,SameTypeCheck,ReActivateSameType,TriggerHandling,ActivationFlow,DeactivationFlow trigger
+    class IdleCheck,ActionChanged,ShortPress,LongPress,TriggerChanged,StateDirection,PriorityCheck,SameTypeFound,ActionPending decision
+    class ActionComplete process
     class BaseSensor,PrevState,CurrentState,StateComparison,UpdatePrevious,StateDetection sensor
     
-    style MainLoop fill:#E8F5E8
     style InterruptProcessing fill:#FFF8DC
     style ActionHandling fill:#F0E6FF
     style ActionExecution fill:#F0E6FF
@@ -192,25 +168,21 @@ flowchart TD
 ### Main Loop Integration
 
 **Continuous Processing Model**:
-1. **LVGL Tasks**: Process UI rendering and animations
-2. **InterruptManager Process**: Coordinate interrupt evaluation and execution
-3. **Error Manager Process**: Handle system error conditions
-4. **Panel Manager Update**: Update current panel display
-5. **Loop Iteration**: Return to start for next cycle
+- **InterruptManager Process**: Starting point that coordinates interrupt evaluation and execution
 
 ### Interrupt Processing Coordination
 
 **InterruptManager Orchestration**:
-- **Action Evaluation**: Always performed every main loop iteration
+- **Action Evaluation**: Always performed every main loop iteration for responsiveness
 - **Idle State Check**: Determines if UI is idle for further processing
 - **Trigger Processing**: Only performed during UI IDLE state
 - **Action Execution**: Only performed during UI IDLE state after Triggers
-- **Processing Order**: Triggers execute before Actions when both pending
+- **Execution Order**: When UI is idle, Triggers execute before Actions (evaluation vs execution phases)
 
 ### Action Handler Flow (Event-Based)
 
 **Continuous Evaluation Model**:
-1. **Sensor Check**: ActionButtonSensor checks GPIO state every iteration
+1. **Sensor Check**: ActionSensor checks GPIO state every iteration
 2. **Change Detection**: Uses BaseSensor change detection template
 3. **Timing Analysis**: Measure press duration for event classification
 4. **Event Queuing**: Set `hasTriggered = true` for valid events
@@ -235,17 +207,17 @@ flowchart TD
 4. **Direction Analysis**: Determine HIGH (activate) vs LOW (deactivate) transition
 5. **Function Execution**: Execute appropriate activate/deactivate function
 
-**Activation Flow with Override Logic**:
-1. **Override Check**: Examine `canBeOverriddenOnActivate` flag
-2. **Blocking Search**: Find higher-priority active non-overridable Triggers
-3. **Resolution Decision**:
-   - **Blocking Found**: Re-execute blocking Trigger's `activateFunc()`
-   - **No Blocking**: Execute new Trigger's `activateFunc()`, set `isActive = true`
+**Activation Flow with Priority Logic**:
+1. **Priority Check**: Find any higher-priority active Triggers
+2. **Activation Decision**:
+   - **No Higher Priority**: Execute `activateFunc()`, set `isActive = true`
+   - **Higher Priority Exists**: Only set `isActive = true` (no function execution)
 
-**Deactivation Flow**:
-1. **Direct Execution**: Execute Trigger's `deactivateFunc()`
-2. **State Update**: Set `isActive = false`
-3. **No Override Logic**: Deactivation cannot be blocked
+**Deactivation Flow with Type-Based Restoration**:
+1. **Execute Deactivation**: Run `deactivateFunc()`, set `isActive = false`
+2. **Same-Type Check**: Find other active Triggers with same Type
+3. **Type Restoration**: Execute highest-priority same-type Trigger's `activateFunc()`
+4. **Example**: Key deactivates → Lock (same Panel type) activates automatically
 
 ### State Change Detection System
 
@@ -297,7 +269,7 @@ public:
 - **Continuous Responsiveness**: Actions always evaluated for immediate event detection
 - **Idle Protection**: Both execution types respect UI idle state for LVGL compatibility
 - **Processing Priority**: Triggers process before Actions when both pending
-- **Memory Efficiency**: Static structures with direct singleton calls (~96 bytes total)
+- **Memory Efficiency**: Static structures with direct singleton calls (estimated ~96 bytes total system)
 
 ### Reliability Features
 - **State Consistency**: BaseSensor change detection prevents false triggers
