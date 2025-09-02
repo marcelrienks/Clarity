@@ -21,7 +21,7 @@
  * @architecture Singleton pattern with static memory allocation for ESP32 safety
  * @memory_optimization Static interrupt array (32 max), 29 bytes per interrupt
  * @performance Smart evaluation intervals: Critical 10ms, Important 25ms, Normal 50ms
- * @handlers PolledHandler for time-based evaluation, QueuedHandler for deferred execution
+ * @handlers TriggerHandler for state-based evaluation, ActionHandler for event-based execution
  */
 class InterruptManager
 {
@@ -41,7 +41,7 @@ public:
     void UnregisterAction(const char* id);
     
     // Panel function injection for new ActionHandler
-    void UpdatePanelFunctions(void (*shortPressFunc)(), void (*longPressFunc)());
+    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
     
     // Handler registration for specialized processing
     void RegisterHandler(std::shared_ptr<IHandler> handler);

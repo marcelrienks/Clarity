@@ -17,7 +17,7 @@
  *
  * @architecture_requirement Part of split sensor design to prevent race conditions
  * @gpio_pin GPIO 26 with pull-down resistor
- * @ownership Created and owned by PolledHandler
+ * @ownership Created and owned by TriggerHandler
  * @change_detection Uses BaseSensor DetectChange template for consistency
  *
  * @usage_context:

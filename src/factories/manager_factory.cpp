@@ -4,8 +4,6 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
-#include "handlers/polled_handler.h"
-#include "handlers/queued_handler.h"
 #include "sensors/button_sensor.h"
 #ifdef CLARITY_DEBUG
 #include "sensors/debug_error_sensor.h"
@@ -14,14 +12,14 @@
 #include "utilities/interrupt_callbacks.h"
 #include <esp32-hal-log.h>
 
-// Factory Methods
+// Implementation Methods
 
-std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                 IStyleService *styleService,
-                                                                 IPreferenceService *preferenceService,
-                                                                 InterruptManager *interruptManager)
+std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
+                                                                      IStyleService *styleService,
+                                                                      IPreferenceService *preferenceService,
+                                                                      InterruptManager *interruptManager)
 {
-    log_v("createPanelManager() called");
+    log_v("CreatePanelManager() called");
 
     if (!display)
     {
@@ -69,9 +67,9 @@ std::unique_ptr<PanelManager> ManagerFactory::createPanelManager(IDisplayProvide
     return panelManager;
 }
 
-std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *theme)
+std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char *theme)
 {
-    log_v("createStyleManager() called");
+    log_v("CreateStyleManager() called");
 
     auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::DAY);
     if (!manager)
@@ -87,9 +85,9 @@ std::unique_ptr<StyleManager> ManagerFactory::createStyleManager(const char *the
 }
 
 
-std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
+std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
 {
-    log_v("createPreferenceManager() called");
+    log_v("CreatePreferenceManager() called");
 
     auto manager = std::make_unique<PreferenceManager>();
     if (!manager)
@@ -106,9 +104,9 @@ std::unique_ptr<PreferenceManager> ManagerFactory::createPreferenceManager()
     return manager;
 }
 
-InterruptManager* ManagerFactory::createInterruptManager(IGpioProvider* gpioProvider)
+InterruptManager* ManagerFactory::CreateInterruptManagerImpl(IGpioProvider* gpioProvider)
 {
-    log_v("createInterruptManager() called");
+    log_v("CreateInterruptManager() called");
 
     if (!gpioProvider) {
         log_e("ManagerFactory: Cannot create InterruptManager - GPIO provider is null");
@@ -134,9 +132,9 @@ InterruptManager* ManagerFactory::createInterruptManager(IGpioProvider* gpioProv
     return manager;
 }
 
-ErrorManager *ManagerFactory::createErrorManager()
+ErrorManager *ManagerFactory::CreateErrorManagerImpl()
 {
-    log_v("createErrorManager() called");
+    log_v("CreateErrorManager() called");
 
     ErrorManager *errorManager = &ErrorManager::Instance();
     if (!errorManager)
@@ -147,4 +145,64 @@ ErrorManager *ManagerFactory::createErrorManager()
 
     log_d("ManagerFactory: ErrorManager created successfully");
     return errorManager;
+}
+
+// IManagerFactory Interface Implementation
+
+std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
+                                                                  IStyleService *styleService,
+                                                                  IPreferenceService *preferenceService,
+                                                                  InterruptManager *interruptManager)
+{
+    return CreatePanelManagerImpl(display, gpio, styleService, preferenceService, interruptManager);
+}
+
+std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManager(const char *theme)
+{
+    return CreateStyleManagerImpl(theme);
+}
+
+std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManager()
+{
+    return CreatePreferenceManagerImpl();
+}
+
+InterruptManager* ManagerFactory::CreateInterruptManager(IGpioProvider* gpioProvider)
+{
+    return CreateInterruptManagerImpl(gpioProvider);
+}
+
+ErrorManager* ManagerFactory::CreateErrorManager()
+{
+    return CreateErrorManagerImpl();
+}
+
+// Static Convenience Methods (for backward compatibility)
+
+std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerStatic(IDisplayProvider *display, IGpioProvider *gpio,
+                                                                        IStyleService *styleService,
+                                                                        IPreferenceService *preferenceService,
+                                                                        InterruptManager *interruptManager)
+{
+    return CreatePanelManagerImpl(display, gpio, styleService, preferenceService, interruptManager);
+}
+
+std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerStatic(const char *theme)
+{
+    return CreateStyleManagerImpl(theme);
+}
+
+std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerStatic()
+{
+    return CreatePreferenceManagerImpl();
+}
+
+InterruptManager* ManagerFactory::CreateInterruptManagerStatic(IGpioProvider* gpioProvider)
+{
+    return CreateInterruptManagerImpl(gpioProvider);
+}
+
+ErrorManager* ManagerFactory::CreateErrorManagerStatic()
+{
+    return CreateErrorManagerImpl();
 }

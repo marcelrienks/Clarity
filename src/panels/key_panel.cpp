@@ -3,8 +3,8 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
+#include "handlers/trigger_handler.h"
 #include "managers/interrupt_manager.h"
-#include "handlers/polled_handler.h"
 #include "sensors/key_present_sensor.h"
 #include "sensors/key_not_present_sensor.h"
 #include "utilities/constants.h"
@@ -214,16 +214,16 @@ KeyState KeyPanel::DetermineCurrentKeyState()
     
     // Access the sensors through InterruptManager to check their current states
     InterruptManager& interruptManager = InterruptManager::Instance();
-    auto polledHandler = interruptManager.GetPolledHandler();
+    auto triggerHandler = interruptManager.GetTriggerHandler();
     
-    if (!polledHandler)
+    if (!triggerHandler)
     {
-        log_w("DetermineCurrentKeyState: PolledHandler not available, defaulting to Inactive");
+        log_w("DetermineCurrentKeyState: TriggerHandler not available, defaulting to Inactive");
         return KeyState::Inactive;
     }
     
     // Check key present sensor
-    auto keyPresentSensor = polledHandler->GetKeyPresentSensor();
+    auto keyPresentSensor = triggerHandler->GetKeyPresentSensor();
     if (keyPresentSensor && keyPresentSensor->GetKeyPresentState())
     {
         log_d("DetermineCurrentKeyState: Key present sensor is active - setting Present state");
@@ -231,7 +231,7 @@ KeyState KeyPanel::DetermineCurrentKeyState()
     }
     
     // Check key not present sensor
-    auto keyNotPresentSensor = polledHandler->GetKeyNotPresentSensor();
+    auto keyNotPresentSensor = triggerHandler->GetKeyNotPresentSensor();
     if (keyNotPresentSensor && keyNotPresentSensor->GetKeyNotPresentState())
     {
         log_d("DetermineCurrentKeyState: Key not present sensor is active - setting NotPresent state");

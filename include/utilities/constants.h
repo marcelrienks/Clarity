@@ -124,8 +124,8 @@ enum class Priority
 /// @brief Interrupt source types for coordinated handler system
 enum class InterruptSource
 {
-    POLLED,     ///< GPIO state monitoring (managed by PolledHandler)
-    QUEUED      ///< Button event processing (managed by QueuedHandler)
+    TRIGGER,    ///< GPIO state monitoring (managed by TriggerHandler)
+    ACTION      ///< Button event processing (managed by ActionHandler)
 };
 
 /// @brief Interrupt effect types for simplified execution logic
@@ -134,7 +134,7 @@ enum class InterruptEffect
     LOAD_PANEL,        ///< Panel switching with restoration tracking
     SET_THEME,         ///< Theme changes (non-blocking for restoration)
     SET_PREFERENCE,    ///< Configuration changes
-    BUTTON_ACTION      ///< Panel-specific button functions (QUEUED only)
+    BUTTON_ACTION      ///< Panel-specific button functions (ACTION only)
 };
 
 /// @brief Button action types detected by timing

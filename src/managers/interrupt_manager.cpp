@@ -4,6 +4,13 @@
 #include "handlers/action_handler.h"
 #include "utilities/system_definitions.h"
 #include "utilities/constants.h"
+#include "sensors/key_present_sensor.h"
+#include "sensors/key_not_present_sensor.h"
+#include "sensors/lock_sensor.h"
+#include "sensors/lights_sensor.h"
+#ifdef CLARITY_DEBUG
+#include "sensors/debug_error_sensor.h"
+#endif
 #include <Arduino.h>
 #include <cstring>
 #include "esp32-hal-log.h"
@@ -66,11 +73,15 @@ void InterruptManager::RegisterSystemInterrupts()
     
     // Get system triggers with handler-owned sensors
     auto systemTriggers = SystemDefinitions::GetSystemTriggers(
-        triggerHandler_->GetKeyPresentSensor(),
-        triggerHandler_->GetKeyNotPresentSensor(),
-        triggerHandler_->GetLockSensor(),
-        triggerHandler_->GetLightsSensor(),
-        triggerHandler_->GetDebugErrorSensor()  // May be null, that's fine
+        static_cast<BaseSensor*>(triggerHandler_->GetKeyPresentSensor()),
+        static_cast<BaseSensor*>(triggerHandler_->GetKeyNotPresentSensor()),
+        static_cast<BaseSensor*>(triggerHandler_->GetLockSensor()),
+        static_cast<BaseSensor*>(triggerHandler_->GetLightsSensor()),
+#ifdef CLARITY_DEBUG
+        static_cast<BaseSensor*>(triggerHandler_->GetDebugErrorSensor())
+#else
+        nullptr  // No debug sensor in release builds
+#endif
     );
     
     // Register all system triggers
@@ -146,7 +157,7 @@ void InterruptManager::UnregisterAction(const char* id)
     }
 }
 
-void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(), void (*longPressFunc)())
+void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context)
 {
     log_v("UpdatePanelFunctions() called");
     
@@ -156,7 +167,7 @@ void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(), void (*lon
     }
     
     // Update action handler with new panel functions
-    actionHandler_->UpdatePanelFunctions(shortPressFunc, longPressFunc);
+    actionHandler_->UpdatePanelFunctions(shortPressFunc, longPressFunc, context);
     log_i("Updated panel functions in ActionHandler");
 }
 
@@ -196,7 +207,7 @@ void InterruptManager::CheckRestoration()
     }
     
     // Check if any non-overridable triggers are still active
-    bool hasActiveTrigger = triggerHandler_->HasActiveNonOverridableTriggers();
+    bool hasActiveTrigger = triggerHandler_->HasActiveTriggers();
     
     if (!hasActiveTrigger) {
         log_d("No active non-overridable triggers - restoration may be needed");

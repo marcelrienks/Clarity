@@ -6,10 +6,10 @@
  *
  * @details This interface defines the contract for panels to provide static function pointers
  * for button input handling. The universal button system injects these functions into
- * QUEUED interrupts, enabling all panels to respond to button input consistently.
+ * ACTION handlers, enabling all panels to respond to button input consistently.
  *
  * @design_pattern Function injection pattern with static callbacks for memory safety
- * @execution_flow Panel provides functions → QueuedHandler injects into interrupts → 
+ * @execution_flow Panel provides functions → ActionHandler injects into actions → 
  *                 InterruptManager coordinates execution with panel context
  * @timing Short press: 50ms-2000ms, Long press: 2000ms-5000ms
  *

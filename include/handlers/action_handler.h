@@ -40,7 +40,7 @@ public:
     void EvaluateActions();  // Called every main loop cycle
     
     // Function injection system for dynamic panel functions
-    void UpdatePanelFunctions(void (*shortPressFunc)(), void (*longPressFunc)());
+    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
     void ClearPanelFunctions();
     
     // Button event processing
@@ -58,7 +58,7 @@ public:
 private:
     // Core action processing
     void EvaluateIndividualAction(Action& action);
-    void ExecuteQueuedActions();
+    void ExecutePendingActions();
     void ExecuteAction(const Action& action);  // Legacy compatibility
     bool ShouldTriggerAction(const Action& action);
     
@@ -91,8 +91,9 @@ private:
     unsigned long buttonPressEndTime_ = 0;
     
     // Function injection for dynamic panel functions
-    void (*currentShortPressFunc_)() = nullptr;
-    void (*currentLongPressFunc_)() = nullptr;
+    void (*currentShortPressFunc_)(void*) = nullptr;
+    void (*currentLongPressFunc_)(void*) = nullptr;
+    void* currentPanelContext_ = nullptr;
     
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;

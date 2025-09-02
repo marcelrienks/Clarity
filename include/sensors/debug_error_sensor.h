@@ -48,7 +48,7 @@ class DebugErrorSensor : public ISensor, public BaseSensor
     
     // BaseSensor interface
     bool HasStateChanged() override;
-    void OnInterruptTriggered() override;  // Made public for polled handler access
+    void OnInterruptTriggered() override;  // Made public for trigger handler access
     
     // Get startup time for grace period checking
     unsigned long GetStartupTime() const { return startupTime_; }

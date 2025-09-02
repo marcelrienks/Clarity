@@ -42,8 +42,8 @@ void ActionHandler::Process() {
     ProcessButtonEvents();
     EvaluateActions();
     
-    // Execute queued actions (this will be called during UI IDLE by InterruptManager)
-    ExecuteQueuedActions();
+    // Execute pending actions (this will be called during UI IDLE by InterruptManager)
+    ExecutePendingActions();
 }
 
 bool ActionHandler::RegisterAction(const Action& action) {
@@ -96,7 +96,7 @@ void ActionHandler::EvaluateActions() {
 void ActionHandler::EvaluateIndividualAction(Action& action) {
     if (ShouldTriggerAction(action)) {
         action.hasTriggered = true;
-        log_d("Action '%s' queued", action.id);
+        log_d("Action '%s' triggered", action.id);
     }
 }
 
@@ -119,20 +119,20 @@ bool ActionHandler::ShouldTriggerAction(const Action& action) {
     return false;
 }
 
-void ActionHandler::ExecuteQueuedActions() {
-    // Process all queued actions using the documented Execute method
+void ActionHandler::ExecutePendingActions() {
+    // Process all pending actions using the documented Execute method
     for (size_t i = 0; i < actionCount_; i++) {
         Action& action = actions_[i];
         if (action.hasTriggered) {
             // Use injected panel functions if available, otherwise use action's own function
             if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
                 log_d("Executing injected short press function for action '%s'", action.id);
-                currentShortPressFunc_();
+                currentShortPressFunc_(currentPanelContext_);
                 action.hasTriggered = false;  // Clear manually since we're using injected function
             }
             else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
                 log_d("Executing injected long press function for action '%s'", action.id);
-                currentLongPressFunc_();
+                currentLongPressFunc_(currentPanelContext_);
                 action.hasTriggered = false;  // Clear manually since we're using injected function
             }
             else {
@@ -148,11 +148,11 @@ void ActionHandler::ExecuteAction(const Action& action) {
     // Check if we should use panel function or action's own function
     if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
         log_d("Executing injected short press function for action '%s'", action.id);
-        currentShortPressFunc_();
+        currentShortPressFunc_(currentPanelContext_);
     }
     else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
         log_d("Executing injected long press function for action '%s'", action.id);
-        currentLongPressFunc_();
+        currentLongPressFunc_(currentPanelContext_);
     }
     else if (action.executeFunc) {
         log_d("Executing action function for action '%s'", action.id);
@@ -178,7 +178,7 @@ void ActionHandler::UpdateButtonState() {
 }
 
 void ActionHandler::ProcessButtonEvents() {
-    // This method processes any queued button events
+    // This method processes any pending button events
     // The timing logic is handled in UpdateButtonState() and DetectButtonAction()
     // Reset triggered flags when button is released
     if (buttonPreviouslyPressed_ && !buttonPressed_) {
@@ -261,29 +261,22 @@ Action* ActionHandler::FindAction(const char* id) {
 }
 
 // Function injection system
-void ActionHandler::UpdatePanelFunctions(void (*shortPressFunc)(), void (*longPressFunc)()) {
+void ActionHandler::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context) {
     currentShortPressFunc_ = shortPressFunc;
     currentLongPressFunc_ = longPressFunc;
-    log_d("Panel functions updated - short: %s, long: %s",
-          shortPressFunc ? "set" : "null", longPressFunc ? "set" : "null");
+    currentPanelContext_ = context;
+    log_d("Panel functions updated - short: %s, long: %s, context: %s",
+          shortPressFunc ? "set" : "null", longPressFunc ? "set" : "null", context ? "set" : "null");
 }
 
 void ActionHandler::ClearPanelFunctions() {
     currentShortPressFunc_ = nullptr;
     currentLongPressFunc_ = nullptr;
+    currentPanelContext_ = nullptr;
     log_d("Panel functions cleared");
 }
 
-// Legacy compatibility methods
-void ActionHandler::RegisterInterrupt(struct Interrupt* interrupt) {
-    log_w("ActionHandler::RegisterInterrupt() called - legacy compatibility only");
-    // Could convert Interrupt to Action format if needed
-}
-
-void ActionHandler::UnregisterInterrupt(const char* id) {
-    log_w("ActionHandler::UnregisterInterrupt() called - legacy compatibility only");
-    UnregisterAction(id);
-}
+// Legacy methods removed - not part of new IHandler interface
 
 // Status and diagnostics
 size_t ActionHandler::GetActionCount() const {

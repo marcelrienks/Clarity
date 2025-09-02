@@ -38,7 +38,7 @@
  * class KeyPresentSensor : public ISensor, public BaseSensor {
  * public:
  *     void Init() override {
- *         RegisterPolledInterrupt("key_present", Priority::IMPORTANT, 
+ *         RegisterTrigger("key_present", Priority::IMPORTANT, 
  *                                InterruptEffect::LOAD_PANEL, 200);
  *     }
  *     bool HasStateChanged() {

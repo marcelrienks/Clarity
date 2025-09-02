@@ -248,16 +248,7 @@ Trigger* TriggerHandler::FindTrigger(const char* id) {
     return nullptr;
 }
 
-// Legacy compatibility methods
-void TriggerHandler::RegisterInterrupt(struct Interrupt* interrupt) {
-    log_w("TriggerHandler::RegisterInterrupt() called - legacy compatibility only");
-    // Could convert Interrupt to Trigger format if needed
-}
-
-void TriggerHandler::UnregisterInterrupt(const char* id) {
-    log_w("TriggerHandler::UnregisterInterrupt() called - legacy compatibility only");
-    UnregisterTrigger(id);
-}
+// Legacy methods removed - not part of new IHandler interface
 
 // Status and diagnostics
 size_t TriggerHandler::GetTriggerCount() const {

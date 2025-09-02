@@ -1,7 +1,7 @@
 #include "managers/panel_manager.h"
 
-// Forward declare for singleton instance
-static class PanelManager* instancePtr_;
+// Static instance for singleton pattern
+static PanelManager* instancePtr_ = nullptr;
 #include "interfaces/i_action_service.h"
 #include "interfaces/i_panel_factory.h"
 #include "interfaces/i_component_factory.h"
@@ -377,13 +377,13 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     }
     
     // Inject functions into universal button interrupts
-    interruptManager_->UpdateButtonInterrupts(shortPressFunc, longPressFunc, panelContext);
+    interruptManager_->UpdatePanelFunctions(shortPressFunc, longPressFunc, panelContext);
     
     log_i("Updated universal button interrupts with functions from panel");
 }
 
 // Static instance for singleton pattern
-static PanelManager* instancePtr_ = nullptr;
+// Static instance pointer already declared above
 
 /// @brief Singleton access for new interrupt architecture
 PanelManager& PanelManager::Instance() {

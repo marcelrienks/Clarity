@@ -38,8 +38,9 @@ public:
     
     // IHandler interface
     void Process() override;
-    void RegisterInterrupt(struct Interrupt* interrupt) override;
-    void UnregisterInterrupt(const char* id) override;
+    // Legacy methods - not part of current IHandler interface
+    void RegisterInterrupt(struct Interrupt* interrupt);
+    void UnregisterInterrupt(const char* id);
     void SetEvaluationInterval(unsigned long intervalMs);
     
     // Sensor access for interrupt context

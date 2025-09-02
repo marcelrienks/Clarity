@@ -67,16 +67,16 @@ bool initializeServices()
     log_d("LvglDisplayProvider created successfully");
 
     // Create managers - factories handle all error checking and logging
-    preferenceManager = ManagerFactory::createPreferenceManager();
+    preferenceManager = ManagerFactory::CreatePreferenceManagerStatic();
     // Initialize StyleManager with user's theme preference
     const char *userTheme = preferenceManager->GetConfig().theme.c_str();
-    styleManager = ManagerFactory::createStyleManager(userTheme);
+    styleManager = ManagerFactory::CreateStyleManagerStatic(userTheme);
     // Create InterruptManager first so it can be injected into PanelManager
-    interruptManager = ManagerFactory::createInterruptManager(gpioProvider.get());
+    interruptManager = ManagerFactory::CreateInterruptManagerStatic(gpioProvider.get());
     // Create PanelManager with InterruptManager for button function injection
-    panelManager = ManagerFactory::createPanelManager(displayProvider.get(), gpioProvider.get(), styleManager.get(),
-                                                      preferenceManager.get(), interruptManager);
-    errorManager = ManagerFactory::createErrorManager();
+    panelManager = ManagerFactory::CreatePanelManagerStatic(displayProvider.get(), gpioProvider.get(), styleManager.get(),
+                                                            preferenceManager.get(), interruptManager);
+    errorManager = ManagerFactory::CreateErrorManagerStatic();
 
     // Verify all critical services were created
     bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && styleManager && preferenceManager &&
