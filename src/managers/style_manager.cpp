@@ -2,17 +2,28 @@
 #include <cstring>
 #include <esp32-hal-log.h>
 
+// Static instance for singleton pattern
+static StyleManager* styleInstancePtr_ = nullptr;
+
 // Constructors and Destructors
 StyleManager::StyleManager(const char *theme) : THEME(theme), initialized_(false)
 {
     log_v("StyleManager() constructor called");
     log_d("Creating StyleManager with theme: %s (LVGL styles will be initialized later)", theme);
+    
+    // Set singleton instance
+    styleInstancePtr_ = this;
 }
 
 StyleManager::~StyleManager()
 {
     log_v("~StyleManager() destructor called");
     ResetStyles();
+    
+    // Clear singleton instance
+    if (styleInstancePtr_ == this) {
+        styleInstancePtr_ = nullptr;
+    }
 }
 
 // Core Functionality Methods
@@ -173,6 +184,16 @@ const ThemeColors &StyleManager::GetColours(const char *theme) const
     if (strcmp(theme, Themes::ERROR) == 0) return errorThemeColours_;
     
     return dayThemeColours_;
+}
+
+/// @brief Singleton access for new interrupt architecture
+StyleManager& StyleManager::Instance() {
+    if (!styleInstancePtr_) {
+        log_e("StyleManager::Instance() called before initialization");
+        // In embedded systems, we need a valid instance
+        // This should be set during ManagerFactory initialization
+    }
+    return *styleInstancePtr_;
 }
 
 /// @brief Get function for theme switching that panels can use in their actions

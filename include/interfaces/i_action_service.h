@@ -32,27 +32,49 @@ class IActionService
 public:
     virtual ~IActionService() = default;
 
+    // Legacy interface methods (for backward compatibility with old interrupt system)
+    
     /**
-     * @brief Get static function pointer for short button press (50ms - 2000ms)
+     * @brief Get static function pointer for short button press (50ms - 2000ms) - LEGACY
      * @details Returns static callback function that will be injected into
-     * universal short press interrupt. Function receives panel context.
+     * legacy universal short press interrupt. Function receives panel context.
      * @return Static function pointer with signature: void(*)(void* panelContext)
      */
     virtual void (*GetShortPressFunction())(void* panelContext) = 0;
 
     /**
-     * @brief Get static function pointer for long button press (2000ms - 5000ms)
+     * @brief Get static function pointer for long button press (2000ms - 5000ms) - LEGACY
      * @details Returns static callback function that will be injected into
-     * universal long press interrupt. Function receives panel context.
+     * legacy universal long press interrupt. Function receives panel context.
      * @return Static function pointer with signature: void(*)(void* panelContext)
      */
     virtual void (*GetLongPressFunction())(void* panelContext) = 0;
 
     /**
-     * @brief Get panel context for function execution
+     * @brief Get panel context for function execution - LEGACY
      * @details Returns pointer to panel instance that will be passed to
      * button functions as context parameter for state access.
      * @return void* pointer to panel instance (typically 'this')
      */
     virtual void* GetPanelContext() = 0;
+    
+    // New interface methods for Trigger/Action architecture
+    
+    /**
+     * @brief Get simple static function pointer for short button press - NEW ARCHITECTURE
+     * @details Returns static callback function that will be injected into
+     * ActionHandler. Function uses static context or singleton access.
+     * @return Static function pointer with signature: void(*)()
+     * @note Default implementation returns nullptr (no action)
+     */
+    virtual void (*GetShortPressAction())() { return nullptr; }
+
+    /**
+     * @brief Get simple static function pointer for long button press - NEW ARCHITECTURE  
+     * @details Returns static callback function that will be injected into
+     * ActionHandler. Function uses static context or singleton access.
+     * @return Static function pointer with signature: void(*)()
+     * @note Default implementation returns nullptr (no action)
+     */
+    virtual void (*GetLongPressAction())() { return nullptr; }
 };

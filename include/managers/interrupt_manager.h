@@ -33,18 +33,15 @@ public:
     void Init(IGpioProvider* gpioProvider = nullptr);
     void Process();
     
-    // Pure interrupt registration system
-    bool RegisterInterrupt(const Interrupt& interrupt);
-    void UnregisterInterrupt(const char* id);
-    void ActivateInterrupt(const char* id);
-    void DeactivateInterrupt(const char* id);
-    void UpdateInterruptContext(const char* id, void* context);
-    void UpdateInterruptExecution(const char* id, void (*execute)(void*));
     
-    // Button system - function injection
-    void UpdateButtonInterrupts(void (*shortPressFunc)(void* context), 
-                               void (*longPressFunc)(void* context), 
-                               void* panelContext);
+    // New Trigger/Action system interface
+    bool RegisterTrigger(const Trigger& trigger);
+    void UnregisterTrigger(const char* id);
+    bool RegisterAction(const Action& action);
+    void UnregisterAction(const char* id);
+    
+    // Panel function injection for new ActionHandler
+    void UpdatePanelFunctions(void (*shortPressFunc)(), void (*longPressFunc)());
     
     // Handler registration for specialized processing
     void RegisterHandler(std::shared_ptr<IHandler> handler);
@@ -63,12 +60,10 @@ public:
     bool HasActiveInterrupts() const;
     size_t GetInterruptCount() const;
     
-    // Handler access for context initialization
-    class PolledHandler* GetPolledHandler() const { return polledHandler_.get(); }
-    class QueuedHandler* GetQueuedHandler() const { return queuedHandler_.get(); }
     
-    // Public effect execution for handlers
-    void ExecuteEffect(const Interrupt& interrupt);
+    // New handler access for Trigger/Action architecture
+    class TriggerHandler* GetTriggerHandler() const { return triggerHandler_.get(); }
+    class ActionHandler* GetActionHandler() const { return actionHandler_.get(); }
     
     // Public restoration checking for handlers
     void CheckRestoration();
@@ -79,44 +74,23 @@ private:
     InterruptManager(const InterruptManager&) = delete;
     InterruptManager& operator=(const InterruptManager&) = delete;
     
-    // Interrupt processing - clean separation
-    void EvaluateInterrupts();
-    void ExecuteInterrupts();
-    void ExecuteByEffect(const Interrupt& interrupt);
     
-    // Handler coordination
-    void ProcessHandlers();
-    void UpdateHandlerContexts();
-    
-    // Interrupt flow methods
-    void EvaluateQueuedInterrupts();
-    void EvaluatePolledInterrupts();
-    bool IsUIIdle() const;
-    void ExecuteQueuedInterrupts();
-    void ExecutePolledInterrupts();
+    // Internal system registration
+    void RegisterSystemInterrupts();
     
     // Helper methods
-    Interrupt* FindInterrupt(const char* id);
-    
-    // Effect-specific execution methods
-    void LoadPanelFromInterrupt(const Interrupt& interrupt);
-    void HandleRestoration();
-    void ApplyThemeFromInterrupt(const Interrupt& interrupt);
-    void ApplyPreferenceFromInterrupt(const Interrupt& interrupt);
-    void ExecuteButtonAction(const Interrupt& interrupt);
+    bool IsUIIdle() const;
     
     // Static storage for memory safety
-    static constexpr size_t MAX_INTERRUPTS = 32;
     static constexpr size_t MAX_HANDLERS = 8;
     
-    // Interrupt storage
-    Interrupt interrupts_[MAX_INTERRUPTS];
-    size_t interruptCount_ = 0;
-    
-    // Handler management
+    // Handler management - Legacy and new handlers
     std::vector<std::shared_ptr<IHandler>> handlers_;
-    std::shared_ptr<class PolledHandler> polledHandler_;
-    std::shared_ptr<class QueuedHandler> queuedHandler_;
+    
+    
+    // New Trigger/Action architecture handlers
+    std::shared_ptr<class TriggerHandler> triggerHandler_;
+    std::shared_ptr<class ActionHandler> actionHandler_;
     
     // System state
     bool initialized_ = false;
@@ -126,10 +100,6 @@ private:
     mutable size_t totalEvaluations_ = 0;
     mutable size_t totalExecutions_ = 0;
     
-    // Button function storage for dynamic dispatch
-    void (*currentShortPressFunc_)(void* context) = nullptr;
-    void (*currentLongPressFunc_)(void* context) = nullptr;
-    void* currentPanelContext_ = nullptr;
     
     // GPIO provider reference
     IGpioProvider* gpioProvider_ = nullptr;

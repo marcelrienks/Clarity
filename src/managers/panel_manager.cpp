@@ -1,4 +1,7 @@
 #include "managers/panel_manager.h"
+
+// Forward declare for singleton instance
+static class PanelManager* instancePtr_;
 #include "interfaces/i_action_service.h"
 #include "interfaces/i_panel_factory.h"
 #include "interfaces/i_component_factory.h"
@@ -58,12 +61,20 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
 
     restorationPanelStr_ = PanelNames::OIL;
     restorationPanel = restorationPanelStr_.c_str();
+    
+    // Set singleton instance
+    instancePtr_ = this;
 }
 
 PanelManager::~PanelManager()
 {
     log_v("~PanelManager() destructor called");
     panel_.reset();
+    
+    // Clear singleton instance
+    if (instancePtr_ == this) {
+        instancePtr_ = nullptr;
+    }
 }
 
 // Private Methods
@@ -369,4 +380,87 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     interruptManager_->UpdateButtonInterrupts(shortPressFunc, longPressFunc, panelContext);
     
     log_i("Updated universal button interrupts with functions from panel");
+}
+
+// Static instance for singleton pattern
+static PanelManager* instancePtr_ = nullptr;
+
+/// @brief Singleton access for new interrupt architecture
+PanelManager& PanelManager::Instance() {
+    if (!instancePtr_) {
+        log_e("PanelManager::Instance() called before initialization");
+        // In embedded systems, we need a valid instance
+        // This should be set during ManagerFactory initialization
+    }
+    return *instancePtr_;
+}
+
+/// @brief Handle short button press action (new architecture)
+void PanelManager::HandleShortPress() {
+    log_v("HandleShortPress() called");
+    
+    if (!panel_) {
+        log_w("No active panel for short press action");
+        return;
+    }
+    
+    // Try to cast panel to IActionService to handle press
+    IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
+    if (actionService) {
+        void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
+        void* panelContext = actionService->GetPanelContext();
+        if (shortPressFunc) {
+            log_d("Executing short press action for current panel");
+            shortPressFunc(panelContext);
+        }
+    } else {
+        log_d("Current panel does not support button actions");
+    }
+}
+
+/// @brief Handle long button press action (new architecture)
+void PanelManager::HandleLongPress() {
+    log_v("HandleLongPress() called");
+    
+    if (!panel_) {
+        log_w("No active panel for long press action");
+        return;
+    }
+    
+    // Try to cast panel to IActionService to handle press
+    IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
+    if (actionService) {
+        void (*longPressFunc)(void* context) = actionService->GetLongPressFunction();
+        void* panelContext = actionService->GetPanelContext();
+        if (longPressFunc) {
+            log_d("Executing long press action for current panel");
+            longPressFunc(panelContext);
+        }
+    } else {
+        log_d("Current panel does not support button actions");
+    }
+}
+
+/// @brief Load a panel by name (new architecture)
+void PanelManager::LoadPanel(const char* panelName) {
+    log_i("LoadPanel() called for: %s", panelName);
+    CreateAndLoadPanel(panelName, true);  // Mark as trigger-driven
+}
+
+/// @brief Check restoration and load appropriate panel (new architecture)
+void PanelManager::CheckRestoration() {
+    log_v("CheckRestoration() called");
+    
+    // Check if any CRITICAL or IMPORTANT triggers are still active
+    // For now, assume restoration is needed if we have a restoration panel
+    if (restorationPanel && strlen(restorationPanel) > 0) {
+        log_i("Restoring to panel: %s", restorationPanel);
+        CreateAndLoadPanel(restorationPanel, false);  // Mark as user-driven restoration
+        
+        // Clear restoration panel after restoring
+        restorationPanelStr_.clear();
+        restorationPanel = nullptr;
+    } else {
+        log_d("No restoration panel to restore to");
+    }
 }

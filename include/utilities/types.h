@@ -152,16 +152,32 @@ struct Configs
 //=============================================================================
 
 
-/// @brief Direct trigger mapping structure (replaces trigger objects)
+/// @brief State-based Trigger for GPIO monitoring with dual functions
 struct Trigger
 {
-    const char *triggerId;
-    int pin;
-    TriggerActionType actionType;
-    const char *actionTarget;
-    const char *restoreTarget;
-    TriggerPriority priority;
-    TriggerExecutionState currentState = TriggerExecutionState::INIT;
+    const char* id;                      ///< Static string identifier
+    Priority priority;                   ///< Processing priority (CRITICAL > IMPORTANT > NORMAL)
+    TriggerType type;                    ///< PANEL, STYLE, or FUNCTION
+    void (*activateFunc)();              ///< Function called when trigger activates
+    void (*deactivateFunc)();            ///< Function called when trigger deactivates
+    class BaseSensor* sensor;            ///< Associated sensor for state monitoring
+    bool canBeOverriddenOnActivate;      ///< Can other triggers override activation?
+    bool isActive;                       ///< Current activation state
+    
+    // Execution methods as documented in interrupt-architecture.md
+    void ExecuteActivate() {
+        if (activateFunc) {
+            activateFunc();
+            isActive = true;  // Only activation sets active flag
+        }
+    }
+    
+    void ExecuteDeactivate() {
+        if (deactivateFunc) {
+            deactivateFunc();
+            isActive = false;  // Clear active flag on deactivation
+        }
+    }
 };
 
 /// @struct ErrorInfo
@@ -180,73 +196,21 @@ struct ErrorInfo
 // Action handlers, triggers, and function wrappers with mutable state
 //=============================================================================
 
-/// @struct Action
-/// @brief Simple action struct that holds a function to execute
+/// @struct Action  
+/// @brief Event-based Action for button processing
 struct Action
 {
-    std::function<void()> execute; ///< Function to execute
-
-    // Constructor
-    Action(std::function<void()> func = nullptr) : execute(func)
-    {
-    }
-
-    // Check if action has a valid function
-    bool IsValid() const
-    {
-        return execute != nullptr;
+    const char* id;                      ///< Static string identifier
+    void (*executeFunc)();               ///< Function to execute on button press
+    bool hasTriggered;                   ///< Whether this action has been triggered
+    ActionPress pressType;               ///< SHORT or LONG press type
+    
+    // Execution method as documented in interrupt-architecture.md
+    void Execute() {
+        if (executeFunc && hasTriggered) {
+            executeFunc();
+            hasTriggered = false;  // Clear trigger flag after execution
+        }
     }
 };
 
-//=============================================================================
-// COORDINATED INTERRUPT SYSTEM
-// Memory-optimized interrupt structure for ESP32 with centralized restoration
-//=============================================================================
-
-/// @struct Interrupt
-/// @brief Simplified single-purpose interrupt structure
-///
-/// @details Streamlined interrupt design with single responsibility:
-/// - Single execution function for clarity and simplicity
-/// - Static function pointers prevent heap fragmentation (critical for ESP32)
-/// - Blocking flag for restoration control
-/// - Direct mapping to sensor state changes (HIGH/LOW)
-///
-/// @memory_usage Optimized for ESP32 memory constraints
-struct Interrupt
-{
-    const char* id;                                   ///< Static string identifier
-    Priority priority;                                ///< Processing priority enum
-    InterruptSource source;                           ///< POLLED or QUEUED
-    
-    // Single execution function - one interrupt, one purpose
-    void (*execute)(void* context);                   ///< Execute the interrupt action
-    void* context;                                     ///< Sensor or service context
-    
-    // Interrupt-specific data
-    union Data {
-        const char* panelName;                        ///< Panel to load
-        const char* theme;                            ///< Theme to set
-        ButtonAction action;                          ///< Button action to perform
-    } data;
-    
-    // Control flags
-    bool blocking;                                    ///< If true, prevents restoration when active
-    InterruptFlags flags;                             ///< Runtime state flags
-    
-    // Helper methods for flag management
-    bool IsActive() const { 
-        return (flags & InterruptFlags::ACTIVE) != InterruptFlags::NONE; 
-    }
-    void SetActive(bool active) { 
-        if (active) flags |= InterruptFlags::ACTIVE; 
-        else flags &= ~InterruptFlags::ACTIVE; 
-    }
-    bool NeedsExecution() const { 
-        return (flags & InterruptFlags::NEEDS_EXECUTION) != InterruptFlags::NONE; 
-    }
-    void SetNeedsExecution(bool needs) {
-        if (needs) flags |= InterruptFlags::NEEDS_EXECUTION;
-        else flags &= ~InterruptFlags::NEEDS_EXECUTION;
-    }
-};

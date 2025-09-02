@@ -69,7 +69,6 @@ class ManagerFactory
   private:
     /// @brief Register all system interrupts with InterruptManager
     /// @param interruptManager The InterruptManager instance to register with
-    static void RegisterSystemInterrupts(InterruptManager* interruptManager);
     // Private constructor to prevent instantiation
     ManagerFactory() = delete;
     ~ManagerFactory() = delete;

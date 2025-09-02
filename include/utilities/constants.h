@@ -113,12 +113,12 @@ enum class TriggerPriority
 };
 
 /// @brief Priority levels for coordinated interrupt system
-/// @details Same numeric values as TriggerPriority for compatibility
+/// @details Higher numeric values = higher priority (CRITICAL > IMPORTANT > NORMAL)
 enum class Priority
 {
-    CRITICAL = 0,  ///< Critical interrupts (key presence, errors, safety)
+    NORMAL = 0,    ///< Non-critical interrupts (theme changes, button actions, preferences)
     IMPORTANT = 1, ///< Important interrupts (lock state, system modes)
-    NORMAL = 2     ///< Non-critical interrupts (theme changes, button actions, preferences)
+    CRITICAL = 2   ///< Critical interrupts (key presence, errors, safety) - highest priority
 };
 
 /// @brief Interrupt source types for coordinated handler system
@@ -143,6 +143,21 @@ enum class ButtonAction
     NONE = 0,          ///< No action detected
     SHORT_PRESS = 1,   ///< Short press (50ms - 2000ms)
     LONG_PRESS = 2     ///< Long press (2000ms - 5000ms)
+};
+
+/// @brief Trigger types for the new Trigger/Action architecture
+enum class TriggerType
+{
+    PANEL,     ///< Panel loading triggers
+    STYLE,     ///< Style/theme changing triggers
+    FUNCTION   ///< General function triggers
+};
+
+/// @brief Action press types for button duration detection
+enum class ActionPress
+{
+    SHORT,     ///< Short press (50ms - 2000ms)
+    LONG       ///< Long press (2000ms - 5000ms)
 };
 
 /// @brief Trigger execution state enumeration

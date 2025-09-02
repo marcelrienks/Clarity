@@ -91,6 +91,20 @@ class PanelManager : public IPanelService
     /// @brief Update universal button interrupts with current panel's functions
     /// @param panel The panel to extract button functions from
     void UpdatePanelButtonFunctions(IPanel* panel);
+    
+    // New Interrupt Architecture Methods
+    /// @brief Handle short button press action (new architecture)
+    void HandleShortPress();
+    
+    /// @brief Handle long button press action (new architecture)
+    void HandleLongPress();
+    
+    /// @brief Load a panel by type enum (new architecture)
+    /// @param panelType Panel type to load
+    void LoadPanel(const char* panelName);
+    
+    /// @brief Check restoration and load appropriate panel (new architecture)
+    void CheckRestoration();
 
     // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
@@ -142,6 +156,9 @@ class PanelManager : public IPanelService
     void PanelCompletionCallback();
 
   public:
+    // Singleton access for new interrupt architecture
+    static PanelManager& Instance();
+    
     // Public Data Members - using c_str() to maintain const char* interface compatibility
     const char *currentPanel = PanelNames::OIL;     ///< Current panel state
     const char *restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
@@ -157,6 +174,7 @@ class PanelManager : public IPanelService
     // This was causing garbage characters (e.g., �8�?�8�?) in logs when panel names became invalid
     std::string currentPanelStr_;                     ///< Safe storage for current panel name
     std::string restorationPanelStr_;                 ///< Safe storage for restoration panel name
+    std::string lastUserPanelStr_ = PanelNames::OIL;  ///< Last user-driven panel for restoration
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming

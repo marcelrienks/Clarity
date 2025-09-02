@@ -62,6 +62,9 @@
 class StyleManager : public IStyleService
 {
   public:
+    // Singleton access for new interrupt architecture
+    static StyleManager& Instance();
+    
     // Constructors and Destructors
     explicit StyleManager(const char *theme);
     ~StyleManager();
