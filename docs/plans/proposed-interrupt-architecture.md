@@ -192,7 +192,7 @@ private:
 class ActionHandler : public IHandler {
 private:
     std::vector<Action> actions_;
-    std::unique_ptr<ActionSensor> actionButtonSensor_;  // Handler owns action sensor
+    std::unique_ptr<ButtonSensor> actionButtonSensor_;  // Handler owns button sensor
     
     // Button timing constants
     static constexpr uint32_t SHORT_PRESS_MIN_MS = 50;

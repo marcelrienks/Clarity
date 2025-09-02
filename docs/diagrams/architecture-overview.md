@@ -1,6 +1,8 @@
-# Architecture Overview Diagram
+# Architecture Overview Diagram  
 
-This diagram shows the high-level component relationships in the Clarity system with the v4.0 Trigger/Action interrupt architecture.
+This diagram shows the high-level component relationships in the Clarity system with the current v3.0 PolledHandler/QueuedHandler interrupt architecture.
+
+**⚠️ Note**: This diagram currently shows proposed v4.0 elements. For accurate current implementation, see [../architecture.md](../architecture.md)
 
 ## Key Architectural Elements
 

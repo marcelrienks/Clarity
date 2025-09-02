@@ -1,6 +1,8 @@
 # Application Flow Diagram
 
-This diagram illustrates the complete application flow from startup through runtime operations, showing the v4.0 Trigger/Action interrupt architecture.
+This diagram illustrates the complete application flow from startup through runtime operations.
+
+**⚠️ Note**: This diagram currently shows proposed v4.0 Trigger/Action architecture. For current v3.0 implementation flow, see [../architecture.md](../architecture.md)
 
 ## Flow Overview
 

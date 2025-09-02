@@ -157,7 +157,7 @@ For detailed architecture, see: **[Architecture Document](architecture.md)**
 2. **TriggerHandler**: GPIO state monitoring with dual activate/deactivate functions and priority-based override logic
 3. **ActionHandler**: Button event processing with press duration detection and event queueing
 4. **Smart Restoration**: PanelManager tracks last user panel and handles intelligent restoration
-5. **Memory Safety**: Direct singleton calls eliminate context parameters (~96 bytes total memory usage)
+5. **Memory Safety**: Direct singleton calls eliminate context parameters (estimated memory usage - see Memory Analysis section)
 6. **Priority Override**: CRITICAL > IMPORTANT > NORMAL with sophisticated blocking logic
 
 **Critical Processing Model (v4.0)**:
@@ -328,7 +328,7 @@ All sensors inherit from BaseSensor for consistent change detection. For impleme
 
 **Sensor Ownership (v4.0)**:
 - **TriggerHandler**: Creates and owns GPIO sensors for state monitoring (Key, Lock, Lights sensors)
-- **ActionHandler**: Creates and owns button sensor for event processing (ActionSensor)  
+- **ActionHandler**: Creates and owns button sensor for action interrupt processing (ButtonSensor)  
 - **Data Panels**: Create own data sensors internally (Oil pressure/temperature sensors)
 - **Display-Only Panels**: Create only components, no sensors (receive state from handlers)
 
@@ -364,11 +364,11 @@ Every panel implements the IActionService interface providing consistent button 
 - **Processing**: Action-based interrupts with event flag processing
 
 **Button Integration Flow (v4.0)**:
-1. **Button Press Detection**: ActionSensor detects press type and duration
-2. **Event Processing**: ActionHandler receives button events and sets action flags
-3. **Action Evaluation**: Actions evaluate for pending button events
-4. **Function Execution**: Current panel's function executed via ActionHandler
-5. **State Update**: Action flags cleared after successful execution
+1. **Button Press Detection**: ButtonSensor detects press type and duration
+2. **Action Interrupt Processing**: ActionHandler receives button events and triggers action interrupts  
+3. **Action Evaluation**: Action interrupts evaluate for pending button events
+4. **Function Execution**: Current panel's function executed via action interrupt
+5. **State Update**: Action interrupt flags cleared after successful execution
 
 For complete input system details, see: **[Input System Documentation](input.md)**
 
@@ -545,7 +545,7 @@ void InterruptManager::CheckAllInterrupts() {
 #### 2.3.9 Benefits of Change-Based Architecture
 - **Performance Optimization**: Triggers execute once per change instead of repeatedly
 - **CPU Efficiency**: Eliminates unnecessary repeated operations during steady states
-- **Memory Stability**: No fragmentation from repeated object creation/destruction (~96 bytes total)
+- **Memory Stability**: No fragmentation from repeated object creation/destruction (memory usage estimates provided below)
 - **Predictable Behavior**: Clear semantics for when triggers execute
 - **System Stability**: Priority override logic prevents conflicting panel switches
 - **Consistent Implementation**: All Triggers follow identical change-detection pattern
@@ -558,7 +558,7 @@ void InterruptManager::CheckAllInterrupts() {
 - **Theme Setting Frequency**: Maximum 2 executions per second (only on actual changes)
 - **Trigger Processing Time**: Consistent regardless of maintained trigger states
 - **CPU Usage During Idle**: Minimal processing overhead when no state changes occur
-- **Memory Usage**: Stable without fragmentation (~96 bytes total system overhead)
+- **Memory Usage**: Stable without fragmentation (see Memory Analysis section for detailed estimates)
 
 **Change Detection Implementation Requirements**:
 
@@ -696,7 +696,7 @@ protected:
   - Methods: `GetLightsState()`, `HasStateChanged()`
   - No interrupt attachment - no destructor needed
 
-- **ActionSensor** (GPIO 32): User input button
+- **ButtonSensor** (GPIO 32): User input button for action interrupts
   - Debouncing and timing logic
   - Owned by QueuedHandler
 
@@ -733,7 +733,51 @@ protected:
 - Dynamic allocation minimization required
 - Memory-efficient patterns must be used throughout
 
-#### 3.1.2 Static Callback Requirements with Centralized Restoration
+#### 3.1.2 Memory Usage Analysis (Current Implementation)
+
+**Static Memory Allocation Analysis**:
+
+Based on the current v3.0 implementation analysis:
+
+**Interrupt System Memory**:
+- Interrupt static array: 32 × 29 bytes = ~928 bytes (maximum capacity)
+- Actual registered interrupts: ~7-8 interrupts = ~200-240 bytes
+- Handler instances: ~200 bytes (PolledHandler + QueuedHandler)
+- **Interrupt system total: ~400-450 bytes**
+
+**Sensor Memory**:  
+- GPIO sensors (5-6 instances): ~30 bytes each = ~150-180 bytes
+- Oil sensors (2 instances): ~40 bytes each = ~80 bytes
+- **Sensor system total: ~230-260 bytes**
+
+**Manager Memory**:
+- InterruptManager singleton: ~150 bytes
+- PanelManager: ~100 bytes
+- StyleManager: ~50 bytes
+- ErrorManager: ~100 bytes
+- **Manager system total: ~400 bytes**
+
+**LVGL Display Buffers** (configurable):
+- Dual 60-line buffers: 240×60×2×2 bytes = 57,600 bytes (57.6KB)
+- Single 60-line buffer option: 240×60×2 bytes = 28,800 bytes (28.8KB)  
+- Reduced 30-line dual buffers: 240×30×2×2 bytes = 28,800 bytes (28.8KB)
+
+**Total Static Memory Estimate**:
+- Core system: ~1,000-1,100 bytes
+- LVGL buffers: 28.8KB - 57.6KB (configurable)
+- **Total estimated usage: ~30-59KB**
+
+**Remaining Available Memory**: 
+- With dual buffers: ~190-220KB available for panel/component operations
+- With single buffer: ~220KB available for panel/component operations
+
+**⚠️ Important Notes**:
+- These are **estimates** based on code analysis, not profiled measurements
+- Actual memory usage may vary based on compiler optimization and runtime allocations
+- Memory profiling tools should be used to validate these estimates
+- Panel and component memory usage varies based on active UI elements
+
+#### 3.1.3 Static Callback Requirements with Centralized Restoration
 **Mandatory Pattern**: All interrupt system callbacks must use static function pointers with centralized restoration
 - Eliminates `std::function` heap allocation overhead
 - Prevents lambda capture heap objects
@@ -742,7 +786,7 @@ protected:
 - **Memory Optimization**: Single execution function per interrupt saves 28 bytes total system memory
 - **Centralized Logic**: Restoration handled in InterruptManager reduces callback complexity
 
-#### 3.1.3 LVGL Buffer Optimization
+#### 3.1.4 LVGL Buffer Optimization
 **Memory Usage**: Dual 60-line buffers consume 57.6KB (240×60×2×2 bytes)
 **Optimization Requirements**:
 - Single buffer mode capability for 30KB savings
@@ -750,7 +794,7 @@ protected:
 - Dynamic buffer allocation based on panel complexity
 - Memory-efficient rendering modes
 
-#### 3.1.4 Pointer Management Strategy
+#### 3.1.5 Pointer Management Strategy
 **Required Ownership Pattern**:
 - main.cpp owns all sensors via unique_ptr (transfer ownership)
 - Panels receive raw pointers (non-owning references)
@@ -786,7 +830,7 @@ protected:
 - Smooth animations at 60 FPS
 - Responsive button input (<100ms response time)
 - Efficient memory usage within ESP32 constraints
-- LVGL buffer: 57.6KB for 60-line dual buffering (240×60×2×2 bytes)
+- LVGL buffer: 28.8KB-57.6KB depending on configuration (see Memory Analysis section)
 
 ### 3.4 Reliability
 - Graceful error handling without system crashes
@@ -967,7 +1011,7 @@ protected:
   - Added comprehensive restoration logic for multi-interrupt scenarios
 - **Version 1.5**: Sensor ownership and resource management clarification
   - Added critical architecture constraint for single sensor ownership
-  - Specified PolledHandler as owner of GPIO sensors, QueuedHandler as owner of button sensor
+  - Specified PolledHandler as owner of GPIO sensors, QueuedHandler as owner of button sensor for action interrupts
   - Eliminated sensor duplication in panels (display-only requirement)
   - Added destructor requirements for proper GPIO resource cleanup
   - Clarified panel responsibilities (trigger panels are display-only)
@@ -987,7 +1031,7 @@ protected:
   - Updated interrupt structures to show separate Trigger and Action structs
   - Documented dual-function Triggers (activate/deactivate) vs single-function Actions
   - Added priority-based override logic and smart restoration documentation
-  - Updated memory usage to reflect ~96 bytes total system overhead
+  - Updated memory usage with detailed analysis and realistic estimates
   - Modified error system to use Trigger-based architecture
   - Added v4.0 benefits: clear separation, override logic, memory efficiency
 - **Last Updated**: January 2025

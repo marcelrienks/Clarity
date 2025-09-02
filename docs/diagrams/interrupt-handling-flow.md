@@ -1,6 +1,8 @@
 # Interrupt Handling Flow Diagram
 
-This diagram illustrates the detailed interrupt processing flow in the v4.0 Trigger/Action architecture, showing the distinct processing paths for state-based Triggers and event-based Actions.
+This diagram illustrates detailed interrupt processing flow concepts.
+
+**⚠️ Note**: This diagram currently shows proposed v4.0 Trigger/Action architecture. For current v3.0 PolledHandler/QueuedHandler implementation, see [../architecture.md](../architecture.md)
 
 ## Flow Overview
 
@@ -11,7 +13,7 @@ This diagram illustrates the detailed interrupt processing flow in the v4.0 Trig
 - **Queue-Based Actions**: Actions queue events immediately, execute during idle in registration order
 - **State Change Detection**: Triggers fire only on GPIO state transitions using BaseSensor change detection
 - **Memory Optimized**: Direct singleton calls eliminate context parameters (estimated ~96 bytes total system overhead)
-- **Handler Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns ActionSensor
+- **Handler Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns ButtonSensor
 
 For complete architecture details, see: **[Architecture Document](../architecture.md)**
 
@@ -33,7 +35,7 @@ flowchart TD
     end
     
     subgraph ActionHandling["Action Handler Flow"]
-        ActionSensor[ActionSensor<br/>Check State]
+        ButtonSensor[ButtonSensor<br/>Check State]
         ActionChanged{State<br/>Changed?}
         TimingCheck[Check Press Duration]
         ShortPress{50ms-2000ms<br/>SHORT?}
@@ -87,8 +89,8 @@ flowchart TD
     ActionExec --> Return2([Return])
     
     %% Action Evaluation Flow
-    ActionEval --> ActionSensor
-    ActionSensor --> ActionChanged
+    ActionEval --> ButtonSensor
+    ButtonSensor --> ActionChanged
     ActionChanged -->|Yes| TimingCheck
     ActionChanged -->|No| IdleCheck
     TimingCheck --> ShortPress
@@ -148,7 +150,7 @@ flowchart TD
     classDef sensor fill:#ffe6cc,stroke:#d79b00,stroke-width:2px
     
     class InterruptMgr,ActionEval,InterruptProcessing interrupt
-    class ActionSensor,TimingCheck,QueueShort,QueueLong,ExecuteAction,ActionHandling,ActionExecution action
+    class ButtonSensor,TimingCheck,QueueShort,QueueLong,ExecuteAction,ActionHandling,ActionExecution action
     class TriggerLoop,SensorCheck,ActivateFlow,DeactivateFlow,ExecuteActivate,ExecuteDeactivate,SetActiveOnly,SameTypeCheck,ReActivateSameType,TriggerHandling,ActivationFlow,DeactivationFlow trigger
     class IdleCheck,ActionChanged,ShortPress,LongPress,TriggerChanged,StateDirection,PriorityCheck,SameTypeFound,ActionPending decision
     class ActionComplete process
@@ -182,7 +184,7 @@ flowchart TD
 ### Action Handler Flow (Event-Based)
 
 **Continuous Evaluation Model**:
-1. **Sensor Check**: ActionSensor checks GPIO state every iteration
+1. **Sensor Check**: ButtonSensor checks GPIO state every iteration
 2. **Change Detection**: Uses BaseSensor change detection template
 3. **Timing Analysis**: Measure press duration for event classification
 4. **Event Queuing**: Set `hasTriggered = true` for valid events
