@@ -4,15 +4,15 @@
 
 This document outlines the comprehensive error handling system design for the Clarity ESP32-based digital gauge system. The design integrates seamlessly with the existing MVP architecture while providing robust error collection, display, and recovery mechanisms.
 
-## Architecture Analysis
+## System Architecture
 
-### Current System Pattern
+### System Pattern
 ```
 DeviceProvider → PanelManager → Panels → Components
 ```
 
 ### Trigger System
-- Static trigger mapping with priority-based execution via `TriggerManager`
+- Static trigger mapping with priority-based execution via TriggerHandler
 - Priority levels: CRITICAL (0) > IMPORTANT (1) > NORMAL (2)
 - Automatic panel switching based on GPIO state changes
 
@@ -105,35 +105,35 @@ private:
 
 ### 3. Integration with Trigger System
 
-#### Extend Trigger Mappings
+#### Add Error Trigger Registration
 
-Modify `src/managers/trigger_manager.cpp`:
+In TriggerHandler initialization:
 
 ```cpp
-// Add error trigger to existing triggers array
-Trigger TriggerManager::triggers_[] = {
-    // ... existing triggers ...
-    {TRIGGER_ERROR_OCCURRED, -1, TriggerActionType::LoadPanel, 
-     PanelNames::ERROR, PanelNames::OIL, TriggerPriority::CRITICAL}
+// Error trigger registered with TriggerHandler
+Trigger errorTrigger = {
+    .id = "error_occurred",
+    .priority = Priority::CRITICAL,
+    .type = TriggerType::PANEL,
+    .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::ERROR); },
+    .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
+    .sensor = &errorSensor,
+    .isActive = false
 };
 ```
 
 #### Add Error Trigger Processing
 
-Extend `TriggerManager::ProcessTriggerEvents()`:
+Extend `TriggerHandler::Process()`:
 
 ```cpp
-void TriggerManager::ProcessTriggerEvents() {
-    // Existing sensor-based polling
-    CheckSensorChanges();
-    
-    // Check for error conditions
-    CheckErrorTrigger();
-}
-
-void TriggerManager::CheckErrorTrigger() {
-    bool shouldShowErrorPanel = ErrorManager::Instance().ShouldTriggerErrorPanel();
-    CheckTriggerChange(TRIGGER_ERROR_OCCURRED, shouldShowErrorPanel);
+void TriggerHandler::Process() {
+    // Process all registered triggers including error trigger
+    for (auto& trigger : triggers_) {
+        if (trigger.sensor && trigger.sensor->HasStateChanged()) {
+            ProcessTriggerStateChange(trigger);
+        }
+    }
 }
 ```
 
@@ -263,63 +263,37 @@ void initializeServices() {
 - Avoid dynamic allocation in critical error paths
 - Pre-allocate error message buffers where feasible
 
-## Implementation Benefits
+## System Benefits
 
-### 1. **Non-Intrusive Design**
+### **Non-Intrusive Design**
 - No try-catch blocks in main loops preserving Arduino's native error handling
 - ESP32 crash reporting and watchdog functionality remains intact
 - Error collection happens through explicit reporting calls
 
-### 2. **Priority-Aware Error Handling**
+### **Priority-Aware Error Handling**
 - Critical errors immediately override current panels via CRITICAL priority trigger
 - Error panel takes precedence over all other panel switching
 - Automatic restoration when errors are resolved
 
-### 3. **Seamless Integration**
+### **Seamless Integration**
 - Leverages existing trigger system architecture
 - Uses established panel loading and lifecycle management
 - Follows existing MVP pattern and dependency injection
 
-### 4. **Memory Efficient**
+### **Memory Efficient**
 - Bounded error queue suitable for ESP32 memory constraints
 - Efficient error structure with minimal overhead
 - Automatic cleanup of old errors
 
-### 5. **User Experience**
+### **User Experience**
 - Clear visual indication of system issues
 - Appropriate error severity handling
 - Automatic recovery without user intervention where possible
 - Manual acknowledgment for critical issues
 
-### 6. **Maintainable and Extensible**
+### **Maintainable and Extensible**
 - Easy to add error reporting to any component
 - Consistent error handling API across the application
 - Centralized error management with clear interfaces
-
-## Implementation Phases
-
-### Phase 1: Core Infrastructure
-1. Add error data structures to `types.h`
-2. Implement `ErrorManager` singleton service
-3. Integrate error trigger into `TriggerManager`
-4. Update service initialization in `main.cpp`
-
-### Phase 2: Error Panel
-1. Create `ErrorPanel` class implementing `IPanel`
-2. Implement error list UI with LVGL components
-3. Add error panel registration to `PanelManager`
-4. Test error panel loading and restoration
-
-### Phase 3: Error Integration
-1. Add error reporting calls to critical components (sensors, managers)
-2. Implement error acknowledgment and auto-dismiss functionality
-3. Add error count indicators to other panels
-4. Test complete error handling workflow
-
-### Phase 4: Polish and Optimization
-1. Optimize memory usage and error queue management
-2. Add configuration options for timeouts and queue size
-3. Implement comprehensive error logging
-4. Performance testing and optimization
 
 This design provides a robust, integrated error handling system that enhances the reliability and maintainability of the Clarity application while respecting the constraints of the Arduino/ESP32 platform.

@@ -1,22 +1,22 @@
-# Input System Implementation Plan
+# Input System Architecture
 
 ## Overview
-This document outlines the implementation plan for adding single button input functionality to the Clarity digital gauge system. The button will be connected to GPIO 32 and provide different behaviors based on the current panel and press duration.
+The Clarity digital gauge system uses a single button input connected to GPIO 32 that provides different behaviors based on the current panel and press duration.
 
-## Phase 1: Hardware & Core Input System
+## Hardware Configuration
 
-### Hardware Setup
-* Add push button to wokwi diagram wired to GPIO 32 (3.3V connection)
-* Configure rising edge detection (trigger only when pin changes to HIGH)
-* Implement proper debouncing to prevent false triggers
+### Button Setup
+* Push button wired to GPIO 32 (3.3V connection)
+* Rising edge detection (trigger only when pin changes to HIGH)
+* Hardware debouncing to prevent false triggers
 
-### Input System Architecture
-* Create separate input system (isolated from existing trigger functionality)
-* Design InputManager class for centralized button handling
-* Implement IInputHandler interface for panels to implement
-* Add timing logic to distinguish short press (50ms-2000ms) vs long press (2000ms-5000ms)
+## Input System Design
 
-## Phase 2: Panel Input Integration
+### Architecture
+* Input system integrated with ActionHandler for centralized button handling
+* Panels implement IActionService interface for universal button functions
+* ActionHandler manages timing logic to distinguish short press (50ms-2000ms) vs long press (2000ms-5000ms)
+* Button functions injected into Action interrupts for universal panel compatibility
 
 ### Per-Panel Input Behaviors
 * **Oil Panel**: 
@@ -32,23 +32,16 @@ This document outlines the implementation plan for adding single button input fu
   - Short press: Cycle through options
   - Long press: Set/edit highlighted option
 
-## Phase 3: Basic Config Panel (Dummy Implementation)
+## Config Panel Design
 
 ### Visual Design
-* Create ConfigPanel with styling similar to error component but with grey colors
-* Display simple menu structure suitable for single button navigation
-
-### Basic Navigation
-* Hardcoded options: "Option 1", "Option 2", "Exit"
-* Short press: Cycle through options with visual highlighting
-* Long press: Placeholder functionality (no action initially)
-
-## Phase 4: Full Config Panel Implementation
+* ConfigPanel with styling similar to error component but with grey colors
+* Simple menu structure suitable for single button navigation
 
 ### Menu Structure
 * Multi-level navigation with clear visual feedback
 * Editing states for modifying option values
-* Breadcrumb or back navigation support
+* Back navigation support
 
 ### Configuration Options
 
@@ -69,15 +62,16 @@ This document outlines the implementation plan for adding single button input fu
 
 ### Persistence Integration
 * Integrate with PreferenceManager for persistent storage of all configuration settings
-* Ensure settings survive device reboots
-* Validate settings on startup
+* Settings survive device reboots
+* Settings validation on startup
 
 ## Technical Considerations
 
 ### Button Timing
 * Short press: 50ms - 2000ms (with debouncing)
 * Long press: 2000ms - 5000ms
-* Maximum press time: 3000ms (auto-release)
+* Maximum press time: 5000ms (auto-release)
+* ActionHandler manages press duration detection and event queuing
 
 ### State Management
 * Track current menu level and selected option

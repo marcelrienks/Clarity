@@ -1,8 +1,6 @@
 # Architecture Overview Diagram  
 
-This diagram shows the high-level component relationships in the Clarity system with the current v3.0 PolledHandler/QueuedHandler interrupt architecture.
-
-**⚠️ Note**: This diagram currently shows proposed v4.0 elements. For accurate current implementation, see [../architecture.md](../architecture.md)
+This diagram shows the high-level component relationships in the Clarity system with the TriggerHandler/ActionHandler interrupt architecture.
 
 ## Key Architectural Elements
 
@@ -128,7 +126,7 @@ flowchart TD
 - **Data Panels**: Create own sensors and components for data acquisition (Oil)
 - **Utility Panels**: Create own components for system functions (Splash, Error, Config)
 
-### Critical Architecture Constraints
+### Architecture Constraints
 - **Trigger/Action Model**: State-based Triggers (GPIO) with dual functions vs event-based Actions (buttons) with single execution
 - **Priority Override System**: CRITICAL > IMPORTANT > NORMAL priorities with blocking logic for Triggers only
 - **Button Timing Integration**: ActionHandler detects press duration (50ms-2000ms short, 2000ms-5000ms long)

@@ -1,8 +1,8 @@
-# Proposed Interrupt Architecture v4.0 - Trigger/Action Separation
+# Interrupt Architecture - Trigger/Action Separation
 
 ## Executive Summary
 
-This document refines the v3.0 proposal by introducing a clear separation between **Triggers** (state-based interrupts from GPIO sensors) and **Actions** (event-based interrupts from buttons). This separation acknowledges the fundamental difference between persistent state changes and momentary events.
+This document describes the interrupt architecture using a clear separation between **Triggers** (state-based interrupts from GPIO sensors) and **Actions** (event-based interrupts from buttons). This separation acknowledges the fundamental difference between persistent state changes and momentary events.
 
 ## Core Design Principle
 
@@ -99,7 +99,7 @@ struct Action {
 
 ## Handler Architecture Integration
 
-### TriggerHandler (formerly PolledHandler)
+### TriggerHandler
 ```cpp
 class TriggerHandler : public IHandler {
 private:
@@ -187,7 +187,7 @@ private:
 };
 ```
 
-### ActionHandler (formerly QueuedHandler)
+### ActionHandler
 ```cpp
 class ActionHandler : public IHandler {
 private:
@@ -243,7 +243,7 @@ private:
 
 ### Trigger Definitions
 ```cpp
-// In InterruptManager or TriggerHandler initialization
+// In TriggerHandler initialization
 std::vector<Trigger> systemTriggers = {
     // Key triggers
     {
@@ -307,7 +307,7 @@ std::vector<Trigger> systemTriggers = {
 
 ### Action Definitions
 ```cpp
-// In InterruptManager or ActionHandler initialization
+// In ActionHandler initialization
 std::vector<Action> systemActions = {
     // Button actions
     {
@@ -443,31 +443,23 @@ void loop() {
 5. **Clean Error Handling**: Standard try-catch with error panel fallback
 6. **Smart Restoration**: Automatic return to last user panel
 
-## Migration Path
+## Implementation Benefits
 
-### Phase 1: Type System
-1. Add new types to `types.h`
-2. Create Trigger and Action structures
-3. Define Priority enum
+### Performance Optimizations
+1. **Continuous Responsiveness**: Actions always evaluated for button events
+2. **Idle Protection**: Both execution types respect UI idle state
+3. **Processing Priority**: Triggers process before Actions when both pending
+4. **Memory Efficiency**: Static structures with direct singleton calls
 
-### Phase 2: Handler Refactoring
-1. Rename PolledHandler → TriggerHandler
-2. Rename QueuedHandler → ActionHandler
-3. Update handler interfaces
-
-### Phase 3: Interrupt Migration
-1. Convert existing interrupts to Triggers
-2. Convert action handling to Actions
-3. Update InterruptManager coordination
-
-### Phase 4: Testing
-1. Test all trigger override scenarios
-2. Verify action execution order
-3. Validate error handling and restoration
+### Reliability Features
+1. **State Consistency**: BaseSensor change detection prevents false triggers
+2. **Override Protection**: Priority-based blocking logic
+3. **Queue Integrity**: Action events preserved until execution
+4. **Error Isolation**: Failed interrupts don't affect others
 
 ## Conclusion
 
-This v4 architecture provides:
+This architecture provides:
 - **Cleaner conceptual model** with Trigger/Action separation
 - **Simpler implementation** without context parameters
 - **Robust error handling** with standard patterns

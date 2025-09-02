@@ -153,21 +153,21 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 For detailed architecture, see: **[Architecture Document](architecture.md)**
 
 **Key Components**:
-1. **InterruptManager**: Coordinates TriggerHandler and ActionHandler with v4.0 Trigger/Action architecture
+1. **InterruptManager**: Coordinates TriggerHandler and ActionHandler with Trigger/Action architecture
 2. **TriggerHandler**: GPIO state monitoring with dual activate/deactivate functions and priority-based override logic
 3. **ActionHandler**: Button event processing with press duration detection and event queueing
 4. **Smart Restoration**: PanelManager tracks last user panel and handles intelligent restoration
 5. **Memory Safety**: Direct singleton calls eliminate context parameters (estimated memory usage - see Memory Analysis section)
 6. **Priority Override**: CRITICAL > IMPORTANT > NORMAL with sophisticated blocking logic
 
-**Critical Processing Model (v4.0)**:
+**Critical Processing Model**:
 - **Action Evaluation**: Happens on EVERY main loop iteration to detect button events
 - **Trigger Evaluation**: Only happens during UI IDLE state
 - **All Execution**: Only happens during UI IDLE state (Triggers processed before Actions)
 
 #### 2.3.3 Triggers (State-Based Interrupts)
 
-**Trigger Architecture (v4.0)**:
+**Trigger Architecture**:
 Triggers monitor GPIO state transitions and execute dual functions based on state changes:
 
 **Change-Based Evaluation**:
@@ -326,7 +326,7 @@ All sensors inherit from BaseSensor for consistent change detection. For impleme
 
 **Sensor Implementation**: See **[Architecture Document](architecture.md#sensor-architecture)** for complete patterns.
 
-**Sensor Ownership (v4.0)**:
+**Sensor Ownership**:
 - **TriggerHandler**: Creates and owns GPIO sensors for state monitoring (Key, Lock, Lights sensors)
 - **ActionHandler**: Creates and owns button sensor for action interrupt processing (ButtonSensor)  
 - **Data Panels**: Create own data sensors internally (Oil pressure/temperature sensors)
@@ -384,7 +384,7 @@ Errors are integrated into the unified interrupt system as Triggers with CRITICA
 - Restoration handling via deactivate function when errors cleared
 - Priority precedence over all other triggers
 
-**Error Trigger Registration Example (v4.0)**:
+**Error Trigger Registration Example**:
 ```cpp
 // Error trigger managed by TriggerHandler
 Trigger errorTrigger = {
@@ -409,7 +409,7 @@ Trigger errorTrigger = {
 - **Error Trigger Integration**: ErrorManager state checked by error trigger evaluation
 - **No Try-Catch**: Preserve Arduino crash reporting in main loops
 
-**Error Lifecycle (v4.0)**:
+**Error Lifecycle**:
 1. **Error Occurrence**: Component reports error to ErrorManager
 2. **Trigger Evaluation**: Error trigger evaluates true when errors pending
 3. **Panel Loading**: Error trigger activateFunc executes, loads ErrorPanel with CRITICAL priority
@@ -428,7 +428,7 @@ public:
 };
 ```
 
-**v4.0 Interrupt Structures**:
+**Interrupt Structures**:
 Separate structures for Triggers (state-based) and Actions (event-based).
 
 **Trigger Structure (State-Based)**:
@@ -464,7 +464,7 @@ struct Action {
 };
 ```
 
-**Handler Implementations (v4.0)**:
+**Handler Implementations**:
 - **TriggerHandler**: Implements IHandler, manages Triggers for GPIO state monitoring with priority override logic
 - **ActionHandler**: Implements IHandler, manages Actions for button event processing with timing detection
 - **Registration**: Separate Trigger and Action struct registration
@@ -472,7 +472,7 @@ struct Action {
 
 For complete implementation details, see: **[Architecture Document](architecture.md#coordinated-interrupt-system-architecture)**
 
-#### 2.3.7 Registration Pattern (v4.0)
+#### 2.3.7 Registration Pattern
 
 Triggers and Actions are registered at startup as separate struct instances:
 
@@ -497,11 +497,11 @@ Action shortPressAction = {
 };
 ```
 
-**Registered Interrupts (v4.0)**:
+**Registered Interrupts**:
 - **Triggers**: key_present, key_not_present, lock_state, lights_state, error_occurred
 - **Actions**: short_press, long_press
 
-This v4.0 approach provides:
+This approach provides:
 - Clear separation between state-based (Triggers) and event-based (Actions) interrupts
 - Priority-based override logic for sophisticated panel management  
 - Smart restoration through PanelManager with last user panel tracking
@@ -510,7 +510,7 @@ This v4.0 approach provides:
 
 #### 2.3.8 Evaluation Process
 
-**Polymorphic Handler Processing (v4.0)**:
+**Polymorphic Handler Processing**:
 InterruptManager coordinates both handlers through the unified IHandler interface:
 
 ```cpp
@@ -520,7 +520,7 @@ void InterruptManager::CheckAllInterrupts() {
 }
 ```
 
-**Handler-Specific Processing (v4.0)**:
+**Handler-Specific Processing**:
 1. **TriggerHandler::Process()** (GPIO state monitoring):
    - Evaluates Triggers for state changes
    - Executes activate/deactivate functions based on state
@@ -535,7 +535,7 @@ void InterruptManager::CheckAllInterrupts() {
    - Ensures Triggers process before Actions when both pending
    - Coordinates smart restoration through PanelManager
 
-**v4.0 Architecture Benefits**:
+**Architecture Benefits**:
 - **Polymorphic Processing**: InterruptManager treats both handlers identically
 - **Clear Separation**: Triggers (state-based) vs Actions (event-based) distinction
 - **Processing Order**: Triggers execute before Actions when both pending
@@ -922,7 +922,7 @@ Based on the current v3.0 implementation analysis:
 
 ### 6.1 Manager Services
 - **PanelManager**: Panel lifecycle, switching, and restoration tracking
-- **InterruptManager**: Orchestrates interrupt checking during LVGL idle time with v4.0 architecture
+- **InterruptManager**: Orchestrates interrupt checking during LVGL idle time
   - **TriggerHandler**: GPIO state monitoring with dual functions and priority override logic
   - **ActionHandler**: Button event processing with timing detection and event flags
 - **StyleManager**: Theme management (Day/Night)
@@ -984,54 +984,3 @@ Based on the current v3.0 implementation analysis:
 - Memory usage remains stable
 - No LVGL conflicts with interrupt system
 
-## 10. Document History
-
-- **Version 1.0**: Initial comprehensive PRD incorporating architecture, error handling, input system, scenarios, and sensor guidelines
-- **Version 1.1**: Updated after codebase review - corrected input timing, updated ErrorManager implementation status, corrected panel names and configurations
-- **Version 1.2**: Major architectural update - transition to change-based trigger system
-  - Updated trigger architecture to use change-based evaluation instead of state-based
-  - Added sensor change detection requirements and implementation patterns
-  - Updated trigger registration examples to show change detection patterns
-  - Added performance requirements and benefits of change-based architecture
-  - Updated multi-trigger scenarios to reflect change-based behaviors
-  - Added comprehensive performance metrics and optimization targets
-- **Version 1.3**: Key sensor architecture refinement - split sensor design
-  - Updated key detection system to use separate KeyPresentSensor and KeyNotPresentSensor classes
-  - Eliminated shared initialization conflicts through independent sensor inheritance
-  - Updated sensor system documentation to reflect split architecture
-  - Modified trigger registration examples to use dedicated sensor classes
-  - Enhanced sensor class hierarchy documentation with inheritance patterns
-  - Improved architectural alignment with independent trigger design principle
-- **Version 1.4**: Coordinated interrupt architecture design
-  - Separated PolledHandler and QueuedHandler with central coordination
-  - Implemented effect-based execution with activate/deactivate functions
-  - Added maintenance-based restoration logic
-  - Enforced single evaluation rule: each interrupt processed exactly once per cycle
-  - Updated interrupt struct to support unified processing
-  - Added comprehensive restoration logic for multi-interrupt scenarios
-- **Version 1.5**: Sensor ownership and resource management clarification
-  - Added critical architecture constraint for single sensor ownership
-  - Specified PolledHandler as owner of GPIO sensors, QueuedHandler as owner of button sensor for action interrupts
-  - Eliminated sensor duplication in panels (display-only requirement)
-  - Added destructor requirements for proper GPIO resource cleanup
-  - Clarified panel responsibilities (trigger panels are display-only)
-  - Added architecture enforcement rules to prevent resource conflicts
-- **Version 2.0**: Interrupt system architecture alignment
-  - Updated all sections to reflect handler-based architecture
-  - Documented IHandler interface and struct-based interrupt design
-  - Updated sensor descriptions to show split KeyPresentSensor/KeyNotPresentSensor
-  - Added code examples showing implementation patterns
-  - Reflected removal of TriggerManager and cleanup phases
-  - Updated panel descriptions to clarify display-only nature
-  - Added performance metrics targets
-  - Documented sensor ownership model with ManagerFactory
-- **Version 3.0**: v4.0 Trigger/Action Architecture Alignment
-  - Updated all sections to reflect v4.0 Trigger/Action separation
-  - Replaced PolledHandler/QueuedHandler references with TriggerHandler/ActionHandler
-  - Updated interrupt structures to show separate Trigger and Action structs
-  - Documented dual-function Triggers (activate/deactivate) vs single-function Actions
-  - Added priority-based override logic and smart restoration documentation
-  - Updated memory usage with detailed analysis and realistic estimates
-  - Modified error system to use Trigger-based architecture
-  - Added v4.0 benefits: clear separation, override logic, memory efficiency
-- **Last Updated**: January 2025

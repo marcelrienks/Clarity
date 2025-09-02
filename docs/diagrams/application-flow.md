@@ -2,8 +2,6 @@
 
 This diagram illustrates the complete application flow from startup through runtime operations.
 
-**⚠️ Note**: This diagram currently shows proposed v4.0 Trigger/Action architecture. For current v3.0 implementation flow, see [../architecture.md](../architecture.md)
-
 ## Flow Overview
 
 - **Startup Sequence**: Dual factory pattern initialization, handler creation with sensor ownership, and initial panel display
@@ -160,7 +158,7 @@ flowchart TB
 3. **Process Errors**: Evaluate error conditions and show error panel if needed
 4. **Process Panels**: Update current panel display and handle transitions
 
-**Interrupt Processing Flow (v4.0 Architecture)**:
+**Interrupt Processing Flow**:
 - **Handler Ownership Model**:
   - TriggerHandler owns all GPIO sensors (created during handler initialization)
   - ActionHandler owns ButtonSensor (created during handler initialization)
@@ -181,7 +179,7 @@ flowchart TB
 - **Priority Override System**: Sophisticated blocking logic for critical triggers
 - **Smart Restoration**: Automatic return to last user-driven panel
 
-### Interrupt Processing Steps (v4.0)
+### Interrupt Processing Steps
 1. **Evaluate Actions**: Always check for button events (every loop)
 2. **Check Idle State**: Determine if UI is idle before processing
 3. **If Idle - Process Triggers First**: 
@@ -214,7 +212,7 @@ flowchart TB
 - **Dual Factory Pattern**: 
   - ProviderFactory implements IProviderFactory for hardware abstraction
   - ManagerFactory uses dependency injection for testability
-- **v4.0 Handlers with Ownership**: 
+- **Handlers with Ownership**: 
   - TriggerHandler owns GPIO sensors (created during initialization)
   - ActionHandler owns ButtonSensor (created during initialization)
 - **Trigger/Action Architecture**:

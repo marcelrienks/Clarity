@@ -2,7 +2,7 @@
 
 ## Full Integration Test
 
-Comprehensive system test covering all interrupts, effects, and panel transitions in coordinated interrupt architecture:
+Comprehensive system test covering all interrupts, effects, and panel transitions:
 
 ### 1. Startup and Initial Animation
 - **Start** → Splash panel loads with day theme
@@ -16,7 +16,7 @@ Comprehensive system test covering all interrupts, effects, and panel transition
 
 ### 3. Panel Loading Interrupts (Priority-Based)
 - **Activate lock** → Lock panel loads (IMPORTANT priority)
-- **Lights interrupt**: Still active but doesn't block (maintains when inactive)
+- **Lights interrupt**: Still active but doesn't block
 - **Lock Panel**: Displays with night theme
 
 ### 4. Higher Priority Key Interrupts
@@ -42,8 +42,8 @@ Comprehensive system test covering all interrupts, effects, and panel transition
 
 ### 8. User Panel Restoration
 - **Deactivate lock** → Restore user-driven panel (Oil Panel)
-- **No non-maintaining interrupts**: All panel-loading interrupts inactive
-- **Lights interrupt**: Still active but maintains, allows restoration
+- **No blocking interrupts**: All panel-loading interrupts inactive
+- **Lights interrupt**: Still active but allows restoration
 - **Oil Panel**: Restored with night theme, animate pressure & temperature
 
 ### 9. Theme Restoration
@@ -88,7 +88,7 @@ Comprehensive system test covering all interrupts, effects, and panel transition
 
 ### 17. Error System Integration
 - **Activate debug error** → Error panel loads (CRITICAL priority)
-- **Error interrupt**: POLLED interrupt with highest priority
+- **Error interrupt**: Trigger interrupt with highest priority
 - **Error Panel**: Displays error list with night theme
 
 ### 18. Error Navigation
@@ -125,8 +125,8 @@ Comprehensive system test covering all interrupts, effects, and panel transition
 
 ## Testing Notes
 - **Panel priorities**: Key (CRITICAL) > Lock (IMPORTANT) > Oil (user-driven)
-- **Theme changes**: Instant (no reload), always maintain when inactive
+- **Theme changes**: Instant (no reload), always allow restoration
 - **Button interrupts**: Universal functions work with all panels
 - **Error handling**: CRITICAL priority, overrides all other panels
-- **Restoration logic**: Only non-maintaining interrupts block restoration
+- **Restoration logic**: Smart restoration with priority-based override
 - **Invalid states**: Handled gracefully with logging

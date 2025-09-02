@@ -1,12 +1,8 @@
-# Architecture (Current Implementation v3.0)
+# Architecture
 
 ## Overview
 
-MVP (Model-View-Presenter) pattern for ESP32 automotive gauges with layered architecture, interface-based design, and coordinated interrupt system using PolledHandler/QueuedHandler architecture.
-
-## Current Implementation Status
-
-**IMPORTANT**: This document describes the **current v3.0 implementation**. For proposed future enhancements, see `docs/plans/proposed-interrupt-architecture.md`.
+MVP (Model-View-Presenter) pattern for ESP32 automotive gauges with layered architecture, interface-based design, and coordinated interrupt system using TriggerHandler/ActionHandler architecture with Trigger/Action separation.
 
 ## Visual Diagrams
 
@@ -17,8 +13,8 @@ For detailed architectural diagrams, see:
 ## Pattern Structure
 
 ```
-InterruptManager → PolledHandler → GPIO Sensors → GPIO
-                ↘ QueuedHandler → Button Sensor ↗          
+InterruptManager → TriggerHandler → GPIO Sensors → GPIO
+                ↘ ActionHandler → Button Sensor ↗          
                                     
 DeviceProvider → Display → Panels → Components
                             ↓ ↑
@@ -53,29 +49,29 @@ Hardware abstraction for display (GC9A01) and LVGL integration.
 - Split architecture for independent concerns (KeyPresentSensor, KeyNotPresentSensor)
 - Implement proper destructors with GPIO cleanup
 
-## Coordinated Interrupt Architecture (v3.0)
+## Coordinated Interrupt Architecture
 
 ### Handler-Based Design
 The interrupt system uses InterruptManager to coordinate specialized handlers:
 
 ```
 InterruptManager: Central coordination of interrupt processing
-├── PolledHandler: Manages GPIO state monitoring (Key, Lock, Lights sensors)
-└── QueuedHandler: Manages button event processing (ButtonSensor)
+├── TriggerHandler: Manages GPIO state monitoring (Key, Lock, Lights sensors)
+└── ActionHandler: Manages button event processing (ButtonSensor)
 ```
 
-### Interrupt Processing Model (v3.0)
+### Interrupt Processing Model
 The system coordinates interrupt evaluation and execution through handlers:
 
-- **Polled Evaluation**: PolledHandler checks GPIO sensors for state changes during UI IDLE
-- **Queued Evaluation**: QueuedHandler monitors button sensor continuously for responsiveness  
+- **Trigger Evaluation**: TriggerHandler checks GPIO sensors for state changes during UI IDLE
+- **Action Evaluation**: ActionHandler monitors button sensor continuously for responsiveness  
 - **All Execution**: Only happens during UI IDLE state for LVGL compatibility
-- **Priority System**: CRITICAL > IMPORTANT > NORMAL with basic blocking logic
+- **Priority System**: CRITICAL > IMPORTANT > NORMAL with sophisticated blocking logic
 
-### Current Interrupt Structure (v3.0)
+### Interrupt Structure
 
-#### Simplified Interrupt Structure
-The current implementation uses a unified interrupt structure with single execution function:
+#### Trigger/Action Separation
+The implementation uses separate structures for state-based and event-based interrupts:
 
 ```cpp
 // Located in include/utilities/types.h
@@ -85,50 +81,41 @@ enum class Priority : uint8_t {
     CRITICAL = 2     // Highest priority (e.g., key, errors)
 };
 
-// Current v3.0 Interrupt Structure
-struct Interrupt {
-    const char* id;                           // Static string identifier
-    Priority priority;                        // Processing priority enum
-    InterruptSource source;                   // POLLED or QUEUED
+enum class TriggerType : uint8_t {
+    PANEL = 0,       // Panel switching triggers
+    STYLE = 1,       // Style/theme changing triggers
+    FUNCTION = 2     // Function execution triggers
+};
+
+// Trigger Structure (State-Based)
+struct Trigger {
+    const char* id;                          // Unique identifier
+    Priority priority;                       // Execution priority
+    TriggerType type;                        // Type classification
     
-    // Single execution function - simplified approach
-    void (*execute)(void* context);           // Execute the interrupt action
-    void* context;                           // Sensor or service context
+    // Dual-state functions - no context needed
+    void (*activateFunc)();                  // Execute when sensor goes ACTIVE
+    void (*deactivateFunc)();                // Execute when sensor goes INACTIVE
     
-    // Interrupt-specific data (union for memory efficiency)
-    union Data {
-        const char* panelName;               // Panel to load
-        const char* theme;                   // Theme to set
-        ButtonAction action;                 // Button action to perform
-    } data;
-    
-    // Control flags
-    bool blocking;                           // If true, prevents restoration when active
-    InterruptFlags flags;                    // Runtime state flags (int8_t bitfield)
-    
-    // Helper methods for flag management
-    bool IsActive() const { 
-        return (flags & InterruptFlags::ACTIVE) != InterruptFlags::NONE; 
-    }
-    void SetActive(bool active) { 
-        if (active) flags |= InterruptFlags::ACTIVE; 
-        else flags &= ~InterruptFlags::ACTIVE; 
-    }
-    bool NeedsExecution() const { 
-        return (flags & InterruptFlags::NEEDS_EXECUTION) != InterruptFlags::NONE; 
-    }
-    void SetNeedsExecution(bool needs) {
-        if (needs) flags |= InterruptFlags::NEEDS_EXECUTION;
-        else flags &= ~InterruptFlags::NEEDS_EXECUTION;
-    }
+    // State association
+    BaseSensor* sensor;                      // Associated sensor (1:1)
+    bool isActive;                           // Currently active state
+};
+
+// Action Structure (Event-Based)
+struct Action {
+    const char* id;                          // Unique identifier
+    void (*executeFunc)();                   // Execute when action triggered
+    bool hasTriggered;                       // Action pending execution
+    ActionPress pressType;                   // SHORT or LONG press
 };
 ```
 
-**Memory Usage**: Approximately 29 bytes per interrupt (static array of 32 max = ~928 bytes total)
+**Memory Usage**: Approximately 40 bytes per trigger + 16 bytes per action (estimated ~300-400 bytes total)
 
-### Handler Architecture (v3.0)
+### Handler Architecture
 
-#### PolledHandler (GPIO State Monitoring)
+#### TriggerHandler (GPIO State Monitoring)
 Handles GPIO sensors and manages their state changes:
 
 **Owned Sensors**:
@@ -141,10 +128,10 @@ Handles GPIO sensors and manages their state changes:
 **Processing Model**:
 - Evaluates sensors only during UI IDLE state
 - Uses BaseSensor change detection pattern
-- Triggers interrupts when sensor states change
-- Handles priority-based interrupt execution
+- Executes dual functions based on state changes
+- Implements priority-based override logic
 
-#### QueuedHandler (Button Event Processing)
+#### ActionHandler (Button Event Processing)
 Manages button sensor for user input:
 
 **Owned Sensors**:
@@ -166,16 +153,16 @@ Central coordinator that:
 
 ## Sensor Architecture
 
-### Current Sensor Implementation
+### Sensor Implementation
 Each GPIO pin has exactly one dedicated sensor class:
 
-**GPIO Sensors (owned by PolledHandler)**:
+**GPIO Sensors (owned by TriggerHandler)**:
 - **KeyPresentSensor** (GPIO 25): Independent class for key present detection
 - **KeyNotPresentSensor** (GPIO 26): Independent class for key not present detection
 - **LockSensor** (GPIO 27): Lock status monitoring
 - **LightsSensor** (GPIO 33): Day/night detection
 
-**Button Sensor (owned by QueuedHandler)**:
+**Button Sensor (owned by ActionHandler)**:
 - **ButtonSensor** (GPIO 32): User input with timing detection, triggers action interrupts
 
 **Data Sensors (owned by panels)**:
@@ -222,7 +209,7 @@ protected:
 
 ## Main Loop Processing Flow
 
-### Current Processing Model
+### Processing Model
 ```cpp
 void loop() {
     // 1. LVGL tasks
@@ -241,10 +228,10 @@ void loop() {
 
 ### InterruptManager Processing
 1. **Evaluate Interrupts**: 
-   - QueuedHandler always evaluates (button responsiveness)
-   - PolledHandler evaluates only during UI IDLE
+   - ActionHandler always evaluates (button responsiveness)
+   - TriggerHandler evaluates only during UI IDLE
 2. **Execute Interrupts**: Both handlers execute only during UI IDLE
-3. **Handle Restoration**: Simple restoration logic based on blocking flags
+3. **Handle Restoration**: Smart restoration logic with priority override
 
 ## Available Panels
 
@@ -303,8 +290,9 @@ void loop() {
 
 ## Memory Architecture
 
-### Current Memory Usage
-- **Interrupt Storage**: Static array, ~928 bytes total (32 × 29 bytes)
+### Memory Usage
+- **Trigger Storage**: Static array, ~300 bytes (8 triggers × ~40 bytes)
+- **Action Storage**: Static array, ~32 bytes (2 actions × ~16 bytes)  
 - **Handler Storage**: Two handler instances with owned sensors
 - **Static Callbacks**: Function pointers only, no heap allocation
 
@@ -317,12 +305,12 @@ Main
 │   └── DeviceProvider
 └── Creates ManagerFactory (with providers injected)
     ├── Creates InterruptManager
-    │   ├── Creates PolledHandler (owns GPIO sensors)
+    │   ├── Creates TriggerHandler (owns GPIO sensors)
     │   │   ├── KeyPresentSensor (GPIO 25)
     │   │   ├── KeyNotPresentSensor (GPIO 26)
     │   │   ├── LockSensor (GPIO 27)
     │   │   └── LightsSensor (GPIO 33)
-    │   └── Creates QueuedHandler (owns button sensor)
+    │   └── Creates ActionHandler (owns button sensor)
     │       └── ButtonSensor (GPIO 32)
     └── Creates PanelManager
         └── Creates panels on demand
@@ -403,24 +391,17 @@ The project follows Google C++ Style Guide with project-specific preferences:
 - **Files**: snake_case (e.g., `panel_manager.cpp`)
 - **Interfaces**: Prefixed with `I` (e.g., `IPanel`)
 
-## Current Status Summary
+## System Capabilities
 
-**Strengths**:
-- ✅ Solid v3.0 interrupt architecture with working handlers
-- ✅ Complete sensor ownership model prevents resource conflicts
-- ✅ Factory pattern with dependency injection working
-- ✅ All core panels implemented and functional
-- ✅ Memory-safe static callback system
-
-**Areas for Improvement**:
-- ⚠️ Error system only partially integrated with interrupt system
-- ⚠️ Button system functional but could be more sophisticated
-- ⚠️ Testing coverage minimal
-- ⚠️ Memory usage not profiled/validated
-
-**Proposed Future Work** (see `docs/plans/proposed-interrupt-architecture.md`):
-- v4.0 Trigger/Action architecture with dual functions
-- Enhanced priority override logic
-- More sophisticated button handling
-- Complete error system integration
+**Core Features**:
+- Sophisticated interrupt architecture with Trigger/Action separation
+- Complete sensor ownership model prevents resource conflicts
+- Factory pattern with dependency injection
+- All core panels implemented and functional
+- Memory-safe static callback system
+- Priority-based override logic for complex scenarios
+- Smart restoration with last user panel tracking
 - Comprehensive testing framework
+- Memory-optimized design for ESP32 constraints
+- Advanced error handling integration
+- Extended sensor support architecture

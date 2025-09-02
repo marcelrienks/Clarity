@@ -1,12 +1,15 @@
-## MVP:
+# Development Patterns
 
-## State:
-Each individual panel is responsible for setting the state to BUSY or IDLE due to the panels being closer to the actual LVGL or Timer logic that consumes processing.
+## MVP Architecture
+Model-View-Presenter pattern with clear separation of concerns.
 
-## "Early Return":
-Ensure early validation and return or error handling
+## State Management
+Each panel manages BUSY or IDLE state due to proximity to LVGL and Timer logic.
 
-## Logging:
-  1. Verbose logs (log_v) - Only for method entry (indicating the method has been called)
-  2. Debug logs (log_d) - Only within method bodies for complex activities
-  3. Info logs (log_i) - Only for major functional/logical parts of the system
+## Error Handling
+Early validation and return patterns with comprehensive error handling.
+
+## Logging Standards
+- **Verbose logs (log_v)**: Method entry indication
+- **Debug logs (log_d)**: Complex activities within method bodies
+- **Info logs (log_i)**: Major functional and logical system operations

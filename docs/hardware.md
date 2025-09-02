@@ -128,23 +128,23 @@ For development and testing, Clarity uses the Wokwi online ESP32 simulator.
 #endif
 ```
 
-## Testing Strategy
+## Testing Approach
 
-### Unit Tests
-- Run natively on development machine
+### Unit Testing
+- Native execution on development machine
 - Mock all hardware interfaces
 - Test core logic without physical hardware
 
-### Integration Tests  
-- Use Wokwi emulator for hardware simulation
-- Test complete system workflows
-- Validate sensor-to-display data flow
-- Verify panel switching logic
+### Integration Testing  
+- Wokwi emulator for hardware simulation
+- Complete system workflow validation
+- Sensor-to-display data flow verification
+- Panel switching logic testing
 
 ### Hardware Validation
-- Final testing on actual NodeMCU-32S + GC9A01 setup
-- Verify timing, performance, and visual appearance
-- Test automotive environment conditions
+- Testing on NodeMCU-32S + GC9A01 setup
+- Timing, performance, and visual verification
+- Automotive environment testing
 
 ## Hardware Assembly Notes
 

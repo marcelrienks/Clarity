@@ -2,8 +2,6 @@
 
 This diagram illustrates detailed interrupt processing flow concepts.
 
-**⚠️ Note**: This diagram currently shows proposed v4.0 Trigger/Action architecture. For current v3.0 PolledHandler/QueuedHandler implementation, see [../architecture.md](../architecture.md)
-
 ## Flow Overview
 
 - **Dual Processing Model**: Separate evaluation and execution phases for Triggers vs Actions

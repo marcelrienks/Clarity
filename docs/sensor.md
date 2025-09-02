@@ -1,6 +1,6 @@
-# Sensor Implementation Guidelines
+# Sensor Architecture
 
-## Success Criteria for Oil Pressure and Temperature Sensors
+## Oil Pressure and Temperature Sensors
 
 ### 1. Panel and Component Responsibilities
 - **Oil pressure and temperature panels** and their respective components are responsible for:
@@ -30,79 +30,58 @@
 - This injection will be based on reading user preferences from the preference service
 - This ensures the entire system respects user-configured units
 
-## Implementation Plan
+## Sensor Design Requirements
 
-### Phase 1: Refactor Sensor Architecture
+### ISensor Interface
+- Method to set the target unit of measure
+- Method to get supported units
+- Consistent interface for all sensors
 
-1. **Update ISensor Interface**
-   - Add a method to set the target unit of measure
-   - Consider adding a method to get supported units
+### Unit-Aware Sensor Base Class
+- Common unit conversion logic
+- Unit storage and validation
+- Consistent interface implementation
 
-2. **Modify Sensor Constructors**
-   - Remove preference service dependency from sensor constructors
-   - Add unit of measure parameter to sensor initialization
+## Oil Pressure Sensor
 
-3. **Create Unit-Aware Sensor Base Class**
-   - Implement common unit conversion logic
-   - Handle unit storage and validation
-   - Provide consistent interface for all sensors
+### Core Responsibilities
+- ADC reading and conversion
+- Unit-based reading output
+- No UI-related concerns (scales, display ranges)
 
-### Phase 2: Update Oil Pressure Sensor
+### Unit Support
+- Store target unit during initialization
+- Convert ADC readings directly to requested unit
+- Return readings in the specified unit format
+- Support Bar, PSI, kPa units
 
-1. **Remove Internal Unit Logic**
-   - Remove preference service dependency
-   - Remove hardcoded unit conversions in GetReading()
+## Oil Temperature Sensor
 
-2. **Implement Unit-Based Reading**
-   - Store target unit during initialization
-   - Convert ADC readings directly to requested unit
-   - Return readings in the specified unit format
+### Core Responsibilities
+- ADC reading and conversion
+- Temperature unit conversion
+- Maintain accuracy in conversions
 
-3. **Simplify Sensor Logic**
-   - Focus only on ADC reading and conversion
-   - Remove UI-related concerns (scales, display ranges)
+### Unit Support
+- Support Celsius and Fahrenheit based on injected unit
+- Accurate temperature conversions
+- No preference service dependency
 
-### Phase 3: Update Oil Temperature Sensor
+## Panel Integration
 
-1. **Apply Same Refactoring as Pressure Sensor**
-   - Remove preference service dependency
-   - Remove internal unit decision logic
+### OemOilPanel Requirements
+- Read pressure and temperature units from preferences
+- Pass units to sensors during panel initialization
+- No sensor-specific unit logic in panels
 
-2. **Implement Temperature Unit Conversion**
-   - Support Celsius and Fahrenheit based on injected unit
-   - Maintain accuracy in conversions
+### Component Requirements
+- Work with sensor readings in their expected units
+- Scale configurations independent of sensor ranges
+- Visual display separate from sensor logic
 
-### Phase 4: Update Panels
+## Architecture Benefits
 
-1. **OemOilPanel Updates**
-   - Read pressure and temperature units from preferences
-   - Pass units to sensors during panel initialization
-   - Remove any sensor-specific unit logic from panels
-
-2. **Component Updates**
-   - Ensure components work with sensor readings in their expected units
-   - Update scale configurations to be independent of sensor ranges
-
-### Phase 5: Testing and Validation
-
-1. **Unit Tests**
-   - Test sensors with different injected units
-   - Verify correct conversions for edge cases
-   - Test sensor independence from display scales
-
-2. **Integration Tests**
-   - Verify panel-sensor communication
-   - Test preference changes and unit updates
-   - Ensure smooth transitions between units
-
-3. **Hardware Testing**
-   - Validate ADC readings with actual hardware
-   - Test full range of sensor inputs
-   - Verify accuracy of unit conversions
-
-### Benefits of This Architecture
-
-1. **Modularity**: Sensors become truly modular and replaceable
+1. **Modularity**: Sensors are truly modular and replaceable
 2. **Flexibility**: Easy to add new sensor types or units
 3. **Separation of Concerns**: Clear boundaries between sensing and display
 4. **Maintainability**: Changes to display don't affect sensor logic
