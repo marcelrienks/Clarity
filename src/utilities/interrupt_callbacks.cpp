@@ -16,7 +16,7 @@
 extern std::unique_ptr<PanelManager> panelManager;
 extern std::unique_ptr<StyleManager> styleManager;
 
-// Global variable for tracking previous panel (as per simplified plan)
+// Global variable for tracking previous panel state
 static std::string savedUserPanel = "";
 
 //=============================================================================

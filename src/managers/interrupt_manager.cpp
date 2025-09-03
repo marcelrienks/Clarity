@@ -109,12 +109,12 @@ void InterruptManager::Process()
         return;
     }
     
-    // Phase 1: Process Actions (continuous evaluation for responsiveness)
+    // Process Actions (continuous evaluation for responsiveness)
     if (actionHandler_) {
         actionHandler_->Process();
     }
     
-    // Phase 2: Process Triggers (only during UI idle)
+    // Process Triggers (only during UI idle)
     if (IsUIIdle() && triggerHandler_) {
         triggerHandler_->Process();
     }

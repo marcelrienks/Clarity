@@ -233,7 +233,7 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     }
 }
 
-// Old Action interface methods (Phase 1 compatibility - commented out)
+// Legacy Action interface methods (retained for reference)
 /*
 Action ErrorPanel::GetShortPressAction()
 {

@@ -13,7 +13,7 @@
  * - ThemeColors: Color scheme structure for different themes
  * - Style Utilities: Helper functions for color mapping and styling
  * 
- * @note This file centralizes style utilities that were previously scattered across components
+ * @note This file centralizes style utilities for consistent theming across components
  * @note For compile-time constants, see constants.h; for mutable types, see types.h
  */
 

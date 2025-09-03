@@ -83,7 +83,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
 {
     log_v("CreatePanelManagerImpl() called");
 
-    // For backward compatibility with static methods that pass providers directly
+    // Validate required providers
     if (!display)
     {
         log_e("ManagerFactory: Cannot create PanelManager - IDisplayProvider is null");
@@ -268,7 +268,7 @@ ErrorManager* ManagerFactory::CreateErrorManager()
     return CreateErrorManagerImpl();
 }
 
-// Static Convenience Methods (for backward compatibility)
+// Static Convenience Methods
 
 std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerStatic(IDisplayProvider *display, IGpioProvider *gpio,
                                                                         IStyleService *styleService,

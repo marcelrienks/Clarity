@@ -11,7 +11,7 @@
  * 
  * @details This file contains all the system-wide trigger and action definitions
  * exactly as specified in docs/interrupt-architecture.md. These definitions
- * replace the legacy interrupt system with the new Trigger/Action separation.
+ * implement the modern Trigger/Action separation architecture.
  */
 
 namespace SystemDefinitions {

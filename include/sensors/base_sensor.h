@@ -13,7 +13,7 @@
  * @details This base class implements the change detection pattern required by
  * the coordinated interrupt system. All sensors must inherit from BaseSensor
  * to ensure consistent change detection behavior and prevent corruption from
- * multiple evaluations per cycle. Phase 3 adds interrupt registration capabilities.
+ * multiple evaluations per cycle.
  *
  * @design_pattern Template method pattern for change detection
  * @change_detection Prevents corruption through single evaluation per cycle

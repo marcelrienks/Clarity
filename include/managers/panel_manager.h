@@ -159,7 +159,7 @@ class PanelManager : public IPanelService
     // Singleton access for new interrupt architecture
     static PanelManager& Instance();
     
-    // Public Data Members - using c_str() to maintain const char* interface compatibility
+    // Public Data Members
     const char *currentPanel = PanelNames::OIL;     ///< Current panel state
     const char *restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
 

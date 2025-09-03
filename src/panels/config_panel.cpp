@@ -137,7 +137,7 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 // IInputService Interface Implementation
 
-// Old Action interface methods (Phase 1 compatibility - commented out)
+// Legacy Action interface methods (retained for reference)
 /*
 Action ConfigPanel::GetShortPressAction()
 {

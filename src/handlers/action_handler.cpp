@@ -144,7 +144,7 @@ void ActionHandler::ExecutePendingActions() {
 }
 
 void ActionHandler::ExecuteAction(const Action& action) {
-    // Legacy method - keeping for backward compatibility
+    // Execute action based on press type
     // Check if we should use panel function or action's own function
     if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
         log_d("Executing injected short press function for action '%s'", action.id);
@@ -276,7 +276,7 @@ void ActionHandler::ClearPanelFunctions() {
     log_d("Panel functions cleared");
 }
 
-// Legacy methods removed - not part of new IHandler interface
+// Handler interface implementation complete
 
 // Status and diagnostics
 size_t ActionHandler::GetActionCount() const {

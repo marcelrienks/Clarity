@@ -193,8 +193,8 @@ void TriggerHandler::RestoreSameTypeTrigger(TriggerType type, Priority excludePr
     // Find the highest priority trigger of the same type that is still active
     Trigger* toRestore = FindHighestPrioritySameType(type, excludePriority);
     if (toRestore && toRestore->isActive && toRestore->activateFunc) {
-        log_d("Restoring same-type trigger '%s' after '%s' deactivated", 
-              toRestore->id, TriggerIds::KEY_PRESENT); // Placeholder for logging
+        log_d("Restoring same-type trigger '%s' after exclusion", 
+              toRestore->id);
         toRestore->activateFunc();
     }
 }
@@ -248,7 +248,7 @@ Trigger* TriggerHandler::FindTrigger(const char* id) {
     return nullptr;
 }
 
-// Legacy methods removed - not part of new IHandler interface
+// Handler interface implementation complete
 
 // Status and diagnostics
 size_t TriggerHandler::GetTriggerCount() const {

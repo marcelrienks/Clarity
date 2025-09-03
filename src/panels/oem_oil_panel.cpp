@@ -397,7 +397,7 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_start(&temperatureAnimation_);
 }
 
-// Old Action interface methods (Phase 1 compatibility - commented out)
+// Legacy Action interface methods (retained for reference)
 /*
 /// @brief Get action for short button press
 /// @return NoAction - oil panel doesn't respond to short presses
