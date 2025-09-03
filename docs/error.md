@@ -185,7 +185,7 @@ private:
 Example integration in existing components:
 
 ```cpp
-// In src/sensors/oil_pressure_sensor.cpp
+// Current implementation uses singleton pattern - in src/sensors/oil_pressure_sensor.cpp
 Reading OilPressureSensor::GetReading() {
     auto reading = analogRead(pin_);
     if (reading == 0 || reading > 4095) {
@@ -220,32 +220,28 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName) {
 
 #### Service-Level Integration
 
-Modify `src/main.cpp` to include error manager initialization:
+Current implementation in `src/main.cpp` uses singleton pattern:
 
 ```cpp
-// Add to global services
-std::unique_ptr<ErrorManager> errorManager;
+// Current implementation - ErrorManager uses singleton pattern
+// Global manager pointers created by ManagerFactory
+ErrorManager *errorManager;
 
-void initializeServices() {
-    log_d("Initializing DeviceProvider...");
-    deviceProvider = std::make_unique<DeviceProvider>();
+bool initializeServices() {
+    // ... other service initialization ...
     
-    log_d("Initializing StyleManager...");
-    styleManager = std::make_unique<StyleManager>();
+    // Create ErrorManager via ManagerFactory (singleton pattern)
+    errorManager = managerFactory->CreateErrorManager();
+    if (!errorManager) {
+        log_e("Failed to create ErrorManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "ErrorManager creation failed");
+        return false;
+    }
     
-    log_d("Initializing ErrorManager...");
-    errorManager = std::make_unique<ErrorManager>();
+    // ErrorManager::Instance() is available globally throughout the system
+    log_d("ErrorManager singleton initialized and available globally");
     
-    log_d("Initializing PreferenceManager...");
-    preferenceManager = std::make_unique<PreferenceManager>();
-    
-    log_d("Initializing PanelManager...");
-    panelManager = std::make_unique<PanelManager>();
-    
-    log_d("Initializing InterruptManager...");
-    interruptManager = std::make_unique<InterruptManager>();
-    
-    log_d("Service initialization complete");
+    return true;
 }
 ```
 

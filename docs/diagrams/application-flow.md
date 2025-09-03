@@ -133,7 +133,13 @@ flowchart TB
    - ProviderFactory created first (implements IProviderFactory for hardware abstraction)
    - ProviderFactory creates hardware providers (Device, GPIO, Display)
    - ManagerFactory created with ProviderFactory dependency injection (Provider → Manager pattern)
-2. **Service Initialization**: ManagerFactory uses injected ProviderFactory to obtain providers, then creates all managers (Preference, Style, Interrupt, Panel, Error)
+2. **Service Initialization Order**: 
+   - ManagerFactory uses injected ProviderFactory to obtain providers
+   - Creates PreferenceManager (for user settings)
+   - Creates StyleManager (with theme from preferences)  
+   - Creates InterruptManager (with GPIO provider)
+   - Creates PanelManager (with all dependencies)
+   - Creates ErrorManager (singleton pattern)
 3. **Handler Creation with Sensor Ownership**:
    - InterruptManager creates TriggerHandler → owns GPIO sensors (Key, Lock, Lights)
    - InterruptManager creates ActionHandler → owns ButtonSensor

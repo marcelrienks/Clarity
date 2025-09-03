@@ -187,11 +187,18 @@ flowchart TD
 
 **Action Processing Flow**:
 ```cpp
-// 1. Event Detection & Queuing
+// 1. Event Detection & Queuing - Current implementation
 void ActionHandler::EvaluateIndividualAction(Action& action) {
-    if (ShouldTriggerAction(action)) {
-        action.hasTriggered = true;  // Queue the action
-        log_d("Action '%s' triggered", action.id);
+    // Button state changes detected via ButtonSensor
+    if (buttonSensor_->HasStateChanged()) {
+        uint32_t pressDuration = buttonSensor_->GetPressDuration();
+        
+        // Check if this action matches the detected press type
+        if ((pressDuration >= 50 && pressDuration < 2000 && action.pressType == ActionPress::SHORT) ||
+            (pressDuration >= 2000 && pressDuration <= 5000 && action.pressType == ActionPress::LONG)) {
+            action.hasTriggered = true;  // Queue the action
+            log_d("Action '%s' triggered with %lums press", action.id, pressDuration);
+        }
     }
 }
 

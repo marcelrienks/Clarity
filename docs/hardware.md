@@ -55,9 +55,9 @@ Clarity is designed for ESP32-based automotive gauge systems with a round displa
 | Lock State       | GPIO 27   | INPUT       | PULLDOWN    | Vehicle lock status        |
 | Light Sensor     | GPIO 33   | INPUT       | PULLDOWN    | Day/night detection        |
 | Input Button     | GPIO 32   | INPUT       | PULLDOWN    | Single button navigation   |
-| Debug Error Sensor | GPIO 34 | INPUT       | None*       | Debug error trigger (dev only) |
+| Debug Error Sensor | GPIO 34 | INPUT       | EXTERNAL*   | Debug error trigger (dev only) |
 
-*GPIO 34 is an input-only pin without internal pull resistors. External pull-down required for stable operation.
+*GPIO 34 is input-only without internal pulls. Requires external pull-down resistor for stable operation in debug builds only.
 
 **Development Only**: Debug error sensor is only active in CLARITY_DEBUG builds. This feature is completely excluded from release builds to save memory and GPIO resources.
 

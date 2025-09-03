@@ -285,14 +285,16 @@ void loop() {
 ### GPIO Mapping (Current Implementation)
 | GPIO | Sensor | Purpose | Handler |
 |------|--------|---------|---------|
+| **Digital GPIO** | | | |
 | **GPIO 32** | ButtonSensor | User input button (action interrupts) | ActionHandler |
 | **GPIO 25** | KeyPresentSensor | Key present detection | TriggerHandler |
 | **GPIO 26** | KeyNotPresentSensor | Key not present detection | TriggerHandler |
 | **GPIO 27** | LockSensor | Vehicle lock status | TriggerHandler |
 | **GPIO 33** | LightsSensor | Day/night detection | TriggerHandler |
 | **GPIO 34** | DebugErrorSensor | Debug error trigger (dev only) | TriggerHandler |
-| **GPIO 36** | OilPressureSensor | Oil pressure (ADC) | OilPanel |
-| **GPIO 39** | OilTemperatureSensor | Oil temperature (ADC) | OilPanel |
+| **ADC Channels** | | | |
+| **GPIO 36** | OilPressureSensor | Oil pressure (ADC1_0) | OilPanel |
+| **GPIO 39** | OilTemperatureSensor | Oil temperature (ADC1_3) | OilPanel |
 
 ## Memory Architecture
 

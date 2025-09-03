@@ -776,10 +776,12 @@ Based on the current v3.0 implementation analysis:
 - Additional memory available with single buffer configuration
 - **Optimized for complex UI operations**
 
-**⚠️ Important Notes**:
-- These are **estimates** based on code analysis, not profiled measurements
-- Actual memory usage may vary based on compiler optimization and runtime allocations
-- Memory profiling tools should be used to validate these estimates
+**⚠️ Current Status**:
+- Memory usage estimates need validation through runtime profiling
+- Actual heap usage may vary with compiler optimizations and runtime allocations
+- LVGL buffer configuration is currently dual-buffer mode (120KB total)
+- Static memory allocations are optimized for ESP32 constraints
+- Memory profiling tools should be used for production validation
 - Panel and component memory usage varies based on active UI elements
 
 #### 3.1.3 Static Callback Requirements with Centralized Restoration

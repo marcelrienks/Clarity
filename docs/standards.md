@@ -374,37 +374,56 @@ public:
 
 ### Complete Class Example
 ```cpp
-// File: oil_temperature_sensor.h
-class OilTemperatureSensor : public ISensor {
+// Current implementation in include/sensors/oil_temperature_sensor.h
+class OilTemperatureSensor : public ISensor, public BaseSensor {
 public:
-    OilTemperatureSensor(IGpioProvider* gpio_provider, int update_rate_ms = 500);
+    OilTemperatureSensor(IGpioProvider* gpioProvider, int updateRateMs = 500);
+    ~OilTemperatureSensor() = default;
     
+    // ISensor interface implementation
     void Init() override;
     void SetTargetUnit(const std::string& unit) override;
     Reading GetReading() override;
     std::vector<std::string> GetSupportedUnits() const override;
     
+    // BaseSensor implementation for change detection
+    bool HasStateChanged() override;
+    
 private:
     static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120;
     static constexpr int32_t TEMPERATURE_MIN_FAHRENHEIT = 32;
+    static constexpr int32_t GPIO_PIN = gpio_pins::OIL_TEMPERATURE;
     
-    IGpioProvider* gpio_provider_;
-    std::string target_unit_;
-    int32_t current_reading_;
-    unsigned long last_update_time_;
-    unsigned long update_interval_ms_;
+    IGpioProvider* gpioProvider_;
+    std::string targetUnit_;
+    int32_t currentReading_;
+    int32_t previousReading_;  // For change detection
+    unsigned long lastUpdateTime_;
+    unsigned long updateIntervalMs_;
 };
 ```
 
 ### Constants Structure Example
 ```cpp
+// Current implementation in include/utilities/constants.h
 struct PanelNames {
-    static constexpr const char* SPLASH = "SplashPanel";
-    static constexpr const char* OIL = "OemOilPanel";
-    static constexpr const char* KEY = "KeyPanel";
-    static constexpr const char* LOCK = "LockPanel";
-    static constexpr const char* ERROR = "ErrorPanel";
-    static constexpr const char* CONFIG = "ConfigPanel";
+    static constexpr const char *SPLASH = "SplashPanel"; ///< Startup splash screen
+    static constexpr const char *OIL = "OemOilPanel";    ///< Oil monitoring dashboard
+    static constexpr const char *KEY = "KeyPanel";       ///< Key status panel
+    static constexpr const char *LOCK = "LockPanel";     ///< Lock status panel
+    static constexpr const char *ERROR = "ErrorPanel";   ///< Error display panel
+    static constexpr const char *CONFIG = "ConfigPanel"; ///< Configuration settings panel
+};
+
+// Interrupt/Trigger constants
+struct TriggerIds {
+    static constexpr const char *KEY_PRESENT = "key_present";         ///< Key present trigger ID
+    static constexpr const char *KEY_NOT_PRESENT = "key_not_present"; ///< Key not present trigger ID
+    static constexpr const char *LOCK_STATE = "lock_state";           ///< Lock state trigger ID
+    static constexpr const char *LIGHTS_STATE = "lights_state";       ///< Lights state trigger ID
+    static constexpr const char *ERROR_OCCURRED = "error_occurred";   ///< Error occurred trigger ID
+    static constexpr const char *SHORT_PRESS = "universal_short_press"; ///< Short press button ID
+    static constexpr const char *LONG_PRESS = "universal_long_press";   ///< Long press button ID
 };
 ```
 
