@@ -124,7 +124,7 @@ flowchart TD
 - **GPIO State Sensors**: Created and owned by TriggerHandler for GPIO state monitoring (Key, Lock, Lights sensors)
 - **Button Event Sensor**: Created and owned by ActionHandler, provides button press duration measurement
 - **Data Sensors**: Created by data panels for continuous measurement (Oil pressure, temperature)
-- **BaseSensor**: Provides change detection template for all sensors
+- **BaseSensor**: Provides DetectChange template for all sensors with atomic comparison and state update
 
 ### Panels (IPanel Interface)
 - **Display-Only Panels**: Display-only, create own components but no sensors (Key, Lock)

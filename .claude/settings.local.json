@@ -12,7 +12,8 @@
       "Bash(tree:*)",
       "Read(/tmp/**)",
       "Read(/tmp/**)",
-      "Read(/tmp/**)"
+      "Read(/tmp/**)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": []

@@ -18,7 +18,7 @@ DeviceProvider → PanelManager → Panels → Components
 
 ### Trigger System
 - Static trigger mapping with priority-based execution via TriggerHandler
-- Priority levels: CRITICAL (0) > IMPORTANT (1) > NORMAL (2)
+- Priority levels: CRITICAL (2) > IMPORTANT (1) > NORMAL (0)
 - Automatic panel switching based on GPIO state changes
 
 ### Main Loop Structure

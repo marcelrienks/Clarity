@@ -180,8 +180,39 @@ flowchart TD
 
 **Queue Management**:
 - **Registration Order**: Actions execute in registration order (no priority)
-- **Event Flags**: Each Action maintains `hasTriggered` boolean
-- **Queue Clearing**: Set `hasTriggered = false` after execution
+- **Event Flags**: Each Action maintains `hasTriggered` boolean in Action struct
+- **Queue Setting**: `action.hasTriggered = true` in ActionHandler evaluation
+- **Queue Execution**: ExecutePendingActions() processes all hasTriggered actions
+- **Queue Clearing**: Action.Execute() sets `hasTriggered = false` after execution
+
+**Action Processing Flow**:
+```cpp
+// 1. Event Detection & Queuing
+void ActionHandler::EvaluateIndividualAction(Action& action) {
+    if (ShouldTriggerAction(action)) {
+        action.hasTriggered = true;  // Queue the action
+        log_d("Action '%s' triggered", action.id);
+    }
+}
+
+// 2. Queue Processing
+void ActionHandler::ExecutePendingActions() {
+    for (size_t i = 0; i < actionCount_; i++) {
+        Action& action = actions_[i];
+        if (action.hasTriggered) {
+            action.Execute();  // Clears hasTriggered automatically
+        }
+    }
+}
+
+// 3. Execution with Auto-Clear
+void Action::Execute() {
+    if (executeFunc && hasTriggered) {
+        executeFunc();
+        hasTriggered = false;  // Clear trigger flag after execution
+    }
+}
+```
 
 ### Trigger Handler Flow (State-Based)
 
@@ -207,24 +238,35 @@ flowchart TD
 ### State Change Detection System
 
 **BaseSensor Template Pattern**:
+- **Template Method**: `DetectChange<T>(currentValue, previousValue)` template
 - **Previous State Storage**: Each sensor maintains previous GPIO state
 - **Current State Reading**: Direct GPIO read via hardware provider
-- **Change Comparison**: Template-based comparison (current != previous)
-- **State Update**: Update previous state after change detection
-- **Initialization Handling**: No change detected on first read
+- **Atomic Comparison**: Template-based comparison (current != previous) with automatic state update
+- **Initialization Handling**: First read sets previous state, returns false (no change)
+- **Thread Safety**: Designed for ESP32 single-threaded interrupt processing
 
-**Sensor Requirements**:
+**Sensor Implementation Pattern**:
 ```cpp
-class GPIOSensor : public BaseSensor {
-private:
-    bool previousState_ = false;  // Required for change detection
-    
-public:
-    bool HasStateChanged() {
-        bool currentState = digitalRead(gpio_);
-        return DetectChange(currentState, previousState_);  // BaseSensor template
+// BaseSensor template method
+template<typename T>
+bool DetectChange(T currentValue, T& previousValue) {
+    if (!initialized_) {
+        previousValue = currentValue;
+        initialized_ = true;
+        return false; // No change on first read
     }
-};
+    
+    bool changed = (currentValue != previousValue);
+    previousValue = currentValue;
+    return changed;
+}
+
+// Example sensor usage
+bool KeyPresentSensor::HasStateChanged() {
+    bool currentState = readKeyPresentState();
+    bool changed = DetectChange(currentState, previousState_);
+    return changed;
+}
 ```
 
 ## Processing Model Comparison
