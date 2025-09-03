@@ -8,7 +8,7 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_preference_service.h"
-#include "interfaces/i_sensor.h"
+#include "sensors/base_sensor.h"
 #include "utilities/sensor_helper.h"
 #include "utilities/types.h"
 
@@ -35,17 +35,20 @@
  * @context This sensor provides temperature readings in the unit requested
  * by the panel, removing unit conversion logic from display components.
  */
-class OilTemperatureSensor : public ISensor
+class OilTemperatureSensor : public BaseSensor
 {
   public:
     // Constructors and Destructors
     OilTemperatureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
     OilTemperatureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs = 500);
 
-    // ISensor interface implementation
+    // BaseSensor interface implementation
     void Init() override;
-    void SetTargetUnit(const std::string &unit) override;
     Reading GetReading() override;
+    bool HasStateChanged() override;
+    
+    // ISensor optional methods
+    void SetTargetUnit(const std::string &unit) override;
     std::vector<std::string> GetSupportedUnits() const override;
 
     /// @brief Set the update rate in milliseconds
@@ -63,6 +66,7 @@ class OilTemperatureSensor : public ISensor
     IPreferenceService *preferenceService_ = nullptr;
     std::string targetUnit_ = "C";
     int32_t currentReading_ = 0;
+    int32_t previousReading_ = 0;  // For change detection
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
 };

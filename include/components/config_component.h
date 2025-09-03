@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_component.h"
+#include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
 #include "utilities/types.h"
 #include <functional>
@@ -39,12 +40,17 @@ class ConfigComponent : public IComponent
     struct MenuItem
     {
         std::string label;
-        std::function<void()> action;
+        std::string actionType;  // Type of action: "theme_switch", "panel_load", etc.
+        std::string actionParam; // Parameter for the action
     };
 
-    // Constructor
-    ConfigComponent();
+    // Constructor with dependency injection
+    ConfigComponent(IPanelService* panelService = nullptr, 
+                   IStyleService* styleService = nullptr);
     ~ConfigComponent() = default;
+    
+    // Execute action directly through injected interfaces
+    void ExecuteAction(const std::string& actionType, const std::string& actionParam);
 
     // IComponent interface implementation
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
@@ -101,7 +107,8 @@ class ConfigComponent : public IComponent
     size_t currentIndex_ = 0;
     std::string currentTitle_ = "Configuration";
     
-    // Style service for theme-aware colors
+    // Dependency-injected interfaces for direct calls
+    IPanelService* panelService_ = nullptr;
     IStyleService* styleService_ = nullptr;
 
     // Constants

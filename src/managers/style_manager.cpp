@@ -197,12 +197,9 @@ StyleManager& StyleManager::Instance() {
 }
 
 /// @brief Get function for theme switching that panels can use in their actions
-std::function<void(const char *)> StyleManager::GetThemeSwitchFunction()
+void StyleManager::SwitchTheme(const char* themeName)
 {
-    log_v("GetThemeSwitchFunction() called");
-    return [this](const char *theme)
-    {
-        log_i("StyleManager: Direct theme switch requested to: %s", theme);
-        this->SetTheme(theme);
-    };
+    log_v("SwitchTheme() called");
+    log_i("StyleManager: Direct theme switch requested to: %s", themeName);
+    SetTheme(themeName);
 }

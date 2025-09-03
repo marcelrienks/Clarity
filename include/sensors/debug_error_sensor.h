@@ -36,7 +36,7 @@
  * developers to manually trigger errors using DIP switch 8 to test
  * the error handling system without actual system errors.
  */
-class DebugErrorSensor : public ISensor, public BaseSensor
+class DebugErrorSensor : public BaseSensor
 {
   public:
     // Constructors and Destructors

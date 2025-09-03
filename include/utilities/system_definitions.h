@@ -36,8 +36,8 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "key_present",
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelNames::KEY); },
-            .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
+            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::KEY); },
+            .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = keyPresentSensor,
             .canBeOverriddenOnActivate = false,
             .isActive = false
@@ -46,8 +46,8 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "key_not_present", 
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelNames::KEY); },
-            .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
+            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::KEY); },
+            .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = keyNotPresentSensor,
             .canBeOverriddenOnActivate = false,
             .isActive = false
@@ -58,8 +58,8 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "lock",
             .priority = Priority::IMPORTANT,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelNames::LOCK); },
-            .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
+            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::LOCK); },
+            .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = lockSensor,
             .canBeOverriddenOnActivate = false,
             .isActive = false
@@ -84,8 +84,8 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "error",
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelNames::ERROR); },
-            .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
+            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::ERROR); },
+            .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = errorSensor,
             .canBeOverriddenOnActivate = false,
             .isActive = false
@@ -102,13 +102,13 @@ inline std::vector<Action> GetSystemActions() {
         // Button actions
         {
             .id = "short_press",
-            .executeFunc = []() { PanelManager::Instance().HandleShortPress(); },
+            .executeFunc = []() { PanelManager::ActionService().HandleShortPress(); },
             .hasTriggered = false,
             .pressType = ActionPress::SHORT
         },
         {
             .id = "long_press",
-            .executeFunc = []() { PanelManager::Instance().HandleLongPress(); },
+            .executeFunc = []() { PanelManager::ActionService().HandleLongPress(); },
             .hasTriggered = false,
             .pressType = ActionPress::LONG
         }

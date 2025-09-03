@@ -3,6 +3,7 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
+#include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
 #include <algorithm>
@@ -11,9 +12,10 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                         IComponentFactory *componentFactory)
+                         IComponentFactory *componentFactory, IPanelNotificationService* notificationService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
+      notificationService_(notificationService ? notificationService : &PanelManager::NotificationService())
 {
     log_v("SplashPanel constructor called");
 }
@@ -59,11 +61,9 @@ void SplashPanel::Init()
 
 /// @brief Show the screen
 /// @param callbackFunction the function to call when the splash screen is complete
-void SplashPanel::Load(std::function<void()> callbackFunction)
+void SplashPanel::Load()
 {
     log_v("Load() called");
-
-    callbackFunction_ = callbackFunction;
     if (!componentFactory_)
     {
         log_e("SplashPanel requires component factory");
@@ -93,11 +93,11 @@ void SplashPanel::Load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the reading on the screen
-void SplashPanel::Update(std::function<void()> callbackFunction)
+void SplashPanel::Update()
 {
     log_v("Update() called");
     // Splash panel doesn't need regular updates - animation handles its own state
-    callbackFunction();
+    notificationService_->OnPanelUpdateComplete(this);
 }
 
 // Static Callback Methods
@@ -158,7 +158,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
-    panel->callbackFunction_();
+    panel->notificationService_->OnPanelLoadComplete(panel);
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);

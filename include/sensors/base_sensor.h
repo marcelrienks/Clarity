@@ -1,5 +1,6 @@
 #pragma once
 
+#include "interfaces/i_sensor.h"
 #include "utilities/types.h"
 #include "utilities/constants.h"
 #include <functional>
@@ -50,7 +51,7 @@
  * };
  * ```
  */
-class BaseSensor
+class BaseSensor : public ISensor
 {
 protected:
     bool initialized_ = false; ///< Initialization flag for first-read handling
@@ -95,13 +96,17 @@ protected:
 public:
     virtual ~BaseSensor() = default;
     
+    // ISensor interface methods (must be implemented by concrete sensors)
+    virtual void Init() = 0;
+    virtual Reading GetReading() = 0;
     
     /**
      * @brief Check if this sensor has state changes (must be implemented by derived classes)
      * @return true if sensor state has changed since last evaluation
      * @note This method should use DetectChange template for consistency
+     * @note This is required by the interrupt system and must be implemented
      */
-    virtual bool HasStateChanged() { return false; }
+    virtual bool HasStateChanged() = 0;
 
 protected:
     

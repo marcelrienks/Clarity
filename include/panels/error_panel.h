@@ -51,8 +51,8 @@ class ErrorPanel : public IPanel
     // Core Functionality Methods
     static constexpr const char *NAME = PanelNames::ERROR;
     void Init() override;
-    void Load(std::function<void()> callbackFunction) override;
-    void Update(std::function<void()> callbackFunction) override;
+    void Load() override;
+    void Update() override;
 
     // Manager injection method
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;

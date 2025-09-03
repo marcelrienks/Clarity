@@ -127,9 +127,9 @@ class StyleManager : public IStyleService
         return initialized_;
     }
 
-    /// @brief Get function for theme switching that panels can use in their actions
-    /// @return Function that takes theme name and switches to that theme
-    std::function<void(const char *)> GetThemeSwitchFunction();
+    /// @brief Switch to specified theme (direct method call - no std::function)
+    /// @param themeName Name of theme to switch to
+    void SwitchTheme(const char* themeName);
 
     // Public Data Members - Theme State
     std::string THEME = Themes::NIGHT;

@@ -72,12 +72,9 @@ void ErrorPanel::Init()
 }
 
 /// @brief Load the error panel UI components
-void ErrorPanel::Load(std::function<void()> callbackFunction)
+void ErrorPanel::Load()
 {
     log_v("Load() called");
-
-    // Store callback for later use
-    callbackFunction_ = callbackFunction;
 
 
     if (!componentFactory_)
@@ -118,10 +115,7 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
     {
         log_e("Screen is null, cannot load error panel");
         ErrorManager::Instance().ReportCriticalError("ErrorPanel", "Cannot load panel - screen creation failed");
-        if (callbackFunction_)
-        {
-            callbackFunction_();
-        }
+        // Error condition - no callback needed
         return;
     }
 
@@ -140,7 +134,7 @@ void ErrorPanel::Load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the error panel with current error data
-void ErrorPanel::Update(std::function<void()> callbackFunction)
+void ErrorPanel::Update()
 {
     log_v("Update() called");
 
@@ -209,7 +203,7 @@ void ErrorPanel::Update(std::function<void()> callbackFunction)
     }
 
 
-    callbackFunction();
+    // Error panel updates are handled internally - no notification needed
 }
 
 // Static Event Callbacks
@@ -225,11 +219,7 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     auto thisInstance = static_cast<ErrorPanel *>(lv_event_get_user_data(event));
     if (thisInstance)
     {
-        
-        if (thisInstance->callbackFunction_)
-        {
-            thisInstance->callbackFunction_();
-        }
+        // Panel completion handled - no callback needed
     }
 }
 

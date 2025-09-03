@@ -1,7 +1,6 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 // System/Library Includes
-#include <functional>
 #include <lvgl.h>
 #include <memory>
 
@@ -71,15 +70,15 @@ class IPanel : public IActionService
     /// Uses stored providers injected via constructor
     virtual void Init() = 0;
 
-    /// @brief Load the panel with asynchronous completion callback
-    /// @param callbackFunction Function to call when loading is complete
+    /// @brief Load the panel (async completion via notification service)
     /// Uses stored providers injected via constructor
-    virtual void Load(std::function<void()> callbackFunction) = 0;
+    /// Calls notification service when loading is complete
+    virtual void Load() = 0;
 
-    /// @brief Update the panel data with asynchronous completion callback
-    /// @param callbackFunction Function to call when update is complete
+    /// @brief Update the panel data (async completion via notification service)  
     /// Uses stored providers injected via constructor
-    virtual void Update(std::function<void()> callbackFunction) = 0;
+    /// Calls notification service when update is complete
+    virtual void Update() = 0;
 
     // Note: Button handling methods inherited from IActionService
     // All panels must implement:
@@ -97,6 +96,5 @@ class IPanel : public IActionService
 
   protected:
     // Protected Data Members
-    std::function<void()> callbackFunction_;
     lv_obj_t *screen_ = nullptr;
 };

@@ -5,6 +5,9 @@
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_notification_service.h"
+#include "interfaces/i_action_execution_service.h"
+#include "interfaces/i_trigger_execution_service.h"
 #include "utilities/types.h"
 
 #include <functional>
@@ -57,7 +60,10 @@ class IPanelFactory;
 class IComponentFactory;
 class InterruptManager;
 
-class PanelManager : public IPanelService
+class PanelManager : public IPanelService,
+                     public IPanelNotificationService,
+                     public IActionExecutionService,
+                     public ITriggerExecutionService
 {
   public:
     // Constructors and Destructors
@@ -91,20 +97,6 @@ class PanelManager : public IPanelService
     /// @brief Update universal button interrupts with current panel's functions
     /// @param panel The panel to extract button functions from
     void UpdatePanelButtonFunctions(IPanel* panel);
-    
-    // New Interrupt Architecture Methods
-    /// @brief Handle short button press action (new architecture)
-    void HandleShortPress();
-    
-    /// @brief Handle long button press action (new architecture)
-    void HandleLongPress();
-    
-    /// @brief Load a panel by type enum (new architecture)
-    /// @param panelType Panel type to load
-    void LoadPanel(const char* panelName);
-    
-    /// @brief Check restoration and load appropriate panel (new architecture)
-    void CheckRestoration();
 
     // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
@@ -137,10 +129,8 @@ class PanelManager : public IPanelService
 
     /// @brief Internal method to create and load a panel directly without splash
     /// @param panelName Name of the panel to create and load
-    /// @param completionCallback Optional callback function to execute when loading is complete
     /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback = nullptr,
-                                  bool isTriggerDriven = false);
+    void CreateAndLoadPanelDirect(const char *panelName, bool isTriggerDriven = false);
 
     /// @brief Internal method to load a panel after first showing a splash screen transition
     /// @param panelName Name of the target panel to load after splash
@@ -158,6 +148,23 @@ class PanelManager : public IPanelService
   public:
     // Singleton access for new interrupt architecture
     static PanelManager& Instance();
+    
+    // Interface accessors for dependency injection (CRITICAL for testability)
+    static IPanelNotificationService& NotificationService() { return Instance(); }
+    static IActionExecutionService& ActionService() { return Instance(); }
+    static ITriggerExecutionService& TriggerService() { return Instance(); }
+    
+    // IPanelNotificationService implementation
+    void OnPanelLoadComplete(IPanel* panel) override;
+    void OnPanelUpdateComplete(IPanel* panel) override;
+    
+    // IActionExecutionService implementation  
+    void HandleShortPress() override;
+    void HandleLongPress() override;
+    
+    // ITriggerExecutionService implementation
+    void LoadPanel(const char* panelName) override;
+    void CheckRestoration() override;
     
     // Public Data Members
     const char *currentPanel = PanelNames::OIL;     ///< Current panel state

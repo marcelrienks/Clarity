@@ -64,11 +64,9 @@ void LockPanel::Init()
 }
 
 /// @brief Load the lock panel UI components
-void LockPanel::Load(std::function<void()> callbackFunction)
+void LockPanel::Load()
 {
     log_v("Load() called");
-    
-    callbackFunction_ = callbackFunction;
 
 
     if (!componentFactory_)
@@ -103,12 +101,12 @@ void LockPanel::Load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the lock panel with current sensor data
-void LockPanel::Update(std::function<void()> callbackFunction)
+void LockPanel::Update()
 {
     log_v("Update() called");
     
     // Lock panel is static - no updates needed
-    callbackFunction();
+    // No notification needed for static panels
 }
 
 // Static Methods
@@ -127,7 +125,7 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
         return;
     
     
-    thisInstance->callbackFunction_();
+    // Static panel - no callback needed
 }
 
 // Manager injection method

@@ -33,7 +33,7 @@
  * It enables automatic theme switching based on vehicle lighting state - when
  * lights are on (night driving), switch to night theme for better visibility.
  */
-class LightsSensor : public ISensor, public BaseSensor
+class LightsSensor : public BaseSensor
 {
   public:
     // Constructors and Destructors

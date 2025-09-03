@@ -7,6 +7,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
 #include "interfaces/i_panel_service.h"
+#include "interfaces/i_panel_notification_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
 #include <memory>
@@ -44,14 +45,15 @@ class SplashPanel : public IPanel
   public:
     // Constructors and Destructors
     SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                IComponentFactory* componentFactory = nullptr);
+                IComponentFactory* componentFactory = nullptr, 
+                IPanelNotificationService* notificationService = nullptr);
     ~SplashPanel();
 
     // Core Functionality Methods
     static constexpr const char *NAME = PanelNames::SPLASH;
     void Init() override;
-    void Load(std::function<void()> callbackFunction) override;
-    void Update(std::function<void()> callbackFunction) override;
+    void Load() override;
+    void Update() override;
 
     // Manager injection method
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
@@ -83,6 +85,7 @@ class SplashPanel : public IPanel
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
     IComponentFactory *componentFactory_;
+    IPanelNotificationService *notificationService_;
 
     // Components
     // screen_ is inherited from IPanel base class

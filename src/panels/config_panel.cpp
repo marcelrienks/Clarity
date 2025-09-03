@@ -50,11 +50,9 @@ void ConfigPanel::Init()
     log_i("ConfigPanel initialization completed");
 }
 
-void ConfigPanel::Load(std::function<void()> callbackFunction)
+void ConfigPanel::Load()
 {
     log_v("Load() called");
-    
-    callbackFunction_ = callbackFunction;
     
 
     // Reset menu to first item and main menu state
@@ -94,12 +92,12 @@ void ConfigPanel::Load(std::function<void()> callbackFunction)
     log_i("ConfigPanel loaded successfully");
 }
 
-void ConfigPanel::Update(std::function<void()> callbackFunction)
+void ConfigPanel::Update()
 {
     log_v("Update() called");
 
     // Config panel is static - no updates needed
-    callbackFunction();
+    // No notification needed for static panels
 }
 
 // Private methods
@@ -111,10 +109,15 @@ void ConfigPanel::ExecuteCurrentOption()
     if (currentMenuIndex_ >= menuItems_.size())
         return;
     
-    if (!menuItems_[currentMenuIndex_].action)
+    const auto& item = menuItems_[currentMenuIndex_];
+    if (item.actionType.empty())
         return;
     
-    menuItems_[currentMenuIndex_].action();
+    // Use the component's action execution method
+    if (configComponent_)
+    {
+        configComponent_->ExecuteAction(item.actionType, item.actionParam);
+    }
 }
 
 // Static callbacks
@@ -129,10 +132,7 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!panel)
         return;
 
-    if (panel->callbackFunction_)
-    {
-        panel->callbackFunction_();
-    }
+    // Config panel completion handled - no callback needed
 }
 
 // IInputService Interface Implementation
@@ -227,31 +227,15 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
     }
 
     menuItems_ = {
-        {"Panel: " + panelDisplay, [this]() { EnterSubmenu(MenuState::PanelSubmenu); }},
-        {"Theme: " + config.theme, [this]() { EnterSubmenu(MenuState::ThemeSubmenu); }},
-        {"Splash: " + std::string(config.showSplash ? "On" : "Off"),
-         [this]() { EnterSubmenu(MenuState::SplashSubmenu); }},
-        {"Splash T: " + std::to_string(config.splashDuration) + "ms",
-         [this]() { EnterSubmenu(MenuState::SplashDurationSubmenu); }},
-        {"Rate: " + std::to_string(config.updateRate) + "ms", [this]() { EnterSubmenu(MenuState::UpdateRateSubmenu); }},
-        {"Press: " + config.pressureUnit, [this]() { EnterSubmenu(MenuState::PressureUnitSubmenu); }},
-        {"Temp: " + config.tempUnit, [this]() { EnterSubmenu(MenuState::TempUnitSubmenu); }},
-        {"Calibration", [this]() { EnterSubmenu(MenuState::CalibrationSubmenu); }},
-        {"Exit", [this]()
-         {
-             // Save configuration before exiting
-             if (preferenceService_)
-             {
-                 preferenceService_->SaveConfig();
-             }
-             // Return to previous panel using restoration panel
-             if (panelService_)
-             {
-                 const char *restorationPanel = panelService_->GetRestorationPanel();
-                 // Use isTriggerDriven=true to prevent splash screen on programmatic panel switches
-                 panelService_->CreateAndLoadPanel(restorationPanel, true);
-             }
-         }}};
+        {"Panel: " + panelDisplay, "submenu", "PanelSubmenu"},
+        {"Theme: " + config.theme, "submenu", "ThemeSubmenu"},
+        {"Splash: " + std::string(config.showSplash ? "On" : "Off"), "submenu", "SplashSubmenu"},
+        {"Splash T: " + std::to_string(config.splashDuration) + "ms", "submenu", "SplashDurationSubmenu"},
+        {"Rate: " + std::to_string(config.updateRate) + "ms", "submenu", "UpdateRateSubmenu"},
+        {"Press: " + config.pressureUnit, "submenu", "PressureUnitSubmenu"},
+        {"Temp: " + config.tempUnit, "submenu", "TempUnitSubmenu"},
+        {"Calibration", "submenu", "CalibrationSubmenu"},
+        {"Exit", "panel_exit", ""}};
 
     // Update component with new menu items
     if (configComponent_)
@@ -297,246 +281,78 @@ void ConfigPanel::UpdateSubmenuItems()
             title = "Select Panel";
             // Currently only OemOilPanel is configurable
             // In the future, this will dynamically build from all configurable panels
-            menuItems_ = {{"Oil Panel",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.panelName = PanelNames::OIL;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Oil Panel", "config_set", "panelName:OilPanel"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::ThemeSubmenu:
         {
             title = "Select Theme";
-            menuItems_ = {{"Day",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.theme = Themes::DAY;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               if (styleService_)
-                               {
-                                   styleService_->SetTheme(cfg.theme.c_str());
-                                   styleService_->ApplyThemeToScreen(screen_);
-                                   // Override screen background for config panel
-                                   lv_obj_set_style_bg_color(screen_, lv_color_hex(0x121212), LV_PART_MAIN); // Day theme gray
-                                   lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
-                                   // Update component theme colors
-                                   if (configComponent_) {
-                                       configComponent_->UpdateThemeColors();
-                                   }
-                               }
-                               ExitSubmenu();
-                           }},
-                          {"Night",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.theme = Themes::NIGHT;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               if (styleService_)
-                               {
-                                   styleService_->SetTheme(cfg.theme.c_str());
-                                   styleService_->ApplyThemeToScreen(screen_);
-                                   // Override screen background for config panel
-                                   lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Night theme dark red
-                                   lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
-                                   // Update component theme colors
-                                   if (configComponent_) {
-                                       configComponent_->UpdateThemeColors();
-                                   }
-                               }
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Day", "theme_set", "Day"},
+                          {"Night", "theme_set", "Night"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::UpdateRateSubmenu:
         {
             title = "Update Rate";
-            menuItems_ = {{"250ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.updateRate = 250;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"500ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.updateRate = 500;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"1000ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.updateRate = 1000;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"2000ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.updateRate = 2000;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"250ms", "config_set", "updateRate:250"},
+                          {"500ms", "config_set", "updateRate:500"},
+                          {"1000ms", "config_set", "updateRate:1000"},
+                          {"2000ms", "config_set", "updateRate:2000"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::SplashSubmenu:
         {
             title = "Splash Screen";
-            menuItems_ = {{"On",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.showSplash = true;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Off",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.showSplash = false;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"On", "config_set", "showSplash:true"},
+                          {"Off", "config_set", "showSplash:false"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::SplashDurationSubmenu:
         {
             title = "Splash Duration";
-            menuItems_ = {{"1500ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.splashDuration = 1500;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"1750ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.splashDuration = 1750;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"2000ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.splashDuration = 2000;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"2000ms",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.splashDuration = 2500;
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"1500ms", "config_set", "splashDuration:1500"},
+                          {"1750ms", "config_set", "splashDuration:1750"},
+                          {"2000ms", "config_set", "splashDuration:2000"},
+                          {"2500ms", "config_set", "splashDuration:2500"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::PressureUnitSubmenu:
         {
             title = "Pressure Unit";
-            menuItems_ = {{"PSI",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.pressureUnit = "PSI";
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Bar",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.pressureUnit = "Bar";
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"kPa",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.pressureUnit = "kPa";
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"PSI", "config_set", "pressureUnit:PSI"},
+                          {"Bar", "config_set", "pressureUnit:Bar"},
+                          {"kPa", "config_set", "pressureUnit:kPa"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::TempUnitSubmenu:
         {
             title = "Temperature Unit";
-            menuItems_ = {{"C",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.tempUnit = "C";
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"F",
-                           [this]()
-                           {
-                               Configs cfg = preferenceService_->GetConfig();
-                               cfg.tempUnit = "F";
-                               preferenceService_->SetConfig(cfg);
-                               preferenceService_->SaveConfig();
-                               ExitSubmenu();
-                           }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"C", "config_set", "tempUnit:C"},
+                          {"F", "config_set", "tempUnit:F"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
         case MenuState::CalibrationSubmenu:
         {
             title = "Sensor Calibration";
-            menuItems_ = {{"Pressure Offset", [this]() { EnterSubmenu(MenuState::PressureOffsetSubmenu); }},
-                          {"Pressure Scale", [this]() { EnterSubmenu(MenuState::PressureScaleSubmenu); }},
-                          {"Temp Offset", [this]() { EnterSubmenu(MenuState::TempOffsetSubmenu); }},
-                          {"Temp Scale", [this]() { EnterSubmenu(MenuState::TempScaleSubmenu); }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Pressure Offset", "submenu_enter", "PressureOffsetSubmenu"},
+                          {"Pressure Scale", "submenu_enter", "PressureScaleSubmenu"},
+                          {"Temp Offset", "submenu_enter", "TempOffsetSubmenu"},
+                          {"Temp Scale", "submenu_enter", "TempScaleSubmenu"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
@@ -545,13 +361,13 @@ void ConfigPanel::UpdateSubmenuItems()
             title = "Pressure Offset";
             char offsetStr[16];
             snprintf(offsetStr, sizeof(offsetStr), "%.2f", config.pressureOffset);
-            menuItems_ = {{"Current: " + std::string(offsetStr), []() {}}, // Read-only display
-                          {"-1.0", [this]() { UpdateCalibration("pressure_offset", -1.0f); }},
-                          {"-0.1", [this]() { UpdateCalibration("pressure_offset", -0.1f); }},
-                          {"0.0", [this]() { UpdateCalibration("pressure_offset", 0.0f); }},
-                          {"+0.1", [this]() { UpdateCalibration("pressure_offset", 0.1f); }},
-                          {"+1.0", [this]() { UpdateCalibration("pressure_offset", 1.0f); }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Current: " + std::string(offsetStr), "display_only", ""},
+                          {"-1.0", "calibration_set", "pressure_offset:-1.0"},
+                          {"-0.1", "calibration_set", "pressure_offset:-0.1"},
+                          {"0.0", "calibration_set", "pressure_offset:0.0"},
+                          {"+0.1", "calibration_set", "pressure_offset:0.1"},
+                          {"+1.0", "calibration_set", "pressure_offset:1.0"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
@@ -560,13 +376,13 @@ void ConfigPanel::UpdateSubmenuItems()
             title = "Pressure Scale";
             char scaleStr[16];
             snprintf(scaleStr, sizeof(scaleStr), "%.3f", config.pressureScale);
-            menuItems_ = {{"Current: " + std::string(scaleStr), []() {}}, // Read-only display
-                          {"0.900", [this]() { UpdateCalibration("pressure_scale", 0.900f); }},
-                          {"0.950", [this]() { UpdateCalibration("pressure_scale", 0.950f); }},
-                          {"1.000", [this]() { UpdateCalibration("pressure_scale", 1.000f); }},
-                          {"1.050", [this]() { UpdateCalibration("pressure_scale", 1.050f); }},
-                          {"1.100", [this]() { UpdateCalibration("pressure_scale", 1.100f); }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Current: " + std::string(scaleStr), "display_only", ""},
+                          {"0.900", "calibration_set", "pressure_scale:0.900"},
+                          {"0.950", "calibration_set", "pressure_scale:0.950"},
+                          {"1.000", "calibration_set", "pressure_scale:1.000"},
+                          {"1.050", "calibration_set", "pressure_scale:1.050"},
+                          {"1.100", "calibration_set", "pressure_scale:1.100"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
@@ -575,13 +391,13 @@ void ConfigPanel::UpdateSubmenuItems()
             title = "Temperature Offset";
             char offsetStr[16];
             snprintf(offsetStr, sizeof(offsetStr), "%.1f", config.tempOffset);
-            menuItems_ = {{"Current: " + std::string(offsetStr), []() {}}, // Read-only display
-                          {"-5.0", [this]() { UpdateCalibration("temp_offset", -5.0f); }},
-                          {"-1.0", [this]() { UpdateCalibration("temp_offset", -1.0f); }},
-                          {"0.0", [this]() { UpdateCalibration("temp_offset", 0.0f); }},
-                          {"+1.0", [this]() { UpdateCalibration("temp_offset", 1.0f); }},
-                          {"+5.0", [this]() { UpdateCalibration("temp_offset", 5.0f); }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Current: " + std::string(offsetStr), "display_only", ""},
+                          {"-5.0", "calibration_set", "temp_offset:-5.0"},
+                          {"-1.0", "calibration_set", "temp_offset:-1.0"},
+                          {"0.0", "calibration_set", "temp_offset:0.0"},
+                          {"+1.0", "calibration_set", "temp_offset:1.0"},
+                          {"+5.0", "calibration_set", "temp_offset:5.0"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 
@@ -590,13 +406,13 @@ void ConfigPanel::UpdateSubmenuItems()
             title = "Temperature Scale";
             char scaleStr[16];
             snprintf(scaleStr, sizeof(scaleStr), "%.3f", config.tempScale);
-            menuItems_ = {{"Current: " + std::string(scaleStr), []() {}}, // Read-only display
-                          {"0.900", [this]() { UpdateCalibration("temp_scale", 0.900f); }},
-                          {"0.950", [this]() { UpdateCalibration("temp_scale", 0.950f); }},
-                          {"1.000", [this]() { UpdateCalibration("temp_scale", 1.000f); }},
-                          {"1.050", [this]() { UpdateCalibration("temp_scale", 1.050f); }},
-                          {"1.100", [this]() { UpdateCalibration("temp_scale", 1.100f); }},
-                          {"Back", [this]() { ExitSubmenu(); }}};
+            menuItems_ = {{"Current: " + std::string(scaleStr), "display_only", ""},
+                          {"0.900", "calibration_set", "temp_scale:0.900"},
+                          {"0.950", "calibration_set", "temp_scale:0.950"},
+                          {"1.000", "calibration_set", "temp_scale:1.000"},
+                          {"1.050", "calibration_set", "temp_scale:1.050"},
+                          {"1.100", "calibration_set", "temp_scale:1.100"},
+                          {"Back", "submenu_back", ""}};
         }
         break;
 

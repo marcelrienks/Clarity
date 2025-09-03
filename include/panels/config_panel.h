@@ -54,8 +54,8 @@ class ConfigPanel : public IPanel
     // Core Functionality Methods
     static constexpr const char *NAME = PanelNames::CONFIG;
     void Init() override;
-    void Load(std::function<void()> callbackFunction) override;
-    void Update(std::function<void()> callbackFunction) override;
+    void Load() override;
+    void Update() override;
 
     // Manager injection method
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
@@ -117,6 +117,5 @@ class ConfigPanel : public IPanel
     size_t currentMenuIndex_ = 0;
     MenuState currentMenuState_ = MenuState::MainMenu;
 
-    // Callback function
-    std::function<void()> callbackFunction_;
+    // Callback function removed - using interface-based notifications
 };

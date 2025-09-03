@@ -88,7 +88,10 @@ Reading OilTemperatureSensor::GetReading()
         // Convert to target unit
         int32_t newValue = ConvertReading(rawValue);
 
-        // Only update if value actually changed
+        // Update change tracking
+        DetectChange(newValue, previousReading_);
+        
+        // Only update current reading if value actually changed
         if (newValue != currentReading_)
         {
             currentReading_ = newValue;
@@ -152,4 +155,12 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
         // ADC 0-4095 maps to 0-120°C
         return (calibratedRaw * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
     }
+}
+
+/// @brief Check if sensor state has changed since last evaluation
+bool OilTemperatureSensor::HasStateChanged()
+{
+    int32_t current = ReadRawValue();
+    int32_t converted = ConvertReading(current);
+    return DetectChange(converted, previousReading_);
 }

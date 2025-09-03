@@ -4,7 +4,8 @@
 #include <cstring>
 
 // Constructor
-ConfigComponent::ConfigComponent()
+ConfigComponent::ConfigComponent(IPanelService* panelService, IStyleService* styleService)
+    : panelService_(panelService), styleService_(styleService)
 {
     log_v("ConfigComponent constructor called");
 }
@@ -21,6 +22,39 @@ void ConfigComponent::SetValue(int32_t value)
 {
     log_v("SetValue() called");
     // Not used for config menu - updates handled via specific methods
+}
+
+void ConfigComponent::ExecuteAction(const std::string& actionType, const std::string& actionParam)
+{
+    log_v("ExecuteAction() called with type: %s, param: %s", actionType.c_str(), actionParam.c_str());
+    
+    if (actionType == "submenu")
+    {
+        // Handle submenu navigation - delegate back to config panel
+        // This would require a callback to the ConfigPanel
+        log_d("Submenu action: %s", actionParam.c_str());
+    }
+    else if (actionType == "panel_exit")
+    {
+        // Exit config panel and return to restoration panel
+        if (panelService_)
+        {
+            const char *restorationPanel = panelService_->GetRestorationPanel();
+            panelService_->CreateAndLoadPanel(restorationPanel, true);
+        }
+    }
+    else if (actionType == "panel_load")
+    {
+        // Load specific panel
+        if (panelService_)
+        {
+            panelService_->CreateAndLoadPanel(actionParam.c_str(), true);
+        }
+    }
+    else
+    {
+        log_w("Unknown action type: %s", actionType.c_str());
+    }
 }
 
 // ConfigComponent specific initialization

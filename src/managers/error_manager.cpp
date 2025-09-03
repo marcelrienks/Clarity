@@ -13,7 +13,7 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
 {
     log_v("ReportError() called");
     // Process auto-dismiss before adding new error
-    ProcessAutoDismiss();
+    AutoDismissOldWarnings();
 
     // Create error info
     ErrorInfo errorInfo;
@@ -99,7 +99,7 @@ bool ErrorManager::ShouldTriggerErrorPanel() const
 {
     log_v("ShouldTriggerErrorPanel() called");
     // Process auto-dismiss first (const_cast for this internal operation)
-    const_cast<ErrorManager *>(this)->ProcessAutoDismiss();
+    const_cast<ErrorManager *>(this)->AutoDismissOldWarnings();
 
     // Always trigger if we have pending errors - let the trigger system handle the logic
     // of whether to actually switch panels
@@ -137,28 +137,6 @@ void ErrorManager::TrimErrorQueue()
     }
 }
 
-void ErrorManager::ProcessAutoDismiss()
-{
-    log_v("ProcessAutoDismiss() called");
-    unsigned long currentTime = millis();
-    size_t originalCount = errorQueue_.size();
-
-    // Remove warnings that are older than auto-dismiss time
-    errorQueue_.erase(std::remove_if(errorQueue_.begin(), errorQueue_.end(),
-                                     [currentTime](const ErrorInfo &error)
-                                     {
-                                         return error.level == ErrorLevel::WARNING && !error.acknowledged &&
-                                                (currentTime - error.timestamp) > WARNING_AUTO_DISMISS_TIME;
-                                     }),
-                      errorQueue_.end());
-    
-    size_t dismissedCount = originalCount - errorQueue_.size();
-    if (dismissedCount > 0)
-    {
-        log_d("Auto-dismiss - currentTime: %lu, dismissTime: %lu, dismissed: %zu warnings", 
-              currentTime, WARNING_AUTO_DISMISS_TIME, dismissedCount);
-    }
-}
 
 ErrorLevel ErrorManager::GetHighestErrorLevel() const
 {
@@ -184,4 +162,46 @@ ErrorLevel ErrorManager::GetHighestErrorLevel() const
         }
     }
     return highest;
+}
+
+/// @brief Auto-dismiss warnings older than timeout
+void ErrorManager::AutoDismissOldWarnings()
+{
+    auto now = millis();
+    auto it = errorQueue_.begin();
+    while (it != errorQueue_.end())
+    {
+        if (it->level == ErrorLevel::WARNING && 
+            (now - it->timestamp) > WARNING_AUTO_DISMISS_TIME)
+        {
+            log_d("Auto-dismissing old warning: %s", it->message.c_str());
+            it = errorQueue_.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+/// @brief Process error queue and manage error panel state
+void ErrorManager::Process()
+{
+    // Process error queue  
+    AutoDismissOldWarnings();
+    
+    // Check if error panel should be triggered
+    if (HasCriticalErrors() && !errorPanelActive_)
+    {
+        // Trigger error panel through interrupt system
+        // This would normally activate the error trigger
+        log_i("Critical errors present, error panel should be activated");
+    }
+    
+    // Check if error panel should be deactivated
+    if (!HasPendingErrors() && errorPanelActive_)
+    {
+        errorPanelActive_ = false;
+        log_i("No pending errors, error panel can be deactivated");
+    }
 }

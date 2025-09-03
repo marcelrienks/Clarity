@@ -113,11 +113,9 @@ void OemOilPanel::Init()
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
-void OemOilPanel::Load(std::function<void()> callbackFunction)
+void OemOilPanel::Load()
 {
     log_v("Load() called");
-
-    callbackFunction_ = callbackFunction;
 
 
     // Create components for both pressure and temperature
@@ -232,11 +230,9 @@ void OemOilPanel::Load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the reading on the screen
-void OemOilPanel::Update(std::function<void()> callbackFunction)
+void OemOilPanel::Update()
 {
     log_v("Update() called");
-
-    callbackFunction_ = callbackFunction;
 
 
     // Always force component refresh when theme has changed (like panel restoration)
@@ -267,11 +263,11 @@ void OemOilPanel::Update(std::function<void()> callbackFunction)
     // Reset the force refresh flag after updates
     forceComponentRefresh_ = false;
 
-    // If no animations were started, call completion callback immediately
+    // If no animations were started, updates complete immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_)
     {
-        // No animations started - call completion callback immediately
-        callbackFunction_();
+        // No animations started - updates complete
+        log_v("OemOilPanel update completed immediately (no animations)");
     }
 }
 
@@ -494,8 +490,7 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
         return;
     }
 
-
-    thisInstance->callbackFunction_();
+    // Animation completed - no callback needed for interface-based approach
 }
 
 /// @brief Callback when animation has completed. aka update complete
@@ -532,10 +527,7 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
         {
             thisInstance->panelService_->SetUiState(UIState::IDLE);
         }
-        if (thisInstance->callbackFunction_)
-        {
-            thisInstance->callbackFunction_();
-        }
+        // All animations completed - no callback needed for interface-based approach
     }
 }
 

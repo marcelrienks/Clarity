@@ -148,13 +148,12 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
     else
     {
         log_d("Loading panel directly: %s", panelName);
-        CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); }, isTriggerDriven);
+        CreateAndLoadPanelDirect(panelName, isTriggerDriven);
     }
 }
 
 /// @brief Internal method to create and load a panel directly without splash
-void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function<void()> completionCallback,
-                                            bool isTriggerDriven)
+void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTriggerDriven)
 {
     log_v("CreateAndLoadPanelDirect() called for: %s", panelName);
 
@@ -250,7 +249,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, std::function
     // Set BUSY before loading panel
     SetUiState(UIState::BUSY);
     
-    panel_->Load(completionCallback);
+    panel_->Load();
     Ticker::handleLvTasks();
     
     log_v("CreateAndLoadPanelDirect() completed");
@@ -263,8 +262,7 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 
     // Capture panel name as string to avoid pointer corruption issues
     std::string targetPanel(panelName);
-    CreateAndLoadPanelDirect(PanelNames::SPLASH, [this, targetPanel]()
-                             { this->PanelManager::SplashCompletionCallback(targetPanel.c_str()); });
+    CreateAndLoadPanelDirect(PanelNames::SPLASH, false); // Splash is not trigger-driven
 }
 
 // Callback Methods
@@ -277,7 +275,7 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
     panel_.reset();
     Ticker::handleLvTasks();
 
-    CreateAndLoadPanelDirect(panelName, [this]() { this->PanelManager::PanelCompletionCallback(); });
+    CreateAndLoadPanelDirect(panelName, false); // Default to user-driven panels
 }
 
 /// @brief callback function to be executed on panel show completion
@@ -298,7 +296,7 @@ void PanelManager::UpdatePanel()
         // Set BUSY before updating panel
         SetUiState(UIState::BUSY);
         
-        panel_->Update([this]() { this->PanelManager::PanelCompletionCallback(); });
+        panel_->Update();
         Ticker::handleLvTasks();
     }
 }
@@ -463,4 +461,16 @@ void PanelManager::CheckRestoration() {
     } else {
         log_d("No restoration panel to restore to");
     }
+}
+
+
+// IPanelNotificationService implementation
+void PanelManager::OnPanelLoadComplete(IPanel* panel) {
+    log_i("Panel load completed for panel: %p", panel);
+    PanelCompletionCallback();
+}
+
+void PanelManager::OnPanelUpdateComplete(IPanel* panel) {
+    log_v("Panel update completed for panel: %p", panel);
+    // Update completion doesn't require special handling - panel continues normal operation
 }

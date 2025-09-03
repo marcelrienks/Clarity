@@ -33,7 +33,7 @@
  * @consistency Follows same pattern as KeySensor, LockSensor, etc.
  * @dependency_injection Uses IGpioProvider for hardware abstraction
  */
-class ButtonSensor : public ISensor, public BaseSensor
+class ButtonSensor : public BaseSensor
 {
   public:
     // Button timing constants

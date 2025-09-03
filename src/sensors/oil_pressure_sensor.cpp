@@ -89,7 +89,10 @@ Reading OilPressureSensor::GetReading()
         // Convert to target unit
         int32_t newValue = ConvertReading(rawValue);
 
-        // Only update if value actually changed
+        // Update change tracking
+        DetectChange(newValue, previousReading_);
+        
+        // Only update current reading if value actually changed
         if (newValue != currentReading_)
         {
             currentReading_ = newValue;
@@ -152,4 +155,12 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
         // Default Bar mapping: 0-4095 ADC to 0-10 Bar
         return (calibratedRaw * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
     }
+}
+
+/// @brief Check if sensor state has changed since last evaluation
+bool OilPressureSensor::HasStateChanged()
+{
+    int32_t current = ReadRawValue();
+    int32_t converted = ConvertReading(current);
+    return DetectChange(converted, previousReading_);
 }

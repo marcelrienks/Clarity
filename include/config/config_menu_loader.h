@@ -33,8 +33,8 @@ class ConfigMenuLoader
     std::vector<std::shared_ptr<ConfigMenuItem>> getRootMenu() const;
     std::shared_ptr<ConfigMenuItem> findMenuItem(const std::string &id) const;
 
-    // Action registration
-    void registerAction(const std::string &actionId, std::function<void()> handler);
+    // Action registration - direct interface calls
+    void registerAction(const std::string &actionId, void (*handler)());
     void executeAction(const std::string &actionId);
 
     // Panel registration (for dynamic panel list)
@@ -52,7 +52,7 @@ class ConfigMenuLoader
   private:
     IPreferenceService *preferenceService_;
     std::vector<std::shared_ptr<ConfigMenuItem>> rootMenu_;
-    std::map<std::string, std::function<void()>> actionHandlers_;
+    std::map<std::string, void (*)()> actionHandlers_; // actionId -> direct interface call
     std::map<std::string, std::string> configurablePanels_; // name -> displayName
 
     // Default embedded menu JSON

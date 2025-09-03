@@ -68,6 +68,10 @@ class ErrorManager
     /// @brief Set error panel active state
     /// @param active True when error panel is currently displayed
     void SetErrorPanelActive(bool active);
+    
+    /// @brief Process error queue and manage error panel state
+    /// @details Called from main loop to auto-dismiss old warnings and manage error panel activation
+    void Process();
 
   private:
     static constexpr size_t MAX_ERROR_QUEUE_SIZE = 10;                ///< Memory-constrained device limit
@@ -84,7 +88,7 @@ class ErrorManager
     void TrimErrorQueue();
 
     /// @brief Auto-dismiss warnings older than timeout
-    void ProcessAutoDismiss();
+    void AutoDismissOldWarnings();
 
     /// @brief Get highest error level in queue
     /// @return Highest severity error level currently in queue

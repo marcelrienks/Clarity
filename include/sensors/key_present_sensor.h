@@ -29,7 +29,7 @@
  * KeyNotPresentSensor handles the complementary key not present state.
  * This separation prevents GPIO resource conflicts and initialization races.
  */
-class KeyPresentSensor : public ISensor, public BaseSensor
+class KeyPresentSensor : public BaseSensor
 {
 public:
     // Constructors and Destructors

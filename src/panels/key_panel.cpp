@@ -67,11 +67,9 @@ void KeyPanel::Init()
 }
 
 /// @brief Load the key panel UI components
-void KeyPanel::Load(std::function<void()> callbackFunction)
+void KeyPanel::Load()
 {
     log_v("Load() called");
-    
-    callbackFunction_ = callbackFunction;
 
 
     if (!componentFactory_)
@@ -120,12 +118,12 @@ void KeyPanel::Load(std::function<void()> callbackFunction)
 }
 
 /// @brief Update the key panel with current sensor data
-void KeyPanel::Update(std::function<void()> callbackFunction)
+void KeyPanel::Update()
 {
     log_v("Update() called");
     
     // Key panel is static - no updates needed
-    callbackFunction();
+    // No notification needed for static panels
 }
 
 // Static Methods
@@ -142,8 +140,7 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!thisInstance)
         return;
     
-    
-    thisInstance->callbackFunction_();
+    // Static panel - no callback needed
 }
 
 // Manager injection method

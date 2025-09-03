@@ -45,8 +45,8 @@ class LockPanel : public IPanel
     // Core Functionality Methods
     static constexpr const char *NAME = PanelNames::LOCK;
     void Init() override;
-    void Load(std::function<void()> callbackFunction) override;
-    void Update(std::function<void()> callbackFunction) override;
+    void Load() override;
+    void Update() override;
 
     // Manager injection method (minimal implementation - panel has no actions)
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;

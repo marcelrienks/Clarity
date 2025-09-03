@@ -33,7 +33,7 @@
  * the vehicle monitoring system and feeds data to LockWidget for display.
  * Currently implemented with simulated data for testing.
  */
-class LockSensor : public ISensor, public BaseSensor
+class LockSensor : public BaseSensor
 {
   public:
     // Constructors and Destructors
