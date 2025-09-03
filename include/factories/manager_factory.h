@@ -1,6 +1,7 @@
 #pragma once
 
 #include "interfaces/i_manager_factory.h"
+#include "interfaces/i_provider_factory.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel_service.h"
@@ -14,27 +15,33 @@ class PanelManager;
 class StyleManager;
 class PreferenceManager;
 class InterruptManager;
+class IProviderFactory;
 
 /**
  * @class ManagerFactory
  * @brief Concrete factory for creating manager instances with error handling and logging
  *
- * @details This factory implements IManagerFactory interface and provides static methods 
- * for creating all manager types used in the Clarity system. Each factory method includes 
- * proper error handling, null checking, dependency validation, and debug logging for 
- * initialization tracking.
+ * @details This factory implements IManagerFactory interface and provides methods 
+ * for creating all manager types used in the Clarity system. It uses IProviderFactory
+ * to obtain hardware providers, implementing the dual factory pattern for clear
+ * separation of concerns. Each factory method includes proper error handling,
+ * null checking, dependency validation, and debug logging for initialization tracking.
  *
- * @design_pattern Concrete Factory (implements Abstract Factory)
+ * @design_pattern Dual Factory Pattern (Concrete Factory using Abstract Provider Factory)
  * @error_handling All methods return nullptr on failure with error logging
  * @logging Debug level logging for successful creations, error level for failures
  * @dependency_validation All required dependencies are validated before construction
- * @testability Implements IManagerFactory interface for test injection
+ * @testability Implements IManagerFactory interface and accepts IProviderFactory for test injection
  */
 class ManagerFactory : public IManagerFactory
 {
 public:
-    /// @brief Default constructor
-    ManagerFactory() = default;
+    /// @brief Constructor accepting provider factory for dependency injection
+    /// @param providerFactory Factory for creating hardware providers (takes ownership)
+    explicit ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory);
+    
+    /// @brief Default constructor for backward compatibility (creates ProviderFactory internally)
+    ManagerFactory();
     
     /// @brief Default destructor
     ~ManagerFactory() override = default;
@@ -93,6 +100,17 @@ public:
     static ErrorManager* CreateErrorManagerStatic();
 
 private:
+    /// @brief Provider factory for creating hardware providers
+    std::unique_ptr<IProviderFactory> providerFactory_;
+    
+    /// @brief Cached providers created from provider factory
+    std::unique_ptr<IGpioProvider> gpioProvider_;
+    std::unique_ptr<IDisplayProvider> displayProvider_;
+    std::unique_ptr<IDeviceProvider> deviceProvider_;
+    
+    /// @brief Initialize providers from factory if not already created
+    bool InitializeProviders();
+    
     /// @brief Implementation helper for creating managers
     /// @param display Display provider for UI operations
     /// @param gpio GPIO provider for hardware access  

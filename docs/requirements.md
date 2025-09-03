@@ -49,7 +49,7 @@ Clarity is a digital gauge system designed for automotive engine monitoring, bui
 
 #### 2.1.2 Dependency Injection
 - All system components use dependency injection for testability and loose coupling
-- **Dual factory pattern**: ProviderFactory creates providers, ManagerFactory creates managers
+- **Multi-factory architecture**: ProviderFactory creates hardware providers, ManagerFactory creates managers (with provider dependency), PanelFactory creates panels, ComponentFactory creates UI components
 - **Interface-based factories**: IProviderFactory interface enables mock provider injection for testing
 - **Generic factory support**: Template-based IFactory<T> for type-safe component creation
 - **Dependency resolution**: Managers and panels receive injected dependencies via constructor

@@ -1,21 +1,28 @@
 #include "main.h"
+#include "factories/provider_factory.h"
 #include "factories/manager_factory.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
-#include "providers/device_provider.h"
-#include "providers/gpio_provider.h"
-#include "providers/lvgl_display_provider.h"
+#include "interfaces/i_device_provider.h"
+#include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_display_provider.h"
 #include "utilities/constants.h"  // For PanelNames
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
-// Global services - factory-created instances
-std::unique_ptr<DeviceProvider> deviceProvider;
-std::unique_ptr<GpioProvider> gpioProvider;
-std::unique_ptr<LvglDisplayProvider> displayProvider;
+// Global factories - dual factory pattern implementation
+std::unique_ptr<IProviderFactory> providerFactory;
+std::unique_ptr<ManagerFactory> managerFactory;
+
+// Global providers - created by ProviderFactory
+std::unique_ptr<IDeviceProvider> deviceProvider;
+std::unique_ptr<IGpioProvider> gpioProvider;
+std::unique_ptr<IDisplayProvider> displayProvider;
+
+// Global managers - created by ManagerFactory
 std::unique_ptr<StyleManager> styleManager;
 std::unique_ptr<PreferenceManager> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
@@ -25,82 +32,112 @@ ErrorManager *errorManager;
 bool initializeServices()
 {
     log_v("initializeServices() called");
-    log_i("Starting Clarity service initialization...");
+    log_i("Starting Clarity service initialization with dual factory pattern...");
 
-    // Create providers directly
-    log_d("Creating DeviceProvider...");
-    deviceProvider = std::make_unique<DeviceProvider>();
-    if (!deviceProvider) {
-        log_e("Failed to create DeviceProvider - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider allocation failed");
+    // Step 1: Create ProviderFactory
+    log_d("Creating ProviderFactory...");
+    providerFactory = std::make_unique<ProviderFactory>();
+    if (!providerFactory) {
+        log_e("Failed to create ProviderFactory - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "ProviderFactory allocation failed");
         return false;
     }
-    deviceProvider->prepare();
-    if (!deviceProvider->screen) {
-        log_e("DeviceProvider screen initialization failed");
-        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider screen initialization failed");
+    log_d("ProviderFactory created successfully");
+
+    // Step 2: Create providers using ProviderFactory
+    log_d("Creating DeviceProvider via factory...");
+    deviceProvider = providerFactory->CreateDeviceProvider();
+    if (!deviceProvider) {
+        log_e("Failed to create DeviceProvider via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider creation failed");
         return false;
     }
     log_d("DeviceProvider created successfully");
 
-    log_d("Creating GpioProvider...");
-    gpioProvider = std::make_unique<GpioProvider>();
+    log_d("Creating GpioProvider via factory...");
+    gpioProvider = providerFactory->CreateGpioProvider();
     if (!gpioProvider) {
-        log_e("Failed to create GpioProvider - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("main", "GpioProvider allocation failed");
+        log_e("Failed to create GpioProvider via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "GpioProvider creation failed");
         return false;
     }
     log_d("GpioProvider created successfully");
 
-    log_d("Creating LvglDisplayProvider...");
-    if (!deviceProvider->screen) {
-        log_e("Cannot create LvglDisplayProvider - DeviceProvider screen is null");
-        ErrorManager::Instance().ReportCriticalError("main", "Cannot create LvglDisplayProvider - screen is null");
-        return false;
-    }
-    displayProvider = std::make_unique<LvglDisplayProvider>(deviceProvider->screen);
+    log_d("Creating DisplayProvider via factory...");
+    displayProvider = providerFactory->CreateDisplayProvider();
     if (!displayProvider) {
-        log_e("Failed to create LvglDisplayProvider - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("main", "LvglDisplayProvider allocation failed");
+        log_e("Failed to create DisplayProvider via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "DisplayProvider creation failed");
         return false;
     }
-    log_d("LvglDisplayProvider created successfully");
+    log_d("DisplayProvider created successfully");
 
-    // Create managers - factories handle all error checking and logging
-    preferenceManager = ManagerFactory::CreatePreferenceManagerStatic();
+    // Step 3: Create ManagerFactory with dependency injection
+    log_d("Creating ManagerFactory with provider factory...");
+    managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
+    if (!managerFactory) {
+        log_e("Failed to create ManagerFactory - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "ManagerFactory allocation failed");
+        return false;
+    }
+    log_d("ManagerFactory created successfully with provider factory");
+
+    // Step 4: Create managers using ManagerFactory
+    log_d("Creating managers via ManagerFactory...");
+    
+    // Create PreferenceManager
+    preferenceManager = managerFactory->CreatePreferenceManager();
+    if (!preferenceManager) {
+        log_e("Failed to create PreferenceManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "PreferenceManager creation failed");
+        return false;
+    }
+    
     // Initialize StyleManager with user's theme preference
     const char *userTheme = preferenceManager->GetConfig().theme.c_str();
-    styleManager = ManagerFactory::CreateStyleManagerStatic(userTheme);
-    // Create InterruptManager first so it can be injected into PanelManager
-    interruptManager = ManagerFactory::CreateInterruptManagerStatic(gpioProvider.get());
-    // Create PanelManager with InterruptManager for button function injection
-    panelManager = ManagerFactory::CreatePanelManagerStatic(displayProvider.get(), gpioProvider.get(), styleManager.get(),
-                                                            preferenceManager.get(), interruptManager);
-    errorManager = ManagerFactory::CreateErrorManagerStatic();
+    styleManager = managerFactory->CreateStyleManager(userTheme);
+    if (!styleManager) {
+        log_e("Failed to create StyleManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
+        return false;
+    }
+    
+    // Create InterruptManager with GPIO provider dependency
+    interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
+    if (!interruptManager) {
+        log_e("Failed to create InterruptManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "InterruptManager creation failed");
+        return false;
+    }
+    
+    // Create PanelManager with all dependencies
+    panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(), 
+                                                      styleManager.get(), preferenceManager.get(), 
+                                                      interruptManager);
+    if (!panelManager) {
+        log_e("Failed to create PanelManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "PanelManager creation failed");
+        return false;
+    }
+    
+    // Create ErrorManager
+    errorManager = managerFactory->CreateErrorManager();
+    if (!errorManager) {
+        log_e("Failed to create ErrorManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "ErrorManager creation failed");
+        return false;
+    }
+    
+    log_d("All managers created successfully via ManagerFactory");
 
-    // Verify all critical services were created
-    bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && styleManager && preferenceManager &&
-                              panelManager && interruptManager && errorManager;
+    // Verify all critical services were created (redundant check as we already checked individually)
+    bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && 
+                              styleManager && preferenceManager && panelManager && 
+                              interruptManager && errorManager;
 
     if (!allServicesCreated)
     {
-        log_e("Critical service creation failed - check factory logs above");
-        // Report critical errors for null services
-        if (!deviceProvider)
-            ErrorManager::Instance().ReportCriticalError("Main", "DeviceProvider creation failed");
-        if (!gpioProvider)
-            ErrorManager::Instance().ReportCriticalError("Main", "GpioProvider creation failed");
-        if (!displayProvider)
-            ErrorManager::Instance().ReportCriticalError("Main", "DisplayProvider creation failed");
-        if (!styleManager)
-            ErrorManager::Instance().ReportCriticalError("Main", "StyleManager creation failed");
-        if (!preferenceManager)
-            ErrorManager::Instance().ReportCriticalError("Main", "PreferenceManager creation failed");
-        // ActionManager removed - button handling moved to handler-based system
-        if (!panelManager)
-            ErrorManager::Instance().ReportCriticalError("Main", "PanelManager creation failed");
-        if (!interruptManager)
-            ErrorManager::Instance().ReportCriticalError("Main", "InterruptManager creation failed");
+        log_e("Critical service creation failed - check logs above for specific failures");
         return false;
     }
 

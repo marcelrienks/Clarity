@@ -14,7 +14,7 @@ This diagram shows the high-level component relationships in the Clarity system 
 - **Priority-Based Override**: Triggers have priority levels (CRITICAL > IMPORTANT > NORMAL) with blocking logic
 - **Button Timing Logic**: Actions handle short press (50ms-2000ms) and long press (2000ms-5000ms)
 - **Evaluation/Execution Split**: Actions evaluate always, execute when idle; Triggers evaluate/execute only when idle
-- **Dual Factory Pattern**: ProviderFactory creates providers, ManagerFactory creates managers with dependency injection
+- **Multi-Factory Architecture**: ProviderFactory creates hardware providers, ManagerFactory creates managers (with provider dependency), plus singleton PanelFactory and ComponentFactory for UI
 - **Interface-Based Factories**: IProviderFactory enables testability with mock provider injection
 - **Handler-Owned Sensors**: TriggerHandler owns GPIO sensors, ActionHandler owns button sensor
 - **Panel Self-Sufficiency**: Panels create their own components and data sensors internally
@@ -137,7 +137,7 @@ flowchart TD
 - **Button Timing Integration**: ActionHandler detects press duration (50ms-2000ms short, 2000ms-5000ms long)
 - **Processing Separation**: Actions evaluate always for responsiveness, both handlers execute only during UI idle
 - **Interface-Based Design**: All major components implement interfaces for testability and loose coupling
-- **Dual Factory Pattern**: Separate factories for providers (ProviderFactory) and managers (ManagerFactory)
+- **Multi-Factory Architecture**: Core dependency pattern (ProviderFactory → ManagerFactory) plus UI singleton factories (PanelFactory, ComponentFactory)
 - **Dependency Injection**: IProviderFactory interface enables test mocking and clean separation
 - **Smart Restoration**: PanelManager tracks last user-driven panel, restores when triggers deactivate
 - **No Context Parameters**: Direct singleton manager calls eliminate need for context pointers

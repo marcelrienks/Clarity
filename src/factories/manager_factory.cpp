@@ -1,9 +1,11 @@
 #include "factories/manager_factory.h"
+#include "factories/provider_factory.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
+#include "interfaces/i_device_provider.h"
 #include "sensors/button_sensor.h"
 #ifdef CLARITY_DEBUG
 #include "sensors/debug_error_sensor.h"
@@ -12,6 +14,66 @@
 #include "utilities/interrupt_callbacks.h"
 #include <esp32-hal-log.h>
 
+// Constructors
+
+ManagerFactory::ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory)
+    : providerFactory_(std::move(providerFactory))
+{
+    log_v("ManagerFactory(IProviderFactory*) constructor called");
+    if (!providerFactory_) {
+        log_w("ManagerFactory created without provider factory - will create default ProviderFactory");
+        providerFactory_ = std::make_unique<ProviderFactory>();
+    }
+}
+
+ManagerFactory::ManagerFactory()
+    : providerFactory_(std::make_unique<ProviderFactory>())
+{
+    log_v("ManagerFactory() default constructor called - creating ProviderFactory");
+}
+
+// Private Helper Methods
+
+bool ManagerFactory::InitializeProviders()
+{
+    log_v("InitializeProviders() called");
+    
+    if (!providerFactory_) {
+        log_e("Cannot initialize providers - provider factory is null");
+        return false;
+    }
+    
+    // Create providers if not already created
+    if (!deviceProvider_) {
+        deviceProvider_ = providerFactory_->CreateDeviceProvider();
+        if (!deviceProvider_) {
+            log_e("Failed to create DeviceProvider");
+            return false;
+        }
+        log_d("DeviceProvider created successfully");
+    }
+    
+    if (!gpioProvider_) {
+        gpioProvider_ = providerFactory_->CreateGpioProvider();
+        if (!gpioProvider_) {
+            log_e("Failed to create GpioProvider");
+            return false;
+        }
+        log_d("GpioProvider created successfully");
+    }
+    
+    if (!displayProvider_) {
+        displayProvider_ = providerFactory_->CreateDisplayProvider();
+        if (!displayProvider_) {
+            log_e("Failed to create DisplayProvider");
+            return false;
+        }
+        log_d("DisplayProvider created successfully");
+    }
+    
+    return true;
+}
+
 // Implementation Methods
 
 std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
@@ -19,8 +81,9 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
                                                                       IPreferenceService *preferenceService,
                                                                       InterruptManager *interruptManager)
 {
-    log_v("CreatePanelManager() called");
+    log_v("CreatePanelManagerImpl() called");
 
+    // For backward compatibility with static methods that pass providers directly
     if (!display)
     {
         log_e("ManagerFactory: Cannot create PanelManager - IDisplayProvider is null");
@@ -154,7 +217,23 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManager(IDisplayProvide
                                                                   IPreferenceService *preferenceService,
                                                                   InterruptManager *interruptManager)
 {
-    return CreatePanelManagerImpl(display, gpio, styleService, preferenceService, interruptManager);
+    log_v("CreatePanelManager() called");
+    
+    // When using the dual factory pattern, get providers from provider factory
+    IDisplayProvider* displayToUse = display;
+    IGpioProvider* gpioToUse = gpio;
+    
+    // If providers not passed, get them from provider factory
+    if (!display || !gpio) {
+        if (!InitializeProviders()) {
+            log_e("Failed to initialize providers from factory");
+            return nullptr;
+        }
+        displayToUse = display ? display : displayProvider_.get();
+        gpioToUse = gpio ? gpio : gpioProvider_.get();
+    }
+    
+    return CreatePanelManagerImpl(displayToUse, gpioToUse, styleService, preferenceService, interruptManager);
 }
 
 std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManager(const char *theme)
@@ -169,7 +248,19 @@ std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManager()
 
 InterruptManager* ManagerFactory::CreateInterruptManager(IGpioProvider* gpioProvider)
 {
-    return CreateInterruptManagerImpl(gpioProvider);
+    log_v("CreateInterruptManager() called");
+    
+    // If no GPIO provider passed, get from provider factory
+    IGpioProvider* gpioToUse = gpioProvider;
+    if (!gpioToUse) {
+        if (!InitializeProviders()) {
+            log_e("Failed to initialize providers from factory");
+            return nullptr;
+        }
+        gpioToUse = gpioProvider_.get();
+    }
+    
+    return CreateInterruptManagerImpl(gpioToUse);
 }
 
 ErrorManager* ManagerFactory::CreateErrorManager()

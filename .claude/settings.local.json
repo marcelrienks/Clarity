@@ -9,7 +9,10 @@
       "Bash(~/.platformio/penv/bin/pio run -e debug-local)",
       "Bash(find:*)",
       "Bash(~/.platformio/penv/bin/pio run -e debug-local --target checkprogsize)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Read(/tmp/**)",
+      "Read(/tmp/**)",
+      "Read(/tmp/**)"
     ],
     "deny": [],
     "ask": []

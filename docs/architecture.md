@@ -303,15 +303,18 @@ void loop() {
 - **Memory Efficiency**: Optimized for ESP32 constraints
 - **Static Callbacks**: Function pointers only, no heap allocation
 
-### Sensor Ownership Model
+### Multi-Factory Architecture & Sensor Ownership Model
 ```
 Main
-├── Creates ProviderFactory
-│   ├── GpioProvider
-│   ├── DisplayProvider
-│   └── DeviceProvider
-└── Creates ManagerFactory (with providers injected)
-    ├── Creates InterruptManager
+├── Creates ProviderFactory (implements IProviderFactory)
+│   ├── Creates DeviceProvider (hardware driver)
+│   ├── Creates GpioProvider (GPIO abstraction)
+│   └── Creates DisplayProvider (LVGL abstraction)
+└── Creates ManagerFactory (receives IProviderFactory)
+    ├── Uses IProviderFactory to get providers
+    ├── Creates PreferenceManager
+    ├── Creates StyleManager (with theme)
+    ├── Creates InterruptManager (with GpioProvider)
     │   ├── Creates TriggerHandler (owns GPIO sensors)
     │   │   ├── KeyPresentSensor (GPIO 25)
     │   │   ├── KeyNotPresentSensor (GPIO 26)
@@ -319,11 +322,12 @@ Main
     │   │   └── LightsSensor (GPIO 33)
     │   └── Creates ActionHandler (owns button sensor)
     │       └── ButtonSensor (GPIO 32)
-    └── Creates PanelManager
-        └── Creates panels on demand
-            ├── KeyPanel (display-only)
-            ├── LockPanel (display-only)
-            └── OilPanel (creates own data sensors)
+    ├── Creates PanelManager (with all dependencies)
+    │   └── Creates panels on demand
+    │       ├── KeyPanel (display-only)
+    │       ├── LockPanel (display-only)
+    │       └── OilPanel (creates own data sensors)
+    └── Creates ErrorManager
 ```
 
 ## Key Interfaces
@@ -346,15 +350,69 @@ Main
 
 ## Service Architecture
 
-### Factory Pattern Design
-- **ProviderFactory**: Creates hardware providers (implements IProviderFactory)
-- **ManagerFactory**: Creates managers with injected dependencies
+### Multi-Factory Architecture Design
 
-### Dependency Injection
+The system uses a multi-factory architecture with 4 specialized factories:
+
+#### Core Dependency Factories (Provider → Manager Pattern):
+The primary architectural pattern involves two interdependent factories:
+
+1. **ProviderFactory** (implements IProviderFactory):
+   - Creates hardware abstraction providers
+   - Manages DeviceProvider, GpioProvider, DisplayProvider
+   - Ensures proper initialization order (Device → GPIO → Display)
+   - Handles hardware-specific setup and configuration
+
+2. **ManagerFactory** (implements IManagerFactory):
+   - Accepts IProviderFactory for provider creation
+   - Creates all manager instances with dependency injection
+   - Coordinates manager initialization order
+   - Enables testability through provider factory injection
+
+3. **PanelFactory** (implements IPanelFactory):
+   - Creates panel instances on demand
+   - Singleton pattern for global access
+   - Registered panel types created dynamically
+
+4. **ComponentFactory** (implements IComponentFactory):
+   - Creates UI components for panels
+   - Singleton pattern for global access
+   - Provides typed component creation methods
+
+### Dependency Injection Flow
 ```cpp
-// Production
+#### UI Creation Factories (Singleton Pattern):
+Two additional singleton factories handle UI component creation:
+
+5. **PanelFactory** (implements IPanelFactory):
+   - Creates panel instances on demand
+   - Singleton pattern for global access from managers
+   - Registered panel types created dynamically
+
+6. **ComponentFactory** (implements IComponentFactory):
+   - Creates UI components for panels
+   - Singleton pattern for global access from panels
+   - Provides typed component creation methods
+
+### Factory Usage Patterns
+```cpp
+// Core Dependency Pattern (Provider → Manager)
 auto providerFactory = std::make_unique<ProviderFactory>();
-auto managerFactory = std::make_unique<ManagerFactory>(providerFactory.get());
+auto managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
+
+// ManagerFactory internally uses providerFactory to create providers
+auto interruptManager = managerFactory->CreateInterruptManager(nullptr); // Gets GPIO from factory
+auto panelManager = managerFactory->CreatePanelManager(nullptr, nullptr, ...); // Gets providers from factory
+
+// UI Singleton Pattern (Independent Factories)
+auto& panelFactory = PanelFactory::Instance();
+auto& componentFactory = ComponentFactory::Instance();
+auto panel = panelFactory.CreatePanel("OilPanel", dependencies...);
+auto component = componentFactory.CreateGaugeComponent(styleService);
+
+// Test usage with mock factories
+auto mockProviderFactory = std::make_unique<MockProviderFactory>();
+auto managerFactory = std::make_unique<ManagerFactory>(std::move(mockProviderFactory));
 ```
 
 ## Implementation Constraints
@@ -387,7 +445,11 @@ The project follows Google C++ Style Guide with project-specific preferences:
 **Core Features**:
 - Sophisticated interrupt architecture with Trigger/Action separation
 - Complete sensor ownership model prevents resource conflicts
-- Factory pattern with dependency injection
+- Multi-factory architecture with specialized concerns
+- Core dependency pattern: Provider → Manager factory chain
+- Hardware abstraction via ProviderFactory
+- Business logic management via ManagerFactory with provider injection
+- UI creation via singleton PanelFactory and ComponentFactory
 - All core panels implemented and functional
 - Memory-safe static callback system
 - Priority-based override logic for complex scenarios

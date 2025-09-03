@@ -4,7 +4,7 @@ This diagram illustrates the complete application flow from startup through runt
 
 ## Flow Overview
 
-- **Startup Sequence**: Dual factory pattern initialization, handler creation with sensor ownership, and initial panel display
+- **Startup Sequence**: Multi-factory initialization with core dependency pattern (ProviderFactory → ManagerFactory), handler creation with sensor ownership, and initial panel display
 - **Main Loop Integration**: LVGL tasks, interrupt processing, error handling, and panel management work together
 - **Handler Ownership**: TriggerHandler creates/owns GPIO sensors, ActionHandler creates/owns button sensor during initialization
 - **Trigger/Action Model**: State-based Triggers with dual functions, event-based Actions with single execution
@@ -129,10 +129,11 @@ flowchart TB
 ## Key Flow Details
 
 ### Startup Sequence
-1. **Factory Creation**: 
-   - ProviderFactory (implements IProviderFactory) creates hardware providers
-   - ManagerFactory receives IProviderFactory for dependency injection
-2. **Service Initialization**: ManagerFactory creates all managers (Interrupt, Panel, Style, Preference, Error)
+1. **Core Factory Dependency Pattern Implementation**: 
+   - ProviderFactory created first (implements IProviderFactory for hardware abstraction)
+   - ProviderFactory creates hardware providers (Device, GPIO, Display)
+   - ManagerFactory created with ProviderFactory dependency injection (Provider → Manager pattern)
+2. **Service Initialization**: ManagerFactory uses injected ProviderFactory to obtain providers, then creates all managers (Preference, Style, Interrupt, Panel, Error)
 3. **Handler Creation with Sensor Ownership**:
    - InterruptManager creates TriggerHandler → owns GPIO sensors (Key, Lock, Lights)
    - InterruptManager creates ActionHandler → owns ButtonSensor
@@ -209,9 +210,16 @@ flowchart TB
 - **Error Recovery**: Deactivation function handles restoration to previous panel
 
 ### Key System Components
-- **Dual Factory Pattern**: 
-  - ProviderFactory implements IProviderFactory for hardware abstraction
-  - ManagerFactory uses dependency injection for testability
+- **Multi-Factory Architecture**: 
+  - **Core Dependency Pattern**: ProviderFactory → ManagerFactory chain
+    - ProviderFactory implements IProviderFactory for hardware abstraction
+    - Creates DeviceProvider, GpioProvider, DisplayProvider
+    - ManagerFactory accepts IProviderFactory for dependency injection
+    - Uses injected factory to obtain providers for manager creation
+  - **UI Singleton Factories**: PanelFactory and ComponentFactory operate independently
+    - PanelFactory creates panels on demand from managers
+    - ComponentFactory creates UI components from panels
+  - **Complete Testability**: Mock provider factory injection enables full testing
 - **Handlers with Ownership**: 
   - TriggerHandler owns GPIO sensors (created during initialization)
   - ActionHandler owns ButtonSensor (created during initialization)
