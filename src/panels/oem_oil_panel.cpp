@@ -490,6 +490,13 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
         return;
     }
 
+    // Set UI state to IDLE so main loop can start calling Update()
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+        log_d("OemOilPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
+    }
+    
     // Animation completed - no callback needed for interface-based approach
 }
 

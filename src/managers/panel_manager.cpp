@@ -260,8 +260,10 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName)
 {
     log_v("CreateAndLoadPanelWithSplash() called for: %s", panelName);
 
-    // Capture panel name as string to avoid pointer corruption issues
-    std::string targetPanel(panelName);
+    // Store the target panel name for after splash completion
+    splashTargetPanelStr_ = panelName;
+    log_d("Stored target panel for after splash: %s", splashTargetPanelStr_.c_str());
+    
     CreateAndLoadPanelDirect(PanelNames::SPLASH, false); // Splash is not trigger-driven
 }
 
@@ -467,7 +469,18 @@ void PanelManager::CheckRestoration() {
 // IPanelNotificationService implementation
 void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     log_i("Panel load completed for panel: %p", panel);
-    PanelCompletionCallback();
+    
+    // Check if this is a splash panel completion that should trigger target panel load
+    if (currentPanelStr_ == PanelNames::SPLASH && !splashTargetPanelStr_.empty()) {
+        log_i("Splash panel completed - transitioning to target panel: %s", splashTargetPanelStr_.c_str());
+        SplashCompletionCallback(splashTargetPanelStr_.c_str());
+        
+        // Clear the target panel after using it
+        splashTargetPanelStr_.clear();
+    } else {
+        // Normal panel completion
+        PanelCompletionCallback();
+    }
 }
 
 void PanelManager::OnPanelUpdateComplete(IPanel* panel) {

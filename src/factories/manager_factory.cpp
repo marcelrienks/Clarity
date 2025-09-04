@@ -63,7 +63,7 @@ bool ManagerFactory::InitializeProviders()
     }
     
     if (!displayProvider_) {
-        displayProvider_ = providerFactory_->CreateDisplayProvider();
+        displayProvider_ = providerFactory_->CreateDisplayProvider(deviceProvider_.get());
         if (!displayProvider_) {
             log_e("Failed to create DisplayProvider");
             return false;

@@ -43,8 +43,9 @@ public:
     virtual std::unique_ptr<IGpioProvider> CreateGpioProvider() = 0;
     
     /// @brief Create display provider for LVGL operations
+    /// @param deviceProvider Device provider instance to use for display initialization
     /// @return Unique pointer to IDisplayProvider instance
-    virtual std::unique_ptr<IDisplayProvider> CreateDisplayProvider() = 0;
+    virtual std::unique_ptr<IDisplayProvider> CreateDisplayProvider(IDeviceProvider* deviceProvider) = 0;
     
     /// @brief Create device provider for hardware driver operations
     /// @return Unique pointer to IDeviceProvider instance

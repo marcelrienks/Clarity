@@ -73,7 +73,7 @@ class SplashPanel : public IPanel
     // Private Data Members
     // Panel specific constants
     static constexpr const int _DISPLAY_TIME = 500;
-    static constexpr const int _DELAY_TIME = 100; //NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory becomes corrupted
+    static constexpr const int _DELAY_TIME = 200; //NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory becomes corrupted
 
     // Calculate timing based on splash duration from config
     int GetAnimationTime() const;

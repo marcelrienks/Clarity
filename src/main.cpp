@@ -64,7 +64,7 @@ bool initializeServices()
     log_d("GpioProvider created successfully");
 
     log_d("Creating DisplayProvider via factory...");
-    displayProvider = providerFactory->CreateDisplayProvider();
+    displayProvider = providerFactory->CreateDisplayProvider(deviceProvider.get());
     if (!displayProvider) {
         log_e("Failed to create DisplayProvider via factory");
         ErrorManager::Instance().ReportCriticalError("main", "DisplayProvider creation failed");

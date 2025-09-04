@@ -51,9 +51,10 @@ public:
     std::unique_ptr<IGpioProvider> CreateGpioProvider() override;
     
     /// @brief Create display provider for LVGL screen operations
+    /// @param deviceProvider Device provider instance to use for display initialization
     /// @return Unique pointer to configured DisplayProvider instance
     /// @note Creates concrete DisplayProvider with 240x240 round display setup
-    std::unique_ptr<IDisplayProvider> CreateDisplayProvider() override;
+    std::unique_ptr<IDisplayProvider> CreateDisplayProvider(IDeviceProvider* deviceProvider) override;
     
     /// @brief Create device provider for low-level hardware driver operations
     /// @return Unique pointer to configured DeviceProvider instance

@@ -8,9 +8,6 @@
 
 #include "esp32-hal-log.h"
 
-// Store device provider for display creation
-static std::unique_ptr<DeviceProvider> s_deviceProvider;
-
 std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 {
     log_v("CreateGpioProvider() called");
@@ -36,38 +33,33 @@ std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
     }
 }
 
-std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider()
+std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDeviceProvider* deviceProvider)
 {
     log_v("CreateDisplayProvider() called");
     
-    // First ensure device provider exists
-    if (!s_deviceProvider)
+    if (!deviceProvider)
     {
-        log_d("Creating DeviceProvider for display initialization");
-        s_deviceProvider = std::make_unique<DeviceProvider>();
-        if (!s_deviceProvider)
-        {
-            log_e("Failed to create DeviceProvider for display");
-            ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider allocation failed");
-            return nullptr;
-        }
-        
-        // Prepare the device (initializes screen)
-        s_deviceProvider->prepare();
-        if (!s_deviceProvider->screen)
-        {
-            log_e("DeviceProvider screen initialization failed");
-            ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider screen is null after prepare");
-            return nullptr;
-        }
+        log_e("DeviceProvider parameter is null");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider parameter is null");
+        return nullptr;
+    }
+    
+    // Access the screen from the injected deviceProvider
+    // Note: Using static_cast since we control the concrete type in this codebase
+    auto* concreteDeviceProvider = static_cast<DeviceProvider*>(deviceProvider);
+    if (!concreteDeviceProvider->screen)
+    {
+        log_e("DeviceProvider screen is null");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider screen is null");
+        return nullptr;
     }
     
     try
     {
-        auto provider = std::make_unique<LvglDisplayProvider>(s_deviceProvider->screen);
+        auto provider = std::make_unique<LvglDisplayProvider>(concreteDeviceProvider->screen);
         if (provider)
         {
-            log_d("Successfully created LvglDisplayProvider");
+            log_d("Successfully created LvglDisplayProvider with injected DeviceProvider");
             return provider;
         }
         else
@@ -87,20 +79,12 @@ std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
 {
     log_v("CreateDeviceProvider() called");
     
-    // If device provider already exists (created for display), return it
-    if (s_deviceProvider)
-    {
-        log_d("Returning existing DeviceProvider instance");
-        std::unique_ptr<IDeviceProvider> provider = std::move(s_deviceProvider);
-        return provider;
-    }
-    
     try
     {
         auto provider = std::make_unique<DeviceProvider>();
         if (provider)
         {
-            // Prepare the device
+            // Prepare the device (initializes screen)
             provider->prepare();
             if (!provider->screen)
             {
@@ -110,8 +94,7 @@ std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
             }
             
             log_d("Successfully created and prepared DeviceProvider");
-            std::unique_ptr<IDeviceProvider> deviceProvider = std::move(provider);
-            return deviceProvider;
+            return provider;
         }
         else
         {

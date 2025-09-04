@@ -182,6 +182,7 @@ class PanelManager : public IPanelService,
     std::string currentPanelStr_;                     ///< Safe storage for current panel name
     std::string restorationPanelStr_;                 ///< Safe storage for restoration panel name
     std::string lastUserPanelStr_ = PanelNames::OIL;  ///< Last user-driven panel for restoration
+    std::string splashTargetPanelStr_;                ///< Target panel to load after splash completion
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
