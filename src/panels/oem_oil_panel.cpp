@@ -232,7 +232,6 @@ void OemOilPanel::Load()
 /// @brief Update the reading on the screen
 void OemOilPanel::Update()
 {
-    log_v("Update() called");
 
 
     // Always force component refresh when theme has changed (like panel restoration)
@@ -266,7 +265,11 @@ void OemOilPanel::Update()
     // If no animations were started, updates complete immediately
     if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_)
     {
-        // No animations started - updates complete
+        // No animations started - updates complete, set UI back to IDLE
+        if (panelService_)
+        {
+            panelService_->SetUiState(UIState::IDLE);
+        }
         log_v("OemOilPanel update completed immediately (no animations)");
     }
 }
@@ -281,7 +284,17 @@ void OemOilPanel::UpdateOilPressure()
     // Skip update if pressure animation is already running
     if (isPressureAnimationRunning_)
     {
-        return;
+        // Validate that the LVGL animation is actually still running
+        // If not, this is a stale flag that needs to be cleared
+        if (!lv_anim_get(&pressureAnimation_, nullptr))
+        {
+            log_w("UpdateOilPressure: Found stale animation flag, clearing it");
+            isPressureAnimationRunning_ = false;
+        }
+        else
+        {
+            return;
+        }
     }
 
     // Safety check for sensor availability
@@ -312,12 +325,51 @@ void OemOilPanel::UpdateOilPressure()
     log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
     oemOilPressureComponent_->Refresh(Reading{value});
 
+    // Determine animation start value
+    // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
+    int32_t animationStartValue = currentOilPressureValue_;
+    const int32_t scaleMin = 0;  // Pressure scale minimum
+    const int32_t scaleMax = 60; // Pressure scale maximum
+    
+    if (currentOilPressureValue_ == -1)
+    {
+        // Initial load - determine start position based on target value
+        if (value < scaleMin)
+        {
+            animationStartValue = scaleMin; // Start from minimum if value is below scale
+        }
+        else if (value > scaleMax)
+        {
+            animationStartValue = scaleMax; // Start from maximum if value is above scale
+        }
+        else
+        {
+            // Value is within scale bounds
+            // For pressure, always start from minimum (0) for initial animation
+            // This represents the engine starting up and building pressure
+            animationStartValue = scaleMin;
+        }
+        log_i("Initial pressure animation: starting from %d to %d", animationStartValue, value);
+    }
+    else if (currentOilPressureValue_ < scaleMin && value >= scaleMin)
+    {
+        // Coming from below scale minimum into visible range
+        animationStartValue = scaleMin;
+        log_i("Pressure entering scale from below: animating from %d to %d", animationStartValue, value);
+    }
+    else if (currentOilPressureValue_ > scaleMax && value <= scaleMax)
+    {
+        // Coming from above scale maximum into visible range
+        animationStartValue = scaleMax;
+        log_i("Pressure entering scale from above: animating from %d to %d", animationStartValue, value);
+    }
+
     // Setup animation
     lv_anim_init(&pressureAnimation_);
     lv_anim_set_duration(&pressureAnimation_, _animation_duration);
     lv_anim_set_repeat_count(&pressureAnimation_, 0);
     lv_anim_set_playback_duration(&pressureAnimation_, 0);
-    lv_anim_set_values(&pressureAnimation_, currentOilPressureValue_, value);
+    lv_anim_set_values(&pressureAnimation_, animationStartValue, value);
     lv_anim_set_var(&pressureAnimation_, this);
     lv_anim_set_user_data(&pressureAnimation_, (void *)static_cast<uintptr_t>(OilSensorTypes::Pressure));
     lv_anim_set_exec_cb(&pressureAnimation_, OemOilPanel::ExecutePressureAnimationCallback);
@@ -341,7 +393,17 @@ void OemOilPanel::UpdateOilTemperature()
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_)
     {
-        return;
+        // Validate that the LVGL animation is actually still running
+        // If not, this is a stale flag that needs to be cleared
+        if (!lv_anim_get(&temperatureAnimation_, nullptr))
+        {
+            log_w("UpdateOilTemperature: Found stale animation flag, clearing it");
+            isTemperatureAnimationRunning_ = false;
+        }
+        else
+        {
+            return;
+        }
     }
 
     // Safety check for sensor availability
@@ -372,12 +434,51 @@ void OemOilPanel::UpdateOilTemperature()
     log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);
     oemOilTemperatureComponent_->Refresh(Reading{value});
 
+    // Determine animation start value
+    // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
+    int32_t animationStartValue = currentOilTemperatureValue_;
+    const int32_t scaleMin = 0;   // Temperature scale minimum
+    const int32_t scaleMax = 120; // Temperature scale maximum
+    
+    if (currentOilTemperatureValue_ == -1)
+    {
+        // Initial load - determine start position based on target value
+        if (value < scaleMin)
+        {
+            animationStartValue = scaleMin; // Start from minimum if value is below scale
+        }
+        else if (value > scaleMax)
+        {
+            animationStartValue = scaleMax; // Start from maximum if value is above scale
+        }
+        else
+        {
+            // Value is within scale bounds
+            // For temperature, always start from minimum (cold) for initial animation
+            // This represents a cold engine warming up, which is the typical scenario
+            animationStartValue = scaleMin;
+        }
+        log_i("Initial temperature animation: starting from %d to %d", animationStartValue, value);
+    }
+    else if (currentOilTemperatureValue_ < scaleMin && value >= scaleMin)
+    {
+        // Coming from below scale minimum into visible range
+        animationStartValue = scaleMin;
+        log_i("Temperature entering scale from below: animating from %d to %d", animationStartValue, value);
+    }
+    else if (currentOilTemperatureValue_ > scaleMax && value <= scaleMax)
+    {
+        // Coming from above scale maximum into visible range
+        animationStartValue = scaleMax;
+        log_i("Temperature entering scale from above: animating from %d to %d", animationStartValue, value);
+    }
+
     // Setup animation
     lv_anim_init(&temperatureAnimation_);
     lv_anim_set_duration(&temperatureAnimation_, _animation_duration);
     lv_anim_set_repeat_count(&temperatureAnimation_, 0);
     lv_anim_set_playback_duration(&temperatureAnimation_, 0);
-    lv_anim_set_values(&temperatureAnimation_, currentOilTemperatureValue_, value);
+    lv_anim_set_values(&temperatureAnimation_, animationStartValue, value);
     lv_anim_set_var(&temperatureAnimation_, this);
     lv_anim_set_user_data(&temperatureAnimation_, (void *)static_cast<uintptr_t>(OilSensorTypes::Temperature));
     lv_anim_set_exec_cb(&temperatureAnimation_, OemOilPanel::ExecuteTemperatureAnimationCallback);
@@ -534,7 +635,6 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
         {
             thisInstance->panelService_->SetUiState(UIState::IDLE);
         }
-        // All animations completed - no callback needed for interface-based approach
     }
 }
 

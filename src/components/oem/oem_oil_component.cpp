@@ -163,9 +163,28 @@ void OemOilComponent::SetValue(int32_t value)
 {
     log_d("SetValue() called with value=%d", value);
 
-    // Allow derived classes to map values if needed (e.g., for reversed scales)
-    int32_t mappedValue = map_value_for_display(value);
-    log_d("SetValue: mappedValue=%d", mappedValue);
+    // Clamp the input value to logical scale boundaries BEFORE mapping
+    // This ensures values stay within the component's logical range
+    const int32_t scaleMin = get_scale_min();
+    const int32_t scaleMax = get_scale_max();
+    
+    int32_t clampedValue = value;
+    if (clampedValue < scaleMin)
+    {
+        log_d("SetValue: Clamping input value %d to scale minimum %d", clampedValue, scaleMin);
+        clampedValue = scaleMin;
+    }
+    else if (clampedValue > scaleMax)
+    {
+        log_d("SetValue: Clamping input value %d to scale maximum %d", clampedValue, scaleMax);
+        clampedValue = scaleMax;
+    }
+
+    // Now allow derived classes to map values if needed (e.g., for reversed scales)
+    // Temperature component will reverse the clamped value: 0->120, 120->0
+    int32_t mappedValue = map_value_for_display(clampedValue);
+    
+    log_d("SetValue: clamped=%d, final mappedValue=%d", clampedValue, mappedValue);
 
     // Update all three needle sections for smooth tapered appearance
     log_d("SetValue: About to call lv_scale_set_line_needle_value for needleLine_");
