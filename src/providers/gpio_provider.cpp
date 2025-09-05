@@ -3,19 +3,23 @@
 
 bool GpioProvider::DigitalRead(int pin)
 {
-    log_v("DigitalRead() called");
-    return ::digitalRead(pin);
+    log_v("DigitalRead() called for pin %d", pin);
+    bool value = ::digitalRead(pin);
+    log_v("DigitalRead() pin %d returned: %d", pin, value);
+    return value;
 }
 
 uint16_t GpioProvider::AnalogRead(int pin)
 {
-    log_v("AnalogRead() called");
-    return ::analogRead(pin);
+    log_v("AnalogRead() called for pin %d", pin);
+    uint16_t value = ::analogRead(pin);
+    log_v("AnalogRead() pin %d returned: %d", pin, value);
+    return value;
 }
 
 void GpioProvider::PinMode(int pin, int mode)
 {
-    log_v("PinMode() called");
+    log_v("PinMode() called for pin %d, mode %d", pin, mode);
     ::pinMode(pin, mode);
 }
 

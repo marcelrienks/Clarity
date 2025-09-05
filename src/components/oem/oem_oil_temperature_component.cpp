@@ -74,9 +74,8 @@ bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 {
     log_v("map_value_for_display() called with value=%d", value);
-    // Maps the value from the original scale (0-120) to the normal scale (120-0).
-    // LVGL 9.3 has a bug that does allow setting a reverse scale 120-0, but it cannot animate the needle using that.
-    // This method is used to map the value from the original scale (0-120) to the normal scale (120-0).
+    // Maps the value from the original scale (0-120) to the reversed display scale (120-0).
+    // Required for LVGL animation compatibility with reversed scales.
 
     // Map from [0,120] to [120,0] reverse the scale
     int32_t max_val = get_scale_max();
@@ -99,7 +98,7 @@ void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) 
         return;
     }
     
-    // Danger zone: map correct danger zone to reversed danger zone (hack to solve reversed scale in LVGL 9.3)
+    // Map danger zone to reversed scale for display
     int32_t max_val = get_scale_max();
     int32_t danger_val = get_danger_zone();
     int32_t mapped_max = map_value_for_display(max_val);

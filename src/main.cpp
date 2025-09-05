@@ -168,7 +168,7 @@ void setup()
 
     Ticker::handleLvTasks();
     
-    // Display complete system configuration for debugging
+    // Display complete system configuration
     if (interruptManager)
     {
         interruptManager->PrintSystemStatus();
@@ -189,7 +189,7 @@ void loop()
         log_d("Main loop running - count: %lu", loopCount);
     }
     
-    // Periodic system health monitoring for debugging (every 30 seconds)
+    // Periodic system health monitoring (every 30 seconds)
     static unsigned long lastDiagnosticTime = 0;
     static constexpr unsigned long DIAGNOSTIC_INTERVAL_MS = 30000;
     if (interruptManager && (millis() - lastDiagnosticTime) > DIAGNOSTIC_INTERVAL_MS)

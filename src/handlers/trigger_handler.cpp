@@ -121,9 +121,32 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
         return; // No sensor associated
     }
     
-    // Check sensor state change
+    // Extra debugging for lock trigger
+    bool isLockTrigger = (strcmp(trigger.id, "lock") == 0);
+    if (isLockTrigger) {
+        bool currentSensorReading = std::get<bool>(trigger.sensor->GetReading());
+        log_d("Lock trigger evaluation: GPIO state = %s, trigger.isActive = %s", 
+              currentSensorReading ? "HIGH" : "LOW", trigger.isActive ? "true" : "false");
+    }
+    
+    // Check if sensor state has changed
+    bool hasChanged = trigger.sensor->HasStateChanged();
+    if (isLockTrigger) {
+        log_d("Lock trigger HasStateChanged() = %s", hasChanged ? "true" : "false");
+    }
+    
+    if (!hasChanged) {
+        return; // No change, nothing to do
+    }
+    
+    // Get current sensor state
     bool sensorActive = IsSensorActive(trigger);
     bool wasActive = trigger.isActive;
+    
+    if (isLockTrigger) {
+        log_d("Lock trigger state: sensorActive = %s, wasActive = %s", 
+              sensorActive ? "true" : "false", wasActive ? "true" : "false");
+    }
     
     // Determine if trigger should activate or deactivate
     if (!wasActive && sensorActive && ShouldActivate(trigger)) {
@@ -140,6 +163,9 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     else if (wasActive && !sensorActive && ShouldDeactivate(trigger)) {
         // Deactivation Flow with Type-Based Restoration (as per interrupt-architecture.md)
         log_d("Executing deactivation for '%s'", trigger.id);
+        if (isLockTrigger) {
+            log_i("LOCK TRIGGER DEACTIVATING - calling ExecuteDeactivate()");
+        }
         trigger.ExecuteDeactivate();  // Execute and set inactive
         UpdatePriorityState(trigger.priority, false);
         
@@ -149,6 +175,11 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
             log_d("Re-activating same-type trigger '%s'", sameTypeTrigger->id);
             sameTypeTrigger->ExecuteActivate();
         }
+    }
+    else if (isLockTrigger) {
+        log_d("Lock trigger: no action taken (wasActive=%s, sensorActive=%s, shouldDeactivate=%s)", 
+              wasActive ? "true" : "false", sensorActive ? "true" : "false", 
+              ShouldDeactivate(trigger) ? "true" : "false");
     }
 }
 
@@ -230,13 +261,20 @@ void TriggerHandler::ExecuteTriggerFunction(const Trigger& trigger, bool isActiv
 }
 
 bool TriggerHandler::IsSensorActive(const Trigger& trigger) const {
-    if (!trigger.sensor || !trigger.sensor->HasStateChanged()) {
+    if (!trigger.sensor) {
         return false;
     }
     
-    // Check sensor reading (assuming bool sensors for GPIO)
-    // This is a simplified implementation - real sensors might need different logic
-    return trigger.sensor->HasStateChanged();
+    // Get sensor reading to determine if it's active
+    Reading reading = trigger.sensor->GetReading();
+    
+    // Check if reading is a boolean (GPIO sensors)
+    if (std::holds_alternative<bool>(reading)) {
+        return std::get<bool>(reading);
+    }
+    
+    // For non-boolean sensors, consider them inactive
+    return false;
 }
 
 Trigger* TriggerHandler::FindTrigger(const char* id) {

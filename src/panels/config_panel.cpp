@@ -96,8 +96,11 @@ void ConfigPanel::Update()
 {
     log_v("Update() called");
 
-    // Config panel is static - no updates needed
-    // No notification needed for static panels
+    // Config panel is static - no updates needed, but must reset UI state to IDLE
+    if (panelService_) {
+        panelService_->SetUiState(UIState::IDLE);
+        log_d("ConfigPanel: Update() - setting UI state to IDLE after static panel update");
+    }
 }
 
 // Private methods
@@ -132,7 +135,12 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!panel)
         return;
 
-    // Config panel completion handled - no callback needed
+    // Set UI state to IDLE after static panel loads so triggers can be evaluated again
+    if (panel->panelService_)
+    {
+        panel->panelService_->SetUiState(UIState::IDLE);
+        log_d("ConfigPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
+    }
 }
 
 // IInputService Interface Implementation

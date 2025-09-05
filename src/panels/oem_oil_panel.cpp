@@ -41,7 +41,7 @@ OemOilPanel::~OemOilPanel()
         log_d("Deleted temperature animation");
     }
 
-    // Delete all animations that might reference this instance to prevent callback corruption
+    // Delete all animations that might reference this instance
     lv_anim_delete(this, nullptr);
     log_d("Deleted all animations for this instance");
 
@@ -155,7 +155,10 @@ void OemOilPanel::Load()
     oemOilPressureComponent_->SetValue(currentOilPressureValue_);
     oemOilTemperatureComponent_->SetValue(currentOilTemperatureValue_);
     
-    // === MEMORY CORRUPTION DEBUGGING ===
+    // Initialize needle colors based on initial values
+    oemOilPressureComponent_->Refresh(Reading{currentOilPressureValue_});
+    oemOilTemperatureComponent_->Refresh(Reading{currentOilTemperatureValue_});
+    
     log_d("=== PRE-SCREEN_LOAD MEMORY VALIDATION ===");
     
     // Log heap status before critical operation
@@ -181,7 +184,7 @@ void OemOilPanel::Load()
         lv_coord_t h = lv_obj_get_height(screen_);
         log_d("  screen_ size: %dx%d", w, h);
     } else {
-        log_e("  screen_ is NULL! Memory corruption detected!");
+        log_e("  screen_ is NULL!");
     }
     
     // Validate component pointers
@@ -208,7 +211,7 @@ void OemOilPanel::Load()
     uint32_t test_pattern = MEMORY_PATTERN;
     log_d("Memory pattern test: wrote 0x%08X", test_pattern);
     if (test_pattern != MEMORY_PATTERN) {
-        log_e("MEMORY CORRUPTION: Pattern changed from 0x%08X to 0x%08X!", MEMORY_PATTERN, test_pattern);
+        log_e("Pattern changed from 0x%08X to 0x%08X!", MEMORY_PATTERN, test_pattern);
     }
 
     log_d("OemOilPanel::Load: About to call lv_screen_load");

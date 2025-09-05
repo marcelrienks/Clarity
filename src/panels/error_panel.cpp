@@ -219,7 +219,12 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     auto thisInstance = static_cast<ErrorPanel *>(lv_event_get_user_data(event));
     if (thisInstance)
     {
-        // Panel completion handled - no callback needed
+        // Set UI state to IDLE after static panel loads so triggers can be evaluated again
+        if (thisInstance->panelService_)
+        {
+            thisInstance->panelService_->SetUiState(UIState::IDLE);
+            log_d("ErrorPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
+        }
     }
 }
 

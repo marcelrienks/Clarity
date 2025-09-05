@@ -122,8 +122,11 @@ void KeyPanel::Update()
 {
     log_v("Update() called");
     
-    // Key panel is static - no updates needed
-    // No notification needed for static panels
+    // Key panel is static - no updates needed, but must reset UI state to IDLE
+    if (panelService_) {
+        panelService_->SetUiState(UIState::IDLE);
+        log_d("KeyPanel: Update() - setting UI state to IDLE after static panel update");
+    }
 }
 
 // Static Methods
@@ -140,7 +143,12 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!thisInstance)
         return;
     
-    // Static panel - no callback needed
+    // Set UI state to IDLE after static panel loads so triggers can be evaluated again
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+        log_d("KeyPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
+    }
 }
 
 // Manager injection method

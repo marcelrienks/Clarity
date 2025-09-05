@@ -29,7 +29,7 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
     // Trim queue if necessary
     TrimErrorQueue();
 
-    // Log error for debugging
+    // Log error
     const char *levelStr = (level == ErrorLevel::WARNING) ? "WARNING"
                            : (level == ErrorLevel::ERROR) ? "ERROR"
                                                           : "CRITICAL";

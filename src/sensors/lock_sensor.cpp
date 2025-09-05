@@ -24,6 +24,10 @@ void LockSensor::Init()
     }
     gpioProvider_->PinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
     
+    // Initialize previous state to current GPIO state
+    previousLockState_ = readLockState();
+    log_d("LockSensor initialized with state: %s", previousLockState_ ? "engaged" : "disengaged");
+    
     // Interrupt registration is now handled centrally in ManagerFactory
     
     log_i("LockSensor initialization completed on GPIO %d with coordinated interrupts", gpio_pins::LOCK);
@@ -62,13 +66,33 @@ bool LockSensor::HasStateChanged()
     log_v("HasStateChanged() called");
     
     bool currentState = readLockState();
+    
+    // Store previous state for logging before DetectChange updates it
+    bool oldPreviousState = previousLockState_;
+    
+    // Detailed timing and state debugging
+    static unsigned long lastLogTime = 0;
+    unsigned long currentTime = millis();
+    
+    // Log every 2 seconds or when state actually differs
+    if (currentTime - lastLogTime > 2000 || currentState != previousLockState_) {
+        log_d("LOCK SENSOR [%lu ms]: Raw GPIO=%s, currentState=%s, previousState=%s, initialized=%s",
+              currentTime,
+              gpioProvider_->DigitalRead(gpio_pins::LOCK) ? "HIGH" : "LOW",
+              currentState ? "HIGH" : "LOW", 
+              previousLockState_ ? "HIGH" : "LOW",
+              initialized_ ? "true" : "false");
+        lastLogTime = currentTime;
+    }
+    
     bool changed = DetectChange(currentState, previousLockState_);
     
     if (changed)
     {
-        log_d("Lock state changed from %s to %s", 
-              previousLockState_ ? "engaged" : "disengaged",
-              currentState ? "engaged" : "disengaged");
+        log_i("LOCK SENSOR STATE CHANGE [%lu ms]: %s -> %s", 
+              currentTime,
+              oldPreviousState ? "HIGH/engaged" : "LOW/disengaged",
+              currentState ? "HIGH/engaged" : "LOW/disengaged");
               
         // In simplified system, determine which interrupt should be triggered
         if (currentState) 
@@ -88,6 +112,10 @@ bool LockSensor::HasStateChanged()
     {
         triggerInterruptId_ = nullptr; // No interrupt to trigger
     }
+    
+    log_v("LOCK SENSOR DEBUG: DetectChange returned %s, previousLockState_ now=%s",
+          changed ? "true" : "false",
+          previousLockState_ ? "HIGH" : "LOW");
     
     return changed;
 }

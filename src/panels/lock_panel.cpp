@@ -105,8 +105,11 @@ void LockPanel::Update()
 {
     log_v("Update() called");
     
-    // Lock panel is static - no updates needed
-    // No notification needed for static panels
+    // Lock panel is static - no updates needed, but must reset UI state to IDLE
+    if (panelService_) {
+        panelService_->SetUiState(UIState::IDLE);
+        log_d("LockPanel: Update() - setting UI state to IDLE after static panel update");
+    }
 }
 
 // Static Methods
@@ -124,8 +127,12 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!thisInstance)
         return;
     
-    
-    // Static panel - no callback needed
+    // Set UI state to IDLE after static panel loads so triggers can be evaluated again
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+        log_d("LockPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
+    }
 }
 
 // Manager injection method

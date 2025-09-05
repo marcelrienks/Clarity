@@ -271,15 +271,15 @@ void InterruptManager::OptimizeMemoryUsage()
 {
     log_v("OptimizeMemoryUsage() called");
     
-    // For the new system, memory is already optimized with fixed arrays
-    // This method exists for API compatibility but doesn't need to do much
+    // Memory is already optimized with static arrays
+    // This method exists for API compatibility
     
     if (triggerHandler_) {
-        // Triggers use fixed arrays, no optimization needed
+        // Static arrays, no optimization needed
     }
     
     if (actionHandler_) {
-        // Actions use fixed arrays, no optimization needed
+        // Static arrays, no optimization needed
     }
     
     log_d("Memory optimization completed (new system uses pre-allocated arrays)");
@@ -289,6 +289,6 @@ void InterruptManager::CompactInterruptArray()
 {
     log_v("CompactInterruptArray() called");
     
-    // New system doesn't need compaction as it uses fixed arrays
-    log_d("Array compaction not needed (new system uses fixed arrays)");
+    // Static arrays don't need compaction
+    log_d("Array compaction not needed (static arrays)");
 }

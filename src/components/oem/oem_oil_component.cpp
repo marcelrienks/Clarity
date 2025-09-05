@@ -99,7 +99,6 @@ void OemOilComponent::Refresh(const Reading &reading)
     int32_t value = std::get<int32_t>(reading);
     const ThemeColors &colours = styleService_->GetThemeColors();
     
-    // Debug: Log current theme and colors being applied
     const char* currentTheme = styleService_->GetCurrentTheme();
     log_d("Component refresh - Theme: %s, gaugeNormal: 0x%06X, needleNormal: 0x%06X", 
           currentTheme, lv_color_to_u32(colours.gaugeNormal), lv_color_to_u32(colours.needleNormal));
@@ -217,7 +216,6 @@ void OemOilComponent::SetValue(int32_t value)
     
     log_d("SetValue: All needle operations completed successfully");
     
-    // === MEMORY CORRUPTION CHECK AFTER LVGL OPERATIONS ===
     log_d("=== POST-NEEDLE MEMORY VALIDATION ===");
     log_d("Free heap after needle operations: %d bytes", ESP.getFreeHeap());
     
@@ -240,7 +238,7 @@ void OemOilComponent::SetValue(int32_t value)
     uint32_t component_test = COMPONENT_PATTERN;
     log_d("Component memory test: 0x%08X", component_test);
     if (component_test != COMPONENT_PATTERN) {
-        log_e("COMPONENT MEMORY CORRUPTION: Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
+        log_e("Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
     }
 }
 
@@ -363,13 +361,13 @@ void OemOilComponent::create_labels()
     // Use same radius for both labels - they should be equidistant from pivot
     int32_t radius = 78;
 
-    // L label position - use center alignment without fixed offsets
+    // L label position
     double lAngleRad = (lAngle * M_PI) / 180.0;
     int32_t lX = (int32_t)(radius * cos(lAngleRad));
     int32_t lY = (int32_t)(radius * sin(lAngleRad));
     lv_obj_align(lowLabel_, LV_ALIGN_CENTER, lX, lY);
 
-    // H label position - use center alignment without fixed offsets
+    // H label position
     double hAngleRad = (hAngle * M_PI) / 180.0;
     int32_t hX = (int32_t)(radius * cos(hAngleRad));
     int32_t hY = (int32_t)(radius * sin(hAngleRad));
