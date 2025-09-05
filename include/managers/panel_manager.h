@@ -134,7 +134,8 @@ class PanelManager : public IPanelService,
 
     /// @brief Internal method to load a panel after first showing a splash screen transition
     /// @param panelName Name of the target panel to load after splash
-    void CreateAndLoadPanelWithSplash(const char *panelName);
+    /// @param isTriggerDriven Whether the target panel load is trigger-driven
+    void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
 
     // Callback Methods
     
@@ -183,6 +184,7 @@ class PanelManager : public IPanelService,
     std::string restorationPanelStr_;                 ///< Safe storage for restoration panel name
     std::string lastUserPanelStr_ = PanelNames::OIL;  ///< Last user-driven panel for restoration
     std::string splashTargetPanelStr_;                ///< Target panel to load after splash completion
+    bool splashTargetTriggerDriven_ = false;          ///< Preserve trigger state through splash transitions
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming

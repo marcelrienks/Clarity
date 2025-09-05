@@ -179,7 +179,6 @@ void setup()
 
 void loop()
 {
-    log_v("loop() called");
     static unsigned long loopCount = 0;
     loopCount++;
 

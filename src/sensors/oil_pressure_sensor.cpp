@@ -71,7 +71,6 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
 /// @brief Get the current pressure reading
 Reading OilPressureSensor::GetReading()
 {
-    log_v("GetReading() called");
     // Check if enough time has passed for update
     if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
@@ -116,7 +115,6 @@ void OilPressureSensor::SetUpdateRate(int updateRateMs)
 /// @brief Read raw ADC value from pressure sensor
 int32_t OilPressureSensor::ReadRawValue()
 {
-    log_v("ReadRawValue() called");
     // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
     return gpioProvider_->AnalogRead(gpio_pins::OIL_PRESSURE);
 }
@@ -124,7 +122,6 @@ int32_t OilPressureSensor::ReadRawValue()
 /// @brief Convert raw ADC value to requested pressure unit
 int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 {
-    log_v("ConvertReading() called");
     
     // Apply calibration if preference service is available
     float calibratedValue = static_cast<float>(rawValue);

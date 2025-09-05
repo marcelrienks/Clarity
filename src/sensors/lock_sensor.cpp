@@ -57,13 +57,11 @@ Reading LockSensor::GetReading()
 
 bool LockSensor::readLockState()
 {
-    log_v("readLockState() called");
     return gpioProvider_->DigitalRead(gpio_pins::LOCK);
 }
 
 bool LockSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
     
     bool currentState = readLockState();
     

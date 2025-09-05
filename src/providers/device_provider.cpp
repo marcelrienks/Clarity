@@ -124,7 +124,6 @@ bool DeviceProvider::IsReady() const
 /// @param data Pixel data buffer to display
 void DeviceProvider::display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data)
 {
-    log_v("display_flush_callback() called");
     DeviceProvider *deviceInstance = (DeviceProvider *)lv_display_get_user_data(display);
 
     uint32_t width = lv_area_get_width(area);

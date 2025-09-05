@@ -180,7 +180,6 @@ void PreferenceManager::SaveConfig()
 /// @return Reference to current configuration settings
 Configs &PreferenceManager::GetConfig()
 {
-    log_v("GetConfig() called");
     return config;
 }
 

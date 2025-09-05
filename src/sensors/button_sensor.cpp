@@ -29,7 +29,6 @@ void ButtonSensor::Init()
 /// @return Reading containing the current button action
 Reading ButtonSensor::GetReading()
 {
-    log_v("GetReading() called");
     // Process button state to detect actions
     ProcessButtonState();
     
@@ -72,14 +71,11 @@ bool ButtonSensor::IsButtonPressed()
 
 bool ButtonSensor::ReadButtonState()
 {
-    log_v("ReadButtonState() called");
     return gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
 }
 
 bool ButtonSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
-    
     ProcessButtonState();
     
     // If no action is ready, clear the interrupt ID

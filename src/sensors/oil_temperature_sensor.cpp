@@ -70,7 +70,6 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
 /// @brief Get the current temperature reading
 Reading OilTemperatureSensor::GetReading()
 {
-    log_v("GetReading() called");
     // Check if enough time has passed for update
     if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
@@ -115,7 +114,6 @@ void OilTemperatureSensor::SetUpdateRate(int updateRateMs)
 /// @brief Read raw ADC value from temperature sensor
 int32_t OilTemperatureSensor::ReadRawValue()
 {
-    log_v("ReadRawValue() called");
     // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
     return gpioProvider_->AnalogRead(gpio_pins::OIL_TEMPERATURE);
 }
@@ -123,7 +121,6 @@ int32_t OilTemperatureSensor::ReadRawValue()
 /// @brief Convert raw ADC value to requested temperature unit
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
-    log_v("ConvertReading() called");
     
     // Apply calibration if preference service is available
     float calibratedValue = static_cast<float>(rawValue);

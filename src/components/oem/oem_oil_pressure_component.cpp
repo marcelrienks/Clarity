@@ -23,7 +23,6 @@ const lv_image_dsc_t *OemOilPressureComponent::get_icon() const
 /// @return The minimum scale value.
 int32_t OemOilPressureComponent::get_scale_min() const
 {
-    log_v("get_scale_min() called");
     return 0;
 }
 
@@ -31,7 +30,6 @@ int32_t OemOilPressureComponent::get_scale_min() const
 /// @return The maximum scale value.
 int32_t OemOilPressureComponent::get_scale_max() const
 {
-    log_v("get_scale_max() called");
     return 60;
 }
 
@@ -39,7 +37,6 @@ int32_t OemOilPressureComponent::get_scale_max() const
 /// @return The danger zone value.
 int32_t OemOilPressureComponent::get_danger_zone() const
 {
-    log_v("get_danger_zone() called");
     return 5;
 }
 
@@ -64,7 +61,6 @@ int32_t OemOilPressureComponent::get_angle_range() const
 /// @return True if the value is in the danger zone, false otherwise.
 bool OemOilPressureComponent::is_danger_condition(int32_t value) const
 {
-    log_v("is_danger_condition() called");
     return value <= OemOilPressureComponent::get_danger_zone();
 }
 

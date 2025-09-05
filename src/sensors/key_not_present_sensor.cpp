@@ -81,6 +81,5 @@ bool KeyNotPresentSensor::readKeyNotPresentState()
     
     // Read GPIO 26 state - HIGH means key is not present
     bool state = gpioProvider_->DigitalRead(gpio_pins::KEY_NOT_PRESENT);
-    log_v("KeyNotPresentSensor GPIO %d read: %s", gpio_pins::KEY_NOT_PRESENT, state ? "HIGH" : "LOW");
     return state;
 }

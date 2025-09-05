@@ -63,13 +63,11 @@ bool LightsSensor::GetLightsState()
 
 bool LightsSensor::readLightsState()
 {
-    log_v("readLightsState() called");
     return gpioProvider_->DigitalRead(gpio_pins::LIGHTS);
 }
 
 bool LightsSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
     
     bool currentState = readLightsState();
     bool previousState = previousLightsState_; // Save before DetectChange modifies it

@@ -3,29 +3,26 @@
 
 bool GpioProvider::DigitalRead(int pin)
 {
-    log_v("DigitalRead() called for pin %d", pin);
     bool value = ::digitalRead(pin);
-    log_v("DigitalRead() pin %d returned: %d", pin, value);
     return value;
 }
 
 uint16_t GpioProvider::AnalogRead(int pin)
 {
-    log_v("AnalogRead() called for pin %d", pin);
     uint16_t value = ::analogRead(pin);
-    log_v("AnalogRead() pin %d returned: %d", pin, value);
     return value;
 }
 
 void GpioProvider::PinMode(int pin, int mode)
 {
-    log_v("PinMode() called for pin %d, mode %d", pin, mode);
+    log_v("PinMode() called");
     ::pinMode(pin, mode);
 }
 
 void GpioProvider::AttachInterrupt(int pin, void (*callback)(), int mode)
 {
     log_v("AttachInterrupt() called");
+    log_i("GPIO %d interrupt attached", pin);
     ::attachInterrupt(digitalPinToInterrupt(pin), callback, mode);
     attachedInterrupts[pin] = true;
 }
@@ -33,6 +30,7 @@ void GpioProvider::AttachInterrupt(int pin, void (*callback)(), int mode)
 void GpioProvider::DetachInterrupt(int pin)
 {
     log_v("DetachInterrupt() called");
+    log_i("GPIO %d interrupt detached", pin);
     ::detachInterrupt(digitalPinToInterrupt(pin));
     attachedInterrupts[pin] = false;
 }

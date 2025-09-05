@@ -104,7 +104,6 @@ Reading DebugErrorSensor::GetReading()
 
 bool DebugErrorSensor::readPinState()
 {
-    log_v("readPinState() called");
     if (!initialized_) return false;
     
     // Use the same debouncing logic as GetReading
@@ -112,8 +111,6 @@ bool DebugErrorSensor::readPinState()
     delay(5);
     bool confirmedState = gpioProvider_->DigitalRead(gpio_pins::DEBUG_ERROR);
     
-    log_v("readPinState: First read=%s, Second read=%s", 
-          currentState ? "HIGH" : "LOW", confirmedState ? "HIGH" : "LOW");
     
     // Only return if both readings match
     if (currentState == confirmedState)
@@ -129,7 +126,6 @@ bool DebugErrorSensor::readPinState()
 
 bool DebugErrorSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
     
     if (!initialized_) {
         log_v("HasStateChanged: Not initialized, returning false");
@@ -147,8 +143,6 @@ bool DebugErrorSensor::HasStateChanged()
     }
     
     bool currentState = readPinState();
-    log_v("HasStateChanged: Previous=%s, Current=%s", 
-          previousState_ ? "HIGH" : "LOW", currentState ? "HIGH" : "LOW");
     
     // Only detect rising edges (LOW to HIGH transition)
     bool changed = !previousState_ && currentState;

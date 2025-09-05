@@ -23,7 +23,6 @@ const lv_image_dsc_t *OemOilTemperatureComponent::get_icon() const
 /// @return The minimum scale value.
 int32_t OemOilTemperatureComponent::get_scale_min() const
 {
-    log_v("get_scale_min() called");
     return 0;
 }
 
@@ -31,7 +30,6 @@ int32_t OemOilTemperatureComponent::get_scale_min() const
 /// @return The maximum scale value.
 int32_t OemOilTemperatureComponent::get_scale_max() const
 {
-    log_v("get_scale_max() called");
     return 120;
 }
 
@@ -39,7 +37,6 @@ int32_t OemOilTemperatureComponent::get_scale_max() const
 /// @return The danger zone value.
 int32_t OemOilTemperatureComponent::get_danger_zone() const
 {
-    log_v("get_danger_zone() called");
     return 100;
 }
 
@@ -64,7 +61,6 @@ int32_t OemOilTemperatureComponent::get_angle_range() const
 /// @return True if the value is in the danger zone, false otherwise.
 bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 {
-    log_v("is_danger_condition() called");
     return value >= OemOilTemperatureComponent::get_danger_zone();
 }
 
@@ -73,7 +69,6 @@ bool OemOilTemperatureComponent::is_danger_condition(int32_t value) const
 /// @return The mapped value.
 int32_t OemOilTemperatureComponent::map_value_for_display(int32_t value) const
 {
-    log_v("map_value_for_display() called with value=%d", value);
     // Maps the value from the original scale (0-120) to the reversed display scale (120-0).
     // Required for LVGL animation compatibility with reversed scales.
 

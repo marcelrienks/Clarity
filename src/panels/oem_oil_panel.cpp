@@ -282,7 +282,6 @@ void OemOilPanel::Update()
 /// @brief Update the oil pressure reading on the screen
 void OemOilPanel::UpdateOilPressure()
 {
-    log_v("UpdateOilPressure() called");
 
     // Skip update if pressure animation is already running
     if (isPressureAnimationRunning_)
@@ -391,7 +390,6 @@ void OemOilPanel::UpdateOilPressure()
 /// @brief Update the oil temperature reading on the screen
 void OemOilPanel::UpdateOilTemperature()
 {
-    log_v("UpdateOilTemperature() called");
 
     // Skip update if temperature animation is already running
     if (isTemperatureAnimationRunning_)
@@ -692,7 +690,6 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 /// @return Mapped value for display (0-60, representing pressure range)
 int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
-    log_v("MapPressureValue() called with sensorValue: %d", sensorValue);
 
     if (!preferenceService_)
     {
@@ -758,7 +755,6 @@ int32_t OemOilPanel::ClampValue(int32_t value, int32_t minVal, int32_t maxVal)
 /// @return Mapped value for display (0-120 scale)
 int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 {
-    log_v("MapTemperatureValue() called with sensorValue: %d", sensorValue);
     
     // Sensor now returns values in configured units, map to display scale (0-120)
     int32_t mappedValue;
