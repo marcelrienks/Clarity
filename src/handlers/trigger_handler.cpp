@@ -149,31 +149,45 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     }
     
     // Determine if trigger should activate or deactivate
-    if (!wasActive && sensorActive && ShouldActivate(trigger)) {
+    if (!wasActive && sensorActive) {
         // Activation Flow with Priority Logic (as per interrupt-architecture.md)
+        // ALWAYS set isActive when sensor becomes active, regardless of priority
+        trigger.isActive = true;
+        UpdatePriorityState(trigger.priority, true);
+        
+        // But only execute the activate function if not blocked by higher priority
         if (!HasHigherPriorityActive(trigger.priority)) {
             log_d("Executing activation for '%s'", trigger.id);
-            trigger.ExecuteActivate();  // Execute and set active
+            if (trigger.activateFunc) {
+                trigger.activateFunc();
+            }
         } else {
-            log_d("Activation of '%s' suppressed by higher priority", trigger.id);
-            trigger.isActive = true;    // Only mark active, don't execute
+            log_d("Trigger '%s' marked active but execution suppressed by higher priority", trigger.id);
         }
-        UpdatePriorityState(trigger.priority, true);
     }
     else if (wasActive && !sensorActive && ShouldDeactivate(trigger)) {
         // Deactivation Flow with Type-Based Restoration (as per interrupt-architecture.md)
-        log_d("Executing deactivation for '%s'", trigger.id);
+        log_d("Deactivating trigger '%s'", trigger.id);
         if (isLockTrigger) {
-            log_i("LOCK TRIGGER DEACTIVATING - calling ExecuteDeactivate()");
+            log_i("LOCK TRIGGER DEACTIVATING - checking for same-type triggers first");
         }
-        trigger.ExecuteDeactivate();  // Execute and set inactive
+        
+        // First, mark this trigger as inactive and update priority state
+        trigger.isActive = false;
         UpdatePriorityState(trigger.priority, false);
         
-        // Find highest priority active trigger of same type
-        Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type, trigger.priority);
+        // Find highest priority active trigger of same type (don't exclude any priority)
+        Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type);
         if (sameTypeTrigger) {
-            log_d("Re-activating same-type trigger '%s'", sameTypeTrigger->id);
+            log_d("Found active same-type trigger '%s' (priority %d) - activating it instead of restoration", 
+                  sameTypeTrigger->id, static_cast<int>(sameTypeTrigger->priority));
             sameTypeTrigger->ExecuteActivate();
+        } else {
+            log_d("No active same-type triggers found - executing deactivate function for restoration");
+            // Only call deactivate function (which does restoration) if no same-type triggers found
+            if (trigger.deactivateFunc) {
+                trigger.deactivateFunc();
+            }
         }
     }
     else if (isLockTrigger) {
@@ -222,30 +236,34 @@ void TriggerHandler::UpdatePriorityState(Priority priority, bool active) {
 
 void TriggerHandler::RestoreSameTypeTrigger(TriggerType type, Priority excludePriority) {
     // Find the highest priority trigger of the same type that is still active
-    Trigger* toRestore = FindHighestPrioritySameType(type, excludePriority);
+    // Note: excludePriority is kept for API compatibility but not used in new logic
+    Trigger* toRestore = FindHighestPrioritySameType(type);
     if (toRestore && toRestore->isActive && toRestore->activateFunc) {
-        log_d("Restoring same-type trigger '%s' after exclusion", 
-              toRestore->id);
+        log_d("Restoring same-type trigger '%s' (priority %d)", 
+              toRestore->id, static_cast<int>(toRestore->priority));
         toRestore->activateFunc();
     }
 }
 
-Trigger* TriggerHandler::FindHighestPrioritySameType(TriggerType type, Priority excludePriority) {
+Trigger* TriggerHandler::FindHighestPrioritySameType(TriggerType type) {
     Trigger* highest = nullptr;
     int highestPriorityValue = -1;  // Track numeric priority value
     
     for (size_t i = 0; i < triggerCount_; i++) {
         Trigger& trigger = triggers_[i];
-        if (trigger.type == type && 
-            trigger.priority != excludePriority &&
-            trigger.isActive) {
-            
+        // Find active triggers of the same type
+        if (trigger.type == type && trigger.isActive) {
             int triggerPriorityValue = static_cast<int>(trigger.priority);
             if (triggerPriorityValue > highestPriorityValue) {
                 highest = &trigger;
                 highestPriorityValue = triggerPriorityValue;
             }
         }
+    }
+    
+    if (highest) {
+        log_d("Found active same-type trigger: '%s' (priority %d, type %d)", 
+              highest->id, static_cast<int>(highest->priority), static_cast<int>(type));
     }
     
     return highest;

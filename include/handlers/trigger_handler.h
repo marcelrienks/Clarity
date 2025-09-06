@@ -74,7 +74,7 @@ private:
     // Priority and blocking logic
     bool HasHigherPriorityActive(Priority priority) const;
     void UpdatePriorityState(Priority priority, bool active);
-    Trigger* FindHighestPrioritySameType(TriggerType type, Priority excludePriority);
+    Trigger* FindHighestPrioritySameType(TriggerType type);
     
     // Helper methods
     Trigger* FindTrigger(const char* id);
