@@ -46,6 +46,7 @@ public:
     // Button event processing
     void ProcessButtonEvents();
     ButtonAction DetectButtonAction();
+    ButtonAction DetectLongPressDuringHold();
     
     // Sensor access for action context
     ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
@@ -58,9 +59,11 @@ public:
 private:
     // Core action processing
     void EvaluateIndividualAction(Action& action);
+    bool EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction);
     void ExecutePendingActions();
     void ExecuteAction(const Action& action);  // Legacy compatibility
     bool ShouldTriggerAction(const Action& action);
+    bool ShouldTriggerActionWithDetectedAction(const Action& action, ButtonAction detectedAction);
     
     // Button timing detection
     void UpdateButtonState();
@@ -73,10 +76,10 @@ private:
     bool IsButtonPressed() const;
     
     // Timing constants
-    static constexpr unsigned long MIN_PRESS_DURATION_MS = 50;
-    static constexpr unsigned long SHORT_PRESS_MAX_MS = 2000;
-    static constexpr unsigned long LONG_PRESS_MIN_MS = 2000;
-    static constexpr unsigned long LONG_PRESS_MAX_MS = 5000;
+    static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum press duration
+    static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Short press: 500-1500ms
+    static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Long press: 1500-3000ms
+    static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;      // Maximum long press duration
     
     static constexpr size_t MAX_ACTIONS = 8;
     
@@ -89,6 +92,7 @@ private:
     bool buttonPreviouslyPressed_ = false;
     unsigned long buttonPressStartTime_ = 0;
     unsigned long buttonPressEndTime_ = 0;
+    bool longPressAlreadyTriggered_ = false;  // Track if long press was triggered during hold
     
     // Function injection for dynamic panel functions
     void (*currentShortPressFunc_)(void*) = nullptr;
