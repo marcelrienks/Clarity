@@ -180,7 +180,22 @@ void setup()
 void loop()
 {
     static unsigned long loopCount = 0;
+    static unsigned long lastLoopLogTime = 0;
     loopCount++;
+    unsigned long currentTime = millis();
+
+    // Log every 2 seconds to detect hangs more quickly
+    if (currentTime - lastLoopLogTime > 2000)
+    {
+        UIState currentUiState = panelManager ? panelManager->GetUiState() : UIState::BUSY;
+        const char* currentPanel = panelManager ? panelManager->GetCurrentPanel() : "UNKNOWN";
+        
+        log_i("MAIN LOOP alive: iteration %lu, UI state: %s, panel: %s", 
+              loopCount, 
+              currentUiState == UIState::IDLE ? "IDLE" : "BUSY",
+              currentPanel ? currentPanel : "NULL");
+        lastLoopLogTime = currentTime;
+    }
 
     // Log every 1000 loops to verify main loop is running
     if (loopCount % 1000 == 0)
@@ -202,14 +217,14 @@ void loop()
         lastDiagnosticTime = millis();
     }
 
-    // Process interrupts when UI is not busy to avoid conflicts
+    // Process interrupts - Actions (button timing) always run, Triggers only during IDLE
     if (interruptManager && panelManager)
     {
         UIState currentState = panelManager->GetUiState();
-        if (currentState == UIState::IDLE)
-        {
-            interruptManager->Process(); // Execute interrupt evaluation and handling
-        }
+        log_v("Calling interruptManager->Process() - UI state: %s", 
+              currentState == UIState::IDLE ? "IDLE" : "BUSY");
+        interruptManager->Process(); // Always process - ActionHandler runs always, TriggerHandler only on IDLE
+        log_v("interruptManager->Process() completed");
     }
     else if (!interruptManager)
     {
@@ -247,6 +262,9 @@ void loop()
         panelManager->UpdatePanel();
     }
 
+    log_v("Calling Ticker::handleLvTasks()");
     Ticker::handleLvTasks();
+    log_v("Calling Ticker::handleDynamicDelay()");
     Ticker::handleDynamicDelay(millis());
+    log_v("Main loop iteration completed");
 }

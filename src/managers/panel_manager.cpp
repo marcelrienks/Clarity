@@ -344,33 +344,43 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     
     if (!panel || !interruptManager_)
     {
-        log_w("Cannot update button functions - panel or InterruptManager is null");
+        log_e("Cannot update button functions - panel=%p, interrupt_manager=%p", 
+              (void*)panel, (void*)interruptManager_);
         return;
     }
+    
+    log_d("UpdatePanelButtonFunctions: Attempting to cast panel to IActionService");
     
     // Try to cast panel to IActionService to get button functions
     IActionService* actionService = dynamic_cast<IActionService*>(panel);
     if (!actionService)
     {
-        // Panel does not implement IActionService - no button functions to update
+        log_w("UpdatePanelButtonFunctions: Panel does not implement IActionService - no button functions available");
         return;
     }
+    
+    log_d("UpdatePanelButtonFunctions: Successfully cast to IActionService, extracting functions");
     
     // Extract button functions from panel
     void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
     void (*longPressFunc)(void* context) = actionService->GetLongPressFunction();
     void* panelContext = actionService->GetPanelContext();
     
+    log_i("UpdatePanelButtonFunctions: Extracted functions - short=%p, long=%p, context=%p", 
+          (void*)shortPressFunc, (void*)longPressFunc, panelContext);
+    
     if (!shortPressFunc || !longPressFunc)
     {
-        log_w("Panel provided null button functions");
+        log_e("UpdatePanelButtonFunctions: Panel provided null button functions - short=%p, long=%p", 
+              (void*)shortPressFunc, (void*)longPressFunc);
         return;
     }
     
     // Inject functions into universal button interrupts
+    log_d("UpdatePanelButtonFunctions: Injecting functions into InterruptManager");
     interruptManager_->UpdatePanelFunctions(shortPressFunc, longPressFunc, panelContext);
     
-    log_i("Updated universal button interrupts with functions from panel");
+    log_i("UpdatePanelButtonFunctions: Successfully updated universal button interrupts with panel functions");
 }
 
 // Static instance for singleton pattern

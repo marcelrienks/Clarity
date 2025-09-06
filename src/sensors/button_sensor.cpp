@@ -26,14 +26,16 @@ void ButtonSensor::Init()
 }
 
 /// @brief Get the current button state as a sensor reading
-/// @return Reading containing the current button action
+/// @return Reading containing the current button state (bool)
 Reading ButtonSensor::GetReading()
 {
     // Process button state to detect actions
     ProcessButtonState();
     
-    // Return the detected action as a reading
-    return static_cast<int32_t>(detectedAction_);
+    // Return the current button state as boolean for ActionHandler compatibility
+    bool state = ReadButtonState();
+    log_v("ButtonSensor::GetReading() returning %s", state ? "true" : "false");
+    return state;
 }
 
 /// @brief Get the current button action
@@ -71,7 +73,24 @@ bool ButtonSensor::IsButtonPressed()
 
 bool ButtonSensor::ReadButtonState()
 {
-    return gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
+    if (!gpioProvider_) {
+        log_e("ButtonSensor::ReadButtonState() - gpioProvider_ is null!");
+        return false;
+    }
+    
+    bool state = gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
+    
+    static unsigned long lastDebugTime = 0;
+    unsigned long currentTime = millis();
+    
+    // Log every 2 seconds to verify GPIO is being read
+    if (currentTime - lastDebugTime > 2000) {
+        log_i("ButtonSensor GPIO %d continuous read = %s", gpio_pins::INPUT_BUTTON, state ? "HIGH" : "LOW");
+        lastDebugTime = currentTime;
+    }
+    
+    log_v("ButtonSensor::ReadButtonState() GPIO %d = %s", gpio_pins::INPUT_BUTTON, state ? "HIGH" : "LOW");
+    return state;
 }
 
 bool ButtonSensor::HasStateChanged()
@@ -94,41 +113,59 @@ const char* ButtonSensor::GetTriggerInterruptId() const
 
 void ButtonSensor::ProcessButtonState()
 {
+    // Get the logical button state (ReadButtonState handles the GPIO inversion)
     bool currentState = ReadButtonState();
     unsigned long currentTime = millis();
+    
+    static unsigned long lastDebugTime = 0;
+    static bool lastLoggedState = false;
+    
+    // Debug every 3 seconds or on state changes
+    if ((currentTime - lastDebugTime > 3000) || (currentState != lastLoggedState)) {
+        log_d("ButtonSensor: GPIO state=%s, internal_state=%s, action_ready=%s", 
+              currentState ? "HIGH" : "LOW", 
+              currentButtonState_ ? "PRESSED" : "RELEASED",
+              actionReady_ ? "true" : "false");
+        lastDebugTime = currentTime;
+        lastLoggedState = currentState;
+    }
     
     if (currentState && !currentButtonState_)
     {
         buttonPressStartTime_ = currentTime;
         currentButtonState_ = true;
-        log_d("Button press started at %lu ms", buttonPressStartTime_);
+        log_i("ButtonSensor: PRESS STARTED at %lu ms (GPIO HIGH detected)", buttonPressStartTime_);
     }
     else if (!currentState && currentButtonState_)
     {
         buttonPressDuration_ = currentTime - buttonPressStartTime_;
         currentButtonState_ = false;
         
-        log_d("Button released after %lu ms", buttonPressDuration_);
+        log_i("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
         
         ButtonAction action = DetermineAction(buttonPressDuration_);
         if (action != ButtonAction::NONE)
         {
             detectedAction_ = action;
             actionReady_ = true;
-            log_i("Button action detected: %s", 
+            log_i("ButtonSensor: ACTION DETECTED: %s (actionReady=true)", 
                   action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
                   
             // In simplified system, determine which interrupt should be triggered
             if (action == ButtonAction::SHORT_PRESS)
             {
-                log_d("Short press detected - should trigger 'short_press' interrupt");
+                log_i("ButtonSensor: Should trigger 'short_press' action");
                 triggerInterruptId_ = "short_press";
             }
             else if (action == ButtonAction::LONG_PRESS)
             {
-                log_d("Long press detected - should trigger 'long_press' interrupt");
+                log_i("ButtonSensor: Should trigger 'long_press' action");
                 triggerInterruptId_ = "long_press";
             }
+        }
+        else
+        {
+            log_w("ButtonSensor: Press duration %lu ms resulted in NO ACTION", buttonPressDuration_);
         }
     }
     else if (currentState && currentButtonState_)
@@ -136,7 +173,7 @@ void ButtonSensor::ProcessButtonState()
         unsigned long heldDuration = currentTime - buttonPressStartTime_;
         if (heldDuration > LONG_PRESS_MAX_MS)
         {
-            log_w("Button press timeout after %lu ms", heldDuration);
+            log_w("ButtonSensor: PRESS TIMEOUT after %lu ms - resetting state", heldDuration);
             currentButtonState_ = false;
             buttonPressStartTime_ = 0;
         }

@@ -79,13 +79,21 @@ inline std::vector<Trigger> GetSystemTriggers(
     };
     
     // Add error trigger if sensor is provided
+    // Note: This trigger does nothing - it only exists to monitor the debug error sensor
+    // The actual error panel loading is handled automatically by the system when errors are detected
     if (errorSensor) {
         triggers.push_back({
             .id = "error",
             .priority = Priority::CRITICAL,
-            .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::ERROR); },
-            .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
+            .type = TriggerType::FUNCTION,  // Changed from PANEL to FUNCTION since it doesn't load a panel
+            .activateFunc = []() { 
+                // No-op: Error panel loading is handled automatically by the system
+                log_d("Debug error sensor activated - errors will be handled by system");
+            },
+            .deactivateFunc = []() { 
+                // No-op: Nothing to restore
+                log_d("Debug error sensor deactivated");
+            },
             .sensor = errorSensor,
             .canBeOverriddenOnActivate = false,
             .isActive = false

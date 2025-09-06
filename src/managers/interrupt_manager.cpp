@@ -111,12 +111,17 @@ void InterruptManager::Process()
     
     // Process Actions (continuous evaluation for responsiveness)
     if (actionHandler_) {
+        log_v("Processing ActionHandler - button timing runs always");
         actionHandler_->Process();
     }
     
     // Process Triggers (only during UI idle)
     if (IsUIIdle() && triggerHandler_) {
+        log_v("Processing TriggerHandler - UI is idle");
         triggerHandler_->Process();
+    }
+    else {
+        log_v("Skipping TriggerHandler - UI is busy");
     }
     
     // Update performance counters

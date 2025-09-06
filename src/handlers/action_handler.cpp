@@ -37,6 +37,15 @@ ActionHandler::~ActionHandler() {
 }
 
 void ActionHandler::Process() {
+    static unsigned long lastProcessTime = 0;
+    unsigned long currentTime = millis();
+    
+    // Log every 2 seconds to verify Process() is being called
+    if (currentTime - lastProcessTime > 2000) {
+        log_i("ActionHandler::Process() called - continuous button evaluation");
+        lastProcessTime = currentTime;
+    }
+    
     // Actions are evaluated every main loop cycle (continuous evaluation)
     UpdateButtonState();
     ProcessButtonEvents();
@@ -108,12 +117,24 @@ bool ActionHandler::ShouldTriggerAction(const Action& action) {
         return false;
     }
     
+    log_d("ShouldTriggerAction: action='%s', detectedAction=%s, hasTriggered=%s",
+          action.id,
+          detectedAction == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
+          detectedAction == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE",
+          action.hasTriggered ? "true" : "false");
+    
     // Match detected button action to action press type
     if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
-        return !action.hasTriggered;  // Only trigger once per press event
+        bool shouldTrigger = !action.hasTriggered;
+        log_i("ShouldTriggerAction: SHORT press match for '%s' - shouldTrigger=%s", 
+              action.id, shouldTrigger ? "YES" : "NO");
+        return shouldTrigger;  // Only trigger once per press event
     }
     else if (action.pressType == ActionPress::LONG && detectedAction == ButtonAction::LONG_PRESS) {
-        return !action.hasTriggered;  // Only trigger once per press event
+        bool shouldTrigger = !action.hasTriggered;
+        log_i("ShouldTriggerAction: LONG press match for '%s' - shouldTrigger=%s", 
+              action.id, shouldTrigger ? "YES" : "NO");
+        return shouldTrigger;  // Only trigger once per press event
     }
     
     return false;
@@ -124,18 +145,22 @@ void ActionHandler::ExecutePendingActions() {
     for (size_t i = 0; i < actionCount_; i++) {
         Action& action = actions_[i];
         if (action.hasTriggered) {
+            log_i("ExecutePendingActions: Executing triggered action '%s' (type: %s)", 
+                  action.id, action.pressType == ActionPress::SHORT ? "SHORT" : "LONG");
+            
             // Use injected panel functions if available, otherwise use action's own function
             if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
-                log_d("Executing injected short press function for action '%s'", action.id);
+                log_i("Executing injected SHORT press function for action '%s'", action.id);
                 currentShortPressFunc_(currentPanelContext_);
                 action.hasTriggered = false;  // Clear manually since we're using injected function
             }
             else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
-                log_d("Executing injected long press function for action '%s'", action.id);
+                log_i("Executing injected LONG press function for action '%s'", action.id);
                 currentLongPressFunc_(currentPanelContext_);
                 action.hasTriggered = false;  // Clear manually since we're using injected function
             }
             else {
+                log_i("Using action's own execute function for '%s'", action.id);
                 // Use the documented Execute method
                 action.Execute();  // This will clear hasTriggered automatically
             }
@@ -167,12 +192,32 @@ void ActionHandler::UpdateButtonState() {
     buttonPreviouslyPressed_ = buttonPressed_;
     buttonPressed_ = IsButtonPressed();
     
+    static unsigned long lastDebugTime = 0;
+    unsigned long currentTime = millis();
+    
+    // Debug every 1 second or on state changes - more frequent for troubleshooting
+    if ((currentTime - lastDebugTime > 1000) || (buttonPreviouslyPressed_ != buttonPressed_)) {
+        bool rawGpioState = false;
+        if (buttonSensor_) {
+            // Try to read GPIO directly via sensor
+            rawGpioState = IsButtonPressed();
+        }
+        log_i("Button state: current=%s, previous=%s, raw_gpio=%s, sensor_valid=%s", 
+              buttonPressed_ ? "PRESSED" : "RELEASED", 
+              buttonPreviouslyPressed_ ? "PRESSED" : "RELEASED",
+              rawGpioState ? "HIGH" : "LOW",
+              buttonSensor_ ? "YES" : "NO");
+        lastDebugTime = currentTime;
+    }
+    
     // Detect button press start
     if (!buttonPreviouslyPressed_ && buttonPressed_) {
+        log_i("BUTTON PRESS STARTED - beginning timing");
         StartButtonTiming();
     }
     // Detect button press end
     else if (buttonPreviouslyPressed_ && !buttonPressed_) {
+        log_i("BUTTON PRESS ENDED - stopping timing");
         StopButtonTiming();
     }
 }
@@ -191,11 +236,18 @@ void ActionHandler::ProcessButtonEvents() {
 ButtonAction ActionHandler::DetectButtonAction() {
     // Only detect action when button is released after a press
     if (!buttonPreviouslyPressed_ || buttonPressed_ || buttonPressEndTime_ == 0) {
+        log_v("DetectButtonAction: No action - prevPressed=%s, pressed=%s, endTime=%lu",
+              buttonPreviouslyPressed_ ? "true" : "false",
+              buttonPressed_ ? "true" : "false", buttonPressEndTime_);
         return ButtonAction::NONE;
     }
     
     unsigned long pressDuration = buttonPressEndTime_ - buttonPressStartTime_;
     ButtonAction action = CalculateButtonAction(pressDuration);
+    
+    log_i("DetectButtonAction: Duration=%lu ms, Action=%s", pressDuration,
+          action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
+          action == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE");
     
     // Clear the timing after detection to prevent multiple triggers
     if (action != ButtonAction::NONE) {
@@ -239,13 +291,25 @@ ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
 
 bool ActionHandler::IsButtonPressed() const {
     if (!buttonSensor_) {
+        log_v("IsButtonPressed: buttonSensor_ is null");
         return false;
     }
     
     // Get button state from sensor - assuming bool reading
     Reading reading = buttonSensor_->GetReading();
     if (std::holds_alternative<bool>(reading)) {
-        return std::get<bool>(reading);
+        bool pressed = std::get<bool>(reading);
+        log_v("IsButtonPressed: reading=%s", pressed ? "PRESSED" : "RELEASED");
+        return pressed;
+    }
+    
+    // Check what type the reading actually is
+    if (std::holds_alternative<int32_t>(reading)) {
+        log_w("IsButtonPressed: Got int32_t reading instead of bool: %d", std::get<int32_t>(reading));
+    } else if (std::holds_alternative<std::monostate>(reading)) {
+        log_w("IsButtonPressed: Got monostate reading (uninitialized)");
+    } else {
+        log_w("IsButtonPressed: Got unexpected reading type");
     }
     
     return false;

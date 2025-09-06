@@ -145,19 +145,14 @@ bool DebugErrorSensor::HasStateChanged()
     bool currentState = readPinState();
     
     // Only detect rising edges (LOW to HIGH transition)
+    // Note: We do NOT update previousState_ here - that's done in GetReading()
+    // This ensures GetReading() can detect the same rising edge and generate errors
     bool changed = !previousState_ && currentState;
     
     if (changed)
     {
         log_i("Debug error state changed - rising edge detected: LOW -> HIGH on GPIO %d", gpio_pins::DEBUG_ERROR);
-        // Update previous state immediately to prevent re-triggering
-        previousState_ = currentState;
-    }
-    else if (previousState_ && !currentState)
-    {
-        // Falling edge detected - update state but don't trigger
-        log_d("Debug error state changed - falling edge detected: HIGH -> LOW on GPIO %d", gpio_pins::DEBUG_ERROR);
-        previousState_ = currentState;
+        // Do NOT update previousState_ here - let GetReading() handle all state updates
     }
     
     return changed;

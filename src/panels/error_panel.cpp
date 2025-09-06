@@ -209,10 +209,11 @@ void ErrorPanel::Update()
 // Static Event Callbacks
 void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
-    log_v("ShowPanelCompletionCallback() called");
+    log_i("ErrorPanel::ShowPanelCompletionCallback() called - CRITICAL for UI state");
 
     if (!event)
     {
+        log_e("ShowPanelCompletionCallback: event is null!");
         return;
     }
 
@@ -222,9 +223,18 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
         // Set UI state to IDLE after static panel loads so triggers can be evaluated again
         if (thisInstance->panelService_)
         {
+            log_i("ErrorPanel: Setting UI state to IDLE - this unblocks main loop processing");
             thisInstance->panelService_->SetUiState(UIState::IDLE);
-            log_d("ErrorPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
+            log_i("ErrorPanel: UI state set to IDLE successfully");
         }
+        else
+        {
+            log_e("ErrorPanel::ShowPanelCompletionCallback: panelService_ is null!");
+        }
+    }
+    else
+    {
+        log_e("ErrorPanel::ShowPanelCompletionCallback: thisInstance is null!");
     }
 }
 
@@ -295,31 +305,33 @@ void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleSe
 
 static void ErrorPanelShortPress(void* panelContext)
 {
-    log_v("ErrorPanelShortPress() called");
+    log_i("ErrorPanelShortPress() called with context=%p", panelContext);
     auto* panel = static_cast<ErrorPanel*>(panelContext);
     
     if (panel)
     {
+        log_i("ErrorPanel: Calling HandleShortPress() on valid panel instance");
         panel->HandleShortPress();
     }
     else
     {
-        log_w("ErrorPanel: Cannot cycle errors - invalid context");
+        log_e("ErrorPanel: Cannot cycle errors - invalid context (null panel)");
     }
 }
 
 static void ErrorPanelLongPress(void* panelContext)
 {
-    log_v("ErrorPanelLongPress() called");
+    log_i("ErrorPanelLongPress() called with context=%p", panelContext);
     auto* panel = static_cast<ErrorPanel*>(panelContext);
     
     if (panel)
     {
+        log_i("ErrorPanel: Calling HandleLongPress() on valid panel instance");
         panel->HandleLongPress();
     }
     else
     {
-        log_w("ErrorPanel: Cannot execute long press - invalid context");
+        log_e("ErrorPanel: Cannot execute long press - invalid context (null panel)");
     }
 }
 
@@ -340,18 +352,22 @@ void* ErrorPanel::GetPanelContext()
 
 void ErrorPanel::HandleShortPress()
 {
-    log_i("ErrorPanel: Manual cycling to next error");
+    log_i("ErrorPanel::HandleShortPress() - Manual cycling to next error");
     
     if (currentErrors_.empty())
     {
+        log_w("ErrorPanel::HandleShortPress() - No errors to cycle through");
         return;
     }
+    
+    log_i("ErrorPanel::HandleShortPress() - Current error index: %zu/%zu", 
+          currentErrorIndex_, currentErrors_.size());
     
     // Move to next error or exit if we've reached the end
     if (currentErrorIndex_ >= currentErrors_.size() - 1)
     {
         // Reached last error - clear all and return to previous panel
-        log_i("ErrorPanel: Reached last error - clearing and returning to previous panel");
+        log_i("ErrorPanel::HandleShortPress() - Reached last error - clearing and returning to previous panel");
         ErrorManager::Instance().ClearAllErrors();
         
         if (panelService_)
@@ -359,13 +375,23 @@ void ErrorPanel::HandleShortPress()
             const char* restorationPanel = panelService_->GetRestorationPanel();
             if (restorationPanel)
             {
+                log_i("ErrorPanel::HandleShortPress() - Switching to restoration panel: %s", restorationPanel);
                 panelService_->CreateAndLoadPanel(restorationPanel, true);
             }
+            else
+            {
+                log_w("ErrorPanel::HandleShortPress() - No restoration panel available");
+            }
+        }
+        else
+        {
+            log_w("ErrorPanel::HandleShortPress() - Panel service not available");
         }
         return;
     }
     
     // Advance to next error
+    log_i("ErrorPanel::HandleShortPress() - Advancing to next error");
     AdvanceToNextError();
 }
 
@@ -403,17 +429,31 @@ void ErrorPanel::SortErrorsBySeverity()
 void ErrorPanel::AdvanceToNextError()
 {
     if (currentErrors_.empty())
+    {
+        log_w("AdvanceToNextError: No errors to advance through");
         return;
-        
+    }
+    
+    size_t oldIndex = currentErrorIndex_;
+    
     // Move to next error
     currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
+    
+    log_i("AdvanceToNextError: Moving from error %zu to %zu (total: %zu)", 
+          oldIndex, currentErrorIndex_, currentErrors_.size());
     
     // Update the component to display the new current error
     if (errorComponent_)
     {
         auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+        log_i("AdvanceToNextError: Updating error component display");
         errorComp->UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+        log_i("AdvanceToNextError: Error component updated successfully");
+    }
+    else
+    {
+        log_e("AdvanceToNextError: Error component is null - cannot update display");
     }
     
-    log_d("Advanced to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
+    log_i("AdvanceToNextError: Successfully advanced to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
 }
