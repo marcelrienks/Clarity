@@ -1,6 +1,7 @@
 #pragma once // preventing duplicate definitions, alternative to the traditional include guards
 
 #include "interfaces/i_style_service.h"
+#include "interfaces/i_preference_service.h"
 #include "utilities/styles.h"
 #include "utilities/types.h"
 
@@ -75,6 +76,7 @@ class StyleManager : public IStyleService
     void InitializeStyles() override;
     void SetTheme(const char *theme) override;
     void ApplyThemeToScreen(lv_obj_t *screen) override;
+    void ApplyCurrentTheme() override;
 
     // Accessor Methods
     const ThemeColors &GetColours(const char *theme) const;
@@ -130,6 +132,10 @@ class StyleManager : public IStyleService
     /// @brief Switch to specified theme (direct method call - no std::function)
     /// @param themeName Name of theme to switch to
     void SwitchTheme(const char* themeName);
+    
+    /// @brief Inject PreferenceService for direct preference reading
+    /// @param preferenceService Service to read theme preferences from
+    void SetPreferenceService(IPreferenceService* preferenceService);
 
     // Public Data Members - Theme State
     std::string THEME = Themes::NIGHT;
@@ -155,6 +161,9 @@ class StyleManager : public IStyleService
     const ThemeColors& dayThemeColours_ = ThemeDefinitions::DAY_THEME;
     const ThemeColors& nightThemeColours_ = ThemeDefinitions::NIGHT_THEME;
     const ThemeColors& errorThemeColours_ = ThemeDefinitions::ERROR_THEME;
+    
+    // Direct preference reading support
+    IPreferenceService* preferenceService_ = nullptr;
 
   private:
     bool initialized_ = false;

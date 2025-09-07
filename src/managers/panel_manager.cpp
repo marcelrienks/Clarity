@@ -230,6 +230,19 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     // Update current panel using std::string for memory safety
     currentPanelStr_ = panelName;
     currentPanel = currentPanelStr_.c_str();
+    
+    // Apply current theme from preferences BEFORE panel is loaded
+    // This ensures correct theme is set before any rendering happens
+    if (styleService_)
+    {
+        log_i("PanelManager: About to call ApplyCurrentTheme for panel: %s", panelName);
+        styleService_->ApplyCurrentTheme();
+        log_i("PanelManager: ApplyCurrentTheme completed for panel: %s", panelName);
+    }
+    else
+    {
+        log_w("PanelManager: No style service available to apply theme");
+    }
 
     // Update universal button interrupts with this panel's functions
     UpdatePanelButtonFunctions(panel_.get());

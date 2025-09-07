@@ -258,6 +258,10 @@ void OemOilPanel::Update()
         forceComponentRefresh_ = false;
     }
 
+    // Apply current sensor settings from preferences (direct reading)
+    // This ensures sensor configuration updates immediately when preferences change
+    ApplyCurrentSensorSettings();
+
     // Update sensor readings and components
     OemOilPanel::UpdateOilPressure();
     OemOilPanel::UpdateOilTemperature();
@@ -552,24 +556,43 @@ void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
 
     preferenceService_ = preferenceService;
 
+    // Apply sensor configuration from preferences when service is first injected
+    ApplyCurrentSensorSettings();
+}
+
+/// @brief Apply current sensor settings from preferences directly
+void OemOilPanel::ApplyCurrentSensorSettings()
+{
+    log_v("ApplyCurrentSensorSettings() called");
+
     // Apply updateRate and units from preferences to sensors if preference service is available
     if (preferenceService_)
     {
         auto config = preferenceService_->GetConfig();
-        log_i("Applying sensor configuration from preferences");
-        log_i("Update rate: %d ms", config.updateRate);
-        log_i("Pressure unit: %s", config.pressureUnit.c_str());
-        log_i("Temperature unit: %s", config.tempUnit.c_str());
+        log_d("Applying current sensor configuration from preferences");
+        log_d("Update rate: %d ms", config.updateRate);
+        log_d("Pressure unit: %s", config.pressureUnit.c_str());
+        log_d("Temperature unit: %s", config.tempUnit.c_str());
 
         // Apply to pressure sensor - we know the concrete types since we created them
         auto pressureSensor = std::static_pointer_cast<OilPressureSensor>(oemOilPressureSensor_);
-        pressureSensor->SetUpdateRate(config.updateRate);
-        pressureSensor->SetTargetUnit(config.pressureUnit);
+        if (pressureSensor)
+        {
+            pressureSensor->SetUpdateRate(config.updateRate);
+            pressureSensor->SetTargetUnit(config.pressureUnit);
+        }
 
         // Apply to temperature sensor - we know the concrete types since we created them
         auto temperatureSensor = std::static_pointer_cast<OilTemperatureSensor>(oemOilTemperatureSensor_);
-        temperatureSensor->SetUpdateRate(config.updateRate);
-        temperatureSensor->SetTargetUnit(config.tempUnit);
+        if (temperatureSensor)
+        {
+            temperatureSensor->SetUpdateRate(config.updateRate);
+            temperatureSensor->SetTargetUnit(config.tempUnit);
+        }
+    }
+    else
+    {
+        log_w("ApplyCurrentSensorSettings: No PreferenceService available - using default sensor settings");
     }
 }
 

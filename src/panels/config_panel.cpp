@@ -110,16 +110,177 @@ void ConfigPanel::ExecuteCurrentOption()
     log_v("ExecuteCurrentOption() called");
 
     if (currentMenuIndex_ >= menuItems_.size())
+    {
+        log_w("Menu index %zu out of bounds (size: %zu)", currentMenuIndex_, menuItems_.size());
         return;
+    }
     
     const auto& item = menuItems_[currentMenuIndex_];
-    if (item.actionType.empty())
-        return;
+    log_i("Executing option at index %zu: '%s' (type: %s, param: %s)", 
+          currentMenuIndex_, item.label.c_str(), item.actionType.c_str(), item.actionParam.c_str());
     
-    // Use the component's action execution method
-    if (configComponent_)
+    if (item.actionType.empty())
     {
-        configComponent_->ExecuteAction(item.actionType, item.actionParam);
+        log_w("Action type is empty for menu item '%s'", item.label.c_str());
+        return;
+    }
+    
+    // Handle panel actions directly in the panel
+    if (item.actionType == "panel_exit")
+    {
+        // Exit config panel and return to restoration panel
+        log_i("Exiting config panel - returning to restoration panel");
+        if (panelService_)
+        {
+            const char *restorationPanel = panelService_->GetRestorationPanel();
+            panelService_->CreateAndLoadPanel(restorationPanel, true);
+        }
+        return;
+    }
+    else if (item.actionType == "submenu")
+    {
+        // Enter the appropriate submenu based on the parameter
+        if (item.actionParam == "PanelSubmenu")
+        {
+            log_i("Entering Panel submenu");
+            EnterSubmenu(MenuState::PanelSubmenu);
+        }
+        else if (item.actionParam == "ThemeSubmenu")
+        {
+            log_i("Entering Theme submenu");
+            EnterSubmenu(MenuState::ThemeSubmenu);
+        }
+        else if (item.actionParam == "UpdateRateSubmenu")
+        {
+            log_i("Entering Update Rate submenu");
+            EnterSubmenu(MenuState::UpdateRateSubmenu);
+        }
+        else if (item.actionParam == "SplashSubmenu")
+        {
+            log_i("Entering Splash submenu");
+            EnterSubmenu(MenuState::SplashSubmenu);
+        }
+        else if (item.actionParam == "SplashDurationSubmenu")
+        {
+            log_i("Entering Splash Duration submenu");
+            EnterSubmenu(MenuState::SplashDurationSubmenu);
+        }
+        else if (item.actionParam == "PressureUnitSubmenu")
+        {
+            log_i("Entering Pressure Unit submenu");
+            EnterSubmenu(MenuState::PressureUnitSubmenu);
+        }
+        else if (item.actionParam == "TempUnitSubmenu")
+        {
+            log_i("Entering Temperature Unit submenu");
+            EnterSubmenu(MenuState::TempUnitSubmenu);
+        }
+        else if (item.actionParam == "CalibrationSubmenu")
+        {
+            log_i("Entering Calibration submenu");
+            EnterSubmenu(MenuState::CalibrationSubmenu);
+        }
+        else if (item.actionParam == "PressureOffsetSubmenu")
+        {
+            log_i("Entering Pressure Offset submenu");
+            EnterSubmenu(MenuState::PressureOffsetSubmenu);
+        }
+        else if (item.actionParam == "PressureScaleSubmenu")
+        {
+            log_i("Entering Pressure Scale submenu");
+            EnterSubmenu(MenuState::PressureScaleSubmenu);
+        }
+        else if (item.actionParam == "TempOffsetSubmenu")
+        {
+            log_i("Entering Temperature Offset submenu");
+            EnterSubmenu(MenuState::TempOffsetSubmenu);
+        }
+        else if (item.actionParam == "TempScaleSubmenu")
+        {
+            log_i("Entering Temperature Scale submenu");
+            EnterSubmenu(MenuState::TempScaleSubmenu);
+        }
+        else
+        {
+            log_w("Unknown submenu: %s", item.actionParam.c_str());
+        }
+    }
+    else if (item.actionType == "submenu_back")
+    {
+        // Return to main menu from submenu
+        log_i("Returning to main menu from submenu");
+        ExitSubmenu();
+    }
+    else if (item.actionType == "theme_set")
+    {
+        // Set the theme immediately
+        log_i("Setting theme to: %s", item.actionParam.c_str());
+        if (preferenceService_)
+        {
+            auto config = preferenceService_->GetConfig();
+            config.theme = item.actionParam;
+            preferenceService_->SetConfig(config);
+            preferenceService_->SaveConfig();
+            log_i("Theme saved to preferences: %s", item.actionParam.c_str());
+            
+            // Apply the theme immediately to the current screen
+            if (styleService_)
+            {
+                styleService_->SetTheme(item.actionParam.c_str());
+                styleService_->ApplyThemeToScreen(screen_);
+                log_i("Theme applied to current config panel");
+            }
+            
+            // Return to main menu after setting
+            ExitSubmenu();
+        }
+    }
+    else if (item.actionType == "config_set")
+    {
+        // Parse the parameter (format: "key:value")
+        size_t colonPos = item.actionParam.find(':');
+        if (colonPos != std::string::npos)
+        {
+            std::string key = item.actionParam.substr(0, colonPos);
+            std::string value = item.actionParam.substr(colonPos + 1);
+            log_i("Setting config %s to %s", key.c_str(), value.c_str());
+            
+            if (preferenceService_)
+            {
+                auto config = preferenceService_->GetConfig();
+                
+                // Apply the specific setting
+                if (key == "panelName") config.panelName = value;
+                else if (key == "updateRate") config.updateRate = std::stoi(value);
+                else if (key == "showSplash") config.showSplash = (value == "true");
+                else if (key == "splashDuration") config.splashDuration = std::stoi(value);
+                else if (key == "pressureUnit") config.pressureUnit = value;
+                else if (key == "tempUnit") config.tempUnit = value;
+                else if (key == "pressureOffset") config.pressureOffset = std::stof(value);
+                else if (key == "pressureScale") config.pressureScale = std::stof(value);
+                else if (key == "tempOffset") config.tempOffset = std::stof(value);
+                else if (key == "tempScale") config.tempScale = std::stof(value);
+                else {
+                    log_w("Unknown config key: %s", key.c_str());
+                    return;
+                }
+                
+                preferenceService_->SetConfig(config);
+                preferenceService_->SaveConfig();
+                log_i("Config saved to preferences");
+                
+                // Return to main menu after setting
+                ExitSubmenu();
+            }
+        }
+    }
+    else
+    {
+        // Use the component's action execution method for other actions
+        if (configComponent_)
+        {
+            configComponent_->ExecuteAction(item.actionType, item.actionParam);
+        }
     }
 }
 
@@ -269,6 +430,28 @@ void ConfigPanel::ExitSubmenu()
     currentMenuState_ = MenuState::MainMenu;
     currentMenuIndex_ = 0;
     UpdateMenuItemsWithCurrentValues();
+    
+    // Update the screen background based on current theme
+    if (styleService_ && screen_)
+    {
+        styleService_->ApplyThemeToScreen(screen_);
+        
+        // For night theme, override the screen background to use dark red instead of black
+        const char* theme = styleService_->GetCurrentTheme();
+        if (strcmp(theme, "Night") == 0) {
+            lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
+            lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
+        }
+    }
+    
+    // Update the config component's theme colors after returning to main menu
+    // This ensures the menu reflects any theme changes made in submenus
+    if (configComponent_)
+    {
+        configComponent_->UpdateThemeColors();
+        configComponent_->SetMenuItems(menuItems_);
+        configComponent_->SetCurrentIndex(currentMenuIndex_);
+    }
 }
 
 void ConfigPanel::UpdateSubmenuItems()
@@ -485,10 +668,12 @@ void ConfigPanel::HandleShortPress()
         return;
     }
     
-    // Cycle to next menu item
+    // Cycle to next menu item (works for both main menu and submenus)
     currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
-    log_i("ConfigPanel: Cycled to menu item %zu: %s", currentMenuIndex_, 
-          menuItems_[currentMenuIndex_].label.c_str());
+    log_i("ConfigPanel: Cycled to menu item %zu: %s (state: %s)", 
+          currentMenuIndex_, 
+          menuItems_[currentMenuIndex_].label.c_str(),
+          currentMenuState_ == MenuState::MainMenu ? "MainMenu" : "Submenu");
     
     // Update the UI
     if (configComponent_)
@@ -499,8 +684,152 @@ void ConfigPanel::HandleShortPress()
 
 void ConfigPanel::HandleLongPress()
 {
-    log_i("ConfigPanel: Executing current option at index %zu", currentMenuIndex_);
-    ExecuteCurrentOption();
+    log_i("ConfigPanel: Long press at index %zu (state: %s)", 
+          currentMenuIndex_,
+          currentMenuState_ == MenuState::MainMenu ? "MainMenu" : "Submenu");
+    
+    if (currentMenuState_ == MenuState::MainMenu)
+    {
+        // In main menu: execute the selected option (enter submenu or exit)
+        log_i("Main menu: Executing current option");
+        ExecuteCurrentOption();
+    }
+    else
+    {
+        // In submenu: execute the selection and return to main menu
+        log_i("Submenu: Selecting option and returning to main menu");
+        
+        if (currentMenuIndex_ < menuItems_.size())
+        {
+            const auto& item = menuItems_[currentMenuIndex_];
+            
+            // Handle special submenu actions
+            if (item.actionType == "submenu_back")
+            {
+                // Back button - just exit submenu
+                log_i("Back button selected - exiting submenu");
+                ExitSubmenu();
+            }
+            else if (item.actionType == "display_only")
+            {
+                // Display only item - do nothing
+                log_i("Display only item - no action");
+            }
+            else if (item.actionType == "panel_set")
+            {
+                // Set panel preference
+                log_i("Setting panel preference: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.panelName = item.actionParam;
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "theme_set")
+            {
+                // Set theme preference
+                log_i("Setting theme preference: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.theme = item.actionParam;
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "update_rate_set")
+            {
+                // Set update rate preference
+                log_i("Setting update rate: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.updateRate = std::stoi(item.actionParam);
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "splash_set")
+            {
+                // Set splash preference
+                log_i("Setting splash preference: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.showSplash = (item.actionParam == "true");
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "splash_duration_set")
+            {
+                // Set splash duration
+                log_i("Setting splash duration: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.splashDuration = std::stoi(item.actionParam);
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "pressure_unit_set")
+            {
+                // Set pressure unit preference
+                log_i("Setting pressure unit: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.pressureUnit = item.actionParam;
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "temp_unit_set")
+            {
+                // Set temperature unit preference
+                log_i("Setting temperature unit: %s", item.actionParam.c_str());
+                if (preferenceService_)
+                {
+                    Configs cfg = preferenceService_->GetConfig();
+                    cfg.tempUnit = item.actionParam;
+                    preferenceService_->SetConfig(cfg);
+                    preferenceService_->SaveConfig();
+                }
+                ExitSubmenu();
+            }
+            else if (item.actionType == "calibration_set")
+            {
+                // Set calibration value
+                log_i("Setting calibration: %s", item.actionParam.c_str());
+                size_t colonPos = item.actionParam.find(':');
+                if (colonPos != std::string::npos)
+                {
+                    std::string key = item.actionParam.substr(0, colonPos);
+                    float value = std::stof(item.actionParam.substr(colonPos + 1));
+                    UpdateCalibration(key, value);
+                }
+                ExitSubmenu();
+            }
+            else
+            {
+                // Unknown action type - just execute through component
+                log_w("Unknown action type in submenu: %s", item.actionType.c_str());
+                if (configComponent_)
+                {
+                    configComponent_->ExecuteAction(item.actionType, item.actionParam);
+                }
+            }
+        }
+    }
 }
 
 void ConfigPanel::UpdateCalibration(const std::string& key, float value)

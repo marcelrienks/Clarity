@@ -203,3 +203,36 @@ void StyleManager::SwitchTheme(const char* themeName)
     log_i("StyleManager: Direct theme switch requested to: %s", themeName);
     SetTheme(themeName);
 }
+
+/// @brief Inject PreferenceService for direct preference reading
+void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
+{
+    log_v("SetPreferenceService() called");
+    preferenceService_ = preferenceService;
+    log_d("StyleManager: PreferenceService injected for direct theme reading");
+}
+
+/// @brief Apply current theme from preferences and refresh styles
+void StyleManager::ApplyCurrentTheme()
+{
+    log_i("StyleManager::ApplyCurrentTheme() called");
+    
+    if (!preferenceService_) {
+        log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
+        log_i("StyleManager: Current cached theme is: %s", THEME.c_str());
+        return;
+    }
+    
+    // Read theme directly from preferences
+    auto config = preferenceService_->GetConfig();
+    const char* currentTheme = config.theme.c_str();
+    log_i("StyleManager: Read theme from preferences: %s (cached: %s)", currentTheme, THEME.c_str());
+    
+    // Apply the theme if it's different from cached value
+    if (THEME != currentTheme) {
+        log_i("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), currentTheme);
+        SetTheme(currentTheme);
+    } else {
+        log_i("StyleManager: Theme unchanged (%s) - no update needed", currentTheme);
+    }
+}

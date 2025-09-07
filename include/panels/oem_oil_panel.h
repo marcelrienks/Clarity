@@ -68,6 +68,9 @@ class OemOilPanel : public IPanel
     /// @brief Set preference service and apply sensor update rate from preferences
     /// @param preferenceService The preference service to use for configuration
     void SetPreferenceService(IPreferenceService *preferenceService);
+    
+    /// @brief Apply current sensor settings from preferences directly
+    void ApplyCurrentSensorSettings();
 
     // IActionService Interface Implementation (inherited through IPanel)
     void (*GetShortPressFunction())(void* panelContext) override;

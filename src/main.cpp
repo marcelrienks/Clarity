@@ -102,6 +102,10 @@ bool initializeServices()
         return false;
     }
     
+    // Inject PreferenceService into StyleManager for direct preference reading
+    styleManager->SetPreferenceService(preferenceManager.get());
+    log_d("StyleManager configured for direct preference reading");
+    
     // Create InterruptManager with GPIO provider dependency
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
     if (!interruptManager) {

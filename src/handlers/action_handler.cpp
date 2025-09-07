@@ -313,7 +313,8 @@ ButtonAction ActionHandler::DetectLongPressDuringHold() {
     unsigned long pressDuration = currentTime - buttonPressStartTime_;
     
     // Check if we've reached the long press threshold while button is still held
-    if (pressDuration >= LONG_PRESS_MIN_MS && pressDuration <= LONG_PRESS_MAX_MS) {
+    // Once we hit 1500ms, it's a long press regardless of how long it's held
+    if (pressDuration >= LONG_PRESS_MIN_MS) {
         log_i("DetectLongPressDuringHold: Long press detected during hold at %lu ms", pressDuration);
         return ButtonAction::LONG_PRESS;
     }
@@ -343,12 +344,14 @@ ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
         log_d("Short press detected: %lu ms", pressDuration);
         return ButtonAction::SHORT_PRESS;
     }
-    else if (pressDuration >= LONG_PRESS_MIN_MS && pressDuration <= LONG_PRESS_MAX_MS) {
+    else if (pressDuration >= LONG_PRESS_MIN_MS) {
+        // Any press >= 1500ms is a long press when released
         log_d("Long press detected: %lu ms", pressDuration);
         return ButtonAction::LONG_PRESS;
     }
     else {
-        log_d("Button press too long: %lu ms (max: %lu ms)", pressDuration, LONG_PRESS_MAX_MS);
+        // This should never be reached since we cover all cases above
+        log_w("Unexpected button press duration: %lu ms", pressDuration);
         return ButtonAction::NONE;
     }
 }

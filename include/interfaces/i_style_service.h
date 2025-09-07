@@ -50,6 +50,12 @@ class IStyleService
      */
     virtual void SetTheme(const char *theme) = 0;
 
+    /**
+     * @brief Apply current theme from preferences and refresh styles
+     * @details Reads theme setting from preferences and applies it if different from cached value
+     */
+    virtual void ApplyCurrentTheme() = 0;
+
     // Style Accessor Methods
 
     /**
