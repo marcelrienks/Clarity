@@ -225,22 +225,9 @@ void ErrorComponent::DisplayCurrentError()
     // Update message - can display full message now with wrapping
     lv_label_set_text(errorMessageLabel_, currentError.message.c_str());
 
-    // Update navigation indicator based on current error index
-    if (currentErrors_.size() == 1)
-    {
-        // Single error - always show exit
-        lv_label_set_text(navigationIndicator_, "Press to exit");
-    }
-    else if (currentErrorIndex_ >= (currentErrors_.size() - 1))
-    {
-        // On last error - show exit
-        lv_label_set_text(navigationIndicator_, "Press to exit");
-    }
-    else
-    {
-        // More errors to show - show next
-        lv_label_set_text(navigationIndicator_, "Press for next");
-    }
+    // Update navigation indicator - same for all errors
+    // Short press cycles through errors, long press exits from any error
+    lv_label_set_text(navigationIndicator_, "short: next, long: exit");
 }
 
 void ErrorComponent::CycleToNextError()

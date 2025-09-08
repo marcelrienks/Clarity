@@ -112,6 +112,11 @@ void ErrorManager::SetErrorPanelActive(bool active)
     errorPanelActive_ = active;
 }
 
+bool ErrorManager::IsErrorPanelActive() const
+{
+    return errorPanelActive_;
+}
+
 void ErrorManager::TrimErrorQueue()
 {
     log_v("TrimErrorQueue() called");

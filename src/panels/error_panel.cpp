@@ -383,17 +383,10 @@ void ErrorPanel::HandleLongPress()
     // Set error panel as inactive
     ErrorManager::Instance().SetErrorPanelActive(false);
     
-    // For debug builds, we need to manually trigger the error trigger deactivation
-    // since the debug error sensor state is controlled by external GPIO, not by the error state
-    #ifdef CLARITY_DEBUG
-    // Manually force the error trigger to deactivate by calling its deactivateFunc
-    // This simulates what would happen if the debug error sensor naturally went LOW
+    // Use standard restoration logic for all builds
+    // This will check for other active triggers and restore appropriately
     PanelManager::TriggerService().CheckRestoration();
-    log_i("ErrorPanel: Manually triggered restoration due to debug error panel exit");
-    #endif
-    
-    // In production, error panels would be triggered by actual error conditions,
-    // and would naturally deactivate when those conditions are resolved
+    log_i("ErrorPanel: Triggered restoration check after clearing errors");
 }
 
 // Auto-cycling implementation

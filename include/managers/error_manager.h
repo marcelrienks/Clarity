@@ -69,6 +69,10 @@ class ErrorManager
     /// @param active True when error panel is currently displayed
     void SetErrorPanelActive(bool active);
     
+    /// @brief Check if error panel is currently active
+    /// @return True if error panel is currently displayed
+    bool IsErrorPanelActive() const;
+    
     /// @brief Process error queue and manage error panel state
     /// @details Called from main loop to auto-dismiss old warnings and manage error panel activation
     void Process();

@@ -155,11 +155,16 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
         trigger.isActive = true;
         UpdatePriorityState(trigger.priority, true);
         
-        // But only execute the activate function if not blocked by higher priority
+        // But only execute the activate function if not blocked by higher priority or error panel
         if (!HasHigherPriorityActive(trigger.priority)) {
-            log_d("Executing activation for '%s'", trigger.id);
-            if (trigger.activateFunc) {
-                trigger.activateFunc();
+            // Check if error panel is active - if so, suppress trigger execution but keep state
+            if (ErrorManager::Instance().IsErrorPanelActive()) {
+                log_d("Trigger '%s' marked active but execution suppressed - error panel is active", trigger.id);
+            } else {
+                log_d("Executing activation for '%s'", trigger.id);
+                if (trigger.activateFunc) {
+                    trigger.activateFunc();
+                }
             }
         } else {
             log_d("Trigger '%s' marked active but execution suppressed by higher priority", trigger.id);

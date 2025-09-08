@@ -79,27 +79,35 @@ Reading DebugErrorSensor::GetReading()
         return previousState_; // Return previous stable state
     }
 
-    // Detect rising edge (LOW to HIGH transition) with confirmed stable reading
-    if (!previousState_ && confirmedState)
+    // Generate errors whenever button is pressed (GPIO HIGH) and error queue is empty
+    if (confirmedState)
     {
-        log_i("Debug error trigger activated - rising edge detected on GPIO %d", gpio_pins::DEBUG_ERROR);
+        log_i("Debug error button pressed - GPIO %d is HIGH", gpio_pins::DEBUG_ERROR);
+        
+        // Only generate errors if error queue is currently empty
+        if (!ErrorManager::Instance().HasPendingErrors())
+        {
+            log_i("Error queue is empty - generating test errors");
+            
+            // Generate three test errors for error panel testing
+            ErrorManager::Instance().ReportWarning("DebugTest", "Test warning for debugging error panel functionality");
 
-        // Generate three test errors for error panel testing
-        ErrorManager::Instance().ReportWarning("DebugTest", "Test warning for debugging error panel functionality");
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
+                                                 "Test error for debugging error panel navigation");
 
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
-                                             "Test error for debugging error panel navigation");
+            ErrorManager::Instance().ReportCriticalError("DebugTest", "Test critical error for debugging error display");
 
-        ErrorManager::Instance().ReportCriticalError("DebugTest", "Test critical error for debugging error display");
-
-        log_i("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL");
+            log_i("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL");
+        }
+        else
+        {
+            log_i("Error queue not empty - ignoring debug button press");
+        }
     }
 
-    // Update previous state for next edge detection
-    previousState_ = confirmedState;
-
-    // Return current confirmed state
-    return confirmedState;
+    // For push button debug sensor, always return false after generating errors
+    // This prevents the trigger system from keeping the trigger active
+    return false;
 }
 
 bool DebugErrorSensor::readPinState()
@@ -144,18 +152,14 @@ bool DebugErrorSensor::HasStateChanged()
     
     bool currentState = readPinState();
     
-    // Only detect rising edges (LOW to HIGH transition)
-    // Note: We do NOT update previousState_ here - that's done in GetReading()
-    // This ensures GetReading() can detect the same rising edge and generate errors
-    bool changed = !previousState_ && currentState;
-    
-    if (changed)
+    // Simply return true whenever button is pressed
+    // This will trigger GetReading() which handles error generation
+    if (currentState)
     {
-        log_i("Debug error state changed - rising edge detected: LOW -> HIGH on GPIO %d", gpio_pins::DEBUG_ERROR);
-        // Do NOT update previousState_ here - let GetReading() handle all state updates
+        log_d("Debug error button detected as pressed on GPIO %d", gpio_pins::DEBUG_ERROR);
     }
     
-    return changed;
+    return currentState;
 }
 
 void DebugErrorSensor::OnInterruptTriggered()
