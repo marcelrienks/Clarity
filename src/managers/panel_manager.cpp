@@ -463,10 +463,24 @@ void PanelManager::LoadPanel(const char* panelName) {
 void PanelManager::CheckRestoration() {
     log_v("CheckRestoration() called");
     
-    // Check if any CRITICAL or IMPORTANT triggers are still active
-    // For now, assume restoration is needed if we have a restoration panel
+    // First check if any PANEL triggers are active that should take priority
+    // This ensures we don't restore to oil panel if a trigger is still active
+    if (interruptManager_) {
+        // Ask the interrupt manager to evaluate and execute any active triggers
+        // If a trigger is active, it will load its panel and we should not restore
+        if (interruptManager_->CheckAndExecuteHighestPriorityTrigger()) {
+            log_i("Active trigger found and executed - skipping restoration");
+            return;
+        }
+        
+        // Check for active STYLE triggers and apply them BEFORE loading restoration panel
+        // This ensures theme triggers like lights are applied to the oil panel
+        interruptManager_->CheckAndExecuteActiveStyleTriggers();
+    }
+    
+    // No active panel triggers, proceed with restoration
     if (restorationPanel && strlen(restorationPanel) > 0) {
-        log_i("Restoring to panel: %s", restorationPanel);
+        log_i("No active panel triggers - restoring to panel: %s", restorationPanel);
         
         // Restoration should ALWAYS be direct - never use splash screen
         // Splash is only for application startup, not trigger restoration
@@ -475,6 +489,7 @@ void PanelManager::CheckRestoration() {
         // Note: restoration panel persists for future trigger activations
     } else {
         // No restoration panel to restore to
+        log_d("No restoration panel configured");
     }
 }
 

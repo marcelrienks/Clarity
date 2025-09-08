@@ -3,6 +3,7 @@
 #include "factories/component_factory.h"
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
+#include "managers/panel_manager.h"
 #include <Arduino.h>
 #include <algorithm>
 
@@ -33,11 +34,8 @@ ErrorPanel::~ErrorPanel()
     // Reset error panel active flag when panel is destroyed
     ErrorManager::Instance().SetErrorPanelActive(false);
 
-    // Restore previous theme if one was stored
-    if (styleService_ && !previousTheme_.empty())
-    {
-        styleService_->SetTheme(previousTheme_.c_str());
-    }
+    // Don't restore theme here - let the trigger system manage themes
+    // The CheckRestoration() method will apply the correct theme based on active triggers
 }
 
 // Core Functionality Methods
@@ -189,16 +187,20 @@ void ErrorPanel::Update()
         log_i("ErrorPanel: No errors remaining - triggering auto-restoration");
         ErrorManager::Instance().SetErrorPanelActive(false);
         
-        // Auto-restore to previous panel
+        // Auto-restore using CheckRestoration to handle active triggers
         if (panelService_)
         {
-            const char* restorationPanel = panelService_->GetRestorationPanel();
-            if (restorationPanel)
-            {
-                log_i("ErrorPanel: Auto-restoring to panel '%s'", restorationPanel);
-                panelService_->CreateAndLoadPanel(restorationPanel, true);
-                return; // Exit early to prevent callback execution on replaced panel
-            }
+            log_i("ErrorPanel: No errors remaining - checking for active triggers before restoration");
+            
+            #ifdef CLARITY_DEBUG
+            // In debug builds, manually trigger restoration since debug error sensor
+            // state is GPIO-controlled, not error-state-controlled
+            PanelManager::TriggerService().CheckRestoration();
+            log_i("ErrorPanel: Auto-restoration triggered for debug build");
+            #endif
+            
+            // In production, error triggers would naturally deactivate when errors are resolved
+            return; // Exit early to prevent callback execution on replaced panel
         }
     }
 
@@ -363,52 +365,35 @@ void ErrorPanel::HandleShortPress()
     log_i("ErrorPanel::HandleShortPress() - Current error index: %zu/%zu", 
           currentErrorIndex_, currentErrors_.size());
     
-    // Move to next error or exit if we've reached the end
-    if (currentErrorIndex_ >= currentErrors_.size() - 1)
-    {
-        // Reached last error - clear all and return to previous panel
-        log_i("ErrorPanel::HandleShortPress() - Reached last error - clearing and returning to previous panel");
-        ErrorManager::Instance().ClearAllErrors();
-        
-        if (panelService_)
-        {
-            const char* restorationPanel = panelService_->GetRestorationPanel();
-            if (restorationPanel)
-            {
-                log_i("ErrorPanel::HandleShortPress() - Switching to restoration panel: %s", restorationPanel);
-                panelService_->CreateAndLoadPanel(restorationPanel, true);
-            }
-            else
-            {
-                log_w("ErrorPanel::HandleShortPress() - No restoration panel available");
-            }
-        }
-        else
-        {
-            log_w("ErrorPanel::HandleShortPress() - Panel service not available");
-        }
-        return;
-    }
-    
-    // Advance to next error
+    // Always advance to next error (cycles back to 0 after last error)
     log_i("ErrorPanel::HandleShortPress() - Advancing to next error");
     AdvanceToNextError();
+    
+    // Short press only cycles through errors, never exits
+    // User must use long press to clear and exit
 }
 
 void ErrorPanel::HandleLongPress()
 {
-    log_i("ErrorPanel: Clearing all errors and returning to previous panel");
+    log_i("ErrorPanel: Long press - clearing all errors and exiting panel");
+    
+    // Clear all errors from the error manager
     ErrorManager::Instance().ClearAllErrors();
     
-    // Return to previous panel
-    if (panelService_)
-    {
-        const char* restorationPanel = panelService_->GetRestorationPanel();
-        if (restorationPanel)
-        {
-            panelService_->CreateAndLoadPanel(restorationPanel, true);
-        }
-    }
+    // Set error panel as inactive
+    ErrorManager::Instance().SetErrorPanelActive(false);
+    
+    // For debug builds, we need to manually trigger the error trigger deactivation
+    // since the debug error sensor state is controlled by external GPIO, not by the error state
+    #ifdef CLARITY_DEBUG
+    // Manually force the error trigger to deactivate by calling its deactivateFunc
+    // This simulates what would happen if the debug error sensor naturally went LOW
+    PanelManager::TriggerService().CheckRestoration();
+    log_i("ErrorPanel: Manually triggered restoration due to debug error panel exit");
+    #endif
+    
+    // In production, error panels would be triggered by actual error conditions,
+    // and would naturally deactivate when those conditions are resolved
 }
 
 // Auto-cycling implementation

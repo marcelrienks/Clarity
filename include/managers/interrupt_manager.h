@@ -68,6 +68,12 @@ public:
     // Public restoration checking for handlers
     void CheckRestoration();
     
+    // Check and execute highest priority active trigger
+    bool CheckAndExecuteHighestPriorityTrigger();
+    
+    // Check and execute active style triggers
+    void CheckAndExecuteActiveStyleTriggers();
+    
 private:
     InterruptManager() = default;
     ~InterruptManager() = default;

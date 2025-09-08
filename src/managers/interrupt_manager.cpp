@@ -221,6 +221,50 @@ void InterruptManager::CheckRestoration()
     }
 }
 
+bool InterruptManager::CheckAndExecuteHighestPriorityTrigger()
+{
+    log_v("CheckAndExecuteHighestPriorityTrigger() called");
+    
+    if (!triggerHandler_) {
+        log_w("Cannot check triggers - TriggerHandler not initialized");
+        return false;
+    }
+    
+    // Find the highest priority active PANEL type trigger
+    Trigger* highestTrigger = triggerHandler_->FindHighestPrioritySameType(TriggerType::PANEL);
+    
+    if (highestTrigger && highestTrigger->isActive && highestTrigger->activateFunc) {
+        log_i("Found active trigger '%s' (priority %d) - executing", 
+              highestTrigger->id, static_cast<int>(highestTrigger->priority));
+        highestTrigger->activateFunc();
+        return true;
+    }
+    
+    log_d("No active panel triggers found");
+    return false;
+}
+
+void InterruptManager::CheckAndExecuteActiveStyleTriggers()
+{
+    log_v("CheckAndExecuteActiveStyleTriggers() called");
+    
+    if (!triggerHandler_) {
+        log_w("Cannot check style triggers - TriggerHandler not initialized");
+        return;
+    }
+    
+    // Find the highest priority active STYLE type trigger
+    Trigger* styleTrigger = triggerHandler_->FindHighestPrioritySameType(TriggerType::STYLE);
+    
+    if (styleTrigger && styleTrigger->isActive && styleTrigger->activateFunc) {
+        log_i("Found active STYLE trigger '%s' (priority %d) - executing", 
+              styleTrigger->id, static_cast<int>(styleTrigger->priority));
+        styleTrigger->activateFunc();
+    } else {
+        log_d("No active style triggers found");
+    }
+}
+
 void InterruptManager::PrintSystemStatus() const
 {
     log_i("=== InterruptManager Status ===");
