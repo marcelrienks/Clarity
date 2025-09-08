@@ -11,7 +11,7 @@ ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleSer
                        IComponentFactory* componentFactory)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
-      panelLoaded_(false), previousTheme_(nullptr), currentErrorIndex_(0)
+      panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
 {
     log_v("ErrorPanel constructor called");
 }
@@ -34,9 +34,9 @@ ErrorPanel::~ErrorPanel()
     ErrorManager::Instance().SetErrorPanelActive(false);
 
     // Restore previous theme if one was stored
-    if (styleService_ && previousTheme_)
+    if (styleService_ && !previousTheme_.empty())
     {
-        styleService_->SetTheme(previousTheme_);
+        styleService_->SetTheme(previousTheme_.c_str());
     }
 }
 

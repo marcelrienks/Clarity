@@ -79,7 +79,7 @@ class StyleManager : public IStyleService
     void ApplyCurrentTheme() override;
 
     // Accessor Methods
-    const ThemeColors &GetColours(const char *theme) const;
+    const ThemeColors &GetColours(const std::string& theme) const;
     lv_style_t &GetBackgroundStyle() override
     {
         return backgroundStyle;
@@ -116,13 +116,10 @@ class StyleManager : public IStyleService
     {
         return gaugeDangerSectionStyle;
     }
-    const char *GetCurrentTheme() const override
-    {
-        return THEME.c_str();
-    }
+    const std::string& GetCurrentTheme() const override;
     const ThemeColors &GetThemeColors() const override
     {
-        return GetColours(THEME.c_str());
+        return GetColours(GetCurrentTheme());
     }
     bool IsInitialized() const override
     {

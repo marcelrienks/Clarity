@@ -143,8 +143,8 @@ void ConfigComponent::UpdateThemeColors()
 
     log_d("Updating theme colors for config component");
     
-    const char* theme = styleService_->GetCurrentTheme();
-    bool isNightTheme = (strcmp(theme, "Night") == 0);
+    const std::string& theme = styleService_->GetCurrentTheme();
+    bool isNightTheme = (theme == "Night");
     
     // Update container background
     if (container_) {
@@ -191,12 +191,12 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     }
 
     const ThemeColors& colors = styleService_->GetThemeColors();
-    const char* theme = styleService_->GetCurrentTheme();
+    const std::string& theme = styleService_->GetCurrentTheme();
     
     if (isSelected)
     {
         // Selected item color based on theme
-        if (strcmp(theme, "Night") == 0)
+        if (theme == "Night")
         {
             return lv_color_hex(0xFF0000); // Bright red for selected item in night theme
         }
@@ -207,7 +207,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     }
     
     // Create gradient based on theme
-    if (strcmp(theme, "Night") == 0)
+    if (theme == "Night")
     {
         // Night theme - shades of red based on distance
         uint32_t baseColor = 0xB00020; // Deep red from night theme
@@ -410,8 +410,8 @@ void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
         return;
     }
 
-    const char* theme = styleService_->GetCurrentTheme();
-    if (strcmp(theme, "Night") == 0)
+    const std::string& theme = styleService_->GetCurrentTheme();
+    if (theme == "Night")
     {
         lv_obj_set_style_bg_color(label, lv_color_hex(0x4D1F1F), LV_PART_MAIN);
         lv_obj_set_style_border_color(label, lv_color_hex(0x993333), LV_PART_MAIN);

@@ -53,7 +53,15 @@ void StyleManager::InitializeStyles()
     lv_style_init(&gaugeDangerSectionStyle);
 
     // Apply theme colors after style objects are initialized
-    SetTheme(THEME.c_str());
+    // Pull theme from preferences if available, otherwise use default
+    if (preferenceService_) {
+        const auto& config = preferenceService_->GetConfig();
+        SetTheme(config.theme.c_str());
+        log_d("Initializing with theme from preferences: %s", config.theme.c_str());
+    } else {
+        SetTheme(THEME.c_str());
+        log_d("No preference service available, using default theme: %s", THEME.c_str());
+    }
     initialized_ = true;
 
     log_d("StyleManager styles initialized successfully");
@@ -123,8 +131,8 @@ void StyleManager::SetTheme(const char *theme)
 
     log_d("Switching application theme to: %s", theme);
 
-    // Update current theme
-    this->THEME = theme;
+    // Note: THEME member is no longer updated here - it serves only as a fallback
+    // The source of truth is always the preference service
 
     // Select the current theme colors
     ThemeColors colours = GetColours(theme);
@@ -174,14 +182,14 @@ void StyleManager::SetTheme(const char *theme)
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
-const ThemeColors &StyleManager::GetColours(const char *theme) const
+const ThemeColors &StyleManager::GetColours(const std::string& theme) const
 {
     log_v("GetColours() called");
-    if (!theme)
+    if (theme.empty())
         return dayThemeColours_;
 
-    if (strcmp(theme, Themes::NIGHT) == 0) return nightThemeColours_;
-    if (strcmp(theme, Themes::ERROR) == 0) return errorThemeColours_;
+    if (theme == Themes::NIGHT) return nightThemeColours_;
+    if (theme == Themes::ERROR) return errorThemeColours_;
     
     return dayThemeColours_;
 }
@@ -224,15 +232,27 @@ void StyleManager::ApplyCurrentTheme()
     }
     
     // Read theme directly from preferences
-    auto config = preferenceService_->GetConfig();
-    const char* currentTheme = config.theme.c_str();
-    log_i("StyleManager: Read theme from preferences: %s (cached: %s)", currentTheme, THEME.c_str());
+    const auto& config = preferenceService_->GetConfig();
+    log_i("StyleManager: Read theme from preferences: %s (cached: %s)", config.theme.c_str(), THEME.c_str());
     
     // Apply the theme if it's different from cached value
-    if (THEME != currentTheme) {
-        log_i("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), currentTheme);
-        SetTheme(currentTheme);
+    if (THEME != config.theme) {
+        log_i("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), config.theme.c_str());
+        SetTheme(config.theme.c_str());
     } else {
-        log_i("StyleManager: Theme unchanged (%s) - no update needed", currentTheme);
+        log_i("StyleManager: Theme unchanged (%s) - no update needed", config.theme.c_str());
     }
+}
+
+const std::string& StyleManager::GetCurrentTheme() const
+{
+    // Always pull theme directly from preferences to ensure consistency
+    if (preferenceService_) {
+        const auto& config = preferenceService_->GetConfig();
+        return config.theme;
+    }
+    
+    // Fallback to cached value if preference service not available
+    log_w("StyleManager: PreferenceService not available, using cached theme: %s", THEME.c_str());
+    return THEME;
 }

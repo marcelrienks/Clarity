@@ -179,8 +179,8 @@ void InterruptCallbacks::LongPressActivate(void* context) {
     }
     
     // Long press toggles between day/night theme
-    const char* currentTheme = styleManager->GetCurrentTheme();
-    if (strcmp(currentTheme, Themes::DAY) == 0) {
+    const std::string& currentTheme = styleManager->GetCurrentTheme();
+    if (currentTheme == Themes::DAY) {
         log_d("Long press - switching from DAY to NIGHT theme");
         styleManager->SetTheme(Themes::NIGHT);
     } else {

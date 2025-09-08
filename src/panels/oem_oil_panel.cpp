@@ -226,7 +226,7 @@ void OemOilPanel::Load()
     {
         styleService_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
-        lastTheme_ = String(styleService_->GetCurrentTheme());
+        lastTheme_ = String(styleService_->GetCurrentTheme().c_str());
     }
     
     log_i("OemOilPanel loaded successfully");
@@ -240,7 +240,7 @@ void OemOilPanel::Update()
     // Always force component refresh when theme has changed (like panel restoration)
     // This ensures icons and pivot styling update regardless of needle value changes
     auto *styleService = styleService_;
-    const char *currentTheme = styleService ? styleService->GetCurrentTheme() : "";
+    const char *currentTheme = styleService ? styleService->GetCurrentTheme().c_str() : "";
     if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme))
     {
         forceComponentRefresh_ = true;

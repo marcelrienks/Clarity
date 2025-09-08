@@ -65,8 +65,8 @@ void ConfigPanel::Load()
         styleService_->ApplyThemeToScreen(screen_);
         
         // For night theme, override the screen background to use dark red instead of black
-        const char* theme = styleService_->GetCurrentTheme();
-        if (strcmp(theme, "Night") == 0) {
+        const std::string& theme = styleService_->GetCurrentTheme();
+        if (theme == "Night") {
             lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
             lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
         }
@@ -437,8 +437,8 @@ void ConfigPanel::ExitSubmenu()
         styleService_->ApplyThemeToScreen(screen_);
         
         // For night theme, override the screen background to use dark red instead of black
-        const char* theme = styleService_->GetCurrentTheme();
-        if (strcmp(theme, "Night") == 0) {
+        const std::string& theme = styleService_->GetCurrentTheme();
+        if (theme == "Night") {
             lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
             lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
         }

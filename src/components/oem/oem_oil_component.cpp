@@ -99,14 +99,14 @@ void OemOilComponent::Refresh(const Reading &reading)
     int32_t value = std::get<int32_t>(reading);
     const ThemeColors &colours = styleService_->GetThemeColors();
     
-    const char* currentTheme = styleService_->GetCurrentTheme();
+    const std::string& currentTheme = styleService_->GetCurrentTheme();
     log_d("Component refresh - Theme: %s, gaugeNormal: 0x%06X, needleNormal: 0x%06X", 
-          currentTheme, lv_color_to_u32(colours.gaugeNormal), lv_color_to_u32(colours.needleNormal));
+          currentTheme.c_str(), lv_color_to_u32(colours.gaugeNormal), lv_color_to_u32(colours.needleNormal));
 
     // Icon color logic - in night mode, always use gaugeNormal (red)
     // In day mode, use gaugeNormal normally, gaugeDanger when in danger
     lv_color_t iconColour;
-    if (strcmp(styleService_->GetCurrentTheme(), Themes::NIGHT) == 0)
+    if (styleService_->GetCurrentTheme() == Themes::NIGHT)
     {
         // Night mode: icons are always red regardless of danger condition
         iconColour = colours.gaugeNormal;
@@ -259,7 +259,7 @@ void OemOilComponent::update_pivot_styling()
     {
         const ThemeColors &colours = styleService_->GetThemeColors();
 
-        if (strcmp(styleService_->GetCurrentTheme(), Themes::NIGHT) == 0)
+        if (styleService_->GetCurrentTheme() == Themes::NIGHT)
         {
             // Night mode - make pivot completely invisible by matching background exactly
             lv_obj_set_style_bg_color(pivotCircle_, colours.background, MAIN_DEFAULT);
