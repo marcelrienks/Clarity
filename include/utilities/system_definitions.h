@@ -39,7 +39,6 @@ inline std::vector<Trigger> GetSystemTriggers(
             .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::KEY); },
             .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = keyPresentSensor,
-            .canBeOverriddenOnActivate = false,
             .isActive = false
         },
         {
@@ -49,7 +48,6 @@ inline std::vector<Trigger> GetSystemTriggers(
             .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::KEY); },
             .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = keyNotPresentSensor,
-            .canBeOverriddenOnActivate = false,
             .isActive = false
         },
         
@@ -61,7 +59,6 @@ inline std::vector<Trigger> GetSystemTriggers(
             .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::LOCK); },
             .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = lockSensor,
-            .canBeOverriddenOnActivate = false,
             .isActive = false
         },
         
@@ -73,7 +70,6 @@ inline std::vector<Trigger> GetSystemTriggers(
             .activateFunc = []() { StyleManager::Instance().SetTheme(Themes::NIGHT); },
             .deactivateFunc = []() { StyleManager::Instance().SetTheme(Themes::DAY); },
             .sensor = lightsSensor,
-            .canBeOverriddenOnActivate = true,  // Can be overridden by higher priority
             .isActive = false
         }
     };
@@ -100,7 +96,6 @@ inline std::vector<Trigger> GetSystemTriggers(
                 log_d("Debug error trigger deactivate - no action needed for push button");
             },
             .sensor = errorSensor,
-            .canBeOverriddenOnActivate = false,
             .isActive = false
         });
     }

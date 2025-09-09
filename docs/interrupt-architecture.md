@@ -48,9 +48,6 @@ struct Trigger {
     
     // State association
     BaseSensor* sensor;                      // Associated sensor (1:1)
-    
-    // Override behavior - only applies to activation
-    bool canBeOverriddenOnActivate;          // Can other triggers override activation?
     bool isActive;                           // Currently active (true after activate, false after deactivate)
     
     // Execution methods
@@ -259,7 +256,6 @@ std::vector<Trigger> systemTriggers = {
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::KEY); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = keyPresentSensor.get(),
-        .canBeOverriddenOnActivate = false,
         .isActive = false
     },
     {
@@ -269,7 +265,6 @@ std::vector<Trigger> systemTriggers = {
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::KEY); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = keyNotPresentSensor.get(),
-        .canBeOverriddenOnActivate = false,
         .isActive = false
     },
     
@@ -281,7 +276,6 @@ std::vector<Trigger> systemTriggers = {
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::LOCK); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = lockSensor.get(),
-        .canBeOverriddenOnActivate = false,
         .isActive = false
     },
     
@@ -293,7 +287,6 @@ std::vector<Trigger> systemTriggers = {
         .activateFunc = []() { StyleManager::Instance().SetTheme(Theme::NIGHT); },
         .deactivateFunc = []() { StyleManager::Instance().SetTheme(Theme::DAY); },
         .sensor = lightsSensor.get(),
-        .canBeOverriddenOnActivate = true,  // Can be overridden by higher priority
         .isActive = false
     },
     
@@ -305,7 +298,6 @@ std::vector<Trigger> systemTriggers = {
         .activateFunc = []() { PanelManager::Instance().LoadPanel(PanelType::ERROR); },
         .deactivateFunc = []() { PanelManager::Instance().CheckRestoration(); },
         .sensor = errorSensor.get(),
-        .canBeOverriddenOnActivate = false,
         .isActive = false
     }
 };

@@ -371,30 +371,21 @@ The primary architectural pattern involves two interdependent factories:
    - Coordinates manager initialization order
    - Enables testability through provider factory injection
 
-3. **PanelFactory** (implements IPanelFactory):
-   - Creates panel instances on demand
-   - Singleton pattern for global access
-   - Registered panel types created dynamically
-
-4. **ComponentFactory** (implements IComponentFactory):
-   - Creates UI components for panels
-   - Singleton pattern for global access
-   - Provides typed component creation methods
-
-### Dependency Injection Flow
-```cpp
 #### UI Creation Factories (Singleton Pattern):
 Two additional singleton factories handle UI component creation:
 
-5. **PanelFactory** (implements IPanelFactory):
+3. **PanelFactory** (implements IPanelFactory):
    - Creates panel instances on demand
    - Singleton pattern for global access from managers
    - Registered panel types created dynamically
 
-6. **ComponentFactory** (implements IComponentFactory):
+4. **ComponentFactory** (implements IComponentFactory):
    - Creates UI components for panels
    - Singleton pattern for global access from panels
    - Provides typed component creation methods
+
+### Dependency Injection Flow
+```cpp
 
 ### Factory Usage Patterns
 ```cpp

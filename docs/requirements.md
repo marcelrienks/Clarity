@@ -311,43 +311,15 @@ For complete interrupt structure details, see: **[Architecture Document](archite
 - No heap allocation during interrupt processing
 - ESP32-optimized memory patterns
 
-**Smart Panel Restoration (v4.0)**:
-- PanelManager tracks last user-driven panel for restoration
-- Trigger deactivation functions can call CheckRestoration()
-- Active non-overridable triggers block restoration and re-execute
-- When no blocking triggers, system restores to last user panel
-- Clean fallback eliminates distributed restoration complexity
+**Key Architecture Elements**:
+- **Smart Panel Restoration**: PanelManager tracks last user-driven panel, restores when triggers deactivate
+- **Sensor Ownership Model**: TriggerHandler owns GPIO sensors, ActionHandler owns ButtonSensor, Panels create data sensors
+- **Priority System**: CRITICAL > IMPORTANT > NORMAL with smart override logic
+- **Processing Model**: Actions evaluated continuously, both handlers execute only during UI idle
 
-For complete restoration logic, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
-
-**Coordinated Processing**:
-For detailed processing flow, see: **[Application Flow Diagram](diagrams/application-flow.md)**
-
-**Interrupt Registration Examples**:
-For complete registration patterns, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
-
-**Registered Interrupts**: See **[Architecture Document](architecture.md)** for complete interrupt list.
-
-**Sensor Change Detection**:
-All sensors inherit from BaseSensor for consistent change detection. For implementation details, see: **[Architecture Document](architecture.md#sensor-architecture)**
-
-**Sensor Implementation**: See **[Architecture Document](architecture.md#sensor-architecture)** for complete patterns.
-
-**Sensor Ownership**:
-- **TriggerHandler**: Creates and owns GPIO sensors for state monitoring (Key, Lock, Lights sensors)
-- **ActionHandler**: Creates and owns button sensor for action interrupt processing (ButtonSensor)  
-- **Data Panels**: Create own data sensors internally (Oil pressure/temperature sensors)
-- **Display-Only Panels**: Create only components, no sensors (receive state from handlers)
-
-For complete ownership model, see: **[Architecture Document](architecture.md#memory-architecture)**
-
-**Resource Management**: See **[Architecture Document](architecture.md#memory-architecture)** for complete ownership model and factory patterns.
-
-**Priority and Restoration**: See **[Architecture Document](architecture.md#coordinated-interrupt-processing-system)** for complete priority system and restoration logic.
-
-**Processing Flow**: See **[Application Flow Diagram](diagrams/application-flow.md)** for detailed interrupt processing steps.
-
-**Architecture Principles**: See **[Architecture Document](architecture.md)** for complete constraints and restoration logic.
+For complete architectural details including restoration logic, sensor patterns, and processing flows, see:
+- **[Architecture Document](architecture.md)** - Complete system architecture
+- **[Application Flow Diagram](diagrams/application-flow.md)** - Runtime processing details
 
 **Multi-Trigger Scenarios**: Comprehensive trigger interaction scenarios and priority rules are documented above in the "Trigger Interaction Rules and Scenarios" section.
 
@@ -426,50 +398,10 @@ Trigger errorTrigger = {
 
 #### 2.3.6 Handler Architecture
 
-**IHandler Interface**:
-```cpp
-class IHandler {
-public:
-    virtual ~IHandler() = default;
-    virtual void Process() = 0;
-};
-```
+**Handler Architecture**:
+The system uses separate structures for Triggers (state-based GPIO monitoring) and Actions (event-based button processing), both managed through the IHandler interface.
 
-**Interrupt Structures**:
-Separate structures for Triggers (state-based) and Actions (event-based).
-
-**Trigger Structure (State-Based)**:
-```cpp
-struct Trigger {
-    const char* id;                          // Unique identifier
-    Priority priority;                       // Execution priority (CRITICAL > IMPORTANT > NORMAL)
-    TriggerType type;                        // Type classification (PANEL, STYLE, FUNCTION)
-    
-    // Dual-state functions - no context needed (singleton calls)
-    void (*activateFunc)();                  // Execute when trigger should activate
-    void (*deactivateFunc)();                // Execute when trigger should deactivate
-    
-    // State association
-    BaseSensor* sensor;                      // Associated sensor (1:1)
-    
-    // State management
-    bool isActive;                           // Currently active (true after activate, false after deactivate)
-};
-```
-
-**Action Structure (Event-Based)**:
-```cpp
-struct Action {
-    const char* id;                          // Unique identifier
-    
-    // Event function - no context needed (singleton calls)
-    void (*executeFunc)();                   // Execute when action triggered
-    
-    // Event state
-    bool hasTriggered;                       // Action pending execution
-    ButtonPress pressType;                   // SHORT or LONG press
-};
-```
+For complete structure definitions and implementation details, see: **[Architecture Document](architecture.md#coordinated-interrupt-architecture)**
 
 **Handler Implementations**:
 - **TriggerHandler**: Implements IHandler, manages Triggers for GPIO state monitoring with priority override logic

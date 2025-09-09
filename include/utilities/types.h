@@ -161,7 +161,6 @@ struct Trigger
     void (*activateFunc)();              ///< Function called when trigger activates
     void (*deactivateFunc)();            ///< Function called when trigger deactivates
     class BaseSensor* sensor;            ///< Associated sensor for state monitoring
-    bool canBeOverriddenOnActivate;      ///< Can other triggers override activation?
     bool isActive;                       ///< Current activation state
     
     // Execution methods as documented in interrupt-architecture.md
