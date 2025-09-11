@@ -25,7 +25,6 @@ void ClarityComponent::Render(lv_obj_t *screen, const ComponentLocation &locatio
         return;
     }
 
-    log_d("Rendering Clarity splash text component");
 
     lv_obj_t *splash = display->CreateLabel(screen);
     lv_label_set_text(splash, UIConstants::APP_NAME);

@@ -126,7 +126,6 @@ void KeyPanel::Update()
     // Key panel is static - no updates needed, but must reset UI state to IDLE
     if (panelService_) {
         panelService_->SetUiState(UIState::IDLE);
-        log_d("KeyPanel: Update() - setting UI state to IDLE after static panel update");
     }
 }
 
@@ -148,7 +147,6 @@ void KeyPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (thisInstance->panelService_)
     {
         thisInstance->panelService_->SetUiState(UIState::IDLE);
-        log_d("KeyPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
     }
 }
 
@@ -232,7 +230,6 @@ KeyState KeyPanel::DetermineCurrentKeyState()
     auto keyPresentSensor = triggerHandler->GetKeyPresentSensor();
     if (keyPresentSensor && keyPresentSensor->GetKeyPresentState())
     {
-        log_d("DetermineCurrentKeyState: Key present sensor is active - setting Present state");
         return KeyState::Present;
     }
     
@@ -240,11 +237,9 @@ KeyState KeyPanel::DetermineCurrentKeyState()
     auto keyNotPresentSensor = triggerHandler->GetKeyNotPresentSensor();
     if (keyNotPresentSensor && keyNotPresentSensor->GetKeyNotPresentState())
     {
-        log_d("DetermineCurrentKeyState: Key not present sensor is active - setting NotPresent state");
         return KeyState::NotPresent;
     }
     
     // If neither sensor is active, default to inactive
-    log_d("DetermineCurrentKeyState: No sensor active - setting Inactive state");
     return KeyState::Inactive;
 }

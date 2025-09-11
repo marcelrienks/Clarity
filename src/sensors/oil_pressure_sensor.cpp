@@ -32,7 +32,6 @@ void OilPressureSensor::Init()
 {
     log_v("Init() called");
     // Configure GPIO pin for analog input
-    log_d("Initializing oil pressure sensor ADC configuration");
 
     // Configure ADC resolution and attenuation for direct 3.3V operation
     analogReadResolution(12);       // 12-bit resolution (0-4095)
@@ -64,13 +63,13 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
     else
     {
         targetUnit_ = unit;
-        log_d("Pressure unit set to: %s", targetUnit_.c_str());
     }
 }
 
 /// @brief Get the current pressure reading
 Reading OilPressureSensor::GetReading()
 {
+    log_v("GetReading() called");
     // Check if enough time has passed for update
     if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
@@ -95,7 +94,8 @@ Reading OilPressureSensor::GetReading()
         if (newValue != currentReading_)
         {
             currentReading_ = newValue;
-            log_i("Pressure reading changed to %d %s (raw: %d)", currentReading_, targetUnit_.c_str(), rawValue);
+            log_t("Pressure reading: %d %s", currentReading_, targetUnit_.c_str());
+            log_v("Pressure reading changed (raw: %d)", rawValue);
         }
     }
 
@@ -107,7 +107,6 @@ void OilPressureSensor::SetUpdateRate(int updateRateMs)
 {
     log_v("SetUpdateRate() called");
     updateIntervalMs_ = updateRateMs;
-    log_d("Oil pressure sensor update rate set to %d ms", updateIntervalMs_);
 }
 
 // Internal methods
@@ -157,6 +156,7 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 /// @brief Check if sensor state has changed since last evaluation
 bool OilPressureSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     int32_t current = ReadRawValue();
     int32_t converted = ConvertReading(current);
     return DetectChange(converted, previousReading_);

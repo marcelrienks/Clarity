@@ -5,7 +5,6 @@
 KeyNotPresentSensor::KeyNotPresentSensor(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider)
 {
-    log_d("KeyNotPresentSensor created for GPIO %d", gpio_pins::KEY_NOT_PRESENT);
 }
 
 KeyNotPresentSensor::~KeyNotPresentSensor()
@@ -13,7 +12,6 @@ KeyNotPresentSensor::~KeyNotPresentSensor()
     if (gpioProvider_ && initialized_) {
         // Clean up GPIO interrupt if attached
         gpioProvider_->DetachInterrupt(gpio_pins::KEY_NOT_PRESENT);
-        log_d("KeyNotPresentSensor destructor: GPIO %d interrupt detached", gpio_pins::KEY_NOT_PRESENT);
     }
 }
 
@@ -31,7 +29,6 @@ void KeyNotPresentSensor::Init()
     previousState_ = readKeyNotPresentState();
     initialized_ = true;
     
-    log_d("KeyNotPresentSensor initialized on GPIO %d, initial state: %s", 
           gpio_pins::KEY_NOT_PRESENT, previousState_ ? "NOT_PRESENT" : "PRESENT");
 }
 
@@ -49,6 +46,7 @@ bool KeyNotPresentSensor::GetKeyNotPresentState()
 
 bool KeyNotPresentSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     if (!initialized_) {
         log_w("KeyNotPresentSensor: HasStateChanged called before initialization");
         return false;

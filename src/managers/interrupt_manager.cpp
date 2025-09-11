@@ -69,7 +69,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 
 void InterruptManager::RegisterSystemInterrupts()
 {
-    log_d("Registering system triggers and actions");
     
     // Get system triggers with handler-owned sensors
     auto systemTriggers = SystemDefinitions::GetSystemTriggers(
@@ -184,7 +183,6 @@ void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
     }
     
     handlers_.push_back(handler);
-    log_d("Registered handler");
 }
 
 void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
@@ -192,7 +190,6 @@ void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
     auto it = std::find(handlers_.begin(), handlers_.end(), handler);
     if (it != handlers_.end()) {
         handlers_.erase(it);
-        log_d("Unregistered handler");
     }
 }
 
@@ -215,7 +212,6 @@ void InterruptManager::CheckRestoration()
     bool hasActiveTrigger = triggerHandler_->HasActiveTriggers();
     
     if (!hasActiveTrigger) {
-        log_d("No active non-overridable triggers - restoration may be needed");
         // Let the PanelManager handle restoration logic
         // This method is mainly for coordination
     }
@@ -240,7 +236,6 @@ bool InterruptManager::CheckAndExecuteHighestPriorityTrigger()
         return true;
     }
     
-    log_d("No active panel triggers found");
     return false;
 }
 
@@ -261,7 +256,6 @@ void InterruptManager::CheckAndExecuteActiveStyleTriggers()
               styleTrigger->id, static_cast<int>(styleTrigger->priority));
         styleTrigger->activateFunc();
     } else {
-        log_d("No active style triggers found");
     }
 }
 
@@ -331,7 +325,6 @@ void InterruptManager::OptimizeMemoryUsage()
         // Static arrays, no optimization needed
     }
     
-    log_d("Memory optimization completed (new system uses pre-allocated arrays)");
 }
 
 void InterruptManager::CompactInterruptArray()
@@ -339,5 +332,4 @@ void InterruptManager::CompactInterruptArray()
     log_v("CompactInterruptArray() called");
     
     // Static arrays don't need compaction
-    log_d("Array compaction not needed (static arrays)");
 }

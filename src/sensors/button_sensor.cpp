@@ -16,7 +16,6 @@ void ButtonSensor::Init()
 {
     log_v("Init() called");
     gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT_PULLDOWN);
-    log_d("ButtonSensor initialized on GPIO %d with pull-down", gpio_pins::INPUT_BUTTON);
     
     bool initialState = gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
     log_i("GPIO %d initial state: %s", gpio_pins::INPUT_BUTTON,
@@ -29,6 +28,7 @@ void ButtonSensor::Init()
 /// @return Reading containing the current button state (bool)
 Reading ButtonSensor::GetReading()
 {
+    log_v("GetReading() called");
     // Process button state to detect actions
     ProcessButtonState();
     
@@ -95,6 +95,7 @@ bool ButtonSensor::ReadButtonState()
 
 bool ButtonSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     ProcessButtonState();
     
     // If no action is ready, clear the interrupt ID
@@ -122,7 +123,6 @@ void ButtonSensor::ProcessButtonState()
     
     // Debug every 3 seconds or on state changes
     if ((currentTime - lastDebugTime > 3000) || (currentState != lastLoggedState)) {
-        log_d("ButtonSensor: GPIO state=%s, internal_state=%s, action_ready=%s", 
               currentState ? "HIGH" : "LOW", 
               currentButtonState_ ? "PRESSED" : "RELEASED",
               actionReady_ ? "true" : "false");
@@ -192,12 +192,10 @@ ButtonAction ButtonSensor::DetermineAction(unsigned long duration)
     }
     else if (duration <= SHORT_PRESS_MAX_MS)
     {
-        log_d("Press duration %lu ms - SHORT_PRESS", duration);
         return ButtonAction::SHORT_PRESS;
     }
     else if (duration <= LONG_PRESS_MAX_MS)
     {
-        log_d("Press duration %lu ms - LONG_PRESS", duration);
         return ButtonAction::LONG_PRESS;
     }
     else

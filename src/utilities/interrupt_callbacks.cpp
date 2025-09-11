@@ -31,7 +31,6 @@ void InterruptCallbacks::KeyPresentActivate(void* context) {
     const char* currentPanel = panelManager->GetCurrentPanel();
     if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
         savedUserPanel = currentPanel;
-        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
     
     // Load KEY panel as trigger-driven
@@ -45,7 +44,6 @@ void InterruptCallbacks::KeyNotPresentActivate(void* context) {
     const char* currentPanel = panelManager->GetCurrentPanel();
     if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
         savedUserPanel = currentPanel;
-        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
     
     // Load KEY panel as trigger-driven
@@ -63,7 +61,6 @@ void InterruptCallbacks::LockEngagedActivate(void* context) {
     const char* currentPanel = panelManager->GetCurrentPanel();
     if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
         savedUserPanel = currentPanel;
-        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
     
     // Load LOCK panel as trigger-driven
@@ -81,9 +78,7 @@ void InterruptCallbacks::LockDisengagedActivate(void* context) {
         panelManager->CreateAndLoadPanel(savedUserPanel.c_str(), false); // Load as user-driven
         savedUserPanel.clear(); // Clear after restoration
     } else if (hasBlockingInterrupts) {
-        log_d("Cannot restore - blocking interrupts still active");
     } else {
-        log_d("No saved panel to restore to");
     }
 }
 
@@ -112,7 +107,6 @@ void InterruptCallbacks::ErrorOccurredActivate(void* context) {
     const char* currentPanel = panelManager->GetCurrentPanel();
     if (currentPanel && !panelManager->IsCurrentPanelTriggerDriven()) {
         savedUserPanel = currentPanel;
-        log_d("Saved user panel '%s' for restoration", savedUserPanel.c_str());
     }
     
     // Load ERROR panel as trigger-driven
@@ -130,9 +124,7 @@ void InterruptCallbacks::ErrorClearedActivate(void* context) {
         panelManager->CreateAndLoadPanel(savedUserPanel.c_str(), false); // Load as user-driven
         savedUserPanel.clear(); // Clear after restoration
     } else if (hasBlockingInterrupts) {
-        log_d("Cannot restore - blocking interrupts still active");
     } else {
-        log_d("No saved panel to restore to");
     }
 }
 
@@ -158,10 +150,8 @@ void InterruptCallbacks::ShortPressActivate(void* context) {
     
     // Execute panel-specific short press action
     if (strcmp(currentPanel, PanelNames::OIL) == 0) {
-        log_d("Short press on OIL panel - cycling to next panel");
         panelManager->CreateAndLoadPanel(PanelNames::KEY, false);
     } else if (strcmp(currentPanel, PanelNames::KEY) == 0) {
-        log_d("Short press on WATER panel - cycling to OIL panel");
         panelManager->CreateAndLoadPanel(PanelNames::OIL, false);
     }
     // Key, Lock, and Error panels don't respond to button presses (trigger-driven only)
@@ -182,10 +172,8 @@ void InterruptCallbacks::LongPressActivate(void* context) {
     // Long press toggles between day/night theme
     const std::string& currentTheme = styleManager->GetCurrentTheme();
     if (currentTheme == Themes::DAY) {
-        log_d("Long press - switching from DAY to NIGHT theme");
         styleManager->SetTheme(Themes::NIGHT);
     } else {
-        log_d("Long press - switching from NIGHT to DAY theme");
         styleManager->SetTheme(Themes::DAY);
     }
     

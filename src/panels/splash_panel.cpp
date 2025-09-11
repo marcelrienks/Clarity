@@ -117,7 +117,6 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::IDLE);
-        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
     }
 
     // Create a timer for the callback
@@ -139,7 +138,6 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::BUSY);
-        log_d("SplashPanel: Starting fade-out animation - setting BUSY");
     }
 
     lv_screen_load_anim(panel->blankScreen_, LV_SCR_LOAD_ANIM_FADE_OUT, panel->GetAnimationTime(), 0, false);

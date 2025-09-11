@@ -19,14 +19,12 @@ void LockSensor::Init()
     static bool initialized = false;
     if (!initialized)
     {
-        log_d("Initializing lock sensor on GPIO %d", gpio_pins::LOCK);
         initialized = true;
     }
     gpioProvider_->PinMode(gpio_pins::LOCK, INPUT_PULLDOWN);
     
     // Initialize previous state to current GPIO state
     previousLockState_ = readLockState();
-    log_d("LockSensor initialized with state: %s", previousLockState_ ? "engaged" : "disengaged");
     
     // Interrupt registration is now handled centrally in ManagerFactory
     
@@ -46,7 +44,6 @@ Reading LockSensor::GetReading()
 
     if (firstRead || isLockEngaged != lastState)
     {
-        log_d("Lock sensor reading: %s (pin %d %s)", isLockEngaged ? "engaged" : "disengaged", gpio_pins::LOCK,
               isLockEngaged ? "HIGH" : "LOW");
         lastState = isLockEngaged;
         firstRead = false;
@@ -62,6 +59,7 @@ bool LockSensor::readLockState()
 
 bool LockSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     
     bool currentState = readLockState();
     
@@ -74,7 +72,6 @@ bool LockSensor::HasStateChanged()
     
     // Log every 2 seconds or when state actually differs
     if (currentTime - lastLogTime > 2000 || currentState != previousLockState_) {
-        log_d("LOCK SENSOR [%lu ms]: Raw GPIO=%s, currentState=%s, previousState=%s, initialized=%s",
               currentTime,
               gpioProvider_->DigitalRead(gpio_pins::LOCK) ? "HIGH" : "LOW",
               currentState ? "HIGH" : "LOW", 
@@ -96,13 +93,11 @@ bool LockSensor::HasStateChanged()
         if (currentState) 
         {
             // Lock is now engaged - trigger lock_engaged interrupt
-            log_d("Lock engaged - should trigger 'lock_engaged' interrupt");
             triggerInterruptId_ = "lock_engaged";
         }
         else 
         {
             // Lock is now disengaged - trigger lock_disengaged interrupt  
-            log_d("Lock disengaged - should trigger 'lock_disengaged' interrupt");
             triggerInterruptId_ = "lock_disengaged";
         }
     }

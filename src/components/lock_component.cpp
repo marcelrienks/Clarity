@@ -36,7 +36,6 @@ void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, 
         return;
     }
 
-    log_d("Rendering lock component icon at specified location");
 
     lockIcon_ = display->CreateImage(screen);
     lv_image_set_src(lockIcon_, &lock_alt_solid);

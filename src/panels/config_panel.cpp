@@ -99,7 +99,6 @@ void ConfigPanel::Update()
     // Config panel is static - no updates needed, but must reset UI state to IDLE
     if (panelService_) {
         panelService_->SetUiState(UIState::IDLE);
-        log_d("ConfigPanel: Update() - setting UI state to IDLE after static panel update");
     }
 }
 
@@ -300,7 +299,6 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::IDLE);
-        log_d("ConfigPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
     }
 }
 

@@ -37,7 +37,6 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
         return;
     }
 
-    log_d("Rendering key component icon at specified location");
 
     keyIcon_ = display->CreateImage(screen);
     lv_image_set_src(keyIcon_, &key_solid);

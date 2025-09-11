@@ -401,7 +401,6 @@ void ErrorPanel::SortErrorsBySeverity()
             return static_cast<int>(a.level) > static_cast<int>(b.level);
         });
     
-    log_d("Sorted %zu errors by severity (CRITICAL -> ERROR -> WARNING)", currentErrors_.size());
 }
 
 

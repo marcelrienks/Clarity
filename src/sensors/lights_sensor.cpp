@@ -17,13 +17,11 @@ void LightsSensor::Init()
 {
     log_v("Init() called");
     // Configure GPIO pin for digital input (safe to call multiple times)
-    log_d("Initializing lights sensor on GPIO %d", gpio_pins::LIGHTS);
 
     gpioProvider_->PinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
     
     // Initialize the sensor state to avoid false change detection
     previousLightsState_ = readLightsState();
-    log_d("Lights sensor initial state: %s", previousLightsState_ ? "ON" : "OFF");
     
     // Interrupt registration is now handled centrally in ManagerFactory
     
@@ -52,7 +50,6 @@ bool LightsSensor::GetLightsState()
 
     if (firstRead || lightsOn != lastState)
     {
-        log_d("Lights sensor reading: %s (pin %d %s)", lightsOn ? "ON" : "OFF", gpio_pins::LIGHTS,
               lightsOn ? "HIGH" : "LOW");
         lastState = lightsOn;
         firstRead = false;
@@ -68,6 +65,7 @@ bool LightsSensor::readLightsState()
 
 bool LightsSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     
     bool currentState = readLightsState();
     bool previousState = previousLightsState_; // Save before DetectChange modifies it
@@ -75,7 +73,6 @@ bool LightsSensor::HasStateChanged()
     
     if (changed)
     {
-        log_d("Lights state changed from %s to %s", 
               previousState ? "ON" : "OFF",
               currentState ? "ON" : "OFF");
               
@@ -83,13 +80,11 @@ bool LightsSensor::HasStateChanged()
         if (currentState) 
         {
             // Lights are now on - trigger lights_on interrupt
-            log_d("Lights on - should trigger 'lights_on' interrupt");
             triggerInterruptId_ = "lights_on";
         }
         else 
         {
             // Lights are now off - trigger lights_off interrupt  
-            log_d("Lights off - should trigger 'lights_off' interrupt");
             triggerInterruptId_ = "lights_off";
         }
     }

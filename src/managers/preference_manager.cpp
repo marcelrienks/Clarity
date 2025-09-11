@@ -38,7 +38,6 @@ void PreferenceManager::CreateDefaultConfig()
 {
     log_v("CreateDefaultConfig() called");
     log_v("CreateDefaultConfig() called");
-    log_d("Creating default configuration with OEM oil panel as default");
 
     config.panelName = PanelNames::OIL;
 
@@ -155,7 +154,6 @@ void PreferenceManager::SaveConfig()
     String jsonString;
     serializeJson(doc, jsonString);
 
-    log_d("Serialized config JSON: %s", jsonString.c_str());
 
     // Save the JSON string to preferences_
     size_t written = preferences_.putString(CONFIG_KEY, jsonString);
@@ -196,7 +194,6 @@ const Configs &PreferenceManager::GetConfig() const
 void PreferenceManager::SetConfig(const Configs &newConfig)
 {
     log_v("SetConfig() called");
-    log_d("Setting configuration - panel: %s, theme: %s, showSplash: %s, updateRate: %d", 
           newConfig.panelName.c_str(), newConfig.theme.c_str(), 
           newConfig.showSplash ? "true" : "false", newConfig.updateRate);
     config = newConfig;
@@ -302,7 +299,6 @@ bool PreferenceManager::HasPreference(const std::string &key) const
     bool hasKey = (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
                    key == "update_rate" || key == "pressure_unit" || key == "temp_unit" ||
                    key == "pressure_offset" || key == "pressure_scale" || key == "temp_offset" || key == "temp_scale");
-    log_d("Checking preference key: %s, exists: %s", key.c_str(), hasKey ? "true" : "false");
     return hasKey;
 }
 

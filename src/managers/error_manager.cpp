@@ -34,6 +34,7 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
                            : (level == ErrorLevel::ERROR) ? "ERROR"
                                                           : "CRITICAL";
     log_e("[%s] %s: %s", levelStr, source, message.c_str());
+    log_t("Error reported: %s", levelStr);
 }
 
 void ErrorManager::ReportWarning(const char *source, const std::string &message)
@@ -123,7 +124,6 @@ void ErrorManager::TrimErrorQueue()
     if (errorQueue_.size() > MAX_ERROR_QUEUE_SIZE)
     {
         size_t originalSize = errorQueue_.size();
-        log_d("Queue trim needed - before: %zu, max: %zu", originalSize, MAX_ERROR_QUEUE_SIZE);
         
         // Sort by priority (critical > error > warning) and timestamp (newer first)
         std::sort(errorQueue_.begin(), errorQueue_.end(),
@@ -138,7 +138,6 @@ void ErrorManager::TrimErrorQueue()
 
         // Keep only the most recent/important errors
         errorQueue_.resize(MAX_ERROR_QUEUE_SIZE);
-        log_d("Queue trimmed - after: %zu, removed: %zu", errorQueue_.size(), originalSize - errorQueue_.size());
     }
 }
 
@@ -179,7 +178,6 @@ void ErrorManager::AutoDismissOldWarnings()
         if (it->level == ErrorLevel::WARNING && 
             (now - it->timestamp) > WARNING_AUTO_DISMISS_TIME)
         {
-            log_d("Auto-dismissing old warning: %s", it->message.c_str());
             it = errorQueue_.erase(it);
         }
         else
