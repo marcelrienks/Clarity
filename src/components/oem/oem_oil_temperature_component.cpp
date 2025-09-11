@@ -99,7 +99,7 @@ void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) 
     int32_t mapped_max = map_value_for_display(max_val);
     int32_t mapped_danger = map_value_for_display(danger_val);
     
-          max_val, danger_val, mapped_max, mapped_danger);
+    // Danger zone mapping completed
     
     lv_scale_section_set_range(section, mapped_max, mapped_danger);
 }

@@ -1,4 +1,5 @@
 #include "managers/panel_manager.h"
+#include "utilities/logging.h"  // For log_t()
 
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
@@ -315,7 +316,7 @@ void PanelManager::SetUiState(UIState state)
 {
     log_v("SetUiState() called with state: %s", UIStateToString(state));
     uiState_ = state;
-    log_t("UI state: %s", UIStateToString(state));
+    // UI state logging removed - was causing test loop due to frequent BUSY/IDLE transitions
 }
 
 /// @brief Get the current UI state
@@ -498,14 +499,14 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     // Check if this is a splash panel completion that should trigger target panel load
     if (currentPanelStr_ == PanelNames::SPLASH && !splashTargetPanelStr_.empty()) {
         log_i("Splash panel completed - transitioning to target panel: %s", splashTargetPanelStr_.c_str());
-              splashTargetPanelStr_.length(), splashTargetPanelStr_.c_str());
+        // Splash target panel processing
         SplashCompletionCallback(splashTargetPanelStr_.c_str());
         
         // Clear the target panel after using it
         splashTargetPanelStr_.clear();
     } else {
         // Normal panel completion
-              currentPanelStr_.c_str(), splashTargetPanelStr_.empty() ? "true" : "false");
+        // Normal panel completion processing
         PanelCompletionCallback();
     }
 }

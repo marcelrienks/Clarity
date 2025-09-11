@@ -50,6 +50,7 @@ bool LightsSensor::GetLightsState()
 
     if (firstRead || lightsOn != lastState)
     {
+        log_v("Lights sensor GPIO %d state: %s", gpio_pins::LIGHTS,
               lightsOn ? "HIGH" : "LOW");
         lastState = lightsOn;
         firstRead = false;
@@ -73,6 +74,7 @@ bool LightsSensor::HasStateChanged()
     
     if (changed)
     {
+        log_i("Lights sensor state changed: %s -> %s", 
               previousState ? "ON" : "OFF",
               currentState ? "ON" : "OFF");
               

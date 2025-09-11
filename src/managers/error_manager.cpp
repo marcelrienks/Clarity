@@ -1,4 +1,5 @@
 #include "managers/error_manager.h"
+#include "utilities/logging.h"  // For log_t()
 #include <Arduino.h>
 #include <algorithm>
 

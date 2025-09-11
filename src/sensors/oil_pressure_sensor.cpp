@@ -1,5 +1,6 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "managers/error_manager.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 

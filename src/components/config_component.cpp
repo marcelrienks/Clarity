@@ -220,7 +220,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         green = (uint8_t)(green * intensity);
         blue = (uint8_t)(blue * intensity);
         
-              distanceFromCenter, intensity, red, green, blue);
+        // Gradient color calculation completed
         
         return lv_color_hex((red << 16) | (green << 8) | blue);
     }
@@ -235,7 +235,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         if (intensity < 0.2f) intensity = 0.2f; // Minimum visibility
         
         gray = (uint8_t)(gray * intensity);
-              distanceFromCenter, intensity, gray);
+        // Grayscale color calculation completed
         return lv_color_hex((gray << 16) | (gray << 8) | gray);
     }
 }

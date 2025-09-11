@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "esp32-hal-log.h"
+#include "utilities/logging.h"  // For log_t()
 
 ActionHandler::ActionHandler(IGpioProvider* gpioProvider) 
     : gpioProvider_(gpioProvider),
@@ -109,7 +110,7 @@ void ActionHandler::EvaluateActions() {
     bool anyActionTriggered = false;
     
     for (size_t i = 0; i < actionCount_; i++) {
-              i, actions_[i].id, static_cast<int>(actions_[i].pressType));
+        // Evaluating action
         
         if (EvaluateIndividualActionWithDetectedAction(actions_[i], detectedAction)) {
             anyActionTriggered = true;
@@ -152,10 +153,7 @@ bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, 
         return false;
     }
     
-          action.id,
-          detectedAction == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
-          detectedAction == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE",
-          action.hasTriggered ? "true" : "false");
+    // Action evaluation completed
     
     // Match detected button action to action press type
     if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
@@ -380,7 +378,7 @@ void ActionHandler::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*l
     currentShortPressFunc_ = shortPressFunc;
     currentLongPressFunc_ = longPressFunc;
     currentPanelContext_ = context;
-          shortPressFunc ? "set" : "null", longPressFunc ? "set" : "null", context ? "set" : "null");
+    // Panel functions updated
 }
 
 void ActionHandler::ClearPanelFunctions() {

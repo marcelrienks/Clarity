@@ -44,6 +44,7 @@ Reading LockSensor::GetReading()
 
     if (firstRead || isLockEngaged != lastState)
     {
+        log_v("Lock sensor GPIO %d state: %s", gpio_pins::LOCK,
               isLockEngaged ? "HIGH" : "LOW");
         lastState = isLockEngaged;
         firstRead = false;
@@ -72,6 +73,7 @@ bool LockSensor::HasStateChanged()
     
     // Log every 2 seconds or when state actually differs
     if (currentTime - lastLogTime > 2000 || currentState != previousLockState_) {
+        log_v("LOCK SENSOR DEBUG [%lu ms]: GPIO=%s, current=%s, previous=%s, initialized=%s",
               currentTime,
               gpioProvider_->DigitalRead(gpio_pins::LOCK) ? "HIGH" : "LOW",
               currentState ? "HIGH" : "LOW", 

@@ -163,7 +163,7 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
         // Find highest priority active trigger of same type (don't exclude any priority)
         Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type);
         if (sameTypeTrigger) {
-                  sameTypeTrigger->id, static_cast<int>(sameTypeTrigger->priority));
+            // Same-type trigger activation
             sameTypeTrigger->ExecuteActivate();
         } else {
             // Only call deactivate function (which does restoration) if no same-type triggers found

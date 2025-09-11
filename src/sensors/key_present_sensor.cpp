@@ -29,6 +29,7 @@ void KeyPresentSensor::Init()
     previousState_ = readKeyPresentState();
     initialized_ = true;
     
+    log_i("KeyPresentSensor initialized on GPIO %d, initial state: %s", 
           gpio_pins::KEY_PRESENT, previousState_ ? "PRESENT" : "NOT_PRESENT");
 }
 

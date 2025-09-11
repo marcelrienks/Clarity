@@ -40,7 +40,7 @@ void DebugErrorSensor::Init()
     
     // Interrupt registration is now handled centrally in ManagerFactory
 
-          gpio_pins::DEBUG_ERROR, previousState_ ? "HIGH" : "LOW");
+    // Debug error sensor initialized
 }
 
 Reading DebugErrorSensor::GetReading()

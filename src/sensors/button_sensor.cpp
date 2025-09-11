@@ -123,9 +123,7 @@ void ButtonSensor::ProcessButtonState()
     
     // Debug every 3 seconds or on state changes
     if ((currentTime - lastDebugTime > 3000) || (currentState != lastLoggedState)) {
-              currentState ? "HIGH" : "LOW", 
-              currentButtonState_ ? "PRESSED" : "RELEASED",
-              actionReady_ ? "true" : "false");
+        // Button state processing
         lastDebugTime = currentTime;
         lastLoggedState = currentState;
     }

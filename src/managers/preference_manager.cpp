@@ -194,8 +194,7 @@ const Configs &PreferenceManager::GetConfig() const
 void PreferenceManager::SetConfig(const Configs &newConfig)
 {
     log_v("SetConfig() called");
-          newConfig.panelName.c_str(), newConfig.theme.c_str(), 
-          newConfig.showSplash ? "true" : "false", newConfig.updateRate);
+    // Configuration updated
     config = newConfig;
 }
 

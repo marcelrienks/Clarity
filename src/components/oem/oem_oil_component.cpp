@@ -100,7 +100,7 @@ void OemOilComponent::Refresh(const Reading &reading)
     const ThemeColors &colours = styleService_->GetThemeColors();
     
     const std::string& currentTheme = styleService_->GetCurrentTheme();
-          currentTheme.c_str(), lv_color_to_u32(colours.gaugeNormal), lv_color_to_u32(colours.needleNormal));
+    // Component refresh completed
 
     // Icon color logic - in night mode, always use gaugeNormal (red)
     // In day mode, use gaugeNormal normally, gaugeDanger when in danger
