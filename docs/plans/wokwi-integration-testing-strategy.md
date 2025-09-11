@@ -275,34 +275,77 @@ jobs:
 - **Automation**: 0% (full manual control)
 - **Use Case**: Development, debugging, investigation
 
-## Future Considerations
+## Push Button Automation Implementation (2025 Update)
 
-### When Wokwi Automation Scenarios Mature
+### Full Automation Achieved
 
-When Wokwi's automation scenarios exit ALPHA and support DIP switches:
+**Problem Solved**: By replacing DIP switches with individual push buttons in a separate diagram, we've achieved full automation capability while maintaining backward compatibility.
 
-1. **Upgrade Tier 2 to Full Automation**:
-   - Convert `wokwi_guided_test.sh` to use automation scenarios
-   - Maintain WITL verification methodology
-   - Keep guided version as fallback
+**New Tier 0: Fully Automated Test**:
+- **File**: `test/wokwi/wokwi_automated_test.sh`
+- **Diagram**: `diagram_automated.json` (push buttons instead of DIP switches)
+- **Scenario**: `scenario_automated.yaml` (full automation)
+- **Duration**: 60-90 seconds
+- **Automation Level**: 100% automated
 
-2. **Potential YAML Automation**:
-   ```yaml
-   name: 'Clarity Full Integration Test'
-   version: 1
-   steps:
-     - wait-serial: '[T] OemOilPanel loaded successfully'
-     - set-control:
-         part-id: sw1
-         control: position_4
-         value: 1
-     - wait-serial: '[T] LightsOnActivate'
-   ```
+**Hardware Mapping Changes**:
+```yaml
+# Original (manual only)
+dip_switch: "sw1"
+  position_1: GPIO 25    # Key Present trigger
+  position_2: GPIO 26    # Key Not Present trigger  
+  position_3: GPIO 27    # Lock trigger
+  position_4: GPIO 33    # Lights trigger
 
-3. **Maintain 3-Tier Structure**:
-   - Keep all three tiers for different use cases
-   - Enhance automation where possible
-   - Preserve manual debugging capabilities
+# New automated version
+trigger_btn1: GPIO 25    # Key Present (Blue button)
+trigger_btn2: GPIO 26    # Key Not Present (Yellow button)
+trigger_btn3: GPIO 27    # Lock Engaged (Orange button)  
+trigger_btn4: GPIO 33    # Lights On (Purple button)
+```
+
+### Cross-Platform Support
+
+**Unified Test Suite**: `test/wokwi/wokwi_integration_test.sh`
+- **Platform Detection**: Automatically detects WSL2, macOS, Linux
+- **CLI Discovery**: Finds wokwi-cli in platform-specific locations
+- **Mode Selection**: Choose testing approach based on needs
+
+**Platform-Specific Paths**:
+```bash
+# WSL2
+/home/username/bin/wokwi-cli
+/usr/local/bin/wokwi-cli
+
+# macOS  
+/Users/username/bin/wokwi-cli
+/Users/username/.wokwi/bin/wokwi-cli
+/usr/local/bin/wokwi-cli
+```
+
+### Updated 4-Tier Testing Strategy
+
+```
+Tier 0: Fully Automated Test     → Complete automation (60-90s)
+Tier 1: Automated Startup Test   → Quick validation (30s)
+Tier 2: Guided Integration Test  → Comprehensive WITL (5-10 min)
+Tier 3: Manual Debug Test        → Development debugging (unlimited)
+```
+
+**Usage Examples**:
+```bash
+# Full automation (recommended)
+./wokwi_integration_test.sh auto
+
+# Quick CI/CD validation  
+./wokwi_integration_test.sh startup
+
+# Comprehensive manual testing
+./wokwi_integration_test.sh guided
+
+# Development debugging
+./wokwi_integration_test.sh manual
+```
 
 ## Conclusion
 

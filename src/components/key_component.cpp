@@ -1,5 +1,6 @@
 #include "components/key_component.h"
 #include "managers/error_manager.h"
+#include "utilities/logging.h"
 #include <esp32-hal-log.h>
 #include <icons/key_solid.h>
 
@@ -60,10 +61,12 @@ void KeyComponent::SetColor(KeyState keyState)
     if (keyState == KeyState::Present)
     {
         colour = styleService_->GetThemeColors().keyPresent;
+        log_t("Key icon color set to GREEN (key present)");
     }
     else // KeyState::NotPresent or KeyState::Inactive
     {
         colour = styleService_->GetThemeColors().keyNotPresent;
+        log_t("Key icon color set to RED (key not present)");
     }
 
     lv_obj_set_style_image_recolor(keyIcon_, colour, LV_PART_MAIN | LV_STATE_DEFAULT);

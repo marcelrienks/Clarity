@@ -39,7 +39,9 @@
       "Bash(timeout:*)",
       "Bash(./wokwi_startup_test.sh:*)",
       "WebFetch(domain:docs.wokwi.com)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Bash(./wokwi_test_automation.sh:*)",
+      "Bash(/Users/marcelrienks/bin/wokwi-cli --help)"
     ],
     "deny": [],
     "ask": []

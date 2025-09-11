@@ -8,6 +8,7 @@
 #include "sensors/key_present_sensor.h"
 #include "sensors/key_not_present_sensor.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <variant>
 
@@ -114,7 +115,7 @@ void KeyPanel::Load()
         styleService_->ApplyThemeToScreen(screen_);
     }
     
-    log_i("KeyPanel loaded successfully");
+    log_t("KeyPanel loaded successfully");
 }
 
 /// @brief Update the key panel with current sensor data

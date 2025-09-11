@@ -4,6 +4,7 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/panel_manager.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <algorithm>
 
@@ -128,7 +129,7 @@ void ErrorPanel::Load()
 
     panelLoaded_ = true;
     
-    log_i("ErrorPanel loaded successfully");
+    log_t("ErrorPanel loaded successfully");
 }
 
 /// @brief Update the error panel with current error data
