@@ -1,5 +1,5 @@
 [wokwi]
 version = 1
 gdbServerPort = 3333
-firmware = '../../.pio/build/debug-local/firmware.bin'
-elf = '../../.pio/build/debug-local/firmware.elf'
+firmware = '../../.pio/build/test-wokwi/firmware.bin'
+elf = '../../.pio/build/test-wokwi/firmware.elf'

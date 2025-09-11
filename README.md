@@ -36,19 +36,18 @@ After I had built this architecture, the project then became a test bed for usin
 ## Quick Start
 
 ```bash
-# Build for local testing (fastest)
+# Build for manual debugging (full verbose logs)
 pio run -e debug-local
+
+# Build for integration testing (clean logs)  
+pio run -e test-wokwi
 
 # Build for hardware upload
 pio run -e debug-upload
 
-# Wokwi Hardware Simulation Tests
-./test/wokwi/run_test.sh basic   # Quick hardware validation (~5 seconds)
-./test/wokwi/run_test.sh full    # Complete system integration (~2 minutes)
-
-# Manual build and test commands
-pio run -e test-wokwi-basic && cd test/wokwi && cp wokwi-basic.toml wokwi.toml && wokwi-cli --timeout 10000
-pio run -e test-wokwi-full && cd test/wokwi && cp wokwi-full.toml wokwi.toml && wokwi-cli --timeout 120000
+# Wokwi Simulation Testing
+cd test/manual && ./wokwi_debug.sh      # Interactive manual testing
+cd test/wokwi && ./wokwi_run.sh         # Automated integration testing
 ```
 
 ### Test Coverage

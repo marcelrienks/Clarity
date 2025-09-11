@@ -35,7 +35,11 @@
       "Bash(/Users/marcelrienks/.wokwi/bin/wokwi-cli --help)",
       "Bash(~/.platformio/penv/bin/pio run -e test-wokwi)",
       "WebSearch",
-      "Bash(timeout 30 pio run -e debug-local)"
+      "Bash(timeout 30 pio run -e debug-local)",
+      "Bash(timeout:*)",
+      "Bash(./wokwi_startup_test.sh:*)",
+      "WebFetch(domain:docs.wokwi.com)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": []

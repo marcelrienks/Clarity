@@ -1,4 +1,5 @@
 #include "managers/style_manager.h"
+#include "utilities/logging.h"  // For log_t()
 #include <cstring>
 #include <esp32-hal-log.h>
 
@@ -237,7 +238,7 @@ void StyleManager::ApplyCurrentTheme()
     
     // Apply the theme if it's different from cached value
     if (THEME != config.theme) {
-        log_i("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), config.theme.c_str());
+        log_t("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), config.theme.c_str());
         SetTheme(config.theme.c_str());
     } else {
         log_i("StyleManager: Theme unchanged (%s) - no update needed", config.theme.c_str());

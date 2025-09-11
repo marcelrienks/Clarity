@@ -10,6 +10,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "utilities/constants.h"  // For PanelNames
+#include "utilities/logging.h"    // For log_t()
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 

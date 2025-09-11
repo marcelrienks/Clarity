@@ -5,6 +5,7 @@
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"  // For log_t()
 
 // Constructors and Destructors
 
@@ -229,7 +230,7 @@ void OemOilPanel::Load()
         lastTheme_ = String(styleService_->GetCurrentTheme().c_str());
     }
     
-    log_i("OemOilPanel loaded successfully");
+    log_t("OemOilPanel loaded successfully");
 }
 
 /// @brief Update the reading on the screen

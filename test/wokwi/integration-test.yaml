@@ -15,13 +15,13 @@ test_phases:
     steps:
       - name: "Verify System Start"
         action: "wait_for_serial"
-        pattern: "SplashPanel loaded successfully"
+        pattern: "\\[T\\] SplashPanel loaded successfully"
         timeout: 10000
         description: "System starts and splash panel loads with day theme"
       
       - name: "Verify Oil Panel Load"
         action: "wait_for_serial"
-        pattern: "OemOilPanel loaded successfully"
+        pattern: "\\[T\\] OemOilPanel loaded successfully"
         timeout: 15000
         description: "Oil panel loads after splash animation with animated gauges"
 
@@ -63,7 +63,7 @@ test_phases:
       
       - name: "Verify Night Theme"
         action: "wait_for_serial"
-        pattern: "Theme changed to Night|LightsOnActivate"
+        pattern: "Theme changed to Night|\\[T\\] LightsOnActivate"
         timeout: 2000
         description: "Night theme applied instantly without panel reload"
       
@@ -77,7 +77,7 @@ test_phases:
       
       - name: "Verify Lock Panel"
         action: "wait_for_serial"
-        pattern: "LockEngagedActivate|Lock trigger activated"
+        pattern: "\\[T\\] LockEngagedActivate|Lock trigger activated"
         timeout: 2000
         description: "Lock panel loads with night theme maintained"
       
@@ -91,7 +91,7 @@ test_phases:
       
       - name: "Verify Key Panel Red"
         action: "wait_for_serial"
-        pattern: "KeyNotPresentActivate|KeyNotPresentSensor state changed"
+        pattern: "\\[T\\] KeyNotPresentActivate|KeyNotPresentSensor state changed"
         timeout: 2000
         description: "Key panel loads with red icon, overrides lock panel"
       
@@ -105,7 +105,7 @@ test_phases:
       
       - name: "Verify Key Panel Green"
         action: "wait_for_serial"
-        pattern: "KeyPresentActivate|KeyPresentSensor state changed"
+        pattern: "\\[T\\] KeyPresentActivate|KeyPresentSensor state changed"
         timeout: 2000
         description: "Key panel reloads with green icon"
       
@@ -131,7 +131,7 @@ test_phases:
       
       - name: "Verify Lock Restoration"
         action: "wait_for_serial"
-        pattern: "Checking for restoration|Cannot restore - blocking interrupts"
+        pattern: "\\[T\\] Checking for restoration|Cannot restore - blocking interrupts"
         timeout: 2000
         description: "Lock panel loads (priority-based restoration)"
 
@@ -147,7 +147,7 @@ test_phases:
       
       - name: "Verify Error Panel"
         action: "wait_for_serial"
-        pattern: "ErrorOccurredActivate|Error trigger activated"
+        pattern: "\\[T\\] ErrorOccurredActivate|Error trigger activated"
         timeout: 2000
         description: "Error panel loads with multiple errors"
       
@@ -161,7 +161,7 @@ test_phases:
       
       - name: "Verify Error Navigation"
         action: "wait_for_serial"
-        pattern: "ShortPressActivate|Error navigation"
+        pattern: "\\[T\\] ShortPressActivate|Error navigation"
         timeout: 2000
         description: "Error panel advances through error queue"
       
@@ -174,7 +174,7 @@ test_phases:
       
       - name: "Verify Error Cleared"
         action: "wait_for_serial"
-        pattern: "LongPressActivate|Error resolution|ErrorClearedActivate"
+        pattern: "\\[T\\] LongPressActivate|Error resolution|\\[T\\] ErrorClearedActivate"
         timeout: 2000
         description: "All errors cleared, restoration to lock panel"
 
@@ -190,7 +190,7 @@ test_phases:
       
       - name: "Verify Oil Panel Restoration"
         action: "wait_for_serial"
-        pattern: "No blocking interrupts - restoring|OemOilPanel"
+        pattern: "\\[T\\] No blocking interrupts - restoring|\\[T\\] OemOilPanel"
         timeout: 3000
         description: "Oil panel loads with night theme and animated gauges"
 
@@ -206,7 +206,7 @@ test_phases:
       
       - name: "Verify Day Theme"
         action: "wait_for_serial"
-        pattern: "Theme changed to Day|LightsOffActivate"
+        pattern: "Theme changed to Day|\\[T\\] LightsOffActivate"
         timeout: 2000
         description: "Day theme applied without panel reload"
 
@@ -222,7 +222,7 @@ test_phases:
       
       - name: "Verify Config Panel"
         action: "wait_for_serial"
-        pattern: "LongPressActivate|Config panel"
+        pattern: "\\[T\\] LongPressActivate|Config panel"
         timeout: 2000
         description: "Config panel loads with main menu"
       
@@ -275,7 +275,7 @@ test_phases:
       
       - name: "Verify Return to Oil Panel"
         action: "wait_for_serial"
-        pattern: "Config exit|OemOilPanel"
+        pattern: "Config exit|\\[T\\] OemOilPanel"
         timeout: 3000
         description: "Return to oil panel with applied night theme"
 
@@ -309,25 +309,25 @@ serial_monitoring:
     - "Starting Clarity service initialization"
     - "ProviderFactory created successfully"
     - "ManagerFactory created successfully"
-    - "SplashPanel loaded successfully"
-    - "OemOilPanel loaded successfully"
+    - "\\[T\\] SplashPanel loaded successfully"
+    - "\\[T\\] OemOilPanel loaded successfully"
   
   trigger_patterns:
-    - "KeyPresentActivate() - Loading KEY panel"
-    - "KeyNotPresentActivate() - Loading KEY panel"
-    - "LockEngagedActivate() - Loading LOCK panel"
-    - "ErrorOccurredActivate() - Loading ERROR panel"
-    - "LightsOnActivate() - Setting NIGHT theme"
-    - "LightsOffActivate() - Setting DAY theme"
+    - "\\[T\\] KeyPresentActivate() - Loading KEY panel"
+    - "\\[T\\] KeyNotPresentActivate() - Loading KEY panel"
+    - "\\[T\\] LockEngagedActivate() - Loading LOCK panel"
+    - "\\[T\\] ErrorOccurredActivate() - Loading ERROR panel"
+    - "\\[T\\] LightsOnActivate() - Setting NIGHT theme"
+    - "\\[T\\] LightsOffActivate() - Setting DAY theme"
   
   restoration_patterns:
-    - "Checking for restoration"
-    - "No blocking interrupts - restoring"
+    - "\\[T\\] Checking for restoration"
+    - "\\[T\\] No blocking interrupts - restoring"
     - "Cannot restore - blocking interrupts still active"
   
   button_patterns:
-    - "ShortPressActivate() - Executing short press action"
-    - "LongPressActivate() - Executing long press action"
+    - "\\[T\\] ShortPressActivate() - Executing short press action"
+    - "\\[T\\] LongPressActivate() - Executing long press action"
   
   error_patterns:
     - "Error trigger detected - loading ErrorPanel"
@@ -343,8 +343,8 @@ serial_monitoring:
 # Test configuration
 config:
   wokwi_diagram: "diagram.json"
-  firmware_path: "../../.pio/build/debug-local/firmware.bin"
-  elf_path: "../../.pio/build/debug-local/firmware.elf"
+  firmware_path: "../../.pio/build/test-wokwi/firmware.bin"
+  elf_path: "../../.pio/build/test-wokwi/firmware.elf"
   serial_baud: 115200
   test_timeout: 300000
   step_timeout: 5000

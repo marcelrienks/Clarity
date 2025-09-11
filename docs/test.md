@@ -1,22 +1,51 @@
-# Clarity Integration Testing
+# Clarity Testing Guide
 
-This document provides comprehensive instructions for running the Clarity digital gauge system integration tests using the Wokwi ESP32 simulator.
+This document provides comprehensive instructions for testing the Clarity digital gauge system using the Wokwi ESP32 simulator. The testing framework includes both automated integration testing and manual debugging capabilities.
 
-## Overview
+## Testing Environments Overview
 
-The integration test validates the complete Clarity system functionality by executing the Primary Integration Test Scenario defined in `docs/scenarios.md`. It covers all 6 panels, 5 interrupts, theme switching, sensor interactions, error handling, and configuration management in a realistic user interaction flow.
+Clarity provides two distinct testing environments, each optimized for different use cases:
+
+| Environment | Purpose | Log Level | Location | Build Target |
+|-------------|---------|-----------|----------|--------------|
+| **Integration Testing** | Automated CI/CD validation | INFO only | `test/wokwi/` | `test-wokwi` |
+| **Manual Debug Testing** | Interactive development | VERBOSE (all levels) | `test/manual/` | `debug-local` |
+
+### Integration Testing Environment
+- ✅ **Clean log output** - Only `[I]`, `[W]`, `[E]`, and custom `[T]` messages
+- ✅ **Automated validation** - Pattern-based test verification
+- ✅ **CI/CD ready** - 5-minute timeout with pass/fail detection
+- ✅ **Performance focus** - Optimized for timing measurements with `log_t()` function
+
+### Manual Debug Testing Environment  
+- ✅ **Full verbose logging** - All `[V]`, `[D]`, `[I]`, `[W]`, `[E]`, and `[T]` messages
+- ✅ **Interactive control** - No timeout, manual hardware simulation
+- ✅ **Development focused** - Complete debug information for troubleshooting
+- ✅ **Performance tracking** - Custom `log_t()` messages alongside full debug output
 
 ## Test Structure
 
-### Test Files Location
+### Integration Testing Files (`test/wokwi/`)
 ```
 test/wokwi/
 ├── diagram.json           # Hardware configuration
-├── wokwi.toml            # Wokwi simulator settings  
+├── wokwi.toml            # Test-wokwi firmware configuration  
 ├── integration-test.yaml # Complete test specification
-├── wokwi_run.sh          # Simple bash test runner
-└── integration_test.py   # Advanced Python test runner
+├── wokwi_run.sh          # Simple bash integration test runner
+└── integration_test.py   # Advanced Python test runner with progress tracking
 ```
+
+### Manual Debug Testing Files (`test/manual/`)
+```
+test/manual/
+├── diagram.json          # Hardware configuration (identical to integration)
+├── wokwi.toml           # Debug-local firmware configuration
+└── wokwi_debug.sh       # Manual debug testing script
+```
+
+### Build Environments
+- **`test-wokwi`**: Clean integration testing (CORE_DEBUG_LEVEL=3)
+- **`debug-local`**: Full debug testing (CORE_DEBUG_LEVEL=5)
 
 ### Hardware Configuration
 
@@ -39,10 +68,12 @@ The test uses a comprehensive hardware setup simulating real automotive gauge sc
 ### 1. Build Environment Setup
 Ensure you have PlatformIO installed and the project builds successfully:
 ```bash
-# Test build
-pio run -e debug-local
+# Build for integration testing (clean logs)
+pio run -e test-wokwi
+ls .pio/build/test-wokwi/firmware.bin
 
-# Check that firmware is created
+# Build for manual debugging (verbose logs)  
+pio run -e debug-local
 ls .pio/build/debug-local/firmware.bin
 ```
 
@@ -75,39 +106,44 @@ python3 --version
 # No additional packages needed - uses only standard library
 ```
 
-## Running the Integration Test
+## Running Tests
 
-### Method 1: Simple Shell Script (Recommended)
+### Integration Testing (Automated)
+
+#### Method 1: Simple Shell Script (Recommended)
 
 The easiest way to run the complete integration test:
 
 ```bash
-# Navigate to test directory
+# Navigate to integration test directory
 cd test/wokwi
 
-# Run the integration test
+# Run the automated integration test
 ./wokwi_run.sh
 ```
 
 **Features:**
-- Automatically builds firmware if needed
+- Automatically builds `test-wokwi` firmware if needed
 - Finds wokwi-cli in common locations
 - Runs 5-minute test with colored output
-- Shows real-time serial monitor output
+- Shows real-time serial monitor output with clean logging (INFO level only)
 
 **Expected Output:**
 ```
 === Clarity Integration Test Runner ===
-Found firmware: ../../.pio/build/debug-local/firmware.bin
+Found firmware: ../../.pio/build/test-wokwi/firmware.bin
 Using wokwi-cli: /home/user/bin/wokwi-cli
 Starting Wokwi simulation with timeout: 300000ms
 
-[Serial output showing test progression...]
+[Clean serial output showing only [I], [W], [E], and [T] messages...]
+[T] SplashPanel loaded successfully
+[T] OemOilPanel loaded successfully
+[T] KeyPresentActivate() - Loading KEY panel
 
 === Integration Test Completed Successfully ===
 ```
 
-### Method 2: Advanced Python Runner
+#### Method 2: Advanced Python Runner
 
 For detailed test phase tracking and analysis:
 
@@ -148,22 +184,61 @@ python3 integration_test.py
 ✅ Integration test completed successfully!
 ```
 
-### Method 3: Direct Wokwi CLI
+### Manual Debug Testing (Interactive)
 
-For manual control and custom parameters:
+For interactive development and debugging with full verbose output:
+
+#### Manual Debug Session
 
 ```bash
-# Navigate to test directory
+# Navigate to manual testing directory
+cd test/manual
+
+# Start interactive debug session (no timeout)
+./wokwi_debug.sh
+
+# Or with optional timeout
+TIMEOUT=300000 ./wokwi_debug.sh
+```
+
+**Features:**
+- Full verbose logging - All `[V]`, `[D]`, `[I]`, `[W]`, `[E]`, and `[T]` messages
+- No timeout by default - Manual control over session
+- Interactive hardware simulation - Full control over buttons, switches, potentiometers
+- Complete debug information - Perfect for development and troubleshooting
+
+**Expected Output:**
+```
+=== Clarity Manual Debug Testing ===
+Full verbose logging enabled for debugging
+Found firmware: ../../.pio/build/debug-local/firmware.bin
+
+=== Hardware Setup ===
+Action Button (btn1):  GPIO 32 - Main user input
+Debug Button (btn2):   GPIO 34 - Debug error trigger
+[...hardware mapping details...]
+
+Serial output (all log levels):
+[V] Verbose debug messages
+[D] Debug information  
+[I] General information
+[W] Warnings
+[E] Errors
+[T] Timing/performance messages ← Your custom log_t() function
+```
+
+#### Method 3: Direct Wokwi CLI
+
+For manual control and custom parameters in either environment:
+
+```bash
+# Integration testing directory
 cd test/wokwi
+wokwi-cli --timeout 300000    # Clean logs, automated patterns
 
-# Run with custom timeout (default: 300000ms = 5 minutes)
-wokwi-cli --timeout 300000
-
-# Run with shorter timeout for quick testing
-wokwi-cli --timeout 60000
-
-# Run indefinitely (Ctrl+C to stop)
-wokwi-cli
+# Manual debugging directory  
+cd test/manual
+wokwi-cli                     # Full logs, no timeout
 ```
 
 ## Test Phases and Expected Behavior
@@ -176,8 +251,8 @@ The integration test follows 7 main phases covering all aspects of the Primary I
 - **Key Serial Patterns**:
   ```
   Starting Clarity service initialization
-  SplashPanel loaded successfully
-  OemOilPanel loaded successfully
+  [T] SplashPanel loaded successfully
+  [T] OemOilPanel loaded successfully
   ```
 
 ### Phase 2: Sensor Interaction
@@ -195,10 +270,10 @@ The integration test follows 7 main phases covering all aspects of the Primary I
 - **Expected**: Night theme → Lock panel → Key panels → Restoration chain
 - **Key Serial Patterns**:
   ```
-  LightsOnActivate() - Setting NIGHT theme
-  LockEngagedActivate() - Loading LOCK panel
-  KeyNotPresentActivate() - Loading KEY panel
-  KeyPresentActivate() - Loading KEY panel
+  [T] LightsOnActivate() - Setting NIGHT theme
+  [T] LockEngagedActivate() - Loading LOCK panel
+  [T] KeyNotPresentActivate() - Loading KEY panel
+  [T] KeyPresentActivate() - Loading KEY panel
   ```
 
 ### Phase 4: Error System Integration
@@ -206,10 +281,10 @@ The integration test follows 7 main phases covering all aspects of the Primary I
 - **Expected**: Error panel → Navigate errors → Clear all errors
 - **Key Serial Patterns**:
   ```
-  ErrorOccurredActivate() - Loading ERROR panel
+  [T] ErrorOccurredActivate() - Loading ERROR panel
   ErrorManager: 3 errors reported
-  Error navigation - cycling through errors
-  Error resolution - all errors cleared
+  [T] ShortPressActivate() - Executing short press action
+  [T] LongPressActivate() - Executing long press action
   ```
 
 ### Phase 5: Trigger Chain Restoration
@@ -217,7 +292,8 @@ The integration test follows 7 main phases covering all aspects of the Primary I
 - **Expected**: Return to Oil panel when all triggers deactivated
 - **Key Serial Patterns**:
   ```
-  No blocking interrupts - restoring to 'OemOilPanel'
+  [T] No blocking interrupts - restoring to 'OemOilPanel'
+  [T] OemOilPanel loaded successfully
   ```
 
 ### Phase 6: Theme Restoration
@@ -225,7 +301,7 @@ The integration test follows 7 main phases covering all aspects of the Primary I
 - **Expected**: Return to day theme
 - **Key Serial Patterns**:
   ```
-  LightsOffActivate() - Setting DAY theme
+  [T] LightsOffActivate() - Setting DAY theme
   Theme changed to Day
   ```
 
@@ -234,10 +310,10 @@ The integration test follows 7 main phases covering all aspects of the Primary I
 - **Expected**: Config navigation → Theme settings → Apply night theme → Exit
 - **Key Serial Patterns**:
   ```
-  Config panel navigation started
-  Theme settings submenu accessed
-  Night theme applied via configuration
-  Config exit - returning to oil panel
+  [T] LongPressActivate() - Executing long press action
+  Config panel loaded successfully
+  Theme configuration updated
+  [T] OemOilPanel loaded successfully
   ```
 
 ## Success Criteria
@@ -280,13 +356,17 @@ pio lib list
 
 **Problem**: Wrong build environment
 ```bash
-# Ensure using debug-local environment (fastest build)
+# For integration testing (clean logs)
+pio run -e test-wokwi
+
+# For manual debugging (verbose logs)
 pio run -e debug-local
 
-# Available environments:
-# - debug-local: Fast build for testing
-# - debug-upload: With inverted colors for waveshare
-# - release: Optimized build
+# Available testing environments:
+# - test-wokwi: Clean integration testing (CORE_DEBUG_LEVEL=3)
+# - debug-local: Full debug testing (CORE_DEBUG_LEVEL=5)
+# - debug-upload: With inverted colors for waveshare (CORE_DEBUG_LEVEL=3)
+# - release: Optimized production build (CORE_DEBUG_LEVEL=0)
 ```
 
 ### Wokwi CLI Issues
@@ -475,4 +555,61 @@ done
 - **Gauge animation**: Smooth 60fps target
 - **Interrupt processing**: <10ms per trigger
 
-This integration test provides comprehensive validation of the Clarity system before and after optimization work, ensuring all functionality remains intact while performance improvements are implemented.
+## log_t() Function Integration
+
+Both testing environments now support the custom `log_t()` function for timing and performance measurements:
+
+### Usage in Code
+```cpp
+#include "utilities/logging.h"  // Include the logging header
+
+// Timing measurements
+log_t("Panel loaded successfully");
+log_t("Operation completed in %d ms", duration);  
+log_t("Free heap: %d bytes", ESP.getFreeHeap());
+log_t("Service initialization completed in %lu ms", end_time - start_time);
+```
+
+### Expected Output
+```
+[T] Panel loaded successfully
+[T] Operation completed in 150 ms
+[T] Free heap: 180432 bytes
+[T] Service initialization completed in 89 ms
+```
+
+### Benefits
+- ⏱️ **Performance measurement** - Easy timing of critical operations
+- 🔍 **Optimization tracking** - Before/after performance comparisons  
+- 🏷️ **Filtered logging** - Easy to grep/filter for timing data
+- 📊 **Metrics collection** - Automated performance monitoring in CI/CD
+
+## Development Workflow
+
+### For Feature Development
+1. **Code Changes** → Build with `debug-local` environment
+2. **Manual Testing** → Use `cd test/manual && ./wokwi_debug.sh`
+3. **Interactive Debugging** → Full verbose output + manual hardware control
+4. **Performance Measurement** → Add `log_t()` calls for timing critical sections
+5. **Fix Issues** → Repeat until stable
+
+### For CI/CD Integration  
+1. **Code Complete** → Build with `test-wokwi` environment
+2. **Integration Testing** → Use `cd test/wokwi && ./wokwi_run.sh`
+3. **Automated Validation** → Clean output + automated pass/fail + `log_t()` timing
+4. **Deploy** → If all tests pass
+
+### Quick Commands Reference
+```bash
+# Manual Debug Testing (Full verbose output)
+cd test/manual && ./wokwi_debug.sh
+
+# Integration Testing (Clean output)  
+cd test/wokwi && ./wokwi_run.sh
+
+# Build specific environments
+pio run -e debug-local    # Manual testing
+pio run -e test-wokwi     # Integration testing
+```
+
+This dual testing framework provides comprehensive validation of the Clarity system before and after optimization work, ensuring all functionality remains intact while performance improvements are implemented and measured.

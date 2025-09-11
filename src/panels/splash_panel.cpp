@@ -6,6 +6,7 @@
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"  // For log_t()
 #include <algorithm>
 #include <esp32-hal-log.h>
 
@@ -90,6 +91,8 @@ void SplashPanel::Load()
 
     // Schedule the fade-in animation
     lv_timer_create(SplashPanel::fade_in_timer_callback, GetAnimationTime(), this);
+    
+    log_t("SplashPanel loaded successfully");
 }
 
 /// @brief Update the reading on the screen

@@ -15,7 +15,7 @@ class ClarityIntegrationTest:
     def __init__(self):
         self.test_dir = Path(__file__).parent
         self.project_root = self.test_dir.parent.parent
-        self.firmware_path = self.project_root / ".pio/build/debug-local/firmware.bin"
+        self.firmware_path = self.project_root / ".pio/build/test-wokwi/firmware.bin"
         self.wokwi_cli = self.find_wokwi_cli()
         
     def find_wokwi_cli(self):
@@ -38,7 +38,7 @@ class ClarityIntegrationTest:
         """Build the firmware using PlatformIO"""
         print("🔨 Building firmware...")
         result = subprocess.run(
-            ["pio", "run", "-e", "debug-local"],
+            ["pio", "run", "-e", "test-wokwi"],
             cwd=self.project_root,
             capture_output=True,
             text=True
@@ -117,8 +117,8 @@ class ClarityIntegrationTest:
         """Update test phase tracking based on serial patterns"""
         patterns = {
             "startup": [
-                "SplashPanel loaded successfully",
-                "OemOilPanel loaded successfully"
+                "[T] SplashPanel loaded successfully",
+                "[T] OemOilPanel loaded successfully"
             ],
             "sensor_interaction": [
                 "Pressure reading changed",
@@ -127,12 +127,12 @@ class ClarityIntegrationTest:
             ],
             "theme_trigger": [
                 "Theme changed to Night",
-                "KeyPresentActivate",
-                "LockEngagedActivate",
+                "[T] KeyPresentActivate",
+                "[T] LockEngagedActivate",
                 "Theme changed to Day"
             ],
             "error_system": [
-                "ErrorOccurredActivate",
+                "[T] ErrorOccurredActivate",
                 "Error navigation",
                 "Error resolution"
             ],

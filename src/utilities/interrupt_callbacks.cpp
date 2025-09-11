@@ -9,6 +9,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"  // For log_t()
 #include <esp32-hal-log.h>
 #include <cstring>
 
@@ -24,7 +25,7 @@ static std::string savedUserPanel = "";
 //=============================================================================
 
 void InterruptCallbacks::KeyPresentActivate(void* context) {
-    log_i("KeyPresentActivate() - Loading KEY panel");
+    log_t("KeyPresentActivate() - Loading KEY panel");
     
     // Save current user panel for restoration
     const char* currentPanel = panelManager->GetCurrentPanel();
@@ -38,7 +39,7 @@ void InterruptCallbacks::KeyPresentActivate(void* context) {
 }
 
 void InterruptCallbacks::KeyNotPresentActivate(void* context) {
-    log_i("KeyNotPresentActivate() - Loading KEY panel");
+    log_t("KeyNotPresentActivate() - Loading KEY panel");
     
     // Save current user panel for restoration  
     const char* currentPanel = panelManager->GetCurrentPanel();
@@ -56,7 +57,7 @@ void InterruptCallbacks::KeyNotPresentActivate(void* context) {
 //=============================================================================
 
 void InterruptCallbacks::LockEngagedActivate(void* context) {
-    log_i("LockEngagedActivate() - Loading LOCK panel");
+    log_t("LockEngagedActivate() - Loading LOCK panel");
     
     // Save current user panel for restoration
     const char* currentPanel = panelManager->GetCurrentPanel();
@@ -70,13 +71,13 @@ void InterruptCallbacks::LockEngagedActivate(void* context) {
 }
 
 void InterruptCallbacks::LockDisengagedActivate(void* context) {
-    log_i("LockDisengagedActivate() - Checking for restoration");
+    log_t("LockDisengagedActivate() - Checking for restoration");
     
     // Check if any blocking interrupts are active
     bool hasBlockingInterrupts = InterruptManager::Instance().HasActiveInterrupts();
     
     if (!hasBlockingInterrupts && !savedUserPanel.empty()) {
-        log_i("No blocking interrupts - restoring to '%s'", savedUserPanel.c_str());
+        log_t("No blocking interrupts - restoring to '%s'", savedUserPanel.c_str());
         panelManager->CreateAndLoadPanel(savedUserPanel.c_str(), false); // Load as user-driven
         savedUserPanel.clear(); // Clear after restoration
     } else if (hasBlockingInterrupts) {
@@ -91,12 +92,12 @@ void InterruptCallbacks::LockDisengagedActivate(void* context) {
 //=============================================================================
 
 void InterruptCallbacks::LightsOnActivate(void* context) {
-    log_i("LightsOnActivate() - Setting NIGHT theme");
+    log_t("LightsOnActivate() - Setting NIGHT theme");
     styleManager->SetTheme(Themes::NIGHT);
 }
 
 void InterruptCallbacks::LightsOffActivate(void* context) {
-    log_i("LightsOffActivate() - Setting DAY theme");
+    log_t("LightsOffActivate() - Setting DAY theme");
     styleManager->SetTheme(Themes::DAY);
 }
 
@@ -105,7 +106,7 @@ void InterruptCallbacks::LightsOffActivate(void* context) {
 //=============================================================================
 
 void InterruptCallbacks::ErrorOccurredActivate(void* context) {
-    log_i("ErrorOccurredActivate() - Loading ERROR panel");
+    log_t("ErrorOccurredActivate() - Loading ERROR panel");
     
     // Save current user panel for restoration
     const char* currentPanel = panelManager->GetCurrentPanel();
@@ -119,13 +120,13 @@ void InterruptCallbacks::ErrorOccurredActivate(void* context) {
 }
 
 void InterruptCallbacks::ErrorClearedActivate(void* context) {
-    log_i("ErrorClearedActivate() - Checking for restoration");
+    log_t("ErrorClearedActivate() - Checking for restoration");
     
     // Check if any blocking interrupts are active
     bool hasBlockingInterrupts = InterruptManager::Instance().HasActiveInterrupts();
     
     if (!hasBlockingInterrupts && !savedUserPanel.empty()) {
-        log_i("No blocking interrupts - restoring to '%s'", savedUserPanel.c_str());
+        log_t("No blocking interrupts - restoring to '%s'", savedUserPanel.c_str());
         panelManager->CreateAndLoadPanel(savedUserPanel.c_str(), false); // Load as user-driven
         savedUserPanel.clear(); // Clear after restoration
     } else if (hasBlockingInterrupts) {
@@ -140,7 +141,7 @@ void InterruptCallbacks::ErrorClearedActivate(void* context) {
 //=============================================================================
 
 void InterruptCallbacks::ShortPressActivate(void* context) {
-    log_i("ShortPressActivate() - Executing short press action");
+    log_t("ShortPressActivate() - Executing short press action");
     
     ButtonSensor* sensor = static_cast<ButtonSensor*>(context);
     if (!sensor) {
@@ -170,7 +171,7 @@ void InterruptCallbacks::ShortPressActivate(void* context) {
 }
 
 void InterruptCallbacks::LongPressActivate(void* context) {
-    log_i("LongPressActivate() - Executing long press action");
+    log_t("LongPressActivate() - Executing long press action");
     
     ButtonSensor* sensor = static_cast<ButtonSensor*>(context);
     if (!sensor) {
