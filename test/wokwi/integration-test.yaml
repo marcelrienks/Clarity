@@ -1,0 +1,362 @@
+# Clarity Integration Test Automation
+# Test Name: Clarity Full System Integration Test
+# Platform: Wokwi ESP32 Simulator
+# Purpose: Validate complete system functionality following the primary integration test scenario
+
+name: "Clarity Full System Integration Test"
+version: "1.0"
+timeout: 300000  # 5 minutes total test timeout
+
+# Test phases following the Primary Integration Test Scenario from scenarios.md
+test_phases:
+
+  # Phase 1: System Startup (Steps 1-2)
+  - name: "System Startup"
+    steps:
+      - name: "Verify System Start"
+        action: "wait_for_serial"
+        pattern: "SplashPanel loaded successfully"
+        timeout: 10000
+        description: "System starts and splash panel loads with day theme"
+      
+      - name: "Verify Oil Panel Load"
+        action: "wait_for_serial"
+        pattern: "OemOilPanel loaded successfully"
+        timeout: 15000
+        description: "Oil panel loads after splash animation with animated gauges"
+
+  # Phase 2: Real-time Sensor Interaction (Step 3)
+  - name: "Sensor Interaction"
+    steps:
+      - name: "Adjust Pressure Input"
+        action: "set_potentiometer"
+        component: "pot1"
+        value: 500
+        description: "Adjust pressure potentiometer to test gauge animation"
+      
+      - name: "Verify Pressure Animation"
+        action: "wait"
+        duration: 2000
+        description: "Allow pressure gauge to animate to new value"
+      
+      - name: "Adjust Temperature Input"
+        action: "set_potentiometer"
+        component: "pot2"
+        value: 800
+        description: "Adjust temperature potentiometer to test gauge animation"
+      
+      - name: "Verify Temperature Animation"
+        action: "wait"
+        duration: 2000
+        description: "Allow temperature gauge to animate to new value"
+
+  # Phase 3: Theme and Trigger System (Steps 4-9)
+  - name: "Theme and Trigger System"
+    steps:
+      # Step 4: Lights Trigger - Theme Change
+      - name: "Activate Lights Trigger"
+        action: "set_switch"
+        component: "sw1"
+        pin: 4
+        state: true
+        description: "Activate lights trigger for night theme"
+      
+      - name: "Verify Night Theme"
+        action: "wait_for_serial"
+        pattern: "Theme changed to Night|LightsOnActivate"
+        timeout: 2000
+        description: "Night theme applied instantly without panel reload"
+      
+      # Step 5: Lock Trigger
+      - name: "Activate Lock Trigger"  
+        action: "set_switch"
+        component: "sw1"
+        pin: 3
+        state: true
+        description: "Activate lock trigger (IMPORTANT priority)"
+      
+      - name: "Verify Lock Panel"
+        action: "wait_for_serial"
+        pattern: "LockEngagedActivate|Lock trigger activated"
+        timeout: 2000
+        description: "Lock panel loads with night theme maintained"
+      
+      # Step 6: Key Not Present Trigger
+      - name: "Activate Key Not Present"
+        action: "set_switch"
+        component: "sw1"
+        pin: 2
+        state: true
+        description: "Activate key not present trigger (CRITICAL priority)"
+      
+      - name: "Verify Key Panel Red"
+        action: "wait_for_serial"
+        pattern: "KeyNotPresentActivate|KeyNotPresentSensor state changed"
+        timeout: 2000
+        description: "Key panel loads with red icon, overrides lock panel"
+      
+      # Step 7: Key Present Trigger Transition
+      - name: "Activate Key Present"
+        action: "set_switch"
+        component: "sw1"
+        pin: 1
+        state: true
+        description: "Activate key present trigger (CRITICAL priority)"
+      
+      - name: "Verify Key Panel Green"
+        action: "wait_for_serial"
+        pattern: "KeyPresentActivate|KeyPresentSensor state changed"
+        timeout: 2000
+        description: "Key panel reloads with green icon"
+      
+      # Step 8-9: Key State Management
+      - name: "Deactivate Key Not Present"
+        action: "set_switch"
+        component: "sw1"
+        pin: 2
+        state: false
+        description: "Deactivate key not present (key present still active)"
+      
+      - name: "Verify Key Panel Persistence"
+        action: "wait"
+        duration: 1000
+        description: "Key panel maintains green icon"
+      
+      - name: "Deactivate Key Present"
+        action: "set_switch"
+        component: "sw1"
+        pin: 1
+        state: false
+        description: "Deactivate key present trigger for restoration"
+      
+      - name: "Verify Lock Restoration"
+        action: "wait_for_serial"
+        pattern: "Checking for restoration|Cannot restore - blocking interrupts"
+        timeout: 2000
+        description: "Lock panel loads (priority-based restoration)"
+
+  # Phase 4: Error System Integration (Steps 10-12)
+  - name: "Error System"
+    steps:
+      # Step 10: Debug Error with Multiple Errors
+      - name: "Activate Debug Error"
+        action: "press_button"
+        component: "btn2"
+        duration: 100
+        description: "Activate debug error trigger (CRITICAL priority)"
+      
+      - name: "Verify Error Panel"
+        action: "wait_for_serial"
+        pattern: "ErrorOccurredActivate|Error trigger activated"
+        timeout: 2000
+        description: "Error panel loads with multiple errors"
+      
+      # Step 11: Error Navigation
+      - name: "Navigate Errors"
+        action: "press_button"
+        component: "btn1"
+        duration: 100
+        repeat: 3
+        description: "Short press to cycle through error messages"
+      
+      - name: "Verify Error Navigation"
+        action: "wait_for_serial"
+        pattern: "ShortPressActivate|Error navigation"
+        timeout: 2000
+        description: "Error panel advances through error queue"
+      
+      # Step 12: Error Resolution
+      - name: "Clear Errors"
+        action: "press_button"
+        component: "btn1"
+        duration: 2500
+        description: "Long press to clear all errors"
+      
+      - name: "Verify Error Cleared"
+        action: "wait_for_serial"
+        pattern: "LongPressActivate|Error resolution|ErrorClearedActivate"
+        timeout: 2000
+        description: "All errors cleared, restoration to lock panel"
+
+  # Phase 5: Trigger Chain Restoration (Step 13)
+  - name: "Trigger Chain Restoration"
+    steps:
+      - name: "Deactivate Lock Trigger"
+        action: "set_switch"
+        component: "sw1"
+        pin: 3
+        state: false
+        description: "Deactivate lock trigger"
+      
+      - name: "Verify Oil Panel Restoration"
+        action: "wait_for_serial"
+        pattern: "No blocking interrupts - restoring|OemOilPanel"
+        timeout: 3000
+        description: "Oil panel loads with night theme and animated gauges"
+
+  # Phase 6: Theme Restoration (Step 14)
+  - name: "Theme Restoration"  
+    steps:
+      - name: "Deactivate Lights Trigger"
+        action: "set_switch"
+        component: "sw1"
+        pin: 4
+        state: false
+        description: "Deactivate lights trigger"
+      
+      - name: "Verify Day Theme"
+        action: "wait_for_serial"
+        pattern: "Theme changed to Day|LightsOffActivate"
+        timeout: 2000
+        description: "Day theme applied without panel reload"
+
+  # Phase 7: Configuration System (Steps 15-21)
+  - name: "Configuration System"
+    steps:
+      # Step 15: Config Access
+      - name: "Access Configuration"
+        action: "press_button"
+        component: "btn1"
+        duration: 2500
+        description: "Long press to access config panel"
+      
+      - name: "Verify Config Panel"
+        action: "wait_for_serial"
+        pattern: "LongPressActivate|Config panel"
+        timeout: 2000
+        description: "Config panel loads with main menu"
+      
+      # Step 16-18: Navigate to Theme Settings
+      - name: "Navigate to Theme Settings"
+        action: "press_button"
+        component: "btn1"
+        duration: 100
+        repeat: 2
+        description: "Short press to navigate to theme settings"
+      
+      - name: "Enter Theme Submenu"
+        action: "press_button"
+        component: "btn1"
+        duration: 2500
+        description: "Long press to enter theme submenu"
+      
+      - name: "Navigate to Night Theme"
+        action: "press_button"
+        component: "btn1"
+        duration: 100
+        description: "Short press to select night theme option"
+      
+      # Step 19: Apply Theme Setting
+      - name: "Apply Night Theme"
+        action: "press_button"
+        component: "btn1"
+        duration: 2500
+        description: "Long press to apply night theme setting"
+      
+      - name: "Verify Theme Applied"
+        action: "wait_for_serial"
+        pattern: "Night theme applied|Theme configuration"
+        timeout: 2000
+        description: "Night theme applied via configuration"
+      
+      # Step 20-21: Exit Configuration
+      - name: "Navigate to Exit"
+        action: "press_button"
+        component: "btn1"
+        duration: 100
+        repeat: 2
+        description: "Short press to navigate to exit option"
+      
+      - name: "Exit Configuration"
+        action: "press_button"
+        component: "btn1"
+        duration: 2500
+        description: "Long press to exit configuration"
+      
+      - name: "Verify Return to Oil Panel"
+        action: "wait_for_serial"
+        pattern: "Config exit|OemOilPanel"
+        timeout: 3000
+        description: "Return to oil panel with applied night theme"
+
+# Success criteria validation
+validation:
+  core_functionality:
+    - panels_display: "All 6 panels display correctly"
+    - interrupts_function: "All 5 interrupts function with correct priorities"  
+    - theme_switching: "Theme switching works (Day/Night)"
+    - button_actions: "Button actions work (short vs long press)"
+    - sensor_animations: "Sensor animations run smoothly"
+    - configuration: "Configuration system navigates properly"
+  
+  integration_points:
+    - panel_priorities: "Error/Key (CRITICAL) > Lock (IMPORTANT) > Oil (default)"
+    - restoration_logic: "Trigger restoration logic works correctly"
+    - theme_persistence: "Theme persists across panel switches"
+    - animations_non_blocking: "Animations don't block other operations"
+    - error_override: "Error system overrides all other panels"
+    - config_immediate: "Config changes apply immediately"
+  
+  performance:
+    - no_memory_leaks: "No memory leaks or crashes"
+    - system_responsive: "System remains responsive throughout test"
+    - smooth_animations: "Smooth gauge animations"
+    - consistent_framerate: "Consistent frame rate maintained"
+
+# Expected serial patterns for monitoring
+serial_monitoring:
+  startup_patterns:
+    - "Starting Clarity service initialization"
+    - "ProviderFactory created successfully"
+    - "ManagerFactory created successfully"
+    - "SplashPanel loaded successfully"
+    - "OemOilPanel loaded successfully"
+  
+  trigger_patterns:
+    - "KeyPresentActivate() - Loading KEY panel"
+    - "KeyNotPresentActivate() - Loading KEY panel"
+    - "LockEngagedActivate() - Loading LOCK panel"
+    - "ErrorOccurredActivate() - Loading ERROR panel"
+    - "LightsOnActivate() - Setting NIGHT theme"
+    - "LightsOffActivate() - Setting DAY theme"
+  
+  restoration_patterns:
+    - "Checking for restoration"
+    - "No blocking interrupts - restoring"
+    - "Cannot restore - blocking interrupts still active"
+  
+  button_patterns:
+    - "ShortPressActivate() - Executing short press action"
+    - "LongPressActivate() - Executing long press action"
+  
+  error_patterns:
+    - "Error trigger detected - loading ErrorPanel"
+    - "ErrorManager: 3 errors reported"
+    - "Error navigation - cycling through errors"
+    - "Error resolution - all errors cleared"
+  
+  sensor_patterns:
+    - "Pressure reading changed from ADC"
+    - "Temperature reading changed from ADC"
+    - "Gauge animation smooth update"
+
+# Test configuration
+config:
+  wokwi_diagram: "diagram.json"
+  firmware_path: "../../.pio/build/debug-local/firmware.bin"
+  elf_path: "../../.pio/build/debug-local/firmware.elf"
+  serial_baud: 115200
+  test_timeout: 300000
+  step_timeout: 5000
+  
+# Hardware mapping (from diagram.json)
+hardware:
+  action_button: "btn1"  # GPIO 32 - Main action button
+  debug_button: "btn2"   # GPIO 34 - Debug error trigger
+  pressure_pot: "pot1"   # GPIO 36 - Oil pressure sensor
+  temp_pot: "pot2"       # GPIO 39 - Oil temperature sensor
+  dip_switch: "sw1"      # DIP switch for triggers
+    # Pin 1: GPIO 25 - Key Present
+    # Pin 2: GPIO 26 - Key Not Present  
+    # Pin 3: GPIO 27 - Lock
+    # Pin 4: GPIO 33 - Lights

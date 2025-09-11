@@ -147,9 +147,64 @@ Based on the Primary Integration Test Scenario from `scenarios.md`:
     - Verify: Oil panel loads with applied night theme
     - Verify: Pressure and Temperature scales animate to preset values
 
+## Implementation
+
+### Test Automation Files Created
+
+The integration test has been implemented with the following files:
+
+1. **`test/wokwi/integration-test.yaml`** - Complete test automation specification
+   - 7 test phases covering all 21 steps from the Primary Integration Test Scenario
+   - Hardware mapping for all buttons, switches, and potentiometers
+   - Serial pattern monitoring for test validation
+   - Success criteria and performance metrics
+
+2. **`test/wokwi/wokwi_run.sh`** - Simple bash script test runner
+   - Automatic firmware building if needed
+   - Wokwi-cli discovery and execution
+   - 5-minute test timeout with colored output
+
+3. **`test/wokwi/integration_test.py`** - Advanced Python test runner
+   - Real-time serial monitoring and phase tracking
+   - Automatic test progression analysis
+   - Test summary with completion status
+
+### Running the Integration Test
+
+**Option 1: Simple Shell Script**
+```bash
+cd test/wokwi
+./wokwi_run.sh
+```
+
+**Option 2: Advanced Python Runner**
+```bash
+cd test/wokwi
+python3 integration_test.py
+```
+
+**Option 3: Direct Wokwi-CLI**
+```bash
+cd test/wokwi
+wokwi-cli --timeout 300000
+```
+
+### Test Hardware Configuration
+
+The test uses the existing `diagram.json` hardware setup:
+- **Action Button (btn1)**: GPIO 32 - Main user input
+- **Debug Button (btn2)**: GPIO 34 - Error trigger activation  
+- **Pressure Pot (pot1)**: GPIO 36 - Oil pressure simulation
+- **Temperature Pot (pot2)**: GPIO 39 - Oil temperature simulation
+- **DIP Switch (sw1)**: 4-position switch for trigger simulation
+  - Pin 1 (GPIO 25): Key Present trigger
+  - Pin 2 (GPIO 26): Key Not Present trigger
+  - Pin 3 (GPIO 27): Lock trigger
+  - Pin 4 (GPIO 33): Lights trigger
+
 ## Wokwi Automation Scenario
 
-The test automation should be implemented in `test/wokwi/integration-test.yaml` following the Primary Integration Test Scenario from `scenarios.md`. The automation should include:
+The test automation has been implemented in `test/wokwi/integration-test.yaml` following the Primary Integration Test Scenario from `scenarios.md`. The automation includes:
 
 ### Key Automation Points:
 - **Sensor Interactions**: Adjust pressure and temperature potentiometers to verify gauge animations
