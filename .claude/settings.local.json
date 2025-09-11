@@ -33,7 +33,8 @@
       "Bash(source:*)",
       "Bash(wokwi-cli:*)",
       "Bash(/Users/marcelrienks/.wokwi/bin/wokwi-cli --help)",
-      "Bash(~/.platformio/penv/bin/pio run -e test-wokwi)"
+      "Bash(~/.platformio/penv/bin/pio run -e test-wokwi)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
