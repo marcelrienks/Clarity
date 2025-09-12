@@ -8,6 +8,7 @@
 #include "sensors/debug_error_sensor.h"
 #endif
 #include "hardware/gpio_pins.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -132,6 +133,14 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     // Get current sensor state
     bool sensorActive = IsSensorActive(trigger);
     bool wasActive = trigger.isActive;
+    
+    // Debug logging for KeyPresent trigger specifically
+    if (strcmp(trigger.id, "key_present") == 0) {
+        log_t("KeyPresent trigger evaluation: hasChanged=%s, wasActive=%s, sensorActive=%s", 
+              hasChanged ? "true" : "false",
+              wasActive ? "true" : "false", 
+              sensorActive ? "true" : "false");
+    }
     
     
     // Determine if trigger should activate or deactivate

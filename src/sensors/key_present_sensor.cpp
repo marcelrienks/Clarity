@@ -55,11 +55,18 @@ bool KeyPresentSensor::HasStateChanged()
     }
     
     bool currentState = readKeyPresentState();
+    bool oldState = previousState_; // Save BEFORE DetectChange modifies it
+    
+    // Add detailed GPIO state debugging for test automation
+    log_t("KeyPresentSensor GPIO 25 poll: current=%s, previous=%s", 
+          currentState ? "HIGH" : "LOW", 
+          oldState ? "HIGH" : "LOW");
+    
     bool changed = DetectChange(currentState, previousState_);
     
     if (changed) {
         log_t("KeyPresentSensor state changed: %s -> %s", 
-              previousState_ ? "PRESENT" : "NOT_PRESENT",
+              oldState ? "PRESENT" : "NOT_PRESENT",
               currentState ? "PRESENT" : "NOT_PRESENT");
     }
     

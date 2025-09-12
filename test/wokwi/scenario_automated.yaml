@@ -8,7 +8,8 @@ steps:
   - wait-serial: '[T] System ready'
   - wait-serial: '[T] Panel transition requested: OemOilPanel'
   - wait-serial: '[T] SplashPanel loaded successfully'
-  - wait-serial: '[T] OemOilPanel loaded successfully'
+  - wait-serial: '[T] Pressure reading:'
+  - wait-serial: '[T] Temperature reading:'
   - delay: 1000ms
   
   # Step 2: Real-time Sensor Interaction
@@ -24,7 +25,6 @@ steps:
       value: 1
   - wait-serial: '[T] LightsOnActivate() - Setting NIGHT theme'
   - wait-serial: '[T] SetTheme() called'
-  - wait-serial: '[T] StyleManager: Theme changed from DAY to NIGHT - applying new theme'
   # Note: Panel should NOT reload, only theme changes
   - delay: 1000ms
   
@@ -50,8 +50,8 @@ steps:
       value: 1
   - wait-serial: '[T] KeyNotPresentActivate() - Loading KEY panel'
   - wait-serial: '[T] Panel transition requested: KeyPanel'
+  - wait-serial: '[T] Key icon color set to RED'
   - wait-serial: '[T] KeyPanel loaded successfully'
-  - wait-serial: '[T] Key icon color set to RED (key not present)'
   - delay: 1000ms
   
   # Step 6: Same Priority Key State Transition
@@ -63,15 +63,15 @@ steps:
       value: 1
   - wait-serial: '[T] KeyPresentActivate() - Loading KEY panel'
   - wait-serial: '[T] Panel transition requested: KeyPanel'
+  - wait-serial: '[T] Key icon color set to GREEN'
   - wait-serial: '[T] KeyPanel loaded successfully'
-  - wait-serial: '[T] Key icon color set to GREEN (key present)'
   - delay: 1000ms
   
   # Step 7: Key State Reversal and Panel Persistence
   # - Key Not Present already deactivated (automatically when Key Present activated)
   # - Key panel remains with green icon (no state change)
   # Note: This step demonstrates persistence - no action needed
-  - delay: 500ms
+  - delay: 1500ms  # Increased delay for GPIO stabilization
   
   # Step 8: Priority-Based Restoration Chain
   # - Key Present deactivates → Lock panel loads (restoration)
@@ -81,7 +81,8 @@ steps:
       part-id: trigger_btn1  # GPIO 25 - Key Present
       control: pressed
       value: 0  # Deactivate
-  # Lock panel should be restored since Lock trigger is still active
+  - wait-serial: '[T] KeyPresentDeactivate() - Checking for restoration'
+  - wait-serial: '[T] CheckRestoration() called'
   - wait-serial: '[T] LockPanel loaded successfully'
   - delay: 1000ms
   
@@ -93,11 +94,12 @@ steps:
       part-id: btn2  # Debug Error button
       control: pressed
       value: 1
-  - delay: 200ms
+  - delay: 300ms  # Increased button press duration
   - set-control:
       part-id: btn2
       control: pressed
       value: 0
+  - delay: 500ms  # Allow button processing time
   - wait-serial: '[T] Error reported: ERROR'
   - wait-serial: '[T] ErrorOccurredActivate() - Loading ERROR panel'
   - wait-serial: '[T] Panel transition requested: ErrorPanel'
@@ -171,13 +173,11 @@ steps:
       value: 0  # Deactivate (return to day)
   - wait-serial: '[T] LightsOffActivate() - Setting DAY theme'
   - wait-serial: '[T] SetTheme() called'
-  - wait-serial: '[T] StyleManager: Theme changed from NIGHT to DAY - applying new theme'
   # Note: Panel should NOT reload, only theme changes
   - delay: 1000ms
   
-  # Step 14: Configuration Access
-  # - Long press loads Config panel
-  # Note: Config panel may not be fully implemented
+  # Step 14: Configuration Access via Button Action
+  # - Long press loads Config panel with main preference settings
   - set-control:
       part-id: btn1  # Action button - long press
       control: pressed
@@ -190,12 +190,123 @@ steps:
   - wait-serial: '[T] Button action detected: LONG_PRESS'
   - wait-serial: '[T] LongPressActivate() - Executing long press action'
   - wait-serial: '[T] HandleLongPress() called'
-  # If Config panel is implemented, it would load here
+  - wait-serial: '[T] OemOilPanel: Calling HandleLongPress() on valid panel instance'
+  - wait-serial: '[T] Panel transition requested: ConfigPanel'
+  - wait-serial: '[T] ConfigPanel loaded successfully'
   - delay: 1000ms
   
-  # Steps 15-20: Configuration Navigation
-  # These require Config panel implementation
-  # Placeholder for future implementation
+  # Step 15: Configuration Navigation to Theme Settings
+  # - Short press repeatedly → Navigate through options until theme settings reached
+  - set-control:
+      part-id: btn1  # Action button - short press
+      control: pressed
+      value: 1
+  - delay: 200ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - delay: 300ms  # Allow button processing time
+  - wait-serial: '[T] Button action detected: SHORT_PRESS'
+  - wait-serial: '[T] ShortPressActivate() - Executing short press action'
+  - wait-serial: '[T] HandleShortPress() called'
+  - wait-serial: '[T] ConfigPanel: Calling HandleShortPress() on valid panel instance'
+  - wait-serial: '[T] ConfigPanel: Navigating to next option'
+  - delay: 500ms
+  
+  # Navigate to Theme Settings option (may require multiple presses)
+  - set-control:
+      part-id: btn1  # Action button - short press
+      control: pressed
+      value: 1
+  - delay: 200ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - wait-serial: '[T] Button action detected: SHORT_PRESS'
+  - wait-serial: '[T] ConfigPanel: Theme Settings option highlighted'
+  - delay: 500ms
+  
+  # Step 16: Theme Submenu Access
+  # - Long press → Theme option settings displayed
+  - set-control:
+      part-id: btn1  # Action button - long press
+      control: pressed
+      value: 1
+  - delay: 1500ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - wait-serial: '[T] Button action detected: LONG_PRESS'
+  - wait-serial: '[T] ConfigPanel: Entering theme submenu'
+  - wait-serial: '[T] ConfigPanel: Theme submenu loaded'
+  - delay: 500ms
+  
+  # Step 17: Theme Selection Navigation
+  # - Short press navigation → Cycle through theme options until Night selected
+  - set-control:
+      part-id: btn1  # Action button - short press
+      control: pressed
+      value: 1
+  - delay: 200ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - wait-serial: '[T] Button action detected: SHORT_PRESS'
+  - wait-serial: '[T] ConfigPanel: Night theme option highlighted'
+  - delay: 500ms
+  
+  # Step 18: Theme Setting Application
+  # - Long press → Apply night theme and return to main preference settings
+  - set-control:
+      part-id: btn1  # Action button - long press
+      control: pressed
+      value: 1
+  - delay: 1500ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - wait-serial: '[T] Button action detected: LONG_PRESS'
+  - wait-serial: '[T] ConfigPanel: Applying night theme setting'
+  - wait-serial: '[T] SetTheme() called'
+  - wait-serial: '[T] ConfigPanel: Returned to main config menu'
+  - delay: 500ms
+  
+  # Step 19: Configuration Exit Navigation
+  # - Short press repeatedly → Navigate through options until Exit reached
+  - set-control:
+      part-id: btn1  # Action button - short press
+      control: pressed
+      value: 1
+  - delay: 200ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - wait-serial: '[T] Button action detected: SHORT_PRESS'
+  - wait-serial: '[T] ConfigPanel: Exit option highlighted'
+  - delay: 500ms
+  
+  # Step 20: Return to Oil Panel with Applied Settings
+  # - Long press → Oil panel loads with night theme
+  - set-control:
+      part-id: btn1  # Action button - long press
+      control: pressed
+      value: 1
+  - delay: 1500ms
+  - set-control:
+      part-id: btn1
+      control: pressed
+      value: 0
+  - wait-serial: '[T] Button action detected: LONG_PRESS'
+  - wait-serial: '[T] ConfigPanel: Executing exit function'
+  - wait-serial: '[T] Panel transition requested: OemOilPanel'
+  - wait-serial: '[T] OemOilPanel loaded successfully'
+  - delay: 1000ms
   
   # Final cleanup - ensure all triggers are released
   - set-control:

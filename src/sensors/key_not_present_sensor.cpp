@@ -55,11 +55,12 @@ bool KeyNotPresentSensor::HasStateChanged()
     }
     
     bool currentState = readKeyNotPresentState();
+    bool oldState = previousState_; // Save BEFORE DetectChange modifies it
     bool changed = DetectChange(currentState, previousState_);
     
     if (changed) {
         log_t("KeyNotPresentSensor state changed: %s -> %s", 
-              previousState_ ? "NOT_PRESENT" : "PRESENT",
+              oldState ? "NOT_PRESENT" : "PRESENT",
               currentState ? "NOT_PRESENT" : "PRESENT");
     }
     

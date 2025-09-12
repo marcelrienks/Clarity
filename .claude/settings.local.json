@@ -46,7 +46,9 @@
       "Bash(for:*)",
       "Bash(do echo \"=== $file ===\")",
       "Bash(done)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(./wokwi_run.sh:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []
