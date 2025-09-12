@@ -8,9 +8,20 @@
  * ESP32's built-in logging system (log_v, log_d, log_i, log_w, log_e).
  * 
  * Additional log levels:
- * - log_t: Timing/performance logs with [T] prefix
+ * - log_t: Test logs with [T] prefix - independent of CORE_DEBUG_LEVEL
+ * 
+ * Test Logging Concept:
+ * - log_t() outputs directly to Serial with [T] prefix
+ * - Controlled by TEST_LOGS flag, not CORE_DEBUG_LEVEL
+ * - Allows CORE_DEBUG_LEVEL=0 while still showing test logs
+ * 
+ * Build Configurations:
+ * - debug-local: CORE_DEBUG_LEVEL=5 + TEST_LOGS (full logging)
+ * - test-wokwi: CORE_DEBUG_LEVEL=0 + TEST_LOGS (test logs only)
+ * - release: CORE_DEBUG_LEVEL=0 (no logs)
  * 
  * @usage:
+ * log_t("Panel loaded successfully");
  * log_t("Operation completed in %d ms", duration);
  * 
  * @note Follows project logging standards from docs/patterns.md
@@ -26,51 +37,48 @@
 #endif
 
 //=============================================================================
-// TIMING/PERFORMANCE LOGGING
-// Special log level for timing, performance metrics, and optimization tracking
+// TEST LOGGING
+// Direct serial output with [T] prefix, independent of CORE_DEBUG_LEVEL
 //=============================================================================
 
 /**
- * @brief Timing/performance log with [T] prefix
+ * @brief Test log with [T] prefix - bypasses ESP32 log levels
  * 
- * @details Special logging level for timing measurements, performance metrics,
- * and optimization tracking. In TEST_LOGS_ONLY mode, only these logs are shown.
- * In normal mode, acts like log_i() with [T] prefix.
+ * @details Direct serial output for test automation and debugging.
+ * Unlike standard ESP32 log functions, log_t() is controlled by the
+ * TEST_LOGS flag and outputs directly to Serial, bypassing CORE_DEBUG_LEVEL.
+ * 
+ * This allows:
+ * - CORE_DEBUG_LEVEL=0 with TEST_LOGS for clean test output
+ * - CORE_DEBUG_LEVEL=5 with TEST_LOGS for full debug + test logs
+ * - CORE_DEBUG_LEVEL=0 without TEST_LOGS for silent release
  * 
  * @usage_examples:
- * - Panel load timing: log_t("Panel load completed in %d ms", duration);
- * - Sensor read timing: log_t("Sensor read cycle: %d ms", cycle_time);
- * - Memory usage: log_t("Free heap: %d bytes", ESP.getFreeHeap());
- * - Animation performance: log_t("Frame render time: %d ms", frame_time);
+ * - State changes: log_t("Sensor state changed: OFF -> ON");
+ * - Panel loading: log_t("KeyPanel loaded successfully");
+ * - Action execution: log_t("HandleShortPress() called");
+ * - Timing: log_t("Operation completed in %d ms", duration);
  * 
- * @note Can be filtered in serial output by searching for "[T]" prefix
- * @note In TEST_LOGS_ONLY mode, this is the ONLY output shown
- * @note Output format: [T] message (not [I][T] message)
+ * @note Output format: [T] message
+ * @note Controlled by TEST_LOGS flag, not CORE_DEBUG_LEVEL
+ * @note Essential for Wokwi test automation
  */
-#ifdef TEST_LOGS_ONLY
-    // In test mode, log_t is the only output
+#ifdef TEST_LOGS
+    // Test logs enabled - direct serial output with [T] prefix
     #define log_t(format, ...) printf("[T] " format "\n", ##__VA_ARGS__)
 #else
-    // In normal mode, log_t outputs with [T] prefix
-    #define log_t(format, ...) printf("[T] " format "\n", ##__VA_ARGS__)
+    // Test logs disabled - no output
+    #define log_t(format, ...) ((void)0)
 #endif
 
-// Test-only logging mode - suppress all logs except log_t
-#ifdef TEST_LOGS_ONLY
-    #undef log_e
-    #undef log_w
-    #undef log_i
-    #undef log_d
-    #undef log_v
-    #define log_e(format, ...) ((void)0)
-    #define log_w(format, ...) ((void)0)
-    #define log_i(format, ...) ((void)0)
-    #define log_d(format, ...) ((void)0)
-    #define log_v(format, ...) ((void)0)
-#endif
+// Note: Standard ESP32 log functions (log_e, log_w, log_i, log_d, log_v)
+// are controlled by CORE_DEBUG_LEVEL and remain unchanged.
+// Only log_t() is controlled by the TEST_LOGS flag.
 
-// Option 2: With ESP32-style timestamp (uncomment to use instead)
-// #define log_t(format, ...) printf("[%7u][T] " format "\n", (unsigned)millis(), ##__VA_ARGS__)
+// Optional: With ESP32-style timestamp (uncomment to use instead of above)
+// #ifdef TEST_LOGS
+//     #define log_t(format, ...) printf("[%7u][T] " format "\n", (unsigned)millis(), ##__VA_ARGS__)
+// #endif
 
 //=============================================================================
 // USAGE EXAMPLES
@@ -80,14 +88,22 @@
  * Basic usage:
  *   log_t("Panel loaded successfully");
  *   log_t("Operation completed in %d ms", duration);
- *   log_t("Free heap: %d bytes", ESP.getFreeHeap());
+ *   log_t("Sensor state changed: %s -> %s", oldState, newState);
  * 
- * Output format:
+ * Output format (with TEST_LOGS enabled):
  *   [T] Panel loaded successfully
  *   [T] Operation completed in 150 ms
- *   [T] Free heap: 180432 bytes
+ *   [T] Sensor state changed: OFF -> ON
+ *
+ * Output format (with TEST_LOGS disabled):
+ *   (no output)
  *
  * With timestamp option enabled:
  *   [   5432][T] Panel loaded successfully  
  *   [   5582][T] Operation completed in 150 ms
+ * 
+ * Build configurations:
+ *   debug-local: CORE_DEBUG_LEVEL=5, TEST_LOGS=1 (all logs)
+ *   test-wokwi:  CORE_DEBUG_LEVEL=0, TEST_LOGS=1 (test logs only)
+ *   release:     CORE_DEBUG_LEVEL=0 (no logs)
  */

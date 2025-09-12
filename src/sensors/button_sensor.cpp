@@ -1,4 +1,5 @@
 #include "sensors/button_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 
 #include "esp32-hal-log.h"
@@ -132,32 +133,32 @@ void ButtonSensor::ProcessButtonState()
     {
         buttonPressStartTime_ = currentTime;
         currentButtonState_ = true;
-        log_i("ButtonSensor: PRESS STARTED at %lu ms (GPIO HIGH detected)", buttonPressStartTime_);
+        log_t("ButtonSensor: PRESS STARTED at %lu ms (GPIO HIGH detected)", buttonPressStartTime_);
     }
     else if (!currentState && currentButtonState_)
     {
         buttonPressDuration_ = currentTime - buttonPressStartTime_;
         currentButtonState_ = false;
         
-        log_i("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
+        log_t("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
         
         ButtonAction action = DetermineAction(buttonPressDuration_);
         if (action != ButtonAction::NONE)
         {
             detectedAction_ = action;
             actionReady_ = true;
-            log_i("ButtonSensor: ACTION DETECTED: %s (actionReady=true)", 
+            log_t("ButtonSensor: ACTION DETECTED: %s (actionReady=true)", 
                   action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
                   
             // In simplified system, determine which interrupt should be triggered
             if (action == ButtonAction::SHORT_PRESS)
             {
-                log_i("ButtonSensor: Should trigger 'short_press' action");
+                log_t("ButtonSensor: Should trigger 'short_press' action");
                 triggerInterruptId_ = "short_press";
             }
             else if (action == ButtonAction::LONG_PRESS)
             {
-                log_i("ButtonSensor: Should trigger 'long_press' action");
+                log_t("ButtonSensor: Should trigger 'long_press' action");
                 triggerInterruptId_ = "long_press";
             }
         }

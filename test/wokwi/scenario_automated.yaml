@@ -6,9 +6,8 @@ steps:
   # - Splash panel loads with day theme  
   # - Oil panel loads automatically after splash
   - wait-serial: '[T] System ready'
-  - wait-serial: '[T] Panel transition requested: SplashPanel'
-  - wait-serial: '[T] SplashPanel loaded successfully'
   - wait-serial: '[T] Panel transition requested: OemOilPanel'
+  - wait-serial: '[T] SplashPanel loaded successfully'
   - wait-serial: '[T] OemOilPanel loaded successfully'
   - delay: 1000ms
   
@@ -24,6 +23,7 @@ steps:
       control: pressed
       value: 1
   - wait-serial: '[T] LightsOnActivate() - Setting NIGHT theme'
+  - wait-serial: '[T] SetTheme() called'
   - wait-serial: '[T] StyleManager: Theme changed from DAY to NIGHT - applying new theme'
   # Note: Panel should NOT reload, only theme changes
   - delay: 1000ms
@@ -98,6 +98,7 @@ steps:
       part-id: btn2
       control: pressed
       value: 0
+  - wait-serial: '[T] Error reported: ERROR'
   - wait-serial: '[T] ErrorOccurredActivate() - Loading ERROR panel'
   - wait-serial: '[T] Panel transition requested: ErrorPanel'
   - wait-serial: '[T] ErrorPanel loaded successfully'
@@ -116,6 +117,9 @@ steps:
       value: 0
   - wait-serial: '[T] Button action detected: SHORT_PRESS'
   - wait-serial: '[T] ShortPressActivate() - Executing short press action'
+  - wait-serial: '[T] HandleShortPress() called'
+  - wait-serial: '[T] ErrorPanel: Calling HandleShortPress() on valid panel instance'
+  - wait-serial: '[T] ErrorPanel::HandleShortPress() - Manual cycling to next error'
   - delay: 500ms
   
   # Step 11: Error Resolution and Priority Restoration
@@ -133,6 +137,9 @@ steps:
       value: 0
   - wait-serial: '[T] Button action detected: LONG_PRESS'
   - wait-serial: '[T] LongPressActivate() - Executing long press action'
+  - wait-serial: '[T] HandleLongPress() called'
+  - wait-serial: '[T] ErrorPanel: Calling HandleLongPress() on valid panel instance'
+  - wait-serial: '[T] ErrorPanel: Long press - clearing all errors and exiting panel'
   # Lock panel should be restored since Lock trigger is still active after error clears
   - wait-serial: '[T] Panel transition requested: LockPanel'
   - wait-serial: '[T] LockPanel loaded successfully'
@@ -146,6 +153,8 @@ steps:
       part-id: trigger_btn3  # GPIO 27 - Lock
       control: pressed
       value: 0  # Deactivate
+  - wait-serial: '[T] LockDisengagedActivate() - Checking for restoration'
+  - wait-serial: '[T] CheckRestoration() called'
   - wait-serial: '[T] No blocking interrupts - restoring to ''OemOilPanel'''
   - wait-serial: '[T] Panel transition requested: OemOilPanel'
   - wait-serial: '[T] OemOilPanel loaded successfully'
@@ -161,6 +170,7 @@ steps:
       control: pressed
       value: 0  # Deactivate (return to day)
   - wait-serial: '[T] LightsOffActivate() - Setting DAY theme'
+  - wait-serial: '[T] SetTheme() called'
   - wait-serial: '[T] StyleManager: Theme changed from NIGHT to DAY - applying new theme'
   # Note: Panel should NOT reload, only theme changes
   - delay: 1000ms
@@ -179,6 +189,7 @@ steps:
       value: 0
   - wait-serial: '[T] Button action detected: LONG_PRESS'
   - wait-serial: '[T] LongPressActivate() - Executing long press action'
+  - wait-serial: '[T] HandleLongPress() called'
   # If Config panel is implemented, it would load here
   - delay: 1000ms
   

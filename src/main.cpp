@@ -234,7 +234,7 @@ void loop()
         // Trigger error panel if needed and not already triggered
         if (shouldTriggerError && !errorPanelTriggered && !isCurrentlyErrorPanel)
         {
-            log_i("Error trigger detected - loading ErrorPanel");
+            log_t("ErrorOccurredActivate() - Loading ERROR panel");
             panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);  // Mark as trigger-driven
             errorManager->SetErrorPanelActive(true);
             errorPanelTriggered = true;

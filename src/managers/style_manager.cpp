@@ -115,7 +115,7 @@ void StyleManager::ResetStyles()
 /// @param theme the theme to be applied
 void StyleManager::SetTheme(const char *theme)
 {
-    log_v("SetTheme() called");
+    log_t("SetTheme() called");
     // Handle invalid theme gracefully
     if (!theme || strlen(theme) == 0)
     {

@@ -41,7 +41,12 @@
       "WebFetch(domain:docs.wokwi.com)",
       "WebFetch(domain:github.com)",
       "Bash(./wokwi_test_automation.sh:*)",
-      "Bash(/Users/marcelrienks/bin/wokwi-cli --help)"
+      "Bash(/Users/marcelrienks/bin/wokwi-cli --help)",
+      "Bash(tee:*)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(done)",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

@@ -1,4 +1,5 @@
 #include "sensors/lights_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -74,7 +75,7 @@ bool LightsSensor::HasStateChanged()
     
     if (changed)
     {
-        log_i("Lights sensor state changed: %s -> %s", 
+        log_t("Lights sensor state changed: %s -> %s", 
               previousState ? "ON" : "OFF",
               currentState ? "ON" : "OFF");
               
@@ -108,18 +109,18 @@ void LightsSensor::OnInterruptTriggered()
     log_v("OnInterruptTriggered() called");
     
     bool currentState = readLightsState();
-    log_i("Lights sensor interrupt triggered - current state: %s", 
+    log_t("Lights sensor interrupt triggered - current state: %s", 
           currentState ? "ON" : "OFF");
     
     // Example custom behavior based on lights state
     if (currentState)
     {
-        log_i("Lights turned on - system could switch to night theme");
+        log_t("Lights turned on - system could switch to night theme");
         // Could trigger night theme, adjust brightness, etc.
     }
     else
     {
-        log_i("Lights turned off - system could switch to day theme");
+        log_t("Lights turned off - system could switch to day theme");
         // Could trigger day theme, increase brightness, etc.
     }
 }

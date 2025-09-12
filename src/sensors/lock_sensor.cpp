@@ -1,4 +1,5 @@
 #include "sensors/lock_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -86,7 +87,7 @@ bool LockSensor::HasStateChanged()
     
     if (changed)
     {
-        log_i("LOCK SENSOR STATE CHANGE [%lu ms]: %s -> %s", 
+        log_t("LOCK SENSOR STATE CHANGE [%lu ms]: %s -> %s", 
               currentTime,
               oldPreviousState ? "HIGH/engaged" : "LOW/disengaged",
               currentState ? "HIGH/engaged" : "LOW/disengaged");
@@ -125,18 +126,18 @@ void LockSensor::OnInterruptTriggered()
     log_v("OnInterruptTriggered() called");
     
     bool currentState = readLockState();
-    log_i("Lock sensor interrupt triggered - current state: %s", 
+    log_t("Lock sensor interrupt triggered - current state: %s", 
           currentState ? "engaged" : "disengaged");
     
     // Example custom behavior based on lock state
     if (currentState)
     {
-        log_i("Lock engaged - system could activate security panels");
+        log_t("Lock engaged - system could activate security panels");
         // Could trigger specific panel loading, theme changes, etc.
     }
     else
     {
-        log_i("Lock disengaged - system could enter normal mode");
+        log_t("Lock disengaged - system could enter normal mode");
         // Could trigger different panels, unlock features, etc.
     }
 }

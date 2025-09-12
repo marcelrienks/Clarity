@@ -2,6 +2,7 @@
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/types.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -89,7 +90,7 @@ void ConfigPanel::Load()
     
     lv_screen_load(screen_);
     
-    log_i("ConfigPanel loaded successfully");
+    log_t("ConfigPanel loaded successfully");
 }
 
 void ConfigPanel::Update()

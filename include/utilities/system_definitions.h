@@ -2,6 +2,7 @@
 
 #include "utilities/types.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 
@@ -36,7 +37,10 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "key_present",
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::KEY); },
+            .activateFunc = []() { 
+                log_t("KeyPresentActivate() - Loading KEY panel");
+                PanelManager::TriggerService().LoadPanel(PanelNames::KEY); 
+            },
             .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = keyPresentSensor,
             .isActive = false
@@ -45,7 +49,10 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "key_not_present", 
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::KEY); },
+            .activateFunc = []() { 
+                log_t("KeyNotPresentActivate() - Loading KEY panel");
+                PanelManager::TriggerService().LoadPanel(PanelNames::KEY); 
+            },
             .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
             .sensor = keyNotPresentSensor,
             .isActive = false
@@ -56,8 +63,14 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "lock",
             .priority = Priority::IMPORTANT,
             .type = TriggerType::PANEL,
-            .activateFunc = []() { PanelManager::TriggerService().LoadPanel(PanelNames::LOCK); },
-            .deactivateFunc = []() { PanelManager::TriggerService().CheckRestoration(); },
+            .activateFunc = []() { 
+                log_t("LockEngagedActivate() - Loading LOCK panel");
+                PanelManager::TriggerService().LoadPanel(PanelNames::LOCK); 
+            },
+            .deactivateFunc = []() { 
+                log_t("LockDisengagedActivate() - Checking for restoration");
+                PanelManager::TriggerService().CheckRestoration(); 
+            },
             .sensor = lockSensor,
             .isActive = false
         },
@@ -67,8 +80,14 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "lights",
             .priority = Priority::NORMAL,
             .type = TriggerType::STYLE,
-            .activateFunc = []() { StyleManager::Instance().SetTheme(Themes::NIGHT); },
-            .deactivateFunc = []() { StyleManager::Instance().SetTheme(Themes::DAY); },
+            .activateFunc = []() { 
+                log_t("LightsOnActivate() - Setting NIGHT theme");
+                StyleManager::Instance().SetTheme(Themes::NIGHT); 
+            },
+            .deactivateFunc = []() { 
+                log_t("LightsOffActivate() - Setting DAY theme");
+                StyleManager::Instance().SetTheme(Themes::DAY); 
+            },
             .sensor = lightsSensor,
             .isActive = false
         }
@@ -110,13 +129,19 @@ inline std::vector<Action> GetSystemActions() {
         // Button actions
         {
             .id = "short_press",
-            .executeFunc = []() { PanelManager::ActionService().HandleShortPress(); },
+            .executeFunc = []() { 
+                log_t("ShortPressActivate() - Executing short press action");
+                PanelManager::ActionService().HandleShortPress(); 
+            },
             .hasTriggered = false,
             .pressType = ActionPress::SHORT
         },
         {
             .id = "long_press",
-            .executeFunc = []() { PanelManager::ActionService().HandleLongPress(); },
+            .executeFunc = []() { 
+                log_t("LongPressActivate() - Executing long press action");
+                PanelManager::ActionService().HandleLongPress(); 
+            },
             .hasTriggered = false,
             .pressType = ActionPress::LONG
         }

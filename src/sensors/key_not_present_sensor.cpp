@@ -1,4 +1,5 @@
 #include "sensors/key_not_present_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -29,7 +30,7 @@ void KeyNotPresentSensor::Init()
     previousState_ = readKeyNotPresentState();
     initialized_ = true;
     
-    log_i("KeyNotPresentSensor initialized on GPIO %d, initial state: %s", 
+    log_i("KeyNotPresentSensor initialization completed on GPIO %d, initial state: %s", 
           gpio_pins::KEY_NOT_PRESENT, previousState_ ? "NOT_PRESENT" : "PRESENT");
 }
 
@@ -57,7 +58,7 @@ bool KeyNotPresentSensor::HasStateChanged()
     bool changed = DetectChange(currentState, previousState_);
     
     if (changed) {
-        log_i("KeyNotPresentSensor state changed: %s -> %s", 
+        log_t("KeyNotPresentSensor state changed: %s -> %s", 
               previousState_ ? "NOT_PRESENT" : "PRESENT",
               currentState ? "NOT_PRESENT" : "PRESENT");
     }
@@ -67,7 +68,7 @@ bool KeyNotPresentSensor::HasStateChanged()
 
 void KeyNotPresentSensor::OnInterruptTriggered()
 {
-    log_i("KeyNotPresentSensor interrupt triggered - key not present state changed");
+    log_t("KeyNotPresentSensor interrupt triggered - key not present state changed");
     // Additional sensor-specific interrupt handling can be added here
 }
 

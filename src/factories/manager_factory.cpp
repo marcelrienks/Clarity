@@ -11,7 +11,6 @@
 #include "sensors/debug_error_sensor.h"
 #endif
 #include "utilities/types.h"
-#include "utilities/interrupt_callbacks.h"
 #include <esp32-hal-log.h>
 
 // Constructors

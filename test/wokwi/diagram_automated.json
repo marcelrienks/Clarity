@@ -25,7 +25,7 @@
       "top": 9.2,
       "left": -463.6,
       "rotate": 270,
-      "attrs": { "color": "blue", "bounce": "1" }
+      "attrs": { "color": "blue" }
     },
     {
       "type": "wokwi-pushbutton",
@@ -33,7 +33,7 @@
       "top": 9.2,
       "left": -406,
       "rotate": 270,
-      "attrs": { "color": "yellow", "bounce": "1" }
+      "attrs": { "color": "yellow" }
     },
     {
       "type": "wokwi-pushbutton",
@@ -41,7 +41,7 @@
       "top": 9.2,
       "left": -348.4,
       "rotate": 270,
-      "attrs": { "color": "orange", "bounce": "1" }
+      "attrs": { "color": "orange" }
     },
     {
       "type": "wokwi-pushbutton",
@@ -49,7 +49,7 @@
       "top": 9.2,
       "left": -290.8,
       "rotate": 270,
-      "attrs": { "color": "purple", "bounce": "1" }
+      "attrs": { "color": "purple" }
     },
     {
       "type": "wokwi-pushbutton",

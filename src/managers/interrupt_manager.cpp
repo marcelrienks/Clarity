@@ -116,8 +116,9 @@ void InterruptManager::Process()
     
     // Process Triggers (only during UI idle)
     if (IsUIIdle() && triggerHandler_) {
-        log_v("Processing TriggerHandler - UI is idle");
+        log_d("Processing TriggerHandler - UI is idle, polling GPIO sensors");
         triggerHandler_->Process();
+        log_d("TriggerHandler processing complete");
     }
     else {
         log_v("Skipping TriggerHandler - UI is busy");
