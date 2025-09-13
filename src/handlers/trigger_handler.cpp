@@ -1,12 +1,6 @@
 #include "handlers/trigger_handler.h"
 #include "managers/error_manager.h"
-#include "sensors/key_present_sensor.h"
-#include "sensors/key_not_present_sensor.h"
-#include "sensors/lock_sensor.h"
-#include "sensors/lights_sensor.h"
-#ifdef CLARITY_DEBUG
-#include "sensors/debug_error_sensor.h"
-#endif
+#include "sensors/gpio_sensor.h"
 #include "hardware/gpio_pins.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
@@ -28,31 +22,29 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
     
     // Create and initialize GPIO sensors owned by this handler
     if (gpioProvider_) {
-        
-        // Create split key sensors
-        keyPresentSensor_ = std::make_unique<KeyPresentSensor>(gpioProvider_);
-        keyNotPresentSensor_ = std::make_unique<KeyNotPresentSensor>(gpioProvider_);
-        
-        // Create other GPIO sensors
-        lockSensor_ = std::make_unique<LockSensor>(gpioProvider_);
-        lightsSensor_ = std::make_unique<LightsSensor>(gpioProvider_);
-        
+
+        // Create GPIO sensors using generic GpioSensor with predefined configurations
+        keyPresentSensor_ = std::make_unique<GpioSensor>(sensor_configs::KEY_PRESENT, gpioProvider_);
+        keyNotPresentSensor_ = std::make_unique<GpioSensor>(sensor_configs::KEY_NOT_PRESENT, gpioProvider_);
+        lockSensor_ = std::make_unique<GpioSensor>(sensor_configs::LOCK, gpioProvider_);
+        lightsSensor_ = std::make_unique<GpioSensor>(sensor_configs::LIGHTS, gpioProvider_);
+
 #ifdef CLARITY_DEBUG
         // Create debug error sensor (debug builds only)
-        debugErrorSensor_ = std::make_unique<DebugErrorSensor>(gpioProvider_);
+        debugErrorSensor_ = std::make_unique<GpioSensor>(sensor_configs::DEBUG_ERROR, gpioProvider_);
 #endif
-        
+
         // Initialize all sensors
         keyPresentSensor_->Init();
         keyNotPresentSensor_->Init();
         lockSensor_->Init();
         lightsSensor_->Init();
-        
+
 #ifdef CLARITY_DEBUG
         debugErrorSensor_->Init();
-        log_i("TriggerHandler created and initialized 5 GPIO sensors: KeyPresent, KeyNotPresent, Lock, Lights, DebugError (debug build)");
+        log_i("TriggerHandler created and initialized 5 GPIO sensors using generic GpioSensor: KeyPresent, KeyNotPresent, Lock, Lights, DebugError (debug build)");
 #else
-        log_i("TriggerHandler created and initialized 4 GPIO sensors: KeyPresent, KeyNotPresent, Lock, Lights");
+        log_i("TriggerHandler created and initialized 4 GPIO sensors using generic GpioSensor: KeyPresent, KeyNotPresent, Lock, Lights");
 #endif
     }
     else {
