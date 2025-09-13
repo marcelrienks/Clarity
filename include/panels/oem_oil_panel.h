@@ -85,8 +85,8 @@ class OemOilPanel : public IPanel
 
   private:
     // Core Functionality Methods
-    void UpdateOilPressure();
-    void UpdateOilTemperature();
+    void UpdateOilPressure(bool forceRefresh = false);
+    void UpdateOilTemperature(bool forceRefresh = false);
 
     // Value mapping methods
     /// @brief Map oil pressure sensor value to display scale
@@ -132,10 +132,25 @@ class OemOilPanel : public IPanel
     // Instance Data Members - State Variables
     int32_t currentOilPressureValue_;
     int32_t currentOilTemperatureValue_;
-    bool isPressureAnimationRunning_ = false;
-    bool isTemperatureAnimationRunning_ = false;
-    bool forceComponentRefresh_ = false; // Force component refresh regardless of value changes
     String lastTheme_;                   // Track last theme to force refresh when theme changes
+
+    // Cache settings to avoid redundant updates
+    int lastUpdateRate_ = -1;            // Track last applied update rate
+    String lastPressureUnit_;            // Track last applied pressure unit
+    String lastTempUnit_;                // Track last applied temperature unit
+
+    // Cached sensor references to avoid repeated static_pointer_cast
+    std::shared_ptr<OilPressureSensor> cachedPressureSensor_;
+    std::shared_ptr<OilTemperatureSensor> cachedTemperatureSensor_;
+
+    // Simplified animation state (single enum instead of multiple booleans)
+    enum class AnimationState {
+        IDLE,
+        PRESSURE_RUNNING,
+        TEMPERATURE_RUNNING,
+        BOTH_RUNNING
+    };
+    AnimationState animationState_ = AnimationState::IDLE;
 
     // Instance Data Members - Animation Objects
     lv_anim_t pressureAnimation_; // Instance-level animation objects (prevents memory leaks)
