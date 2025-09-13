@@ -119,11 +119,12 @@ class OemOilPanel : public IPanel
     // Instance Data Members - UI Objects
     // screen_ is inherited from IPanel base class
 
-    // Instance Data Members - Components and Sensors (direct instantiation)
-    std::unique_ptr<OemOilPressureComponent> oemOilPressureComponent_;
-    std::unique_ptr<OemOilTemperatureComponent> oemOilTemperatureComponent_;
+    // Instance Data Members - Components and Sensors (static allocation)
+    OemOilPressureComponent oemOilPressureComponent_;
+    OemOilTemperatureComponent oemOilTemperatureComponent_;
     std::shared_ptr<ISensor> oemOilPressureSensor_;
     std::shared_ptr<ISensor> oemOilTemperatureSensor_;
+    bool componentsInitialized_ = false;
 
     // Instance Data Members - State Variables
     int32_t currentOilPressureValue_;

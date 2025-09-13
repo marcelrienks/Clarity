@@ -53,7 +53,8 @@ class KeyPanel : public BasePanel
     // Helper methods
     KeyState DetermineCurrentKeyState();
 
-    // Instance Data Members
-    std::shared_ptr<IComponent> keyComponent_;
+    // Instance Data Members - static allocation
+    KeyComponent keyComponent_;
+    bool componentInitialized_ = false;
     KeyState currentKeyState_ = KeyState::Inactive;
 };

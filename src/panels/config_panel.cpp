@@ -10,7 +10,7 @@
 // Constructors and Destructors
 ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      currentMenuIndex_(0), configComponent_(std::make_unique<ConfigComponent>())
+      currentMenuIndex_(0), configComponent_(), componentInitialized_(false)
 {
     log_v("ConfigPanel constructor called");
 }
@@ -18,8 +18,8 @@ ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
 ConfigPanel::~ConfigPanel()
 {
     log_v("~ConfigPanel() destructor called");
-    
-    configComponent_.reset();
+
+    // Component is now stack-allocated and will be automatically destroyed
 
     if (screen_)
     {
@@ -74,16 +74,19 @@ void ConfigPanel::Load()
     }
 
     // Initialize the config component with the screen
-    if (!configComponent_ || !screen_)
+    if (!screen_)
         return;
 
-    configComponent_->Init(screen_);
-    configComponent_->SetStyleService(styleService_);
+    // Mark component as initialized
+    componentInitialized_ = true;
+
+    configComponent_.Init(screen_);
+    configComponent_.SetStyleService(styleService_);
 
     // Set initial menu items
     UpdateMenuItemsWithCurrentValues();
-    configComponent_->SetMenuItems(menuItems_);
-    configComponent_->SetCurrentIndex(currentMenuIndex_);
+    configComponent_.SetMenuItems(menuItems_);
+    configComponent_.SetCurrentIndex(currentMenuIndex_);
 
     // Register the screen loaded event callback
     lv_obj_add_event_cb(screen_, ConfigPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
@@ -280,9 +283,9 @@ void ConfigPanel::ExecuteCurrentOption()
     else
     {
         // Use the component's action execution method for other actions
-        if (configComponent_)
+        if (componentInitialized_)
         {
-            configComponent_->ExecuteAction(item.actionType, item.actionParam);
+            configComponent_.ExecuteAction(item.actionType, item.actionParam);
         }
     }
 }
@@ -319,18 +322,18 @@ Action ConfigPanel::GetShortPressAction()
         [this]()
         {
             currentMenuIndex_ = (currentMenuIndex_ + 1) % menuItems_.size();
-            if (configComponent_)
+            if (componentInitialized_)
             {
-                configComponent_->SetCurrentIndex(currentMenuIndex_);
+                configComponent_.SetCurrentIndex(currentMenuIndex_);
 
                 // Update hint text based on current menu item
                 if (menuItems_[currentMenuIndex_].label == "Exit")
                 {
-                    configComponent_->SetHintText("Short: Next | Long: Press to exit");
+                    configComponent_.SetHintText("Short: Next | Long: Press to exit");
                 }
                 else
                 {
-                    configComponent_->SetHintText("Short: Next | Long: Select");
+                    configComponent_.SetHintText("Short: Next | Long: Select");
                 }
             }
         });
@@ -420,11 +423,11 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
         {"Exit", "panel_exit", ""}};
 
     // Update component with new menu items
-    if (configComponent_)
+    if (componentInitialized_)
     {
-        configComponent_->SetTitle("Configuration");
-        configComponent_->SetMenuItems(menuItems_);
-        configComponent_->SetCurrentIndex(currentMenuIndex_);
+        configComponent_.SetTitle("Configuration");
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(currentMenuIndex_);
     }
 }
 
@@ -464,11 +467,11 @@ void ConfigPanel::ExitSubmenu()
     
     // Update the config component's theme colors after returning to main menu
     // This ensures the menu reflects any theme changes made in submenus
-    if (configComponent_)
+    if (componentInitialized_)
     {
-        configComponent_->UpdateThemeColors();
-        configComponent_->SetMenuItems(menuItems_);
-        configComponent_->SetCurrentIndex(currentMenuIndex_);
+        configComponent_.UpdateThemeColors();
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(currentMenuIndex_);
     }
     
     // Add test log for returning to main config menu
@@ -634,11 +637,11 @@ void ConfigPanel::UpdateSubmenuItems()
     }
 
     // Update component with new menu items and title
-    if (configComponent_)
+    if (componentInitialized_)
     {
-        configComponent_->SetTitle(title);
-        configComponent_->SetMenuItems(menuItems_);
-        configComponent_->SetCurrentIndex(currentMenuIndex_);
+        configComponent_.SetTitle(title);
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(currentMenuIndex_);
     }
 }
 
@@ -711,9 +714,9 @@ void ConfigPanel::HandleShortPress()
     }
     
     // Update the UI
-    if (configComponent_)
+    if (componentInitialized_)
     {
-        configComponent_->SetCurrentIndex(currentMenuIndex_);
+        configComponent_.SetCurrentIndex(currentMenuIndex_);
     }
 }
 
@@ -860,9 +863,9 @@ void ConfigPanel::HandleLongPress()
             {
                 // Unknown action type - just execute through component
                 log_w("Unknown action type in submenu: %s", item.actionType.c_str());
-                if (configComponent_)
+                if (componentInitialized_)
                 {
-                    configComponent_->ExecuteAction(item.actionType, item.actionParam);
+                    configComponent_.ExecuteAction(item.actionType, item.actionParam);
                 }
             }
         }

@@ -1,5 +1,5 @@
 #include "panels/key_panel.h"
-#include "interfaces/i_component_factory.h"
+#include "components/key_component.h"
 #include "handlers/trigger_handler.h"
 #include "managers/interrupt_manager.h"
 #include "managers/error_manager.h"
@@ -11,7 +11,8 @@
 // Constructors and Destructors
 KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                    IComponentFactory* componentFactory)
-    : BasePanel(gpio, display, styleService, componentFactory)
+    : BasePanel(gpio, display, styleService, componentFactory),
+      keyComponent_(styleService), componentInitialized_(false)
 {
     // Determine current key state by checking which sensor is currently active
     currentKeyState_ = DetermineCurrentKeyState();
@@ -20,24 +21,14 @@ KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService
 // BasePanel template method implementations
 void KeyPanel::CreateContent()
 {
-    // Create component using injected factory
-    keyComponent_ = componentFactory_->CreateKeyComponent(styleService_);
-    if (!keyComponent_)
-    {
-        log_e("Failed to create key component");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "KeyPanel", "Component creation failed");
-        return;
-    }
+    // Component is now stack-allocated and initialized in constructor
+    componentInitialized_ = true;
 
     // Render the component
-    keyComponent_->Render(screen_, centerLocation_, displayProvider_);
+    keyComponent_.Render(screen_, centerLocation_, displayProvider_);
 
-    // Cast to KeyComponent to access SetColor method
-    KeyComponent* keyComp = static_cast<KeyComponent*>(keyComponent_.get());
-    if (keyComp)
-    {
-        keyComp->SetColor(currentKeyState_);
-    }
+    // Set color directly on the concrete component
+    keyComponent_.SetColor(currentKeyState_);
 }
 
 void KeyPanel::UpdateContent()

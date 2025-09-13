@@ -1,5 +1,5 @@
 #include "panels/lock_panel.h"
-#include "interfaces/i_component_factory.h"
+#include "components/lock_component.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <esp32-hal-log.h>
@@ -8,7 +8,8 @@
 // Constructors and Destructors
 LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                      IComponentFactory* componentFactory)
-    : BasePanel(gpio, display, styleService, componentFactory)
+    : BasePanel(gpio, display, styleService, componentFactory),
+      lockComponent_(styleService), componentInitialized_(false)
 {
     // Note: LockPanel is display-only, state comes from interrupt system
     // Since this panel is only loaded when lock state changes, assume engaged
@@ -18,17 +19,11 @@ LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleServi
 // BasePanel template method implementations
 void LockPanel::CreateContent()
 {
-    // Create component using injected factory
-    lockComponent_ = componentFactory_->CreateLockComponent(styleService_);
-    if (!lockComponent_)
-    {
-        log_e("Failed to create lock component");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "LockPanel", "Component creation failed");
-        return;
-    }
+    // Component is now stack-allocated and initialized in constructor
+    componentInitialized_ = true;
 
     // Create the lock component centered on screen - always shows red (engaged) state
-    lockComponent_->Render(screen_, centerLocation_, displayProvider_);
+    lockComponent_.Render(screen_, centerLocation_, displayProvider_);
 }
 
 void LockPanel::UpdateContent()

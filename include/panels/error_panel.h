@@ -44,8 +44,7 @@ class ErrorPanel : public IPanel
 {
   public:
     // Constructors and Destructors
-    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-               IComponentFactory* componentFactory = nullptr);
+    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~ErrorPanel();
 
     // Core Functionality Methods
@@ -75,9 +74,9 @@ class ErrorPanel : public IPanel
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
-    IComponentFactory *componentFactory_;
     // screen_ is inherited from IPanel base class
-    std::shared_ptr<IComponent> errorComponent_; // Error component
+    ErrorComponent errorComponent_; // Error component - static allocation
+    bool componentInitialized_ = false;
     ComponentLocation centerLocation_;               // Component positioning
     bool panelLoaded_;                               // Track panel load state
     std::vector<ErrorInfo> currentErrors_;           // Cache of current error state

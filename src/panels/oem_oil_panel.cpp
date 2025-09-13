@@ -11,8 +11,10 @@
 
 OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
+      oemOilPressureComponent_(styleService), oemOilTemperatureComponent_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
-      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)), currentOilPressureValue_(-1),
+      oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
+      componentsInitialized_(false), currentOilPressureValue_(-1),
       currentOilTemperatureValue_(-1), lastTheme_("")
 {
     log_v("OemOilPanel constructor called");
@@ -42,15 +44,7 @@ OemOilPanel::~OemOilPanel()
         screen_ = nullptr;
     }
 
-    if (oemOilPressureComponent_)
-    {
-        oemOilPressureComponent_.reset();
-    }
-
-    if (oemOilTemperatureComponent_)
-    {
-        oemOilTemperatureComponent_.reset();
-    }
+    // Components are now stack-allocated and will be automatically destroyed
 
     if (oemOilPressureSensor_)
     {
@@ -120,32 +114,25 @@ void OemOilPanel::Load()
         return;
     }
 
-    // Creating pressure and temperature components directly
-    oemOilPressureComponent_ = std::make_unique<OemOilPressureComponent>(styleService_);
-    oemOilTemperatureComponent_ = std::make_unique<OemOilTemperatureComponent>(styleService_);
-
-    if (!oemOilPressureComponent_ || !oemOilTemperatureComponent_)
-    {
-        log_e("Failed to create required components");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OemOilPanel", "Component creation failed");
-        return;
-    }
+    // Components are now stack-allocated and initialized in constructor
+    // Mark components as initialized for initialization checks
+    componentsInitialized_ = true;
 
     // Create location parameters with rotational start points for scales
     ComponentLocation pressureLocation(210);   // rotation starting at 210 degrees
     ComponentLocation temperatureLocation(30); // rotation starting at 30 degrees
 
     // Render both components
-    oemOilPressureComponent_->Render(screen_, pressureLocation, displayProvider_);
-    oemOilTemperatureComponent_->Render(screen_, temperatureLocation, displayProvider_);
+    oemOilPressureComponent_.Render(screen_, pressureLocation, displayProvider_);
+    oemOilTemperatureComponent_.Render(screen_, temperatureLocation, displayProvider_);
     
     // Initialize needle positions to match current values (prevents animation jumps)
-    oemOilPressureComponent_->SetValue(currentOilPressureValue_);
-    oemOilTemperatureComponent_->SetValue(currentOilTemperatureValue_);
+    oemOilPressureComponent_.SetValue(currentOilPressureValue_);
+    oemOilTemperatureComponent_.SetValue(currentOilTemperatureValue_);
     
     // Initialize needle colors based on initial values
-    oemOilPressureComponent_->Refresh(Reading{currentOilPressureValue_});
-    oemOilTemperatureComponent_->Refresh(Reading{currentOilTemperatureValue_});
+    oemOilPressureComponent_.Refresh(Reading{currentOilPressureValue_});
+    oemOilTemperatureComponent_.Refresh(Reading{currentOilTemperatureValue_});
     
     
     // Log heap status before critical operation
@@ -259,13 +246,13 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
     {
         if (forceRefresh)
         {
-            oemOilPressureComponent_->Refresh(Reading{value});
+            oemOilPressureComponent_.Refresh(Reading{value});
         }
         return; // No animation needed since value didn't change
     }
 
     log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
-    oemOilPressureComponent_->Refresh(Reading{value});
+    oemOilPressureComponent_.Refresh(Reading{value});
 
     // Determine animation start value
     // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
@@ -372,13 +359,13 @@ void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
     {
         if (forceRefresh)
         {
-            oemOilTemperatureComponent_->Refresh(Reading{value});
+            oemOilTemperatureComponent_.Refresh(Reading{value});
         }
         return; // No animation needed since value didn't change
     }
 
     log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);
-    oemOilTemperatureComponent_->Refresh(Reading{value});
+    oemOilTemperatureComponent_.Refresh(Reading{value});
 
     // Determine animation start value
     // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
@@ -647,10 +634,8 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 
     auto thisInstance =
         static_cast<OemOilPanel *>(animation->var); // use the animation to get the var which is this instance
-    if (thisInstance->oemOilPressureComponent_)
-    {
-        thisInstance->oemOilPressureComponent_.get()->SetValue(value);
-    }
+    // Component is now stack-allocated, always available
+    thisInstance->oemOilPressureComponent_.SetValue(value);
 }
 
 /// @brief callback used by the animation to set the values smoothly until ultimate value is reached
@@ -669,10 +654,8 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 
     auto thisInstance =
         static_cast<OemOilPanel *>(animation->var); // use the animation to get the var which is this instance
-    if (thisInstance->oemOilTemperatureComponent_)
-    {
-        thisInstance->oemOilTemperatureComponent_.get()->SetValue(value);
-    }
+    // Component is now stack-allocated, always available
+    thisInstance->oemOilTemperatureComponent_.SetValue(value);
 }
 
 // Value mapping methods

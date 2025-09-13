@@ -50,7 +50,8 @@ class LockPanel : public BasePanel
     void HandleLongPress() override;
 
   private:
-    // Instance Data Members
-    std::shared_ptr<IComponent> lockComponent_;
+    // Instance Data Members - static allocation
+    LockComponent lockComponent_;
+    bool componentInitialized_ = false;
     bool isLockEngaged_ = false;
 };
