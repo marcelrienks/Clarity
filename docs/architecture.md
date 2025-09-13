@@ -7,7 +7,7 @@ MVP (Model-View-Presenter) pattern for ESP32 automotive gauges with layered arch
 **Related Documentation:**
 - **[Requirements](requirements.md)** - Detailed functional and non-functional requirements
 - **[Hardware](hardware.md)** - Target hardware and GPIO pin mappings  
-- **[Interrupt Architecture](interrupt-architecture.md)** - Detailed Trigger/Action separation design
+- **[Interrupt Architecture](interrupts.md)** - Detailed Trigger/Action separation design
 - **[Standards](standards.md)** - Coding and naming conventions
 
 ## Visual Diagrams
@@ -57,153 +57,26 @@ Hardware abstraction for display (GC9A01) and LVGL integration.
 
 ## Coordinated Interrupt Architecture
 
-### Handler-Based Design
-The interrupt system uses InterruptManager to coordinate specialized handlers:
+The Clarity system implements a sophisticated interrupt architecture with TriggerHandler/ActionHandler separation for optimal performance and LVGL compatibility.
 
-```
-InterruptManager: Central coordination of interrupt processing
-├── TriggerHandler: Manages GPIO state monitoring (Key, Lock, Lights sensors)
-└── ActionHandler: Manages button event processing (ButtonSensor)
-```
+**📘 For complete interrupt system documentation, see [Interrupt Architecture](interrupts.md)**
 
-### Interrupt Processing Model
-The system coordinates interrupt evaluation and execution through handlers:
-
-- **Trigger Evaluation**: TriggerHandler checks GPIO sensors for state changes during UI IDLE
-- **Action Evaluation**: ActionHandler monitors button sensor every main loop iteration for responsiveness  
-- **All Execution**: Only happens during UI IDLE state for LVGL compatibility
-- **Priority System**: CRITICAL > IMPORTANT > NORMAL with sophisticated blocking logic
-
-### Interrupt Structure
-
-#### Trigger/Action Separation
-The implementation uses separate structures for state-based and event-based interrupts:
-
-```cpp
-// Located in include/utilities/types.h
-enum class Priority : uint8_t {
-    NORMAL = 0,      // Lowest priority (e.g., lights)
-    IMPORTANT = 1,   // Medium priority (e.g., lock)
-    CRITICAL = 2     // Highest priority (e.g., key, errors)
-};
-
-enum class TriggerType : uint8_t {
-    PANEL = 0,       // Panel switching triggers
-    STYLE = 1,       // Style/theme changing triggers
-    FUNCTION = 2     // Function execution triggers
-};
-
-// Trigger Structure (State-Based)
-struct Trigger {
-    const char* id;                          // Unique identifier
-    Priority priority;                       // Execution priority
-    TriggerType type;                        // Type classification
-    
-    // Dual-state functions - no context needed
-    void (*activateFunc)();                  // Execute when sensor goes ACTIVE
-    void (*deactivateFunc)();                // Execute when sensor goes INACTIVE
-    
-    // State association
-    BaseSensor* sensor;                      // Associated sensor (1:1)
-    bool isActive;                           // Currently active state
-};
-
-// Action Structure (Event-Based)
-struct Action {
-    const char* id;                          // Unique identifier
-    void (*executeFunc)();                   // Execute when action triggered
-    bool hasTriggered;                       // Action pending execution
-    ActionPress pressType;                   // SHORT or LONG press
-};
-```
-
-**Memory Efficiency**: Static structures with minimal overhead for ESP32 memory constraints
-
-### Handler Architecture
-
-#### TriggerHandler (GPIO State Monitoring)
-Handles GPIO sensors and manages their state changes:
-
-**Owned Sensors**:
-- KeyPresentSensor (GPIO 25)
-- KeyNotPresentSensor (GPIO 26)  
-- LockSensor (GPIO 27)
-- LightsSensor (GPIO 33)
-- DebugErrorSensor (GPIO 34, debug builds only)
-
-**Processing Model**:
-- Evaluates sensors only during UI IDLE state
-- Uses BaseSensor change detection pattern
-- Executes dual functions based on state changes
-- Implements priority-based override logic
-
-#### ActionHandler (Button Event Processing)
-Manages button sensor for user input:
-
-**Owned Sensors**:
-- ButtonSensor (GPIO 32)
-
-**Processing Model**:
-- Evaluates button state every main loop iteration for responsiveness
-- Queues button events (short/long press) for later execution
-- Executes queued events only during UI IDLE state
-- Manages press duration detection (50ms-2000ms short, 2000ms-5000ms long)
-
-### InterruptManager Coordination
-Central coordinator that:
-- Manages static interrupt array (32 max interrupts)
-- Routes interrupts to appropriate handlers based on InterruptSource
-- Handles interrupt registration/unregistration
-- Coordinates evaluation and execution timing
-- Manages button function injection for universal action interrupts
-
+**Key Features:**
+- **TriggerHandler**: GPIO state monitoring (Key, Lock, Lights sensors) - processes during UI IDLE
+- **ActionHandler**: Button event processing - processes every main loop for responsiveness
+- **Priority-based execution**: CRITICAL > IMPORTANT > NORMAL priority handling
+- **Type-based restoration**: Panel/Style trigger restoration when deactivating
 ## Sensor Architecture
 
-### Sensor Implementation
-Each GPIO pin has exactly one dedicated sensor class:
+The Clarity system implements a comprehensive sensor architecture with single ownership and change detection patterns.
 
-**GPIO Sensors (owned by TriggerHandler)**:
-- **KeyPresentSensor** (GPIO 25): Independent class for key present detection
-- **KeyNotPresentSensor** (GPIO 26): Independent class for key not present detection
-- **LockSensor** (GPIO 27): Lock status monitoring
-- **LightsSensor** (GPIO 33): Day/night detection
+**📘 For complete sensor architecture documentation, see [Sensor Architecture](sensor.md)**
 
-**Button Sensor (owned by ActionHandler)**:
-- **ButtonSensor** (GPIO 32): User input with timing detection, triggers action interrupts
-
-**Data Sensors (owned by panels)**:
-- **OilPressureSensor**: Continuous pressure monitoring
-- **OilTemperatureSensor**: Continuous temperature monitoring
-
-### BaseSensor Pattern
-All sensors inherit from BaseSensor for consistent change detection:
-
-```cpp
-class BaseSensor {
-protected:
-    bool initialized_ = false;
-    
-    template<typename T>
-    bool DetectChange(T currentValue, T& previousValue) {
-        if (!initialized_) {
-            previousValue = currentValue;
-            initialized_ = true;
-            return false; // No change on first read
-        }
-        
-        bool changed = (currentValue != previousValue);
-        previousValue = currentValue;
-        return changed;
-    }
-};
-```
-
-### Sensor Independence Requirements
-**Architectural Principle**: Split sensor design prevents initialization conflicts:
-- Independent initialization flags
-- Separate change detection state
-- No shared state between sensors
-- Individual GPIO resource management
+**Key Features:**
+- **Single Ownership**: Each GPIO has exactly one dedicated sensor class
+- **BaseSensor Pattern**: Templated change detection across all sensor types
+- **Handler Ownership**: TriggerHandler owns GPIO sensors, ActionHandler owns button sensor
+- **Panel Ownership**: Data panels create their own ADC sensors for continuous monitoring
 
 ## Managers
 

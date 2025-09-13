@@ -3,7 +3,7 @@
 **Related Documentation:**
 - **[Requirements](requirements.md)** - Complete trigger scenarios and panel behaviors
 - **[Architecture](architecture.md)** - System components and interaction patterns
-- **[Interrupt Architecture](interrupt-architecture.md)** - Trigger priority and processing logic
+- **[Interrupt Architecture](interrupts.md)** - Trigger priority and processing logic
 
 ## Primary Integration Test Scenario
 

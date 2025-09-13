@@ -94,3 +94,79 @@ Clarity is designed for ESP32-based automotive gauge systems with a round displa
 3. **ADC Inputs**: Add RC filter (10kΩ + 100nF) for sensor noise reduction
 4. **Pull-up Resistors**: GPIO inputs require 10kΩ pull-up to 3.3V
 5. **Automotive Integration**: Use automotive-grade connectors and shielded cables
+
+## Input System Architecture
+
+### Button Input Configuration
+* **Hardware**: Push button wired to GPIO 32 (3.3V connection)
+* **Detection**: Rising edge detection (trigger only when pin changes to HIGH)
+* **Debouncing**: Hardware debouncing to prevent false triggers
+* **Timing Detection**: ActionHandler manages press duration
+  - **Short press**: 50ms - 2000ms (with debouncing)
+  - **Long press**: 2000ms - 5000ms
+  - **Maximum press**: 5000ms (auto-release)
+
+### Input System Design
+* **Architecture**: Input system integrated with ActionHandler for centralized button handling
+* **Interface**: Panels implement IActionService interface for universal button functions
+* **Timing Logic**: ActionHandler distinguishes short vs long press events
+* **Universal Compatibility**: Button functions injected into Action interrupts for all panels
+
+### Per-Panel Input Behaviors
+
+#### Oil Panel
+- **Short press**: No action
+- **Long press**: Load config panel
+
+#### Splash Panel
+- **Short press**: Stop animation and load default panel immediately
+- **Long press**: Load config panel
+
+#### Error Panel
+- **Short press**: Cycle through each error
+- **Long press**: Clear all errors
+
+#### Config Panel
+- **Short press**: Cycle through options
+- **Long press**: Set/edit highlighted option
+
+### Configuration Panel Design
+
+#### Visual Design
+* ConfigPanel with styling similar to error component but with grey colors
+* Simple menu structure suitable for single button navigation
+* Multi-level navigation with clear visual feedback
+
+#### Configuration Options
+
+**Default Panel Selection:**
+- Display list of all registered panels
+- Short press: Cycle through available panels
+- Long press: Set highlighted panel as default
+
+**Splash Screen Toggle:**
+- Enable/disable splash screen on startup
+- Short press: Cycle between "Enabled" and "Disabled"
+- Long press: Apply selected setting
+
+**Exit Option:**
+- Return to default panel
+- Short press: Highlight exit option
+- Long press: Execute exit and return to default panel
+
+#### Persistence Integration
+* Integrate with PreferenceManager for persistent storage of all settings
+* Settings survive device reboots
+* Settings validation on startup
+
+### Technical Considerations
+
+#### State Management
+* Track current menu level and selected option
+* Handle navigation state transitions
+* Provide visual feedback for all interactions
+
+#### Error Handling
+* Graceful fallback if invalid states are reached
+* Timeout mechanisms for unresponsive interactions
+* Reset to safe state on errors

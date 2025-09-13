@@ -48,7 +48,8 @@
       "Bash(done)",
       "Bash(rm:*)",
       "Bash(./wokwi_run.sh:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(sed:*)"
     ],
     "deny": [],
     "ask": []

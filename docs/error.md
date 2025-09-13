@@ -3,7 +3,7 @@
 **Related Documentation:**
 - **[Architecture](architecture.md)** - MVP pattern and system architecture
 - **[Requirements](requirements.md)** - Error handling requirements and integration
-- **[Interrupt Architecture](interrupt-architecture.md)** - Error trigger implementation
+- **[Interrupt Architecture](interrupts.md)** - Error trigger implementation
 
 ## Overview
 
