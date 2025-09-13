@@ -1,12 +1,8 @@
 #pragma once
 
+#include "panels/base_panel.h"
 #include "components/lock_component.h"
-#include "interfaces/i_display_provider.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_style_service.h"
-#include "utilities/types.h"
+#include "utilities/constants.h"
 
 // Forward declarations
 class IComponentFactory;
@@ -34,43 +30,27 @@ class IComponentFactory;
  * @context This panel provides a dedicated view for lock status monitoring.
  * It's designed to be simple and clear, focusing on the lock status indication.
  */
-class LockPanel : public IPanel
+class LockPanel : public BasePanel
 {
   public:
     // Constructors and Destructors
     LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
               IComponentFactory* componentFactory = nullptr);
-    ~LockPanel();
 
-    // Core Functionality Methods
+    // Panel identification
     static constexpr const char *NAME = PanelNames::LOCK;
-    void Init() override;
-    void Load() override;
-    void Update() override;
 
-    // Manager injection method (minimal implementation - panel has no actions)
-    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+  protected:
+    // BasePanel template method implementations
+    void CreateContent() override;
+    void UpdateContent() override;
+    const char* GetPanelName() const override { return PanelNames::LOCK; }
 
-    // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
-    
-    // Public action handler
-    void HandleLongPress();
+    // Optional overrides
+    void HandleLongPress() override;
 
   private:
-    // Static Methods
-    static void ShowPanelCompletionCallback(lv_event_t *event);
-
     // Instance Data Members
-    IGpioProvider *gpioProvider_;
-    IDisplayProvider *displayProvider_;
-    IStyleService *styleService_;
-    IPanelService *panelService_ = nullptr;
-    IComponentFactory *componentFactory_;
-    // screen_ is inherited from IPanel base class
     std::shared_ptr<IComponent> lockComponent_;
-    ComponentLocation centerLocation_;
     bool isLockEngaged_ = false;
 };
