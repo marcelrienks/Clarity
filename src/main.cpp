@@ -212,11 +212,7 @@ void loop()
     // Process interrupts - Actions (button timing) always run, Triggers only during IDLE
     if (interruptManager && panelManager)
     {
-        UIState currentState = panelManager->GetUiState();
-        log_v("Calling interruptManager->Process() - UI state: %s", 
-              currentState == UIState::IDLE ? "IDLE" : "BUSY");
         interruptManager->Process(); // Always process - ActionHandler runs always, TriggerHandler only on IDLE
-        log_v("interruptManager->Process() completed");
     }
     else if (!interruptManager)
     {
@@ -253,9 +249,6 @@ void loop()
         panelManager->UpdatePanel();
     }
 
-    log_v("Calling Ticker::handleLvTasks()");
     Ticker::handleLvTasks();
-    log_v("Calling Ticker::handleDynamicDelay()");
     Ticker::handleDynamicDelay(millis());
-    log_v("Main loop iteration completed");
 }

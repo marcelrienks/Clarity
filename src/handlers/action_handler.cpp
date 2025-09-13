@@ -39,11 +39,7 @@ void ActionHandler::Process() {
     static unsigned long lastProcessTime = 0;
     unsigned long currentTime = millis();
     
-    // Log every 10 seconds to verify Process() is being called (reduced frequency)
-    if (currentTime - lastProcessTime > 10000) {
-        log_d("Process() called (%d times)", static_cast<int>((currentTime - lastProcessTime) / 10));
-        lastProcessTime = currentTime;
-    }
+    // Removed Process() logging for critical path optimization - Step 10
     
     // Actions are evaluated every main loop cycle (continuous evaluation)
     UpdateButtonState();

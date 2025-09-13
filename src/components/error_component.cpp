@@ -61,8 +61,6 @@ void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location,
 
 void ErrorComponent::Refresh(const Reading &reading)
 {
-    log_v("Refresh() called");
-
     // For single error display, we'll update directly from ErrorManager rather than using Reading
     // This allows us to get the complete error queue information and maintain current position
     // Note: Don't call UpdateErrorDisplay() here during initialization - let the panel control the display
@@ -72,23 +70,20 @@ void ErrorComponent::Refresh(const Reading &reading)
 // Error-specific methods
 void ErrorComponent::UpdateErrorDisplay()
 {
-    log_v("UpdateErrorDisplay() called");
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
-    
+
     // Sort errors by severity (CRITICAL first, WARNING last)
-    std::sort(newErrors.begin(), newErrors.end(), 
+    std::sort(newErrors.begin(), newErrors.end(),
         [](const ErrorInfo& a, const ErrorInfo& b) {
             return static_cast<int>(a.level) > static_cast<int>(b.level);
         });
-    
+
     UpdateErrorDisplay(newErrors);
 }
 
 void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
 {
-    log_v("UpdateErrorDisplay() called with %zu errors", errors.size());
-
     // Store current error state
     currentErrors_ = errors;
 
@@ -112,11 +107,9 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
 
 void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, size_t currentIndex)
 {
-    log_v("UpdateErrorDisplay() called with %zu errors, current index %zu", errors.size(), currentIndex);
-
     // Store current error state
     currentErrors_ = errors;
-    
+
     // Set the current index
     if (currentIndex < currentErrors_.size())
     {

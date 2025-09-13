@@ -67,8 +67,6 @@ bool LightsSensor::readLightsState()
 
 bool LightsSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
-    
     bool currentState = readLightsState();
     bool previousState = previousLightsState_; // Save before DetectChange modifies it
     bool changed = DetectChange(currentState, previousLightsState_);

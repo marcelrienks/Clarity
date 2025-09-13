@@ -130,10 +130,7 @@ bool DebugErrorSensor::readPinState()
 
 bool DebugErrorSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
-    
     if (!initialized_) {
-        log_v("HasStateChanged: Not initialized, returning false");
         return false;
     }
     
@@ -142,8 +139,7 @@ bool DebugErrorSensor::HasStateChanged()
     unsigned long currentTime = millis();
     if (currentTime - startupTime_ < STARTUP_GRACE_PERIOD_MS)
     {
-        log_v("HasStateChanged: Still in grace period (%lu ms remaining)", 
-              STARTUP_GRACE_PERIOD_MS - (currentTime - startupTime_));
+        // Still in grace period
         return false;
     }
     
