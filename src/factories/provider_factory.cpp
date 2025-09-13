@@ -2,7 +2,6 @@
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
 #include "providers/device_provider.h"
-#include "interfaces/i_device_provider.h"
 #include "managers/error_manager.h"
 #include <Arduino.h>
 
@@ -32,7 +31,7 @@ std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
     }
 }
 
-std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDeviceProvider* deviceProvider)
+std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceProvider* deviceProvider)
 {
     log_d("CreateDisplayProvider() called");
     
@@ -72,7 +71,7 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDevice
     }
 }
 
-std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
+std::unique_ptr<DeviceProvider> ProviderFactory::CreateDeviceProvider()
 {
     log_d("CreateDeviceProvider() called");
     

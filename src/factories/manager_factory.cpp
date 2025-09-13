@@ -5,7 +5,7 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
-#include "interfaces/i_device_provider.h"
+#include "providers/device_provider.h"
 #include "sensors/button_sensor.h"
 #ifdef CLARITY_DEBUG
 #include "sensors/gpio_sensor.h"

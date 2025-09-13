@@ -3,6 +3,9 @@
 #include "interfaces/i_provider_factory.h"
 #include <memory>
 
+// Forward declarations
+class DeviceProvider;
+
 /**
  * @class ProviderFactory
  * @brief Concrete factory implementation for creating hardware providers
@@ -54,10 +57,10 @@ public:
     /// @param deviceProvider Device provider instance to use for display initialization
     /// @return Unique pointer to configured DisplayProvider instance
     /// @note Creates concrete DisplayProvider with 240x240 round display setup
-    std::unique_ptr<IDisplayProvider> CreateDisplayProvider(IDeviceProvider* deviceProvider) override;
+    std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider) override;
     
     /// @brief Create device provider for low-level hardware driver operations
     /// @return Unique pointer to configured DeviceProvider instance
     /// @note Creates concrete DeviceProvider for GC9A01 display driver
-    std::unique_ptr<IDeviceProvider> CreateDeviceProvider() override;
+    std::unique_ptr<DeviceProvider> CreateDeviceProvider() override;
 };
