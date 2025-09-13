@@ -148,6 +148,11 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
         trigger.isActive = true;
         UpdatePriorityState(trigger.priority, true);
 
+        // Call sensor's OnInterruptTriggered method for sensor-specific behavior (e.g., debug error generation)
+        if (trigger.sensor) {
+            trigger.sensor->OnInterruptTriggered();
+        }
+
         // But only execute the activate function if not blocked by higher priority or error panel
         if (!HasHigherPriorityActive(trigger.priority)) {
             // Check if error panel is active - if so, suppress trigger execution but keep state

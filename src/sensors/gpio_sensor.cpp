@@ -2,6 +2,9 @@
 #include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
+#ifdef CLARITY_DEBUG
+#include "managers/error_manager.h"
+#endif
 
 GpioSensor::GpioSensor(const GpioSensorConfig& config, IGpioProvider* gpioProvider)
     : config_(config)
@@ -128,8 +131,19 @@ void GpioSensor::OnInterruptTriggered()
     }
     else if (config_.pin == gpio_pins::DEBUG_ERROR) {
         #ifdef CLARITY_DEBUG
-        log_t("Debug error sensor triggered - generating test errors");
-        // Debug error generation would be handled by the trigger system
+        log_i("Debug error trigger activated via interrupt - generating test errors");
+
+        // Generate three test errors for error panel testing (same as original DebugErrorSensor)
+        ErrorManager::Instance().ReportWarning("DebugTest",
+                                               "Test warning from debug error sensor");
+
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
+                                             "Test error from debug error sensor");
+
+        ErrorManager::Instance().ReportCriticalError("DebugTest",
+                                                     "Test critical error from debug error sensor");
+
+        log_i("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL");
         #endif
     }
     else {

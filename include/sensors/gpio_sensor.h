@@ -5,6 +5,7 @@
 #include "interfaces/i_sensor.h"
 #include "sensors/base_sensor.h"
 #include "utilities/types.h"
+#include <Arduino.h>
 
 /**
  * @struct GpioSensorConfig
