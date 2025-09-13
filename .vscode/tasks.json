@@ -2,48 +2,6 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run All Tests (Complete Suite)",
-            "type": "shell",
-            "command": "${workspaceFolder}/run_all_tests.bat",
-            "options": {
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": ["/c"]
-                }
-            },
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "new",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "problemMatcher": [],
-            "detail": "Runs Unity unit tests, Wokwi integration tests, and build verification"
-        },
-        {
-            "label": "Unit Tests Only",
-            "type": "shell",
-            "command": "pio",
-            "args": ["test", "-e", "test", "--verbose"],
-            "group": "test",
-            "presentation": {
-                "echo": true,
-                "reveal": "always",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "problemMatcher": [],
-            "detail": "Runs Unity unit tests only (fast)"
-        },
-        {
             "label": "Wokwi Integration Tests",
             "type": "shell",
             "command": "${workspaceFolder}/test/wokwi/run_automated_tests.sh",
@@ -63,7 +21,11 @@
             "label": "Build for Wokwi Testing",
             "type": "shell",
             "command": "pio",
-            "args": ["run", "-e", "debug-local"],
+            "args": [
+                "run",
+                "-e",
+                "debug-local"
+            ],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -73,14 +35,24 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "problemMatcher": ["$platformio"],
+            "problemMatcher": [
+                "$platformio"
+            ],
             "detail": "Fast build for Wokwi testing (debug-local environment)"
         },
         {
             "label": "Build All Environments",
             "type": "shell",
             "command": "pio",
-            "args": ["run", "-e", "debug-local", "-e", "debug-upload", "-e", "release"],
+            "args": [
+                "run",
+                "-e",
+                "debug-local",
+                "-e",
+                "debug-upload",
+                "-e",
+                "release"
+            ],
             "group": "build",
             "presentation": {
                 "echo": true,
@@ -90,8 +62,23 @@
                 "showReuseMessage": true,
                 "clear": false
             },
-            "problemMatcher": ["$platformio"],
+            "problemMatcher": [
+                "$platformio"
+            ],
             "detail": "Builds all three environments for verification"
+        },
+        {
+            "label": "Start Terminal Logging",
+            "type": "shell",
+            "command": "script",
+            "args": [
+                "-a",
+                "${workspaceFolder}/wokwi_debug.log"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}"
+            },
+            "group": "build"
         }
     ]
 }

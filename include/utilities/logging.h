@@ -53,6 +53,12 @@
  * - CORE_DEBUG_LEVEL=5 with TEST_LOGS for full debug + test logs
  * - CORE_DEBUG_LEVEL=0 without TEST_LOGS for silent release
  * 
+ * Features duplicate suppression:
+ * - Suppresses duplicate messages silently
+ * - Every 25th duplicate is logged with count
+ * - Shows final count when a new message arrives
+ * - Resets when a new message is encountered
+ * 
  * @usage_examples:
  * - State changes: log_t("Sensor state changed: OFF -> ON");
  * - Panel loading: log_t("KeyPanel loaded successfully");
@@ -64,8 +70,10 @@
  * @note Essential for Wokwi test automation
  */
 #ifdef TEST_LOGS
-    // Test logs enabled - direct serial output with [T] prefix
-    #define log_t(format, ...) printf("[T] " format "\n", ##__VA_ARGS__)
+    // Function declaration for the implementation
+    void log_t_impl(const char* format, ...);
+    // Test logs enabled - uses implementation with duplicate suppression
+    #define log_t(format, ...) log_t_impl(format, ##__VA_ARGS__)
 #else
     // Test logs disabled - no output
     #define log_t(format, ...) ((void)0)

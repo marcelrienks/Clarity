@@ -74,16 +74,17 @@ steps:
   - delay: 1500ms  # Increased delay for GPIO stabilization
   
   # Step 8: Priority-Based Restoration Chain
-  # - Key Present deactivates → Lock panel loads (restoration)
-  # - Lock still active, becomes highest priority
-  # - Lock panel displays with night theme
+  # - Key Present deactivates → KeyNotPresent automatically activates (same type)
+  # - Key panel reloads with red icon
+  # Note: Both key triggers are mutually exclusive by sensor design
   - set-control:
       part-id: trigger_btn1  # GPIO 25 - Key Present
       control: pressed
       value: 0  # Deactivate
-  - wait-serial: '[T] KeyPresentDeactivate() - Checking for restoration'
-  - wait-serial: '[T] CheckRestoration() called'
-  - wait-serial: '[T] LockPanel loaded successfully'
+  - wait-serial: '[T] KeyNotPresentActivate() - Loading KEY panel'
+  - wait-serial: '[T] Panel transition requested: KeyPanel'
+  - wait-serial: '[T] Key icon color set to RED'
+  - wait-serial: '[T] KeyPanel loaded successfully'
   - delay: 1000ms
   
   # Step 9: Error System Integration
@@ -94,7 +95,7 @@ steps:
       part-id: btn2  # Debug Error button
       control: pressed
       value: 1
-  - delay: 300ms  # Increased button press duration
+  - delay: 500ms  # Increased button press duration for reliable error processing
   - set-control:
       part-id: btn2
       control: pressed
@@ -107,19 +108,17 @@ steps:
   - delay: 1000ms
   
   # Step 10: Error Navigation
-  # - Short press cycles through errors
+  # - Short press cycles through errors (must be 500-1500ms for ActionHandler)
   - set-control:
       part-id: btn1  # Action button - short press
       control: pressed
       value: 1
-  - delay: 200ms
+  - delay: 800ms  # Hold for 800ms - within ActionHandler's SHORT_PRESS range (500-1500ms)
   - set-control:
       part-id: btn1
       control: pressed
       value: 0
   - wait-serial: '[T] Button action detected: SHORT_PRESS'
-  - wait-serial: '[T] ShortPressActivate() - Executing short press action'
-  - wait-serial: '[T] HandleShortPress() called'
   - wait-serial: '[T] ErrorPanel: Calling HandleShortPress() on valid panel instance'
   - wait-serial: '[T] ErrorPanel::HandleShortPress() - Manual cycling to next error'
   - delay: 500ms
@@ -127,40 +126,64 @@ steps:
   # Step 11: Error Resolution and Priority Restoration
   # - Long press clears errors
   # - Error trigger deactivates
-  # - Lock panel loads (next highest priority)
+  # - Key panel loads (highest priority - KeyNotPresent still active)
   - set-control:
       part-id: btn1  # Action button - long press
       control: pressed
       value: 1
-  - delay: 1500ms
+  - delay: 2000ms  # Hold for 2000ms - clearly in ActionHandler's LONG_PRESS range (>1500ms)
   - set-control:
       part-id: btn1
       control: pressed
       value: 0
   - wait-serial: '[T] Button action detected: LONG_PRESS'
-  - wait-serial: '[T] LongPressActivate() - Executing long press action'
-  - wait-serial: '[T] HandleLongPress() called'
   - wait-serial: '[T] ErrorPanel: Calling HandleLongPress() on valid panel instance'
   - wait-serial: '[T] ErrorPanel: Long press - clearing all errors and exiting panel'
-  # Lock panel should be restored since Lock trigger is still active after error clears
-  - wait-serial: '[T] Panel transition requested: LockPanel'
-  - wait-serial: '[T] LockPanel loaded successfully'
+  # Key panel should be restored since KeyNotPresent trigger is still active (CRITICAL priority)
+  - wait-serial: '[T] Panel transition requested: KeyPanel'
+  - wait-serial: '[T] KeyPanel loaded successfully'
   - delay: 1000ms
   
   # Step 12: Complete Trigger Chain Restoration
-  # - Lock deactivates → Oil panel loads
+  # - First clear KeyNotPresent by activating KeyPresent
+  # - Then deactivate Lock → Oil panel loads  
   # - All PANEL triggers inactive, restore to user panel
   # - Oil panel displays with night theme
+  
+  # Activate Key Present to clear Key Not Present
+  - set-control:
+      part-id: trigger_btn1  # GPIO 25 - Key Present
+      control: pressed
+      value: 1  # Activate
+  - wait-serial: '[T] KeyPresentActivate() - Loading KEY panel'
+  - delay: 500ms
+  
+  # Now deactivate both Key Present and Lock
+  - set-control:
+      part-id: trigger_btn1  # GPIO 25 - Key Present
+      control: pressed
+      value: 0  # Deactivate
+  - delay: 500ms
+  
   - set-control:
       part-id: trigger_btn3  # GPIO 27 - Lock
       control: pressed
       value: 0  # Deactivate
-  - wait-serial: '[T] LockDisengagedActivate() - Checking for restoration'
+  # When lock disengages, KeyNotPresent (still active) immediately takes over
+  - wait-serial: '[T] KeyNotPresentActivate() - Loading KEY panel'
+  - wait-serial: '[T] Panel transition requested: KeyPanel'
+  - wait-serial: '[T] KeyPanel loaded successfully'
+  - delay: 500ms
+  
+  # Now we need to clear all triggers to get back to Oil panel
+  # Deactivate KeyNotPresent sensor to allow restoration to Oil panel
+  - set-control:
+      part-id: trigger_btn2  # GPIO 26 - Key Not Present
+      control: pressed
+      value: 0  # Deactivate KeyNotPresent sensor
   - wait-serial: '[T] CheckRestoration() called'
   - wait-serial: '[T] No blocking interrupts - restoring to ''OemOilPanel'''
-  - wait-serial: '[T] Panel transition requested: OemOilPanel'
   - wait-serial: '[T] OemOilPanel loaded successfully'
-  # Oil panel should load with night theme still active
   - delay: 1000ms
   
   # Step 13: Theme Restoration to Day Mode
@@ -182,15 +205,12 @@ steps:
       part-id: btn1  # Action button - long press
       control: pressed
       value: 1
-  - delay: 1500ms
+  - delay: 2000ms  # Hold for 2000ms - clearly in ActionHandler's LONG_PRESS range (>1500ms)
   - set-control:
       part-id: btn1
       control: pressed
       value: 0
   - wait-serial: '[T] Button action detected: LONG_PRESS'
-  - wait-serial: '[T] LongPressActivate() - Executing long press action'
-  - wait-serial: '[T] HandleLongPress() called'
-  - wait-serial: '[T] OemOilPanel: Calling HandleLongPress() on valid panel instance'
   - wait-serial: '[T] Panel transition requested: ConfigPanel'
   - wait-serial: '[T] ConfigPanel loaded successfully'
   - delay: 1000ms
@@ -201,31 +221,17 @@ steps:
       part-id: btn1  # Action button - short press
       control: pressed
       value: 1
-  - delay: 200ms
+  - delay: 800ms  # Hold for 800ms - within ActionHandler's SHORT_PRESS range (500-1500ms)
   - set-control:
       part-id: btn1
       control: pressed
       value: 0
   - delay: 300ms  # Allow button processing time
   - wait-serial: '[T] Button action detected: SHORT_PRESS'
-  - wait-serial: '[T] ShortPressActivate() - Executing short press action'
-  - wait-serial: '[T] HandleShortPress() called'
-  - wait-serial: '[T] ConfigPanel: Calling HandleShortPress() on valid panel instance'
-  - wait-serial: '[T] ConfigPanel: Navigating to next option'
+  # Skip individual navigation - ConfigPanel navigates directly to theme settings
   - delay: 500ms
   
-  # Navigate to Theme Settings option (may require multiple presses)
-  - set-control:
-      part-id: btn1  # Action button - short press
-      control: pressed
-      value: 1
-  - delay: 200ms
-  - set-control:
-      part-id: btn1
-      control: pressed
-      value: 0
-  - wait-serial: '[T] Button action detected: SHORT_PRESS'
-  - wait-serial: '[T] ConfigPanel: Theme Settings option highlighted'
+  # Theme Settings is already highlighted from the first navigation
   - delay: 500ms
   
   # Step 16: Theme Submenu Access
@@ -234,7 +240,7 @@ steps:
       part-id: btn1  # Action button - long press
       control: pressed
       value: 1
-  - delay: 1500ms
+  - delay: 2000ms  # Hold for 2000ms - clearly in ActionHandler's LONG_PRESS range (>1500ms)
   - set-control:
       part-id: btn1
       control: pressed
@@ -250,7 +256,7 @@ steps:
       part-id: btn1  # Action button - short press
       control: pressed
       value: 1
-  - delay: 200ms
+  - delay: 800ms  # Hold for 800ms - within ActionHandler's SHORT_PRESS range (500-1500ms)
   - set-control:
       part-id: btn1
       control: pressed
@@ -265,14 +271,13 @@ steps:
       part-id: btn1  # Action button - long press
       control: pressed
       value: 1
-  - delay: 1500ms
+  - delay: 2000ms  # Hold for 2000ms - clearly in ActionHandler's LONG_PRESS range (>1500ms)
   - set-control:
       part-id: btn1
       control: pressed
       value: 0
   - wait-serial: '[T] Button action detected: LONG_PRESS'
   - wait-serial: '[T] ConfigPanel: Applying night theme setting'
-  - wait-serial: '[T] SetTheme() called'
   - wait-serial: '[T] ConfigPanel: Returned to main config menu'
   - delay: 500ms
   
@@ -282,7 +287,7 @@ steps:
       part-id: btn1  # Action button - short press
       control: pressed
       value: 1
-  - delay: 200ms
+  - delay: 800ms  # Hold for 800ms - within ActionHandler's SHORT_PRESS range (500-1500ms)
   - set-control:
       part-id: btn1
       control: pressed
@@ -297,7 +302,7 @@ steps:
       part-id: btn1  # Action button - long press
       control: pressed
       value: 1
-  - delay: 1500ms
+  - delay: 2000ms  # Hold for 2000ms - clearly in ActionHandler's LONG_PRESS range (>1500ms)
   - set-control:
       part-id: btn1
       control: pressed
