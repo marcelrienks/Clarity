@@ -7,13 +7,10 @@
 // Constructors and Destructors
 KeyComponent::KeyComponent(IStyleService *styleService) : keyIcon_(nullptr), styleService_(styleService)
 {
-    log_v("KeyComponent constructor called");
 }
 
 KeyComponent::~KeyComponent()
 {
-    log_v("~KeyComponent() destructor called");
-    
     if (keyIcon_)
     {
         lv_obj_del(keyIcon_);
@@ -27,7 +24,6 @@ KeyComponent::~KeyComponent()
 /// @param location The location parameters for positioning the component.
 void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
-    log_v("Render() called");
     
     if (!display)
     {
@@ -49,7 +45,6 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
 /// @param keyState The current key state to determine color
 void KeyComponent::SetColor(KeyState keyState)
 {
-    log_v("SetColor() called with state: %d", static_cast<int>(keyState));
     
     if (!styleService_ || !keyIcon_)
     {
