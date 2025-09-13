@@ -5,7 +5,7 @@
 // Forward declarations
 class IGpioProvider;
 class IDisplayProvider;
-class IDeviceProvider;
+class DeviceProvider;
 
 /**
  * @interface IProviderFactory
@@ -45,9 +45,9 @@ public:
     /// @brief Create display provider for LVGL operations
     /// @param deviceProvider Device provider instance to use for display initialization
     /// @return Unique pointer to IDisplayProvider instance
-    virtual std::unique_ptr<IDisplayProvider> CreateDisplayProvider(IDeviceProvider* deviceProvider) = 0;
+    virtual std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider) = 0;
     
     /// @brief Create device provider for hardware driver operations
     /// @return Unique pointer to IDeviceProvider instance
-    virtual std::unique_ptr<IDeviceProvider> CreateDeviceProvider() = 0;
+    virtual std::unique_ptr<DeviceProvider> CreateDeviceProvider() = 0;
 };

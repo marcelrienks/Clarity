@@ -6,7 +6,7 @@
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
 #include "managers/style_manager.h"
-#include "interfaces/i_device_provider.h"
+#include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "utilities/constants.h"
@@ -19,7 +19,7 @@ std::unique_ptr<IProviderFactory> providerFactory;
 std::unique_ptr<ManagerFactory> managerFactory;
 
 // Global providers - created by ProviderFactory
-std::unique_ptr<IDeviceProvider> deviceProvider;
+std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
 

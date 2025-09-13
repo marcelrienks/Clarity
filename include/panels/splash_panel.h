@@ -12,8 +12,6 @@
 #include "interfaces/i_style_service.h"
 #include <memory>
 
-// Forward declarations
-class IComponentFactory;
 
 /**
  * @class SplashPanel
@@ -45,7 +43,6 @@ class SplashPanel : public IPanel
   public:
     // Constructors and Destructors
     SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                IComponentFactory* componentFactory = nullptr, 
                 IPanelNotificationService* notificationService = nullptr);
     ~SplashPanel();
 
@@ -84,12 +81,12 @@ class SplashPanel : public IPanel
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
-    IComponentFactory *componentFactory_;
     IPanelNotificationService *notificationService_;
 
-    // Components
+    // Components - static allocation
     // screen_ is inherited from IPanel base class
-    std::shared_ptr<IComponent> component_;
+    ClarityComponent component_;
+    bool componentInitialized_ = false;
     lv_obj_t *blankScreen_;
 
     // Static Callback Methods

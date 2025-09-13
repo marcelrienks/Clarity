@@ -5,6 +5,9 @@
 #include "utilities/logging.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
+#ifdef CLARITY_DEBUG
+#include "managers/error_manager.h"
+#endif
 
 /**
  * @file system_definitions.h
@@ -107,14 +110,24 @@ inline std::vector<Trigger> GetSystemTriggers(
             .id = "error",
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,  // Keep as PANEL type for priority handling
-            .activateFunc = []() { 
-                // Check if error queue is empty - if so, don't re-trigger
-                // This prevents restoration from re-executing after long press clears errors
-                if (!ErrorManager::Instance().HasPendingErrors()) {
-                    log_t("ErrorActivate() - No pending errors, ignoring restoration trigger");
-                    return;
-                }
-                log_t("ErrorActivate() - Debug error button pressed");
+            .activateFunc = []() {
+                log_t("ErrorActivate() - Debug error button pressed, generating test errors");
+
+#ifdef CLARITY_DEBUG
+                // Generate three test errors for error panel testing
+                ErrorManager::Instance().ReportWarning("DebugTest",
+                                                       "Test warning from debug error trigger");
+
+                ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
+                                                     "Test error from debug error trigger");
+
+                ErrorManager::Instance().ReportCriticalError("DebugTest",
+                                                             "Test critical error from debug error trigger");
+
+                log_t("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL - error panel will load automatically");
+#else
+                log_t("Debug error generation not available in release build");
+#endif
             },
             .deactivateFunc = []() { 
                 // No-op: Push button doesn't have deactivation, no restoration needed

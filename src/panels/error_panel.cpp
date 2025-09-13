@@ -9,11 +9,9 @@
 #include <algorithm>
 
 // Constructors and Destructors
-ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                       IComponentFactory* componentFactory)
+ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
-      panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
+      errorComponent_(styleService), componentInitialized_(false), panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
 {
     log_v("ErrorPanel constructor called");
 }
@@ -27,10 +25,7 @@ ErrorPanel::~ErrorPanel()
         lv_obj_delete(screen_);
     }
 
-    if (errorComponent_)
-    {
-        errorComponent_.reset();
-    }
+    // Component is now stack-allocated and will be automatically destroyed
 
     // Reset error panel active flag when panel is destroyed
     ErrorManager::Instance().SetErrorPanelActive(false);
@@ -76,21 +71,8 @@ void ErrorPanel::Load()
     log_v("Load() called");
 
 
-    if (!componentFactory_)
-    {
-        log_e("ErrorPanel requires component factory");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", "ComponentFactory is null");
-        return;
-    }
-
-    // Create component using injected factory
-    errorComponent_ = componentFactory_->CreateErrorComponent(styleService_);
-    if (!errorComponent_)
-    {
-        log_e("Failed to create error component");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel", "Component creation failed");
-        return;
-    }
+    // Component is now stack-allocated and initialized in constructor
+    componentInitialized_ = true;
 
     if (!displayProvider_)
     {
@@ -101,11 +83,11 @@ void ErrorPanel::Load()
     }
 
     // Render the component
-    errorComponent_->Render(screen_, centerLocation_, displayProvider_);
+    errorComponent_.Render(screen_, centerLocation_, displayProvider_);
 
     // Get current errors and refresh component
     std::vector<ErrorInfo> currentErrors = ErrorManager::Instance().GetErrorQueue();
-    errorComponent_->Refresh(Reading{}); // Component will fetch errors internally
+    errorComponent_.Refresh(Reading{}); // Component will fetch errors internally
 
     lv_obj_add_event_cb(screen_, ErrorPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -172,12 +154,12 @@ void ErrorPanel::Update()
         currentErrorIndex_ = 0;
         
         // Tell component to display all errors with current index
-        if (errorComponent_)
+        if (componentInitialized_)
         {
-            auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+            // Direct access to concrete component (no casting needed)
             if (!currentErrors_.empty())
             {
-                errorComp->UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+                errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
             }
         }
     }
@@ -420,11 +402,11 @@ void ErrorPanel::AdvanceToNextError()
           oldIndex, currentErrorIndex_, currentErrors_.size());
     
     // Update the component to display the new current error
-    if (errorComponent_)
+    if (componentInitialized_)
     {
-        auto errorComp = std::static_pointer_cast<ErrorComponent>(errorComponent_);
+        // Direct access to concrete component
         log_i("AdvanceToNextError: Updating error component display");
-        errorComp->UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+        errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
         log_i("AdvanceToNextError: Error component updated successfully");
     }
     else

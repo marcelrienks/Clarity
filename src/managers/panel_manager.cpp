@@ -4,17 +4,17 @@
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
 #include "interfaces/i_action_service.h"
-#include "interfaces/i_panel_factory.h"
-#include "interfaces/i_component_factory.h"
+// Direct panel includes (factory pattern eliminated)
+#include "panels/splash_panel.h"
+#include "panels/oem_oil_panel.h"
+#include "panels/error_panel.h"
+#include "panels/config_panel.h"
+#include "panels/key_panel.h"
+#include "panels/lock_panel.h"
 // ActionManager include removed - button handling moved to handler-based system
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
-#include "panels/config_panel.h"
-#include "panels/oem_oil_panel.h"
-#include "panels/splash_panel.h"
 #include "utilities/ticker.h"
-#include "factories/panel_factory.h"
-#include "factories/component_factory.h"
 #include "utilities/constants.h"
 #include <cstring>
 #include <esp32-hal-log.h>
@@ -35,12 +35,9 @@ void PanelManager::Init()
 // Constructors and Destructors
 
 PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IPreferenceService *preferenceService, InterruptManager* interruptManager,
-                           IPanelFactory* panelFactory, IComponentFactory* componentFactory)
+                           IPreferenceService *preferenceService, InterruptManager* interruptManager)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       preferenceService_(preferenceService), interruptManager_(interruptManager),
-      panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       errorManager_(ErrorManager::Instance())
 {
     log_v("PanelManager() constructor called");
@@ -84,30 +81,30 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 {
     log_v("CreatePanel() called for: %s", panelName);
 
-    // Use injected factory for panel creation
-    
+    // Direct panel instantiation (factory pattern eliminated)
+
     if (strcmp(panelName, PanelNames::SPLASH) == 0) {
-        return panelFactory_->CreateSplashPanel(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleService_);
     }
-    
+
     if (strcmp(panelName, PanelNames::OIL) == 0) {
-        return panelFactory_->CreateOemOilPanel(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleService_);
     }
-    
+
     if (strcmp(panelName, PanelNames::ERROR) == 0) {
-        return panelFactory_->CreateErrorPanel(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleService_);
     }
-    
+
     if (strcmp(panelName, PanelNames::CONFIG) == 0) {
-        return panelFactory_->CreateConfigPanel(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleService_);
     }
-    
+
     if (strcmp(panelName, PanelNames::KEY) == 0) {
-        return panelFactory_->CreateKeyPanel(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleService_);
     }
-    
+
     if (strcmp(panelName, PanelNames::LOCK) == 0) {
-        return panelFactory_->CreateLockPanel(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleService_);
     }
     
     // Unknown panel type

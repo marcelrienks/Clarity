@@ -13,6 +13,7 @@
 // Forward declarations
 class PanelManager;
 class StyleManager;
+class DeviceProvider;
 class PreferenceManager;
 class InterruptManager;
 class IProviderFactory;
@@ -86,7 +87,7 @@ private:
     /// @brief Cached providers created from provider factory
     std::unique_ptr<IGpioProvider> gpioProvider_;
     std::unique_ptr<IDisplayProvider> displayProvider_;
-    std::unique_ptr<IDeviceProvider> deviceProvider_;
+    std::unique_ptr<DeviceProvider> deviceProvider_;
     
     /// @brief Initialize providers from factory if not already created
     bool InitializeProviders();

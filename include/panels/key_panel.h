@@ -1,15 +1,9 @@
 #pragma once
 
+#include "panels/base_panel.h"
 #include "components/key_component.h"
-#include "interfaces/i_display_provider.h"
-#include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_style_service.h"
-#include "utilities/types.h"
+#include "utilities/constants.h"
 
-// Forward declarations
-class IComponentFactory;
 
 /**
  * @class KeyPanel
@@ -34,46 +28,30 @@ class IComponentFactory;
  * @context This panel provides a dedicated view for key status monitoring.
  * It's designed to be simple and clear, focusing on the key status indication.
  */
-class KeyPanel : public IPanel
+class KeyPanel : public BasePanel
 {
   public:
     // Constructors and Destructors
-    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-             IComponentFactory* componentFactory = nullptr);
-    ~KeyPanel();
+    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
 
-    // Core Functionality Methods
+    // Panel identification
     static constexpr const char *NAME = PanelNames::KEY;
-    void Init() override;
-    void Load() override;
-    void Update() override;
 
-    // Manager injection method (minimal implementation - panel has no actions)
-    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+  protected:
+    // BasePanel template method implementations
+    void CreateContent() override;
+    void UpdateContent() override;
+    const char* GetPanelName() const override { return PanelNames::KEY; }
 
-    // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
-    
-    // Public action handler
-    void HandleLongPress();
+    // Optional overrides
+    void HandleLongPress() override;
 
   private:
-    // Static Methods
-    static void ShowPanelCompletionCallback(lv_event_t *event);
-    
     // Helper methods
     KeyState DetermineCurrentKeyState();
 
-    // Instance Data Members
-    IGpioProvider *gpioProvider_;
-    IDisplayProvider *displayProvider_;
-    IStyleService *styleService_;
-    IPanelService *panelService_ = nullptr;
-    IComponentFactory *componentFactory_;
-    // screen_ is inherited from IPanel base class
-    std::shared_ptr<IComponent> keyComponent_;
-    ComponentLocation centerLocation_;
+    // Instance Data Members - static allocation
+    KeyComponent keyComponent_;
+    bool componentInitialized_ = false;
     KeyState currentKeyState_ = KeyState::Inactive;
 };

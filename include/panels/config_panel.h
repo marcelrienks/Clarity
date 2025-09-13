@@ -109,8 +109,9 @@ class ConfigPanel : public IPanel
     IPreferenceService *preferenceService_ = nullptr;
     // screen_ is inherited from IPanel base class
 
-    // Component (View)
-    std::unique_ptr<ConfigComponent> configComponent_;
+    // Component (View) - static allocation
+    ConfigComponent configComponent_;
+    bool componentInitialized_ = false;
 
     // Menu state (Presenter logic)
     std::vector<ConfigComponent::MenuItem> menuItems_;

@@ -9,13 +9,7 @@
 
 // Forward declarations for sensors
 class BaseSensor;
-class KeyPresentSensor;
-class KeyNotPresentSensor;
-class LockSensor;
-class LightsSensor;
-#ifdef CLARITY_DEBUG
-class DebugErrorSensor;
-#endif
+class GpioSensor;
 
 #include "esp32-hal-log.h"
 
@@ -52,12 +46,12 @@ public:
     void RestoreSameTypeTrigger(TriggerType type, Priority priority);
     
     // Sensor access for trigger context
-    KeyPresentSensor* GetKeyPresentSensor() const { return keyPresentSensor_.get(); }
-    KeyNotPresentSensor* GetKeyNotPresentSensor() const { return keyNotPresentSensor_.get(); }
-    LockSensor* GetLockSensor() const { return lockSensor_.get(); }
-    LightsSensor* GetLightsSensor() const { return lightsSensor_.get(); }
+    GpioSensor* GetKeyPresentSensor() const { return keyPresentSensor_.get(); }
+    GpioSensor* GetKeyNotPresentSensor() const { return keyNotPresentSensor_.get(); }
+    GpioSensor* GetLockSensor() const { return lockSensor_.get(); }
+    GpioSensor* GetLightsSensor() const { return lightsSensor_.get(); }
 #ifdef CLARITY_DEBUG
-    DebugErrorSensor* GetDebugErrorSensor() const { return debugErrorSensor_.get(); }
+    GpioSensor* GetDebugErrorSensor() const { return debugErrorSensor_.get(); }
 #endif
     
     // Status and diagnostics
@@ -94,11 +88,11 @@ private:
     
     // Handler-owned sensors for GPIO monitoring
     IGpioProvider* gpioProvider_;
-    std::unique_ptr<KeyPresentSensor> keyPresentSensor_;
-    std::unique_ptr<KeyNotPresentSensor> keyNotPresentSensor_;
-    std::unique_ptr<LockSensor> lockSensor_;
-    std::unique_ptr<LightsSensor> lightsSensor_;
+    std::unique_ptr<GpioSensor> keyPresentSensor_;
+    std::unique_ptr<GpioSensor> keyNotPresentSensor_;
+    std::unique_ptr<GpioSensor> lockSensor_;
+    std::unique_ptr<GpioSensor> lightsSensor_;
 #ifdef CLARITY_DEBUG
-    std::unique_ptr<DebugErrorSensor> debugErrorSensor_;
+    std::unique_ptr<GpioSensor> debugErrorSensor_;
 #endif
 };

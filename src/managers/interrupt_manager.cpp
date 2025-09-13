@@ -4,13 +4,7 @@
 #include "handlers/action_handler.h"
 #include "utilities/system_definitions.h"
 #include "utilities/constants.h"
-#include "sensors/key_present_sensor.h"
-#include "sensors/key_not_present_sensor.h"
-#include "sensors/lock_sensor.h"
-#include "sensors/lights_sensor.h"
-#ifdef CLARITY_DEBUG
-#include "sensors/debug_error_sensor.h"
-#endif
+#include "sensors/gpio_sensor.h"
 #include <Arduino.h>
 #include <cstring>
 #include "esp32-hal-log.h"
