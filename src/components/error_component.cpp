@@ -221,21 +221,8 @@ void ErrorComponent::DisplayCurrentError()
     lv_label_set_text(navigationIndicator_, "short: next, long: exit");
 }
 
-void ErrorComponent::CycleToNextError()
-{
-    log_v("CycleToNextError() called - deprecated method, ErrorPanel now handles cycling");
-    // This method is deprecated - ErrorPanel now handles all cycling logic
-    // via HandleShortPress() -> AdvanceToNextError() -> UpdateErrorDisplay()
-    log_w("ErrorComponent::CycleToNextError() is deprecated - use ErrorPanel button handling instead");
-}
-
-void ErrorComponent::HandleCycleButtonPress()
-{
-    log_v("HandleCycleButtonPress() called - deprecated method, ErrorPanel now handles cycling");
-    // This method is deprecated - ErrorPanel now handles all button logic
-    // via HandleShortPress() -> AdvanceToNextError() -> UpdateErrorDisplay()
-    log_w("ErrorComponent::HandleCycleButtonPress() is deprecated - use ErrorPanel button handling instead");
-}
+// Note: Deprecated methods CycleToNextError() and HandleCycleButtonPress() removed.
+// ErrorPanel now handles all cycling logic via HandleShortPress() -> AdvanceToNextError()
 
 // Helper Methods
 const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
@@ -254,19 +241,5 @@ const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
     }
 }
 
-// Static Event Callbacks
-void ErrorComponent::ErrorAcknowledgeCallback(lv_event_t *event)
-{
-    log_v("ErrorAcknowledgeCallback() called");
-    size_t errorIndex = reinterpret_cast<size_t>(lv_event_get_user_data(event));
-
-    ErrorManager::Instance().AcknowledgeError(errorIndex);
-}
-
-void ErrorComponent::ClearAllErrorsCallback(lv_event_t *event)
-{
-    log_v("ClearAllErrorsCallback() called");
-    ErrorComponent *component = static_cast<ErrorComponent *>(lv_event_get_user_data(event));
-
-    ErrorManager::Instance().ClearAllErrors();
-}
+// Note: LVGL event callbacks removed - these were never connected to UI elements
+// Error handling is now done through ErrorPanel button logic

@@ -257,11 +257,10 @@ Action ErrorPanel::GetShortPressAction()
                 return;
             }
 
-            // Use the ErrorComponent's built-in cycling method
+            // Use ErrorPanel's own cycling method (modern approach)
             if (errorComponent_)
             {
-                auto errorList = std::static_pointer_cast<ErrorComponent>(errorComponent_);
-                errorList->CycleToNextError();
+                AdvanceToNextError();
             }
             else
             {

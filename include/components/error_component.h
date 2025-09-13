@@ -23,7 +23,7 @@
  *
  * @data_source Works with ErrorManager for error queue updates and maintains current position
  * @visual_states Color-coded border and error level (white/yellow/red) based on current error
- * @interaction_support GPIO button cycling through error queue (CycleToNextError method)
+ * @interaction_support GPIO button cycling managed by ErrorPanel via AdvanceToNextError method
  *
  * @round_display_optimizations:
  * - Full screen utilization with minimal margins
@@ -50,15 +50,10 @@ class ErrorComponent : public IComponent
     void UpdateErrorDisplay();
     void UpdateErrorDisplay(const std::vector<ErrorInfo> &errors);
     void UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, size_t currentIndex);
-    void CycleToNextError(); // Navigate to next error in queue (cycles back to first after last)
-
-    // GPIO Integration interface - to be called when button is pressed
-    void HandleCycleButtonPress(); // Public interface for GPIO button integration
+    // Note: GPIO button cycling is now handled by ErrorPanel via AdvanceToNextError()
 
   protected:
-    // UI Event Handlers
-    static void ErrorAcknowledgeCallback(lv_event_t *event);
-    static void ClearAllErrorsCallback(lv_event_t *event);
+    // Note: LVGL event handlers removed - never connected to UI elements
 
   private:
     // Internal Methods

@@ -34,19 +34,6 @@
 // Runtime state definitions for type safety and clear state management
 //=============================================================================
 
-/// @enum LogLevels
-/// @brief Logging verbosity levels for debug output
-///
-/// @details Defines the hierarchy of logging levels from most verbose
-/// to most critical. Used by the logging system to filter output.
-enum class LogLevels
-{
-    Verbose, ///< Detailed trace information
-    Debug,   ///< Debug information for development
-    Info,    ///< General information messages
-    Warning, ///< Warning conditions that should be noted
-    Error    ///< Error conditions requiring attention
-};
 
 /// @enum OilSensorTypes
 /// @brief Types of oil monitoring sensors
