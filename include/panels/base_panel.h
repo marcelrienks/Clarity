@@ -7,8 +7,6 @@
 #include "interfaces/i_style_service.h"
 #include "utilities/types.h"
 
-// Forward declarations
-class IComponentFactory;
 
 /**
  * @class BasePanel
@@ -60,8 +58,7 @@ class BasePanel : public IPanel
 {
 public:
     // Constructors and Destructors
-    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService,
-              IComponentFactory* componentFactory = nullptr);
+    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
     virtual ~BasePanel();
 
     // Core Functionality Methods - Final implementations using Template Method pattern
@@ -112,7 +109,6 @@ protected:
     IDisplayProvider* displayProvider_;
     IStyleService* styleService_;
     IPanelService* panelService_;
-    IComponentFactory* componentFactory_;
     ComponentLocation centerLocation_;
 
 private:

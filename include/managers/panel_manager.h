@@ -56,7 +56,6 @@
 
 // Forward declarations
 class StyleManager;
-class IComponentFactory;
 class InterruptManager;
 
 class PanelManager : public IPanelService,
@@ -67,8 +66,7 @@ class PanelManager : public IPanelService,
   public:
     // Constructors and Destructors
     PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                 IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr,
-                 IComponentFactory* componentFactory = nullptr);
+                 IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -186,7 +184,6 @@ class PanelManager : public IPanelService,
     // IActionManager removed - button handling moved to handler-based system
     InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
     IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
-    IComponentFactory *componentFactory_ = nullptr;   ///< Component factory for dependency injection
 
     // Cached service references to avoid repeated singleton calls
     class ErrorManager& errorManager_;                ///< Cached ErrorManager reference

@@ -6,9 +6,8 @@
 #include <variant>
 
 // Constructors and Destructors
-LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                     IComponentFactory* componentFactory)
-    : BasePanel(gpio, display, styleService, componentFactory),
+LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+    : BasePanel(gpio, display, styleService),
       lockComponent_(styleService), componentInitialized_(false)
 {
     // Note: LockPanel is display-only, state comes from interrupt system

@@ -1,17 +1,13 @@
 #include "panels/base_panel.h"
-#include "factories/component_factory.h"
-#include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "utilities/constants.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 
 // Constructors and Destructors
-BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService,
-                     IComponentFactory* componentFactory)
+BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      panelService_(nullptr),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
+      panelService_(nullptr)
 {
     log_v("BasePanel constructor called");
 }
@@ -49,13 +45,6 @@ void BasePanel::Init()
 void BasePanel::Load()
 {
     log_v("%s::Load() called", GetPanelName());
-
-    if (!componentFactory_)
-    {
-        log_e("%s requires component factory", GetPanelName());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, GetPanelName(), "ComponentFactory is null");
-        return;
-    }
 
     // Create panel-specific content (implemented by derived classes)
     CreateContent();

@@ -9,9 +9,8 @@
 #include <variant>
 
 // Constructors and Destructors
-KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                   IComponentFactory* componentFactory)
-    : BasePanel(gpio, display, styleService, componentFactory),
+KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+    : BasePanel(gpio, display, styleService),
       keyComponent_(styleService), componentInitialized_(false)
 {
     // Determine current key state by checking which sensor is currently active

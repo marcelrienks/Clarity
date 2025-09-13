@@ -4,8 +4,6 @@
 #include "components/lock_component.h"
 #include "utilities/constants.h"
 
-// Forward declarations
-class IComponentFactory;
 
 /**
  * @class LockPanel
@@ -34,8 +32,7 @@ class LockPanel : public BasePanel
 {
   public:
     // Constructors and Destructors
-    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-              IComponentFactory* componentFactory = nullptr);
+    LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
 
     // Panel identification
     static constexpr const char *NAME = PanelNames::LOCK;

@@ -10,8 +10,6 @@
 #include "managers/error_manager.h"
 #include "utilities/types.h"
 
-// Forward declarations
-class IComponentFactory;
 
 /**
  * @class ErrorPanel

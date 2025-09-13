@@ -14,7 +14,6 @@ static PanelManager* instancePtr_ = nullptr;
 // ActionManager include removed - button handling moved to handler-based system
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
-#include "factories/component_factory.h"
 #include "utilities/ticker.h"
 #include "utilities/constants.h"
 #include <cstring>
@@ -36,11 +35,9 @@ void PanelManager::Init()
 // Constructors and Destructors
 
 PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IPreferenceService *preferenceService, InterruptManager* interruptManager,
-                           IComponentFactory* componentFactory)
+                           IPreferenceService *preferenceService, InterruptManager* interruptManager)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       preferenceService_(preferenceService), interruptManager_(interruptManager),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       errorManager_(ErrorManager::Instance())
 {
     log_v("PanelManager() constructor called");

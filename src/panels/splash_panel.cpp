@@ -1,6 +1,4 @@
 #include "panels/splash_panel.h"
-#include "factories/component_factory.h"
-#include "interfaces/i_component_factory.h"
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
@@ -13,9 +11,9 @@
 // Constructors and Destructors
 
 SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                         IComponentFactory *componentFactory, IPanelNotificationService* notificationService)
+                         IPanelNotificationService* notificationService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
+      component_(styleService), componentInitialized_(false),
       notificationService_(notificationService ? notificationService : &PanelManager::NotificationService())
 {
     log_v("SplashPanel constructor called");
@@ -35,10 +33,7 @@ SplashPanel::~SplashPanel()
         lv_obj_del(blankScreen_);
     }
 
-    if (component_)
-    {
-        component_.reset();
-    }
+    // Component is now stack-allocated and will be automatically destroyed
 }
 
 // Core Functionality Methods
@@ -65,27 +60,14 @@ void SplashPanel::Init()
 void SplashPanel::Load()
 {
     log_v("Load() called");
-    if (!componentFactory_)
-    {
-        log_e("SplashPanel requires component factory");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "SplashPanel", "ComponentFactory is null");
-        return;
-    }
-
-    // Create component using injected factory
-    component_ = componentFactory_->CreateClarityComponent(styleService_);
-    if (!component_)
-    {
-        log_e("Failed to create clarity component for splash panel");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "SplashPanel", "Component creation failed");
-        return;
-    }
+    // Component is now stack-allocated and initialized in constructor
+    componentInitialized_ = true;
 
     // Create location parameters for the splash component
     ComponentLocation splashLocation(LV_ALIGN_CENTER, 0, 0);
 
     // Render the component
-    component_->Render(screen_, splashLocation, displayProvider_);
+    component_.Render(screen_, splashLocation, displayProvider_);
 
     lv_screen_load_anim(screen_, LV_SCR_LOAD_ANIM_FADE_IN, GetAnimationTime(), 0, false);
 

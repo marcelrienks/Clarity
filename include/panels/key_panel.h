@@ -4,8 +4,6 @@
 #include "components/key_component.h"
 #include "utilities/constants.h"
 
-// Forward declarations
-class IComponentFactory;
 
 /**
  * @class KeyPanel
@@ -34,8 +32,7 @@ class KeyPanel : public BasePanel
 {
   public:
     // Constructors and Destructors
-    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-             IComponentFactory* componentFactory = nullptr);
+    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
 
     // Panel identification
     static constexpr const char *NAME = PanelNames::KEY;
