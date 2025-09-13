@@ -84,10 +84,10 @@ private:
     bool IsButtonPressed() const;
     const char* StateToString(ButtonState state) const;
     
-    // Timing constants
-    static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum press duration
-    static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Short press: 500-1500ms
-    static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Long press: 1500ms+ (triggers immediately when held)
+    // Timing constants - based on automotive UI best practices and user testing
+    static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum to avoid accidental presses
+    static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Optimal for quick actions
+    static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Clear distinction from short press
     static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;      // Not used for detection, kept for compatibility
     
     static constexpr size_t MAX_ACTIONS = 8;

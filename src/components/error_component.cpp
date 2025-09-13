@@ -64,7 +64,6 @@ void ErrorComponent::Refresh(const Reading &reading)
     // For single error display, we'll update directly from ErrorManager rather than using Reading
     // This allows us to get the complete error queue information and maintain current position
     // Note: Don't call UpdateErrorDisplay() here during initialization - let the panel control the display
-    // UpdateErrorDisplay();
 }
 
 // Error-specific methods

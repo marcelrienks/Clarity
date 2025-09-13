@@ -1,4 +1,4 @@
-#pragma once // preventing duplicate definitions, alternative to the traditional include guards
+#pragma once
 
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"

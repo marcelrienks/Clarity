@@ -1,4 +1,4 @@
-#pragma once // preventing duplicate definitions, alternative to the traditional include guards
+#pragma once
 
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"

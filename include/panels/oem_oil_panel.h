@@ -1,4 +1,4 @@
-#pragma once // preventing duplicate definitions, alternative to the traditional include guards
+#pragma once
 
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"

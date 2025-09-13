@@ -546,3 +546,149 @@ const char* restorationPanel = currentPanel;       // Pointer aliasing issues
 - [ ] Does micro-optimization justify complexity? → Usually NO on ESP32
 
 *This pattern was established after optimization efforts revealed the critical importance of string lifetime safety in async operations.*
+
+## 14. Code Documentation Pattern
+
+### The Philosophy
+**Write comments that explain WHY, not WHAT. Comments should provide context, reasoning, and architectural insight that code alone cannot convey.**
+
+### Documentation Standards
+
+#### Public API Documentation (Required)
+All public APIs must have Doxygen-style documentation:
+
+```cpp
+/**
+ * @class InterruptManager
+ * @brief Central coordinator for trigger/action interrupt processing
+ *
+ * @details Manages TriggerHandler for GPIO state monitoring and ActionHandler
+ * for button event processing. Coordinates timing to ensure LVGL compatibility
+ * by processing triggers only during UI IDLE state.
+ */
+class InterruptManager {
+public:
+    /**
+     * @brief Initialize interrupt system with GPIO provider
+     * @param gpioProvider GPIO abstraction for hardware access
+     */
+    void Init(IGpioProvider* gpioProvider);
+
+    /**
+     * @brief Process interrupt handlers with LVGL timing coordination
+     *
+     * ActionHandler processes every call for button responsiveness.
+     * TriggerHandler processes only during UI IDLE for compatibility.
+     */
+    void Process();
+};
+```
+
+#### Implementation Comments (Selective)
+
+**✅ GOOD - Explains complex logic reasoning:**
+```cpp
+void InterruptManager::Process() {
+    // ActionHandler runs every cycle for button responsiveness
+    if (actionHandler_) {
+        actionHandler_->Process();
+    }
+
+    // TriggerHandler only during IDLE to prevent LVGL conflicts
+    if (IsUIIdle() && triggerHandler_) {
+        triggerHandler_->Process();
+    }
+}
+```
+
+**✅ GOOD - Explains architectural decisions:**
+```cpp
+// Static arrays prevent heap fragmentation on ESP32
+constexpr size_t MAX_TRIGGERS = 32;
+Trigger triggers_[MAX_TRIGGERS];
+```
+
+**❌ BAD - States the obvious:**
+```cpp
+void InterruptManager::Process() {
+    // Process interrupts
+    if (actionHandler_) {
+        actionHandler_->Process(); // Call Process method
+    }
+}
+```
+
+**❌ BAD - Redundant explanations:**
+```cpp
+#pragma once // preventing duplicate definitions, alternative to the traditional include guards
+```
+
+#### Special Cases
+
+**Constructor Explanations:**
+```cpp
+InterruptManager::InterruptManager()
+    : initialized_(false), gpioProvider_(nullptr) {
+    // Initialize with safe defaults - handlers created during Init()
+}
+```
+
+**Complex Algorithm Context:**
+```cpp
+bool DetectChange(T currentValue, T& previousValue) {
+    if (!initialized_) {
+        previousValue = currentValue;
+        initialized_ = true;
+        return false; // No change on first read prevents false triggers
+    }
+    // Standard change detection for subsequent readings
+    bool changed = (currentValue != previousValue);
+    previousValue = currentValue;
+    return changed;
+}
+```
+
+### Comment Removal Guidelines
+
+**Remove These Types of Comments:**
+1. **Obvious Explanations**: `i++; // Increment i`
+2. **Standard Practices**: `#pragma once // Include guard`
+3. **Development Debris**: `// TODO: Fix this later`
+4. **Commented Code**: `// oldFunction();` (use version control instead)
+5. **Redundant Headers**: `#include "file.h" // For ClassName`
+
+### Comment Style Standards
+
+**Use `/**` for Public APIs:**
+```cpp
+/**
+ * @brief Brief description
+ * @param param Description
+ * @return Return description
+ */
+```
+
+**Use `//` for Implementation Notes:**
+```cpp
+// Explains WHY this specific approach was chosen
+if (IsUIIdle()) {
+    ProcessTriggers(); // LVGL requires UI idle state for safety
+}
+```
+
+**Use `///` for Member Documentation:**
+```cpp
+class InterruptManager {
+private:
+    bool initialized_;          ///< Track initialization state
+    IGpioProvider* gpioProvider_; ///< Hardware abstraction layer
+};
+```
+
+### Code Review Checklist
+
+- [ ] **Public APIs documented?** All public methods have `@brief` and parameter docs
+- [ ] **Complex logic explained?** WHY reasoning provided for non-obvious code
+- [ ] **No obvious comments?** Removed statements of what code clearly does
+- [ ] **Architectural context?** Design pattern usage and system integration explained
+- [ ] **Consistent style?** `/**` for APIs, `//` for implementation notes

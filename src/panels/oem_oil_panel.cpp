@@ -5,7 +5,7 @@
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
-#include "utilities/logging.h"  // For log_t()
+#include "utilities/logging.h"
 
 // Constructors and Destructors
 

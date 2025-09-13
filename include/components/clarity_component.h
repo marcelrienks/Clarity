@@ -1,4 +1,4 @@
-#pragma once // preventing duplicate definitions, alternative to the traditional include guards
+#pragma once
 
 // Project Includes
 #include "interfaces/i_component.h"

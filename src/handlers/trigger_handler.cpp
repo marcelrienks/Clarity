@@ -145,11 +145,17 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     
     // Determine if trigger should activate or deactivate
     if (!wasActive && sensorActive) {
+        // CRITICAL ARCHITECTURE: Priority-based execution with state preservation
+        // 1. isActive flag ALWAYS updated when sensor changes (regardless of priority)
+        // 2. Function execution BLOCKED by higher priority but state preserved
+        // 3. This preserves trigger state for restoration when higher priority clears
+        // 4. Error panel active check prevents UI corruption during error display
+
         // Activation Flow with Priority Logic (as per interrupt-architecture.md)
         // ALWAYS set isActive when sensor becomes active, regardless of priority
         trigger.isActive = true;
         UpdatePriorityState(trigger.priority, true);
-        
+
         // But only execute the activate function if not blocked by higher priority or error panel
         if (!HasHigherPriorityActive(trigger.priority)) {
             // Check if error panel is active - if so, suppress trigger execution but keep state
@@ -199,10 +205,14 @@ bool TriggerHandler::IsBlocked(const Trigger& trigger) const {
 }
 
 bool TriggerHandler::HasHigherPriorityActive(Priority priority) const {
+    // Priority comparison: Higher numeric values = higher priority
+    // CRITICAL=2 > IMPORTANT=1 > NORMAL=0 (reverse of typical enum ordering)
+    // This allows simple numeric comparison for priority blocking logic
+
     // With corrected priority values: CRITICAL=2, IMPORTANT=1, NORMAL=0
     // Higher numeric value = higher priority
     int candidatePriority = static_cast<int>(priority);
-    
+
     // Check if any active trigger has higher numeric priority
     for (size_t i = 0; i < triggerCount_; i++) {
         const Trigger& trigger = triggers_[i];

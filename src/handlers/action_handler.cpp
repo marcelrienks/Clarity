@@ -7,7 +7,7 @@
 #include <cstring>
 
 #include "esp32-hal-log.h"
-#include "utilities/logging.h"  // For log_t()
+#include "utilities/logging.h"
 
 ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider),
@@ -39,7 +39,6 @@ void ActionHandler::Process() {
     static unsigned long lastProcessTime = 0;
     unsigned long currentTime = millis();
     
-    // Removed Process() logging for critical path optimization - Step 10
     
     // Actions are evaluated every main loop cycle (continuous evaluation)
     UpdateButtonState();

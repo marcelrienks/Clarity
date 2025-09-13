@@ -70,6 +70,11 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 void InterruptManager::RegisterSystemInterrupts()
 {
     
+    // SAFE CASTING: All GPIO sensors inherit from BaseSensor through multiple inheritance
+    // TriggerHandler owns these sensors exclusively - no shared ownership
+    // static_cast is safe here as type hierarchy guarantees BaseSensor interface
+    // This pattern allows system triggers to access sensors through base interface
+
     // Get system triggers with handler-owned sensors
     // Note: static_cast is safe here as all sensors inherit from BaseSensor
     auto systemTriggers = SystemDefinitions::GetSystemTriggers(
@@ -191,6 +196,11 @@ void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
 
 bool InterruptManager::IsUIIdle() const
 {
+    // PERFORMANCE OPTIMIZATION: Cache UI idle state to reduce LVGL queries
+    // LVGL query is expensive (requires display lock + calculation)
+    // 5ms cache timeout balances responsiveness vs performance
+    // 10ms idle threshold prevents interrupting smooth animations
+
     // Cache UI idle state with timeout to reduce LVGL query frequency
     static bool cached_idle = false;
     static unsigned long last_check = 0;

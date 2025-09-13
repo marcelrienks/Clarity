@@ -1,5 +1,5 @@
 #include "managers/panel_manager.h"
-#include "utilities/logging.h"  // For log_t()
+#include "utilities/logging.h"
 
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
