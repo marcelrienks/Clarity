@@ -30,6 +30,7 @@
 #else
     #include <lvgl.h>
 #endif
+#include <cstring>
 #include <functional>
 #include <stdint.h>
 #include <string>
@@ -183,11 +184,24 @@ struct Trigger
 /// @brief Complete error information structure
 struct ErrorInfo
 {
+    static constexpr size_t MAX_MESSAGE_LENGTH = 128; ///< Fixed buffer size for embedded optimization
+
     ErrorLevel level;        ///< Severity level of the error
     const char *source;      ///< Component/manager that reported the error
-    std::string message;     ///< Human-readable error description
+    char message[MAX_MESSAGE_LENGTH]; ///< Fixed-size error message buffer (optimized for embedded)
     unsigned long timestamp; ///< millis() timestamp when error occurred
     bool acknowledged;       ///< Whether user has acknowledged the error
+
+    // Constructor to maintain compatibility with std::string API
+    ErrorInfo() : level(ErrorLevel::WARNING), source(nullptr), timestamp(0), acknowledged(false) {
+        message[0] = '\0';
+    }
+
+    // Helper method to set message safely
+    void SetMessage(const std::string& msg) {
+        strncpy(message, msg.c_str(), MAX_MESSAGE_LENGTH - 1);
+        message[MAX_MESSAGE_LENGTH - 1] = '\0'; // Ensure null termination
+    }
 };
 
 //=============================================================================

@@ -61,8 +61,6 @@ bool LockSensor::readLockState()
 
 bool LockSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
-    
     bool currentState = readLockState();
     
     // Store previous state for logging before DetectChange updates it

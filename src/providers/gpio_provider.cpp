@@ -3,40 +3,38 @@
 
 bool GpioProvider::DigitalRead(int pin)
 {
-    bool value = ::digitalRead(pin);
-    return value;
+    return ::digitalRead(pin);
 }
 
 uint16_t GpioProvider::AnalogRead(int pin)
 {
-    uint16_t value = ::analogRead(pin);
-    return value;
+    return ::analogRead(pin);
 }
 
 void GpioProvider::PinMode(int pin, int mode)
 {
-    log_v("PinMode() called");
     ::pinMode(pin, mode);
 }
 
 void GpioProvider::AttachInterrupt(int pin, void (*callback)(), int mode)
 {
-    log_v("AttachInterrupt() called");
-    log_i("GPIO %d interrupt attached", pin);
-    ::attachInterrupt(digitalPinToInterrupt(pin), callback, mode);
-    attachedInterrupts[pin] = true;
+    if (pin >= 0 && pin < MAX_GPIO_PIN) {
+        log_i("GPIO %d interrupt attached", pin);
+        ::attachInterrupt(digitalPinToInterrupt(pin), callback, mode);
+        attachedInterrupts_[pin] = true;
+    }
 }
 
 void GpioProvider::DetachInterrupt(int pin)
 {
-    log_v("DetachInterrupt() called");
-    log_i("GPIO %d interrupt detached", pin);
-    ::detachInterrupt(digitalPinToInterrupt(pin));
-    attachedInterrupts[pin] = false;
+    if (pin >= 0 && pin < MAX_GPIO_PIN) {
+        log_i("GPIO %d interrupt detached", pin);
+        ::detachInterrupt(digitalPinToInterrupt(pin));
+        attachedInterrupts_[pin] = false;
+    }
 }
 
 bool GpioProvider::HasInterrupt(int pin)
 {
-    log_v("HasInterrupt() called");
-    return attachedInterrupts.count(pin) && attachedInterrupts[pin];
+    return (pin >= 0 && pin < MAX_GPIO_PIN) ? attachedInterrupts_[pin] : false;
 }

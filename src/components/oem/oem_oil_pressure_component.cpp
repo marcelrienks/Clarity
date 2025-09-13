@@ -5,7 +5,6 @@
 
 OemOilPressureComponent::OemOilPressureComponent(IStyleService *styleService) : OemOilComponent(styleService)
 {
-    log_v("OemOilPressureComponent() constructor called");
     // Constructor delegates to base class
 }
 
@@ -15,7 +14,6 @@ OemOilPressureComponent::OemOilPressureComponent(IStyleService *styleService) : 
 /// @return Pointer to the icon image descriptor.
 const lv_image_dsc_t *OemOilPressureComponent::get_icon() const
 {
-    log_v("get_icon() called");
     return &oil_can_regular;
 }
 
@@ -44,7 +42,6 @@ int32_t OemOilPressureComponent::get_danger_zone() const
 /// @return The scale mode.
 lv_scale_mode_t OemOilPressureComponent::get_scale_mode() const
 {
-    log_v("get_scale_mode() called");
     return LV_SCALE_MODE_ROUND_INNER;
 }
 
@@ -52,7 +49,6 @@ lv_scale_mode_t OemOilPressureComponent::get_scale_mode() const
 /// @return The angle range.
 int32_t OemOilPressureComponent::get_angle_range() const
 {
-    log_v("get_angle_range() called");
     return 120;
 }
 
@@ -68,7 +64,6 @@ bool OemOilPressureComponent::is_danger_condition(int32_t value) const
 /// @param section The scale section to configure.
 void OemOilPressureComponent::setup_danger_zone(lv_scale_section_t *section) const
 {
-    log_v("setup_danger_zone() called");
     lv_scale_section_set_range(section, OemOilPressureComponent::get_scale_min(),
                                OemOilPressureComponent::get_danger_zone());
 }
@@ -77,7 +72,6 @@ void OemOilPressureComponent::setup_danger_zone(lv_scale_section_t *section) con
 /// @return The Y offset value.
 int32_t OemOilPressureComponent::get_icon_y_offset() const
 {
-    log_v("get_icon_y_offset() called");
     return -55;
 }
 
@@ -86,7 +80,6 @@ int32_t OemOilPressureComponent::get_icon_y_offset() const
 /// @param hAngle Reference to store the H label angle.
 void OemOilPressureComponent::get_label_angles(int32_t &lAngle, int32_t &hAngle) const
 {
-    log_v("get_label_angles() called");
     // Standard positioning for pressure component
     // L label: At _scale_rotation angle (low pressure start)
     lAngle = scaleRotation_;

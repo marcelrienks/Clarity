@@ -29,7 +29,6 @@ void ButtonSensor::Init()
 /// @return Reading containing the current button state (bool)
 Reading ButtonSensor::GetReading()
 {
-    log_v("GetReading() called");
     // Process button state to detect actions
     ProcessButtonState();
     
@@ -43,7 +42,6 @@ Reading ButtonSensor::GetReading()
 /// @return ButtonAction indicating the type of press detected
 ButtonAction ButtonSensor::GetButtonAction()
 {
-    log_v("GetButtonAction() called");
     ProcessButtonState();
     return detectedAction_;
 }
@@ -58,7 +56,6 @@ bool ButtonSensor::HasButtonAction() const
 /// @brief Clear the current button action (after processing)
 void ButtonSensor::ClearButtonAction()
 {
-    log_v("ClearButtonAction() called");
     detectedAction_ = ButtonAction::NONE;
     actionReady_ = false;
 }
@@ -67,7 +64,6 @@ void ButtonSensor::ClearButtonAction()
 /// @return true if button is pressed (GPIO HIGH), false otherwise
 bool ButtonSensor::IsButtonPressed()
 {
-    log_v("IsButtonPressed() called");
     // GPIO 32 reads HIGH when button is pressed (connected to 3.3V)
     return gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
 }
@@ -96,7 +92,6 @@ bool ButtonSensor::ReadButtonState()
 
 bool ButtonSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
     ProcessButtonState();
     
     // If no action is ready, clear the interrupt ID

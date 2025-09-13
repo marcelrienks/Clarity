@@ -66,7 +66,8 @@ class OilTemperatureSensor : public BaseSensor
     IPreferenceService *preferenceService_ = nullptr;
     std::string targetUnit_ = "C";
     int32_t currentReading_ = 0;
-    int32_t previousReading_ = 0;  // For change detection
+    int32_t previousReading_ = 0;  // For GetReading() change tracking
+    int32_t previousChangeReading_ = 0;  // For HasStateChanged() separate tracking
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
 };

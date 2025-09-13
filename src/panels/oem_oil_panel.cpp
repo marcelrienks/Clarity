@@ -28,16 +28,11 @@ OemOilPanel::~OemOilPanel()
     log_v("~OemOilPanel() destructor called");
 
     // Stop any running animations before destroying the panel
-    if (isPressureAnimationRunning_)
+    if (animationState_ != AnimationState::IDLE)
     {
         lv_anim_delete(&pressureAnimation_, nullptr);
-        isPressureAnimationRunning_ = false;
-    }
-
-    if (isTemperatureAnimationRunning_)
-    {
         lv_anim_delete(&temperatureAnimation_, nullptr);
-        isTemperatureAnimationRunning_ = false;
+        animationState_ = AnimationState::IDLE;
     }
 
     // Delete all animations that might reference this instance
@@ -105,6 +100,10 @@ void OemOilPanel::Init()
 
     oemOilTemperatureSensor_->Init();
     currentOilTemperatureValue_ = -1; // Sentinel value to ensure first update
+
+    // Cache sensor references to avoid repeated static_pointer_cast operations
+    cachedPressureSensor_ = std::static_pointer_cast<OilPressureSensor>(oemOilPressureSensor_);
+    cachedTemperatureSensor_ = std::static_pointer_cast<OilTemperatureSensor>(oemOilTemperatureSensor_);
     
     log_i("OemOilPanel initialization completed");
 }
@@ -208,72 +207,49 @@ void OemOilPanel::Load()
 /// @brief Update the reading on the screen
 void OemOilPanel::Update()
 {
-
-
-    // Always force component refresh when theme has changed (like panel restoration)
-    // This ensures icons and pivot styling update regardless of needle value changes
-    auto *styleService = styleService_;
-    const char *currentTheme = styleService ? styleService->GetCurrentTheme().c_str() : "";
-    if (lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme))
+    // Check for theme changes and apply immediately
+    const char *currentTheme = styleService_ ? styleService_->GetCurrentTheme().c_str() : "";
+    bool themeChanged = lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme);
+    if (themeChanged)
     {
-        forceComponentRefresh_ = true;
-        // Theme changed, forcing component refresh
         lastTheme_ = String(currentTheme);
-
-        // Apply the new theme to the screen background when theme changes
         if (styleService_ && screen_)
         {
             styleService_->ApplyThemeToScreen(screen_);
         }
     }
-    else
+
+    // Apply sensor settings periodically (every ~100 updates) instead of every cycle
+    // This reduces overhead while still catching preference changes reasonably quickly
+    static uint16_t settingsUpdateCounter = 0;
+    if (++settingsUpdateCounter % 100 == 0)
     {
-        forceComponentRefresh_ = false;
+        ApplyCurrentSensorSettings();
     }
 
-    // Apply current sensor settings from preferences (direct reading)
-    // This ensures sensor configuration updates immediately when preferences change
-    ApplyCurrentSensorSettings();
-
-    // Update sensor readings and components
-    OemOilPanel::UpdateOilPressure();
-    OemOilPanel::UpdateOilTemperature();
-
-    // Reset the force refresh flag after updates
-    forceComponentRefresh_ = false;
+    // Update sensor readings and components (pass theme change flag)
+    UpdateOilPressure(themeChanged);
+    UpdateOilTemperature(themeChanged);
 
     // If no animations were started, updates complete immediately
-    if (!isPressureAnimationRunning_ && !isTemperatureAnimationRunning_)
+    if (animationState_ == AnimationState::IDLE)
     {
-        // No animations started - updates complete, set UI back to IDLE
         if (panelService_)
         {
             panelService_->SetUiState(UIState::IDLE);
         }
-        log_v("OemOilPanel update completed immediately (no animations)");
     }
 }
 
 // Private Methods
 
 /// @brief Update the oil pressure reading on the screen
-void OemOilPanel::UpdateOilPressure()
+void OemOilPanel::UpdateOilPressure(bool forceRefresh)
 {
-
-    // Skip update if pressure animation is already running
-    if (isPressureAnimationRunning_)
+    // Skip if pressure animation is running unless this is a forced refresh
+    if (!forceRefresh && (animationState_ == AnimationState::PRESSURE_RUNNING || animationState_ == AnimationState::BOTH_RUNNING))
     {
-        // Validate that the LVGL animation is actually still running
-        // If not, this is a stale flag that needs to be cleared
-        if (!lv_anim_get(&pressureAnimation_, nullptr))
-        {
-            log_w("UpdateOilPressure: Found stale animation flag, clearing it");
-            isPressureAnimationRunning_ = false;
-        }
-        else
-        {
-            return;
-        }
+        return;
     }
 
     // Safety check for sensor availability
@@ -287,18 +263,14 @@ void OemOilPanel::UpdateOilPressure()
     auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
 
-    // Handle forced refresh (theme changes) even when values unchanged
-    if (value == currentOilPressureValue_ && forceComponentRefresh_)
+    // Handle forced refresh (theme changes) or skip if unchanged
+    if (value == currentOilPressureValue_)
     {
-        // Pressure value unchanged but forced refresh required - updating colors only
-        oemOilPressureComponent_->Refresh(Reading{value});
+        if (forceRefresh)
+        {
+            oemOilPressureComponent_->Refresh(Reading{value});
+        }
         return; // No animation needed since value didn't change
-    }
-
-    // Skip update only if value is exactly the same as last update AND this is not a forced update
-    if (value == currentOilPressureValue_ && !forceComponentRefresh_)
-    {
-        return;
     }
 
     log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
@@ -354,7 +326,12 @@ void OemOilPanel::UpdateOilPressure()
     lv_anim_set_exec_cb(&pressureAnimation_, OemOilPanel::ExecutePressureAnimationCallback);
     lv_anim_set_completed_cb(&pressureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
-    isPressureAnimationRunning_ = true;
+    // Update animation state based on current state
+    if (animationState_ == AnimationState::TEMPERATURE_RUNNING) {
+        animationState_ = AnimationState::BOTH_RUNNING;
+    } else {
+        animationState_ = AnimationState::PRESSURE_RUNNING;
+    }
     // Set ANIMATING state before starting animation
     if (panelService_)
     {
@@ -365,18 +342,22 @@ void OemOilPanel::UpdateOilPressure()
 }
 
 /// @brief Update the oil temperature reading on the screen
-void OemOilPanel::UpdateOilTemperature()
+void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
 {
 
     // Skip update if temperature animation is already running
-    if (isTemperatureAnimationRunning_)
+    if (animationState_ == AnimationState::TEMPERATURE_RUNNING || animationState_ == AnimationState::BOTH_RUNNING)
     {
         // Validate that the LVGL animation is actually still running
         // If not, this is a stale flag that needs to be cleared
         if (!lv_anim_get(&temperatureAnimation_, nullptr))
         {
             log_w("UpdateOilTemperature: Found stale animation flag, clearing it");
-            isTemperatureAnimationRunning_ = false;
+            if (animationState_ == AnimationState::TEMPERATURE_RUNNING) {
+                animationState_ = AnimationState::IDLE;
+            } else if (animationState_ == AnimationState::BOTH_RUNNING) {
+                animationState_ = AnimationState::PRESSURE_RUNNING;
+            }
         }
         else
         {
@@ -395,18 +376,14 @@ void OemOilPanel::UpdateOilTemperature()
     auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
     auto value = MapTemperatureValue(sensorValue);
 
-    // Handle forced refresh (theme changes) even when values unchanged
-    if (value == currentOilTemperatureValue_ && forceComponentRefresh_)
+    // Handle forced refresh (theme changes) or skip if unchanged
+    if (value == currentOilTemperatureValue_)
     {
-        // Temperature value unchanged but forced refresh required - updating colors only
-        oemOilTemperatureComponent_->Refresh(Reading{value});
+        if (forceRefresh)
+        {
+            oemOilTemperatureComponent_->Refresh(Reading{value});
+        }
         return; // No animation needed since value didn't change
-    }
-
-    // Skip update only if value is exactly the same as last update AND this is not a forced update
-    if (value == currentOilTemperatureValue_ && !forceComponentRefresh_)
-    {
-        return;
     }
 
     log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);
@@ -462,7 +439,12 @@ void OemOilPanel::UpdateOilTemperature()
     lv_anim_set_exec_cb(&temperatureAnimation_, OemOilPanel::ExecuteTemperatureAnimationCallback);
     lv_anim_set_completed_cb(&temperatureAnimation_, OemOilPanel::UpdatePanelCompletionCallback);
 
-    isTemperatureAnimationRunning_ = true;
+    // Update animation state based on current state
+    if (animationState_ == AnimationState::PRESSURE_RUNNING) {
+        animationState_ = AnimationState::BOTH_RUNNING;
+    } else {
+        animationState_ = AnimationState::TEMPERATURE_RUNNING;
+    }
     // Set ANIMATING state before starting animation
     if (panelService_)
     {
@@ -535,32 +517,51 @@ void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
 /// @brief Apply current sensor settings from preferences directly
 void OemOilPanel::ApplyCurrentSensorSettings()
 {
-    log_v("ApplyCurrentSensorSettings() called");
-
     // Apply updateRate and units from preferences to sensors if preference service is available
-    if (preferenceService_)
+    if (preferenceService_ && cachedPressureSensor_ && cachedTemperatureSensor_)
     {
         auto config = preferenceService_->GetConfig();
 
-        // Apply to pressure sensor - we know the concrete types since we created them
-        auto pressureSensor = std::static_pointer_cast<OilPressureSensor>(oemOilPressureSensor_);
-        if (pressureSensor)
+        // Only update settings if they have changed
+        bool updateRateChanged = (lastUpdateRate_ != config.updateRate);
+        bool pressureUnitChanged = !lastPressureUnit_.equals(config.pressureUnit.c_str());
+        bool tempUnitChanged = !lastTempUnit_.equals(config.tempUnit.c_str());
+
+        if (updateRateChanged)
         {
-            pressureSensor->SetUpdateRate(config.updateRate);
-            pressureSensor->SetTargetUnit(config.pressureUnit);
+            cachedPressureSensor_->SetUpdateRate(config.updateRate);
+            cachedTemperatureSensor_->SetUpdateRate(config.updateRate);
+            lastUpdateRate_ = config.updateRate;
         }
 
-        // Apply to temperature sensor - we know the concrete types since we created them
-        auto temperatureSensor = std::static_pointer_cast<OilTemperatureSensor>(oemOilTemperatureSensor_);
-        if (temperatureSensor)
+        if (pressureUnitChanged)
         {
-            temperatureSensor->SetUpdateRate(config.updateRate);
-            temperatureSensor->SetTargetUnit(config.tempUnit);
+            cachedPressureSensor_->SetTargetUnit(config.pressureUnit);
+            lastPressureUnit_ = String(config.pressureUnit.c_str());
+        }
+
+        if (tempUnitChanged)
+        {
+            cachedTemperatureSensor_->SetTargetUnit(config.tempUnit);
+            lastTempUnit_ = String(config.tempUnit.c_str());
+        }
+
+        // Only log if something actually changed
+        if (updateRateChanged || pressureUnitChanged || tempUnitChanged)
+        {
+            log_t("Sensor settings updated - Rate: %dms, Pressure: %s, Temp: %s",
+                  config.updateRate, config.pressureUnit, config.tempUnit);
         }
     }
-    else
+    else if (!preferenceService_)
     {
-        log_w("ApplyCurrentSensorSettings: No PreferenceService available - using default sensor settings");
+        // Only log this warning once during initialization
+        static bool logged = false;
+        if (!logged)
+        {
+            log_w("ApplyCurrentSensorSettings: No PreferenceService available - using default sensor settings");
+            logged = true;
+        }
     }
 }
 
@@ -610,16 +611,26 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
     if (sensorType == OilSensorTypes::Pressure)
     {
         thisInstance->currentOilPressureValue_ = animation->current_value;
-        thisInstance->isPressureAnimationRunning_ = false;
+        // Update animation state when pressure animation completes
+        if (thisInstance->animationState_ == AnimationState::PRESSURE_RUNNING) {
+            thisInstance->animationState_ = AnimationState::IDLE;
+        } else if (thisInstance->animationState_ == AnimationState::BOTH_RUNNING) {
+            thisInstance->animationState_ = AnimationState::TEMPERATURE_RUNNING;
+        }
     }
     else if (sensorType == OilSensorTypes::Temperature)
     {
         thisInstance->currentOilTemperatureValue_ = animation->current_value;
-        thisInstance->isTemperatureAnimationRunning_ = false;
+        // Update animation state when temperature animation completes
+        if (thisInstance->animationState_ == AnimationState::TEMPERATURE_RUNNING) {
+            thisInstance->animationState_ = AnimationState::IDLE;
+        } else if (thisInstance->animationState_ == AnimationState::BOTH_RUNNING) {
+            thisInstance->animationState_ = AnimationState::PRESSURE_RUNNING;
+        }
     }
 
-    // Only call the callback function if both animations are not running
-    if (!thisInstance->isPressureAnimationRunning_ && !thisInstance->isTemperatureAnimationRunning_)
+    // Only set UI state to idle when all animations are complete
+    if (thisInstance->animationState_ == AnimationState::IDLE)
     {
         // Set IDLE state when all animations are complete
         if (thisInstance->panelService_)

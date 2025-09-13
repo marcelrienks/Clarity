@@ -48,7 +48,6 @@ bool KeyNotPresentSensor::GetKeyNotPresentState()
 
 bool KeyNotPresentSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
     if (!initialized_) {
         log_w("KeyNotPresentSensor: HasStateChanged called before initialization");
         return false;
