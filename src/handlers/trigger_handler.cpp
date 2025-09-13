@@ -19,7 +19,7 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider),
       triggerCount_(0)
 {
-    log_v("TriggerHandler() constructor called");
+    log_d("TriggerHandler() constructor called");
     
     // Initialize priority tracking
     for (int i = 0; i < 3; i++) {
@@ -61,7 +61,7 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
 }
 
 TriggerHandler::~TriggerHandler() {
-    log_v("TriggerHandler destructor called");
+    log_d("TriggerHandler destructor called");
 }
 
 void TriggerHandler::Process() {

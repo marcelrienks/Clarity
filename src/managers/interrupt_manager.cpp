@@ -71,6 +71,7 @@ void InterruptManager::RegisterSystemInterrupts()
 {
     
     // Get system triggers with handler-owned sensors
+    // Note: static_cast is safe here as all sensors inherit from BaseSensor
     auto systemTriggers = SystemDefinitions::GetSystemTriggers(
         static_cast<BaseSensor*>(triggerHandler_->GetKeyPresentSensor()),
         static_cast<BaseSensor*>(triggerHandler_->GetKeyNotPresentSensor()),
@@ -110,7 +111,7 @@ void InterruptManager::Process()
     
     // Process Actions (continuous evaluation for responsiveness)
     if (actionHandler_) {
-        log_v("Processing ActionHandler - button timing runs always");
+        // Removed verbose logging from hot path - ActionHandler called every main loop cycle";
         actionHandler_->Process();
     }
     
@@ -121,7 +122,7 @@ void InterruptManager::Process()
         log_d("TriggerHandler processing complete");
     }
     else {
-        log_v("Skipping TriggerHandler - UI is busy");
+        // Removed verbose logging from hot path - UI busy check happens frequently
     }
     
     // Update performance counters
@@ -196,8 +197,17 @@ void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
 
 bool InterruptManager::IsUIIdle() const
 {
-    // Check if LVGL is ready and not processing
-    return lv_disp_get_inactive_time(nullptr) > 10; // 10ms idle threshold
+    // Cache UI idle state with timeout to reduce LVGL query frequency
+    static bool cached_idle = false;
+    static unsigned long last_check = 0;
+
+    unsigned long current_time = millis();
+    if (current_time - last_check >= 5) { // Check every 5ms max (was checking every main loop cycle)
+        cached_idle = lv_disp_get_inactive_time(nullptr) > 10; // 10ms idle threshold
+        last_check = current_time;
+    }
+
+    return cached_idle;
 }
 
 void InterruptManager::CheckRestoration()

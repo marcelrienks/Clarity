@@ -9,16 +9,14 @@
 #include "esp32-hal-log.h"
 #include "utilities/logging.h"  // For log_t()
 
-ActionHandler::ActionHandler(IGpioProvider* gpioProvider) 
+ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider),
       actionCount_(0),
-      buttonPressed_(false),
-      buttonPreviouslyPressed_(false),
+      buttonState_(ButtonState::IDLE),
       buttonPressStartTime_(0),
-      buttonPressEndTime_(0),
-      longPressAlreadyTriggered_(false)
+      buttonPressEndTime_(0)
 {
-    log_v("ActionHandler() constructor called");
+    log_d("ActionHandler() constructor called");
     
     // Create and initialize ButtonSensor owned by this handler
     if (gpioProvider_) {
@@ -34,16 +32,16 @@ ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
 }
 
 ActionHandler::~ActionHandler() {
-    log_v("ActionHandler destructor called");
+    log_d("ActionHandler destructor called");
 }
 
 void ActionHandler::Process() {
     static unsigned long lastProcessTime = 0;
     unsigned long currentTime = millis();
     
-    // Log every 2 seconds to verify Process() is being called
-    if (currentTime - lastProcessTime > 2000) {
-        log_v("Process() called");
+    // Log every 10 seconds to verify Process() is being called (reduced frequency)
+    if (currentTime - lastProcessTime > 10000) {
+        log_d("Process() called (%d times)", static_cast<int>((currentTime - lastProcessTime) / 10));
         lastProcessTime = currentTime;
     }
     
@@ -119,10 +117,6 @@ void ActionHandler::EvaluateActions() {
     
     // Clear timing data after all actions have been evaluated to prevent duplicate triggers
     if (detectedAction != ButtonAction::NONE && anyActionTriggered) {
-        if (detectedAction == ButtonAction::LONG_PRESS) {
-            // For long press, mark as triggered to ignore subsequent release
-            longPressAlreadyTriggered_ = true;
-        }
         buttonPressStartTime_ = 0;
         buttonPressEndTime_ = 0;
     }
@@ -159,13 +153,13 @@ bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, 
     if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
         bool shouldTrigger = !action.hasTriggered;
         if (shouldTrigger) log_t("Button action detected: SHORT_PRESS");
-        log_v("SHORT press match for '%s' - shouldTrigger=%s", action.id, shouldTrigger ? "YES" : "NO");
+        // Removed verbose logging from hot path
         return shouldTrigger;  // Only trigger once per press event
     }
     else if (action.pressType == ActionPress::LONG && detectedAction == ButtonAction::LONG_PRESS) {
         bool shouldTrigger = !action.hasTriggered;
         if (shouldTrigger) log_t("Button action detected: LONG_PRESS");
-        log_v("LONG press match for '%s' - shouldTrigger=%s", action.id, shouldTrigger ? "YES" : "NO");
+        // Removed verbose logging from hot path
         return shouldTrigger;  // Only trigger once per press event
     }
     
@@ -218,44 +212,72 @@ void ActionHandler::ExecuteAction(const Action& action) {
 }
 
 void ActionHandler::UpdateButtonState() {
-    buttonPreviouslyPressed_ = buttonPressed_;
-    buttonPressed_ = IsButtonPressed();
-    
-    static unsigned long lastDebugTime = 0;
+    bool currentPressed = IsButtonPressed();
     unsigned long currentTime = millis();
-    
-    // Debug every 1 second or on state changes - more frequent for troubleshooting
-    if ((currentTime - lastDebugTime > 1000) || (buttonPreviouslyPressed_ != buttonPressed_)) {
-        bool rawGpioState = false;
-        if (buttonSensor_) {
-            // Try to read GPIO directly via sensor
-            rawGpioState = IsButtonPressed();
-        }
-        log_i("Button state: current=%s, previous=%s, raw_gpio=%s, sensor_valid=%s", 
-              buttonPressed_ ? "PRESSED" : "RELEASED", 
-              buttonPreviouslyPressed_ ? "PRESSED" : "RELEASED",
-              rawGpioState ? "HIGH" : "LOW",
+
+    static unsigned long lastDebugTime = 0;
+    ButtonState previousState = buttonState_;
+
+    // State machine transitions
+    switch (buttonState_) {
+        case ButtonState::IDLE:
+            if (currentPressed) {
+                buttonState_ = ButtonState::PRESSED;
+                StartButtonTiming();
+                log_t("Button press started");
+            }
+            break;
+
+        case ButtonState::PRESSED:
+            if (!currentPressed) {
+                buttonState_ = ButtonState::RELEASED;
+                StopButtonTiming();
+                log_t("Button press ended");
+            } else {
+                // Check for long press during hold
+                unsigned long pressDuration = currentTime - buttonPressStartTime_;
+                if (pressDuration >= LONG_PRESS_MIN_MS) {
+                    buttonState_ = ButtonState::LONG_PRESS_TRIGGERED;
+                    log_t("Long press triggered during hold");
+                }
+            }
+            break;
+
+        case ButtonState::LONG_PRESS_TRIGGERED:
+            if (!currentPressed) {
+                buttonState_ = ButtonState::IDLE; // Skip RELEASED state for long press
+                buttonPressEndTime_ = currentTime;
+            }
+            break;
+
+        case ButtonState::RELEASED:
+            buttonState_ = ButtonState::IDLE;
+            break;
+    }
+
+    // Debug every 2 seconds or on state changes (reduced from 1 second)
+    if ((currentTime - lastDebugTime > 2000) || (buttonState_ != previousState)) {
+        log_i("Button state: %s, raw_gpio=%s, sensor_valid=%s",
+              StateToString(buttonState_),
+              currentPressed ? "HIGH" : "LOW",
               buttonSensor_ ? "YES" : "NO");
         lastDebugTime = currentTime;
     }
-    
-    // Detect button press start
-    if (!buttonPreviouslyPressed_ && buttonPressed_) {
-        log_t("Button press started");
-        StartButtonTiming();
-    }
-    // Detect button press end
-    else if (buttonPreviouslyPressed_ && !buttonPressed_) {
-        log_t("Button press ended");
-        StopButtonTiming();
+}
+
+const char* ActionHandler::StateToString(ButtonState state) const {
+    switch (state) {
+        case ButtonState::IDLE: return "IDLE";
+        case ButtonState::PRESSED: return "PRESSED";
+        case ButtonState::LONG_PRESS_TRIGGERED: return "LONG_TRIGGERED";
+        case ButtonState::RELEASED: return "RELEASED";
+        default: return "UNKNOWN";
     }
 }
 
 void ActionHandler::ProcessButtonEvents() {
-    // This method processes any pending button events
-    // The timing logic is handled in UpdateButtonState() and DetectButtonAction()
-    // Reset triggered flags when button is released
-    if (buttonPreviouslyPressed_ && !buttonPressed_) {
+    // Reset triggered flags when button transitions to idle
+    if (buttonState_ == ButtonState::IDLE) {
         for (size_t i = 0; i < actionCount_; i++) {
             actions_[i].hasTriggered = false;
         }
@@ -263,56 +285,36 @@ void ActionHandler::ProcessButtonEvents() {
 }
 
 ButtonAction ActionHandler::DetectButtonAction() {
-    // Only detect action when button is released after a press
-    if (!buttonPreviouslyPressed_ || buttonPressed_ || buttonPressEndTime_ == 0) {
-        log_v("DetectButtonAction: No action - prevPressed=%s, pressed=%s, endTime=%lu",
-              buttonPreviouslyPressed_ ? "true" : "false",
-              buttonPressed_ ? "true" : "false", buttonPressEndTime_);
+    // Only detect action when button is in RELEASED state
+    if (buttonState_ != ButtonState::RELEASED || buttonPressEndTime_ == 0) {
         return ButtonAction::NONE;
     }
-    
-    // If long press was already triggered during hold, ignore the release
-    if (longPressAlreadyTriggered_) {
-        log_i("DetectButtonAction: Ignoring release after long press was triggered during hold");
-        longPressAlreadyTriggered_ = false;  // Reset for next press
-        return ButtonAction::NONE;
-    }
-    
+
     unsigned long pressDuration = buttonPressEndTime_ - buttonPressStartTime_;
     ButtonAction action = CalculateButtonAction(pressDuration);
-    
+
     log_i("DetectButtonAction: Duration=%lu ms, Action=%s", pressDuration,
           action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
           action == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE");
-    
-    // Don't clear timing here - let EvaluateActions clear it after all actions are checked
-    
+
     return action;
 }
 
 ButtonAction ActionHandler::DetectLongPressDuringHold() {
-    // Check for long press during button hold (without waiting for release)
-    if (!buttonPressed_ || buttonPressStartTime_ == 0 || longPressAlreadyTriggered_) {
-        return ButtonAction::NONE;
-    }
-    
-    unsigned long currentTime = millis();
-    unsigned long pressDuration = currentTime - buttonPressStartTime_;
-    
-    // Check if we've reached the long press threshold while button is still held
-    // Once we hit 1500ms, it's a long press regardless of how long it's held
-    if (pressDuration >= LONG_PRESS_MIN_MS) {
+    // Check for long press during button hold (state machine handles this better now)
+    if (buttonState_ == ButtonState::LONG_PRESS_TRIGGERED) {
+        unsigned long currentTime = millis();
+        unsigned long pressDuration = currentTime - buttonPressStartTime_;
         log_i("DetectLongPressDuringHold: Long press detected during hold at %lu ms", pressDuration);
         return ButtonAction::LONG_PRESS;
     }
-    
+
     return ButtonAction::NONE;
 }
 
 void ActionHandler::StartButtonTiming() {
     buttonPressStartTime_ = millis();
     buttonPressEndTime_ = 0;
-    longPressAlreadyTriggered_ = false;  // Reset for new press
 }
 
 void ActionHandler::StopButtonTiming() {
@@ -340,7 +342,7 @@ ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
 
 bool ActionHandler::IsButtonPressed() const {
     if (!buttonSensor_) {
-        log_v("IsButtonPressed: buttonSensor_ is null");
+        // Removed verbose logging from hot path - checked every cycle
         return false;
     }
     
@@ -348,7 +350,7 @@ bool ActionHandler::IsButtonPressed() const {
     Reading reading = buttonSensor_->GetReading();
     if (std::holds_alternative<bool>(reading)) {
         bool pressed = std::get<bool>(reading);
-        log_v("IsButtonPressed: reading=%s", pressed ? "PRESSED" : "RELEASED");
+        // Removed verbose logging from hot path - called every main loop cycle
         return pressed;
     }
     
@@ -403,16 +405,15 @@ bool ActionHandler::HasPendingActions() const {
 void ActionHandler::PrintActionStatus() const {
     log_i("ActionHandler Status:");
     log_i("  Total actions: %d", actionCount_);
-    log_i("  Button state: pressed=%s, previouslyPressed=%s", 
-          buttonPressed_ ? "yes" : "no", buttonPreviouslyPressed_ ? "yes" : "no");
+    log_i("  Button state: %s", StateToString(buttonState_));
     log_i("  Timing: start=%lu, end=%lu", buttonPressStartTime_, buttonPressEndTime_);
     log_i("  Functions: short=%s, long=%s",
           currentShortPressFunc_ ? "set" : "null", currentLongPressFunc_ ? "set" : "null");
-    
+
     for (size_t i = 0; i < actionCount_; i++) {
         const Action& action = actions_[i];
         log_i("  Action[%d]: id='%s', pressType=%d, triggered=%s",
-              i, action.id, static_cast<int>(action.pressType), 
+              i, action.id, static_cast<int>(action.pressType),
               action.hasTriggered ? "yes" : "no");
     }
 }

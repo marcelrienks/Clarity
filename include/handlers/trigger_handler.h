@@ -8,6 +8,7 @@
 #include <memory>
 
 // Forward declarations for sensors
+class BaseSensor;
 class KeyPresentSensor;
 class KeyNotPresentSensor;
 class LockSensor;

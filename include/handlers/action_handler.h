@@ -55,7 +55,15 @@ public:
     size_t GetActionCount() const;
     bool HasPendingActions() const;
     void PrintActionStatus() const;
-    
+
+    // Button state machine (moved to public for StateToString access)
+    enum class ButtonState {
+        IDLE,
+        PRESSED,
+        LONG_PRESS_TRIGGERED,
+        RELEASED
+    };
+
 private:
     // Core action processing
     void EvaluateIndividualAction(Action& action);
@@ -74,6 +82,7 @@ private:
     // Helper methods
     Action* FindAction(const char* id);
     bool IsButtonPressed() const;
+    const char* StateToString(ButtonState state) const;
     
     // Timing constants
     static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum press duration
@@ -86,13 +95,11 @@ private:
     // Action storage
     Action actions_[MAX_ACTIONS];
     size_t actionCount_ = 0;
-    
-    // Button timing state
-    bool buttonPressed_ = false;
-    bool buttonPreviouslyPressed_ = false;
+
+    // Button state
+    ButtonState buttonState_ = ButtonState::IDLE;
     unsigned long buttonPressStartTime_ = 0;
     unsigned long buttonPressEndTime_ = 0;
-    bool longPressAlreadyTriggered_ = false;  // Track if long press was triggered during hold
     
     // Function injection for dynamic panel functions
     void (*currentShortPressFunc_)(void*) = nullptr;
