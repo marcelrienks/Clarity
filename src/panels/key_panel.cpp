@@ -3,8 +3,7 @@
 #include "handlers/trigger_handler.h"
 #include "managers/interrupt_manager.h"
 #include "managers/error_manager.h"
-#include "sensors/key_present_sensor.h"
-#include "sensors/key_not_present_sensor.h"
+#include "sensors/gpio_sensor.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 #include <variant>
@@ -77,16 +76,16 @@ KeyState KeyPanel::DetermineCurrentKeyState()
         return KeyState::Inactive;
     }
     
-    // Check key present sensor
+    // Check key present sensor (now using generic GetState method)
     auto keyPresentSensor = triggerHandler->GetKeyPresentSensor();
-    if (keyPresentSensor && keyPresentSensor->GetKeyPresentState())
+    if (keyPresentSensor && keyPresentSensor->GetState())
     {
         return KeyState::Present;
     }
-    
-    // Check key not present sensor
+
+    // Check key not present sensor (now using generic GetState method)
     auto keyNotPresentSensor = triggerHandler->GetKeyNotPresentSensor();
-    if (keyNotPresentSensor && keyNotPresentSensor->GetKeyNotPresentState())
+    if (keyNotPresentSensor && keyNotPresentSensor->GetState())
     {
         return KeyState::NotPresent;
     }
