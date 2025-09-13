@@ -15,8 +15,7 @@
 #include <Arduino.h>
 
 // Forward declarations
-// (Using interfaces instead of concrete classes)
-class IComponentFactory;
+// (Direct component usage - no factory needed)
 
 /**
  * @class OemOilPanel
@@ -52,8 +51,7 @@ class OemOilPanel : public IPanel
 {
   public:
     // Constructors and Destructors
-    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                IComponentFactory* componentFactory = nullptr);
+    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~OemOilPanel();
 
     // Core Functionality Methods
@@ -118,14 +116,12 @@ class OemOilPanel : public IPanel
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
-    IComponentFactory *componentFactory_;
-
     // Instance Data Members - UI Objects
     // screen_ is inherited from IPanel base class
 
-    // Instance Data Members - Components and Sensors
-    std::shared_ptr<IComponent> oemOilPressureComponent_;
-    std::shared_ptr<IComponent> oemOilTemperatureComponent_;
+    // Instance Data Members - Components and Sensors (direct instantiation)
+    std::unique_ptr<OemOilPressureComponent> oemOilPressureComponent_;
+    std::unique_ptr<OemOilTemperatureComponent> oemOilTemperatureComponent_;
     std::shared_ptr<ISensor> oemOilPressureSensor_;
     std::shared_ptr<ISensor> oemOilTemperatureSensor_;
 

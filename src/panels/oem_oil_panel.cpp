@@ -1,6 +1,6 @@
 #include "panels/oem_oil_panel.h"
-#include "factories/component_factory.h"
-#include "interfaces/i_component_factory.h"
+#include "components/oem/oem_oil_pressure_component.h"
+#include "components/oem/oem_oil_temperature_component.h"
 #include "managers/error_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
@@ -9,10 +9,8 @@
 
 // Constructors and Destructors
 
-OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                         IComponentFactory *componentFactory)
+OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)), currentOilPressureValue_(-1),
       currentOilTemperatureValue_(-1), lastTheme_("")
@@ -122,16 +120,9 @@ void OemOilPanel::Load()
         return;
     }
 
-    if (!componentFactory_)
-    {
-        log_e("ComponentFactory is required for component creation");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OemOilPanel", "ComponentFactory is null");
-        return;
-    }
-
-    // Creating pressure and temperature components
-    oemOilPressureComponent_ = componentFactory_->CreateOilPressureComponent(styleService_);
-    oemOilTemperatureComponent_ = componentFactory_->CreateOilTemperatureComponent(styleService_);
+    // Creating pressure and temperature components directly
+    oemOilPressureComponent_ = std::make_unique<OemOilPressureComponent>(styleService_);
+    oemOilTemperatureComponent_ = std::make_unique<OemOilTemperatureComponent>(styleService_);
 
     if (!oemOilPressureComponent_ || !oemOilTemperatureComponent_)
     {

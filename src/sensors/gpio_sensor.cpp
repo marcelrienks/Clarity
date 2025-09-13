@@ -131,19 +131,7 @@ void GpioSensor::OnInterruptTriggered()
     }
     else if (config_.pin == gpio_pins::DEBUG_ERROR) {
         #ifdef CLARITY_DEBUG
-        log_i("Debug error trigger activated via interrupt - generating test errors");
-
-        // Generate three test errors for error panel testing (same as original DebugErrorSensor)
-        ErrorManager::Instance().ReportWarning("DebugTest",
-                                               "Test warning from debug error sensor");
-
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
-                                             "Test error from debug error sensor");
-
-        ErrorManager::Instance().ReportCriticalError("DebugTest",
-                                                     "Test critical error from debug error sensor");
-
-        log_i("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL");
+        log_i("Debug error button interrupt detected - error generation handled by trigger system");
         #endif
     }
     else {
