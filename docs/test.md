@@ -2,45 +2,34 @@
 
 This document provides comprehensive instructions for testing the Clarity digital gauge system using the Wokwi ESP32 simulator. The testing framework includes both automated integration testing and manual debugging capabilities.
 
-## Testing Environments Overview
+## Testing Environment Overview
 
-Clarity provides two distinct testing environments, each optimized for different use cases:
+Clarity provides automated integration testing using the Wokwi ESP32 simulator with build environment flexibility for different development needs:
 
-| Environment | Purpose | Log Level | Location | Build Target |
-|-------------|---------|-----------|----------|--------------|
-| **Integration Testing** | Automated CI/CD validation | TEST_LOGS_ONLY | `test/wokwi/` | `test-wokwi` |
-| **Manual Debug Testing** | Interactive development | VERBOSE (all levels) | `test/manual/` | `debug-local` |
+| Build Environment | Purpose | Log Level | Usage |
+|-------------------|---------|-----------|-------|
+| **test-wokwi** | Automated CI/CD validation | TEST_LOGS only | Clean integration testing |
+| **debug-local** | Development debugging | Full verbose + TEST_LOGS | Local development with Wokwi |
 
-### Integration Testing Environment
+### Automated Integration Testing
 - ✅ **Ultra-clean log output** - ONLY `[T]` test messages (all other logs suppressed)
-- ✅ **Automated test patterns** - Validates specific functionality sequences
+- ✅ **Push button automation** - Complete scenario automation without manual interaction
 - ✅ **2-minute timeout** - Prevents hanging in CI environments
-- ✅ **Test phase tracking** - Progress monitoring with pass/fail detection
+- ✅ **Duplicate suppression** - Intelligent log_t() spam prevention
+- ✅ **Cross-platform support** - Works on WSL2, macOS, and Linux
 
-### Manual Debug Testing Environment  
-- ✅ **Full verbose logging** - All `[V]`, `[D]`, `[I]`, `[W]`, `[E]`, and `[T]` messages
-- ✅ **Interactive control** - No timeout, manual hardware simulation
-- ✅ **Development focused** - Complete debug information for troubleshooting
-- ✅ **Performance tracking** - Custom `log_t()` messages alongside full debug output
+### Development Testing Features
+- ✅ **Full verbose logging** - All `[V]`, `[D]`, `[I]`, `[W]`, `[E]`, and `[T]` messages when using debug-local
+- ✅ **Same automation scripts** - Use either build environment with same test scenarios
+- ✅ **Performance tracking** - Custom `log_t()` messages with duplicate suppression
 
 ## 📋 Build Commands
 
 **Important:** Always run PlatformIO build commands from the project root directory, not from test subdirectories.
 
-### Manual Debug Environment:
+### Clean Integration Testing:
 ```bash
-# From project root: Build for manual testing (verbose logging)
-cd /path/to/Clarity
-pio run -e debug-local
-
-# Then run manual debug session
-cd test/manual
-./wokwi_debug.sh
-```
-
-### Integration Test Environment:  
-```bash
-# From project root: Build for integration testing (TEST_LOGS_ONLY mode)
+# From project root: Build for integration testing (TEST_LOGS only)
 cd /path/to/Clarity
 pio run -e test-wokwi
 
@@ -49,66 +38,61 @@ cd test/wokwi
 ./wokwi_test_automation.sh
 ```
 
+### Development Testing:
+```bash
+# From project root: Build for development testing (verbose logging)
+cd /path/to/Clarity
+pio run -e debug-local
+
+# Then run automated tests with full logging
+cd test/wokwi
+./wokwi_test_automation.sh
+```
+
 ## Test Structure
 
-### Integration Testing Files (`test/wokwi/`)
+### Testing Files (`test/wokwi/`)
 ```
 test/wokwi/
 ├── diagram_automated.json        # Hardware configuration with push buttons
-├── wokwi_automated.toml         # Test-wokwi firmware configuration  
-├── scenario_automated.yaml      # Complete automated test specification
-├── wokwi_test_automation.sh     # Cross-platform automated test runner
-└── wokwi.toml                   # Manual testing configuration
-```
-
-### Manual Debug Testing Files (`test/manual/`)
-```
-test/manual/
-├── diagram.json          # Hardware configuration with DIP switches
-├── wokwi.toml           # Debug-local firmware configuration
-└── wokwi_debug.sh       # Manual debug testing script
+├── diagram.json                  # Alternative hardware configuration
+├── scenario_automated.yaml       # Complete automated test specification
+├── wokwi_test_automation.sh      # Cross-platform automated test runner
+├── wokwi_automated.toml         # Automated testing configuration
+└── wokwi.toml                   # Base testing configuration
 ```
 
 ### Build Environments
-- **`test-wokwi`**: Ultra-clean integration testing (CORE_DEBUG_LEVEL=0 + TEST_LOGS_ONLY)
-- **`debug-local`**: Full debug testing (CORE_DEBUG_LEVEL=5)
+- **`test-wokwi`**: Clean integration testing (CORE_DEBUG_LEVEL=0 + TEST_LOGS)
+- **`debug-local`**: Full debug testing (CORE_DEBUG_LEVEL=5 + TEST_LOGS)
 
 ### Hardware Configuration
 
-#### Integration Testing (Automated)
+The Wokwi simulation uses standardized hardware configuration:
+
 - **ESP32 DevKit-C v4**: Main microcontroller
 - **ILI9341 Display**: 240x240 simulation (note: actual target is round GC9A01)
 - **Action Button (btn1)**: GPIO 32 - Main user input button
 - **Debug Button (btn2)**: GPIO 34 - Debug error trigger activation
-- **Push Button Triggers**: Replace DIP switches for full automation
+- **Push Button Triggers**: Full automation control
   - **trigger_btn1 (Blue)**: GPIO 25 - Key Present
   - **trigger_btn2 (Yellow)**: GPIO 26 - Key Not Present
   - **trigger_btn3 (Orange)**: GPIO 27 - Lock Engaged
   - **trigger_btn4 (Purple)**: GPIO 33 - Lights On
-
-#### Manual Debug Testing (Interactive)
-- **ESP32 DevKit-C v4**: Main microcontroller
-- **ILI9341 Display**: 240x240 simulation
-- **Action Button (btn1)**: GPIO 32 - Main user input button
-- **Debug Button (btn2)**: GPIO 34 - Debug error trigger activation
-- **Pressure Potentiometer (pot1)**: GPIO 36 - Oil pressure sensor simulation
-- **Temperature Potentiometer (pot2)**: GPIO 39 - Oil temperature sensor simulation
-- **4-Position DIP Switch (sw1)**: Trigger simulation controls
-  - Position 1 (GPIO 25): Key Present trigger
-  - Position 2 (GPIO 26): Key Not Present trigger  
-  - Position 3 (GPIO 27): Lock trigger
-  - Position 4 (GPIO 33): Lights trigger
+- **Sensor Simulation**: Analog inputs (used by scenario automation)
+  - **GPIO 36**: Oil pressure sensor simulation
+  - **GPIO 39**: Oil temperature sensor simulation
 
 ## Prerequisites
 
 ### 1. Build Environment Setup
 Ensure you have PlatformIO installed and the project builds successfully:
 ```bash
-# Build for integration testing (TEST_LOGS_ONLY)
+# Build for integration testing (TEST_LOGS only)
 pio run -e test-wokwi
 ls .pio/build/test-wokwi/firmware.bin
 
-# Build for manual debugging (verbose logs)  
+# Build for development testing (verbose logs + TEST_LOGS)
 pio run -e debug-local
 ls .pio/build/debug-local/firmware.bin
 ```
@@ -143,14 +127,12 @@ wokwi-cli --version
 
 ## Running Tests
 
-### Integration Testing (Automated)
+### Automated Integration Testing
 
-#### Method 1: Cross-Platform Shell Script (Recommended)
-
-The automated integration test with push button controls:
+The fully automated integration test with push button simulation:
 
 ```bash
-# Navigate to integration test directory
+# Navigate to test directory
 cd test/wokwi
 
 # Run the fully automated integration test
@@ -161,20 +143,20 @@ cd test/wokwi
 - Cross-platform detection (WSL2, macOS, Linux)
 - Automatically finds wokwi-cli in common locations
 - Push button automation for 100% hands-off testing
-- Shows ONLY `[T]` test logs (all other output suppressed)
-- Comprehensive scenario testing matching scenarios.md
+- Duplicate suppression to prevent log spam
+- Comprehensive scenario testing with 20+ test steps
 
-**Expected Output (TEST_LOGS_ONLY):**
+### Build Environment Comparison
+
+#### Clean Integration Testing (test-wokwi)
+**Expected Output (TEST_LOGS only):**
 ```
 ========================================
- Clarity Wokwi Test Automation         
+ Clarity Wokwi Test Automation
 ========================================
 
 Platform: macos
 Wokwi CLI: /Users/username/bin/wokwi-cli
-
-Starting Clarity Automated Integration Test
-Test Environment: Wokwi Emulator with Push Button Automation
 
 [T] SplashPanel loaded successfully
 [T] OemOilPanel loaded successfully
@@ -182,50 +164,25 @@ Test Environment: Wokwi Emulator with Push Button Automation
 [T] LockPanel loaded successfully
 [T] KeyPanel loaded successfully
 [T] Key icon color set to RED (key not present)
-[T] Key icon color set to GREEN (key present)
+[T] Temperature reading: 85°C (x25)    ← Duplicate suppression
 [T] ErrorPanel loaded successfully
-← ONLY test timing messages shown, all other logs suppressed
+← ONLY test messages shown, clean CI/CD output
 ```
 
-### Manual Debug Testing (Interactive)
-
-For interactive development and debugging with full verbose output:
-
-```bash
-# Navigate to manual testing directory
-cd test/manual
-
-# Start interactive debug session (no timeout)
-./wokwi_debug.sh
-
-# Or with optional timeout
-TIMEOUT=300000 ./wokwi_debug.sh
+#### Development Testing (debug-local)
+**Expected Output (Full Logging):**
 ```
+========================================
+ Clarity Wokwi Test Automation
+========================================
 
-**Features:**
-- Full verbose logging - All `[V]`, `[D]`, `[I]`, `[W]`, `[E]`, and `[T]` messages
-- No timeout by default - Manual control over session
-- Interactive hardware simulation - Full control over buttons, switches, potentiometers
-- Complete debug information - Perfect for development and troubleshooting
-
-**Expected Output:**
-```
-=== Clarity Manual Debug Testing ===
-Full verbose logging enabled for debugging
-Found firmware: ../../.pio/build/debug-local/firmware.bin
-
-=== Hardware Setup ===
-Action Button (btn1):  GPIO 32 - Main user input
-Debug Button (btn2):   GPIO 34 - Debug error trigger
-[...hardware mapping details...]
-
-Serial output (all log levels):
 [V] Verbose debug messages
-[D] Debug information  
+[D] Debug information
 [I] General information
 [W] Warnings
 [E] Errors
-[T] Timing/performance messages ← Your custom log_t() function
+[T] Timing/performance messages ← Custom log_t() with suppression
+← All log levels shown for debugging
 ```
 
 ## Test Phases and Expected Behavior
@@ -301,7 +258,7 @@ The integration test follows the complete scenario from scenarios.md covering al
 
 Both testing environments support the custom `log_t()` function with different behaviors:
 
-### TEST_LOGS_ONLY Mode (test-wokwi)
+### TEST_LOGS Mode (test-wokwi environment)
 ```cpp
 #include "utilities/logging.h"  // Include the logging header
 
@@ -309,45 +266,59 @@ log_t("Panel loaded successfully");        // Shows: [T] Panel loaded successful
 log_t("Operation took %d ms", duration);   // Shows: [T] Operation took 150 ms
 
 // All other log levels (log_e, log_w, log_i, log_d, log_v) are suppressed
-log_i("This will not appear");             // Suppressed
-log_d("This will not appear");             // Suppressed
+log_i("This will not appear");             // Suppressed in test-wokwi
+log_d("This will not appear");             // Suppressed in test-wokwi
 ```
 
-### Full Debug Mode (debug-local)
+### Full Debug Mode (debug-local environment)
 ```cpp
 log_t("Panel loaded successfully");        // Shows: [T] Panel loaded successfully
 log_i("General information");              // Shows: [I] General information
 log_d("Debug details");                    // Shows: [D] Debug details
-// All log levels work normally
+// All log levels work normally + TEST_LOGS
+```
+
+### Duplicate Suppression Examples
+```cpp
+// Repetitive sensor readings
+log_t("Temperature reading: 85°C");        // Shows: [T] Temperature reading: 85°C
+log_t("Temperature reading: 85°C");        // Silent (duplicate #2)
+// ... 23 more identical messages suppressed silently
+log_t("Temperature reading: 85°C");        // Shows: [T] Temperature reading: 85°C (x25)
+log_t("Temperature reading: 86°C");        // Shows: [T] (total x27)
+                                          //        [T] Temperature reading: 86°C
 ```
 
 ### Expected Output Examples
-**Integration Testing (TEST_LOGS_ONLY):**
+**Integration Testing (test-wokwi - TEST_LOGS only):**
 ```
 [T] SplashPanel loaded successfully
 [T] OemOilPanel loaded successfully
 [T] KeyPanel loaded successfully
 [T] Key icon color set to GREEN (key present)
+[T] Temperature reading: 85°C (x25)
 [T] LockPanel loaded successfully
 [T] ErrorPanel loaded successfully
 ```
 
-**Manual Debug Testing (Full Logging):**
+**Development Testing (debug-local - Full Logging + TEST_LOGS):**
 ```
 [V] Verbose debug messages
 [D] Debug information
 [I] General information
 [W] Warnings
 [E] Errors
-[T] Timing/performance messages
+[T] Timing/performance messages ← With duplicate suppression
 ```
 
 ### Benefits
 - ⏱️ **Performance measurement** - Easy timing of critical operations
-- 🔍 **Optimization tracking** - Before/after performance comparisons  
+- 🔍 **Optimization tracking** - Before/after performance comparisons
 - 🏷️ **Filtered logging** - Easy to grep/filter for timing data
 - 📊 **Clean CI output** - Only essential test logs in automated testing
 - 🧪 **Test assertions** - Perfect for automated test validation
+- 🚫 **Duplicate suppression** - Prevents log spam from repetitive messages
+- 🔧 **Build environment control** - Different logging per environment
 
 ## Troubleshooting
 
@@ -366,15 +337,15 @@ pio lib list
 
 **Problem**: Wrong build environment
 ```bash
-# For integration testing (TEST_LOGS_ONLY)
+# For integration testing (TEST_LOGS only)
 pio run -e test-wokwi
 
-# For manual debugging (verbose logs)
+# For development testing (verbose logs + TEST_LOGS)
 pio run -e debug-local
 
 # Available testing environments:
-# - test-wokwi: Ultra-clean integration testing (TEST_LOGS_ONLY)
-# - debug-local: Full debug testing (CORE_DEBUG_LEVEL=5)
+# - test-wokwi: Clean integration testing (CORE_DEBUG_LEVEL=0 + TEST_LOGS)
+# - debug-local: Full debug testing (CORE_DEBUG_LEVEL=5 + TEST_LOGS)
 ```
 
 **Problem**: PlatformIO command not found from test directory
@@ -416,7 +387,7 @@ The automation script automatically detects platform and finds wokwi-cli in comm
 This is expected behavior in Wokwi simulation - GPIO changes are polled rather than generating actual interrupts. The TEST_LOGS_ONLY feature is still working correctly.
 
 **Problem**: Only seeing [T] logs in integration test
-This is the intended behavior! TEST_LOGS_ONLY mode suppresses all other log levels for clean CI/CD output.
+This is the intended behavior! TEST_LOGS mode with test-wokwi environment suppresses all other log levels for clean CI/CD output.
 
 **Problem**: Missing test phases  
 - Check that all push buttons start in released position
@@ -427,26 +398,26 @@ This is the intended behavior! TEST_LOGS_ONLY mode suppresses all other log leve
 
 ### For Feature Development
 1. **Code Changes** → Build with `pio run -e debug-local` (from project root)
-2. **Manual Testing** → Use `cd test/manual && ./wokwi_debug.sh`
-3. **Interactive Debugging** → Full verbose output + manual hardware control
-4. **Performance Measurement** → Add `log_t()` calls for timing critical sections
+2. **Development Testing** → Use `cd test/wokwi && ./wokwi_test_automation.sh`
+3. **Full Debug Output** → Verbose logging + automated scenarios for comprehensive debugging
+4. **Performance Measurement** → Add `log_t()` calls with duplicate suppression
 5. **Fix Issues** → Repeat until stable
 
-### For CI/CD Integration  
+### For CI/CD Integration
 1. **Code Complete** → Build with `pio run -e test-wokwi` (from project root)
 2. **Integration Testing** → Use `cd test/wokwi && ./wokwi_test_automation.sh`
-3. **Automated Validation** → Ultra-clean output + automated pass/fail + `log_t()` timing
+3. **Automated Validation** → Clean output + automated pass/fail + `log_t()` timing
 4. **Deploy** → If all tests pass
 
 ### Quick Commands Reference
 ```bash
-# Manual Debug Testing (Full verbose output)
+# Development Testing (Full verbose output + TEST_LOGS)
 cd /path/to/Clarity
 pio run -e debug-local
-cd test/manual
-./wokwi_debug.sh
+cd test/wokwi
+./wokwi_test_automation.sh
 
-# Integration Testing (TEST_LOGS_ONLY output)  
+# Integration Testing (TEST_LOGS only output)
 cd /path/to/Clarity
 pio run -e test-wokwi
 cd test/wokwi
@@ -478,4 +449,4 @@ jobs:
           timeout 180 ./wokwi_test_automation.sh
 ```
 
-This comprehensive testing framework provides both detailed debugging capabilities for development and ultra-clean automated testing for CI/CD, ensuring all functionality remains intact while providing clear, actionable test results.
+This comprehensive testing framework provides automated integration testing with flexible build environments - supporting both clean CI/CD output and full debugging capabilities, with intelligent duplicate suppression to maintain readable logs during extended operation.
