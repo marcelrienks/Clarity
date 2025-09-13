@@ -57,8 +57,9 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
     auto supportedUnits = GetSupportedUnits();
     if (!SensorHelper::IsUnitSupported(unit, supportedUnits))
     {
-        ErrorManager::Instance().ReportError(ErrorLevel::WARNING, "OilPressureSensor",
-                                             "Unsupported unit requested: " + unit + ". Using default Bar.");
+        // Use static string to avoid allocation in error path
+        static const char* errorMsg = "Unsupported pressure unit requested. Using default Bar.";
+        ErrorManager::Instance().ReportError(ErrorLevel::WARNING, "OilPressureSensor", errorMsg);
         targetUnit_ = "Bar";
     }
     else
@@ -70,7 +71,6 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
 /// @brief Get the current pressure reading
 Reading OilPressureSensor::GetReading()
 {
-    log_v("GetReading() called");
     // Check if enough time has passed for update
     if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
@@ -80,8 +80,10 @@ Reading OilPressureSensor::GetReading()
         // Validate ADC reading
         if (!SensorHelper::IsValidAdcReading(rawValue))
         {
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OilPressureSensor",
-                                                 "Raw reading out of range: " + std::to_string(rawValue));
+            // Use char buffer to avoid std::to_string allocation in error path
+            static char errorBuffer[64];
+            snprintf(errorBuffer, sizeof(errorBuffer), "Raw reading out of range: %d", rawValue);
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OilPressureSensor", errorBuffer);
             return std::monostate{}; // Return invalid reading
         }
 
@@ -96,7 +98,6 @@ Reading OilPressureSensor::GetReading()
         {
             currentReading_ = newValue;
             log_t("Pressure reading: %d %s", currentReading_, targetUnit_.c_str());
-            log_v("Pressure reading changed (raw: %d)", rawValue);
         }
     }
 
@@ -106,7 +107,6 @@ Reading OilPressureSensor::GetReading()
 /// @brief Set the update rate for sensor readings
 void OilPressureSensor::SetUpdateRate(int updateRateMs)
 {
-    log_v("SetUpdateRate() called");
     updateIntervalMs_ = updateRateMs;
 }
 
@@ -129,8 +129,6 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
     {
         const Configs& config = preferenceService_->GetConfig();
         calibratedValue = (calibratedValue * config.pressureScale) + config.pressureOffset;
-        log_v("Applied calibration: raw=%d, offset=%.3f, scale=%.3f, calibrated=%.1f", 
-              rawValue, config.pressureOffset, config.pressureScale, calibratedValue);
     }
     
     // Convert calibrated ADC value to requested pressure unit
@@ -157,8 +155,8 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 /// @brief Check if sensor state has changed since last evaluation
 bool OilPressureSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
-    int32_t current = ReadRawValue();
-    int32_t converted = ConvertReading(current);
-    return DetectChange(converted, previousReading_);
+    // Use cached reading to avoid double ADC reads - GetReading() updates currentReading_
+    // This method is called during interrupt evaluation, GetReading() during main loop
+    int32_t cachedReading = static_cast<int32_t>(std::get<int32_t>(GetReading()));
+    return DetectChange(cachedReading, previousChangeReading_);
 }

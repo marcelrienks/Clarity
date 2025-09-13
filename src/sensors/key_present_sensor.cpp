@@ -37,7 +37,6 @@ void KeyPresentSensor::Init()
 Reading KeyPresentSensor::GetReading()
 {
     bool currentState = readKeyPresentState();
-    log_v("KeyPresentSensor reading: %s", currentState ? "PRESENT" : "NOT_PRESENT");
     return Reading(currentState);
 }
 
@@ -48,7 +47,6 @@ bool KeyPresentSensor::GetKeyPresentState()
 
 bool KeyPresentSensor::HasStateChanged()
 {
-    log_v("HasStateChanged() called");
     if (!initialized_) {
         log_w("KeyPresentSensor: HasStateChanged called before initialization");
         return false;

@@ -153,13 +153,11 @@ bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, 
     if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
         bool shouldTrigger = !action.hasTriggered;
         if (shouldTrigger) log_t("Button action detected: SHORT_PRESS");
-        // Removed verbose logging from hot path
         return shouldTrigger;  // Only trigger once per press event
     }
     else if (action.pressType == ActionPress::LONG && detectedAction == ButtonAction::LONG_PRESS) {
         bool shouldTrigger = !action.hasTriggered;
         if (shouldTrigger) log_t("Button action detected: LONG_PRESS");
-        // Removed verbose logging from hot path
         return shouldTrigger;  // Only trigger once per press event
     }
     
@@ -342,7 +340,6 @@ ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
 
 bool ActionHandler::IsButtonPressed() const {
     if (!buttonSensor_) {
-        // Removed verbose logging from hot path - checked every cycle
         return false;
     }
     
@@ -350,7 +347,6 @@ bool ActionHandler::IsButtonPressed() const {
     Reading reading = buttonSensor_->GetReading();
     if (std::holds_alternative<bool>(reading)) {
         bool pressed = std::get<bool>(reading);
-        // Removed verbose logging from hot path - called every main loop cycle
         return pressed;
     }
     

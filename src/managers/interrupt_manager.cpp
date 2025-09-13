@@ -111,7 +111,6 @@ void InterruptManager::Process()
     
     // Process Actions (continuous evaluation for responsiveness)
     if (actionHandler_) {
-        // Removed verbose logging from hot path - ActionHandler called every main loop cycle";
         actionHandler_->Process();
     }
     
@@ -122,7 +121,6 @@ void InterruptManager::Process()
         log_d("TriggerHandler processing complete");
     }
     else {
-        // Removed verbose logging from hot path - UI busy check happens frequently
     }
     
     // Update performance counters
