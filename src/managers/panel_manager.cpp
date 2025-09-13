@@ -40,14 +40,15 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       preferenceService_(preferenceService), interruptManager_(interruptManager),
       panelFactory_(panelFactory ? panelFactory : &PanelFactory::Instance()),
-      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance())
+      componentFactory_(componentFactory ? componentFactory : &ComponentFactory::Instance()),
+      errorManager_(ErrorManager::Instance())
 {
     log_v("PanelManager() constructor called");
     if (!display || !gpio || !styleService || !preferenceService)
     {
         log_e("PanelManager requires all dependencies: display, gpio, styleService, and "
               "preferenceService");
-        ErrorManager::Instance().ReportCriticalError(
+        errorManager_.ReportCriticalError(
             "PanelManager",
             "Missing required dependencies - display, gpio, styleService, or preferenceService is null");
         // In a real embedded system, you might want to handle this more gracefully
@@ -55,12 +56,9 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
     }
 
 
-    // Initialize panel names using std::string for memory safety
-    currentPanelStr_ = PanelNames::OIL;
-    currentPanel = currentPanelStr_.c_str();
-
-    restorationPanelStr_ = PanelNames::OIL;
-    restorationPanel = restorationPanelStr_.c_str();
+    // Panel names are already const char* constants, no conversion needed
+    currentPanel = PanelNames::OIL;
+    restorationPanel = PanelNames::OIL;
     
     // Set singleton instance
     instancePtr_ = this;
@@ -114,7 +112,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     
     // Unknown panel type
     log_e("Failed to create panel: %s", panelName);
-    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
+    errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager",
                                          std::string("Failed to create panel: ") + panelName);
     return nullptr;
 }
@@ -161,12 +159,11 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     if (!isSplashPanel)
     {
         // If loading a trigger-driven panel, save the current panel for restoration
-        if (isTriggerDriven && !currentPanelIsTriggerDriven_ && currentPanel)
+        if (isTriggerDriven && !currentPanelIsTriggerDriven_ && !currentPanel.empty())
         {
             // Save the current non-trigger panel as the restoration target
-            restorationPanelStr_ = currentPanel;
-            restorationPanel = restorationPanelStr_.c_str();
-            log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel);
+            restorationPanel = currentPanel;
+            log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel.c_str());
         }
         
         // Track current panel trigger state (only for non-splash panels)
@@ -184,7 +181,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     if (!panel_)
     {
         log_e("Failed to create panel: %s", panelName);
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
+        errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager",
                                              std::string("Panel creation failed for: ") + panelName);
         return;
     }
@@ -228,9 +225,8 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
 
     panel_->Init();
 
-    // Update current panel using std::string for memory safety
-    currentPanelStr_ = panelName;
-    currentPanel = currentPanelStr_.c_str();
+    // Update current panel directly (PanelNames are static constants)
+    currentPanel = panelName;
     
     // Apply current theme from preferences BEFORE panel is loaded
     // This ensures correct theme is set before any rendering happens
@@ -264,7 +260,8 @@ void PanelManager::CreateAndLoadPanelWithSplash(const char *panelName, bool isTr
     log_v("CreateAndLoadPanelWithSplash() called for: %s", panelName);
 
     // Store the target panel name for after splash completion
-    splashTargetPanelStr_ = panelName;
+    // Using std::string for safe data storage (see docs/guidelines.md)
+    splashTargetPanel_ = panelName;
     
     // Store the original trigger state to preserve restoration behavior
     splashTargetTriggerDriven_ = isTriggerDriven;
@@ -292,7 +289,7 @@ void PanelManager::SplashCompletionCallback(const char *panelName)
 void PanelManager::PanelCompletionCallback()
 {
     log_v("PanelCompletionCallback() called");
-    
+
     // Set IDLE when panel operation completes
     SetUiState(UIState::IDLE);
 }
@@ -328,13 +325,13 @@ UIState PanelManager::GetUiState() const
 /// @brief Get the current panel name
 const char *PanelManager::GetCurrentPanel() const
 {
-    return currentPanel;
+    return currentPanel.c_str();
 }
 
 /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
 const char *PanelManager::GetRestorationPanel() const
 {
-    return restorationPanel;
+    return restorationPanel.c_str();
 }
 
 /// @brief Check if the current panel was loaded by a trigger
@@ -478,12 +475,12 @@ void PanelManager::CheckRestoration() {
     }
     
     // No active panel triggers, proceed with restoration
-    if (restorationPanel && strlen(restorationPanel) > 0) {
-        log_t("No blocking interrupts - restoring to '%s'", restorationPanel);
-        
+    if (!restorationPanel.empty()) {
+        log_t("No blocking interrupts - restoring to '%s'", restorationPanel.c_str());
+
         // Restoration should ALWAYS be direct - never use splash screen
         // Splash is only for application startup, not trigger restoration
-        CreateAndLoadPanelDirect(restorationPanel, false);  // Direct restoration without splash
+        CreateAndLoadPanelDirect(restorationPanel.c_str(), false);  // Direct restoration without splash
         
         // Note: restoration panel persists for future trigger activations
     } else {
@@ -497,13 +494,13 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     log_i("Panel load completed for panel: %p", panel);
     
     // Check if this is a splash panel completion that should trigger target panel load
-    if (currentPanelStr_ == PanelNames::SPLASH && !splashTargetPanelStr_.empty()) {
-        log_i("Splash panel completed - transitioning to target panel: %s", splashTargetPanelStr_.c_str());
+    if (currentPanel == PanelNames::SPLASH && !splashTargetPanel_.empty()) {
+        log_i("Splash panel completed - transitioning to target panel: %s", splashTargetPanel_.c_str());
         // Splash target panel processing
-        SplashCompletionCallback(splashTargetPanelStr_.c_str());
-        
+        SplashCompletionCallback(splashTargetPanel_.c_str());
+
         // Clear the target panel after using it
-        splashTargetPanelStr_.clear();
+        splashTargetPanel_.clear();
     } else {
         // Normal panel completion
         // Normal panel completion processing

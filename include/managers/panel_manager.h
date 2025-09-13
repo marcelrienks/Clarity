@@ -167,9 +167,9 @@ class PanelManager : public IPanelService,
     void LoadPanel(const char* panelName) override;
     void CheckRestoration() override;
     
-    // Public Data Members
-    const char *currentPanel = PanelNames::OIL;     ///< Current panel state
-    const char *restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
+    // Public Data Members - using std::string for safety (see docs/guidelines.md)
+    std::string currentPanel = PanelNames::OIL;     ///< Current panel state
+    std::string restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
 
   private:
     // Instance Data Members
@@ -177,13 +177,9 @@ class PanelManager : public IPanelService,
     UIState uiState_ = UIState::IDLE;          ///< Current UI processing state
     bool currentPanelIsTriggerDriven_ = false; ///< Track if current panel is trigger-driven
 
-    // Panel name storage using std::string for memory safety and automatic management
-    // Using std::string instead of char* to prevent corruption when source strings are deallocated
-    // This was causing garbage characters (e.g., �8�?�8�?) in logs when panel names became invalid
-    std::string currentPanelStr_;                     ///< Safe storage for current panel name
-    std::string restorationPanelStr_;                 ///< Safe storage for restoration panel name
-    std::string lastUserPanelStr_ = PanelNames::OIL;  ///< Last user-driven panel for restoration
-    std::string splashTargetPanelStr_;                ///< Target panel to load after splash completion
+    // Panel name storage - using std::string for safety (see docs/guidelines.md)
+    std::string lastUserPanel_ = PanelNames::OIL;    ///< Last user-driven panel
+    std::string splashTargetPanel_;                   ///< Target panel for splash transition
     bool splashTargetTriggerDriven_ = false;          ///< Preserve trigger state through splash transitions
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
@@ -193,4 +189,7 @@ class PanelManager : public IPanelService,
     IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
     IPanelFactory *panelFactory_ = nullptr;           ///< Panel factory for creating panels
     IComponentFactory *componentFactory_ = nullptr;   ///< Component factory for dependency injection
+
+    // Cached service references to avoid repeated singleton calls
+    class ErrorManager& errorManager_;                ///< Cached ErrorManager reference
 };
