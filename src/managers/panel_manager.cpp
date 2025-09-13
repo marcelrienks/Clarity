@@ -1,4 +1,5 @@
 #include "managers/panel_manager.h"
+#include "utilities/logging.h"  // For log_t()
 
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
@@ -123,7 +124,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 /// @brief Create and load a panel by name
 void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDriven)
 {
-    log_i("Panel transition requested: %s", panelName);
+    log_t("Panel transition requested: %s", panelName);
 
     // Check if splash screen should be shown - only if NOT trigger-driven and splash is enabled
     bool showSplash = false;
@@ -144,7 +145,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
     }
     else
     {
-        log_i("Loading panel directly: %s", panelName);
+        log_v("Loading panel directly: %s", panelName);
         CreateAndLoadPanelDirect(panelName, isTriggerDriven);
     }
 }
@@ -315,6 +316,7 @@ void PanelManager::SetUiState(UIState state)
 {
     log_v("SetUiState() called with state: %s", UIStateToString(state));
     uiState_ = state;
+    // UI state logging removed - was causing test loop due to frequent BUSY/IDLE transitions
 }
 
 /// @brief Get the current UI state
@@ -362,7 +364,6 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
         return;
     }
     
-    log_d("UpdatePanelButtonFunctions: Attempting to cast panel to IActionService");
     
     // Try to cast panel to IActionService to get button functions
     IActionService* actionService = dynamic_cast<IActionService*>(panel);
@@ -372,7 +373,6 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
         return;
     }
     
-    log_d("UpdatePanelButtonFunctions: Successfully cast to IActionService, extracting functions");
     
     // Extract button functions from panel
     void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
@@ -390,7 +390,6 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     }
     
     // Inject functions into universal button interrupts
-    log_d("UpdatePanelButtonFunctions: Injecting functions into InterruptManager");
     interruptManager_->UpdatePanelFunctions(shortPressFunc, longPressFunc, panelContext);
     
     log_i("UpdatePanelButtonFunctions: Successfully updated universal button interrupts with panel functions");
@@ -411,7 +410,7 @@ PanelManager& PanelManager::Instance() {
 
 /// @brief Handle short button press action (new architecture)
 void PanelManager::HandleShortPress() {
-    log_v("HandleShortPress() called");
+    log_t("HandleShortPress() called");
     
     if (!panel_) {
         log_w("No active panel for short press action");
@@ -433,7 +432,7 @@ void PanelManager::HandleShortPress() {
 
 /// @brief Handle long button press action (new architecture)
 void PanelManager::HandleLongPress() {
-    log_v("HandleLongPress() called");
+    log_t("HandleLongPress() called");
     
     if (!panel_) {
         log_w("No active panel for long press action");
@@ -455,13 +454,13 @@ void PanelManager::HandleLongPress() {
 
 /// @brief Load a panel by name (new architecture)
 void PanelManager::LoadPanel(const char* panelName) {
-    log_i("LoadPanel() called for: %s", panelName);
+    log_t("LoadPanel() called for: %s", panelName);
     CreateAndLoadPanel(panelName, true);  // Mark as trigger-driven
 }
 
 /// @brief Check restoration and load appropriate panel (new architecture)
 void PanelManager::CheckRestoration() {
-    log_v("CheckRestoration() called");
+    log_t("CheckRestoration() called");
     
     // First check if any PANEL triggers are active that should take priority
     // This ensures we don't restore to oil panel if a trigger is still active
@@ -469,7 +468,7 @@ void PanelManager::CheckRestoration() {
         // Ask the interrupt manager to evaluate and execute any active triggers
         // If a trigger is active, it will load its panel and we should not restore
         if (interruptManager_->CheckAndExecuteHighestPriorityTrigger()) {
-            log_i("Active trigger found and executed - skipping restoration");
+            log_t("Active trigger found and executed - skipping restoration");
             return;
         }
         
@@ -480,7 +479,7 @@ void PanelManager::CheckRestoration() {
     
     // No active panel triggers, proceed with restoration
     if (restorationPanel && strlen(restorationPanel) > 0) {
-        log_i("No active panel triggers - restoring to panel: %s", restorationPanel);
+        log_t("No blocking interrupts - restoring to '%s'", restorationPanel);
         
         // Restoration should ALWAYS be direct - never use splash screen
         // Splash is only for application startup, not trigger restoration
@@ -489,7 +488,6 @@ void PanelManager::CheckRestoration() {
         // Note: restoration panel persists for future trigger activations
     } else {
         // No restoration panel to restore to
-        log_d("No restoration panel configured");
     }
 }
 
@@ -501,16 +499,14 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     // Check if this is a splash panel completion that should trigger target panel load
     if (currentPanelStr_ == PanelNames::SPLASH && !splashTargetPanelStr_.empty()) {
         log_i("Splash panel completed - transitioning to target panel: %s", splashTargetPanelStr_.c_str());
-        log_d("Memory check - splashTargetPanelStr_ size: %d, content: '%s'", 
-              splashTargetPanelStr_.length(), splashTargetPanelStr_.c_str());
+        // Splash target panel processing
         SplashCompletionCallback(splashTargetPanelStr_.c_str());
         
         // Clear the target panel after using it
         splashTargetPanelStr_.clear();
     } else {
         // Normal panel completion
-        log_d("Normal panel completion - currentPanel: %s, splashTarget empty: %s", 
-              currentPanelStr_.c_str(), splashTargetPanelStr_.empty() ? "true" : "false");
+        // Normal panel completion processing
         PanelCompletionCallback();
     }
 }

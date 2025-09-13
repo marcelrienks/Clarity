@@ -2,6 +2,7 @@
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/types.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -89,7 +90,7 @@ void ConfigPanel::Load()
     
     lv_screen_load(screen_);
     
-    log_i("ConfigPanel loaded successfully");
+    log_t("ConfigPanel loaded successfully");
 }
 
 void ConfigPanel::Update()
@@ -99,7 +100,6 @@ void ConfigPanel::Update()
     // Config panel is static - no updates needed, but must reset UI state to IDLE
     if (panelService_) {
         panelService_->SetUiState(UIState::IDLE);
-        log_d("ConfigPanel: Update() - setting UI state to IDLE after static panel update");
     }
 }
 
@@ -130,6 +130,7 @@ void ConfigPanel::ExecuteCurrentOption()
     {
         // Exit config panel and return to restoration panel
         log_i("Exiting config panel - returning to restoration panel");
+        log_t("ConfigPanel: Executing exit function");
         if (panelService_)
         {
             const char *restorationPanel = panelService_->GetRestorationPanel();
@@ -148,6 +149,7 @@ void ConfigPanel::ExecuteCurrentOption()
         else if (item.actionParam == "ThemeSubmenu")
         {
             log_i("Entering Theme submenu");
+            log_t("ConfigPanel: Entering theme submenu");
             EnterSubmenu(MenuState::ThemeSubmenu);
         }
         else if (item.actionParam == "UpdateRateSubmenu")
@@ -226,6 +228,7 @@ void ConfigPanel::ExecuteCurrentOption()
             // Apply the theme immediately to the current screen
             if (styleService_)
             {
+                log_t("ConfigPanel: Applying night theme setting");
                 styleService_->SetTheme(item.actionParam.c_str());
                 styleService_->ApplyThemeToScreen(screen_);
                 log_i("Theme applied to current config panel");
@@ -300,7 +303,6 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::IDLE);
-        log_d("ConfigPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
     }
 }
 
@@ -422,6 +424,11 @@ void ConfigPanel::EnterSubmenu(MenuState submenu)
     currentMenuState_ = submenu;
     currentMenuIndex_ = 0;
     UpdateSubmenuItems();
+    
+    // Add test log for theme submenu loaded
+    if (submenu == MenuState::ThemeSubmenu) {
+        log_t("ConfigPanel: Theme submenu loaded");
+    }
 }
 
 void ConfigPanel::ExitSubmenu()
@@ -452,6 +459,9 @@ void ConfigPanel::ExitSubmenu()
         configComponent_->SetMenuItems(menuItems_);
         configComponent_->SetCurrentIndex(currentMenuIndex_);
     }
+    
+    // Add test log for returning to main config menu
+    log_t("ConfigPanel: Returned to main config menu");
 }
 
 void ConfigPanel::UpdateSubmenuItems()
@@ -675,6 +685,20 @@ void ConfigPanel::HandleShortPress()
           menuItems_[currentMenuIndex_].label.c_str(),
           currentMenuState_ == MenuState::MainMenu ? "MainMenu" : "Submenu");
     
+    // Add test logs for specific navigation events
+    if (currentMenuState_ == MenuState::MainMenu && 
+        menuItems_[currentMenuIndex_].label.find("Theme:") == 0) {
+        log_t("ConfigPanel: Theme Settings option highlighted");
+    }
+    if (currentMenuState_ == MenuState::ThemeSubmenu && 
+        menuItems_[currentMenuIndex_].label == "Night") {
+        log_t("ConfigPanel: Night theme option highlighted");
+    }
+    if (currentMenuState_ == MenuState::MainMenu && 
+        menuItems_[currentMenuIndex_].label == "Exit") {
+        log_t("ConfigPanel: Exit option highlighted");
+    }
+    
     // Update the UI
     if (configComponent_)
     {
@@ -732,6 +756,7 @@ void ConfigPanel::HandleLongPress()
             {
                 // Set theme preference
                 log_i("Setting theme preference: %s", item.actionParam.c_str());
+                log_t("ConfigPanel: Applying night theme setting");
                 if (preferenceService_)
                 {
                     Configs cfg = preferenceService_->GetConfig();
@@ -740,6 +765,7 @@ void ConfigPanel::HandleLongPress()
                     preferenceService_->SaveConfig();
                 }
                 ExitSubmenu();
+                log_t("ConfigPanel: Returned to main config menu");
             }
             else if (item.actionType == "update_rate_set")
             {

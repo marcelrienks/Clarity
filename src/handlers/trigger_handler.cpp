@@ -8,6 +8,7 @@
 #include "sensors/debug_error_sensor.h"
 #endif
 #include "hardware/gpio_pins.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -27,7 +28,6 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
     
     // Create and initialize GPIO sensors owned by this handler
     if (gpioProvider_) {
-        log_d("Creating TriggerHandler-owned GPIO sensors");
         
         // Create split key sensors
         keyPresentSensor_ = std::make_unique<KeyPresentSensor>(gpioProvider_);
@@ -122,18 +122,9 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     }
     
     // Extra debugging for lock trigger
-    bool isLockTrigger = (strcmp(trigger.id, "lock") == 0);
-    if (isLockTrigger) {
-        bool currentSensorReading = std::get<bool>(trigger.sensor->GetReading());
-        log_d("Lock trigger evaluation: GPIO state = %s, trigger.isActive = %s", 
-              currentSensorReading ? "HIGH" : "LOW", trigger.isActive ? "true" : "false");
-    }
     
     // Check if sensor state has changed
     bool hasChanged = trigger.sensor->HasStateChanged();
-    if (isLockTrigger) {
-        log_d("Lock trigger HasStateChanged() = %s", hasChanged ? "true" : "false");
-    }
     
     if (!hasChanged) {
         return; // No change, nothing to do
@@ -143,10 +134,14 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     bool sensorActive = IsSensorActive(trigger);
     bool wasActive = trigger.isActive;
     
-    if (isLockTrigger) {
-        log_d("Lock trigger state: sensorActive = %s, wasActive = %s", 
-              sensorActive ? "true" : "false", wasActive ? "true" : "false");
+    // Debug logging for KeyPresent trigger specifically
+    if (strcmp(trigger.id, "key_present") == 0) {
+        log_t("KeyPresent trigger evaluation: hasChanged=%s, wasActive=%s, sensorActive=%s", 
+              hasChanged ? "true" : "false",
+              wasActive ? "true" : "false", 
+              sensorActive ? "true" : "false");
     }
+    
     
     // Determine if trigger should activate or deactivate
     if (!wasActive && sensorActive) {
@@ -159,23 +154,16 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
         if (!HasHigherPriorityActive(trigger.priority)) {
             // Check if error panel is active - if so, suppress trigger execution but keep state
             if (ErrorManager::Instance().IsErrorPanelActive()) {
-                log_d("Trigger '%s' marked active but execution suppressed - error panel is active", trigger.id);
             } else {
-                log_d("Executing activation for '%s'", trigger.id);
                 if (trigger.activateFunc) {
                     trigger.activateFunc();
                 }
             }
         } else {
-            log_d("Trigger '%s' marked active but execution suppressed by higher priority", trigger.id);
         }
     }
     else if (wasActive && !sensorActive && ShouldDeactivate(trigger)) {
         // Deactivation Flow with Type-Based Restoration (as per interrupt-architecture.md)
-        log_d("Deactivating trigger '%s'", trigger.id);
-        if (isLockTrigger) {
-            log_i("LOCK TRIGGER DEACTIVATING - checking for same-type triggers first");
-        }
         
         // First, mark this trigger as inactive and update priority state
         trigger.isActive = false;
@@ -184,21 +172,14 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
         // Find highest priority active trigger of same type (don't exclude any priority)
         Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type);
         if (sameTypeTrigger) {
-            log_d("Found active same-type trigger '%s' (priority %d) - activating it instead of restoration", 
-                  sameTypeTrigger->id, static_cast<int>(sameTypeTrigger->priority));
+            // Same-type trigger activation
             sameTypeTrigger->ExecuteActivate();
         } else {
-            log_d("No active same-type triggers found - executing deactivate function for restoration");
             // Only call deactivate function (which does restoration) if no same-type triggers found
             if (trigger.deactivateFunc) {
                 trigger.deactivateFunc();
             }
         }
-    }
-    else if (isLockTrigger) {
-        log_d("Lock trigger: no action taken (wasActive=%s, sensorActive=%s, shouldDeactivate=%s)", 
-              wasActive ? "true" : "false", sensorActive ? "true" : "false", 
-              ShouldDeactivate(trigger) ? "true" : "false");
     }
 }
 
@@ -244,8 +225,6 @@ void TriggerHandler::RestoreSameTypeTrigger(TriggerType type, Priority excludePr
     // Note: excludePriority is kept for API compatibility but not used in new logic
     Trigger* toRestore = FindHighestPrioritySameType(type);
     if (toRestore && toRestore->isActive && toRestore->activateFunc) {
-        log_d("Restoring same-type trigger '%s' (priority %d)", 
-              toRestore->id, static_cast<int>(toRestore->priority));
         toRestore->activateFunc();
     }
 }
@@ -267,8 +246,6 @@ Trigger* TriggerHandler::FindHighestPrioritySameType(TriggerType type) {
     }
     
     if (highest) {
-        log_d("Found active same-type trigger: '%s' (priority %d, type %d)", 
-              highest->id, static_cast<int>(highest->priority), static_cast<int>(type));
     }
     
     return highest;

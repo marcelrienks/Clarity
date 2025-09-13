@@ -17,7 +17,6 @@ std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
         auto provider = std::make_unique<GpioProvider>();
         if (provider)
         {
-            log_d("Successfully created GpioProvider");
             return provider;
         }
         else
@@ -59,7 +58,6 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDevice
         auto provider = std::make_unique<LvglDisplayProvider>(concreteDeviceProvider->screen);
         if (provider)
         {
-            log_d("Successfully created LvglDisplayProvider with injected DeviceProvider");
             return provider;
         }
         else
@@ -93,7 +91,6 @@ std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
                 return nullptr;
             }
             
-            log_d("Successfully created and prepared DeviceProvider");
             return provider;
         }
         else

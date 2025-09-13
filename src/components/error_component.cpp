@@ -10,7 +10,6 @@ ErrorComponent::ErrorComponent(IStyleService *styleService)
       currentErrorIndex_(0), buttonPressCount_(0)
 {
     log_v("ErrorComponent() constructor called");
-    log_d("Creating ErrorComponent");
 }
 
 ErrorComponent::~ErrorComponent()

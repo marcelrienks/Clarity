@@ -1,11 +1,11 @@
 #include "sensors/key_present_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
 KeyPresentSensor::KeyPresentSensor(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider)
 {
-    log_d("KeyPresentSensor created for GPIO %d", gpio_pins::KEY_PRESENT);
 }
 
 KeyPresentSensor::~KeyPresentSensor()
@@ -13,7 +13,6 @@ KeyPresentSensor::~KeyPresentSensor()
     if (gpioProvider_ && initialized_) {
         // Clean up GPIO interrupt if attached
         gpioProvider_->DetachInterrupt(gpio_pins::KEY_PRESENT);
-        log_d("KeyPresentSensor destructor: GPIO %d interrupt detached", gpio_pins::KEY_PRESENT);
     }
 }
 
@@ -31,7 +30,7 @@ void KeyPresentSensor::Init()
     previousState_ = readKeyPresentState();
     initialized_ = true;
     
-    log_d("KeyPresentSensor initialized on GPIO %d, initial state: %s", 
+    log_i("KeyPresentSensor initialization completed on GPIO %d, initial state: %s", 
           gpio_pins::KEY_PRESENT, previousState_ ? "PRESENT" : "NOT_PRESENT");
 }
 
@@ -49,17 +48,25 @@ bool KeyPresentSensor::GetKeyPresentState()
 
 bool KeyPresentSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     if (!initialized_) {
         log_w("KeyPresentSensor: HasStateChanged called before initialization");
         return false;
     }
     
     bool currentState = readKeyPresentState();
+    bool oldState = previousState_; // Save BEFORE DetectChange modifies it
+    
+    // Add detailed GPIO state debugging for test automation
+    log_t("KeyPresentSensor GPIO 25 poll: current=%s, previous=%s", 
+          currentState ? "HIGH" : "LOW", 
+          oldState ? "HIGH" : "LOW");
+    
     bool changed = DetectChange(currentState, previousState_);
     
     if (changed) {
-        log_i("KeyPresentSensor state changed: %s -> %s", 
-              previousState_ ? "PRESENT" : "NOT_PRESENT",
+        log_t("KeyPresentSensor state changed: %s -> %s", 
+              oldState ? "PRESENT" : "NOT_PRESENT",
               currentState ? "PRESENT" : "NOT_PRESENT");
     }
     
@@ -68,7 +75,7 @@ bool KeyPresentSensor::HasStateChanged()
 
 void KeyPresentSensor::OnInterruptTriggered()
 {
-    log_i("KeyPresentSensor interrupt triggered - key present state changed");
+    log_t("KeyPresentSensor interrupt triggered - key present state changed");
     // Additional sensor-specific interrupt handling can be added here
 }
 

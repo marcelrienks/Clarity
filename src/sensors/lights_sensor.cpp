@@ -1,4 +1,5 @@
 #include "sensors/lights_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -17,13 +18,11 @@ void LightsSensor::Init()
 {
     log_v("Init() called");
     // Configure GPIO pin for digital input (safe to call multiple times)
-    log_d("Initializing lights sensor on GPIO %d", gpio_pins::LIGHTS);
 
     gpioProvider_->PinMode(gpio_pins::LIGHTS, INPUT_PULLDOWN);
     
     // Initialize the sensor state to avoid false change detection
     previousLightsState_ = readLightsState();
-    log_d("Lights sensor initial state: %s", previousLightsState_ ? "ON" : "OFF");
     
     // Interrupt registration is now handled centrally in ManagerFactory
     
@@ -52,7 +51,7 @@ bool LightsSensor::GetLightsState()
 
     if (firstRead || lightsOn != lastState)
     {
-        log_d("Lights sensor reading: %s (pin %d %s)", lightsOn ? "ON" : "OFF", gpio_pins::LIGHTS,
+        log_v("Lights sensor GPIO %d state: %s", gpio_pins::LIGHTS,
               lightsOn ? "HIGH" : "LOW");
         lastState = lightsOn;
         firstRead = false;
@@ -68,6 +67,7 @@ bool LightsSensor::readLightsState()
 
 bool LightsSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     
     bool currentState = readLightsState();
     bool previousState = previousLightsState_; // Save before DetectChange modifies it
@@ -75,7 +75,7 @@ bool LightsSensor::HasStateChanged()
     
     if (changed)
     {
-        log_d("Lights state changed from %s to %s", 
+        log_t("Lights sensor state changed: %s -> %s", 
               previousState ? "ON" : "OFF",
               currentState ? "ON" : "OFF");
               
@@ -83,13 +83,11 @@ bool LightsSensor::HasStateChanged()
         if (currentState) 
         {
             // Lights are now on - trigger lights_on interrupt
-            log_d("Lights on - should trigger 'lights_on' interrupt");
             triggerInterruptId_ = "lights_on";
         }
         else 
         {
             // Lights are now off - trigger lights_off interrupt  
-            log_d("Lights off - should trigger 'lights_off' interrupt");
             triggerInterruptId_ = "lights_off";
         }
     }
@@ -111,18 +109,18 @@ void LightsSensor::OnInterruptTriggered()
     log_v("OnInterruptTriggered() called");
     
     bool currentState = readLightsState();
-    log_i("Lights sensor interrupt triggered - current state: %s", 
+    log_t("Lights sensor interrupt triggered - current state: %s", 
           currentState ? "ON" : "OFF");
     
     // Example custom behavior based on lights state
     if (currentState)
     {
-        log_i("Lights turned on - system could switch to night theme");
+        log_t("Lights turned on - system could switch to night theme");
         // Could trigger night theme, adjust brightness, etc.
     }
     else
     {
-        log_i("Lights turned off - system could switch to day theme");
+        log_t("Lights turned off - system could switch to day theme");
         // Could trigger day theme, increase brightness, etc.
     }
 }

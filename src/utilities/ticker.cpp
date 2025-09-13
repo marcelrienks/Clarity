@@ -23,7 +23,6 @@ void Ticker::handleDynamicDelay(uint32_t startTime)
 /// @brief Handle lv tasks by calculating the time differences since start up
 void Ticker::handleLvTasks()
 {
-    // log_d("...");
     static uint32_t lastTickIncrement = 0;
     static uint32_t lastTaskRun = 0;
 

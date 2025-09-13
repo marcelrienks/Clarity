@@ -1,0 +1,112 @@
+{
+  "version": 1,
+  "author": "Marcel Rienks",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": -38.4, "left": -206.36, "attrs": {} },
+    { "type": "wokwi-ili9341", "id": "lcd1", "top": -37.6, "left": -57.9, "attrs": {} },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot1",
+      "top": 85.1,
+      "left": -317,
+      "attrs": { "value": "330" }
+    },
+    {
+      "type": "wokwi-potentiometer",
+      "id": "pot2",
+      "top": 181.1,
+      "left": -317,
+      "attrs": { "value": "660" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "trigger_btn1",
+      "top": 9.2,
+      "left": -463.6,
+      "rotate": 270,
+      "attrs": { "color": "blue" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "trigger_btn2",
+      "top": 9.2,
+      "left": -406,
+      "rotate": 270,
+      "attrs": { "color": "yellow" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "trigger_btn3",
+      "top": 9.2,
+      "left": -348.4,
+      "rotate": 270,
+      "attrs": { "color": "orange" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "trigger_btn4",
+      "top": 9.2,
+      "left": -290.8,
+      "rotate": 270,
+      "attrs": { "color": "purple" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": 201.2,
+      "left": -156.4,
+      "rotate": 270,
+      "attrs": { "bounce": "1", "xray": "", "color": "green" }
+    },
+    {
+      "type": "wokwi-resistor",
+      "id": "r1",
+      "top": 62.4,
+      "left": -211.75,
+      "rotate": 90,
+      "attrs": { "value": "10000" }
+    },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn2",
+      "top": 201,
+      "left": -217.8,
+      "rotate": 90,
+      "attrs": { "color": "red", "xray": "1" }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "lcd1:VCC", "esp:3V3", "purple", [ "v19.2", "h-220.8", "v-278.4" ] ],
+    [ "lcd1:GND", "esp:GND.2", "white", [ "v19.2", "h-96", "v-278.4" ] ],
+    [ "lcd1:RST", "esp:4", "#8f4814", [ "v19.2", "h-115.2", "v-163.2" ] ],
+    [ "lcd1:CS", "esp:22", "gold", [ "v19.2", "h-105.6", "v-259.2" ] ],
+    [ "lcd1:D/C", "esp:16", "blue", [ "v19.2", "h-124.8", "v-172.8" ] ],
+    [ "lcd1:MOSI", "esp:23", "green", [ "v19.2", "h-134.41", "v-268.8" ] ],
+    [ "lcd1:SCK", "esp:18", "orange", [ "v19.2", "h-144.01", "v-201.6" ] ],
+    [ "lcd1:LED", "esp:3V3", "gray", [ "v19.2", "h-288.01", "v-278.4" ] ],
+    [ "pot1:SIG", "esp:VP", "green", [ "v19.2", "h66.8", "v-153.6" ] ],
+    [ "pot2:SIG", "esp:VN", "green", [ "v19.2", "h66.8", "v-240" ] ],
+    [ "pot1:GND", "esp:GND.1", "black", [ "v19.2", "h57.6", "v-57.6" ] ],
+    [ "pot2:GND", "esp:GND.1", "black", [ "v19.2", "h57.6", "v-153.6" ] ],
+    [ "trigger_btn1:1.l", "esp:25", "blue", [ "v9.6", "h230.4", "v-9.6" ] ],
+    [ "trigger_btn2:1.l", "esp:26", "yellow", [ "v9.6", "h182.25" ] ],
+    [ "trigger_btn3:1.l", "esp:27", "orange", [ "v9.6", "h115.2", "v9.6" ] ],
+    [ "trigger_btn4:1.l", "esp:33", "purple", [ "v9.6", "h57.6", "v-19.2" ] ],
+    [ "pot1:VCC", "esp:3V3", "red", [ "v19.2", "h37.6", "v-172.8" ] ],
+    [ "pot2:VCC", "esp:3V3", "red", [ "v19.2", "h37.6", "v-268.8" ] ],
+    [ "esp:3V3", "trigger_btn1:2.r", "red", [ "h-220.65", "v9.8" ] ],
+    [ "esp:3V3", "trigger_btn2:2.r", "red", [ "h-163.05", "v9.8" ] ],
+    [ "esp:3V3", "trigger_btn3:2.r", "red", [ "h-105.45", "v0", "h-0.2" ] ],
+    [ "esp:3V3", "trigger_btn4:2.r", "red", [ "h0" ] ],
+    [ "btn1:1.l", "esp:32", "gold", [ "v9.6", "h-86.4", "v-220.8" ] ],
+    [ "esp:3V3", "btn1:2.r", "red", [ "h-28.65", "v192", "h115" ] ],
+    [ "esp:34", "r1:1", "gray", [ "h0" ] ],
+    [ "r1:2", "esp:GND.1", "gray", [ "v18", "h-38.55" ] ],
+    [ "esp:3V3", "btn2:1.l", "red", [ "h-28.65", "v192", "h57.6" ] ],
+    [ "esp:34", "btn2:2.r", "violet", [ "h-19.05", "v240", "h29" ] ]
+  ],
+  "dependencies": {}
+}

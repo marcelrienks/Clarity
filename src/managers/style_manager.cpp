@@ -1,4 +1,5 @@
 #include "managers/style_manager.h"
+#include "utilities/logging.h"  // For log_t()
 #include <cstring>
 #include <esp32-hal-log.h>
 
@@ -9,7 +10,6 @@ static StyleManager* styleInstancePtr_ = nullptr;
 StyleManager::StyleManager(const char *theme) : THEME(theme), initialized_(false)
 {
     log_v("StyleManager() constructor called");
-    log_d("Creating StyleManager with theme: %s (LVGL styles will be initialized later)", theme);
     
     // Set singleton instance
     styleInstancePtr_ = this;
@@ -33,11 +33,9 @@ void StyleManager::InitializeStyles()
     log_v("InitializeStyles() called");
     if (initialized_)
     {
-        log_d("StyleManager styles already initialized");
         return;
     }
 
-    log_d("Initializing LVGL styles now that LVGL is ready: %s", THEME.c_str());
 
     // Initialize LVGL style objects (must be done after LVGL init)
     lv_style_init(&backgroundStyle);
@@ -57,14 +55,11 @@ void StyleManager::InitializeStyles()
     if (preferenceService_) {
         const auto& config = preferenceService_->GetConfig();
         SetTheme(config.theme.c_str());
-        log_d("Initializing with theme from preferences: %s", config.theme.c_str());
     } else {
         SetTheme(THEME.c_str());
-        log_d("No preference service available, using default theme: %s", THEME.c_str());
     }
     initialized_ = true;
 
-    log_d("StyleManager styles initialized successfully");
 }
 
 /// @brief Apply the current theme to a specific screen
@@ -101,7 +96,6 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 void StyleManager::ResetStyles()
 {
     log_v("ResetStyles() called");
-    log_d("Resetting all LVGL styles to default state");
 
     // Reset all style objects
     lv_style_reset(&backgroundStyle);
@@ -121,15 +115,13 @@ void StyleManager::ResetStyles()
 /// @param theme the theme to be applied
 void StyleManager::SetTheme(const char *theme)
 {
-    log_v("SetTheme() called");
+    log_t("SetTheme() called");
     // Handle invalid theme gracefully
     if (!theme || strlen(theme) == 0)
     {
-        log_d("Invalid theme provided, keeping current theme: %s", THEME.c_str());
         return;
     }
 
-    log_d("Switching application theme to: %s", theme);
 
     // Note: THEME member is no longer updated here - it serves only as a fallback
     // The source of truth is always the preference service
@@ -208,7 +200,7 @@ StyleManager& StyleManager::Instance() {
 void StyleManager::SwitchTheme(const char* themeName)
 {
     log_v("SwitchTheme() called");
-    log_i("StyleManager: Direct theme switch requested to: %s", themeName);
+    log_v("Direct theme switch requested to: %s", themeName);
     SetTheme(themeName);
 }
 
@@ -217,7 +209,6 @@ void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
 {
     log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
-    log_d("StyleManager: PreferenceService injected for direct theme reading");
 }
 
 /// @brief Apply current theme from preferences and refresh styles
@@ -227,20 +218,20 @@ void StyleManager::ApplyCurrentTheme()
     
     if (!preferenceService_) {
         log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
-        log_i("StyleManager: Current cached theme is: %s", THEME.c_str());
+        log_v("Current cached theme is: %s", THEME.c_str());
         return;
     }
     
     // Read theme directly from preferences
     const auto& config = preferenceService_->GetConfig();
-    log_i("StyleManager: Read theme from preferences: %s (cached: %s)", config.theme.c_str(), THEME.c_str());
+    log_v("Read theme from preferences: %s (cached: %s)", config.theme.c_str(), THEME.c_str());
     
     // Apply the theme if it's different from cached value
     if (THEME != config.theme) {
-        log_i("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), config.theme.c_str());
+        log_t("StyleManager: Theme changed from %s to %s - applying new theme", THEME.c_str(), config.theme.c_str());
         SetTheme(config.theme.c_str());
     } else {
-        log_i("StyleManager: Theme unchanged (%s) - no update needed", config.theme.c_str());
+        log_v("Theme unchanged (%s) - no update needed", config.theme.c_str());
     }
 }
 

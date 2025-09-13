@@ -1,4 +1,5 @@
 #include "sensors/button_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 
 #include "esp32-hal-log.h"
@@ -16,7 +17,6 @@ void ButtonSensor::Init()
 {
     log_v("Init() called");
     gpioProvider_->PinMode(gpio_pins::INPUT_BUTTON, INPUT_PULLDOWN);
-    log_d("ButtonSensor initialized on GPIO %d with pull-down", gpio_pins::INPUT_BUTTON);
     
     bool initialState = gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
     log_i("GPIO %d initial state: %s", gpio_pins::INPUT_BUTTON,
@@ -29,6 +29,7 @@ void ButtonSensor::Init()
 /// @return Reading containing the current button state (bool)
 Reading ButtonSensor::GetReading()
 {
+    log_v("GetReading() called");
     // Process button state to detect actions
     ProcessButtonState();
     
@@ -95,6 +96,7 @@ bool ButtonSensor::ReadButtonState()
 
 bool ButtonSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     ProcessButtonState();
     
     // If no action is ready, clear the interrupt ID
@@ -122,10 +124,7 @@ void ButtonSensor::ProcessButtonState()
     
     // Debug every 3 seconds or on state changes
     if ((currentTime - lastDebugTime > 3000) || (currentState != lastLoggedState)) {
-        log_d("ButtonSensor: GPIO state=%s, internal_state=%s, action_ready=%s", 
-              currentState ? "HIGH" : "LOW", 
-              currentButtonState_ ? "PRESSED" : "RELEASED",
-              actionReady_ ? "true" : "false");
+        // Button state processing
         lastDebugTime = currentTime;
         lastLoggedState = currentState;
     }
@@ -134,32 +133,32 @@ void ButtonSensor::ProcessButtonState()
     {
         buttonPressStartTime_ = currentTime;
         currentButtonState_ = true;
-        log_i("ButtonSensor: PRESS STARTED at %lu ms (GPIO HIGH detected)", buttonPressStartTime_);
+        log_t("ButtonSensor: PRESS STARTED at %lu ms (GPIO HIGH detected)", buttonPressStartTime_);
     }
     else if (!currentState && currentButtonState_)
     {
         buttonPressDuration_ = currentTime - buttonPressStartTime_;
         currentButtonState_ = false;
         
-        log_i("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
+        log_t("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
         
         ButtonAction action = DetermineAction(buttonPressDuration_);
         if (action != ButtonAction::NONE)
         {
             detectedAction_ = action;
             actionReady_ = true;
-            log_i("ButtonSensor: ACTION DETECTED: %s (actionReady=true)", 
+            log_t("ButtonSensor: ACTION DETECTED: %s (actionReady=true)", 
                   action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
                   
             // In simplified system, determine which interrupt should be triggered
             if (action == ButtonAction::SHORT_PRESS)
             {
-                log_i("ButtonSensor: Should trigger 'short_press' action");
+                log_t("ButtonSensor: Should trigger 'short_press' action");
                 triggerInterruptId_ = "short_press";
             }
             else if (action == ButtonAction::LONG_PRESS)
             {
-                log_i("ButtonSensor: Should trigger 'long_press' action");
+                log_t("ButtonSensor: Should trigger 'long_press' action");
                 triggerInterruptId_ = "long_press";
             }
         }
@@ -192,12 +191,10 @@ ButtonAction ButtonSensor::DetermineAction(unsigned long duration)
     }
     else if (duration <= SHORT_PRESS_MAX_MS)
     {
-        log_d("Press duration %lu ms - SHORT_PRESS", duration);
         return ButtonAction::SHORT_PRESS;
     }
     else if (duration <= LONG_PRESS_MAX_MS)
     {
-        log_d("Press duration %lu ms - LONG_PRESS", duration);
         return ButtonAction::LONG_PRESS;
     }
     else

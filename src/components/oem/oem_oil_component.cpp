@@ -100,8 +100,7 @@ void OemOilComponent::Refresh(const Reading &reading)
     const ThemeColors &colours = styleService_->GetThemeColors();
     
     const std::string& currentTheme = styleService_->GetCurrentTheme();
-    log_d("Component refresh - Theme: %s, gaugeNormal: 0x%06X, needleNormal: 0x%06X", 
-          currentTheme.c_str(), lv_color_to_u32(colours.gaugeNormal), lv_color_to_u32(colours.needleNormal));
+    // Component refresh completed
 
     // Icon color logic - in night mode, always use gaugeNormal (red)
     // In day mode, use gaugeNormal normally, gaugeDanger when in danger
@@ -160,7 +159,6 @@ void OemOilComponent::Refresh(const Reading &reading)
 /// @param value
 void OemOilComponent::SetValue(int32_t value)
 {
-    log_d("SetValue() called with value=%d", value);
 
     // Clamp the input value to logical scale boundaries BEFORE mapping
     // This ensures values stay within the component's logical range
@@ -170,12 +168,10 @@ void OemOilComponent::SetValue(int32_t value)
     int32_t clampedValue = value;
     if (clampedValue < scaleMin)
     {
-        log_d("SetValue: Clamping input value %d to scale minimum %d", clampedValue, scaleMin);
         clampedValue = scaleMin;
     }
     else if (clampedValue > scaleMax)
     {
-        log_d("SetValue: Clamping input value %d to scale maximum %d", clampedValue, scaleMax);
         clampedValue = scaleMax;
     }
 
@@ -183,60 +179,37 @@ void OemOilComponent::SetValue(int32_t value)
     // Temperature component will reverse the clamped value: 0->120, 120->0
     int32_t mappedValue = map_value_for_display(clampedValue);
     
-    log_d("SetValue: clamped=%d, final mappedValue=%d", clampedValue, mappedValue);
 
     // Update all three needle sections for smooth tapered appearance
-    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleLine_");
     lv_scale_set_line_needle_value(scale_, needleLine_, NEEDLE_LENGTH, mappedValue);             // Full length (tip)
-    log_d("SetValue: needleLine_ completed");
     
-    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleMiddle_");
     lv_scale_set_line_needle_value(scale_, needleMiddle_, (NEEDLE_LENGTH * 2) / 3, mappedValue); // 2/3 length (middle)
-    log_d("SetValue: needleMiddle_ completed");
     
-    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleBase_");
     lv_scale_set_line_needle_value(scale_, needleBase_, NEEDLE_LENGTH / 3, mappedValue);         // 1/3 length (base)
-    log_d("SetValue: needleBase_ completed");
 
     // Update highlight lines for 3D effect
-    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleHighlightLine_");
     lv_scale_set_line_needle_value(scale_, needleHighlightLine_, NEEDLE_LENGTH - 2,
                                    mappedValue); // Slightly shorter for highlight effect
-    log_d("SetValue: needleHighlightLine_ completed");
     
-    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleHighlightMiddle_");
     lv_scale_set_line_needle_value(scale_, needleHighlightMiddle_, ((NEEDLE_LENGTH * 2) / 3) - 2,
                                    mappedValue); // 2/3 length highlight
-    log_d("SetValue: needleHighlightMiddle_ completed");
     
-    log_d("SetValue: About to call lv_scale_set_line_needle_value for needleHighlightBase_");
     lv_scale_set_line_needle_value(scale_, needleHighlightBase_, (NEEDLE_LENGTH / 3) - 2,
                                    mappedValue); // 1/3 length highlight
-    log_d("SetValue: needleHighlightBase_ completed");
     
-    log_d("SetValue: All needle operations completed successfully");
     
-    log_d("=== POST-NEEDLE MEMORY VALIDATION ===");
-    log_d("Free heap after needle operations: %d bytes", ESP.getFreeHeap());
     
     // Validate critical object pointers after LVGL operations
-    log_d("LVGL object validation after SetValue:");
-    log_d("  scale_ pointer: %p", scale_);
-    log_d("  needleLine_ pointer: %p", needleLine_);
-    log_d("  needleMiddle_ pointer: %p", needleMiddle_);
-    log_d("  needleBase_ pointer: %p", needleBase_);
     
     // Check if LVGL objects are still valid
     if (scale_) {
         lv_coord_t scale_x = lv_obj_get_x(scale_);
         lv_coord_t scale_y = lv_obj_get_y(scale_);
-        log_d("  scale_ position after operations: (%d, %d)", scale_x, scale_y);
     }
     
     // Memory pattern check in component context
     static const uint32_t COMPONENT_PATTERN = 0xBEEFCAFE;
     uint32_t component_test = COMPONENT_PATTERN;
-    log_d("Component memory test: 0x%08X", component_test);
     if (component_test != COMPONENT_PATTERN) {
         log_e("Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
     }
@@ -470,7 +443,6 @@ void OemOilComponent::create_scale(int32_t rotation)
 
     if (styleService_ && styleService_->IsInitialized())
     {
-        log_d("Applying gauge styles to scale object");
         lv_obj_add_style(scale_, &styleService_->GetGaugeMainStyle(), MAIN_DEFAULT);
         lv_obj_add_style(scale_, &styleService_->GetGaugeIndicatorStyle(), INDICATOR_DEFAULT);
         lv_obj_add_style(scale_, &styleService_->GetGaugeItemsStyle(), ITEMS_DEFAULT);
@@ -488,7 +460,6 @@ void OemOilComponent::create_scale(int32_t rotation)
 
     if (styleService_ && styleService_->IsInitialized())
     {
-        log_d("Applying danger zone styles to scale section");
         lv_scale_section_set_style(section, MAIN_DEFAULT, &styleService_->GetGaugeMainStyle());
         lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
         lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());

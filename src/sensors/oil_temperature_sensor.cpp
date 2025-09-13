@@ -1,5 +1,6 @@
 #include "sensors/oil_temperature_sensor.h"
 #include "managers/error_manager.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -63,13 +64,13 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
     else
     {
         targetUnit_ = unit;
-        log_d("Temperature unit set to: %s", targetUnit_.c_str());
     }
 }
 
 /// @brief Get the current temperature reading
 Reading OilTemperatureSensor::GetReading()
 {
+    log_v("GetReading() called");
     // Check if enough time has passed for update
     if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
@@ -94,7 +95,8 @@ Reading OilTemperatureSensor::GetReading()
         if (newValue != currentReading_)
         {
             currentReading_ = newValue;
-            log_i("Temperature reading changed to %d %s (raw: %d)", currentReading_, targetUnit_.c_str(), rawValue);
+            log_t("Temperature reading: %d %s", currentReading_, targetUnit_.c_str());
+            log_v("Temperature reading changed (raw: %d)", rawValue);
         }
     }
 
@@ -106,7 +108,6 @@ void OilTemperatureSensor::SetUpdateRate(int updateRateMs)
 {
     log_v("SetUpdateRate() called");
     updateIntervalMs_ = updateRateMs;
-    log_d("Oil temperature sensor update rate set to %d ms", updateIntervalMs_);
 }
 
 // Internal methods
@@ -157,6 +158,7 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 /// @brief Check if sensor state has changed since last evaluation
 bool OilTemperatureSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     int32_t current = ReadRawValue();
     int32_t converted = ConvertReading(current);
     return DetectChange(converted, previousReading_);

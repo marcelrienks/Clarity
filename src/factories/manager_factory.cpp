@@ -11,7 +11,6 @@
 #include "sensors/debug_error_sensor.h"
 #endif
 #include "utilities/types.h"
-#include "utilities/interrupt_callbacks.h"
 #include <esp32-hal-log.h>
 
 // Constructors
@@ -50,7 +49,6 @@ bool ManagerFactory::InitializeProviders()
             log_e("Failed to create DeviceProvider");
             return false;
         }
-        log_d("DeviceProvider created successfully");
     }
     
     if (!gpioProvider_) {
@@ -59,7 +57,6 @@ bool ManagerFactory::InitializeProviders()
             log_e("Failed to create GpioProvider");
             return false;
         }
-        log_d("GpioProvider created successfully");
     }
     
     if (!displayProvider_) {
@@ -68,7 +65,6 @@ bool ManagerFactory::InitializeProviders()
             log_e("Failed to create DisplayProvider");
             return false;
         }
-        log_d("DisplayProvider created successfully");
     }
     
     return true;
@@ -123,10 +119,8 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
         return nullptr;
     }
 
-    log_d("ManagerFactory: Initializing PanelManager...");
     panelManager->Init();
     
-    log_d("ManagerFactory: PanelManager created successfully");
     return panelManager;
 }
 
@@ -143,7 +137,6 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
         return nullptr;
     }
 
-    log_d("ManagerFactory: StyleManager created successfully");
     return manager;
 }
 
@@ -161,9 +154,7 @@ std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
         return nullptr;
     }
 
-    log_d("ManagerFactory: Initializing PreferenceManager...");
     manager->Init();
-    log_d("ManagerFactory: PreferenceManager created successfully");
     return manager;
 }
 
@@ -185,13 +176,11 @@ InterruptManager* ManagerFactory::CreateInterruptManagerImpl(IGpioProvider* gpio
         return nullptr;
     }
 
-    log_d("ManagerFactory: Initializing InterruptManager singleton with GPIO provider...");
     manager->Init(gpioProvider);
     
     // IMPORTANT: InterruptManager::Init() creates handlers which own the sensors
     // We must register interrupts AFTER Init() completes so contexts are available
     
-    log_d("ManagerFactory: InterruptManager initialized successfully with GPIO provider (system interrupts registered internally)");
     return manager;
 }
 
@@ -206,7 +195,6 @@ ErrorManager *ManagerFactory::CreateErrorManagerImpl()
         return nullptr;
     }
 
-    log_d("ManagerFactory: ErrorManager created successfully");
     return errorManager;
 }
 

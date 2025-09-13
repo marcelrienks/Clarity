@@ -6,6 +6,7 @@
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"  // For log_t()
 #include <algorithm>
 #include <esp32-hal-log.h>
 
@@ -90,6 +91,8 @@ void SplashPanel::Load()
 
     // Schedule the fade-in animation
     lv_timer_create(SplashPanel::fade_in_timer_callback, GetAnimationTime(), this);
+    
+    log_t("SplashPanel loaded successfully");
 }
 
 /// @brief Update the reading on the screen
@@ -114,7 +117,6 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::IDLE);
-        log_d("SplashPanel: Display timer - setting IDLE (no animations active)");
     }
 
     // Create a timer for the callback
@@ -136,7 +138,6 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     if (panel->panelService_)
     {
         panel->panelService_->SetUiState(UIState::BUSY);
-        log_d("SplashPanel: Starting fade-out animation - setting BUSY");
     }
 
     lv_screen_load_anim(panel->blankScreen_, LV_SCR_LOAD_ANIM_FADE_OUT, panel->GetAnimationTime(), 0, false);

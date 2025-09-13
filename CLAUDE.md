@@ -15,7 +15,8 @@ pio.exe run
 
 Quick compilation test (faster for testing changes):
 ```bash
-pio.exe run -e debug-local    # Fastest build environment for testing
+pio.exe run -e debug-local    # Full debug build for manual testing
+pio.exe run -e test-wokwi     # Clean integration testing build
 ```
 
 Check program size (quick verification):
@@ -30,7 +31,8 @@ pio.exe run --target upload
 
 Build specific environments:
 ```bash
-pio.exe run -e debug-local    # Debug build for local testing (fastest)
+pio.exe run -e debug-local    # Full debug build for manual testing (VERBOSE logs)
+pio.exe run -e test-wokwi     # Integration testing build (INFO logs only)
 pio.exe run -e debug-upload   # Debug build with inverted colors for waveshare display
 pio.exe run -e release        # Optimized release build with inverted colors
 ```
@@ -58,9 +60,26 @@ Target hardware: 240x240 round GC9A01 display
 - Hardware pins defined in `device_provider.h`
 - LVGL buffer sized for 60-line dual buffering
 
+## Testing
+
+The project provides two testing environments:
+
+**Manual Debug Testing** (for development):
+```bash
+cd test/manual
+./wokwi_debug.sh    # Full verbose logging, interactive controls
+```
+
+**Integration Testing** (for CI/CD):
+```bash
+cd test/wokwi
+./wokwi_run.sh      # Clean logs, automated validation
+```
+
 ## Development Notes
 
 - Local testing is done via a tool called wokwi to emulate a display, but it can only offer a square display rather than the round display that this application is intended for. And a limitation of that display is it renders the image inverted horizontally
+- Use `log_t()` function for timing/performance measurements - appears as `[T]` messages in both test environments
 
 ## Testing Limitations
 

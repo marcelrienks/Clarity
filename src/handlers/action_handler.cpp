@@ -7,6 +7,7 @@
 #include <cstring>
 
 #include "esp32-hal-log.h"
+#include "utilities/logging.h"  // For log_t()
 
 ActionHandler::ActionHandler(IGpioProvider* gpioProvider) 
     : gpioProvider_(gpioProvider),
@@ -21,7 +22,6 @@ ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
     
     // Create and initialize ButtonSensor owned by this handler
     if (gpioProvider_) {
-        log_d("Creating ActionHandler-owned ButtonSensor");
         
         buttonSensor_ = std::make_unique<ButtonSensor>(gpioProvider_);
         buttonSensor_->Init();
@@ -43,7 +43,7 @@ void ActionHandler::Process() {
     
     // Log every 2 seconds to verify Process() is being called
     if (currentTime - lastProcessTime > 2000) {
-        log_i("ActionHandler::Process() called - continuous button evaluation");
+        log_v("Process() called");
         lastProcessTime = currentTime;
     }
     
@@ -98,7 +98,6 @@ void ActionHandler::UnregisterAction(const char* id) {
 
 void ActionHandler::EvaluateActions() {
     // Process each action for trigger conditions
-    log_d("EvaluateActions: checking %zu actions", actionCount_);
     
     // Check if there's a valid button action to evaluate
     ButtonAction detectedAction = DetectButtonAction();
@@ -111,8 +110,7 @@ void ActionHandler::EvaluateActions() {
     bool anyActionTriggered = false;
     
     for (size_t i = 0; i < actionCount_; i++) {
-        log_d("EvaluateActions: checking action[%zu]: id='%s', pressType=%d", 
-              i, actions_[i].id, static_cast<int>(actions_[i].pressType));
+        // Evaluating action
         
         if (EvaluateIndividualActionWithDetectedAction(actions_[i], detectedAction)) {
             anyActionTriggered = true;
@@ -121,11 +119,9 @@ void ActionHandler::EvaluateActions() {
     
     // Clear timing data after all actions have been evaluated to prevent duplicate triggers
     if (detectedAction != ButtonAction::NONE && anyActionTriggered) {
-        log_d("EvaluateActions: Clearing button timing after successful action detection");
         if (detectedAction == ButtonAction::LONG_PRESS) {
             // For long press, mark as triggered to ignore subsequent release
             longPressAlreadyTriggered_ = true;
-            log_d("EvaluateActions: Long press triggered - will ignore release");
         }
         buttonPressStartTime_ = 0;
         buttonPressEndTime_ = 0;
@@ -135,14 +131,12 @@ void ActionHandler::EvaluateActions() {
 void ActionHandler::EvaluateIndividualAction(Action& action) {
     if (ShouldTriggerAction(action)) {
         action.hasTriggered = true;
-        log_d("Action '%s' triggered", action.id);
     }
 }
 
 bool ActionHandler::EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction) {
     if (ShouldTriggerActionWithDetectedAction(action, detectedAction)) {
         action.hasTriggered = true;
-        log_d("Action '%s' triggered", action.id);
         return true;
     }
     return false;
@@ -159,23 +153,19 @@ bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, 
         return false;
     }
     
-    log_d("ShouldTriggerActionWithDetectedAction: action='%s', detectedAction=%s, hasTriggered=%s",
-          action.id,
-          detectedAction == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
-          detectedAction == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE",
-          action.hasTriggered ? "true" : "false");
+    // Action evaluation completed
     
     // Match detected button action to action press type
     if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
         bool shouldTrigger = !action.hasTriggered;
-        log_i("ShouldTriggerActionWithDetectedAction: SHORT press match for '%s' - shouldTrigger=%s", 
-              action.id, shouldTrigger ? "YES" : "NO");
+        if (shouldTrigger) log_t("Button action detected: SHORT_PRESS");
+        log_v("SHORT press match for '%s' - shouldTrigger=%s", action.id, shouldTrigger ? "YES" : "NO");
         return shouldTrigger;  // Only trigger once per press event
     }
     else if (action.pressType == ActionPress::LONG && detectedAction == ButtonAction::LONG_PRESS) {
         bool shouldTrigger = !action.hasTriggered;
-        log_i("ShouldTriggerActionWithDetectedAction: LONG press match for '%s' - shouldTrigger=%s", 
-              action.id, shouldTrigger ? "YES" : "NO");
+        if (shouldTrigger) log_t("Button action detected: LONG_PRESS");
+        log_v("LONG press match for '%s' - shouldTrigger=%s", action.id, shouldTrigger ? "YES" : "NO");
         return shouldTrigger;  // Only trigger once per press event
     }
     
@@ -214,15 +204,12 @@ void ActionHandler::ExecuteAction(const Action& action) {
     // Execute action based on press type
     // Check if we should use panel function or action's own function
     if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
-        log_d("Executing injected short press function for action '%s'", action.id);
         currentShortPressFunc_(currentPanelContext_);
     }
     else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
-        log_d("Executing injected long press function for action '%s'", action.id);
         currentLongPressFunc_(currentPanelContext_);
     }
     else if (action.executeFunc) {
-        log_d("Executing action function for action '%s'", action.id);
         action.executeFunc();
     }
     else {
@@ -254,12 +241,12 @@ void ActionHandler::UpdateButtonState() {
     
     // Detect button press start
     if (!buttonPreviouslyPressed_ && buttonPressed_) {
-        log_i("BUTTON PRESS STARTED - beginning timing");
+        log_t("Button press started");
         StartButtonTiming();
     }
     // Detect button press end
     else if (buttonPreviouslyPressed_ && !buttonPressed_) {
-        log_i("BUTTON PRESS ENDED - stopping timing");
+        log_t("Button press ended");
         StopButtonTiming();
     }
 }
@@ -326,27 +313,22 @@ void ActionHandler::StartButtonTiming() {
     buttonPressStartTime_ = millis();
     buttonPressEndTime_ = 0;
     longPressAlreadyTriggered_ = false;  // Reset for new press
-    log_d("Button press started at %lu ms", buttonPressStartTime_);
 }
 
 void ActionHandler::StopButtonTiming() {
     buttonPressEndTime_ = millis();
     unsigned long duration = buttonPressEndTime_ - buttonPressStartTime_;
-    log_d("Button press ended at %lu ms, duration: %lu ms", buttonPressEndTime_, duration);
 }
 
 ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
     if (pressDuration < MIN_PRESS_DURATION_MS) {
-        log_d("Button press too short: %lu ms (min: %lu ms)", pressDuration, MIN_PRESS_DURATION_MS);
         return ButtonAction::NONE;
     }
     else if (pressDuration <= SHORT_PRESS_MAX_MS) {
-        log_d("Short press detected: %lu ms", pressDuration);
         return ButtonAction::SHORT_PRESS;
     }
     else if (pressDuration >= LONG_PRESS_MIN_MS) {
         // Any press >= 1500ms is a long press when released
-        log_d("Long press detected: %lu ms", pressDuration);
         return ButtonAction::LONG_PRESS;
     }
     else {
@@ -396,15 +378,13 @@ void ActionHandler::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*l
     currentShortPressFunc_ = shortPressFunc;
     currentLongPressFunc_ = longPressFunc;
     currentPanelContext_ = context;
-    log_d("Panel functions updated - short: %s, long: %s, context: %s",
-          shortPressFunc ? "set" : "null", longPressFunc ? "set" : "null", context ? "set" : "null");
+    // Panel functions updated
 }
 
 void ActionHandler::ClearPanelFunctions() {
     currentShortPressFunc_ = nullptr;
     currentLongPressFunc_ = nullptr;
     currentPanelContext_ = nullptr;
-    log_d("Panel functions cleared");
 }
 
 // Handler interface implementation complete

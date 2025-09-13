@@ -11,14 +11,12 @@ DebugErrorSensor::DebugErrorSensor(IGpioProvider *gpioProvider)
     : gpioProvider_(gpioProvider), previousState_(false), initialized_(false), startupTime_(0)
 {
     log_v("DebugErrorSensor() constructor called");
-    log_d("Creating DebugErrorSensor for GPIO %d", gpio_pins::DEBUG_ERROR);
 }
 
 // Core Functionality Methods
 void DebugErrorSensor::Init()
 {
     log_v("Init() called");
-    log_d("Initializing DebugErrorSensor on GPIO %d", gpio_pins::DEBUG_ERROR);
 
     if (!gpioProvider_)
     {
@@ -42,8 +40,7 @@ void DebugErrorSensor::Init()
     
     // Interrupt registration is now handled centrally in ManagerFactory
 
-    log_d("DebugErrorSensor initialized on GPIO %d with coordinated interrupts, initial state: %s", 
-          gpio_pins::DEBUG_ERROR, previousState_ ? "HIGH" : "LOW");
+    // Debug error sensor initialized
 }
 
 Reading DebugErrorSensor::GetReading()
@@ -75,7 +72,6 @@ Reading DebugErrorSensor::GetReading()
     // Only proceed if both readings match
     if (currentState != confirmedState)
     {
-        log_d("DebugErrorSensor: Unstable reading detected, ignoring");
         return previousState_; // Return previous stable state
     }
 
@@ -134,6 +130,7 @@ bool DebugErrorSensor::readPinState()
 
 bool DebugErrorSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     
     if (!initialized_) {
         log_v("HasStateChanged: Not initialized, returning false");
@@ -156,7 +153,6 @@ bool DebugErrorSensor::HasStateChanged()
     // This will trigger GetReading() which handles error generation
     if (currentState)
     {
-        log_d("Debug error button detected as pressed on GPIO %d", gpio_pins::DEBUG_ERROR);
     }
     
     return currentState;

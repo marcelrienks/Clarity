@@ -1,11 +1,11 @@
 #include "sensors/key_not_present_sensor.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
 KeyNotPresentSensor::KeyNotPresentSensor(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider)
 {
-    log_d("KeyNotPresentSensor created for GPIO %d", gpio_pins::KEY_NOT_PRESENT);
 }
 
 KeyNotPresentSensor::~KeyNotPresentSensor()
@@ -13,7 +13,6 @@ KeyNotPresentSensor::~KeyNotPresentSensor()
     if (gpioProvider_ && initialized_) {
         // Clean up GPIO interrupt if attached
         gpioProvider_->DetachInterrupt(gpio_pins::KEY_NOT_PRESENT);
-        log_d("KeyNotPresentSensor destructor: GPIO %d interrupt detached", gpio_pins::KEY_NOT_PRESENT);
     }
 }
 
@@ -31,7 +30,7 @@ void KeyNotPresentSensor::Init()
     previousState_ = readKeyNotPresentState();
     initialized_ = true;
     
-    log_d("KeyNotPresentSensor initialized on GPIO %d, initial state: %s", 
+    log_i("KeyNotPresentSensor initialization completed on GPIO %d, initial state: %s", 
           gpio_pins::KEY_NOT_PRESENT, previousState_ ? "NOT_PRESENT" : "PRESENT");
 }
 
@@ -49,17 +48,19 @@ bool KeyNotPresentSensor::GetKeyNotPresentState()
 
 bool KeyNotPresentSensor::HasStateChanged()
 {
+    log_v("HasStateChanged() called");
     if (!initialized_) {
         log_w("KeyNotPresentSensor: HasStateChanged called before initialization");
         return false;
     }
     
     bool currentState = readKeyNotPresentState();
+    bool oldState = previousState_; // Save BEFORE DetectChange modifies it
     bool changed = DetectChange(currentState, previousState_);
     
     if (changed) {
-        log_i("KeyNotPresentSensor state changed: %s -> %s", 
-              previousState_ ? "NOT_PRESENT" : "PRESENT",
+        log_t("KeyNotPresentSensor state changed: %s -> %s", 
+              oldState ? "NOT_PRESENT" : "PRESENT",
               currentState ? "NOT_PRESENT" : "PRESENT");
     }
     
@@ -68,7 +69,7 @@ bool KeyNotPresentSensor::HasStateChanged()
 
 void KeyNotPresentSensor::OnInterruptTriggered()
 {
-    log_i("KeyNotPresentSensor interrupt triggered - key not present state changed");
+    log_t("KeyNotPresentSensor interrupt triggered - key not present state changed");
     // Additional sensor-specific interrupt handling can be added here
 }
 

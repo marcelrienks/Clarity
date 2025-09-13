@@ -4,6 +4,7 @@
 #include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/panel_manager.h"
+#include "utilities/logging.h"
 #include <Arduino.h>
 #include <algorithm>
 
@@ -128,7 +129,7 @@ void ErrorPanel::Load()
 
     panelLoaded_ = true;
     
-    log_i("ErrorPanel loaded successfully");
+    log_t("ErrorPanel loaded successfully");
 }
 
 /// @brief Update the error panel with current error data
@@ -312,7 +313,7 @@ static void ErrorPanelShortPress(void* panelContext)
     
     if (panel)
     {
-        log_i("ErrorPanel: Calling HandleShortPress() on valid panel instance");
+        log_t("ErrorPanel: Calling HandleShortPress() on valid panel instance");
         panel->HandleShortPress();
     }
     else
@@ -328,7 +329,7 @@ static void ErrorPanelLongPress(void* panelContext)
     
     if (panel)
     {
-        log_i("ErrorPanel: Calling HandleLongPress() on valid panel instance");
+        log_t("ErrorPanel: Calling HandleLongPress() on valid panel instance");
         panel->HandleLongPress();
     }
     else
@@ -354,7 +355,7 @@ void* ErrorPanel::GetPanelContext()
 
 void ErrorPanel::HandleShortPress()
 {
-    log_i("ErrorPanel::HandleShortPress() - Manual cycling to next error");
+    log_t("ErrorPanel::HandleShortPress() - Manual cycling to next error");
     
     if (currentErrors_.empty())
     {
@@ -362,11 +363,11 @@ void ErrorPanel::HandleShortPress()
         return;
     }
     
-    log_i("ErrorPanel::HandleShortPress() - Current error index: %zu/%zu", 
+    log_t("ErrorPanel::HandleShortPress() - Current error index: %zu/%zu", 
           currentErrorIndex_, currentErrors_.size());
     
     // Always advance to next error (cycles back to 0 after last error)
-    log_i("ErrorPanel::HandleShortPress() - Advancing to next error");
+    log_t("ErrorPanel::HandleShortPress() - Advancing to next error");
     AdvanceToNextError();
     
     // Short press only cycles through errors, never exits
@@ -375,7 +376,7 @@ void ErrorPanel::HandleShortPress()
 
 void ErrorPanel::HandleLongPress()
 {
-    log_i("ErrorPanel: Long press - clearing all errors and exiting panel");
+    log_t("ErrorPanel: Long press - clearing all errors and exiting panel");
     
     // Clear all errors from the error manager
     ErrorManager::Instance().ClearAllErrors();
@@ -400,7 +401,6 @@ void ErrorPanel::SortErrorsBySeverity()
             return static_cast<int>(a.level) > static_cast<int>(b.level);
         });
     
-    log_d("Sorted %zu errors by severity (CRITICAL -> ERROR -> WARNING)", currentErrors_.size());
 }
 
 

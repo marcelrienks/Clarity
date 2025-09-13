@@ -4,6 +4,7 @@
 #include "managers/style_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/constants.h"
+#include "utilities/logging.h"
 #include <esp32-hal-log.h>
 #include <variant>
 
@@ -97,7 +98,7 @@ void LockPanel::Load()
         styleService_->ApplyThemeToScreen(screen_);
     }
     
-    log_i("LockPanel loaded successfully");
+    log_t("LockPanel loaded successfully");
 }
 
 /// @brief Update the lock panel with current sensor data
@@ -108,7 +109,6 @@ void LockPanel::Update()
     // Lock panel is static - no updates needed, but must reset UI state to IDLE
     if (panelService_) {
         panelService_->SetUiState(UIState::IDLE);
-        log_d("LockPanel: Update() - setting UI state to IDLE after static panel update");
     }
 }
 
@@ -131,7 +131,6 @@ void LockPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (thisInstance->panelService_)
     {
         thisInstance->panelService_->SetUiState(UIState::IDLE);
-        log_d("LockPanel: ShowPanelCompletionCallback - setting UI state to IDLE");
     }
 }
 

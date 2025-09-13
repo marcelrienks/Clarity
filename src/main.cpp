@@ -10,6 +10,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "utilities/constants.h"  // For PanelNames
+#include "utilities/logging.h"    // For log_t()
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
@@ -35,55 +36,44 @@ bool initializeServices()
     log_i("Starting Clarity service initialization with dual factory pattern...");
 
     // Step 1: Create ProviderFactory
-    log_d("Creating ProviderFactory...");
     providerFactory = std::make_unique<ProviderFactory>();
     if (!providerFactory) {
         log_e("Failed to create ProviderFactory - allocation failed");
         ErrorManager::Instance().ReportCriticalError("main", "ProviderFactory allocation failed");
         return false;
     }
-    log_d("ProviderFactory created successfully");
 
     // Step 2: Create providers using ProviderFactory
-    log_d("Creating DeviceProvider via factory...");
     deviceProvider = providerFactory->CreateDeviceProvider();
     if (!deviceProvider) {
         log_e("Failed to create DeviceProvider via factory");
         ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider creation failed");
         return false;
     }
-    log_d("DeviceProvider created successfully");
 
-    log_d("Creating GpioProvider via factory...");
     gpioProvider = providerFactory->CreateGpioProvider();
     if (!gpioProvider) {
         log_e("Failed to create GpioProvider via factory");
         ErrorManager::Instance().ReportCriticalError("main", "GpioProvider creation failed");
         return false;
     }
-    log_d("GpioProvider created successfully");
 
-    log_d("Creating DisplayProvider via factory...");
     displayProvider = providerFactory->CreateDisplayProvider(deviceProvider.get());
     if (!displayProvider) {
         log_e("Failed to create DisplayProvider via factory");
         ErrorManager::Instance().ReportCriticalError("main", "DisplayProvider creation failed");
         return false;
     }
-    log_d("DisplayProvider created successfully");
 
     // Step 3: Create ManagerFactory with dependency injection
-    log_d("Creating ManagerFactory with provider factory...");
     managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
     if (!managerFactory) {
         log_e("Failed to create ManagerFactory - allocation failed");
         ErrorManager::Instance().ReportCriticalError("main", "ManagerFactory allocation failed");
         return false;
     }
-    log_d("ManagerFactory created successfully with provider factory");
 
     // Step 4: Create managers using ManagerFactory
-    log_d("Creating managers via ManagerFactory...");
     
     // Create PreferenceManager
     preferenceManager = managerFactory->CreatePreferenceManager();
@@ -104,7 +94,6 @@ bool initializeServices()
     
     // Inject PreferenceService into StyleManager for direct preference reading
     styleManager->SetPreferenceService(preferenceManager.get());
-    log_d("StyleManager configured for direct preference reading");
     
     // Create InterruptManager with GPIO provider dependency
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
@@ -132,7 +121,6 @@ bool initializeServices()
         return false;
     }
     
-    log_d("All managers created successfully via ManagerFactory");
 
     // Verify all critical services were created (redundant check as we already checked individually)
     bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && 
@@ -146,6 +134,7 @@ bool initializeServices()
     }
 
     log_i("All services initialized successfully");
+    log_t("System ready");
     return true;
 }
 
@@ -204,7 +193,6 @@ void loop()
     // Log every 1000 loops to verify main loop is running
     if (loopCount % 1000 == 0)
     {
-        log_d("Main loop running - count: %lu", loopCount);
     }
     
     // Periodic system health monitoring (every 30 seconds)
@@ -246,7 +234,7 @@ void loop()
         // Trigger error panel if needed and not already triggered
         if (shouldTriggerError && !errorPanelTriggered && !isCurrentlyErrorPanel)
         {
-            log_i("Error trigger detected - loading ErrorPanel");
+            log_t("ErrorOccurredActivate() - Loading ERROR panel");
             panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);  // Mark as trigger-driven
             errorManager->SetErrorPanelActive(true);
             errorPanelTriggered = true;
@@ -254,7 +242,6 @@ void loop()
         // Reset trigger state when no longer needed
         else if (!shouldTriggerError && errorPanelTriggered)
         {
-            log_d("Error trigger cleared - resetting error panel state");
             errorManager->SetErrorPanelActive(false);
             errorPanelTriggered = false;
         }

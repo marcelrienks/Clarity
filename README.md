@@ -1,5 +1,5 @@
-[![Unity Tests](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/test.yml)
-[![Wokwi Integration Tests](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-tests.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-tests.yml)
+[![Wokwi Basic Hardware Test](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-basic-test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-basic-test.yml)
+[![Wokwi Full System Test](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-full-test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-full-test.yml)
 
 # Clarity
 ESP32 automotive gauge system for engine monitoring with LVGL UI on round displays.
@@ -9,29 +9,51 @@ After I had built this architecture, the project then became a test bed for usin
 
 ## Documentation
 
+### Core Documentation
+- **[Testing](docs/test.md)** - Complete testing guide with Wokwi simulation and GitHub Actions
 - [Architecture](docs/architecture.md) - MVP pattern and system design
-- [Hardware](docs/hardware.md) - Hardware setup and configuration
-- [Testing](docs/test.md) - Unit and integration test guide  
-- [Scenarios](docs/scenario.md) - Usage workflows
+- [Hardware](docs/hardware.md) - Hardware setup and configuration  
+- [Requirements](docs/requirements.md) - System requirements and specifications
+- [Scenarios](docs/scenarios.md) - Usage workflows and user scenarios
 - [Standards](docs/standards.md) - Coding and naming standards
-- [Patterns](docs/patterns.md) - Various patterns followed in this project
-- [Todo](docs/todo.md) - Development tasks
+- [Patterns](docs/patterns.md) - Design patterns used in the project
+
+### System Design
+- [Interrupt Architecture](docs/interrupt-architecture.md) - Interrupt system design and implementation
+- [Error Handling](docs/error.md) - Error management and reporting system
+- [Input System](docs/input.md) - User input handling and processing
+- [Sensor System](docs/sensor.md) - Sensor data acquisition and processing
+- [Implementation Status](docs/implementation-status.md) - Current implementation progress
+
+### Diagrams
+- [Architecture Overview](docs/diagrams/architecture-overview.md) - High-level system architecture
+- [Application Flow](docs/diagrams/application-flow.md) - Application execution flow
+- [Interrupt Handling Flow](docs/diagrams/interrupt-handling-flow.md) - Interrupt processing flow
+
+### CI/CD & Workflows
+- [Workflow Setup](.github/workflows/README.md) - Detailed GitHub Actions configuration guide
 
 ## Quick Start
 
 ```bash
-# Build
-pio.exe run -e debug-local
+# Build for manual debugging (full verbose logs)
+pio run -e debug-local
 
-# Unity tests
-pio.exe test -e test-all        # All tests through PlatformIO
-./run_unity_tests.sh            # Linux/Mac runner
-run_unity_tests.bat             # Windows runner
+# Build for integration testing (clean logs)  
+pio run -e test-wokwi
 
-# Wokwi Integration Tests
-./run_wokwi_tests.sh            # Linux/Mac runner
-run_wokwi_tests.bat             # Windows runner
+# Build for hardware upload
+pio run -e debug-upload
+
+# Wokwi Simulation Testing
+cd test/manual && ./wokwi_debug.sh      # Interactive manual testing
+cd test/wokwi && ./wokwi_run.sh         # Automated integration testing
 ```
+
+### Test Coverage
+- **Basic Test**: GPIO, buttons, sensors, timing validation (5 phases)
+- **Full Test**: Complete system integration with all panels, triggers, animations, themes, and configuration (7 phases)
+- **Automated CI/CD**: Tests run automatically on commits and pull requests
 
 ## Main Libraries:
 * Arduino

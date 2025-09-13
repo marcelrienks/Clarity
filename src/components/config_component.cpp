@@ -32,7 +32,6 @@ void ConfigComponent::ExecuteAction(const std::string& actionType, const std::st
     {
         // Handle submenu navigation - delegate back to config panel
         // This would require a callback to the ConfigPanel
-        log_d("Submenu action: %s", actionParam.c_str());
     }
     else if (actionType == "panel_exit")
     {
@@ -68,7 +67,6 @@ void ConfigComponent::Init(lv_obj_t *screen)
         return;
     }
 
-    log_d("Initializing config component UI");
 
     screen_ = screen;
     
@@ -141,7 +139,6 @@ void ConfigComponent::UpdateThemeColors()
         return;
     }
 
-    log_d("Updating theme colors for config component");
     
     const std::string& theme = styleService_->GetCurrentTheme();
     bool isNightTheme = (theme == "Night");
@@ -223,8 +220,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         green = (uint8_t)(green * intensity);
         blue = (uint8_t)(blue * intensity);
         
-        log_d("Night theme color calculation - distance: %d, intensity: %.2f, red: %d, green: %d, blue: %d", 
-              distanceFromCenter, intensity, red, green, blue);
+        // Gradient color calculation completed
         
         return lv_color_hex((red << 16) | (green << 8) | blue);
     }
@@ -239,8 +235,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         if (intensity < 0.2f) intensity = 0.2f; // Minimum visibility
         
         gray = (uint8_t)(gray * intensity);
-        log_d("Day theme color calculation - distance: %d, intensity: %.2f, gray: %d", 
-              distanceFromCenter, intensity, gray);
+        // Grayscale color calculation completed
         return lv_color_hex((gray << 16) | (gray << 8) | gray);
     }
 }
@@ -306,7 +301,6 @@ void ConfigComponent::UpdateMenuDisplay()
         return;
     }
 
-    log_d("Updating menu display with current selection");
 
     // Update menu items with scrolling effect
     for (int i = 0; i < VISIBLE_ITEMS && i < static_cast<int>(menuLabels_.size()); ++i)
@@ -318,7 +312,6 @@ void ConfigComponent::UpdateMenuDisplay()
         if (menuItemIndex >= 0 && menuItemIndex < static_cast<int>(menuItems_.size()))
         {
             lv_label_set_text(menuLabels_[i], menuItems_[menuItemIndex].label.c_str());
-            log_d("Menu item %d: menuItemIndex=%d, label=%s", i, menuItemIndex, menuItems_[menuItemIndex].label.c_str());
 
             // Calculate distance from center
             int distanceFromCenter = abs(i - CENTER_INDEX);
