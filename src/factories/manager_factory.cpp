@@ -18,7 +18,7 @@
 ManagerFactory::ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory)
     : providerFactory_(std::move(providerFactory))
 {
-    log_v("ManagerFactory(IProviderFactory*) constructor called");
+    log_d("ManagerFactory(IProviderFactory*) constructor called");
     if (!providerFactory_) {
         log_w("ManagerFactory created without provider factory - will create default ProviderFactory");
         providerFactory_ = std::make_unique<ProviderFactory>();
@@ -28,14 +28,14 @@ ManagerFactory::ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory
 ManagerFactory::ManagerFactory()
     : providerFactory_(std::make_unique<ProviderFactory>())
 {
-    log_v("ManagerFactory() default constructor called - creating ProviderFactory");
+    log_d("ManagerFactory() default constructor called - creating ProviderFactory");
 }
 
 // Private Helper Methods
 
 bool ManagerFactory::InitializeProviders()
 {
-    log_v("InitializeProviders() called");
+    log_d("InitializeProviders() called");
     
     if (!providerFactory_) {
         log_e("Cannot initialize providers - provider factory is null");
@@ -77,7 +77,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
                                                                       IPreferenceService *preferenceService,
                                                                       InterruptManager *interruptManager)
 {
-    log_v("CreatePanelManagerImpl() called");
+    log_d("CreatePanelManagerImpl() called");
 
     // Validate required providers
     if (!display)
@@ -126,7 +126,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
 
 std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char *theme)
 {
-    log_v("CreateStyleManager() called");
+    log_d("CreateStyleManager() called");
 
     auto manager = std::make_unique<StyleManager>(theme ? theme : Themes::DAY);
     if (!manager)
@@ -143,7 +143,7 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
 std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
 {
-    log_v("CreatePreferenceManager() called");
+    log_d("CreatePreferenceManager() called");
 
     auto manager = std::make_unique<PreferenceManager>();
     if (!manager)
@@ -160,7 +160,7 @@ std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
 
 InterruptManager* ManagerFactory::CreateInterruptManagerImpl(IGpioProvider* gpioProvider)
 {
-    log_v("CreateInterruptManager() called");
+    log_d("CreateInterruptManager() called");
 
     if (!gpioProvider) {
         log_e("ManagerFactory: Cannot create InterruptManager - GPIO provider is null");
@@ -186,7 +186,7 @@ InterruptManager* ManagerFactory::CreateInterruptManagerImpl(IGpioProvider* gpio
 
 ErrorManager *ManagerFactory::CreateErrorManagerImpl()
 {
-    log_v("CreateErrorManager() called");
+    log_d("CreateErrorManager() called");
 
     ErrorManager *errorManager = &ErrorManager::Instance();
     if (!errorManager)
@@ -205,7 +205,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManager(IDisplayProvide
                                                                   IPreferenceService *preferenceService,
                                                                   InterruptManager *interruptManager)
 {
-    log_v("CreatePanelManager() called");
+    log_d("CreatePanelManager() called");
     
     // When using the dual factory pattern, get providers from provider factory
     IDisplayProvider* displayToUse = display;
@@ -236,7 +236,7 @@ std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManager()
 
 InterruptManager* ManagerFactory::CreateInterruptManager(IGpioProvider* gpioProvider)
 {
-    log_v("CreateInterruptManager() called");
+    log_d("CreateInterruptManager() called");
     
     // If no GPIO provider passed, get from provider factory
     IGpioProvider* gpioToUse = gpioProvider;
@@ -256,32 +256,3 @@ ErrorManager* ManagerFactory::CreateErrorManager()
     return CreateErrorManagerImpl();
 }
 
-// Static Convenience Methods
-
-std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerStatic(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                        IStyleService *styleService,
-                                                                        IPreferenceService *preferenceService,
-                                                                        InterruptManager *interruptManager)
-{
-    return CreatePanelManagerImpl(display, gpio, styleService, preferenceService, interruptManager);
-}
-
-std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerStatic(const char *theme)
-{
-    return CreateStyleManagerImpl(theme);
-}
-
-std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerStatic()
-{
-    return CreatePreferenceManagerImpl();
-}
-
-InterruptManager* ManagerFactory::CreateInterruptManagerStatic(IGpioProvider* gpioProvider)
-{
-    return CreateInterruptManagerImpl(gpioProvider);
-}
-
-ErrorManager* ManagerFactory::CreateErrorManagerStatic()
-{
-    return CreateErrorManagerImpl();
-}

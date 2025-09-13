@@ -10,7 +10,7 @@
 
 std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 {
-    log_v("CreateGpioProvider() called");
+    log_d("CreateGpioProvider() called");
     
     try
     {
@@ -34,7 +34,7 @@ std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 
 std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDeviceProvider* deviceProvider)
 {
-    log_v("CreateDisplayProvider() called");
+    log_d("CreateDisplayProvider() called");
     
     if (!deviceProvider)
     {
@@ -43,19 +43,18 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDevice
         return nullptr;
     }
     
-    // Access the screen from the injected deviceProvider
-    // Note: Using static_cast since we control the concrete type in this codebase
-    auto* concreteDeviceProvider = static_cast<DeviceProvider*>(deviceProvider);
-    if (!concreteDeviceProvider->screen)
+    // Access the screen from the injected deviceProvider using interface method
+    lv_obj_t* screen = deviceProvider->GetScreen();
+    if (!screen)
     {
         log_e("DeviceProvider screen is null");
         ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider screen is null");
         return nullptr;
     }
-    
+
     try
     {
-        auto provider = std::make_unique<LvglDisplayProvider>(concreteDeviceProvider->screen);
+        auto provider = std::make_unique<LvglDisplayProvider>(screen);
         if (provider)
         {
             return provider;
@@ -75,7 +74,7 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(IDevice
 
 std::unique_ptr<IDeviceProvider> ProviderFactory::CreateDeviceProvider()
 {
-    log_v("CreateDeviceProvider() called");
+    log_d("CreateDeviceProvider() called");
     
     try
     {

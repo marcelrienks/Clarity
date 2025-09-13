@@ -78,26 +78,6 @@ public:
     /// @brief Create ErrorManager singleton instance
     /// @return Pointer to configured ErrorManager instance or nullptr on failure
     ErrorManager* CreateErrorManager() override;
-    
-    // Static convenience methods for backward compatibility
-    
-    /// @brief Static convenience method - Create PanelManager with injected dependencies
-    static std::unique_ptr<PanelManager> CreatePanelManagerStatic(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                  IStyleService *styleService, 
-                                                                  IPreferenceService *preferenceService,
-                                                                  InterruptManager *interruptManager);
-
-    /// @brief Static convenience method - Create StyleManager with optional theme
-    static std::unique_ptr<StyleManager> CreateStyleManagerStatic(const char *theme = nullptr);
-
-    /// @brief Static convenience method - Create PreferenceManager
-    static std::unique_ptr<PreferenceManager> CreatePreferenceManagerStatic();
-
-    /// @brief Static convenience method - Initialize InterruptManager singleton
-    static InterruptManager* CreateInterruptManagerStatic(IGpioProvider* gpioProvider);
-
-    /// @brief Static convenience method - Create ErrorManager singleton
-    static ErrorManager* CreateErrorManagerStatic();
 
 private:
     /// @brief Provider factory for creating hardware providers
