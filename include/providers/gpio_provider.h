@@ -40,7 +40,9 @@
 class GpioProvider : public IGpioProvider
 {
   private:
-    std::map<int, bool> attachedInterrupts;
+    // Use fixed array for ESP32 GPIO pins (0-39) - much faster than std::map
+    static constexpr int MAX_GPIO_PIN = 40;
+    bool attachedInterrupts_[MAX_GPIO_PIN] = {false};
 
   public:
     /// @brief Read digital value from a GPIO pin
