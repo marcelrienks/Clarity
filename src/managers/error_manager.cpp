@@ -5,14 +5,12 @@
 
 ErrorManager &ErrorManager::Instance()
 {
-    log_v("Instance() called");
     static ErrorManager instance;
     return instance;
 }
 
 void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::string &message)
 {
-    log_v("ReportError() called");
     // Process auto-dismiss before adding new error
     AutoDismissOldWarnings();
 
@@ -20,7 +18,7 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
     ErrorInfo errorInfo;
     errorInfo.level = level;
     errorInfo.source = source;
-    errorInfo.message = message;
+    errorInfo.SetMessage(message);
     errorInfo.timestamp = millis();
     errorInfo.acknowledged = false;
 
@@ -34,44 +32,38 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
     const char *levelStr = (level == ErrorLevel::WARNING) ? "WARNING"
                            : (level == ErrorLevel::ERROR) ? "ERROR"
                                                           : "CRITICAL";
-    log_e("[%s] %s: %s", levelStr, source, message.c_str());
+    log_e("[%s] %s: %s", levelStr, source, errorInfo.message);
     log_t("Error reported: %s", levelStr);
 }
 
 void ErrorManager::ReportWarning(const char *source, const std::string &message)
 {
-    log_v("ReportWarning() called");
     ReportError(ErrorLevel::WARNING, source, message);
 }
 
 void ErrorManager::ReportCriticalError(const char *source, const std::string &message)
 {
-    log_v("ReportCriticalError() called");
     ReportError(ErrorLevel::CRITICAL, source, message);
 }
 
 bool ErrorManager::HasPendingErrors() const
 {
-    log_v("HasPendingErrors() called");
     return !errorQueue_.empty();
 }
 
 bool ErrorManager::HasCriticalErrors() const
 {
-    log_v("HasCriticalErrors() called");
     return std::any_of(errorQueue_.begin(), errorQueue_.end(), [](const ErrorInfo &error)
                        { return error.level == ErrorLevel::CRITICAL && !error.acknowledged; });
 }
 
 std::vector<ErrorInfo> ErrorManager::GetErrorQueue() const
 {
-    log_v("GetErrorQueue() called");
     return errorQueue_;
 }
 
 void ErrorManager::AcknowledgeError(size_t errorIndex)
 {
-    log_v("AcknowledgeError() called");
     if (errorIndex < errorQueue_.size())
     {
         errorQueue_[errorIndex].acknowledged = true;
@@ -92,14 +84,12 @@ void ErrorManager::AcknowledgeError(size_t errorIndex)
 
 void ErrorManager::ClearAllErrors()
 {
-    log_v("ClearAllErrors() called");
     errorQueue_.clear();
     errorPanelActive_ = false;
 }
 
 bool ErrorManager::ShouldTriggerErrorPanel() const
 {
-    log_v("ShouldTriggerErrorPanel() called");
     // Process auto-dismiss first (const_cast for this internal operation)
     const_cast<ErrorManager *>(this)->AutoDismissOldWarnings();
 
@@ -110,7 +100,6 @@ bool ErrorManager::ShouldTriggerErrorPanel() const
 
 void ErrorManager::SetErrorPanelActive(bool active)
 {
-    log_v("SetErrorPanelActive() called");
     errorPanelActive_ = active;
 }
 
@@ -121,11 +110,8 @@ bool ErrorManager::IsErrorPanelActive() const
 
 void ErrorManager::TrimErrorQueue()
 {
-    log_v("TrimErrorQueue() called");
     if (errorQueue_.size() > MAX_ERROR_QUEUE_SIZE)
     {
-        size_t originalSize = errorQueue_.size();
-        
         // Sort by priority (critical > error > warning) and timestamp (newer first)
         std::sort(errorQueue_.begin(), errorQueue_.end(),
                   [](const ErrorInfo &a, const ErrorInfo &b)
@@ -142,10 +128,8 @@ void ErrorManager::TrimErrorQueue()
     }
 }
 
-
 ErrorLevel ErrorManager::GetHighestErrorLevel() const
 {
-    log_v("GetHighestErrorLevel() called");
     if (errorQueue_.empty())
     {
         return ErrorLevel::WARNING; // Default level
@@ -191,9 +175,9 @@ void ErrorManager::AutoDismissOldWarnings()
 /// @brief Process error queue and manage error panel state
 void ErrorManager::Process()
 {
-    // Process error queue  
+    // Process error queue
     AutoDismissOldWarnings();
-    
+
     // Check if error panel should be triggered
     if (HasCriticalErrors() && !errorPanelActive_)
     {
@@ -201,7 +185,7 @@ void ErrorManager::Process()
         // This would normally activate the error trigger
         log_i("Critical errors present, error panel should be activated");
     }
-    
+
     // Check if error panel should be deactivated
     if (!HasPendingErrors() && errorPanelActive_)
     {

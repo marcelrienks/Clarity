@@ -222,7 +222,7 @@ void ErrorComponent::DisplayCurrentError()
     lv_label_set_text(errorSourceLabel_, currentError.source);
 
     // Update message - can display full message now with wrapping
-    lv_label_set_text(errorMessageLabel_, currentError.message.c_str());
+    lv_label_set_text(errorMessageLabel_, currentError.message);
 
     // Update navigation indicator - same for all errors
     // Short press cycles through errors, long press exits from any error
