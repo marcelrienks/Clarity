@@ -210,24 +210,42 @@ std::string PreferenceManager::GetPreference(const std::string &key) const
         return config.panelName;
     if (key == "show_splash")
         return config.showSplash ? "true" : "false";
-    if (key == "splash_duration")
-        return std::to_string(config.splashDuration);
+    if (key == "splash_duration") {
+        static char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%d", config.splashDuration);
+        return buffer;
+    }
     if (key == "theme")
         return config.theme;
-    if (key == "update_rate")
-        return std::to_string(config.updateRate);
+    if (key == "update_rate") {
+        static char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%d", config.updateRate);
+        return buffer;
+    }
     if (key == "pressure_unit")
         return config.pressureUnit;
     if (key == "temp_unit")
         return config.tempUnit;
-    if (key == "pressure_offset")
-        return std::to_string(config.pressureOffset);
-    if (key == "pressure_scale")
-        return std::to_string(config.pressureScale);
-    if (key == "temp_offset")
-        return std::to_string(config.tempOffset);
-    if (key == "temp_scale")
-        return std::to_string(config.tempScale);
+    if (key == "pressure_offset") {
+        static char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%.2f", config.pressureOffset);
+        return buffer;
+    }
+    if (key == "pressure_scale") {
+        static char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%.2f", config.pressureScale);
+        return buffer;
+    }
+    if (key == "temp_offset") {
+        static char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%.2f", config.tempOffset);
+        return buffer;
+    }
+    if (key == "temp_scale") {
+        static char buffer[16];
+        snprintf(buffer, sizeof(buffer), "%.2f", config.tempScale);
+        return buffer;
+    }
 
     log_w("Unknown preference key: %s", key.c_str());
     return "";

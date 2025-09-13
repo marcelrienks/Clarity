@@ -397,14 +397,25 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
         panelDisplay = panelDisplay.substr(0, panelDisplay.find("Panel"));
     }
 
+    // Use static buffers to avoid dynamic allocations in menu creation
+    static char panelItem[64], themeItem[64], splashItem[64], splashTimeItem[64], rateItem[64], pressureItem[64], tempItem[64];
+
+    snprintf(panelItem, sizeof(panelItem), "Panel: %s", panelDisplay.c_str());
+    snprintf(themeItem, sizeof(themeItem), "Theme: %s", config.theme.c_str());
+    snprintf(splashItem, sizeof(splashItem), "Splash: %s", config.showSplash ? "On" : "Off");
+    snprintf(splashTimeItem, sizeof(splashTimeItem), "Splash T: %dms", config.splashDuration);
+    snprintf(rateItem, sizeof(rateItem), "Rate: %dms", config.updateRate);
+    snprintf(pressureItem, sizeof(pressureItem), "Press: %s", config.pressureUnit.c_str());
+    snprintf(tempItem, sizeof(tempItem), "Temp: %s", config.tempUnit.c_str());
+
     menuItems_ = {
-        {"Panel: " + panelDisplay, "submenu", "PanelSubmenu"},
-        {"Theme: " + config.theme, "submenu", "ThemeSubmenu"},
-        {"Splash: " + std::string(config.showSplash ? "On" : "Off"), "submenu", "SplashSubmenu"},
-        {"Splash T: " + std::to_string(config.splashDuration) + "ms", "submenu", "SplashDurationSubmenu"},
-        {"Rate: " + std::to_string(config.updateRate) + "ms", "submenu", "UpdateRateSubmenu"},
-        {"Press: " + config.pressureUnit, "submenu", "PressureUnitSubmenu"},
-        {"Temp: " + config.tempUnit, "submenu", "TempUnitSubmenu"},
+        {panelItem, "submenu", "PanelSubmenu"},
+        {themeItem, "submenu", "ThemeSubmenu"},
+        {splashItem, "submenu", "SplashSubmenu"},
+        {splashTimeItem, "submenu", "SplashDurationSubmenu"},
+        {rateItem, "submenu", "UpdateRateSubmenu"},
+        {pressureItem, "submenu", "PressureUnitSubmenu"},
+        {tempItem, "submenu", "TempUnitSubmenu"},
         {"Calibration", "submenu", "CalibrationSubmenu"},
         {"Exit", "panel_exit", ""}};
 

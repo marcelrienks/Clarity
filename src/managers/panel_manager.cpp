@@ -112,8 +112,10 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     
     // Unknown panel type
     log_e("Failed to create panel: %s", panelName);
-    errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager",
-                                         std::string("Failed to create panel: ") + panelName);
+    // Use char buffer to avoid string allocation in error path
+    char errorMsg[128];
+    snprintf(errorMsg, sizeof(errorMsg), "Failed to create panel: %s", panelName);
+    errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager", errorMsg);
     return nullptr;
 }
 
@@ -181,8 +183,10 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     if (!panel_)
     {
         log_e("Failed to create panel: %s", panelName);
-        errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager",
-                                             std::string("Panel creation failed for: ") + panelName);
+        // Use char buffer to avoid string allocation in error path
+        char errorMsg[128];
+        snprintf(errorMsg, sizeof(errorMsg), "Panel creation failed for: %s", panelName);
+        errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager", errorMsg);
         return;
     }
 
