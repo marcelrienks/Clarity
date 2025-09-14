@@ -3,11 +3,15 @@
 #include <Arduino.h>
 #include <algorithm>
 
+// ========== Static Methods ==========
+
 ErrorManager &ErrorManager::Instance()
 {
     static ErrorManager instance;
     return instance;
 }
+
+// ========== Public Interface Methods ==========
 
 void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::string &message)
 {
@@ -108,6 +112,30 @@ bool ErrorManager::IsErrorPanelActive() const
     return errorPanelActive_;
 }
 
+/// @brief Process error queue and manage error panel state
+void ErrorManager::Process()
+{
+    // Process error queue
+    AutoDismissOldWarnings();
+
+    // Check if error panel should be triggered
+    if (HasCriticalErrors() && !errorPanelActive_)
+    {
+        // Trigger error panel through interrupt system
+        // This would normally activate the error trigger
+        log_i("Critical errors present, error panel should be activated");
+    }
+
+    // Check if error panel should be deactivated
+    if (!HasPendingErrors() && errorPanelActive_)
+    {
+        errorPanelActive_ = false;
+        log_i("No pending errors, error panel can be deactivated");
+    }
+}
+
+// ========== Private Methods ==========
+
 void ErrorManager::TrimErrorQueue()
 {
     if (errorQueue_.size() > MAX_ERROR_QUEUE_SIZE)
@@ -125,6 +153,25 @@ void ErrorManager::TrimErrorQueue()
 
         // Keep only the most recent/important errors
         errorQueue_.resize(MAX_ERROR_QUEUE_SIZE);
+    }
+}
+
+/// @brief Auto-dismiss warnings older than timeout
+void ErrorManager::AutoDismissOldWarnings()
+{
+    auto now = millis();
+    auto it = errorQueue_.begin();
+    while (it != errorQueue_.end())
+    {
+        if (it->level == ErrorLevel::WARNING &&
+            (now - it->timestamp) > WARNING_AUTO_DISMISS_TIME)
+        {
+            it = errorQueue_.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
     }
 }
 
@@ -151,45 +198,4 @@ ErrorLevel ErrorManager::GetHighestErrorLevel() const
         }
     }
     return highest;
-}
-
-/// @brief Auto-dismiss warnings older than timeout
-void ErrorManager::AutoDismissOldWarnings()
-{
-    auto now = millis();
-    auto it = errorQueue_.begin();
-    while (it != errorQueue_.end())
-    {
-        if (it->level == ErrorLevel::WARNING && 
-            (now - it->timestamp) > WARNING_AUTO_DISMISS_TIME)
-        {
-            it = errorQueue_.erase(it);
-        }
-        else
-        {
-            ++it;
-        }
-    }
-}
-
-/// @brief Process error queue and manage error panel state
-void ErrorManager::Process()
-{
-    // Process error queue
-    AutoDismissOldWarnings();
-
-    // Check if error panel should be triggered
-    if (HasCriticalErrors() && !errorPanelActive_)
-    {
-        // Trigger error panel through interrupt system
-        // This would normally activate the error trigger
-        log_i("Critical errors present, error panel should be activated");
-    }
-
-    // Check if error panel should be deactivated
-    if (!HasPendingErrors() && errorPanelActive_)
-    {
-        errorPanelActive_ = false;
-        log_i("No pending errors, error panel can be deactivated");
-    }
 }

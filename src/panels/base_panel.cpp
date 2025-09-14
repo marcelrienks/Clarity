@@ -4,7 +4,8 @@
 #include "utilities/logging.h"
 #include <Arduino.h>
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
+
 BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       panelService_(nullptr)
@@ -23,7 +24,7 @@ BasePanel::~BasePanel()
     }
 }
 
-// Core Functionality Methods - Template Method implementations
+// ========== Public Interface Methods ==========
 
 void BasePanel::Init()
 {
@@ -74,7 +75,6 @@ void BasePanel::Update()
     }
 }
 
-// Manager injection method
 void BasePanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
 {
     log_v("%s::SetManagers() called", GetPanelName());
@@ -87,8 +87,6 @@ void BasePanel::SetManagers(IPanelService* panelService, IStyleService* styleSer
         styleService_ = styleService;
     }
 }
-
-// IActionService Interface Implementation
 
 void (*BasePanel::GetShortPressFunction())(void* panelContext)
 {
@@ -105,7 +103,47 @@ void* BasePanel::GetPanelContext()
     return this;
 }
 
-// Private Methods
+// ========== Static Methods ==========
+
+void BasePanel::ShowPanelCompletionCallback(lv_event_t* event)
+{
+    if (!event)
+        return;
+
+    auto thisInstance = static_cast<BasePanel*>(lv_event_get_user_data(event));
+    if (!thisInstance)
+        return;
+
+    log_v("%s::ShowPanelCompletionCallback() called", thisInstance->GetPanelName());
+
+    // Set UI state to IDLE after panel loads so triggers can be evaluated again
+    if (thisInstance->panelService_)
+    {
+        thisInstance->panelService_->SetUiState(UIState::IDLE);
+    }
+}
+
+void BasePanel::BasePanelShortPress(void* panelContext)
+{
+    auto* panel = static_cast<BasePanel*>(panelContext);
+    if (panel)
+    {
+        log_v("%s::BasePanelShortPress() called", panel->GetPanelName());
+        panel->HandleShortPress();
+    }
+}
+
+void BasePanel::BasePanelLongPress(void* panelContext)
+{
+    auto* panel = static_cast<BasePanel*>(panelContext);
+    if (panel)
+    {
+        log_v("%s::BasePanelLongPress() called", panel->GetPanelName());
+        panel->HandleLongPress();
+    }
+}
+
+// ========== Private Methods ==========
 
 void BasePanel::ValidateProviders()
 {
@@ -137,47 +175,5 @@ void BasePanel::ApplyThemeAndLoadScreen()
     if (styleService_)
     {
         styleService_->ApplyThemeToScreen(screen_);
-    }
-}
-
-// Static Methods
-
-void BasePanel::ShowPanelCompletionCallback(lv_event_t* event)
-{
-    if (!event)
-        return;
-
-    auto thisInstance = static_cast<BasePanel*>(lv_event_get_user_data(event));
-    if (!thisInstance)
-        return;
-
-    log_v("%s::ShowPanelCompletionCallback() called", thisInstance->GetPanelName());
-
-    // Set UI state to IDLE after panel loads so triggers can be evaluated again
-    if (thisInstance->panelService_)
-    {
-        thisInstance->panelService_->SetUiState(UIState::IDLE);
-    }
-}
-
-// Static button press functions for IActionService
-
-void BasePanel::BasePanelShortPress(void* panelContext)
-{
-    auto* panel = static_cast<BasePanel*>(panelContext);
-    if (panel)
-    {
-        log_v("%s::BasePanelShortPress() called", panel->GetPanelName());
-        panel->HandleShortPress();
-    }
-}
-
-void BasePanel::BasePanelLongPress(void* panelContext)
-{
-    auto* panel = static_cast<BasePanel*>(panelContext);
-    if (panel)
-    {
-        log_v("%s::BasePanelLongPress() called", panel->GetPanelName());
-        panel->HandleLongPress();
     }
 }

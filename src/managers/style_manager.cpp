@@ -6,11 +6,12 @@
 // Static instance for singleton pattern
 static StyleManager* styleInstancePtr_ = nullptr;
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
+
 StyleManager::StyleManager(const char *theme) : theme_(theme), initialized_(false)
 {
     log_v("StyleManager() constructor called");
-    
+
     // Set singleton instance
     styleInstancePtr_ = this;
 }
@@ -19,14 +20,26 @@ StyleManager::~StyleManager()
 {
     log_v("~StyleManager() destructor called");
     ResetStyles();
-    
+
     // Clear singleton instance
     if (styleInstancePtr_ == this) {
         styleInstancePtr_ = nullptr;
     }
 }
 
-// Core Functionality Methods
+// ========== Static Methods ==========
+
+/// @brief Singleton access for new interrupt architecture
+StyleManager& StyleManager::Instance() {
+    if (!styleInstancePtr_) {
+        log_e("StyleManager::Instance() called before initialization");
+        // In embedded systems, we need a valid instance
+        // This should be set during ManagerFactory initialization
+    }
+    return *styleInstancePtr_;
+}
+
+// ========== Public Interface Methods ==========
 
 void StyleManager::InitializeStyles()
 {
@@ -60,55 +73,6 @@ void StyleManager::InitializeStyles()
     }
     initialized_ = true;
 
-}
-
-/// @brief Apply the current theme to a specific screen
-/// @param screen the screen to which the theme will be applied
-void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
-{
-    log_v("ApplyThemeToScreen() called");
-
-    // Safety checks
-    if (!screen)
-    {
-        log_w("Cannot apply theme to null screen");
-        return;
-    }
-
-    if (!initialized_)
-    {
-        log_w("StyleManager not initialized, skipping theme application");
-        return;
-    }
-
-    // Only apply the background style to screens
-    // Other styles should be applied to specific components that need them
-    lv_obj_add_style(screen, &backgroundStyle_, MAIN_DEFAULT);
-
-    // Don't apply all styles to the same screen - this can cause conflicts
-    // Components should apply their own specific styles as needed
-}
-
-/// @brief Initialises the styles for the application
-/// @param theme the theme to be applied
-
-/// @brief Reset all styles to their default state
-void StyleManager::ResetStyles()
-{
-    log_v("ResetStyles() called");
-
-    // Reset all style objects
-    lv_style_reset(&backgroundStyle_);
-    lv_style_reset(&textStyle_);
-    lv_style_reset(&gaugeNormalStyle_);
-    lv_style_reset(&gaugeWarningStyle_);
-    lv_style_reset(&gaugeDangerStyle_);
-
-    // Reset shared gauge component styles
-    lv_style_reset(&gaugeIndicatorStyle_);
-    lv_style_reset(&gaugeItemsStyle_);
-    lv_style_reset(&gaugeMainStyle_);
-    lv_style_reset(&gaugeDangerSectionStyle_);
 }
 
 /// @brief Apply a specified theme to the styles
@@ -170,7 +134,57 @@ void StyleManager::SetTheme(const char *theme)
     }
 }
 
-// Accessor Methods
+/// @brief Apply the current theme to a specific screen
+/// @param screen the screen to which the theme will be applied
+void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
+{
+    log_v("ApplyThemeToScreen() called");
+
+    // Safety checks
+    if (!screen)
+    {
+        log_w("Cannot apply theme to null screen");
+        return;
+    }
+
+    if (!initialized_)
+    {
+        log_w("StyleManager not initialized, skipping theme application");
+        return;
+    }
+
+    // Only apply the background style to screens
+    // Other styles should be applied to specific components that need them
+    lv_obj_add_style(screen, &backgroundStyle_, MAIN_DEFAULT);
+
+    // Don't apply all styles to the same screen - this can cause conflicts
+    // Components should apply their own specific styles as needed
+}
+
+/// @brief Apply current theme from preferences and refresh styles
+void StyleManager::ApplyCurrentTheme()
+{
+    log_i("StyleManager::ApplyCurrentTheme() called");
+
+    if (!preferenceService_) {
+        log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
+        log_v("Current cached theme is: %s", theme_.c_str());
+        return;
+    }
+
+    // Read theme directly from preferences
+    const auto& config = preferenceService_->GetConfig();
+    log_v("Read theme from preferences: %s (cached: %s)", config.theme.c_str(), theme_.c_str());
+
+    // Apply the theme if it's different from cached value
+    if (theme_ != config.theme) {
+        log_t("StyleManager: Theme changed from %s to %s - applying new theme", theme_.c_str(), config.theme.c_str());
+        SetTheme(config.theme.c_str());
+    } else {
+        log_v("Theme unchanged (%s) - no update needed", config.theme.c_str());
+    }
+}
+
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
@@ -182,18 +196,21 @@ const ThemeColors &StyleManager::GetColours(const std::string& theme) const
 
     if (theme == Themes::NIGHT) return nightThemeColours_;
     if (theme == Themes::ERROR) return errorThemeColours_;
-    
+
     return dayThemeColours_;
 }
 
-/// @brief Singleton access for new interrupt architecture
-StyleManager& StyleManager::Instance() {
-    if (!styleInstancePtr_) {
-        log_e("StyleManager::Instance() called before initialization");
-        // In embedded systems, we need a valid instance
-        // This should be set during ManagerFactory initialization
+const std::string& StyleManager::GetCurrentTheme() const
+{
+    // Always pull theme directly from preferences to ensure consistency
+    if (preferenceService_) {
+        const auto& config = preferenceService_->GetConfig();
+        return config.theme;
     }
-    return *styleInstancePtr_;
+
+    // Fallback to cached value if preference service not available
+    log_w("StyleManager: PreferenceService not available, using cached theme: %s", theme_.c_str());
+    return theme_;
 }
 
 /// @brief Get function for theme switching that panels can use in their actions
@@ -211,39 +228,23 @@ void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
     preferenceService_ = preferenceService;
 }
 
-/// @brief Apply current theme from preferences and refresh styles
-void StyleManager::ApplyCurrentTheme()
-{
-    log_i("StyleManager::ApplyCurrentTheme() called");
-    
-    if (!preferenceService_) {
-        log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
-        log_v("Current cached theme is: %s", theme_.c_str());
-        return;
-    }
-    
-    // Read theme directly from preferences
-    const auto& config = preferenceService_->GetConfig();
-    log_v("Read theme from preferences: %s (cached: %s)", config.theme.c_str(), theme_.c_str());
-    
-    // Apply the theme if it's different from cached value
-    if (theme_ != config.theme) {
-        log_t("StyleManager: Theme changed from %s to %s - applying new theme", theme_.c_str(), config.theme.c_str());
-        SetTheme(config.theme.c_str());
-    } else {
-        log_v("Theme unchanged (%s) - no update needed", config.theme.c_str());
-    }
-}
+// ========== Private Methods ==========
 
-const std::string& StyleManager::GetCurrentTheme() const
+/// @brief Reset all styles to their default state
+void StyleManager::ResetStyles()
 {
-    // Always pull theme directly from preferences to ensure consistency
-    if (preferenceService_) {
-        const auto& config = preferenceService_->GetConfig();
-        return config.theme;
-    }
-    
-    // Fallback to cached value if preference service not available
-    log_w("StyleManager: PreferenceService not available, using cached theme: %s", theme_.c_str());
-    return theme_;
+    log_v("ResetStyles() called");
+
+    // Reset all style objects
+    lv_style_reset(&backgroundStyle_);
+    lv_style_reset(&textStyle_);
+    lv_style_reset(&gaugeNormalStyle_);
+    lv_style_reset(&gaugeWarningStyle_);
+    lv_style_reset(&gaugeDangerStyle_);
+
+    // Reset shared gauge component styles
+    lv_style_reset(&gaugeIndicatorStyle_);
+    lv_style_reset(&gaugeItemsStyle_);
+    lv_style_reset(&gaugeMainStyle_);
+    lv_style_reset(&gaugeDangerSectionStyle_);
 }

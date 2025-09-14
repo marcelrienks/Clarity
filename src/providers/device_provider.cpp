@@ -3,7 +3,8 @@
 #include "providers/lvgl_display_provider.h"
 #include <esp32-hal-log.h>
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
+
 /// @brief DeviceProvider constructor, initialises the device and sets the bus, panel and light configurations
 DeviceProvider::DeviceProvider()
 {
@@ -69,7 +70,8 @@ DeviceProvider::DeviceProvider()
     setPanel(&panelInstance_);
 }
 
-// Core Functionality Methods
+// ========== Public Interface Methods ==========
+
 /// @brief Prepares the device for use by initialising the screen, setting up the display and LVGL
 void DeviceProvider::prepare()
 {
@@ -102,11 +104,10 @@ void DeviceProvider::prepare()
 
     // Create main screen for display provider
     screen_ = lv_screen_active();
-    
+
     log_i("DeviceProvider hardware initialization completed successfully");
 }
 
-// IDeviceProvider interface methods
 lv_obj_t* DeviceProvider::GetScreen() const
 {
     return screen_;
@@ -117,7 +118,8 @@ bool DeviceProvider::IsReady() const
     return screen_ != nullptr;
 }
 
-// Static Methods
+// ========== Static Methods ==========
+
 /// @brief Static Display Flush Wrapper function for LVGL display driver
 /// @param display LVGL display object
 /// @param area Screen area to flush

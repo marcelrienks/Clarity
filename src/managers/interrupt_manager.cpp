@@ -9,12 +9,16 @@
 #include <cstring>
 #include "esp32-hal-log.h"
 
+// ========== Static Methods ==========
+
 // Singleton implementation
 InterruptManager& InterruptManager::Instance()
 {
     static InterruptManager instance;
     return instance;
 }
+
+// ========== Public Interface Methods ==========
 
 void InterruptManager::Init(IGpioProvider* gpioProvider)
 {
@@ -32,74 +36,33 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 
     // Store GPIO provider
     gpioProvider_ = gpioProvider;
-    
+
     // Clear handler storage
     handlers_.clear();
-    
+
     // Create new Trigger/Action architecture handlers only
     triggerHandler_ = std::make_shared<TriggerHandler>(gpioProvider);
     actionHandler_ = std::make_shared<ActionHandler>(gpioProvider);
-    
+
     if (!triggerHandler_ || !actionHandler_)
     {
         log_e("Failed to create Trigger/Action handlers");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager", 
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
                                            "Failed to create Trigger/Action handlers");
         return;
     }
-    
+
     // Register handlers
     RegisterHandler(triggerHandler_);
     RegisterHandler(actionHandler_);
-    
+
     // Register system triggers and actions
     RegisterSystemInterrupts();
-    
+
     initialized_ = true;
     lastEvaluationTime_ = millis();
-    
+
     log_i("InterruptManager initialized with new Trigger/Action architecture");
-}
-
-void InterruptManager::RegisterSystemInterrupts()
-{
-    
-    // SAFE CASTING: All GPIO sensors inherit from BaseSensor through multiple inheritance
-    // TriggerHandler owns these sensors exclusively - no shared ownership
-    // static_cast is safe here as type hierarchy guarantees BaseSensor interface
-    // This pattern allows system triggers to access sensors through base interface
-
-    // Get system triggers with handler-owned sensors
-    // Note: static_cast is safe here as all sensors inherit from BaseSensor
-    auto systemTriggers = SystemDefinitions::GetSystemTriggers(
-        static_cast<BaseSensor*>(triggerHandler_->GetKeyPresentSensor()),
-        static_cast<BaseSensor*>(triggerHandler_->GetKeyNotPresentSensor()),
-        static_cast<BaseSensor*>(triggerHandler_->GetLockSensor()),
-        static_cast<BaseSensor*>(triggerHandler_->GetLightsSensor()),
-#ifdef CLARITY_DEBUG
-        static_cast<BaseSensor*>(triggerHandler_->GetDebugErrorSensor())
-#else
-        nullptr  // No debug sensor in release builds
-#endif
-    );
-    
-    // Register all system triggers
-    for (const auto& trigger : systemTriggers) {
-        if (!RegisterTrigger(trigger)) {
-            log_e("Failed to register system trigger: %s", trigger.id);
-        }
-    }
-    
-    // Get and register system actions
-    auto systemActions = SystemDefinitions::GetSystemActions();
-    for (const auto& action : systemActions) {
-        if (!RegisterAction(action)) {
-            log_e("Failed to register system action: %s", action.id);
-        }
-    }
-    
-    log_i("Registered %zu system triggers and %zu system actions", 
-          systemTriggers.size(), systemActions.size());
 }
 
 void InterruptManager::Process()
@@ -107,17 +70,17 @@ void InterruptManager::Process()
     if (!initialized_) {
         return;
     }
-    
+
     // Process Actions (continuous evaluation for responsiveness)
     if (actionHandler_) {
         actionHandler_->Process();
     }
-    
+
     // Process Triggers (only during UI idle)
     if (IsUIIdle() && triggerHandler_) {
         triggerHandler_->Process();
     }
-    
+
     // Update performance counters
     totalEvaluations_++;
 }
@@ -128,7 +91,7 @@ bool InterruptManager::RegisterTrigger(const Trigger& trigger)
         log_e("Cannot register trigger - TriggerHandler not initialized");
         return false;
     }
-    
+
     return triggerHandler_->RegisterTrigger(trigger);
 }
 
@@ -145,7 +108,7 @@ bool InterruptManager::RegisterAction(const Action& action)
         log_e("Cannot register action - ActionHandler not initialized");
         return false;
     }
-    
+
     return actionHandler_->RegisterAction(action);
 }
 
@@ -159,12 +122,12 @@ void InterruptManager::UnregisterAction(const char* id)
 void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context)
 {
     log_v("UpdatePanelFunctions() called");
-    
+
     if (!actionHandler_) {
         log_w("Cannot update panel functions - ActionHandler not initialized");
         return;
     }
-    
+
     // Update action handler with new panel functions
     actionHandler_->UpdatePanelFunctions(shortPressFunc, longPressFunc, context);
     log_i("Updated panel functions in ActionHandler");
@@ -176,7 +139,7 @@ void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
         log_e("Cannot register null handler");
         return;
     }
-    
+
     handlers_.push_back(handler);
 }
 
@@ -188,24 +151,62 @@ void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
     }
 }
 
-bool InterruptManager::IsUIIdle() const
+size_t InterruptManager::GetRegisteredInterruptCount() const
 {
-    // PERFORMANCE OPTIMIZATION: Cache UI idle state to reduce LVGL queries
-    // LVGL query is expensive (requires display lock + calculation)
-    // 5ms cache timeout balances responsiveness vs performance
-    // 10ms idle threshold prevents interrupting smooth animations
+    size_t count = 0;
+    if (triggerHandler_) {
+        count += triggerHandler_->GetTriggerCount();
+    }
+    if (actionHandler_) {
+        count += actionHandler_->GetActionCount();
+    }
+    return count;
+}
 
-    // Cache UI idle state with timeout to reduce LVGL query frequency
-    static bool cached_idle = false;
-    static unsigned long last_check = 0;
+void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const
+{
+    totalEvaluations = totalEvaluations_;
+    totalExecutions = totalExecutions_;
+}
 
-    unsigned long current_time = millis();
-    if (current_time - last_check >= 5) { // Check every 5ms max (was checking every main loop cycle)
-        cached_idle = lv_disp_get_inactive_time(nullptr) > 10; // 10ms idle threshold
-        last_check = current_time;
+void InterruptManager::OptimizeMemoryUsage()
+{
+    log_v("OptimizeMemoryUsage() called");
+
+    // Memory is already optimized with static arrays
+    // This method exists for API compatibility
+
+    if (triggerHandler_) {
+        // Static arrays, no optimization needed
     }
 
-    return cached_idle;
+    if (actionHandler_) {
+        // Static arrays, no optimization needed
+    }
+
+}
+
+void InterruptManager::CompactInterruptArray()
+{
+    log_v("CompactInterruptArray() called");
+
+    // Static arrays don't need compaction
+}
+
+bool InterruptManager::HasActiveInterrupts() const
+{
+    if (triggerHandler_ && triggerHandler_->HasActiveTriggers()) {
+        return true;
+    }
+    if (actionHandler_ && actionHandler_->HasPendingActions()) {
+        return true;
+    }
+    return false;
+}
+
+size_t InterruptManager::GetInterruptCount() const
+{
+    return GetRegisteredInterruptCount();
 }
 
 void InterruptManager::CheckRestoration()
@@ -258,60 +259,65 @@ void InterruptManager::CheckAndExecuteActiveStyleTriggers()
     }
 }
 
-size_t InterruptManager::GetRegisteredInterruptCount() const
+// ========== Private Methods ==========
+
+void InterruptManager::RegisterSystemInterrupts()
 {
-    size_t count = 0;
-    if (triggerHandler_) {
-        count += triggerHandler_->GetTriggerCount();
+
+    // SAFE CASTING: All GPIO sensors inherit from BaseSensor through multiple inheritance
+    // TriggerHandler owns these sensors exclusively - no shared ownership
+    // static_cast is safe here as type hierarchy guarantees BaseSensor interface
+    // This pattern allows system triggers to access sensors through base interface
+
+    // Get system triggers with handler-owned sensors
+    // Note: static_cast is safe here as all sensors inherit from BaseSensor
+    auto systemTriggers = SystemDefinitions::GetSystemTriggers(
+        static_cast<BaseSensor*>(triggerHandler_->GetKeyPresentSensor()),
+        static_cast<BaseSensor*>(triggerHandler_->GetKeyNotPresentSensor()),
+        static_cast<BaseSensor*>(triggerHandler_->GetLockSensor()),
+        static_cast<BaseSensor*>(triggerHandler_->GetLightsSensor()),
+#ifdef CLARITY_DEBUG
+        static_cast<BaseSensor*>(triggerHandler_->GetDebugErrorSensor())
+#else
+        nullptr  // No debug sensor in release builds
+#endif
+    );
+
+    // Register all system triggers
+    for (const auto& trigger : systemTriggers) {
+        if (!RegisterTrigger(trigger)) {
+            log_e("Failed to register system trigger: %s", trigger.id);
+        }
     }
-    if (actionHandler_) {
-        count += actionHandler_->GetActionCount();
+
+    // Get and register system actions
+    auto systemActions = SystemDefinitions::GetSystemActions();
+    for (const auto& action : systemActions) {
+        if (!RegisterAction(action)) {
+            log_e("Failed to register system action: %s", action.id);
+        }
     }
-    return count;
+
+    log_i("Registered %zu system triggers and %zu system actions",
+          systemTriggers.size(), systemActions.size());
 }
 
-void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const
+bool InterruptManager::IsUIIdle() const
 {
-    totalEvaluations = totalEvaluations_;
-    totalExecutions = totalExecutions_;
-}
+    // PERFORMANCE OPTIMIZATION: Cache UI idle state to reduce LVGL queries
+    // LVGL query is expensive (requires display lock + calculation)
+    // 5ms cache timeout balances responsiveness vs performance
+    // 10ms idle threshold prevents interrupting smooth animations
 
-bool InterruptManager::HasActiveInterrupts() const
-{
-    if (triggerHandler_ && triggerHandler_->HasActiveTriggers()) {
-        return true;
-    }
-    if (actionHandler_ && actionHandler_->HasPendingActions()) {
-        return true;
-    }
-    return false;
-}
+    // Cache UI idle state with timeout to reduce LVGL query frequency
+    static bool cached_idle = false;
+    static unsigned long last_check = 0;
 
-size_t InterruptManager::GetInterruptCount() const
-{
-    return GetRegisteredInterruptCount();
-}
-
-void InterruptManager::OptimizeMemoryUsage()
-{
-    log_v("OptimizeMemoryUsage() called");
-    
-    // Memory is already optimized with static arrays
-    // This method exists for API compatibility
-    
-    if (triggerHandler_) {
-        // Static arrays, no optimization needed
+    unsigned long current_time = millis();
+    if (current_time - last_check >= 5) { // Check every 5ms max (was checking every main loop cycle)
+        cached_idle = lv_disp_get_inactive_time(nullptr) > 10; // 10ms idle threshold
+        last_check = current_time;
     }
-    
-    if (actionHandler_) {
-        // Static arrays, no optimization needed
-    }
-    
-}
 
-void InterruptManager::CompactInterruptArray()
-{
-    log_v("CompactInterruptArray() called");
-    
-    // Static arrays don't need compaction
+    return cached_idle;
 }

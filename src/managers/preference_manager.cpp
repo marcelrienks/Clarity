@@ -1,9 +1,7 @@
 #include "managers/preference_manager.h"
 #include <esp32-hal-log.h>
 
-// Static Methods removed - using dependency injection
-
-// Core Functionality Methods
+// ========== Public Interface Methods ==========
 
 /// @brief Initialises the preference manager to handle application preferences_
 void PreferenceManager::Init()
@@ -32,17 +30,51 @@ void PreferenceManager::Init()
     LoadConfig();
 }
 
-/// @brief Create and save a list of default panels
-/// @return true if the save was successful
-void PreferenceManager::CreateDefaultConfig()
+/// @brief Save the current config_uration to preferences_
+/// @return true if the save was successful, false otherwise
+void PreferenceManager::SaveConfig()
 {
-    log_v("CreateDefaultConfig() called");
-    log_v("CreateDefaultConfig() called");
+    log_v("SaveConfig() called");
+    log_v("SaveConfig() called");
 
-    config_.panelName = PanelNames::OIL;
+    preferences_.remove(CONFIG_KEY_);
 
-    PreferenceManager::SaveConfig();
-    PreferenceManager::LoadConfig();
+    // Use the new JsonDocument instead of the deprecated classes
+    JsonDocument doc;
+    doc[JsonDocNames::PANEL_NAME] = config_.panelName.c_str();
+    doc[JsonDocNames::SHOW_SPLASH] = config_.showSplash;
+    doc[JsonDocNames::SPLASH_DURATION] = config_.splashDuration;
+    doc[JsonDocNames::THEME] = config_.theme.c_str();
+    doc[JsonDocNames::UPDATE_RATE] = config_.updateRate;
+    doc[JsonDocNames::PRESSURE_UNIT] = config_.pressureUnit.c_str();
+    doc[JsonDocNames::TEMP_UNIT] = config_.tempUnit.c_str();
+
+    // Serialize calibration settings
+    doc[JsonDocNames::PRESSURE_OFFSET] = config_.pressureOffset;
+    doc[JsonDocNames::PRESSURE_SCALE] = config_.pressureScale;
+    doc[JsonDocNames::TEMP_OFFSET] = config_.tempOffset;
+    doc[JsonDocNames::TEMP_SCALE] = config_.tempScale;
+
+    // Serialize to JSON string
+    String jsonString;
+    serializeJson(doc, jsonString);
+
+
+    // Save the JSON string to preferences_
+    size_t written = preferences_.putString(CONFIG_KEY_, jsonString);
+    if (written > 0)
+    {
+        log_i("Configuration saved successfully (%zu bytes written)", written);
+        // Commit changes to NVS - this is critical for persistence across reboots
+        preferences_.end();
+        // Reopen preferences for future operations
+        preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
+        log_i("System config_uration updated and persisted to NVS storage");
+    }
+    else
+    {
+        log_e("Failed to save config_uration to NVS");
+    }
 }
 
 /// @brief Load the configuration from preferences_
@@ -125,54 +157,18 @@ void PreferenceManager::LoadConfig()
     }
 }
 
-/// @brief Save the current config_uration to preferences_
-/// @return true if the save was successful, false otherwise
-void PreferenceManager::SaveConfig()
+/// @brief Create and save a list of default panels
+/// @return true if the save was successful
+void PreferenceManager::CreateDefaultConfig()
 {
-    log_v("SaveConfig() called");
-    log_v("SaveConfig() called");
+    log_v("CreateDefaultConfig() called");
+    log_v("CreateDefaultConfig() called");
 
-    preferences_.remove(CONFIG_KEY_);
+    config_.panelName = PanelNames::OIL;
 
-    // Use the new JsonDocument instead of the deprecated classes
-    JsonDocument doc;
-    doc[JsonDocNames::PANEL_NAME] = config_.panelName.c_str();
-    doc[JsonDocNames::SHOW_SPLASH] = config_.showSplash;
-    doc[JsonDocNames::SPLASH_DURATION] = config_.splashDuration;
-    doc[JsonDocNames::THEME] = config_.theme.c_str();
-    doc[JsonDocNames::UPDATE_RATE] = config_.updateRate;
-    doc[JsonDocNames::PRESSURE_UNIT] = config_.pressureUnit.c_str();
-    doc[JsonDocNames::TEMP_UNIT] = config_.tempUnit.c_str();
-    
-    // Serialize calibration settings
-    doc[JsonDocNames::PRESSURE_OFFSET] = config_.pressureOffset;
-    doc[JsonDocNames::PRESSURE_SCALE] = config_.pressureScale;
-    doc[JsonDocNames::TEMP_OFFSET] = config_.tempOffset;
-    doc[JsonDocNames::TEMP_SCALE] = config_.tempScale;
-
-    // Serialize to JSON string
-    String jsonString;
-    serializeJson(doc, jsonString);
-
-
-    // Save the JSON string to preferences_
-    size_t written = preferences_.putString(CONFIG_KEY_, jsonString);
-    if (written > 0)
-    {
-        log_i("Configuration saved successfully (%zu bytes written)", written);
-        // Commit changes to NVS - this is critical for persistence across reboots
-        preferences_.end();
-        // Reopen preferences for future operations
-        preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
-        log_i("System config_uration updated and persisted to NVS storage");
-    }
-    else
-    {
-        log_e("Failed to save config_uration to NVS");
-    }
+    PreferenceManager::SaveConfig();
+    PreferenceManager::LoadConfig();
 }
-
-// IPreferenceService interface implementation
 
 /// @brief Get the current config_uration object
 /// @return Reference to current config_uration settings
@@ -197,8 +193,6 @@ void PreferenceManager::SetConfig(const Configs &newConfig)
     // Configuration updated
     config_ = newConfig;
 }
-
-// Generic preference access methods for dynamic menus
 
 /// @brief Get a preference value by key
 /// @param key The preference key
@@ -318,5 +312,3 @@ bool PreferenceManager::HasPreference(const std::string &key) const
                    key == "pressure_offset" || key == "pressure_scale" || key == "temp_offset" || key == "temp_scale");
     return hasKey;
 }
-
-// Private Methods
