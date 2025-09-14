@@ -57,54 +57,32 @@
 class BasePanel : public IPanel
 {
 public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    BasePanel(const BasePanel&) = delete;
+    BasePanel& operator=(const BasePanel&) = delete;
     virtual ~BasePanel();
 
-    // Core Functionality Methods - Final implementations using Template Method pattern
+    // ========== Public Interface Methods ==========
     void Init() final;
     void Load() final;
     void Update() final;
-
-    // Manager injection method
     void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
-
-    // IActionService Interface Implementation
     void (*GetShortPressFunction())(void* panelContext) final;
     void (*GetLongPressFunction())(void* panelContext) final;
     void* GetPanelContext() final;
 
 protected:
-    // Template Method hooks - derived classes implement these
-
-    /// @brief Create and render panel-specific UI components
-    /// Called during Load() after screen setup but before screen loading
+    // ========== Protected Methods ==========
     virtual void CreateContent() = 0;
-
-    /// @brief Update components with fresh data
-    /// Called during Update() to refresh display with current data
     virtual void UpdateContent() = 0;
-
-    /// @brief Return panel name constant for logging and identification
     virtual const char* GetPanelName() const = 0;
-
-    // Optional hooks - default implementations provided
-
-    /// @brief Additional initialization before screen creation
-    /// Override for custom setup that needs to happen before screen creation
     virtual void CustomInit() {}
-
-    /// @brief Additional setup after content creation but before screen loading
-    /// Override for custom setup after components are created
     virtual void PostLoad() {}
-
-    /// @brief Handle short button press - default does nothing
     virtual void HandleShortPress() {}
-
-    /// @brief Handle long button press - default does nothing
     virtual void HandleLongPress() {}
 
-    // Protected members available to derived classes
+    // ========== Protected Data Members ==========
     IGpioProvider* gpioProvider_;
     IDisplayProvider* displayProvider_;
     IStyleService* styleService_;
@@ -112,14 +90,12 @@ protected:
     ComponentLocation centerLocation_;
 
 private:
-    // Static event callback for LVGL
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t* event);
-
-    // Static button press functions for IActionService
     static void BasePanelShortPress(void* panelContext);
     static void BasePanelLongPress(void* panelContext);
 
-    // Common validation and setup methods
+    // ========== Private Methods ==========
     void ValidateProviders();
     void SetupScreen();
     void ApplyThemeAndLoadScreen();

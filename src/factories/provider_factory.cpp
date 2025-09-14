@@ -9,8 +9,6 @@
 
 std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 {
-    log_d("CreateGpioProvider() called");
-    
     try
     {
         auto provider = std::make_unique<GpioProvider>();
@@ -33,8 +31,6 @@ std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 
 std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceProvider* deviceProvider)
 {
-    log_d("CreateDisplayProvider() called");
-    
     if (!deviceProvider)
     {
         log_e("DeviceProvider parameter is null");
@@ -73,8 +69,6 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceP
 
 std::unique_ptr<DeviceProvider> ProviderFactory::CreateDeviceProvider()
 {
-    log_d("CreateDeviceProvider() called");
-    
     try
     {
         auto provider = std::make_unique<DeviceProvider>();
@@ -82,7 +76,7 @@ std::unique_ptr<DeviceProvider> ProviderFactory::CreateDeviceProvider()
         {
             // Prepare the device (initializes screen)
             provider->prepare();
-            if (!provider->screen)
+            if (!provider->GetScreen())
             {
                 log_e("DeviceProvider screen initialization failed");
                 ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider screen is null");

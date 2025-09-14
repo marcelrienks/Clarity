@@ -258,23 +258,6 @@ void InterruptManager::CheckAndExecuteActiveStyleTriggers()
     }
 }
 
-void InterruptManager::PrintSystemStatus() const
-{
-    log_i("=== InterruptManager Status ===");
-    log_i("Initialized: %s", initialized_ ? "true" : "false");
-    log_i("Total Evaluations: %zu", totalEvaluations_);
-    log_i("Total Executions: %zu", totalExecutions_);
-    log_i("Registered Handlers: %zu", handlers_.size());
-    
-    if (triggerHandler_) {
-        log_i("TriggerHandler registered triggers: %zu", triggerHandler_->GetTriggerCount());
-    }
-    
-    if (actionHandler_) {
-        log_i("ActionHandler registered actions: %zu", actionHandler_->GetActionCount());
-    }
-}
-
 size_t InterruptManager::GetRegisteredInterruptCount() const
 {
     size_t count = 0;

@@ -49,27 +49,25 @@
  */
 class DeviceProvider : public lgfx::LGFX_Device, public IDeviceProvider
 {
-  public:
-    // Constructors and Destructors
+public:
+    // ========== Constructors and Destructor ==========
     DeviceProvider();
     DeviceProvider(const DeviceProvider &) = delete;
     DeviceProvider &operator=(const DeviceProvider &) = delete;
+    ~DeviceProvider() = default;
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     void prepare() override;
-
-    // IDeviceProvider interface methods
     lv_obj_t* GetScreen() const override;
     bool IsReady() const override;
 
-    // Public Data Members
-    lv_obj_t *screen;
-
-  private:
-    // Static Methods
+private:
+    // ========== Static Methods ==========
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 
-    // Instance Data Members
+    // ========== Private Data Members ==========
+    lv_obj_t *screen_;
+
     lgfx::Panel_GC9A01 panelInstance_; // Waveshare Round 1.28inch LCD Display Module
     lgfx::Light_PWM lightInstance_;
     lgfx::Bus_SPI busInstance_;
@@ -78,7 +76,7 @@ class DeviceProvider : public lgfx::LGFX_Device, public IDeviceProvider
     // Using 40 lines (1/6 of screen) reduces memory usage from ~57KB to ~38KB
     // while maintaining smooth rendering performance
     static constexpr unsigned int BUFFER_LINE_COUNT = 40; // Reduced from 60 for memory optimization
-    static constexpr unsigned int LV_BUFFER_SIZE = 
+    static constexpr unsigned int LV_BUFFER_SIZE =
         (SCREEN_WIDTH * BUFFER_LINE_COUNT * sizeof(lv_color_t));
     uint8_t lvBuffer_[2][LV_BUFFER_SIZE];
 };

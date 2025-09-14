@@ -64,14 +64,23 @@ class PanelManager : public IPanelService,
                      public ITriggerExecutionService
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors/Destructor ==========
     PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
                  IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
 
-    // Core Functionality Methods (IPanelService implementation)
+    // ========== Static Methods ==========
+    // Singleton access for new interrupt architecture
+    static PanelManager& Instance();
+
+    // Interface accessors for dependency injection (CRITICAL for testability)
+    static IPanelNotificationService& NotificationService() { return Instance(); }
+    static IActionExecutionService& ActionService() { return Instance(); }
+    static ITriggerExecutionService& TriggerService() { return Instance(); }
+
+    // ========== IPanelService Implementation ==========
     /// @brief Initialize the panel service and register available panels
     void Init() override;
 
@@ -90,12 +99,7 @@ class PanelManager : public IPanelService,
 
     /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel() override;
-    
-    /// @brief Update universal button interrupts with current panel's functions
-    /// @param panel The panel to extract button functions from
-    void UpdatePanelButtonFunctions(IPanel* panel);
 
-    // State Management Methods (IPanelService implementation)
     /// @brief Get the current panel name
     /// @return Current panel identifier string
     const char *GetCurrentPanel() const override;
@@ -108,19 +112,34 @@ class PanelManager : public IPanelService,
     /// @return True if current panel was loaded by a trigger, false for user-driven panels
     bool IsCurrentPanelTriggerDriven() const override;
 
-    // Trigger Integration Methods (IPanelService implementation)
     /// @brief Callback executed when trigger-driven panel loading is complete
     /// @param triggerId ID of the trigger that initiated the panel switch
     void TriggerPanelSwitchCallback(const char *triggerId) override;
 
+    // ========== IPanelNotificationService Implementation ==========
+    void OnPanelLoadComplete(IPanel* panel) override;
+    void OnPanelUpdateComplete(IPanel* panel) override;
+
+    // ========== IActionExecutionService Implementation ==========
+    void HandleShortPress() override;
+    void HandleLongPress() override;
+
+    // ========== ITriggerExecutionService Implementation ==========
+    void LoadPanel(const char* panelName) override;
+    void CheckRestoration() override;
+
+    // ========== Other Public Methods ==========
+    /// @brief Update universal button interrupts with current panel's functions
+    /// @param panel The panel to extract button functions from
+    void UpdatePanelButtonFunctions(IPanel* panel);
+
   private:
-    // Core Functionality Methods
-    
+    // ========== Private Methods ==========
     /// @brief Register all available panels
     void RegisterAllPanels();
 
     /// @brief Create a panel instance by name using the registered factory
-    /// @param panel_name Name of the panel type to create
+    /// @param panelName Name of the panel type to create
     /// @return Shared pointer to the created panel instance
     std::shared_ptr<IPanel> CreatePanel(const char *panelName);
 
@@ -134,57 +153,32 @@ class PanelManager : public IPanelService,
     /// @param isTriggerDriven Whether the target panel load is trigger-driven
     void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
 
-    // Callback Methods
-    
     /// @brief Callback executed when splash screen loading is complete
-    /// @param panel_name Name of the target panel to load after splash
+    /// @param panelName Name of the target panel to load after splash
     void SplashCompletionCallback(const char *panelName);
 
     /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
 
-  public:
-    // Singleton access for new interrupt architecture
-    static PanelManager& Instance();
-    
-    // Interface accessors for dependency injection (CRITICAL for testability)
-    static IPanelNotificationService& NotificationService() { return Instance(); }
-    static IActionExecutionService& ActionService() { return Instance(); }
-    static ITriggerExecutionService& TriggerService() { return Instance(); }
-    
-    // IPanelNotificationService implementation
-    void OnPanelLoadComplete(IPanel* panel) override;
-    void OnPanelUpdateComplete(IPanel* panel) override;
-    
-    // IActionExecutionService implementation  
-    void HandleShortPress() override;
-    void HandleLongPress() override;
-    
-    // ITriggerExecutionService implementation
-    void LoadPanel(const char* panelName) override;
-    void CheckRestoration() override;
-    
-    // Public Data Members - using std::string for safety (see docs/guidelines.md)
-    std::string currentPanel = PanelNames::OIL;     ///< Current panel state
-    std::string restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
-
-  private:
-    // Instance Data Members
+    // ========== Panel State Data Members ==========
+    std::string currentPanel_ = PanelNames::OIL;     ///< Current panel state
+    std::string restorationPanel_ = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
     std::shared_ptr<IPanel> panel_ = nullptr;
     UIState uiState_ = UIState::IDLE;          ///< Current UI processing state
     bool currentPanelIsTriggerDriven_ = false; ///< Track if current panel is trigger-driven
 
-    // Panel name storage - using std::string for safety (see docs/guidelines.md)
+    // ========== Panel Name Storage Data Members ==========
     std::string lastUserPanel_ = PanelNames::OIL;    ///< Last user-driven panel
     std::string splashTargetPanel_;                   ///< Target panel for splash transition
     bool splashTargetTriggerDriven_ = false;          ///< Preserve trigger state through splash transitions
+
+    // ========== Service Dependencies ==========
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
-    // IActionManager removed - button handling moved to handler-based system
     InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
     IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
 
-    // Cached service references to avoid repeated singleton calls
+    // ========== Cached Service References ==========
     class ErrorManager& errorManager_;                ///< Cached ErrorManager reference
 };

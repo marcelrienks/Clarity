@@ -54,8 +54,8 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
 
 
     // Panel names are already const char* constants, no conversion needed
-    currentPanel = PanelNames::OIL;
-    restorationPanel = PanelNames::OIL;
+    currentPanel_ = PanelNames::OIL;
+    restorationPanel_ = PanelNames::OIL;
     
     // Set singleton instance
     instancePtr_ = this;
@@ -158,11 +158,11 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     if (!isSplashPanel)
     {
         // If loading a trigger-driven panel, save the current panel for restoration
-        if (isTriggerDriven && !currentPanelIsTriggerDriven_ && !currentPanel.empty())
+        if (isTriggerDriven && !currentPanelIsTriggerDriven_ && !currentPanel_.empty())
         {
             // Save the current non-trigger panel as the restoration target
-            restorationPanel = currentPanel;
-            log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel.c_str());
+            restorationPanel_ = currentPanel_;
+            log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel_.c_str());
         }
         
         // Track current panel trigger state (only for non-splash panels)
@@ -227,7 +227,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     panel_->Init();
 
     // Update current panel directly (PanelNames are static constants)
-    currentPanel = panelName;
+    currentPanel_ = panelName;
     
     // Apply current theme from preferences BEFORE panel is loaded
     // This ensures correct theme is set before any rendering happens
@@ -326,13 +326,13 @@ UIState PanelManager::GetUiState() const
 /// @brief Get the current panel name
 const char *PanelManager::GetCurrentPanel() const
 {
-    return currentPanel.c_str();
+    return currentPanel_.c_str();
 }
 
 /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
 const char *PanelManager::GetRestorationPanel() const
 {
-    return restorationPanel.c_str();
+    return restorationPanel_.c_str();
 }
 
 /// @brief Check if the current panel was loaded by a trigger
@@ -476,12 +476,12 @@ void PanelManager::CheckRestoration() {
     }
     
     // No active panel triggers, proceed with restoration
-    if (!restorationPanel.empty()) {
-        log_t("No blocking interrupts - restoring to '%s'", restorationPanel.c_str());
+    if (!restorationPanel_.empty()) {
+        log_t("No blocking interrupts - restoring to '%s'", restorationPanel_.c_str());
 
         // Restoration should ALWAYS be direct - never use splash screen
         // Splash is only for application startup, not trigger restoration
-        CreateAndLoadPanelDirect(restorationPanel.c_str(), false);  // Direct restoration without splash
+        CreateAndLoadPanelDirect(restorationPanel_.c_str(), false);  // Direct restoration without splash
         
         // Note: restoration panel persists for future trigger activations
     } else {
@@ -495,7 +495,7 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     log_i("Panel load completed for panel: %p", panel);
     
     // Check if this is a splash panel completion that should trigger target panel load
-    if (currentPanel == PanelNames::SPLASH && !splashTargetPanel_.empty()) {
+    if (currentPanel_ == PanelNames::SPLASH && !splashTargetPanel_.empty()) {
         log_i("Splash panel completed - transitioning to target panel: %s", splashTargetPanel_.c_str());
         // Splash target panel processing
         SplashCompletionCallback(splashTargetPanel_.c_str());

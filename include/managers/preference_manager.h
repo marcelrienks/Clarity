@@ -46,10 +46,14 @@
  */
 class PreferenceManager : public IPreferenceService
 {
-  public:
-    // Static Methods removed - using dependency injection
+public:
+    // ========== Constructors and Destructor ==========
+    PreferenceManager() = default;
+    PreferenceManager(const PreferenceManager&) = delete;
+    PreferenceManager& operator=(const PreferenceManager&) = delete;
+    ~PreferenceManager() = default;
 
-    // IPreferenceService interface implementation
+    // ========== Public Interface Methods ==========
     void Init() override;
     void SaveConfig() override;
     void LoadConfig() override;
@@ -57,19 +61,13 @@ class PreferenceManager : public IPreferenceService
     Configs &GetConfig() override;
     const Configs &GetConfig() const override;
     void SetConfig(const Configs &config) override;
-
-    // Generic preference access methods
     std::string GetPreference(const std::string &key) const override;
     void SetPreference(const std::string &key, const std::string &value) override;
     bool HasPreference(const std::string &key) const override;
 
-    // Public Data Members
-    inline static Configs config;
-
-  private:
-    // Static Data Members
-    inline static const char *CONFIG_KEY = "config";
-
-    // Instance Data Members
+private:
+    // ========== Private Data Members ==========
+    static inline const char *CONFIG_KEY_ = "config";
+    static inline Configs config_;
     Preferences preferences_;
 };

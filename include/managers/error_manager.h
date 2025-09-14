@@ -18,83 +18,43 @@
 /// - Automatic cleanup of old errors when queue is full
 class ErrorManager
 {
-  public:
-    /// @brief Get singleton instance
-    /// @return Reference to the global ErrorManager instance
+public:
+    // ========== Constructors and Destructor ==========
+    ErrorManager(const ErrorManager&) = delete;
+    ErrorManager& operator=(const ErrorManager&) = delete;
+    ~ErrorManager() = default;
+
+    // ========== Static Methods ==========
     static ErrorManager &Instance();
 
-    // Error reporting interface
-    /// @brief Report an error with specified level
-    /// @param level Error severity level
-    /// @param source Component/manager reporting the error
-    /// @param message Human-readable error description
+    // ========== Public Interface Methods ==========
     void ReportError(ErrorLevel level, const char *source, const std::string &message);
-
-    /// @brief Report a warning (convenience method)
-    /// @param source Component/manager reporting the warning
-    /// @param message Human-readable warning description
     void ReportWarning(const char *source, const std::string &message);
-
-    /// @brief Report a critical error (convenience method)
-    /// @param source Component/manager reporting the critical error
-    /// @param message Human-readable error description
     void ReportCriticalError(const char *source, const std::string &message);
-
-    // Error queue management
-    /// @brief Check if there are any pending errors
-    /// @return True if error queue is not empty
     bool HasPendingErrors() const;
-
-    /// @brief Check if there are any critical errors
-    /// @return True if any critical errors exist in queue
     bool HasCriticalErrors() const;
-
-    /// @brief Get copy of current error queue
-    /// @return Vector containing all pending errors
     std::vector<ErrorInfo> GetErrorQueue() const;
-
-    /// @brief Acknowledge a specific error by index
-    /// @param errorIndex Index of error to acknowledge
     void AcknowledgeError(size_t errorIndex);
-
-    /// @brief Clear all errors from the queue
     void ClearAllErrors();
-
-    // Integration with trigger system
-    /// @brief Check if error panel should be triggered
-    /// @return True if error panel should be displayed
     bool ShouldTriggerErrorPanel() const;
-
-    /// @brief Set error panel active state
-    /// @param active True when error panel is currently displayed
     void SetErrorPanelActive(bool active);
-    
-    /// @brief Check if error panel is currently active
-    /// @return True if error panel is currently displayed
     bool IsErrorPanelActive() const;
-    
-    /// @brief Process error queue and manage error panel state
-    /// @details Called from main loop to auto-dismiss old warnings and manage error panel activation
     void Process();
 
-  private:
+private:
+    // ========== Constructors and Destructor ==========
+    ErrorManager() = default;
+
+    // ========== Private Methods ==========
+    void TrimErrorQueue();
+    void AutoDismissOldWarnings();
+    ErrorLevel GetHighestErrorLevel() const;
+
+    // ========== Private Data Members ==========
     static constexpr size_t MAX_ERROR_QUEUE_SIZE = 10;                ///< Memory-constrained device limit
     static constexpr unsigned long WARNING_AUTO_DISMISS_TIME = 10000; ///< 10 seconds for warnings
 
     std::vector<ErrorInfo> errorQueue_;
     bool errorPanelActive_ = false;
     unsigned long lastWarningDismissalTime_ = 0;
-
-    /// @brief Private constructor for singleton pattern
-    ErrorManager() = default;
-
-    /// @brief Remove old errors when queue is full
-    void TrimErrorQueue();
-
-    /// @brief Auto-dismiss warnings older than timeout
-    void AutoDismissOldWarnings();
-
-    /// @brief Get highest error level in queue
-    /// @return Highest severity error level currently in queue
-    ErrorLevel GetHighestErrorLevel() const;
 };

@@ -101,7 +101,7 @@ void DeviceProvider::prepare()
     lv_display_set_buffers(display, lvBuffer_[0], lvBuffer_[1], LV_BUFFER_SIZE, LV_DISPLAY_RENDER_MODE_PARTIAL);
 
     // Create main screen for display provider
-    screen = lv_screen_active();
+    screen_ = lv_screen_active();
     
     log_i("DeviceProvider hardware initialization completed successfully");
 }
@@ -109,12 +109,12 @@ void DeviceProvider::prepare()
 // IDeviceProvider interface methods
 lv_obj_t* DeviceProvider::GetScreen() const
 {
-    return screen;
+    return screen_;
 }
 
 bool DeviceProvider::IsReady() const
 {
-    return screen != nullptr;
+    return screen_ != nullptr;
 }
 
 // Static Methods

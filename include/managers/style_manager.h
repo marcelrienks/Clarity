@@ -62,59 +62,57 @@
  */
 class StyleManager : public IStyleService
 {
-  public:
-    // Singleton access for new interrupt architecture
-    static StyleManager& Instance();
-    
-    // Constructors and Destructors
+public:
+    // ========== Constructors and Destructor ==========
     explicit StyleManager(const char *theme);
-    ~StyleManager();
     StyleManager(const StyleManager &) = delete;
     StyleManager &operator=(const StyleManager &) = delete;
+    ~StyleManager();
 
-    // Core Functionality Methods (IStyleService implementation)
+    // ========== Static Methods ==========
+    static StyleManager& Instance();
+
+    // ========== Public Interface Methods ==========
     void InitializeStyles() override;
     void SetTheme(const char *theme) override;
     void ApplyThemeToScreen(lv_obj_t *screen) override;
     void ApplyCurrentTheme() override;
-
-    // Accessor Methods
     const ThemeColors &GetColours(const std::string& theme) const;
     lv_style_t &GetBackgroundStyle() override
     {
-        return backgroundStyle;
+        return backgroundStyle_;
     }
     lv_style_t &GetTextStyle() override
     {
-        return textStyle;
+        return textStyle_;
     }
     lv_style_t &GetGaugeNormalStyle() override
     {
-        return gaugeNormalStyle;
+        return gaugeNormalStyle_;
     }
     lv_style_t &GetGaugeWarningStyle() override
     {
-        return gaugeWarningStyle;
+        return gaugeWarningStyle_;
     }
     lv_style_t &GetGaugeDangerStyle() override
     {
-        return gaugeDangerStyle;
+        return gaugeDangerStyle_;
     }
     lv_style_t &GetGaugeIndicatorStyle() override
     {
-        return gaugeIndicatorStyle;
+        return gaugeIndicatorStyle_;
     }
     lv_style_t &GetGaugeItemsStyle() override
     {
-        return gaugeItemsStyle;
+        return gaugeItemsStyle_;
     }
     lv_style_t &GetGaugeMainStyle() override
     {
-        return gaugeMainStyle;
+        return gaugeMainStyle_;
     }
     lv_style_t &GetGaugeDangerSectionStyle() override
     {
-        return gaugeDangerSectionStyle;
+        return gaugeDangerSectionStyle_;
     }
     const std::string& GetCurrentTheme() const override;
     const ThemeColors &GetThemeColors() const override
@@ -125,43 +123,35 @@ class StyleManager : public IStyleService
     {
         return initialized_;
     }
-
-    /// @brief Switch to specified theme (direct method call - no std::function)
-    /// @param themeName Name of theme to switch to
     void SwitchTheme(const char* themeName);
-    
-    /// @brief Inject PreferenceService for direct preference reading
-    /// @param preferenceService Service to read theme preferences from
     void SetPreferenceService(IPreferenceService* preferenceService);
 
-    // Public Data Members - Theme State
-    std::string THEME = Themes::NIGHT;
-
-    // Core Style Objects
-    lv_style_t backgroundStyle;   // Style for backgrounds
-    lv_style_t textStyle;         // Style for general text
-    lv_style_t gaugeNormalStyle;  // Style for gauges in normal range
-    lv_style_t gaugeWarningStyle; // Style for gauges in warning range
-    lv_style_t gaugeDangerStyle;  // Style for gauges in danger range
-
-    // Shared gauge component styles (replaces per-component allocation)
-    lv_style_t gaugeIndicatorStyle;     // Style for gauge major ticks
-    lv_style_t gaugeItemsStyle;         // Style for gauge minor ticks
-    lv_style_t gaugeMainStyle;          // Style for gauge main part
-    lv_style_t gaugeDangerSectionStyle; // Style for danger zone sections
-
-  private:
-    // Core Functionality Methods
+private:
+    // ========== Private Methods ==========
     void ResetStyles();
 
-    // Instance Data Members - Theme color references from styles.h
+    // ========== Private Data Members ==========
+    std::string theme_ = Themes::NIGHT;
+    bool initialized_ = false;
+
+    // Core Style Objects
+    lv_style_t backgroundStyle_;   // Style for backgrounds
+    lv_style_t textStyle_;         // Style for general text
+    lv_style_t gaugeNormalStyle_;  // Style for gauges in normal range
+    lv_style_t gaugeWarningStyle_; // Style for gauges in warning range
+    lv_style_t gaugeDangerStyle_;  // Style for gauges in danger range
+
+    // Shared gauge component styles (replaces per-component allocation)
+    lv_style_t gaugeIndicatorStyle_;     // Style for gauge major ticks
+    lv_style_t gaugeItemsStyle_;         // Style for gauge minor ticks
+    lv_style_t gaugeMainStyle_;          // Style for gauge main part
+    lv_style_t gaugeDangerSectionStyle_; // Style for danger zone sections
+
+    // Theme color references from styles.h
     const ThemeColors& dayThemeColours_ = ThemeDefinitions::DAY_THEME;
     const ThemeColors& nightThemeColours_ = ThemeDefinitions::NIGHT_THEME;
     const ThemeColors& errorThemeColours_ = ThemeDefinitions::ERROR_THEME;
-    
+
     // Direct preference reading support
     IPreferenceService* preferenceService_ = nullptr;
-
-  private:
-    bool initialized_ = false;
 };

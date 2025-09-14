@@ -156,7 +156,7 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_obj_align(errorLevelLabel_, LV_ALIGN_TOP_MID, 0, 5);
     lv_obj_set_style_text_font(errorLevelLabel_, &lv_font_montserrat_24, 0); // Large font
     lv_obj_set_style_text_color(errorLevelLabel_, lv_color_white(), 0);
-    lv_label_set_text(errorLevelLabel_, "LOADING");  // Temporary until errors load
+    lv_label_set_text(errorLevelLabel_, "ERROR");
 
     // Create error source label
     errorSourceLabel_ = lv_label_create(errorContentArea_);

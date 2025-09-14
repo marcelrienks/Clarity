@@ -16,11 +16,8 @@ ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
       buttonPressStartTime_(0),
       buttonPressEndTime_(0)
 {
-    log_d("ActionHandler() constructor called");
-    
     // Create and initialize ButtonSensor owned by this handler
     if (gpioProvider_) {
-        
         buttonSensor_ = std::make_unique<ButtonSensor>(gpioProvider_);
         buttonSensor_->Init();
         
@@ -32,7 +29,6 @@ ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
 }
 
 ActionHandler::~ActionHandler() {
-    log_d("ActionHandler destructor called");
 }
 
 void ActionHandler::Process() {

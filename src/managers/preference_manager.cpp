@@ -39,7 +39,7 @@ void PreferenceManager::CreateDefaultConfig()
     log_v("CreateDefaultConfig() called");
     log_v("CreateDefaultConfig() called");
 
-    config.panelName = PanelNames::OIL;
+    config_.panelName = PanelNames::OIL;
 
     PreferenceManager::SaveConfig();
     PreferenceManager::LoadConfig();
@@ -52,7 +52,7 @@ void PreferenceManager::LoadConfig()
     log_v("LoadConfig() called");
     log_v("LoadConfig() called");
 
-    String jsonString = preferences_.getString(CONFIG_KEY, "");
+    String jsonString = preferences_.getString(CONFIG_KEY_, "");
     if (jsonString.length() == 0)
     {
         log_w("No config found, creating default");
@@ -73,82 +73,82 @@ void PreferenceManager::LoadConfig()
         return PreferenceManager::CreateDefaultConfig();
     }
 
-    config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
+    config_.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
 
     // Load all settings with defaults if not present
     if (!doc[JsonDocNames::SHOW_SPLASH].isNull())
     {
-        config.showSplash = doc[JsonDocNames::SHOW_SPLASH].as<bool>();
+        config_.showSplash = doc[JsonDocNames::SHOW_SPLASH].as<bool>();
     }
 
     if (!doc[JsonDocNames::SPLASH_DURATION].isNull())
     {
-        config.splashDuration = doc[JsonDocNames::SPLASH_DURATION].as<int>();
+        config_.splashDuration = doc[JsonDocNames::SPLASH_DURATION].as<int>();
     }
 
     if (!doc[JsonDocNames::THEME].isNull())
     {
-        config.theme = std::string(doc[JsonDocNames::THEME].as<const char *>());
+        config_.theme = std::string(doc[JsonDocNames::THEME].as<const char *>());
     }
 
     if (!doc[JsonDocNames::UPDATE_RATE].isNull())
     {
-        config.updateRate = doc[JsonDocNames::UPDATE_RATE].as<int>();
+        config_.updateRate = doc[JsonDocNames::UPDATE_RATE].as<int>();
     }
 
     if (!doc[JsonDocNames::PRESSURE_UNIT].isNull())
     {
-        config.pressureUnit = std::string(doc[JsonDocNames::PRESSURE_UNIT].as<const char *>());
+        config_.pressureUnit = std::string(doc[JsonDocNames::PRESSURE_UNIT].as<const char *>());
     }
 
     if (!doc[JsonDocNames::TEMP_UNIT].isNull())
     {
-        config.tempUnit = std::string(doc[JsonDocNames::TEMP_UNIT].as<const char *>());
+        config_.tempUnit = std::string(doc[JsonDocNames::TEMP_UNIT].as<const char *>());
     }
 
     // Load calibration settings
     if (!doc[JsonDocNames::PRESSURE_OFFSET].isNull())
     {
-        config.pressureOffset = doc[JsonDocNames::PRESSURE_OFFSET].as<float>();
+        config_.pressureOffset = doc[JsonDocNames::PRESSURE_OFFSET].as<float>();
     }
     if (!doc[JsonDocNames::PRESSURE_SCALE].isNull())
     {
-        config.pressureScale = doc[JsonDocNames::PRESSURE_SCALE].as<float>();
+        config_.pressureScale = doc[JsonDocNames::PRESSURE_SCALE].as<float>();
     }
     if (!doc[JsonDocNames::TEMP_OFFSET].isNull())
     {
-        config.tempOffset = doc[JsonDocNames::TEMP_OFFSET].as<float>();
+        config_.tempOffset = doc[JsonDocNames::TEMP_OFFSET].as<float>();
     }
     if (!doc[JsonDocNames::TEMP_SCALE].isNull())
     {
-        config.tempScale = doc[JsonDocNames::TEMP_SCALE].as<float>();
+        config_.tempScale = doc[JsonDocNames::TEMP_SCALE].as<float>();
     }
 }
 
-/// @brief Save the current configuration to preferences_
+/// @brief Save the current config_uration to preferences_
 /// @return true if the save was successful, false otherwise
 void PreferenceManager::SaveConfig()
 {
     log_v("SaveConfig() called");
     log_v("SaveConfig() called");
 
-    preferences_.remove(CONFIG_KEY);
+    preferences_.remove(CONFIG_KEY_);
 
     // Use the new JsonDocument instead of the deprecated classes
     JsonDocument doc;
-    doc[JsonDocNames::PANEL_NAME] = config.panelName.c_str();
-    doc[JsonDocNames::SHOW_SPLASH] = config.showSplash;
-    doc[JsonDocNames::SPLASH_DURATION] = config.splashDuration;
-    doc[JsonDocNames::THEME] = config.theme.c_str();
-    doc[JsonDocNames::UPDATE_RATE] = config.updateRate;
-    doc[JsonDocNames::PRESSURE_UNIT] = config.pressureUnit.c_str();
-    doc[JsonDocNames::TEMP_UNIT] = config.tempUnit.c_str();
+    doc[JsonDocNames::PANEL_NAME] = config_.panelName.c_str();
+    doc[JsonDocNames::SHOW_SPLASH] = config_.showSplash;
+    doc[JsonDocNames::SPLASH_DURATION] = config_.splashDuration;
+    doc[JsonDocNames::THEME] = config_.theme.c_str();
+    doc[JsonDocNames::UPDATE_RATE] = config_.updateRate;
+    doc[JsonDocNames::PRESSURE_UNIT] = config_.pressureUnit.c_str();
+    doc[JsonDocNames::TEMP_UNIT] = config_.tempUnit.c_str();
     
     // Serialize calibration settings
-    doc[JsonDocNames::PRESSURE_OFFSET] = config.pressureOffset;
-    doc[JsonDocNames::PRESSURE_SCALE] = config.pressureScale;
-    doc[JsonDocNames::TEMP_OFFSET] = config.tempOffset;
-    doc[JsonDocNames::TEMP_SCALE] = config.tempScale;
+    doc[JsonDocNames::PRESSURE_OFFSET] = config_.pressureOffset;
+    doc[JsonDocNames::PRESSURE_SCALE] = config_.pressureScale;
+    doc[JsonDocNames::TEMP_OFFSET] = config_.tempOffset;
+    doc[JsonDocNames::TEMP_SCALE] = config_.tempScale;
 
     // Serialize to JSON string
     String jsonString;
@@ -156,7 +156,7 @@ void PreferenceManager::SaveConfig()
 
 
     // Save the JSON string to preferences_
-    size_t written = preferences_.putString(CONFIG_KEY, jsonString);
+    size_t written = preferences_.putString(CONFIG_KEY_, jsonString);
     if (written > 0)
     {
         log_i("Configuration saved successfully (%zu bytes written)", written);
@@ -164,38 +164,38 @@ void PreferenceManager::SaveConfig()
         preferences_.end();
         // Reopen preferences for future operations
         preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
-        log_i("System configuration updated and persisted to NVS storage");
+        log_i("System config_uration updated and persisted to NVS storage");
     }
     else
     {
-        log_e("Failed to save configuration to NVS");
+        log_e("Failed to save config_uration to NVS");
     }
 }
 
 // IPreferenceService interface implementation
 
-/// @brief Get the current configuration object
-/// @return Reference to current configuration settings
+/// @brief Get the current config_uration object
+/// @return Reference to current config_uration settings
 Configs &PreferenceManager::GetConfig()
 {
-    return config;
+    return config_;
 }
 
-/// @brief Get the current configuration object (read-only)
-/// @return Const reference to current configuration settings
+/// @brief Get the current config_uration object (read-only)
+/// @return Const reference to current config_uration settings
 const Configs &PreferenceManager::GetConfig() const
 {
     log_v("GetConfig() const called");
-    return config;
+    return config_;
 }
 
-/// @brief Update the configuration object
-/// @param newConfig New configuration settings to apply
+/// @brief Update the config_uration object
+/// @param newConfig New config_uration settings to apply
 void PreferenceManager::SetConfig(const Configs &newConfig)
 {
     log_v("SetConfig() called");
     // Configuration updated
-    config = newConfig;
+    config_ = newConfig;
 }
 
 // Generic preference access methods for dynamic menus
@@ -207,43 +207,43 @@ std::string PreferenceManager::GetPreference(const std::string &key) const
 {
     log_v("GetPreference() called");
     if (key == "panel_name")
-        return config.panelName;
+        return config_.panelName;
     if (key == "show_splash")
-        return config.showSplash ? "true" : "false";
+        return config_.showSplash ? "true" : "false";
     if (key == "splash_duration") {
         static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%d", config.splashDuration);
+        snprintf(buffer, sizeof(buffer), "%d", config_.splashDuration);
         return buffer;
     }
     if (key == "theme")
-        return config.theme;
+        return config_.theme;
     if (key == "update_rate") {
         static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%d", config.updateRate);
+        snprintf(buffer, sizeof(buffer), "%d", config_.updateRate);
         return buffer;
     }
     if (key == "pressure_unit")
-        return config.pressureUnit;
+        return config_.pressureUnit;
     if (key == "temp_unit")
-        return config.tempUnit;
+        return config_.tempUnit;
     if (key == "pressure_offset") {
         static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.pressureOffset);
+        snprintf(buffer, sizeof(buffer), "%.2f", config_.pressureOffset);
         return buffer;
     }
     if (key == "pressure_scale") {
         static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.pressureScale);
+        snprintf(buffer, sizeof(buffer), "%.2f", config_.pressureScale);
         return buffer;
     }
     if (key == "temp_offset") {
         static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.tempOffset);
+        snprintf(buffer, sizeof(buffer), "%.2f", config_.tempOffset);
         return buffer;
     }
     if (key == "temp_scale") {
         static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.tempScale);
+        snprintf(buffer, sizeof(buffer), "%.2f", config_.tempScale);
         return buffer;
     }
 
@@ -259,47 +259,47 @@ void PreferenceManager::SetPreference(const std::string &key, const std::string 
     log_v("SetPreference() called");
     if (key == "panel_name")
     {
-        config.panelName = value;
+        config_.panelName = value;
     }
     else if (key == "show_splash")
     {
-        config.showSplash = (value == "true");
+        config_.showSplash = (value == "true");
     }
     else if (key == "splash_duration")
     {
-        config.splashDuration = std::stoi(value);
+        config_.splashDuration = std::stoi(value);
     }
     else if (key == "theme")
     {
-        config.theme = value;
+        config_.theme = value;
     }
     else if (key == "update_rate")
     {
-        config.updateRate = std::stoi(value);
+        config_.updateRate = std::stoi(value);
     }
     else if (key == "pressure_unit")
     {
-        config.pressureUnit = value;
+        config_.pressureUnit = value;
     }
     else if (key == "temp_unit")
     {
-        config.tempUnit = value;
+        config_.tempUnit = value;
     }
     else if (key == "pressure_offset")
     {
-        config.pressureOffset = std::stof(value);
+        config_.pressureOffset = std::stof(value);
     }
     else if (key == "pressure_scale")
     {
-        config.pressureScale = std::stof(value);
+        config_.pressureScale = std::stof(value);
     }
     else if (key == "temp_offset")
     {
-        config.tempOffset = std::stof(value);
+        config_.tempOffset = std::stof(value);
     }
     else if (key == "temp_scale")
     {
-        config.tempScale = std::stof(value);
+        config_.tempScale = std::stof(value);
     }
     else
     {

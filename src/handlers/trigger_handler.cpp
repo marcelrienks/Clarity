@@ -9,12 +9,10 @@
 
 #include "esp32-hal-log.h"
 
-TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider) 
+TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider),
       triggerCount_(0)
 {
-    log_d("TriggerHandler() constructor called");
-    
     // Initialize priority tracking
     for (int i = 0; i < 3; i++) {
         priorityActive_[i] = false;
@@ -53,7 +51,6 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
 }
 
 TriggerHandler::~TriggerHandler() {
-    log_d("TriggerHandler destructor called");
 }
 
 void TriggerHandler::Process() {

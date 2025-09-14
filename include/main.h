@@ -30,5 +30,34 @@
 
 // Project Includes
 #include "utilities/ticker.h"
+#include <memory>
+
+// Forward declarations
+class IProviderFactory;
+class ManagerFactory;
+class DeviceProvider;
+class IGpioProvider;
+class IDisplayProvider;
+class StyleManager;
+class PreferenceManager;
+class PanelManager;
+class InterruptManager;
+class ErrorManager;
+
+// Global factories - dual factory pattern implementation
+extern std::unique_ptr<IProviderFactory> providerFactory;
+extern std::unique_ptr<ManagerFactory> managerFactory;
+
+// Global providers - created by ProviderFactory
+extern std::unique_ptr<DeviceProvider> deviceProvider;
+extern std::unique_ptr<IGpioProvider> gpioProvider;
+extern std::unique_ptr<IDisplayProvider> displayProvider;
+
+// Global managers - created by ManagerFactory
+extern std::unique_ptr<StyleManager> styleManager;
+extern std::unique_ptr<PreferenceManager> preferenceManager;
+extern std::unique_ptr<PanelManager> panelManager;
+extern InterruptManager *interruptManager;
+extern ErrorManager *errorManager;
 
 // Function declarations
