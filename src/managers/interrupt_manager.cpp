@@ -11,7 +11,10 @@
 
 // ========== Static Methods ==========
 
-// Singleton implementation
+/**
+ * @brief Singleton implementation using Meyer's singleton pattern
+ * @details Thread-safe in C++11+ due to static local variable initialization
+ */
 InterruptManager& InterruptManager::Instance()
 {
     static InterruptManager instance;
@@ -20,6 +23,10 @@ InterruptManager& InterruptManager::Instance()
 
 // ========== Public Interface Methods ==========
 
+/**
+ * @brief Initialize interrupt system with GPIO provider and create handlers
+ * @details Sets up TriggerHandler and ActionHandler, registers system interrupts
+ */
 void InterruptManager::Init(IGpioProvider* gpioProvider)
 {
     log_v("Init() called");
@@ -34,13 +41,13 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
         return;
     }
 
-    // Store GPIO provider
+    // Store GPIO provider reference
     gpioProvider_ = gpioProvider;
 
-    // Clear handler storage
+    // Clear any existing handler storage
     handlers_.clear();
 
-    // Create new Trigger/Action architecture handlers only
+    // Create new Trigger/Action architecture handlers
     triggerHandler_ = std::make_shared<TriggerHandler>(gpioProvider);
     actionHandler_ = std::make_shared<ActionHandler>(gpioProvider);
 
@@ -52,11 +59,11 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
         return;
     }
 
-    // Register handlers
+    // Register handlers in legacy system
     RegisterHandler(triggerHandler_);
     RegisterHandler(actionHandler_);
 
-    // Register system triggers and actions
+    // Register all system-level triggers and actions
     RegisterSystemInterrupts();
 
     initialized_ = true;
@@ -65,26 +72,34 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
     log_i("InterruptManager initialized with new Trigger/Action architecture");
 }
 
+/**
+ * @brief Process all interrupts based on UI state and responsiveness requirements
+ * @details Actions are processed continuously, triggers only during UI idle periods
+ */
 void InterruptManager::Process()
 {
     if (!initialized_) {
         return;
     }
 
-    // Process Actions (continuous evaluation for responsiveness)
+    // Process Actions continuously for immediate responsiveness (button presses)
     if (actionHandler_) {
         actionHandler_->Process();
     }
 
-    // Process Triggers (only during UI idle)
+    // Process Triggers only during UI idle to avoid interfering with animations
     if (IsUIIdle() && triggerHandler_) {
         triggerHandler_->Process();
     }
 
-    // Update performance counters
+    // Update performance monitoring counters
     totalEvaluations_++;
 }
 
+/**
+ * @brief Register trigger condition with TriggerHandler
+ * @details Delegates to TriggerHandler for actual registration and validation
+ */
 bool InterruptManager::RegisterTrigger(const Trigger& trigger)
 {
     if (!triggerHandler_) {
@@ -95,6 +110,9 @@ bool InterruptManager::RegisterTrigger(const Trigger& trigger)
     return triggerHandler_->RegisterTrigger(trigger);
 }
 
+/**
+ * @brief Unregister trigger by identifier
+ */
 void InterruptManager::UnregisterTrigger(const char* id)
 {
     if (triggerHandler_) {
@@ -102,6 +120,10 @@ void InterruptManager::UnregisterTrigger(const char* id)
     }
 }
 
+/**
+ * @brief Register action with ActionHandler
+ * @details Delegates to ActionHandler for actual registration and validation
+ */
 bool InterruptManager::RegisterAction(const Action& action)
 {
     if (!actionHandler_) {
@@ -112,6 +134,9 @@ bool InterruptManager::RegisterAction(const Action& action)
     return actionHandler_->RegisterAction(action);
 }
 
+/**
+ * @brief Unregister action by identifier
+ */
 void InterruptManager::UnregisterAction(const char* id)
 {
     if (actionHandler_) {
@@ -119,6 +144,10 @@ void InterruptManager::UnregisterAction(const char* id)
     }
 }
 
+/**
+ * @brief Update panel button handler functions for current panel
+ * @details Called when switching panels to update button behavior
+ */
 void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context)
 {
     log_v("UpdatePanelFunctions() called");
@@ -128,11 +157,14 @@ void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void 
         return;
     }
 
-    // Update action handler with new panel functions
+    // Delegate to ActionHandler to update button behavior
     actionHandler_->UpdatePanelFunctions(shortPressFunc, longPressFunc, context);
     log_i("Updated panel functions in ActionHandler");
 }
 
+/**
+ * @brief Register legacy interrupt handler (for backward compatibility)
+ */
 void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
 {
     if (!handler) {
@@ -143,6 +175,9 @@ void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
     handlers_.push_back(handler);
 }
 
+/**
+ * @brief Unregister legacy interrupt handler
+ */
 void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
 {
     auto it = std::find(handlers_.begin(), handlers_.end(), handler);
@@ -151,6 +186,9 @@ void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
     }
 }
 
+/**
+ * @brief Get total count of registered interrupts (triggers + actions)
+ */
 size_t InterruptManager::GetRegisteredInterruptCount() const
 {
     size_t count = 0;
@@ -163,36 +201,49 @@ size_t InterruptManager::GetRegisteredInterruptCount() const
     return count;
 }
 
+/**
+ * @brief Retrieve performance statistics for interrupt processing
+ */
 void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const
 {
     totalEvaluations = totalEvaluations_;
     totalExecutions = totalExecutions_;
 }
 
+/**
+ * @brief Optimize memory usage - no-op with static array implementation
+ * @details Static arrays are already memory-optimal, method exists for API compatibility
+ */
 void InterruptManager::OptimizeMemoryUsage()
 {
     log_v("OptimizeMemoryUsage() called");
 
     // Memory is already optimized with static arrays
-    // This method exists for API compatibility
+    // This method exists for API compatibility with dynamic implementations
 
     if (triggerHandler_) {
-        // Static arrays, no optimization needed
+        // Static arrays are already optimized - no action needed
     }
 
     if (actionHandler_) {
-        // Static arrays, no optimization needed
+        // Static arrays are already optimized - no action needed
     }
-
 }
 
+/**
+ * @brief Compact interrupt array - no-op with static array implementation
+ * @details Static arrays don't fragment and don't need compaction
+ */
 void InterruptManager::CompactInterruptArray()
 {
     log_v("CompactInterruptArray() called");
 
-    // Static arrays don't need compaction
+    // Static arrays don't need compaction - no fragmentation occurs
 }
 
+/**
+ * @brief Check if any triggers or actions are currently active or pending
+ */
 bool InterruptManager::HasActiveInterrupts() const
 {
     if (triggerHandler_ && triggerHandler_->HasActiveTriggers()) {
@@ -204,11 +255,18 @@ bool InterruptManager::HasActiveInterrupts() const
     return false;
 }
 
+/**
+ * @brief Get interrupt count (alias for GetRegisteredInterruptCount)
+ */
 size_t InterruptManager::GetInterruptCount() const
 {
     return GetRegisteredInterruptCount();
 }
 
+/**
+ * @brief Check if panel restoration is needed after interrupt deactivation
+ * @details Coordinates with PanelManager for seamless panel restoration
+ */
 void InterruptManager::CheckRestoration()
 {
     if (!triggerHandler_) {
@@ -220,10 +278,14 @@ void InterruptManager::CheckRestoration()
 
     if (!hasActiveTrigger) {
         // Let the PanelManager handle restoration logic
-        // This method is mainly for coordination
+        // This method provides coordination point for restoration
     }
 }
 
+/**
+ * @brief Find and execute the highest priority PANEL trigger
+ * @details Scans for active panel triggers and executes the highest priority one
+ */
 bool InterruptManager::CheckAndExecuteHighestPriorityTrigger()
 {
     if (!triggerHandler_) {
@@ -243,6 +305,10 @@ bool InterruptManager::CheckAndExecuteHighestPriorityTrigger()
     return false;
 }
 
+/**
+ * @brief Find and execute the highest priority STYLE trigger
+ * @details Handles theme and styling triggers separately from panel triggers
+ */
 void InterruptManager::CheckAndExecuteActiveStyleTriggers()
 {
     if (!triggerHandler_) {
@@ -261,9 +327,12 @@ void InterruptManager::CheckAndExecuteActiveStyleTriggers()
 
 // ========== Private Methods ==========
 
+/**
+ * @brief Register all system-level triggers and actions
+ * @details Creates sensors through TriggerHandler and registers standard system interrupts
+ */
 void InterruptManager::RegisterSystemInterrupts()
 {
-
     // SAFE CASTING: All GPIO sensors inherit from BaseSensor through multiple inheritance
     // TriggerHandler owns these sensors exclusively - no shared ownership
     // static_cast is safe here as type hierarchy guarantees BaseSensor interface
@@ -283,7 +352,7 @@ void InterruptManager::RegisterSystemInterrupts()
 #endif
     );
 
-    // Register all system triggers
+    // Register all system triggers with error handling
     for (const auto& trigger : systemTriggers) {
         if (!RegisterTrigger(trigger)) {
             log_e("Failed to register system trigger: %s", trigger.id);

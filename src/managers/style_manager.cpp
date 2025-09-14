@@ -8,20 +8,27 @@ static StyleManager* styleInstancePtr_ = nullptr;
 
 // ========== Constructors and Destructor ==========
 
+/**
+ * @brief Construct StyleManager with specified initial theme
+ * @details Sets up singleton pointer but does not initialize LVGL styles yet
+ */
 StyleManager::StyleManager(const char *theme) : theme_(theme), initialized_(false)
 {
     log_v("StyleManager() constructor called");
 
-    // Set singleton instance
+    // Set singleton instance for interrupt architecture
     styleInstancePtr_ = this;
 }
 
+/**
+ * @brief Destructor - clean up LVGL styles and singleton pointer
+ */
 StyleManager::~StyleManager()
 {
     log_v("~StyleManager() destructor called");
     ResetStyles();
 
-    // Clear singleton instance
+    // Clear singleton instance if we are the current instance
     if (styleInstancePtr_ == this) {
         styleInstancePtr_ = nullptr;
     }
@@ -29,7 +36,10 @@ StyleManager::~StyleManager()
 
 // ========== Static Methods ==========
 
-/// @brief Singleton access for new interrupt architecture
+/**
+ * @brief Singleton access for interrupt architecture
+ * @details Must be initialized by ManagerFactory before use
+ */
 StyleManager& StyleManager::Instance() {
     if (!styleInstancePtr_) {
         log_e("StyleManager::Instance() called before initialization");
@@ -41,14 +51,17 @@ StyleManager& StyleManager::Instance() {
 
 // ========== Public Interface Methods ==========
 
+/**
+ * @brief Initialize all LVGL style objects and apply theme
+ * @details Must be called after LVGL initialization, idempotent
+ */
 void StyleManager::InitializeStyles()
 {
     log_v("InitializeStyles() called");
     if (initialized_)
     {
-        return;
+        return; // Already initialized - idempotent operation
     }
-
 
     // Initialize LVGL style objects (must be done after LVGL init)
     lv_style_init(&backgroundStyle_);
@@ -57,14 +70,14 @@ void StyleManager::InitializeStyles()
     lv_style_init(&gaugeWarningStyle_);
     lv_style_init(&gaugeDangerStyle_);
 
-    // Initialize shared gauge component styles
+    // Initialize shared gauge component styles for memory efficiency
     lv_style_init(&gaugeIndicatorStyle_);
     lv_style_init(&gaugeItemsStyle_);
     lv_style_init(&gaugeMainStyle_);
     lv_style_init(&gaugeDangerSectionStyle_);
 
     // Apply theme colors after style objects are initialized
-    // Pull theme from preferences if available, otherwise use default
+    // Pull theme from preferences if available, otherwise use constructor default
     if (preferenceService_) {
         const auto& config = preferenceService_->GetConfig();
         SetTheme(config.theme.c_str());
@@ -72,7 +85,6 @@ void StyleManager::InitializeStyles()
         SetTheme(theme_.c_str());
     }
     initialized_ = true;
-
 }
 
 /// @brief Apply a specified theme to the styles
@@ -188,18 +200,27 @@ void StyleManager::ApplyCurrentTheme()
 /// @brief Get the colours scheme for the supplied theme
 /// @param theme the theme to retrieve the colour scheme for
 /// @return the colour scheme for the specified theme
+/**
+ * @brief Resolve theme name to corresponding color scheme
+ * @details Returns day theme as fallback for unknown themes
+ */
 const ThemeColors &StyleManager::GetColours(const std::string& theme) const
 {
     log_v("GetColours() called");
     if (theme.empty())
-        return dayThemeColours_;
+        return dayThemeColours_; // Default fallback
 
+    // Map theme names to color schemes
     if (theme == Themes::NIGHT) return nightThemeColours_;
     if (theme == Themes::ERROR) return errorThemeColours_;
 
-    return dayThemeColours_;
+    return dayThemeColours_; // Fallback for unknown themes
 }
 
+/**
+ * @brief Get current active theme name
+ * @details Always reads from preferences when available for consistency
+ */
 const std::string& StyleManager::GetCurrentTheme() const
 {
     // Always pull theme directly from preferences to ensure consistency
@@ -213,7 +234,10 @@ const std::string& StyleManager::GetCurrentTheme() const
     return theme_;
 }
 
-/// @brief Get function for theme switching that panels can use in their actions
+/**
+ * @brief Direct theme switching interface for panel actions
+ * @param themeName Name of theme to switch to immediately
+ */
 void StyleManager::SwitchTheme(const char* themeName)
 {
     log_v("SwitchTheme() called");
@@ -221,7 +245,10 @@ void StyleManager::SwitchTheme(const char* themeName)
     SetTheme(themeName);
 }
 
-/// @brief Inject PreferenceService for direct preference reading
+/**
+ * @brief Inject preference service dependency for theme persistence
+ * @param preferenceService Pointer to preference service instance
+ */
 void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
 {
     log_v("SetPreferenceService() called");
@@ -230,12 +257,15 @@ void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
 
 // ========== Private Methods ==========
 
-/// @brief Reset all styles to their default state
+/**
+ * @brief Reset all LVGL style objects to default state
+ * @details Called during destruction to clean up LVGL resources
+ */
 void StyleManager::ResetStyles()
 {
     log_v("ResetStyles() called");
 
-    // Reset all style objects
+    // Reset all core style objects to free LVGL resources
     lv_style_reset(&backgroundStyle_);
     lv_style_reset(&textStyle_);
     lv_style_reset(&gaugeNormalStyle_);

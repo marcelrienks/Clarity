@@ -3,43 +3,48 @@
 
 // ========== Public Interface Methods ==========
 
-/// @brief Initialises the preference manager to handle application preferences_
+/**
+ * @brief Initialize NVS storage system and load configuration
+ * @details Handles NVS corruption by formatting and retrying, then loads config from storage
+ */
 void PreferenceManager::Init()
 {
     log_v("Init() called");
 
-    // Initialize preferences_
+    // Initialize NVS preferences namespace
     if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
     {
-        log_w("Failed to initialize preferences_, retrying after format");
+        log_w("Failed to initialize preferences, retrying after format");
 
-        // Format NVS if opening failed
+        // Format NVS partition if opening failed (handles corruption)
         nvs_flash_erase();
 
-        // Try again
+        // Retry after format
         if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
-            log_w("Failed to initialize preferences_ after format");
+            log_w("Failed to initialize preferences after format");
 
         else
             log_w("Preferences initialized successfully after format");
     }
-
     else
         log_i("PreferenceManager service started successfully - configuration loaded and ready");
 
+    // Load existing configuration or create defaults
     LoadConfig();
 }
 
-/// @brief Save the current config_uration to preferences_
-/// @return true if the save was successful, false otherwise
+/**
+ * @brief Serialize and persist current configuration to NVS
+ * @details Creates JSON document, serializes all config settings, commits to flash storage
+ */
 void PreferenceManager::SaveConfig()
 {
     log_v("SaveConfig() called");
-    log_v("SaveConfig() called");
 
+    // Clear existing config entry to prevent corruption
     preferences_.remove(CONFIG_KEY_);
 
-    // Use the new JsonDocument instead of the deprecated classes
+    // Build JSON document with all configuration settings
     JsonDocument doc;
     doc[JsonDocNames::PANEL_NAME] = config_.panelName.c_str();
     doc[JsonDocNames::SHOW_SPLASH] = config_.showSplash;
@@ -49,41 +54,42 @@ void PreferenceManager::SaveConfig()
     doc[JsonDocNames::PRESSURE_UNIT] = config_.pressureUnit.c_str();
     doc[JsonDocNames::TEMP_UNIT] = config_.tempUnit.c_str();
 
-    // Serialize calibration settings
+    // Include sensor calibration settings
     doc[JsonDocNames::PRESSURE_OFFSET] = config_.pressureOffset;
     doc[JsonDocNames::PRESSURE_SCALE] = config_.pressureScale;
     doc[JsonDocNames::TEMP_OFFSET] = config_.tempOffset;
     doc[JsonDocNames::TEMP_SCALE] = config_.tempScale;
 
-    // Serialize to JSON string
+    // Serialize to JSON string for storage
     String jsonString;
     serializeJson(doc, jsonString);
 
-
-    // Save the JSON string to preferences_
+    // Persist JSON string to NVS flash storage
     size_t written = preferences_.putString(CONFIG_KEY_, jsonString);
     if (written > 0)
     {
         log_i("Configuration saved successfully (%zu bytes written)", written);
-        // Commit changes to NVS - this is critical for persistence across reboots
+        // Force commit to NVS flash - critical for persistence across reboots
         preferences_.end();
-        // Reopen preferences for future operations
+        // Reopen preferences handle for future operations
         preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
-        log_i("System config_uration updated and persisted to NVS storage");
+        log_i("System configuration updated and persisted to NVS storage");
     }
     else
     {
-        log_e("Failed to save config_uration to NVS");
+        log_e("Failed to save configuration to NVS");
     }
 }
 
-/// @brief Load the configuration from preferences_
-/// @return true if the load was successful, false otherwise
+/**
+ * @brief Load and deserialize configuration from NVS storage
+ * @details Reads JSON config, validates format, falls back to defaults on error
+ */
 void PreferenceManager::LoadConfig()
 {
     log_v("LoadConfig() called");
-    log_v("LoadConfig() called");
 
+    // Attempt to read JSON configuration string from NVS
     String jsonString = preferences_.getString(CONFIG_KEY_, "");
     if (jsonString.length() == 0)
     {
@@ -91,23 +97,26 @@ void PreferenceManager::LoadConfig()
         return PreferenceManager::CreateDefaultConfig();
     }
 
+    // Deserialize JSON configuration
     JsonDocument doc;
     DeserializationError result = deserializeJson(doc, jsonString);
     if (result != DeserializationError::Ok)
     {
-        log_w("Error deserializing config");
+        log_w("Error deserializing config - JSON corruption detected");
         return PreferenceManager::CreateDefaultConfig();
     }
 
+    // Validate essential config fields
     if (doc[JsonDocNames::PANEL_NAME].isNull())
     {
-        log_w("Error reading config");
+        log_w("Error reading config - missing panel name");
         return PreferenceManager::CreateDefaultConfig();
     }
 
+    // Load core configuration settings
     config_.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
 
-    // Load all settings with defaults if not present
+    // Load optional settings with graceful fallback for missing fields
     if (!doc[JsonDocNames::SHOW_SPLASH].isNull())
     {
         config_.showSplash = doc[JsonDocNames::SHOW_SPLASH].as<bool>();
@@ -138,7 +147,7 @@ void PreferenceManager::LoadConfig()
         config_.tempUnit = std::string(doc[JsonDocNames::TEMP_UNIT].as<const char *>());
     }
 
-    // Load calibration settings
+    // Load sensor calibration settings
     if (!doc[JsonDocNames::PRESSURE_OFFSET].isNull())
     {
         config_.pressureOffset = doc[JsonDocNames::PRESSURE_OFFSET].as<float>();
@@ -157,69 +166,85 @@ void PreferenceManager::LoadConfig()
     }
 }
 
-/// @brief Create and save a list of default panels
-/// @return true if the save was successful
+/**
+ * @brief Create default configuration and persist to storage
+ * @details Sets up initial default values and saves to NVS
+ */
 void PreferenceManager::CreateDefaultConfig()
 {
     log_v("CreateDefaultConfig() called");
-    log_v("CreateDefaultConfig() called");
 
+    // Set default panel selection
     config_.panelName = PanelNames::OIL;
 
+    // Persist defaults to storage and reload to verify
     PreferenceManager::SaveConfig();
     PreferenceManager::LoadConfig();
 }
 
-/// @brief Get the current config_uration object
-/// @return Reference to current config_uration settings
+/**
+ * @brief Get mutable reference to current configuration
+ */
 Configs &PreferenceManager::GetConfig()
 {
     return config_;
 }
 
-/// @brief Get the current config_uration object (read-only)
-/// @return Const reference to current config_uration settings
+/**
+ * @brief Get read-only reference to current configuration
+ */
 const Configs &PreferenceManager::GetConfig() const
 {
     log_v("GetConfig() const called");
     return config_;
 }
 
-/// @brief Update the config_uration object
-/// @param newConfig New config_uration settings to apply
+/**
+ * @brief Replace current configuration with new settings
+ * @details Updates in-memory config - call SaveConfig() to persist
+ */
 void PreferenceManager::SetConfig(const Configs &newConfig)
 {
     log_v("SetConfig() called");
-    // Configuration updated
+    // Update in-memory configuration
     config_ = newConfig;
 }
 
-/// @brief Get a preference value by key
-/// @param key The preference key
-/// @return String representation of the value
+/**
+ * @brief Get preference value as string using key lookup
+ * @details Converts typed config values to string representation
+ */
 std::string PreferenceManager::GetPreference(const std::string &key) const
 {
     log_v("GetPreference() called");
+
+    // String preferences (direct return)
     if (key == "panel_name")
         return config_.panelName;
+    if (key == "theme")
+        return config_.theme;
+    if (key == "pressure_unit")
+        return config_.pressureUnit;
+    if (key == "temp_unit")
+        return config_.tempUnit;
+
+    // Boolean preferences
     if (key == "show_splash")
         return config_.showSplash ? "true" : "false";
+
+    // Integer preferences
     if (key == "splash_duration") {
         static char buffer[16];
         snprintf(buffer, sizeof(buffer), "%d", config_.splashDuration);
         return buffer;
     }
-    if (key == "theme")
-        return config_.theme;
     if (key == "update_rate") {
         static char buffer[16];
         snprintf(buffer, sizeof(buffer), "%d", config_.updateRate);
         return buffer;
     }
-    if (key == "pressure_unit")
-        return config_.pressureUnit;
-    if (key == "temp_unit")
-        return config_.tempUnit;
+
+    // Float preferences (calibration values)
     if (key == "pressure_offset") {
         static char buffer[16];
         snprintf(buffer, sizeof(buffer), "%.2f", config_.pressureOffset);
@@ -245,31 +270,22 @@ std::string PreferenceManager::GetPreference(const std::string &key) const
     return "";
 }
 
-/// @brief Set a preference value by key
-/// @param key The preference key
-/// @param value String representation of the value
+/**
+ * @brief Update preference value using key-based lookup
+ * @details Parses string value and updates appropriate config field
+ */
 void PreferenceManager::SetPreference(const std::string &key, const std::string &value)
 {
     log_v("SetPreference() called");
+
+    // String preferences (direct assignment)
     if (key == "panel_name")
     {
         config_.panelName = value;
     }
-    else if (key == "show_splash")
-    {
-        config_.showSplash = (value == "true");
-    }
-    else if (key == "splash_duration")
-    {
-        config_.splashDuration = std::stoi(value);
-    }
     else if (key == "theme")
     {
         config_.theme = value;
-    }
-    else if (key == "update_rate")
-    {
-        config_.updateRate = std::stoi(value);
     }
     else if (key == "pressure_unit")
     {
@@ -279,6 +295,21 @@ void PreferenceManager::SetPreference(const std::string &key, const std::string 
     {
         config_.tempUnit = value;
     }
+    // Boolean preferences
+    else if (key == "show_splash")
+    {
+        config_.showSplash = (value == "true");
+    }
+    // Integer preferences
+    else if (key == "splash_duration")
+    {
+        config_.splashDuration = std::stoi(value);
+    }
+    else if (key == "update_rate")
+    {
+        config_.updateRate = std::stoi(value);
+    }
+    // Float preferences (sensor calibration)
     else if (key == "pressure_offset")
     {
         config_.pressureOffset = std::stof(value);
@@ -301,12 +332,15 @@ void PreferenceManager::SetPreference(const std::string &key, const std::string 
     }
 }
 
-/// @brief Check if a preference exists
-/// @param key The preference key
-/// @return true if preference exists
+/**
+ * @brief Validate if preference key is recognized by the system
+ * @details Checks against all supported configuration keys
+ */
 bool PreferenceManager::HasPreference(const std::string &key) const
 {
     log_v("HasPreference() called");
+
+    // Check against all supported preference keys
     bool hasKey = (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
                    key == "update_rate" || key == "pressure_unit" || key == "temp_unit" ||
                    key == "pressure_offset" || key == "pressure_scale" || key == "temp_offset" || key == "temp_scale");

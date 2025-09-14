@@ -6,6 +6,9 @@
 
 // ========== Constructors and Destructor ==========
 
+/**
+ * @brief Initialize BasePanel with dependency injection of required services
+ */
 BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       panelService_(nullptr)
@@ -13,6 +16,10 @@ BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleServi
     log_v("BasePanel constructor called");
 }
 
+/**
+ * @brief Destructor ensuring proper LVGL screen cleanup
+ * @details Deletes LVGL screen object to prevent memory leaks
+ */
 BasePanel::~BasePanel()
 {
     log_v("BasePanel destructor called");
@@ -26,6 +33,10 @@ BasePanel::~BasePanel()
 
 // ========== Public Interface Methods ==========
 
+/**
+ * @brief Template method for panel initialization
+ * @details Validates providers, calls CustomInit() hook, sets up screen and center location
+ */
 void BasePanel::Init()
 {
     log_v("%s::Init() called", GetPanelName());
@@ -37,12 +48,16 @@ void BasePanel::Init()
 
     SetupScreen();
 
-    // Set up center location for components
+    // Set up center location for component positioning
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
 
     log_i("%s initialization completed", GetPanelName());
 }
 
+/**
+ * @brief Template method for panel loading
+ * @details Calls CreateContent(), PostLoad() hooks, sets up callbacks, and displays screen
+ */
 void BasePanel::Load()
 {
     log_v("%s::Load() called", GetPanelName());
@@ -53,7 +68,7 @@ void BasePanel::Load()
     // Allow derived classes to perform additional setup
     PostLoad();
 
-    // Set up LVGL event callback and load screen
+    // Set up LVGL event callback for screen load completion
     lv_obj_add_event_cb(screen_, BasePanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
     ApplyThemeAndLoadScreen();
@@ -61,6 +76,10 @@ void BasePanel::Load()
     log_t("%s loaded successfully", GetPanelName());
 }
 
+/**
+ * @brief Template method for panel updates
+ * @details Calls UpdateContent() hook and resets UI state to IDLE
+ */
 void BasePanel::Update()
 {
     log_v("%s::Update() called", GetPanelName());
@@ -75,6 +94,10 @@ void BasePanel::Update()
     }
 }
 
+/**
+ * @brief Inject manager service dependencies
+ * @details Updates panel and style service references for runtime services
+ */
 void BasePanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
 {
     log_v("%s::SetManagers() called", GetPanelName());
@@ -88,16 +111,25 @@ void BasePanel::SetManagers(IPanelService* panelService, IStyleService* styleSer
     }
 }
 
+/**
+ * @brief Get short press handler function pointer
+ */
 void (*BasePanel::GetShortPressFunction())(void* panelContext)
 {
     return BasePanelShortPress;
 }
 
+/**
+ * @brief Get long press handler function pointer
+ */
 void (*BasePanel::GetLongPressFunction())(void* panelContext)
 {
     return BasePanelLongPress;
 }
 
+/**
+ * @brief Get panel instance pointer for button handler context
+ */
 void* BasePanel::GetPanelContext()
 {
     return this;
@@ -105,6 +137,10 @@ void* BasePanel::GetPanelContext()
 
 // ========== Static Methods ==========
 
+/**
+ * @brief LVGL callback for screen load completion
+ * @details Resets UI state to IDLE to allow trigger evaluation after panel display
+ */
 void BasePanel::ShowPanelCompletionCallback(lv_event_t* event)
 {
     if (!event)
@@ -123,6 +159,9 @@ void BasePanel::ShowPanelCompletionCallback(lv_event_t* event)
     }
 }
 
+/**
+ * @brief Static wrapper for short button press - delegates to virtual method
+ */
 void BasePanel::BasePanelShortPress(void* panelContext)
 {
     auto* panel = static_cast<BasePanel*>(panelContext);
@@ -133,6 +172,9 @@ void BasePanel::BasePanelShortPress(void* panelContext)
     }
 }
 
+/**
+ * @brief Static wrapper for long button press - delegates to virtual method
+ */
 void BasePanel::BasePanelLongPress(void* panelContext)
 {
     auto* panel = static_cast<BasePanel*>(panelContext);
@@ -145,6 +187,10 @@ void BasePanel::BasePanelLongPress(void* panelContext)
 
 // ========== Private Methods ==========
 
+/**
+ * @brief Validate required providers are available
+ * @details Reports critical error if display or GPIO provider is missing
+ */
 void BasePanel::ValidateProviders()
 {
     if (!displayProvider_ || !gpioProvider_)
@@ -156,6 +202,9 @@ void BasePanel::ValidateProviders()
     }
 }
 
+/**
+ * @brief Create LVGL screen and apply current theme
+ */
 void BasePanel::SetupScreen()
 {
     screen_ = displayProvider_->CreateScreen();
@@ -167,6 +216,10 @@ void BasePanel::SetupScreen()
     }
 }
 
+/**
+ * @brief Load screen and ensure current theme is applied
+ * @details Double-applies theme to ensure consistency after screen load
+ */
 void BasePanel::ApplyThemeAndLoadScreen()
 {
     lv_screen_load(screen_);

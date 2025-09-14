@@ -54,15 +54,67 @@ public:
     ~PreferenceManager() = default;
 
     // ========== Public Interface Methods ==========
+    /**
+     * @brief Initialize NVS storage and load existing configuration
+     * @details Attempts NVS format and retry if initial open fails
+     */
     void Init() override;
+
+    /**
+     * @brief Persist current configuration to NVS storage
+     * @details Serializes config to JSON and commits to flash storage
+     */
     void SaveConfig() override;
+
+    /**
+     * @brief Load configuration from NVS storage
+     * @details Deserializes JSON config, falls back to defaults if corrupted
+     */
     void LoadConfig() override;
+
+    /**
+     * @brief Create and save default configuration settings
+     * @details Sets up initial config values and persists them
+     */
     void CreateDefaultConfig() override;
+
+    /**
+     * @brief Get mutable reference to current configuration
+     * @return Reference to configuration object for modification
+     */
     Configs &GetConfig() override;
+
+    /**
+     * @brief Get read-only reference to current configuration
+     * @return Const reference to configuration object
+     */
     const Configs &GetConfig() const override;
+
+    /**
+     * @brief Update the configuration with new settings
+     * @param config New configuration settings to apply
+     */
     void SetConfig(const Configs &config) override;
+
+    /**
+     * @brief Get preference value by key name
+     * @param key Preference key to retrieve
+     * @return String representation of preference value
+     */
     std::string GetPreference(const std::string &key) const override;
+
+    /**
+     * @brief Set preference value by key name
+     * @param key Preference key to update
+     * @param value New preference value as string
+     */
     void SetPreference(const std::string &key, const std::string &value) override;
+
+    /**
+     * @brief Check if a preference key exists
+     * @param key Preference key to check
+     * @return true if key is recognized, false otherwise
+     */
     bool HasPreference(const std::string &key) const override;
 
 private:

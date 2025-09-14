@@ -5,6 +5,10 @@
 
 // ========== Static Methods ==========
 
+/**
+ * @brief Get singleton instance using Meyer's singleton pattern
+ * @details Thread-safe in C++11+ due to static local variable initialization
+ */
 ErrorManager &ErrorManager::Instance()
 {
     static ErrorManager instance;
@@ -13,12 +17,16 @@ ErrorManager &ErrorManager::Instance()
 
 // ========== Public Interface Methods ==========
 
+/**
+ * @brief Core error reporting implementation
+ * @details Creates ErrorInfo object, adds to queue with timestamp, trims queue if needed
+ */
 void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::string &message)
 {
     // Process auto-dismiss before adding new error
     AutoDismissOldWarnings();
 
-    // Create error info
+    // Create error info structure
     ErrorInfo errorInfo;
     errorInfo.level = level;
     errorInfo.source = source;
@@ -29,10 +37,10 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
     // Add to queue
     errorQueue_.push_back(errorInfo);
 
-    // Trim queue if necessary
+    // Trim queue if necessary to maintain memory constraints
     TrimErrorQueue();
 
-    // Log error
+    // Log error with appropriate level
     const char *levelStr = (level == ErrorLevel::WARNING) ? "WARNING"
                            : (level == ErrorLevel::ERROR) ? "ERROR"
                                                           : "CRITICAL";
@@ -40,45 +48,65 @@ void ErrorManager::ReportError(ErrorLevel level, const char *source, const std::
     log_t("Error reported: %s", levelStr);
 }
 
+/**
+ * @brief Convenience method for reporting warnings
+ */
 void ErrorManager::ReportWarning(const char *source, const std::string &message)
 {
     ReportError(ErrorLevel::WARNING, source, message);
 }
 
+/**
+ * @brief Convenience method for reporting critical errors
+ */
 void ErrorManager::ReportCriticalError(const char *source, const std::string &message)
 {
     ReportError(ErrorLevel::CRITICAL, source, message);
 }
 
+/**
+ * @brief Simple check for any errors in queue
+ */
 bool ErrorManager::HasPendingErrors() const
 {
     return !errorQueue_.empty();
 }
 
+/**
+ * @brief Check for unacknowledged critical errors using STL algorithm
+ */
 bool ErrorManager::HasCriticalErrors() const
 {
     return std::any_of(errorQueue_.begin(), errorQueue_.end(), [](const ErrorInfo &error)
                        { return error.level == ErrorLevel::CRITICAL && !error.acknowledged; });
 }
 
+/**
+ * @brief Return copy of error queue to prevent external modification
+ */
 std::vector<ErrorInfo> ErrorManager::GetErrorQueue() const
 {
     return errorQueue_;
 }
 
+/**
+ * @brief Acknowledge error and apply removal policy based on severity
+ * @details Warnings/errors are removed immediately, critical errors remain until explicit clear
+ */
 void ErrorManager::AcknowledgeError(size_t errorIndex)
 {
     if (errorIndex < errorQueue_.size())
     {
         errorQueue_[errorIndex].acknowledged = true;
 
-        // Remove acknowledged warnings and errors (keep critical until explicitly cleared)
+        // Apply removal policy: remove non-critical errors immediately
+        // Critical errors remain visible until explicitly cleared
         if (errorQueue_[errorIndex].level != ErrorLevel::CRITICAL)
         {
             errorQueue_.erase(errorQueue_.begin() + errorIndex);
         }
 
-        // Update last dismissal time for warnings
+        // Update dismissal time tracking for warnings
         if (errorQueue_.size() > errorIndex && errorQueue_[errorIndex].level == ErrorLevel::WARNING)
         {
             lastWarningDismissalTime_ = millis();
@@ -86,12 +114,20 @@ void ErrorManager::AcknowledgeError(size_t errorIndex)
     }
 }
 
+/**
+ * @brief Force clear all errors and reset error panel state
+ */
 void ErrorManager::ClearAllErrors()
 {
     errorQueue_.clear();
     errorPanelActive_ = false;
 }
 
+/**
+ * @brief Determine if error panel should be triggered
+ * @details Processes auto-dismiss first, then checks for pending errors
+ * @note Uses const_cast for internal cleanup operation in const method
+ */
 bool ErrorManager::ShouldTriggerErrorPanel() const
 {
     // Process auto-dismiss first (const_cast for this internal operation)
@@ -102,11 +138,17 @@ bool ErrorManager::ShouldTriggerErrorPanel() const
     return HasPendingErrors();
 }
 
+/**
+ * @brief Update error panel activation state
+ */
 void ErrorManager::SetErrorPanelActive(bool active)
 {
     errorPanelActive_ = active;
 }
 
+/**
+ * @brief Check current error panel activation state
+ */
 bool ErrorManager::IsErrorPanelActive() const
 {
     return errorPanelActive_;
@@ -136,11 +178,16 @@ void ErrorManager::Process()
 
 // ========== Private Methods ==========
 
+/**
+ * @brief Trim error queue to maximum size using priority-based sorting
+ * @details Sorts by error level priority (critical > error > warning) then by timestamp (newer first)
+ */
 void ErrorManager::TrimErrorQueue()
 {
     if (errorQueue_.size() > MAX_ERROR_QUEUE_SIZE)
     {
         // Sort by priority (critical > error > warning) and timestamp (newer first)
+        // Higher error level enum values indicate higher priority
         std::sort(errorQueue_.begin(), errorQueue_.end(),
                   [](const ErrorInfo &a, const ErrorInfo &b)
                   {
@@ -151,7 +198,7 @@ void ErrorManager::TrimErrorQueue()
                       return a.timestamp > b.timestamp;
                   });
 
-        // Keep only the most recent/important errors
+        // Keep only the most recent/important errors within memory constraints
         errorQueue_.resize(MAX_ERROR_QUEUE_SIZE);
     }
 }
@@ -175,21 +222,26 @@ void ErrorManager::AutoDismissOldWarnings()
     }
 }
 
+/**
+ * @brief Find highest severity among unacknowledged errors
+ * @details Scans queue for highest priority unacknowledged error, returns WARNING if empty
+ */
 ErrorLevel ErrorManager::GetHighestErrorLevel() const
 {
     if (errorQueue_.empty())
     {
-        return ErrorLevel::WARNING; // Default level
+        return ErrorLevel::WARNING; // Default level when no errors exist
     }
 
     ErrorLevel highest = ErrorLevel::WARNING;
     for (const auto &error : errorQueue_)
     {
+        // Only consider unacknowledged errors
         if (!error.acknowledged)
         {
             if (error.level == ErrorLevel::CRITICAL)
             {
-                return ErrorLevel::CRITICAL; // Highest possible
+                return ErrorLevel::CRITICAL; // Highest possible - short circuit
             }
             if (error.level == ErrorLevel::ERROR && highest == ErrorLevel::WARNING)
             {

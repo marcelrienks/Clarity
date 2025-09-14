@@ -32,28 +32,137 @@ public:
     ~InterruptManager() = default;
 
     // ========== Static Methods ==========
+    /**
+     * @brief Get singleton instance using Meyer's singleton pattern
+     * @return Reference to the global InterruptManager instance
+     */
     static InterruptManager& Instance();
 
     // ========== Public Interface Methods ==========
+    /**
+     * @brief Initialize interrupt system with GPIO provider
+     * @param gpioProvider Pointer to GPIO provider for hardware access
+     * @details Creates TriggerHandler and ActionHandler, registers system interrupts
+     */
     void Init(IGpioProvider* gpioProvider = nullptr);
+
+    /**
+     * @brief Process all registered interrupts based on UI state
+     * @details Actions processed continuously, triggers only during UI idle periods
+     */
     void Process();
+
+    /**
+     * @brief Register a trigger condition for monitoring
+     * @param trigger Trigger configuration to register
+     * @return true if registration successful, false otherwise
+     */
     bool RegisterTrigger(const Trigger& trigger);
+
+    /**
+     * @brief Remove trigger by identifier
+     * @param id Unique identifier of trigger to unregister
+     */
     void UnregisterTrigger(const char* id);
+
+    /**
+     * @brief Register an action for execution
+     * @param action Action configuration to register
+     * @return true if registration successful, false otherwise
+     */
     bool RegisterAction(const Action& action);
+
+    /**
+     * @brief Remove action by identifier
+     * @param id Unique identifier of action to unregister
+     */
     void UnregisterAction(const char* id);
+
+    /**
+     * @brief Update panel button handler functions
+     * @param shortPressFunc Function to call on short button press
+     * @param longPressFunc Function to call on long button press
+     * @param context Context pointer to pass to handler functions
+     */
     void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
+
+    /**
+     * @brief Register a legacy interrupt handler
+     * @param handler Shared pointer to handler implementation
+     */
     void RegisterHandler(std::shared_ptr<IHandler> handler);
+
+    /**
+     * @brief Unregister a legacy interrupt handler
+     * @param handler Shared pointer to handler to remove
+     */
     void UnregisterHandler(std::shared_ptr<IHandler> handler);
+
+    /**
+     * @brief Get total count of registered interrupts (triggers + actions)
+     * @return Total number of registered interrupts
+     */
     size_t GetRegisteredInterruptCount() const;
+
+    /**
+     * @brief Get performance statistics for interrupt processing
+     * @param totalEvaluations Reference to store total evaluation count
+     * @param totalExecutions Reference to store total execution count
+     */
     void GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const;
+
+    /**
+     * @brief Optimize memory usage (no-op with static arrays)
+     * @details Provided for API compatibility, static arrays are already optimized
+     */
     void OptimizeMemoryUsage();
+
+    /**
+     * @brief Compact interrupt array (no-op with static arrays)
+     * @details Provided for API compatibility, static arrays don't need compaction
+     */
     void CompactInterruptArray();
+
+    /**
+     * @brief Check if any triggers or actions are currently active
+     * @return true if active interrupts exist, false otherwise
+     */
     bool HasActiveInterrupts() const;
+
+    /**
+     * @brief Get total interrupt count (alias for GetRegisteredInterruptCount)
+     * @return Total number of registered interrupts
+     */
     size_t GetInterruptCount() const;
+
+    /**
+     * @brief Get direct access to trigger handler
+     * @return Pointer to TriggerHandler instance
+     */
     class TriggerHandler* GetTriggerHandler() const { return triggerHandler_.get(); }
+
+    /**
+     * @brief Get direct access to action handler
+     * @return Pointer to ActionHandler instance
+     */
     class ActionHandler* GetActionHandler() const { return actionHandler_.get(); }
+
+    /**
+     * @brief Check if panel restoration is needed after interrupt deactivation
+     * @details Coordinates with PanelManager for seamless panel restoration
+     */
     void CheckRestoration();
+
+    /**
+     * @brief Find and execute highest priority PANEL trigger
+     * @return true if trigger was found and executed, false otherwise
+     */
     bool CheckAndExecuteHighestPriorityTrigger();
+
+    /**
+     * @brief Find and execute highest priority STYLE trigger
+     * @details Handles theme and styling triggers separately from panel triggers
+     */
     void CheckAndExecuteActiveStyleTriggers();
 
 private:
@@ -61,7 +170,17 @@ private:
     InterruptManager() = default;
 
     // ========== Private Methods ==========
+    /**
+     * @brief Register all system-level triggers and actions
+     * @details Creates sensors and registers standard system interrupts
+     */
     void RegisterSystemInterrupts();
+
+    /**
+     * @brief Check if UI is idle for trigger processing optimization
+     * @return true if UI has been idle for sufficient time
+     * @details Uses cached result with 5ms timeout to reduce LVGL query overhead
+     */
     bool IsUIIdle() const;
 
     // ========== Private Data Members ==========
