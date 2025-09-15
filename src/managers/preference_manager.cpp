@@ -50,18 +50,36 @@ PreferenceManager::PreferenceManager() {
 // ========== IPreferenceManager Implementation ==========
 
 
+/**
+ * @brief Save current configuration to persistent storage
+ *
+ * Legacy interface method that delegates to SaveAllConfigSections().
+ * Provides backward compatibility while using the new sectioned storage system.
+ */
 void PreferenceManager::SaveConfig() {
     log_v("SaveConfig() called");
     SemaphoreGuard lock(configMutex_);
     SaveAllConfigSections();
 }
 
+/**
+ * @brief Load configuration from persistent storage
+ *
+ * Legacy interface method that delegates to LoadAllConfigSections().
+ * Restores all registered configuration sections from their respective NVS namespaces.
+ */
 void PreferenceManager::LoadConfig() {
     log_v("LoadConfig() called");
     SemaphoreGuard lock(configMutex_);
     LoadAllConfigSections();
 }
 
+/**
+ * @brief Create default configuration if none exists
+ *
+ * Creates default system configuration sections and saves them to storage.
+ * Called during first boot or when configuration reset is requested.
+ */
 void PreferenceManager::CreateDefaultConfig() {
     log_v("CreateDefaultConfig() called");
     SemaphoreGuard lock(configMutex_);
@@ -71,6 +89,14 @@ void PreferenceManager::CreateDefaultConfig() {
 }
 
 
+/**
+ * @brief Get a preference value by key
+ * @param key The preference key (dot-separated format)
+ * @return String representation of the value
+ *
+ * Legacy string-based interface that delegates to the type-safe QueryConfig system.
+ * Automatically converts the stored ConfigValue to string representation.
+ */
 std::string PreferenceManager::GetPreference(const std::string& key) const {
     log_v("GetPreference() called");
     SemaphoreGuard lock(configMutex_);
@@ -80,12 +106,28 @@ std::string PreferenceManager::GetPreference(const std::string& key) const {
     return "";
 }
 
+/**
+ * @brief Set a preference value by key
+ * @param key The preference key (dot-separated format)
+ * @param value String representation of the value
+ *
+ * Legacy string-based interface that delegates to the type-safe UpdateConfig system.
+ * Automatically converts the string value to appropriate ConfigValue type.
+ */
 void PreferenceManager::SetPreference(const std::string& key, const std::string& value) {
     log_v("SetPreference() called");
     SemaphoreGuard lock(configMutex_);
     UpdateConfigImpl(key, Config::ConfigValue(value));
 }
 
+/**
+ * @brief Check if a preference exists
+ * @param key The preference key to check
+ * @return true if preference exists in any registered section
+ *
+ * Queries the dynamic configuration system to determine if the specified
+ * key exists in any registered configuration section.
+ */
 bool PreferenceManager::HasPreference(const std::string& key) const {
     SemaphoreGuard lock(configMutex_);
     return QueryConfigImpl(key).has_value();
@@ -93,6 +135,19 @@ bool PreferenceManager::HasPreference(const std::string& key) const {
 
 // ========== Dynamic Configuration Implementation ==========
 
+/**
+ * @brief Register a configuration section for component self-registration
+ * @param section ConfigSection containing items, metadata, and validation rules
+ * @return true if registration successful, false if section already exists
+ *
+ * Implements component self-registration pattern from dynamic-config-implementation.md.
+ * Components call this during initialization to register their configuration requirements.
+ * The section defines configuration items with types, default values, validation constraints,
+ * and UI metadata for automatic menu generation.
+ *
+ * After registration, any existing persisted values are automatically loaded from NVS,
+ * allowing components to immediately access their stored configuration.
+ */
 bool PreferenceManager::RegisterConfigSection(const Config::ConfigSection& section) {
     log_v("RegisterConfigSection() called");
     SemaphoreGuard lock(configMutex_);
@@ -114,6 +169,14 @@ bool PreferenceManager::RegisterConfigSection(const Config::ConfigSection& secti
     return true;
 }
 
+/**
+ * @brief Get list of all registered configuration section names
+ * @return Vector of section names for UI generation and iteration
+ *
+ * Used primarily by ConfigPanel for automatic menu generation. The returned
+ * list enables dynamic UI creation where menus are built based on what
+ * components have registered, rather than hardcoded menu structures.
+ */
 std::vector<std::string> PreferenceManager::GetRegisteredSectionNames() const {
     SemaphoreGuard lock(configMutex_);
     std::vector<std::string> names;
@@ -126,6 +189,15 @@ std::vector<std::string> PreferenceManager::GetRegisteredSectionNames() const {
     return names;
 }
 
+/**
+ * @brief Retrieve a specific configuration section by name
+ * @param sectionName Name of the section to retrieve
+ * @return Optional containing section if found, nullopt if not registered
+ *
+ * Returns the complete section definition including current values and metadata.
+ * Used by ConfigPanel to build configuration UIs and by components to access
+ * their registered configuration structure.
+ */
 std::optional<Config::ConfigSection> PreferenceManager::GetConfigSection(const std::string& sectionName) const {
     SemaphoreGuard lock(configMutex_);
 
@@ -138,6 +210,15 @@ std::optional<Config::ConfigSection> PreferenceManager::GetConfigSection(const s
 }
 
 
+/**
+ * @brief Save a specific configuration section to NVS storage
+ * @param sectionName Name of the section to persist
+ * @return true if save operation successful
+ *
+ * Persists all configuration items in the specified section to sectioned NVS storage.
+ * Each section gets its own NVS namespace for organization. Used when components
+ * want to save their specific configuration without affecting other sections.
+ */
 bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
     auto it = registeredSections_.find(sectionName);
     if (it == registeredSections_.end()) {
@@ -166,6 +247,15 @@ bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
     return success;
 }
 
+/**
+ * @brief Load a specific configuration section from NVS storage
+ * @param sectionName Name of the section to load
+ * @return true if load operation successful
+ *
+ * Loads persisted values from sectioned NVS storage into the in-memory section definition.
+ * Called automatically after component registration to restore previous configuration.
+ * Updates the registered section with stored values while preserving metadata.
+ */
 bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
     auto it = registeredSections_.find(sectionName);
     if (it == registeredSections_.end()) {
@@ -185,6 +275,14 @@ bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
     return true;
 }
 
+/**
+ * @brief Save all registered configuration sections to storage
+ * @return true if all sections saved successfully
+ *
+ * Batch operation for complete configuration persistence. Iterates through all
+ * registered sections and saves each one to its respective NVS namespace.
+ * Used during application shutdown or when performing complete configuration backup.
+ */
 bool PreferenceManager::SaveAllConfigSections() {
     bool allSuccess = true;
     for (const auto& [name, section] : registeredSections_) {
@@ -195,6 +293,14 @@ bool PreferenceManager::SaveAllConfigSections() {
     return allSuccess;
 }
 
+/**
+ * @brief Load all registered configuration sections from storage
+ * @return true if all sections loaded successfully
+ *
+ * Batch operation for complete configuration restoration. Iterates through all
+ * registered sections and loads persisted values from their respective NVS namespaces.
+ * Called during application startup to restore previous configuration state.
+ */
 bool PreferenceManager::LoadAllConfigSections() {
     bool allSuccess = true;
     for (const auto& [name, section] : registeredSections_) {

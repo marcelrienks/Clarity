@@ -7,7 +7,15 @@
 
 // Constructors and Destructors
 
-/// @brief Constructor for OilTemperatureSensor
+/**
+ * @brief Constructs an oil temperature sensor with basic GPIO provider dependency
+ * @param gpioProvider Pointer to GPIO provider interface for ADC reading
+ * @param updateRateMs Update interval in milliseconds for sensor readings
+ *
+ * Initializes the sensor with GPIO provider for ADC operations and sets default
+ * configuration values. Uses Celsius as the default temperature unit. This constructor
+ * is used when no preference service is available for dynamic configuration.
+ */
 OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int updateRateMs)
     : gpioProvider_(gpioProvider), updateIntervalMs_(updateRateMs)
 {
@@ -17,7 +25,16 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
     currentReading_ = 0;
 }
 
-/// @brief Constructor for OilTemperatureSensor with preference service for calibration
+/**
+ * @brief Constructs an oil temperature sensor with preference service for dynamic configuration
+ * @param gpioProvider Pointer to GPIO provider interface for ADC reading
+ * @param preferenceService Pointer to preference service for configuration persistence
+ * @param updateRateMs Default update interval in milliseconds for sensor readings
+ *
+ * Enhanced constructor that enables dynamic configuration through the preference service.
+ * Allows for real-time calibration adjustments and unit changes. The preference service
+ * enables live configuration updates and persistent storage of sensor settings.
+ */
 OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs)
     : gpioProvider_(gpioProvider), preferenceService_(preferenceService), updateIntervalMs_(updateRateMs)
 {
@@ -29,7 +46,14 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPrefere
 
 // Core Functionality Methods
 
-/// @brief Initialize the oil temperature sensor hardware
+/**
+ * @brief Initialize the oil temperature sensor hardware and configuration
+ *
+ * Configures ESP32 ADC for 12-bit resolution with 11dB attenuation for 0-3.3V range.
+ * Registers with dynamic configuration system if enabled and loads persisted settings.
+ * Sets up live configuration callbacks for runtime updates.
+ * Takes initial sensor reading to establish baseline for change detection.
+ */
 void OilTemperatureSensor::Init()
 {
     log_v("Init() called");
@@ -60,14 +84,29 @@ void OilTemperatureSensor::Init()
     GetReading();
 }
 
-/// @brief Get supported temperature units
+/**
+ * @brief Gets the list of supported temperature units
+ * @return Vector of supported unit strings
+ *
+ * Returns the available temperature units that this sensor can convert to.
+ * Supports both Celsius and Fahrenheit for international compatibility.
+ * Used by the configuration system for unit selection validation.
+ */
 std::vector<std::string> OilTemperatureSensor::GetSupportedUnits() const
 {
     log_v("GetSupportedUnits() called");
     return {"C", "F"};
 }
 
-/// @brief Set the target unit for temperature readings
+/**
+ * @brief Sets the target unit for temperature readings
+ * @param unit Target temperature unit ("C" or "F")
+ *
+ * Validates the requested unit against supported units and updates the target
+ * unit for future readings. Falls back to Celsius if an unsupported unit is
+ * requested and reports a warning error. Used by both initialization and live
+ * configuration updates to change the display unit.
+ */
 void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
 {
     log_v("SetTargetUnit() called");
@@ -86,7 +125,16 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
     }
 }
 
-/// @brief Get the current temperature reading
+/**
+ * @brief Gets the current temperature reading in the configured unit
+ * @return Reading containing temperature value or invalid reading on error
+ *
+ * Performs rate-limited ADC sampling, validates the raw reading, and converts
+ * to the target temperature unit. Includes change detection and error handling
+ * for out-of-range ADC values. Updates the cached reading only when the value
+ * changes to minimize unnecessary processing. This is the main interface method
+ * for obtaining temperature measurements.
+ */
 Reading OilTemperatureSensor::GetReading()
 {
     // Check if enough time has passed for update
@@ -110,7 +158,7 @@ Reading OilTemperatureSensor::GetReading()
 
         // Update change tracking
         DetectChange(newValue, previousReading_);
-        
+
         // Only update current reading if value actually changed
         if (newValue != currentReading_)
         {
@@ -122,7 +170,14 @@ Reading OilTemperatureSensor::GetReading()
     return currentReading_;
 }
 
-/// @brief Set the update rate for sensor readings
+/**
+ * @brief Sets the update rate for sensor readings
+ * @param updateRateMs Update interval in milliseconds
+ *
+ * Updates the sensor's reading interval to control the frequency of ADC sampling.
+ * Lower values provide more responsive readings but increase CPU usage.
+ * Used by both initialization and live configuration updates.
+ */
 void OilTemperatureSensor::SetUpdateRate(int updateRateMs)
 {
     updateIntervalMs_ = updateRateMs;
@@ -130,20 +185,36 @@ void OilTemperatureSensor::SetUpdateRate(int updateRateMs)
 
 // Internal methods
 
-/// @brief Read raw ADC value from temperature sensor
+/**
+ * @brief Reads raw ADC value from the temperature sensor
+ * @return 12-bit ADC value (0-4095) representing analog voltage
+ *
+ * Performs a direct ADC read from the oil temperature sensor GPIO pin.
+ * The reading represents the analog voltage from the temperature sensor
+ * before any calibration or unit conversion is applied.
+ */
 int32_t OilTemperatureSensor::ReadRawValue()
 {
     // Read analog value from GPIO pin (0-4095 for 12-bit ADC)
     return gpioProvider_->AnalogRead(gpio_pins::OIL_TEMPERATURE);
 }
 
-/// @brief Convert raw ADC value to requested temperature unit
+/**
+ * @brief Converts raw ADC value to requested temperature unit with calibration
+ * @param rawValue Raw 12-bit ADC value (0-4095)
+ * @return Calibrated temperature value in the target unit
+ *
+ * Applies calibration scale and offset to the raw ADC reading, then converts
+ * to the requested temperature unit. The base calibration maps 0-4095 ADC to
+ * 0-120°C. Supports conversion to Fahrenheit (32-248°F) and Celsius (0-120°C)
+ * temperature ranges for automotive applications.
+ */
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
     // Apply calibration
     float calibratedValue = static_cast<float>(rawValue);
     calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
-    
+
     // Convert calibrated ADC value to requested temperature unit
     // Base calibration: 0-4095 ADC = 0-120°C
     int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
@@ -166,7 +237,15 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
     }
 }
 
-/// @brief Check if sensor state has changed since last evaluation
+/**
+ * @brief Checks if sensor state has changed since last evaluation
+ * @return true if temperature reading has changed significantly
+ *
+ * Uses the cached reading to avoid double ADC reads, as this method is called
+ * during interrupt evaluation while GetReading() is called during the main loop.
+ * Implements change detection for the interrupt system to trigger appropriate
+ * responses to temperature changes.
+ */
 bool OilTemperatureSensor::HasStateChanged()
 {
     // Use cached reading to avoid double ADC reads - GetReading() updates currentReading_
@@ -174,7 +253,14 @@ bool OilTemperatureSensor::HasStateChanged()
     return DetectChange(cachedReading, previousChangeReading_);
 }
 
-/// @brief Load configuration from preference system
+/**
+ * @brief Loads configuration from the preference system
+ *
+ * Retrieves saved configuration values from the preference service including
+ * target unit, update rate, and calibration parameters. Provides sensible
+ * defaults for any missing configuration values. This enables persistent
+ * configuration storage and restoration across system restarts.
+ */
 void OilTemperatureSensor::LoadConfiguration()
 {
     if (!preferenceService_) return;
