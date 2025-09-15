@@ -8,7 +8,6 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_preference_service.h"
-#include "interfaces/i_dynamic_config_service.h"
 #include "sensors/base_sensor.h"
 #include "utilities/sensor_helper.h"
 #include "utilities/types.h"
@@ -62,13 +61,26 @@ class OilTemperatureSensor : public BaseSensor
     /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs);
 
-    /// @brief Load configuration from preference system
+    /**
+     * @brief Load configuration from preference system
+     * @details Loads persisted configuration values (unit, update rate, calibration)
+     * from the preference service and applies them to the sensor
+     */
     void LoadConfiguration();
 
-    /// @brief Register configuration with dynamic config system
+    /**
+     * @brief Register configuration with dynamic config system
+     * @details Implements component self-registration pattern from dynamic-config-implementation.md
+     * Registers configuration section with metadata for automatic UI generation
+     * and validation constraints for temperature unit, update rate, and calibration
+     */
     void RegisterConfiguration();
 
-    /// @brief Register for live configuration update callbacks
+    /**
+     * @brief Register callbacks for live configuration updates
+     * @details Sets up real-time response to configuration changes without restart
+     * Monitors oil_temperature section for changes and applies them immediately
+     */
     void RegisterLiveUpdateCallbacks();
 
   protected:
@@ -80,7 +92,6 @@ class OilTemperatureSensor : public BaseSensor
     // Instance members
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;
-    IDynamicConfigService *dynamicConfigService_ = nullptr;
     float calibrationOffset_ = 0.0f;
     float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "C";

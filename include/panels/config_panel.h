@@ -7,7 +7,6 @@
 #include "interfaces/i_panel.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
-#include "interfaces/i_dynamic_config_service.h"
 #include "interfaces/i_style_service.h"
 #include "config/config_types.h"
 #include "utilities/types.h"
@@ -119,7 +118,6 @@ class ConfigPanel : public IPanel
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
-    IDynamicConfigService *dynamicConfigService_ = nullptr;
     bool useDynamicConfig_ = false;
     // screen_ is inherited from IPanel base class
 

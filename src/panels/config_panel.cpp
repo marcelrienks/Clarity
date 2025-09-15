@@ -224,12 +224,9 @@ void ConfigPanel::ExecuteCurrentOption()
         log_i("Setting theme to: %s", item.actionParam.c_str());
         if (preferenceService_)
         {
-            auto config = preferenceService_->GetConfig();
-            config.theme = item.actionParam;
-            preferenceService_->SetConfig(config);
-            preferenceService_->SaveConfig();
+            preferenceService_->SetPreference("system.theme", item.actionParam);
             log_i("Theme saved to preferences: %s", item.actionParam.c_str());
-            
+
             // Apply the theme immediately to the current screen
             if (styleService_)
             {
@@ -238,7 +235,7 @@ void ConfigPanel::ExecuteCurrentOption()
                 styleService_->ApplyThemeToScreen(screen_);
                 log_i("Theme applied to current config panel");
             }
-            
+
             // Return to main menu after setting
             ExitSubmenu();
         }
@@ -253,32 +250,28 @@ void ConfigPanel::ExecuteCurrentOption()
             std::string value = item.actionParam.substr(colonPos + 1);
             log_i("Setting config %s to %s", key.c_str(), value.c_str());
 
-            // For Phase 3, we'll handle configuration through legacy system
-            // The dynamic UI will still work but will use the existing config structure
+            // Use dynamic preference system
             if (preferenceService_)
             {
-                // Legacy config handling
-                auto config = preferenceService_->GetConfig();
-
-                // Apply the specific setting
-                if (key == "panelName") config.panelName = value;
-                else if (key == "updateRate") config.updateRate = std::stoi(value);
-                else if (key == "showSplash") config.showSplash = (value == "true");
-                else if (key == "splashDuration") config.splashDuration = std::stoi(value);
-                else if (key == "pressureUnit") config.pressureUnit = value;
-                else if (key == "tempUnit") config.tempUnit = value;
-                else if (key == "pressureOffset") config.pressureOffset = std::stof(value);
-                else if (key == "pressureScale") config.pressureScale = std::stof(value);
-                else if (key == "tempOffset") config.tempOffset = std::stof(value);
-                else if (key == "tempScale") config.tempScale = std::stof(value);
+                // Map old config keys to new preference keys
+                std::string prefKey;
+                if (key == "panelName") prefKey = "system.panel_name";
+                else if (key == "updateRate") prefKey = "system.update_rate";
+                else if (key == "showSplash") prefKey = "system.show_splash";
+                else if (key == "splashDuration") prefKey = "system.splash_duration";
+                else if (key == "pressureUnit") prefKey = "oil_pressure.unit";
+                else if (key == "tempUnit") prefKey = "oil_temperature.unit";
+                else if (key == "pressureOffset") prefKey = "oil_pressure.offset";
+                else if (key == "pressureScale") prefKey = "oil_pressure.scale";
+                else if (key == "tempOffset") prefKey = "oil_temperature.offset";
+                else if (key == "tempScale") prefKey = "oil_temperature.scale";
                 else {
                     log_w("Unknown config key: %s", key.c_str());
                     return;
                 }
 
-                preferenceService_->SetConfig(config);
-                preferenceService_->SaveConfig();
-                log_i("Config saved to preferences");
+                preferenceService_->SetPreference(prefKey, value);
+                log_i("Config saved to preferences: %s = %s", prefKey.c_str(), value.c_str());
 
                 // Return to main menu after setting
                 ExitSubmenu();
@@ -298,10 +291,10 @@ void ConfigPanel::ExecuteCurrentOption()
         // Show enum value selector
         log_i("Showing enum selector for: %s", item.actionParam.c_str());
 
-        if (dynamicConfigService_)
+        if (preferenceService_)
         {
             auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
-            auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+            auto sectionOpt = preferenceService_->GetConfigSection(sectionName);
             if (sectionOpt)
             {
                 auto itemPtr = sectionOpt->FindItem(itemKey);
@@ -317,10 +310,10 @@ void ConfigPanel::ExecuteCurrentOption()
         // Show numeric value editor
         log_i("Showing numeric editor for: %s", item.actionParam.c_str());
 
-        if (dynamicConfigService_)
+        if (preferenceService_)
         {
             auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
-            auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+            auto sectionOpt = preferenceService_->GetConfigSection(sectionName);
             if (sectionOpt)
             {
                 auto itemPtr = sectionOpt->FindItem(itemKey);
@@ -336,10 +329,10 @@ void ConfigPanel::ExecuteCurrentOption()
         // Toggle boolean value directly or show selector
         log_i("Toggling boolean for: %s", item.actionParam.c_str());
 
-        if (dynamicConfigService_)
+        if (preferenceService_)
         {
             auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
-            auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+            auto sectionOpt = preferenceService_->GetConfigSection(sectionName);
             if (sectionOpt)
             {
                 auto itemPtr = sectionOpt->FindItem(itemKey);
@@ -445,10 +438,10 @@ void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
     if (preferenceService_) {
         // Since we can't do proper casting without RTTI and the interfaces are separate,
         // we'll disable dynamic config for now and use legacy mode
-        dynamicConfigService_ = nullptr;
+        preferenceService_ = nullptr;
         useDynamicConfig_ = false;
 
-        log_d("ConfigPanel using %s configuration system (dynamic mode disabled for Phase 3)",
+        log_i("ConfigPanel using %s configuration system (dynamic mode disabled for Phase 3)",
               useDynamicConfig_ ? "dynamic" : "legacy");
     }
 
@@ -470,7 +463,7 @@ void ConfigPanel::InitializeMenuItems()
 
     // For Phase 3, we'll use legacy menus but the infrastructure is ready
     // for future dynamic menu implementation
-    log_d("Using legacy configuration menus (dynamic UI infrastructure ready)");
+    log_i("Using legacy configuration menus (dynamic UI infrastructure ready)");
     UpdateMenuItemsWithCurrentValues();
 }
 
@@ -481,10 +474,30 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
     if (!preferenceService_)
         return;
 
-    const Configs &config = preferenceService_->GetConfig();
+    // Get individual preferences with defaults
+    std::string panelName = preferenceService_->GetPreference("system.panel_name");
+    if (panelName.empty()) panelName = "oil";
+
+    std::string theme = preferenceService_->GetPreference("system.theme");
+    if (theme.empty()) theme = "day";
+
+    std::string showSplashStr = preferenceService_->GetPreference("system.show_splash");
+    bool showSplash = showSplashStr == "true" || showSplashStr.empty(); // default true
+
+    std::string splashDurationStr = preferenceService_->GetPreference("system.splash_duration");
+    int splashDuration = splashDurationStr.empty() ? 1500 : std::stoi(splashDurationStr);
+
+    std::string updateRateStr = preferenceService_->GetPreference("system.update_rate");
+    int updateRate = updateRateStr.empty() ? 500 : std::stoi(updateRateStr);
+
+    std::string pressureUnit = preferenceService_->GetPreference("oil_pressure.unit");
+    if (pressureUnit.empty()) pressureUnit = "Bar";
+
+    std::string tempUnit = preferenceService_->GetPreference("oil_temperature.unit");
+    if (tempUnit.empty()) tempUnit = "C";
 
     // Format panel name for display (remove "Panel" suffix)
-    std::string panelDisplay = config.panelName;
+    std::string panelDisplay = panelName;
     if (panelDisplay.find("Panel") != std::string::npos)
     {
         panelDisplay = panelDisplay.substr(0, panelDisplay.find("Panel"));
@@ -494,12 +507,12 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
     static char panelItem[64], themeItem[64], splashItem[64], splashTimeItem[64], rateItem[64], pressureItem[64], tempItem[64];
 
     snprintf(panelItem, sizeof(panelItem), "Panel: %s", panelDisplay.c_str());
-    snprintf(themeItem, sizeof(themeItem), "Theme: %s", config.theme.c_str());
-    snprintf(splashItem, sizeof(splashItem), "Splash: %s", config.showSplash ? "On" : "Off");
-    snprintf(splashTimeItem, sizeof(splashTimeItem), "Splash T: %dms", config.splashDuration);
-    snprintf(rateItem, sizeof(rateItem), "Rate: %dms", config.updateRate);
-    snprintf(pressureItem, sizeof(pressureItem), "Press: %s", config.pressureUnit.c_str());
-    snprintf(tempItem, sizeof(tempItem), "Temp: %s", config.tempUnit.c_str());
+    snprintf(themeItem, sizeof(themeItem), "Theme: %s", theme.c_str());
+    snprintf(splashItem, sizeof(splashItem), "Splash: %s", showSplash ? "On" : "Off");
+    snprintf(splashTimeItem, sizeof(splashTimeItem), "Splash T: %dms", splashDuration);
+    snprintf(rateItem, sizeof(rateItem), "Rate: %dms", updateRate);
+    snprintf(pressureItem, sizeof(pressureItem), "Press: %s", pressureUnit.c_str());
+    snprintf(tempItem, sizeof(tempItem), "Temp: %s", tempUnit.c_str());
 
     menuItems_ = {
         {panelItem, "submenu", "PanelSubmenu"},
@@ -575,7 +588,40 @@ void ConfigPanel::UpdateSubmenuItems()
     if (!preferenceService_)
         return;
 
-    const Configs &config = preferenceService_->GetConfig();
+    // Get individual preferences with defaults
+    std::string panelName = preferenceService_->GetPreference("system.panel_name");
+    if (panelName.empty()) panelName = "oil";
+
+    std::string theme = preferenceService_->GetPreference("system.theme");
+    if (theme.empty()) theme = "day";
+
+    std::string showSplashStr = preferenceService_->GetPreference("system.show_splash");
+    bool showSplash = showSplashStr == "true" || showSplashStr.empty(); // default true
+
+    std::string splashDurationStr = preferenceService_->GetPreference("system.splash_duration");
+    int splashDuration = splashDurationStr.empty() ? 1500 : std::stoi(splashDurationStr);
+
+    std::string updateRateStr = preferenceService_->GetPreference("system.update_rate");
+    int updateRate = updateRateStr.empty() ? 500 : std::stoi(updateRateStr);
+
+    std::string pressureUnit = preferenceService_->GetPreference("oil_pressure.unit");
+    if (pressureUnit.empty()) pressureUnit = "Bar";
+
+    std::string tempUnit = preferenceService_->GetPreference("oil_temperature.unit");
+    if (tempUnit.empty()) tempUnit = "C";
+
+    std::string pressureOffsetStr = preferenceService_->GetPreference("oil_pressure.offset");
+    float pressureOffset = pressureOffsetStr.empty() ? 0.0f : std::stof(pressureOffsetStr);
+
+    std::string pressureScaleStr = preferenceService_->GetPreference("oil_pressure.scale");
+    float pressureScale = pressureScaleStr.empty() ? 1.0f : std::stof(pressureScaleStr);
+
+    std::string tempOffsetStr = preferenceService_->GetPreference("oil_temperature.offset");
+    float tempOffset = tempOffsetStr.empty() ? 0.0f : std::stof(tempOffsetStr);
+
+    std::string tempScaleStr = preferenceService_->GetPreference("oil_temperature.scale");
+    float tempScale = tempScaleStr.empty() ? 1.0f : std::stof(tempScaleStr);
+
     menuItems_.clear();
     std::string title = "Configuration";
 
@@ -665,7 +711,7 @@ void ConfigPanel::UpdateSubmenuItems()
         {
             title = "Pressure Offset";
             char offsetStr[16];
-            snprintf(offsetStr, sizeof(offsetStr), "%.2f", config.pressureOffset);
+            snprintf(offsetStr, sizeof(offsetStr), "%.2f", pressureOffset);
             menuItems_ = {{"Current: " + std::string(offsetStr), "display_only", ""},
                           {"-1.0", "calibration_set", "pressure_offset:-1.0"},
                           {"-0.1", "calibration_set", "pressure_offset:-0.1"},
@@ -680,7 +726,7 @@ void ConfigPanel::UpdateSubmenuItems()
         {
             title = "Pressure Scale";
             char scaleStr[16];
-            snprintf(scaleStr, sizeof(scaleStr), "%.3f", config.pressureScale);
+            snprintf(scaleStr, sizeof(scaleStr), "%.3f", pressureScale);
             menuItems_ = {{"Current: " + std::string(scaleStr), "display_only", ""},
                           {"0.900", "calibration_set", "pressure_scale:0.900"},
                           {"0.950", "calibration_set", "pressure_scale:0.950"},
@@ -695,7 +741,7 @@ void ConfigPanel::UpdateSubmenuItems()
         {
             title = "Temperature Offset";
             char offsetStr[16];
-            snprintf(offsetStr, sizeof(offsetStr), "%.1f", config.tempOffset);
+            snprintf(offsetStr, sizeof(offsetStr), "%.1f", tempOffset);
             menuItems_ = {{"Current: " + std::string(offsetStr), "display_only", ""},
                           {"-5.0", "calibration_set", "temp_offset:-5.0"},
                           {"-1.0", "calibration_set", "temp_offset:-1.0"},
@@ -710,7 +756,7 @@ void ConfigPanel::UpdateSubmenuItems()
         {
             title = "Temperature Scale";
             char scaleStr[16];
-            snprintf(scaleStr, sizeof(scaleStr), "%.3f", config.tempScale);
+            snprintf(scaleStr, sizeof(scaleStr), "%.3f", tempScale);
             menuItems_ = {{"Current: " + std::string(scaleStr), "display_only", ""},
                           {"0.900", "calibration_set", "temp_scale:0.900"},
                           {"0.950", "calibration_set", "temp_scale:0.950"},
@@ -849,10 +895,7 @@ void ConfigPanel::HandleLongPress()
                 log_i("Setting panel preference: %s", item.actionParam.c_str());
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.panelName = item.actionParam;
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("system.panel_name", item.actionParam);
                 }
                 ExitSubmenu();
             }
@@ -863,10 +906,7 @@ void ConfigPanel::HandleLongPress()
                 log_t("ConfigPanel: Applying night theme setting");
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.theme = item.actionParam;
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("system.theme", item.actionParam);
                 }
                 ExitSubmenu();
                 log_t("ConfigPanel: Returned to main config menu");
@@ -877,10 +917,7 @@ void ConfigPanel::HandleLongPress()
                 log_i("Setting update rate: %s", item.actionParam.c_str());
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.updateRate = std::stoi(item.actionParam);
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("system.update_rate", item.actionParam);
                 }
                 ExitSubmenu();
             }
@@ -890,10 +927,7 @@ void ConfigPanel::HandleLongPress()
                 log_i("Setting splash preference: %s", item.actionParam.c_str());
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.showSplash = (item.actionParam == "true");
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("system.show_splash", item.actionParam);
                 }
                 ExitSubmenu();
             }
@@ -903,10 +937,7 @@ void ConfigPanel::HandleLongPress()
                 log_i("Setting splash duration: %s", item.actionParam.c_str());
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.splashDuration = std::stoi(item.actionParam);
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("system.splash_duration", item.actionParam);
                 }
                 ExitSubmenu();
             }
@@ -916,10 +947,7 @@ void ConfigPanel::HandleLongPress()
                 log_i("Setting pressure unit: %s", item.actionParam.c_str());
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.pressureUnit = item.actionParam;
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("oil_pressure.unit", item.actionParam);
                 }
                 ExitSubmenu();
             }
@@ -929,10 +957,7 @@ void ConfigPanel::HandleLongPress()
                 log_i("Setting temperature unit: %s", item.actionParam.c_str());
                 if (preferenceService_)
                 {
-                    Configs cfg = preferenceService_->GetConfig();
-                    cfg.tempUnit = item.actionParam;
-                    preferenceService_->SetConfig(cfg);
-                    preferenceService_->SaveConfig();
+                    preferenceService_->SetPreference("oil_temperature.unit", item.actionParam);
                 }
                 ExitSubmenu();
             }
@@ -968,28 +993,29 @@ void ConfigPanel::UpdateCalibration(const std::string& key, float value)
     
     if (!preferenceService_)
         return;
-    
-    Configs cfg = preferenceService_->GetConfig();
-    
+
+    std::string prefKey;
     if (key == "pressure_offset")
     {
-        cfg.pressureOffset = value;
+        prefKey = "oil_pressure.offset";
     }
     else if (key == "pressure_scale")
     {
-        cfg.pressureScale = value;
+        prefKey = "oil_pressure.scale";
     }
     else if (key == "temp_offset")
     {
-        cfg.tempOffset = value;
+        prefKey = "oil_temperature.offset";
     }
     else if (key == "temp_scale")
     {
-        cfg.tempScale = value;
+        prefKey = "oil_temperature.scale";
     }
 
-    preferenceService_->SetConfig(cfg);
-    preferenceService_->SaveConfig();
+    if (!prefKey.empty())
+    {
+        preferenceService_->SetPreference(prefKey, std::to_string(value));
+    }
 
     // Refresh the submenu to show updated values
     UpdateSubmenuItems();
@@ -1001,7 +1027,7 @@ void ConfigPanel::BuildDynamicMenus()
 {
     log_v("BuildDynamicMenus() called");
 
-    if (!dynamicConfigService_)
+    if (!preferenceService_)
     {
         log_w("Cannot build dynamic menus - dynamic config service not available");
         UpdateMenuItemsWithCurrentValues(); // Fallback to legacy
@@ -1009,7 +1035,7 @@ void ConfigPanel::BuildDynamicMenus()
     }
 
     // Get all registered sections
-    auto sectionNames = dynamicConfigService_->GetRegisteredSectionNames();
+    auto sectionNames = preferenceService_->GetRegisteredSectionNames();
 
     // Build main menu dynamically
     menuItems_.clear();
@@ -1018,7 +1044,7 @@ void ConfigPanel::BuildDynamicMenus()
     // For now, we'll use the section names as-is
     for (const auto& sectionName : sectionNames)
     {
-        auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+        auto sectionOpt = preferenceService_->GetConfigSection(sectionName);
         if (sectionOpt)
         {
             ConfigComponent::MenuItem item;
@@ -1040,17 +1066,17 @@ void ConfigPanel::BuildDynamicMenus()
         configComponent_.SetCurrentIndex(currentMenuIndex_);
     }
 
-    log_d("Built dynamic menu with %zu sections", sectionNames.size());
+    log_i("Built dynamic menu with %zu sections", sectionNames.size());
 }
 
 void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
 {
     log_v("BuildSectionMenu() called for section: %s", sectionName.c_str());
 
-    if (!dynamicConfigService_)
+    if (!preferenceService_)
         return;
 
-    auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+    auto sectionOpt = preferenceService_->GetConfigSection(sectionName);
     if (!sectionOpt)
     {
         log_w("Section not found: %s", sectionName.c_str());
@@ -1121,7 +1147,7 @@ void ConfigPanel::ShowEnumSelector(const std::string& fullKey, const Config::Con
 {
     log_v("ShowEnumSelector() called for %s", fullKey.c_str());
 
-    if (!dynamicConfigService_)
+    if (!preferenceService_)
         return;
 
     // Parse options from metadata
@@ -1165,7 +1191,7 @@ void ConfigPanel::ShowNumericEditor(const std::string& fullKey, const Config::Co
 {
     log_v("ShowNumericEditor() called for %s", fullKey.c_str());
 
-    if (!dynamicConfigService_)
+    if (!preferenceService_)
         return;
 
     // Parse options from metadata (could be range or discrete values)
@@ -1212,7 +1238,7 @@ void ConfigPanel::ShowBooleanToggle(const std::string& fullKey, const Config::Co
 {
     log_v("ShowBooleanToggle() called for %s", fullKey.c_str());
 
-    if (!dynamicConfigService_)
+    if (!preferenceService_)
         return;
 
     // Get current boolean value

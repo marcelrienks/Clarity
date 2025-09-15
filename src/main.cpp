@@ -73,8 +73,9 @@ bool initializeServices()
     }
     
     // Initialize StyleManager with user's theme preference
-    const char *userTheme = preferenceManager->GetConfig().theme.c_str();
-    styleManager = managerFactory->CreateStyleManager(userTheme);
+    std::string userTheme = preferenceManager->GetPreference("system.theme");
+    if (userTheme.empty()) userTheme = "day";
+    styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
         ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
@@ -127,8 +128,9 @@ void setup()
     styleManager->InitializeStyles();
     Ticker::handleLvTasks();
 
-    auto config = preferenceManager->GetConfig();
-    panelManager->CreateAndLoadPanel(config.panelName.c_str());
+    std::string panelName = preferenceManager->GetPreference("system.panel_name");
+    if (panelName.empty()) panelName = "oil";
+    panelManager->CreateAndLoadPanel(panelName.c_str());
     Ticker::handleLvTasks();
     
     log_i("Clarity application started successfully");

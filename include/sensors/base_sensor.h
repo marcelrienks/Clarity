@@ -114,7 +114,6 @@ public:
      * Default implementation does nothing - sensors should override for specific behavior
      */
     virtual void OnInterruptTriggered() {
-        log_d("BaseSensor interrupt triggered for sensor - no specific action defined");
     }
 
 protected:

@@ -113,39 +113,6 @@ struct ComponentLocation
     }
 };
 
-//=============================================================================
-// CONFIGURATION DATA
-// User-modifiable settings and application preferences
-//=============================================================================
-
-/// @struct Configs
-/// @brief Application configuration settings
-///
-/// @details Holds all persistent configuration values managed by
-/// PreferenceManager. Automatically serialized to/from JSON in NVS.
-///
-/// @default_values All fields have sensible defaults for first-run
-struct Configs
-{
-    // General settings
-    std::string panelName = PanelNames::OIL; ///< Default panel on startup
-    bool showSplash = true;                  ///< Show splash screen on startup
-    int splashDuration = 1500;               ///< Splash screen duration in milliseconds
-
-    // Display settings
-    std::string theme = Themes::DAY; ///< Theme preference (Day/Night)
-
-    // Sensor settings
-    int updateRate = 500;             ///< Sensor update rate in milliseconds
-    std::string pressureUnit = "Bar"; ///< Pressure unit (PSI, Bar, kPa)
-    std::string tempUnit = "C";       ///< Temperature unit (C, F)
-    
-    // Sensor calibration settings
-    float pressureOffset = 0.0f;      ///< Pressure sensor offset correction
-    float pressureScale = 1.0f;       ///< Pressure sensor scaling factor
-    float tempOffset = 0.0f;          ///< Temperature sensor offset correction
-    float tempScale = 1.0f;           ///< Temperature sensor scaling factor
-};
 
 //=============================================================================
 // RUNTIME STATE STRUCTURES

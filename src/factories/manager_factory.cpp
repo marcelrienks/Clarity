@@ -3,7 +3,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "managers/dynamic_preference_manager.h"
+#include "managers/preference_manager.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "sensors/button_sensor.h"
@@ -138,17 +138,16 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
 std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManagerImpl()
 {
-    // Create DynamicPreferenceManager for modern configuration capabilities
-    auto manager = std::make_unique<DynamicPreferenceManager>();
+    // Create PreferenceManager for modern configuration capabilities
+    auto manager = std::make_unique<PreferenceManager>();
     if (!manager)
     {
-        log_e("ManagerFactory: Failed to create DynamicPreferenceManager - allocation failed");
+        log_e("ManagerFactory: Failed to create PreferenceManager - allocation failed");
         ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "DynamicPreferenceManager allocation failed - out of memory");
+                                                     "PreferenceManager allocation failed - out of memory");
         return nullptr;
     }
 
-    manager->Init();
     return manager;
 }
 

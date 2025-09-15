@@ -54,7 +54,9 @@
       "Bash(git commit:*)",
       "Bash(git rm:*)",
       "Bash(git restore:*)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(xtensa-esp32-elf-g++:*)",
+      "Bash(gcc:*)"
     ],
     "deny": [],
     "ask": []

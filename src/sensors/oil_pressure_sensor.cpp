@@ -46,10 +46,10 @@ void OilPressureSensor::Init()
         // Check if we should register our configuration
         std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
         if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
-            // Access dynamic config capabilities - DynamicPreferenceManager implements both interfaces
-            dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
+            // Use unified preference service interface for dynamic configuration
             RegisterConfiguration();
-            log_d("OilPressureSensor registered with dynamic config system");
+            RegisterLiveUpdateCallbacks();
+            log_i("OilPressureSensor registered with dynamic config system");
         }
     }
 
@@ -137,14 +137,9 @@ int32_t OilPressureSensor::ReadRawValue()
 /// @brief Convert raw ADC value to requested pressure unit
 int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 {
-    
-    // Apply calibration if preference service is available
+    // Apply calibration
     float calibratedValue = static_cast<float>(rawValue);
-    if (preferenceService_)
-    {
-        const Configs& config = preferenceService_->GetConfig();
-        calibratedValue = (calibratedValue * config.pressureScale) + config.pressureOffset;
-    }
+    calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
     
     // Convert calibrated ADC value to requested pressure unit
     // Base calibration: 0-4095 ADC = 0-10 Bar
@@ -181,21 +176,39 @@ void OilPressureSensor::LoadConfiguration()
 {
     if (!preferenceService_) return;
 
-    // Load from legacy config
-    const Configs& config = preferenceService_->GetConfig();
-    targetUnit_ = config.pressureUnit;
-    updateIntervalMs_ = config.updateRate;
-    calibrationOffset_ = config.pressureOffset;
-    calibrationScale_ = config.pressureScale;
+    // Load from dynamic config system
+    targetUnit_ = preferenceService_->GetPreference("oil_pressure.unit");
+    if (targetUnit_.empty()) targetUnit_ = "Bar";
 
-    log_d("Loaded oil pressure sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
+    std::string updateRateStr = preferenceService_->GetPreference("oil_pressure.update_rate");
+    if (!updateRateStr.empty()) {
+        updateIntervalMs_ = std::stoi(updateRateStr);
+    } else {
+        updateIntervalMs_ = 500;
+    }
+
+    std::string offsetStr = preferenceService_->GetPreference("oil_pressure.offset");
+    if (!offsetStr.empty()) {
+        calibrationOffset_ = std::stof(offsetStr);
+    } else {
+        calibrationOffset_ = 0.0f;
+    }
+
+    std::string scaleStr = preferenceService_->GetPreference("oil_pressure.scale");
+    if (!scaleStr.empty()) {
+        calibrationScale_ = std::stof(scaleStr);
+    } else {
+        calibrationScale_ = 1.0f;
+    }
+
+    log_i("Loaded oil pressure sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
           targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
 }
 
 /// @brief Register configuration with dynamic config system
 void OilPressureSensor::RegisterConfiguration()
 {
-    if (!dynamicConfigService_) return;
+    if (!preferenceService_) return;
 
     using namespace Config;
 
@@ -218,6 +231,51 @@ void OilPressureSensor::RegisterConfiguration()
     section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
         1.0f, ConfigMetadata("0.9,1.1")));
 
-    dynamicConfigService_->RegisterConfigSection(section);
-    log_d("Registered oil pressure sensor configuration");
+    preferenceService_->RegisterConfigSection(section);
+    log_i("Registered oil pressure sensor configuration");
+}
+
+void OilPressureSensor::RegisterLiveUpdateCallbacks() {
+    if (!preferenceService_) return;
+
+    // Register callback for our section changes
+    auto callback = [this](const std::string& fullKey,
+                          const std::optional<Config::ConfigValue>& oldValue,
+                          const Config::ConfigValue& newValue) {
+
+        // Handle unit change
+        if (fullKey == "oil_pressure.unit") {
+            if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
+                SetTargetUnit(*newUnit);
+                log_i("Oil pressure unit changed to: %s", newUnit->c_str());
+            }
+        }
+
+        // Handle update rate change
+        else if (fullKey == "oil_pressure.update_rate") {
+            if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
+                SetUpdateRate(*newRate);
+                log_i("Oil pressure update rate changed to: %d ms", *newRate);
+            }
+        }
+
+        // Handle calibration offset change
+        else if (fullKey == "oil_pressure.offset") {
+            if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+                calibrationOffset_ = *newOffset;
+                log_i("Oil pressure calibration offset changed to: %.2f", *newOffset);
+            }
+        }
+
+        // Handle calibration scale change
+        else if (fullKey == "oil_pressure.scale") {
+            if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+                calibrationScale_ = *newScale;
+                log_i("Oil pressure calibration scale changed to: %.2f", *newScale);
+            }
+        }
+    };
+
+    // Register for all oil_pressure section changes
+    configCallbackId_ = preferenceService_->RegisterChangeCallback("oil_pressure", callback);
 }

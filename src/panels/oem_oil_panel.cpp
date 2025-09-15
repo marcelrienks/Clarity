@@ -498,37 +498,45 @@ void OemOilPanel::ApplyCurrentSensorSettings()
     // Apply updateRate and units from preferences to sensors if preference service is available
     if (preferenceService_ && cachedPressureSensor_ && cachedTemperatureSensor_)
     {
-        auto config = preferenceService_->GetConfig();
+        // Get individual preferences with defaults
+        std::string updateRateStr = preferenceService_->GetPreference("system.update_rate");
+        int updateRate = updateRateStr.empty() ? 500 : std::stoi(updateRateStr);
+
+        std::string pressureUnit = preferenceService_->GetPreference("oil_pressure.unit");
+        if (pressureUnit.empty()) pressureUnit = "Bar";
+
+        std::string tempUnit = preferenceService_->GetPreference("oil_temperature.unit");
+        if (tempUnit.empty()) tempUnit = "C";
 
         // Only update settings if they have changed
-        bool updateRateChanged = (lastUpdateRate_ != config.updateRate);
-        bool pressureUnitChanged = !lastPressureUnit_.equals(config.pressureUnit.c_str());
-        bool tempUnitChanged = !lastTempUnit_.equals(config.tempUnit.c_str());
+        bool updateRateChanged = (lastUpdateRate_ != updateRate);
+        bool pressureUnitChanged = !lastPressureUnit_.equals(pressureUnit.c_str());
+        bool tempUnitChanged = !lastTempUnit_.equals(tempUnit.c_str());
 
         if (updateRateChanged)
         {
-            cachedPressureSensor_->SetUpdateRate(config.updateRate);
-            cachedTemperatureSensor_->SetUpdateRate(config.updateRate);
-            lastUpdateRate_ = config.updateRate;
+            cachedPressureSensor_->SetUpdateRate(updateRate);
+            cachedTemperatureSensor_->SetUpdateRate(updateRate);
+            lastUpdateRate_ = updateRate;
         }
 
         if (pressureUnitChanged)
         {
-            cachedPressureSensor_->SetTargetUnit(config.pressureUnit);
-            lastPressureUnit_ = String(config.pressureUnit.c_str());
+            cachedPressureSensor_->SetTargetUnit(pressureUnit);
+            lastPressureUnit_ = String(pressureUnit.c_str());
         }
 
         if (tempUnitChanged)
         {
-            cachedTemperatureSensor_->SetTargetUnit(config.tempUnit);
-            lastTempUnit_ = String(config.tempUnit.c_str());
+            cachedTemperatureSensor_->SetTargetUnit(tempUnit);
+            lastTempUnit_ = String(tempUnit.c_str());
         }
 
         // Only log if something actually changed
         if (updateRateChanged || pressureUnitChanged || tempUnitChanged)
         {
             log_t("Sensor settings updated - Rate: %dms, Pressure: %s, Temp: %s",
-                  config.updateRate, config.pressureUnit, config.tempUnit);
+                  updateRate, pressureUnit.c_str(), tempUnit.c_str());
         }
     }
     else if (!preferenceService_)
@@ -673,8 +681,9 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
         return result;
     }
 
-    const Configs &config = preferenceService_->GetConfig();
-    int32_t mappedValue = MapPressureByUnit(sensorValue, config.pressureUnit);
+    std::string pressureUnit = preferenceService_->GetPreference("oil_pressure.unit");
+    if (pressureUnit.empty()) pressureUnit = "Bar";
+    int32_t mappedValue = MapPressureByUnit(sensorValue, pressureUnit);
     
     log_v("MapPressureValue() returning: %d", mappedValue);
     return mappedValue;
@@ -736,8 +745,9 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 
     if (preferenceService_)
     {
-        const Configs &config = preferenceService_->GetConfig();
-        if (config.tempUnit == "F")
+        std::string tempUnit = preferenceService_->GetPreference("oil_temperature.unit");
+        if (tempUnit.empty()) tempUnit = "C";
+        if (tempUnit == "F")
         {
             // Sensor returns 32-248°F, map to 0-120 display scale
             // Clamp to valid range (32-248°F equivalent to 0-120°C)

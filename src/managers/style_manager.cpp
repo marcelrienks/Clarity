@@ -183,15 +183,16 @@ void StyleManager::ApplyCurrentTheme()
     }
 
     // Read theme directly from preferences
-    const auto& config = preferenceService_->GetConfig();
-    log_v("Read theme from preferences: %s (cached: %s)", config.theme.c_str(), theme_.c_str());
+    std::string preferenceTheme = preferenceService_->GetPreference("system.theme");
+    if (preferenceTheme.empty()) preferenceTheme = "day";
+    log_v("Read theme from preferences: %s (cached: %s)", preferenceTheme.c_str(), theme_.c_str());
 
     // Apply the theme if it's different from cached value
-    if (theme_ != config.theme) {
-        log_t("StyleManager: Theme changed from %s to %s - applying new theme", theme_.c_str(), config.theme.c_str());
-        SetTheme(config.theme.c_str());
+    if (theme_ != preferenceTheme) {
+        log_t("StyleManager: Theme changed from %s to %s - applying new theme", theme_.c_str(), preferenceTheme.c_str());
+        SetTheme(preferenceTheme.c_str());
     } else {
-        log_v("Theme unchanged (%s) - no update needed", config.theme.c_str());
+        log_v("Theme unchanged (%s) - no update needed", preferenceTheme.c_str());
     }
 }
 
@@ -223,8 +224,10 @@ const std::string& StyleManager::GetCurrentTheme() const
 {
     // Always pull theme directly from preferences to ensure consistency
     if (preferenceService_) {
-        const auto& config = preferenceService_->GetConfig();
-        return config.theme;
+        static std::string currentTheme;
+        currentTheme = preferenceService_->GetPreference("system.theme");
+        if (currentTheme.empty()) currentTheme = "day";
+        return currentTheme;
     }
 
     // Fallback to cached value if preference service not available
@@ -282,9 +285,10 @@ void StyleManager::LoadConfiguration()
 {
     if (!preferenceService_) return;
 
-    // Load from legacy config
-    const Configs& config = preferenceService_->GetConfig();
-    SetTheme(config.theme.c_str());
+    // Load from dynamic config system
+    std::string themePreference = preferenceService_->GetPreference("system.theme");
+    if (themePreference.empty()) themePreference = "day";
+    SetTheme(themePreference.c_str());
 
-    log_d("Loaded style configuration: theme=%s", theme_.c_str());
+    log_i("Loaded style configuration: theme=%s", theme_.c_str());
 }

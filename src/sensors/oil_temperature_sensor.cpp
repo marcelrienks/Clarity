@@ -43,14 +43,16 @@ void OilTemperatureSensor::Init()
     if (preferenceService_) {
         LoadConfiguration();
 
-        // Check if dynamic config is enabled
+        // Check if dynamic config is enabled (system-wide setting)
         std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
         if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
-            // Access dynamic config capabilities - DynamicPreferenceManager implements both interfaces
-            dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
+            // Register this sensor's configuration section with the preference service
+            // This enables self-registration per docs/plans/dynamic-config-implementation.md
             RegisterConfiguration();
+
+            // Set up live callbacks to respond to configuration changes
             RegisterLiveUpdateCallbacks();
-            log_d("OilTemperatureSensor registered with dynamic config system");
+            log_i("OilTemperatureSensor registered with dynamic config system");
         }
     }
 
@@ -138,7 +140,6 @@ int32_t OilTemperatureSensor::ReadRawValue()
 /// @brief Convert raw ADC value to requested temperature unit
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
-
     // Apply calibration
     float calibratedValue = static_cast<float>(rawValue);
     calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
@@ -178,57 +179,85 @@ void OilTemperatureSensor::LoadConfiguration()
 {
     if (!preferenceService_) return;
 
-    // Load from legacy config
-    const Configs& config = preferenceService_->GetConfig();
-    targetUnit_ = config.tempUnit;
-    updateIntervalMs_ = config.updateRate;
-    calibrationOffset_ = config.tempOffset;
-    calibrationScale_ = config.tempScale;
+    // Load from dynamic config system
+    targetUnit_ = preferenceService_->GetPreference("oil_temperature.unit");
+    if (targetUnit_.empty()) targetUnit_ = "C";
 
-    log_d("Loaded oil temperature sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
+    std::string updateRateStr = preferenceService_->GetPreference("oil_temperature.update_rate");
+    if (!updateRateStr.empty()) {
+        updateIntervalMs_ = std::stoi(updateRateStr);
+    } else {
+        updateIntervalMs_ = 500;
+    }
+
+    std::string offsetStr = preferenceService_->GetPreference("oil_temperature.offset");
+    if (!offsetStr.empty()) {
+        calibrationOffset_ = std::stof(offsetStr);
+    } else {
+        calibrationOffset_ = 0.0f;
+    }
+
+    std::string scaleStr = preferenceService_->GetPreference("oil_temperature.scale");
+    if (!scaleStr.empty()) {
+        calibrationScale_ = std::stof(scaleStr);
+    } else {
+        calibrationScale_ = 1.0f;
+    }
+
+    log_i("Loaded oil temperature sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
           targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
 }
 
 /// @brief Register configuration with dynamic config system
+/// @details Implements component self-registration pattern from dynamic-config-implementation.md
+/// This allows the sensor to define its own configuration requirements including:
+/// - Temperature unit selection (C/F)
+/// - Update rate options
+/// - Calibration parameters with validation ranges
 void OilTemperatureSensor::RegisterConfiguration()
 {
-    if (!dynamicConfigService_) return;
+    if (!preferenceService_) return;
 
     using namespace Config;
 
+    // Create configuration section for this sensor component
     ConfigSection section("OilTemperatureSensor", "oil_temperature", "Oil Temperature Sensor");
-    section.displayOrder = 3;
+    section.displayOrder = 3; // Controls UI ordering in config menus
 
-    // Temperature unit selection
+    // Temperature unit selection - enum with C/F options
     section.AddItem(ConfigItem("unit", "Temperature Unit", ConfigValueType::Enum,
         std::string("C"), ConfigMetadata("C,F")));
 
-    // Update rate
+    // Update rate - predefined options for sensor reading frequency
     section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
         500, ConfigMetadata("250,500,1000,2000")));
 
-    // Calibration offset
+    // Calibration offset - float with range validation (-5.0 to +5.0)
     section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
         0.0f, ConfigMetadata("-5.0,5.0")));
 
-    // Calibration scale
+    // Calibration scale - float with range validation (0.9 to 1.1)
     section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
         1.0f, ConfigMetadata("0.9,1.1")));
 
-    dynamicConfigService_->RegisterConfigSection(section);
-    log_d("Registered oil temperature sensor configuration");
+    // Register with preference service for persistence and UI generation
+    preferenceService_->RegisterConfigSection(section);
+    log_i("Registered oil temperature sensor configuration");
 }
 
+/// @brief Register callbacks for live configuration updates
+/// @details Sets up real-time response to configuration changes without requiring restart
+/// Implements live update system from dynamic-config-implementation.md Phase 4
 void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
-    if (!dynamicConfigService_) return;
+    if (!preferenceService_) return;
 
-    // Register callback for our section changes
+    // Register callback to watch for changes to oil_temperature section
+    // Lambda captures 'this' to allow access to sensor methods
     auto callback = [this](const std::string& fullKey,
                           const std::optional<Config::ConfigValue>& oldValue,
                           const Config::ConfigValue& newValue) {
-        log_d("OilTemperatureSensor: Config change detected for %s", fullKey.c_str());
 
-        // Handle unit change
+        // Handle temperature unit change (C/F) - immediate effect on readings
         if (fullKey == "oil_temperature.unit") {
             if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
                 SetTargetUnit(*newUnit);
@@ -236,7 +265,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
             }
         }
 
-        // Handle update rate change
+        // Handle update rate change - controls sensor reading frequency
         else if (fullKey == "oil_temperature.update_rate") {
             if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
                 SetUpdateRate(*newRate);
@@ -262,6 +291,5 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
     };
 
     // Register for all oil_temperature section changes
-    configCallbackId_ = dynamicConfigService_->RegisterChangeCallback("oil_temperature", callback);
-    log_d("Registered live update callback with ID: %u", configCallbackId_);
+    configCallbackId_ = preferenceService_->RegisterChangeCallback("oil_temperature", callback);
 }

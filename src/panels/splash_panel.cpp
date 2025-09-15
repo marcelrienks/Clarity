@@ -170,7 +170,12 @@ void SplashPanel::SetPreferenceService(IPreferenceService *preferenceService)
 int SplashPanel::GetAnimationTime() const
 {
     log_v("GetAnimationTime() called");
-    int animTime = (preferenceService_->GetConfig().splashDuration - _DISPLAY_TIME) / 2;
+
+    // Get splash duration preference with default
+    std::string splashDurationStr = preferenceService_ ? preferenceService_->GetPreference("system.splash_duration") : "";
+    int splashDuration = splashDurationStr.empty() ? 1500 : std::stoi(splashDurationStr);
+
+    int animTime = (splashDuration - _DISPLAY_TIME) / 2;
 
     return animTime;
 }
