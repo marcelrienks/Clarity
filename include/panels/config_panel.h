@@ -7,7 +7,9 @@
 #include "interfaces/i_panel.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
+#include "interfaces/i_dynamic_config_service.h"
 #include "interfaces/i_style_service.h"
+#include "config/config_types.h"
 #include "utilities/types.h"
 
 #include <memory>
@@ -98,6 +100,16 @@ class ConfigPanel : public IPanel
     void UpdateSubmenuItems();
     void UpdateCalibration(const std::string& key, float value);
 
+    // Dynamic configuration methods
+    void BuildDynamicMenus();
+    void BuildSectionMenu(const std::string& sectionName);
+    std::string FormatItemLabel(const Config::ConfigItem& item) const;
+    void ShowEnumSelector(const std::string& fullKey, const Config::ConfigItem& item);
+    void ShowNumericEditor(const std::string& fullKey, const Config::ConfigItem& item);
+    void ShowBooleanToggle(const std::string& fullKey, const Config::ConfigItem& item);
+    std::vector<std::string> ParseOptions(const std::string& constraints) const;
+    std::pair<std::string, std::string> ParseConfigKey(const std::string& fullKey) const;
+
     // Static callback
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
@@ -107,6 +119,8 @@ class ConfigPanel : public IPanel
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
+    IDynamicConfigService *dynamicConfigService_ = nullptr;
+    bool useDynamicConfig_ = false;
     // screen_ is inherited from IPanel base class
 
     // Component (View) - static allocation

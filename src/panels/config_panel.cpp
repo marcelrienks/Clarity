@@ -6,6 +6,8 @@
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
+#include <sstream>
+#include <cctype>
 
 // Constructors and Destructors
 ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
@@ -250,11 +252,14 @@ void ConfigPanel::ExecuteCurrentOption()
             std::string key = item.actionParam.substr(0, colonPos);
             std::string value = item.actionParam.substr(colonPos + 1);
             log_i("Setting config %s to %s", key.c_str(), value.c_str());
-            
+
+            // For Phase 3, we'll handle configuration through legacy system
+            // The dynamic UI will still work but will use the existing config structure
             if (preferenceService_)
             {
+                // Legacy config handling
                 auto config = preferenceService_->GetConfig();
-                
+
                 // Apply the specific setting
                 if (key == "panelName") config.panelName = value;
                 else if (key == "updateRate") config.updateRate = std::stoi(value);
@@ -270,15 +275,85 @@ void ConfigPanel::ExecuteCurrentOption()
                     log_w("Unknown config key: %s", key.c_str());
                     return;
                 }
-                
+
                 preferenceService_->SetConfig(config);
                 preferenceService_->SaveConfig();
                 log_i("Config saved to preferences");
-                
+
                 // Return to main menu after setting
                 ExitSubmenu();
             }
         }
+    }
+    // ========== Dynamic Configuration Actions ==========
+    else if (item.actionType == "enter_section")
+    {
+        // Enter a configuration section
+        log_i("Entering configuration section: %s", item.actionParam.c_str());
+        currentMenuState_ = MenuState::MainMenu; // Use MainMenu as generic submenu state
+        BuildSectionMenu(item.actionParam);
+    }
+    else if (item.actionType == "show_enum_selector")
+    {
+        // Show enum value selector
+        log_i("Showing enum selector for: %s", item.actionParam.c_str());
+
+        if (dynamicConfigService_)
+        {
+            auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
+            auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+            if (sectionOpt)
+            {
+                auto itemPtr = sectionOpt->FindItem(itemKey);
+                if (itemPtr)
+                {
+                    ShowEnumSelector(item.actionParam, *itemPtr);
+                }
+            }
+        }
+    }
+    else if (item.actionType == "show_numeric_editor")
+    {
+        // Show numeric value editor
+        log_i("Showing numeric editor for: %s", item.actionParam.c_str());
+
+        if (dynamicConfigService_)
+        {
+            auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
+            auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+            if (sectionOpt)
+            {
+                auto itemPtr = sectionOpt->FindItem(itemKey);
+                if (itemPtr)
+                {
+                    ShowNumericEditor(item.actionParam, *itemPtr);
+                }
+            }
+        }
+    }
+    else if (item.actionType == "toggle_boolean")
+    {
+        // Toggle boolean value directly or show selector
+        log_i("Toggling boolean for: %s", item.actionParam.c_str());
+
+        if (dynamicConfigService_)
+        {
+            auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
+            auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+            if (sectionOpt)
+            {
+                auto itemPtr = sectionOpt->FindItem(itemKey);
+                if (itemPtr)
+                {
+                    ShowBooleanToggle(item.actionParam, *itemPtr);
+                }
+            }
+        }
+    }
+    else if (item.actionType == "show_string_editor")
+    {
+        // String editing not implemented yet - show placeholder
+        log_i("String editor not yet implemented for: %s", item.actionParam.c_str());
     }
     else
     {
@@ -365,6 +440,18 @@ void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
     log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
+
+    // Check if this is a dynamic config service
+    if (preferenceService_) {
+        // Since we can't do proper casting without RTTI and the interfaces are separate,
+        // we'll disable dynamic config for now and use legacy mode
+        dynamicConfigService_ = nullptr;
+        useDynamicConfig_ = false;
+
+        log_d("ConfigPanel using %s configuration system (dynamic mode disabled for Phase 3)",
+              useDynamicConfig_ ? "dynamic" : "legacy");
+    }
+
     // Initialize menu items now that we have access to preferences
     InitializeMenuItems();
 }
@@ -381,6 +468,9 @@ void ConfigPanel::InitializeMenuItems()
         return;
     }
 
+    // For Phase 3, we'll use legacy menus but the infrastructure is ready
+    // for future dynamic menu implementation
+    log_d("Using legacy configuration menus (dynamic UI infrastructure ready)");
     UpdateMenuItemsWithCurrentValues();
 }
 
@@ -897,10 +987,295 @@ void ConfigPanel::UpdateCalibration(const std::string& key, float value)
     {
         cfg.tempScale = value;
     }
-    
+
     preferenceService_->SetConfig(cfg);
     preferenceService_->SaveConfig();
-    
+
     // Refresh the submenu to show updated values
     UpdateSubmenuItems();
+}
+
+// ========== Dynamic Configuration Methods ==========
+
+void ConfigPanel::BuildDynamicMenus()
+{
+    log_v("BuildDynamicMenus() called");
+
+    if (!dynamicConfigService_)
+    {
+        log_w("Cannot build dynamic menus - dynamic config service not available");
+        UpdateMenuItemsWithCurrentValues(); // Fallback to legacy
+        return;
+    }
+
+    // Get all registered sections
+    auto sectionNames = dynamicConfigService_->GetRegisteredSectionNames();
+
+    // Build main menu dynamically
+    menuItems_.clear();
+
+    // Sort sections by display order if we had that information
+    // For now, we'll use the section names as-is
+    for (const auto& sectionName : sectionNames)
+    {
+        auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+        if (sectionOpt)
+        {
+            ConfigComponent::MenuItem item;
+            item.label = sectionOpt->displayName;
+            item.actionType = "enter_section";
+            item.actionParam = sectionName;
+            menuItems_.push_back(item);
+        }
+    }
+
+    // Add Exit option
+    menuItems_.push_back({"Exit", "panel_exit", ""});
+
+    // Update component with new menu items
+    if (componentInitialized_)
+    {
+        configComponent_.SetTitle("Configuration");
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(currentMenuIndex_);
+    }
+
+    log_d("Built dynamic menu with %zu sections", sectionNames.size());
+}
+
+void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
+{
+    log_v("BuildSectionMenu() called for section: %s", sectionName.c_str());
+
+    if (!dynamicConfigService_)
+        return;
+
+    auto sectionOpt = dynamicConfigService_->GetConfigSection(sectionName);
+    if (!sectionOpt)
+    {
+        log_w("Section not found: %s", sectionName.c_str());
+        return;
+    }
+
+    const auto& section = *sectionOpt;
+
+    // Build section-specific menu
+    menuItems_.clear();
+
+    for (const auto& item : section.items)
+    {
+        ConfigComponent::MenuItem menuItem;
+        menuItem.label = FormatItemLabel(item);
+
+        // Determine action type based on config item type
+        switch (item.type)
+        {
+            case Config::ConfigValueType::Enum:
+                menuItem.actionType = "show_enum_selector";
+                break;
+            case Config::ConfigValueType::Boolean:
+                menuItem.actionType = "toggle_boolean";
+                break;
+            case Config::ConfigValueType::Integer:
+            case Config::ConfigValueType::Float:
+                menuItem.actionType = "show_numeric_editor";
+                break;
+            case Config::ConfigValueType::String:
+                menuItem.actionType = "show_string_editor";
+                break;
+        }
+
+        menuItem.actionParam = sectionName + "." + item.key;
+        menuItems_.push_back(menuItem);
+    }
+
+    // Add Back option
+    menuItems_.push_back({"Back", "submenu_back", ""});
+
+    // Update component
+    if (componentInitialized_)
+    {
+        configComponent_.SetTitle(section.displayName);
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(0); // Reset to first item
+    }
+}
+
+std::string ConfigPanel::FormatItemLabel(const Config::ConfigItem& item) const
+{
+    std::string label = item.displayName + ": ";
+
+    // Format current value based on type
+    std::string valueStr = Config::ConfigValueHelper::ToString(item.value);
+
+    // Add unit if available
+    if (!item.metadata.unit.empty())
+    {
+        valueStr += item.metadata.unit;
+    }
+
+    return label + valueStr;
+}
+
+void ConfigPanel::ShowEnumSelector(const std::string& fullKey, const Config::ConfigItem& item)
+{
+    log_v("ShowEnumSelector() called for %s", fullKey.c_str());
+
+    if (!dynamicConfigService_)
+        return;
+
+    // Parse options from metadata
+    auto options = ParseOptions(item.metadata.constraints);
+    if (options.empty())
+    {
+        log_w("No options available for enum %s", fullKey.c_str());
+        return;
+    }
+
+    // Build enum selector submenu
+    menuItems_.clear();
+
+    // Show current value
+    std::string currentValue = Config::ConfigValueHelper::ToString(item.value);
+    menuItems_.push_back({"Current: " + currentValue, "display_only", ""});
+
+    // Add options
+    for (const auto& option : options)
+    {
+        ConfigComponent::MenuItem menuItem;
+        menuItem.label = option;
+        menuItem.actionType = "config_set";
+        menuItem.actionParam = fullKey + ":" + option;
+        menuItems_.push_back(menuItem);
+    }
+
+    // Add Back option
+    menuItems_.push_back({"Back", "submenu_back", ""});
+
+    // Update component
+    if (componentInitialized_)
+    {
+        configComponent_.SetTitle(item.displayName);
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(0);
+    }
+}
+
+void ConfigPanel::ShowNumericEditor(const std::string& fullKey, const Config::ConfigItem& item)
+{
+    log_v("ShowNumericEditor() called for %s", fullKey.c_str());
+
+    if (!dynamicConfigService_)
+        return;
+
+    // Parse options from metadata (could be range or discrete values)
+    auto options = ParseOptions(item.metadata.constraints);
+
+    // Build numeric editor submenu
+    menuItems_.clear();
+
+    // Show current value
+    std::string currentValue = Config::ConfigValueHelper::ToString(item.value);
+    if (!item.metadata.unit.empty())
+    {
+        currentValue += item.metadata.unit;
+    }
+    menuItems_.push_back({"Current: " + currentValue, "display_only", ""});
+
+    // Add options (either discrete values or common values for ranges)
+    for (const auto& option : options)
+    {
+        ConfigComponent::MenuItem menuItem;
+        menuItem.label = option;
+        if (!item.metadata.unit.empty())
+        {
+            menuItem.label += item.metadata.unit;
+        }
+        menuItem.actionType = "config_set";
+        menuItem.actionParam = fullKey + ":" + option;
+        menuItems_.push_back(menuItem);
+    }
+
+    // Add Back option
+    menuItems_.push_back({"Back", "submenu_back", ""});
+
+    // Update component
+    if (componentInitialized_)
+    {
+        configComponent_.SetTitle(item.displayName);
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(0);
+    }
+}
+
+void ConfigPanel::ShowBooleanToggle(const std::string& fullKey, const Config::ConfigItem& item)
+{
+    log_v("ShowBooleanToggle() called for %s", fullKey.c_str());
+
+    if (!dynamicConfigService_)
+        return;
+
+    // Get current boolean value
+    bool currentValue = false;
+    if (auto boolVal = Config::ConfigValueHelper::GetValue<bool>(item.value))
+    {
+        currentValue = *boolVal;
+    }
+
+    // Build boolean toggle submenu
+    menuItems_.clear();
+
+    // Show current value
+    menuItems_.push_back({"Current: " + std::string(currentValue ? "On" : "Off"), "display_only", ""});
+
+    // Add toggle options
+    menuItems_.push_back({"On", "config_set", fullKey + ":true"});
+    menuItems_.push_back({"Off", "config_set", fullKey + ":false"});
+
+    // Add Back option
+    menuItems_.push_back({"Back", "submenu_back", ""});
+
+    // Update component
+    if (componentInitialized_)
+    {
+        configComponent_.SetTitle(item.displayName);
+        configComponent_.SetMenuItems(menuItems_);
+        configComponent_.SetCurrentIndex(0);
+    }
+}
+
+std::vector<std::string> ConfigPanel::ParseOptions(const std::string& constraints) const
+{
+    std::vector<std::string> options;
+
+    if (constraints.empty())
+        return options;
+
+    std::stringstream ss(constraints);
+    std::string item;
+
+    while (std::getline(ss, item, ','))
+    {
+        // Trim whitespace
+        item.erase(0, item.find_first_not_of(" \t"));
+        item.erase(item.find_last_not_of(" \t") + 1);
+
+        if (!item.empty())
+        {
+            options.push_back(item);
+        }
+    }
+
+    return options;
+}
+
+std::pair<std::string, std::string> ConfigPanel::ParseConfigKey(const std::string& fullKey) const
+{
+    size_t dotPos = fullKey.find('.');
+    if (dotPos == std::string::npos)
+    {
+        return {"", fullKey};
+    }
+
+    return {fullKey.substr(0, dotPos), fullKey.substr(dotPos + 1)};
 }
