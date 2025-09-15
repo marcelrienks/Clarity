@@ -8,6 +8,7 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_preference_service.h"
+#include "interfaces/i_dynamic_config_service.h"
 #include "sensors/base_sensor.h"
 #include "utilities/sensor_helper.h"
 #include "utilities/types.h"
@@ -64,6 +65,12 @@ class OilTemperatureSensor : public BaseSensor
     /// @brief Load configuration from preference system
     void LoadConfiguration();
 
+    /// @brief Register configuration with dynamic config system
+    void RegisterConfiguration();
+
+    /// @brief Register for live configuration update callbacks
+    void RegisterLiveUpdateCallbacks();
+
   protected:
     // Internal methods
     int32_t ReadRawValue();
@@ -73,6 +80,7 @@ class OilTemperatureSensor : public BaseSensor
     // Instance members
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;
+    IDynamicConfigService *dynamicConfigService_ = nullptr;
     float calibrationOffset_ = 0.0f;
     float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "C";
@@ -81,4 +89,5 @@ class OilTemperatureSensor : public BaseSensor
     int32_t previousChangeReading_ = 0;  // For HasStateChanged() separate tracking
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
+    uint32_t configCallbackId_ = 0;  // For live update callback management
 };

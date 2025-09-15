@@ -4,6 +4,7 @@
 #include <optional>
 #include <vector>
 #include <string>
+#include <functional>
 
 /**
  * @interface IDynamicConfigService
@@ -22,6 +23,26 @@
 class IDynamicConfigService {
 public:
     virtual ~IDynamicConfigService() = default;
+
+    // ========== Live Update Callback Types ==========
+
+    /**
+     * @brief Callback function type for configuration changes
+     * @param fullKey The full configuration key that changed
+     * @param oldValue The previous value (may be empty if key was new)
+     * @param newValue The new value
+     */
+    using ConfigChangeCallback = std::function<void(const std::string& fullKey,
+                                                   const std::optional<Config::ConfigValue>& oldValue,
+                                                   const Config::ConfigValue& newValue)>;
+
+    /**
+     * @brief Callback function type for section changes
+     * @param sectionName The name of the section that changed
+     * @param changeType Type of change (added, removed, modified)
+     */
+    using SectionChangeCallback = std::function<void(const std::string& sectionName,
+                                                    const std::string& changeType)>;
 
     // ========== Registration Methods ==========
 
@@ -138,6 +159,57 @@ public:
      * @return true if reset successful
      */
     virtual bool ResetSectionToDefaults(const std::string& sectionName) = 0;
+
+    // ========== Live Update Methods ==========
+
+    /**
+     * @brief Register a callback for configuration changes
+     * @param fullKey The full configuration key to watch (empty string for all keys)
+     * @param callback The callback function to call when the configuration changes
+     * @return Callback ID for later unregistration
+     */
+    virtual uint32_t RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) = 0;
+
+    /**
+     * @brief Register a callback for section changes
+     * @param sectionName The section name to watch (empty string for all sections)
+     * @param callback The callback function to call when sections change
+     * @return Callback ID for later unregistration
+     */
+    virtual uint32_t RegisterSectionCallback(const std::string& sectionName, SectionChangeCallback callback) = 0;
+
+    /**
+     * @brief Unregister a configuration change callback
+     * @param callbackId The callback ID returned from RegisterChangeCallback
+     * @return true if callback was found and removed
+     */
+    virtual bool UnregisterChangeCallback(uint32_t callbackId) = 0;
+
+    /**
+     * @brief Unregister a section change callback
+     * @param callbackId The callback ID returned from RegisterSectionCallback
+     * @return true if callback was found and removed
+     */
+    virtual bool UnregisterSectionCallback(uint32_t callbackId) = 0;
+
+    /**
+     * @brief Force notification of all registered callbacks for a key
+     * @param fullKey The configuration key to notify about
+     * @return true if notifications were sent
+     */
+    virtual bool NotifyConfigChange(const std::string& fullKey) = 0;
+
+    /**
+     * @brief Enable or disable live updates
+     * @param enabled Whether live updates should be active
+     */
+    virtual void SetLiveUpdatesEnabled(bool enabled) = 0;
+
+    /**
+     * @brief Check if live updates are currently enabled
+     * @return true if live updates are enabled
+     */
+    virtual bool AreLiveUpdatesEnabled() const = 0;
 
 protected:
     // ========== Implementation Methods ==========

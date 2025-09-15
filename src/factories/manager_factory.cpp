@@ -139,15 +139,14 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
 std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
 {
-    // Note: We currently return PreferenceManager for backward compatibility
-    // Components can still use the enhanced DynamicPreferenceManager features
-    // via static_cast when the factory is updated to use DynamicPreferenceManager
-    auto manager = std::make_unique<PreferenceManager>();
+    // Create DynamicPreferenceManager for enhanced configuration capabilities
+    // while maintaining IPreferenceService interface compatibility
+    auto manager = std::make_unique<DynamicPreferenceManager>();
     if (!manager)
     {
-        log_e("ManagerFactory: Failed to create PreferenceManager - allocation failed");
+        log_e("ManagerFactory: Failed to create DynamicPreferenceManager - allocation failed");
         ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "PreferenceManager allocation failed - out of memory");
+                                                     "DynamicPreferenceManager allocation failed - out of memory");
         return nullptr;
     }
 

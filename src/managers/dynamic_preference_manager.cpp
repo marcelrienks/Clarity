@@ -3,22 +3,13 @@
 #include <algorithm>
 #include <sstream>
 
-// ========== IPreferenceService Implementation ==========
+// ========== PreferenceManager Override ==========
 
 void DynamicPreferenceManager::Init() {
+    // Call parent initialization first to set up legacy system
+    PreferenceManager::Init();
+
     std::lock_guard<std::mutex> lock(configMutex_);
-
-    // Initialize NVS
-    esp_err_t err = nvs_flash_init();
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        nvs_flash_erase();
-        err = nvs_flash_init();
-    }
-
-    if (err != ESP_OK) {
-        log_e("Failed to initialize NVS: %s", esp_err_to_name(err));
-        return;
-    }
 
     // Check if migration is needed
     preferences_.begin(META_NAMESPACE_, false);
@@ -29,8 +20,7 @@ void DynamicPreferenceManager::Init() {
     if (!migrationCompleted_) {
         log_i("Migrating legacy configuration to dynamic system");
         if (!MigrateLegacyConfig()) {
-            log_e("Migration failed, creating defaults");
-            CreateDefaultConfig();
+            log_e("Migration failed, using legacy system");
         }
     } else {
         // Load existing dynamic configuration
@@ -38,7 +28,7 @@ void DynamicPreferenceManager::Init() {
         SyncLegacyConfig();
     }
 
-    log_i("DynamicPreferenceManager initialized");
+    log_i("DynamicPreferenceManager initialized with live updates enabled");
 }
 
 void DynamicPreferenceManager::SaveConfig() {
@@ -358,24 +348,6 @@ std::optional<Config::ConfigValue> DynamicPreferenceManager::QueryConfigImpl(con
     return item->value;
 }
 
-bool DynamicPreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) {
-    std::lock_guard<std::mutex> lock(configMutex_);
-
-    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
-
-    auto it = registeredSections_.find(sectionName);
-    if (it == registeredSections_.end()) return false;
-
-    auto item = it->second.FindItem(itemKey);
-    if (!item) return false;
-
-    if (ValidateConfigValue(fullKey, value)) {
-        item->value = value;
-        return true;
-    }
-
-    return false;
-}
 
 // ========== Private Helper Methods ==========
 
@@ -729,4 +701,163 @@ Config::ConfigValue DynamicPreferenceManager::LoadValueFromNVS(Preferences& pref
     }
 
     return std::monostate{};
+}
+
+// ========== Live Update Implementation ==========
+
+uint32_t DynamicPreferenceManager::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
+    std::lock_guard<std::mutex> lock(configMutex_);
+    uint32_t callbackId = nextCallbackId_++;
+    changeCallbacks_[callbackId] = std::make_pair(fullKey, callback);
+    log_d("Registered change callback %u for key: %s", callbackId, fullKey.c_str());
+    return callbackId;
+}
+
+uint32_t DynamicPreferenceManager::RegisterSectionCallback(const std::string& sectionName, SectionChangeCallback callback) {
+    std::lock_guard<std::mutex> lock(configMutex_);
+    uint32_t callbackId = nextCallbackId_++;
+    sectionCallbacks_[callbackId] = std::make_pair(sectionName, callback);
+    log_d("Registered section callback %u for section: %s", callbackId, sectionName.c_str());
+    return callbackId;
+}
+
+bool DynamicPreferenceManager::UnregisterChangeCallback(uint32_t callbackId) {
+    std::lock_guard<std::mutex> lock(configMutex_);
+    auto it = changeCallbacks_.find(callbackId);
+    if (it != changeCallbacks_.end()) {
+        log_d("Unregistered change callback %u", callbackId);
+        changeCallbacks_.erase(it);
+        return true;
+    }
+    return false;
+}
+
+bool DynamicPreferenceManager::UnregisterSectionCallback(uint32_t callbackId) {
+    std::lock_guard<std::mutex> lock(configMutex_);
+    auto it = sectionCallbacks_.find(callbackId);
+    if (it != sectionCallbacks_.end()) {
+        log_d("Unregistered section callback %u", callbackId);
+        sectionCallbacks_.erase(it);
+        return true;
+    }
+    return false;
+}
+
+bool DynamicPreferenceManager::NotifyConfigChange(const std::string& fullKey) {
+    if (!liveUpdatesEnabled_) {
+        return false;
+    }
+
+    std::lock_guard<std::mutex> lock(configMutex_);
+
+    // Get current value
+    auto currentValue = QueryConfigImpl(fullKey);
+    if (!currentValue) {
+        log_w("Cannot notify change for non-existent key: %s", fullKey.c_str());
+        return false;
+    }
+
+    // Notify relevant callbacks
+    bool notificationSent = false;
+    for (const auto& [callbackId, keyCallbackPair] : changeCallbacks_) {
+        const std::string& watchedKey = keyCallbackPair.first;
+        const ConfigChangeCallback& callback = keyCallbackPair.second;
+
+        // Empty string means watch all keys
+        if (watchedKey.empty() || watchedKey == fullKey) {
+            try {
+                // We don't have old value in this context, so pass nullopt
+                callback(fullKey, std::nullopt, *currentValue);
+                notificationSent = true;
+                log_t("Notified callback %u for key change: %s", callbackId, fullKey.c_str());
+            } catch (const std::exception& e) {
+                log_e("Exception in change callback %u: %s", callbackId, e.what());
+            }
+        }
+    }
+
+    return notificationSent;
+}
+
+void DynamicPreferenceManager::SetLiveUpdatesEnabled(bool enabled) {
+    std::lock_guard<std::mutex> lock(configMutex_);
+    liveUpdatesEnabled_ = enabled;
+    log_i("Live updates %s", enabled ? "enabled" : "disabled");
+}
+
+bool DynamicPreferenceManager::AreLiveUpdatesEnabled() const {
+    std::lock_guard<std::mutex> lock(configMutex_);
+    return liveUpdatesEnabled_;
+}
+
+bool DynamicPreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) {
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+
+    // Find the section
+    auto sectionIt = registeredSections_.find(sectionName);
+    if (sectionIt == registeredSections_.end()) {
+        log_w("Section not found for key: %s", fullKey.c_str());
+        return false;
+    }
+
+    Config::ConfigSection& section = sectionIt->second;
+
+    // Find the item
+    auto itemIt = std::find_if(section.items.begin(), section.items.end(),
+        [&itemKey](const Config::ConfigItem& item) { return item.key == itemKey; });
+
+    if (itemIt == section.items.end()) {
+        log_w("Item not found for key: %s", fullKey.c_str());
+        return false;
+    }
+
+    // Store old value for callback notification
+    std::optional<Config::ConfigValue> oldValue = itemIt->value;
+
+    // Validate the new value
+    if (!ValidateConfigValue(fullKey, value)) {
+        log_w("Validation failed for key: %s", fullKey.c_str());
+        return false;
+    }
+
+    // Update the value
+    itemIt->value = value;
+
+    // Save to NVS
+    std::string nsName = GetSectionNamespace(sectionName);
+    preferences_.begin(nsName.c_str(), false);
+    bool success = StoreValueToNVS(preferences_, itemKey, value, itemIt->type);
+    preferences_.end();
+
+    if (success) {
+        log_d("Updated config %s = %s", fullKey.c_str(),
+              Config::ConfigValueHelper::ToString(value).c_str());
+
+        // Notify callbacks if live updates are enabled
+        if (liveUpdatesEnabled_) {
+            for (const auto& [callbackId, keyCallbackPair] : changeCallbacks_) {
+                const std::string& watchedKey = keyCallbackPair.first;
+                const ConfigChangeCallback& callback = keyCallbackPair.second;
+
+                // Empty string means watch all keys
+                if (watchedKey.empty() || watchedKey == fullKey) {
+                    try {
+                        callback(fullKey, oldValue, value);
+                        log_t("Notified callback %u for update: %s", callbackId, fullKey.c_str());
+                    } catch (const std::exception& e) {
+                        log_e("Exception in change callback %u: %s", callbackId, e.what());
+                    }
+                }
+            }
+        }
+
+        // Sync legacy config if needed
+        SyncLegacyConfig();
+    } else {
+        // Revert the in-memory change if NVS save failed
+        itemIt->value = *oldValue;
+        log_e("Failed to save config to NVS for key: %s", fullKey.c_str());
+    }
+
+    return success;
 }

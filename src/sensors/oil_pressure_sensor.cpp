@@ -1,5 +1,6 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "managers/error_manager.h"
+#include "config/config_types.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
@@ -38,8 +39,18 @@ void OilPressureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Load configuration from preference service
+    // Register with dynamic config system if available and load configuration
     if (preferenceService_) {
+        // Try to access dynamic config capabilities
+        dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
+        if (dynamicConfigService_) {
+            // Check if we should register our configuration
+            std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
+            if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
+                RegisterConfiguration();
+                log_d("OilPressureSensor registered with dynamic config system");
+            }
+        }
         LoadConfiguration();
     }
 
@@ -180,4 +191,34 @@ void OilPressureSensor::LoadConfiguration()
 
     log_d("Loaded oil pressure sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
           targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
+}
+
+/// @brief Register configuration with dynamic config system
+void OilPressureSensor::RegisterConfiguration()
+{
+    if (!dynamicConfigService_) return;
+
+    using namespace Config;
+
+    ConfigSection section("OilPressureSensor", "oil_pressure", "Oil Pressure Sensor");
+    section.displayOrder = 2;
+
+    // Pressure unit selection
+    section.AddItem(ConfigItem("unit", "Pressure Unit", ConfigValueType::Enum,
+        std::string("Bar"), ConfigMetadata("PSI,Bar,kPa")));
+
+    // Update rate
+    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
+        500, ConfigMetadata("250,500,1000,2000")));
+
+    // Calibration offset
+    section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
+        0.0f, ConfigMetadata("-1.0,1.0")));
+
+    // Calibration scale
+    section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
+        1.0f, ConfigMetadata("0.9,1.1")));
+
+    dynamicConfigService_->RegisterConfigSection(section);
+    log_d("Registered oil pressure sensor configuration");
 }

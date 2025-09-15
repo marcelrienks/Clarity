@@ -1,5 +1,6 @@
 #include "sensors/oil_temperature_sensor.h"
 #include "managers/error_manager.h"
+#include "config/config_types.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
@@ -38,9 +39,21 @@ void OilTemperatureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Load configuration from preference service
+    // Register with dynamic config system if available and load configuration
     if (preferenceService_) {
         LoadConfiguration();
+
+        // Check if dynamic config is enabled
+        std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
+        if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
+            // Access dynamic config capabilities via static_cast (DynamicPreferenceManager implements both interfaces)
+            dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
+            if (dynamicConfigService_) {
+                RegisterConfiguration();
+                RegisterLiveUpdateCallbacks();
+                log_d("OilTemperatureSensor registered with dynamic config system");
+            }
+        }
     }
 
     // Take initial reading to establish baseline
@@ -176,4 +189,81 @@ void OilTemperatureSensor::LoadConfiguration()
 
     log_d("Loaded oil temperature sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
           targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
+}
+
+/// @brief Register configuration with dynamic config system
+void OilTemperatureSensor::RegisterConfiguration()
+{
+    if (!dynamicConfigService_) return;
+
+    using namespace Config;
+
+    ConfigSection section("OilTemperatureSensor", "oil_temperature", "Oil Temperature Sensor");
+    section.displayOrder = 3;
+
+    // Temperature unit selection
+    section.AddItem(ConfigItem("unit", "Temperature Unit", ConfigValueType::Enum,
+        std::string("C"), ConfigMetadata("C,F")));
+
+    // Update rate
+    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
+        500, ConfigMetadata("250,500,1000,2000")));
+
+    // Calibration offset
+    section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
+        0.0f, ConfigMetadata("-5.0,5.0")));
+
+    // Calibration scale
+    section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
+        1.0f, ConfigMetadata("0.9,1.1")));
+
+    dynamicConfigService_->RegisterConfigSection(section);
+    log_d("Registered oil temperature sensor configuration");
+}
+
+void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
+    if (!dynamicConfigService_) return;
+
+    // Register callback for our section changes
+    auto callback = [this](const std::string& fullKey,
+                          const std::optional<Config::ConfigValue>& oldValue,
+                          const Config::ConfigValue& newValue) {
+        log_d("OilTemperatureSensor: Config change detected for %s", fullKey.c_str());
+
+        // Handle unit change
+        if (fullKey == "oil_temperature.unit") {
+            if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
+                SetTargetUnit(*newUnit);
+                log_i("Oil temperature unit changed to: %s", newUnit->c_str());
+            }
+        }
+
+        // Handle update rate change
+        else if (fullKey == "oil_temperature.update_rate") {
+            if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
+                SetUpdateRate(*newRate);
+                log_i("Oil temperature update rate changed to: %d ms", *newRate);
+            }
+        }
+
+        // Handle calibration offset change
+        else if (fullKey == "oil_temperature.offset") {
+            if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+                calibrationOffset_ = *newOffset;
+                log_i("Oil temperature calibration offset changed to: %.2f", *newOffset);
+            }
+        }
+
+        // Handle calibration scale change
+        else if (fullKey == "oil_temperature.scale") {
+            if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+                calibrationScale_ = *newScale;
+                log_i("Oil temperature calibration scale changed to: %.2f", *newScale);
+            }
+        }
+    };
+
+    // Register for all oil_temperature section changes
+    configCallbackId_ = dynamicConfigService_->RegisterChangeCallback("oil_temperature", callback);
+    log_d("Registered live update callback with ID: %u", configCallbackId_);
 }

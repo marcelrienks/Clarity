@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interfaces/i_preference_service.h"
+#include "managers/preference_manager.h"
 #include "interfaces/i_dynamic_config_service.h"
 #include "config/config_types.h"
 #include "utilities/types.h"
@@ -26,7 +26,7 @@
  * @storage_format Sectioned NVS with separate namespace per component
  * @thread_safety Thread-safe configuration access with mutex protection
  */
-class DynamicPreferenceManager : public IPreferenceService, public IDynamicConfigService {
+class DynamicPreferenceManager : public PreferenceManager, public IDynamicConfigService {
 public:
     // ========== Constructors and Destructor ==========
     DynamicPreferenceManager() = default;
@@ -34,17 +34,8 @@ public:
     DynamicPreferenceManager& operator=(const DynamicPreferenceManager&) = delete;
     ~DynamicPreferenceManager() = default;
 
-    // ========== IPreferenceService Implementation ==========
+    // ========== PreferenceManager Override ==========
     void Init() override;
-    void SaveConfig() override;
-    void LoadConfig() override;
-    void CreateDefaultConfig() override;
-    Configs& GetConfig() override;
-    const Configs& GetConfig() const override;
-    void SetConfig(const Configs& config) override;
-    std::string GetPreference(const std::string& key) const override;
-    void SetPreference(const std::string& key, const std::string& value) override;
-    bool HasPreference(const std::string& key) const override;
 
     // ========== IDynamicConfigService Implementation ==========
     bool RegisterConfigSection(const Config::ConfigSection& section) override;
@@ -59,6 +50,13 @@ public:
     bool ValidateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) const override;
     bool ResetToDefault(const std::string& fullKey) override;
     bool ResetSectionToDefaults(const std::string& sectionName) override;
+    uint32_t RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) override;
+    uint32_t RegisterSectionCallback(const std::string& sectionName, SectionChangeCallback callback) override;
+    bool UnregisterChangeCallback(uint32_t callbackId) override;
+    bool UnregisterSectionCallback(uint32_t callbackId) override;
+    bool NotifyConfigChange(const std::string& fullKey) override;
+    void SetLiveUpdatesEnabled(bool enabled) override;
+    bool AreLiveUpdatesEnabled() const override;
 
 protected:
     std::optional<Config::ConfigValue> QueryConfigImpl(const std::string& fullKey) const override;
@@ -77,6 +75,12 @@ private:
     static inline Configs legacyConfig_;                             ///< Legacy configuration for backward compatibility
     Preferences preferences_;                                        ///< NVS preferences instance
     bool migrationCompleted_ = false;                               ///< Migration status flag
+
+    // Live update system
+    bool liveUpdatesEnabled_ = true;                                ///< Whether live updates are enabled
+    uint32_t nextCallbackId_ = 1;                                  ///< Counter for generating callback IDs
+    std::map<uint32_t, std::pair<std::string, ConfigChangeCallback>> changeCallbacks_; ///< Configuration change callbacks
+    std::map<uint32_t, std::pair<std::string, SectionChangeCallback>> sectionCallbacks_; ///< Section change callbacks
 
     // ========== Private Helper Methods ==========
 
