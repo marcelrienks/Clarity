@@ -41,17 +41,16 @@ void OilPressureSensor::Init()
 
     // Register with dynamic config system if available and load configuration
     if (preferenceService_) {
-        // Try to access dynamic config capabilities
-        dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
-        if (dynamicConfigService_) {
-            // Check if we should register our configuration
-            std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
-            if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
-                RegisterConfiguration();
-                log_d("OilPressureSensor registered with dynamic config system");
-            }
-        }
         LoadConfiguration();
+
+        // Check if we should register our configuration
+        std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
+        if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
+            // Access dynamic config capabilities - DynamicPreferenceManager implements both interfaces
+            dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
+            RegisterConfiguration();
+            log_d("OilPressureSensor registered with dynamic config system");
+        }
     }
 
     // Take initial reading to establish baseline

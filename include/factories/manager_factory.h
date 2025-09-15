@@ -67,9 +67,9 @@ public:
     /// @return Unique pointer to configured StyleManager instance or nullptr on failure
     std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr) override;
 
-    /// @brief Create PreferenceManager (no dependencies currently)
-    /// @return Unique pointer to configured PreferenceManager instance or nullptr on failure
-    std::unique_ptr<PreferenceManager> CreatePreferenceManager() override;
+    /// @brief Create PreferenceService (no dependencies currently)
+    /// @return Unique pointer to configured IPreferenceService instance or nullptr on failure
+    std::unique_ptr<IPreferenceService> CreatePreferenceManager() override;
 
     /// @brief Initialize InterruptManager singleton instance with GPIO provider
     /// @param gpioProvider GPIO provider for handler sensor ownership
@@ -108,7 +108,7 @@ private:
     static std::unique_ptr<StyleManager> CreateStyleManagerImpl(const char *theme = nullptr);
 
     /// @brief Implementation helper for creating PreferenceManager
-    static std::unique_ptr<PreferenceManager> CreatePreferenceManagerImpl();
+    static std::unique_ptr<IPreferenceService> CreatePreferenceManagerImpl();
 
     /// @brief Implementation helper for creating InterruptManager
     static InterruptManager* CreateInterruptManagerImpl(IGpioProvider* gpioProvider);

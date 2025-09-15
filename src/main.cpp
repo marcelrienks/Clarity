@@ -4,7 +4,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "managers/preference_manager.h"
+#include "interfaces/i_preference_service.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
@@ -21,7 +21,7 @@ std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
-std::unique_ptr<PreferenceManager> preferenceManager;
+std::unique_ptr<IPreferenceService> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;

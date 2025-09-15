@@ -1,6 +1,6 @@
 #pragma once
 
-#include "managers/preference_manager.h"
+#include "interfaces/i_preference_service.h"
 #include "interfaces/i_dynamic_config_service.h"
 #include "config/config_types.h"
 #include "utilities/types.h"
@@ -13,20 +13,19 @@
 
 /**
  * @class DynamicPreferenceManager
- * @brief Enhanced configuration manager with dynamic registration support
+ * @brief Modern dynamic configuration manager
  *
- * @details This manager extends the original PreferenceManager with support for:
+ * @details This manager provides:
  * - Component self-registration of configuration requirements
  * - Sectioned NVS storage for better organization
  * - Type-safe configuration access with templates
- * - Automatic migration from legacy configuration format
- * - Metadata-driven validation
+ * - Live configuration updates with callbacks
+ * - Metadata-driven validation and UI generation
  *
- * @backward_compatibility Maintains support for legacy Configs struct during migration
  * @storage_format Sectioned NVS with separate namespace per component
  * @thread_safety Thread-safe configuration access with mutex protection
  */
-class DynamicPreferenceManager : public PreferenceManager, public IDynamicConfigService {
+class DynamicPreferenceManager : public IPreferenceService, public IDynamicConfigService {
 public:
     // ========== Constructors and Destructor ==========
     DynamicPreferenceManager() = default;
@@ -34,8 +33,17 @@ public:
     DynamicPreferenceManager& operator=(const DynamicPreferenceManager&) = delete;
     ~DynamicPreferenceManager() = default;
 
-    // ========== PreferenceManager Override ==========
+    // ========== IPreferenceService Implementation ==========
     void Init() override;
+    void SaveConfig() override;
+    void LoadConfig() override;
+    void CreateDefaultConfig() override;
+    Configs& GetConfig() override;
+    const Configs& GetConfig() const override;
+    void SetConfig(const Configs& config) override;
+    std::string GetPreference(const std::string& key) const override;
+    void SetPreference(const std::string& key, const std::string& value) override;
+    bool HasPreference(const std::string& key) const override;
 
     // ========== IDynamicConfigService Implementation ==========
     bool RegisterConfigSection(const Config::ConfigSection& section) override;
@@ -72,9 +80,8 @@ private:
 
     mutable std::mutex configMutex_;                                 ///< Thread safety mutex
     std::map<std::string, Config::ConfigSection> registeredSections_; ///< Registered configuration sections
-    static inline Configs legacyConfig_;                             ///< Legacy configuration for backward compatibility
+    Configs config_;                                                 ///< Current configuration state
     Preferences preferences_;                                        ///< NVS preferences instance
-    bool migrationCompleted_ = false;                               ///< Migration status flag
 
     // Live update system
     bool liveUpdatesEnabled_ = true;                                ///< Whether live updates are enabled
@@ -99,28 +106,16 @@ private:
     std::string GetSectionNamespace(const std::string& sectionName) const;
 
     /**
-     * @brief Migrate legacy configuration to new format
-     * @return true if migration successful or not needed
-     */
-    bool MigrateLegacyConfig();
-
-    /**
-     * @brief Synchronize legacy config struct with dynamic sections
-     * @details Updates the legacy Configs struct based on current dynamic values
-     */
-    void SyncLegacyConfig();
-
-    /**
-     * @brief Synchronize dynamic sections with legacy config struct
-     * @details Updates dynamic configuration based on legacy struct values
-     */
-    void SyncFromLegacyConfig();
-
-    /**
      * @brief Create default configuration sections
      * @details Registers default sections for system components
      */
     void CreateDefaultSections();
+
+    /**
+     * @brief Sync dynamic sections to legacy Configs struct
+     * @details Updates the Configs struct from dynamic section values
+     */
+    void SyncToLegacyConfig();
 
     /**
      * @brief Validate integer value against range constraints

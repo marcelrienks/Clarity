@@ -39,7 +39,7 @@ class DeviceProvider;
 class IGpioProvider;
 class IDisplayProvider;
 class StyleManager;
-class PreferenceManager;
+class IPreferenceService;
 class PanelManager;
 class InterruptManager;
 class ErrorManager;
@@ -55,7 +55,7 @@ extern std::unique_ptr<IDisplayProvider> displayProvider;
 
 // Global managers - created by ManagerFactory
 extern std::unique_ptr<StyleManager> styleManager;
-extern std::unique_ptr<PreferenceManager> preferenceManager;
+extern std::unique_ptr<IPreferenceService> preferenceManager;
 extern std::unique_ptr<PanelManager> panelManager;
 extern InterruptManager *interruptManager;
 extern ErrorManager *errorManager;

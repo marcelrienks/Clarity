@@ -46,13 +46,11 @@ void OilTemperatureSensor::Init()
         // Check if dynamic config is enabled
         std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
         if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
-            // Access dynamic config capabilities via static_cast (DynamicPreferenceManager implements both interfaces)
+            // Access dynamic config capabilities - DynamicPreferenceManager implements both interfaces
             dynamicConfigService_ = static_cast<IDynamicConfigService*>(preferenceService_);
-            if (dynamicConfigService_) {
-                RegisterConfiguration();
-                RegisterLiveUpdateCallbacks();
-                log_d("OilTemperatureSensor registered with dynamic config system");
-            }
+            RegisterConfiguration();
+            RegisterLiveUpdateCallbacks();
+            log_d("OilTemperatureSensor registered with dynamic config system");
         }
     }
 

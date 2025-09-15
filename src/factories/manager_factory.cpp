@@ -3,7 +3,6 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "managers/preference_manager.h"
 #include "managers/dynamic_preference_manager.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
@@ -137,10 +136,9 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 }
 
 
-std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
+std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManagerImpl()
 {
-    // Create DynamicPreferenceManager for enhanced configuration capabilities
-    // while maintaining IPreferenceService interface compatibility
+    // Create DynamicPreferenceManager for modern configuration capabilities
     auto manager = std::make_unique<DynamicPreferenceManager>();
     if (!manager)
     {
@@ -222,7 +220,7 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManager(const char *the
     return CreateStyleManagerImpl(theme);
 }
 
-std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManager()
+std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManager()
 {
     return CreatePreferenceManagerImpl();
 }

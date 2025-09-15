@@ -63,9 +63,9 @@ public:
     /// @return Unique pointer to configured StyleManager instance or nullptr on failure
     virtual std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr) = 0;
 
-    /// @brief Create PreferenceManager (no dependencies currently)
-    /// @return Unique pointer to configured PreferenceManager instance or nullptr on failure
-    virtual std::unique_ptr<PreferenceManager> CreatePreferenceManager() = 0;
+    /// @brief Create PreferenceService (no dependencies currently)
+    /// @return Unique pointer to configured IPreferenceService instance or nullptr on failure
+    virtual std::unique_ptr<IPreferenceService> CreatePreferenceManager() = 0;
 
     /// @brief Initialize InterruptManager singleton instance with GPIO provider
     /// @param gpioProvider GPIO provider for handler sensor ownership
