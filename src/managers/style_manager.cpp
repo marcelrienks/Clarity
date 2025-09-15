@@ -76,11 +76,9 @@ void StyleManager::InitializeStyles()
     lv_style_init(&gaugeMainStyle_);
     lv_style_init(&gaugeDangerSectionStyle_);
 
-    // Apply theme colors after style objects are initialized
-    // Pull theme from preferences if available, otherwise use constructor default
+    // Apply theme from preferences
     if (preferenceService_) {
-        const auto& config = preferenceService_->GetConfig();
-        SetTheme(config.theme.c_str());
+        LoadConfiguration();
     } else {
         SetTheme(theme_.c_str());
     }
@@ -277,4 +275,16 @@ void StyleManager::ResetStyles()
     lv_style_reset(&gaugeItemsStyle_);
     lv_style_reset(&gaugeMainStyle_);
     lv_style_reset(&gaugeDangerSectionStyle_);
+}
+
+/// @brief Load configuration from preference system
+void StyleManager::LoadConfiguration()
+{
+    if (!preferenceService_) return;
+
+    // Load from legacy config
+    const Configs& config = preferenceService_->GetConfig();
+    SetTheme(config.theme.c_str());
+
+    log_d("Loaded style configuration: theme=%s", theme_.c_str());
 }

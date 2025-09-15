@@ -38,6 +38,11 @@ void OilPressureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
+    // Load configuration from preference service
+    if (preferenceService_) {
+        LoadConfiguration();
+    }
+
     // Take initial reading to establish baseline
     GetReading();
 }
@@ -159,4 +164,20 @@ bool OilPressureSensor::HasStateChanged()
     // This method is called during interrupt evaluation, GetReading() during main loop
     int32_t cachedReading = static_cast<int32_t>(std::get<int32_t>(GetReading()));
     return DetectChange(cachedReading, previousChangeReading_);
+}
+
+/// @brief Load configuration from preference system
+void OilPressureSensor::LoadConfiguration()
+{
+    if (!preferenceService_) return;
+
+    // Load from legacy config
+    const Configs& config = preferenceService_->GetConfig();
+    targetUnit_ = config.pressureUnit;
+    updateIntervalMs_ = config.updateRate;
+    calibrationOffset_ = config.pressureOffset;
+    calibrationScale_ = config.pressureScale;
+
+    log_d("Loaded oil pressure sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
+          targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
 }

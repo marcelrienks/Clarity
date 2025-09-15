@@ -39,6 +39,12 @@
 class OilPressureSensor : public BaseSensor
 {
   public:
+    // Configuration constants for dynamic config system
+    static constexpr const char* CONFIG_SECTION = "oil_pressure";
+    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
+    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
+    static constexpr const char* CONFIG_CALIBRATION_OFFSET = "oil_pressure.offset";
+    static constexpr const char* CONFIG_CALIBRATION_SCALE = "oil_pressure.scale";
     // Constructors and Destructors
     OilPressureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
     OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs = 500);
@@ -56,6 +62,9 @@ class OilPressureSensor : public BaseSensor
     /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs);
 
+    /// @brief Load configuration from preference system
+    void LoadConfiguration();
+
   protected:
     // Internal methods
     int32_t ReadRawValue();
@@ -65,6 +74,8 @@ class OilPressureSensor : public BaseSensor
     // Instance members
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;
+    float calibrationOffset_ = 0.0f;
+    float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "Bar";
     int32_t currentReading_ = 0;
     int32_t previousReading_ = 0;  // For GetReading() change tracking

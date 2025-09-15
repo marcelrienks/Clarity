@@ -62,6 +62,11 @@
  */
 class StyleManager : public IStyleService
 {
+    // Configuration constants for dynamic config system
+    static constexpr const char* CONFIG_SECTION = "style";
+    static constexpr const char* CONFIG_THEME = "style.theme";
+    static constexpr const char* CONFIG_BRIGHTNESS = "style.brightness";
+
 public:
     // ========== Constructors and Destructor ==========
     /**
@@ -232,6 +237,11 @@ public:
      * @param preferenceService Pointer to preference service instance
      */
     void SetPreferenceService(IPreferenceService* preferenceService);
+
+    /**
+     * @brief Load configuration from preference system
+     */
+    void LoadConfiguration();
 
 private:
     // ========== Private Methods ==========

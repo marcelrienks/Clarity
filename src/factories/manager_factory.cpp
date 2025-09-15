@@ -4,6 +4,7 @@
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/preference_manager.h"
+#include "managers/dynamic_preference_manager.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "sensors/button_sensor.h"
@@ -138,7 +139,9 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
 std::unique_ptr<PreferenceManager> ManagerFactory::CreatePreferenceManagerImpl()
 {
-
+    // Note: We currently return PreferenceManager for backward compatibility
+    // Components can still use the enhanced DynamicPreferenceManager features
+    // via static_cast when the factory is updated to use DynamicPreferenceManager
     auto manager = std::make_unique<PreferenceManager>();
     if (!manager)
     {

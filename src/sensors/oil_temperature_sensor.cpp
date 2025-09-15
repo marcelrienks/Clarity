@@ -38,6 +38,11 @@ void OilTemperatureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
+    // Load configuration from preference service
+    if (preferenceService_) {
+        LoadConfiguration();
+    }
+
     // Take initial reading to establish baseline
     GetReading();
 }
@@ -122,14 +127,10 @@ int32_t OilTemperatureSensor::ReadRawValue()
 /// @brief Convert raw ADC value to requested temperature unit
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
-    
-    // Apply calibration if preference service is available
+
+    // Apply calibration
     float calibratedValue = static_cast<float>(rawValue);
-    if (preferenceService_)
-    {
-        const Configs& config = preferenceService_->GetConfig();
-        calibratedValue = (calibratedValue * config.tempScale) + config.tempOffset;
-    }
+    calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
     
     // Convert calibrated ADC value to requested temperature unit
     // Base calibration: 0-4095 ADC = 0-120°C
@@ -159,4 +160,20 @@ bool OilTemperatureSensor::HasStateChanged()
     // Use cached reading to avoid double ADC reads - GetReading() updates currentReading_
     int32_t cachedReading = static_cast<int32_t>(std::get<int32_t>(GetReading()));
     return DetectChange(cachedReading, previousChangeReading_);
+}
+
+/// @brief Load configuration from preference system
+void OilTemperatureSensor::LoadConfiguration()
+{
+    if (!preferenceService_) return;
+
+    // Load from legacy config
+    const Configs& config = preferenceService_->GetConfig();
+    targetUnit_ = config.tempUnit;
+    updateIntervalMs_ = config.updateRate;
+    calibrationOffset_ = config.tempOffset;
+    calibrationScale_ = config.tempScale;
+
+    log_d("Loaded oil temperature sensor configuration: unit=%s, rate=%lu, offset=%.2f, scale=%.2f",
+          targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
 }
