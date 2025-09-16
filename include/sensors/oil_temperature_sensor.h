@@ -57,30 +57,12 @@ class OilTemperatureSensor : public BaseSensor
     void SetTargetUnit(const std::string &unit) override;
     std::vector<std::string> GetSupportedUnits() const override;
 
-    /// @brief Set the update rate in milliseconds
-    /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs);
 
-    /**
-     * @brief Load configuration from preference system
-     * @details Loads persisted configuration values (unit, update rate, calibration)
-     * from the preference service and applies them to the sensor
-     */
     void LoadConfiguration();
 
-    /**
-     * @brief Register configuration with dynamic config system
-     * @details Implements component self-registration pattern from dynamic-config-implementation.md
-     * Registers configuration section with metadata for automatic UI generation
-     * and validation constraints for temperature unit, update rate, and calibration
-     */
     void RegisterConfiguration();
 
-    /**
-     * @brief Register callbacks for live configuration updates
-     * @details Sets up real-time response to configuration changes without restart
-     * Monitors oil_temperature section for changes and applies them immediately
-     */
     void RegisterLiveUpdateCallbacks();
 
   protected:

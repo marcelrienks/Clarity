@@ -4,11 +4,23 @@
 #include <esp32-hal-log.h>
 #include <icons/key_solid.h>
 
-// Constructors and Destructors
+/**
+ * @brief Constructs a key icon component with style service dependency
+ * @param styleService Style service for theme-based color management
+ *
+ * Initializes the key component with style service for applying theme colors.
+ * Sets key icon pointer to nullptr for later initialization.
+ */
 KeyComponent::KeyComponent(IStyleService *styleService) : keyIcon_(nullptr), styleService_(styleService)
 {
 }
 
+/**
+ * @brief Destructor that cleans up the key icon
+ *
+ * Deletes the LVGL key icon object if it exists to prevent memory leaks.
+ * Uses LVGL's object deletion function for proper cleanup.
+ */
 KeyComponent::~KeyComponent()
 {
     if (keyIcon_)

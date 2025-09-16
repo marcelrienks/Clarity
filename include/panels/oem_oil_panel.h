@@ -63,11 +63,8 @@ class OemOilPanel : public IPanel
     // Manager injection method
     void SetManagers(IPanelService *panelService, IStyleService *styleService);
 
-    /// @brief Set preference service and apply sensor update rate from preferences
-    /// @param preferenceService The preference service to use for configuration
     void SetPreferenceService(IPreferenceService *preferenceService);
     
-    /// @brief Apply current sensor settings from preferences directly
     void ApplyCurrentSensorSettings();
 
     // IActionService Interface Implementation (inherited through IPanel)
@@ -87,9 +84,6 @@ class OemOilPanel : public IPanel
     void UpdateOilTemperature(bool forceRefresh = false);
 
     // Value mapping methods
-    /// @brief Map oil pressure sensor value to display scale
-    /// @param sensor_value Raw sensor value (1-10 Bar)
-    /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
     int32_t MapPressureValue(int32_t sensorValue);
     
     // Helper methods for pressure mapping
@@ -99,9 +93,6 @@ class OemOilPanel : public IPanel
     int32_t MapBarPressure(int32_t sensorValue);
     int32_t ClampValue(int32_t value, int32_t minVal, int32_t maxVal);
 
-    /// @brief Map oil temperature sensor value to display scale
-    /// @param sensor_value Raw sensor value (0-120°C)
-    /// @return Mapped value for display
     int32_t MapTemperatureValue(int32_t sensorValue);
 
     // Static Callback Methods

@@ -58,17 +58,12 @@ class OilPressureSensor : public BaseSensor
     void SetTargetUnit(const std::string &unit) override;
     std::vector<std::string> GetSupportedUnits() const override;
 
-    /// @brief Set the update rate in milliseconds
-    /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs);
 
-    /// @brief Load configuration from preference system
     void LoadConfiguration();
 
-    /// @brief Register configuration with dynamic config system
     void RegisterConfiguration();
 
-    /// @brief Register for live configuration update callbacks
     void RegisterLiveUpdateCallbacks();
 
   protected:

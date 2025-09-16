@@ -48,19 +48,12 @@ class ButtonSensor : public BaseSensor
     void Init() override;
     Reading GetReading() override;
 
-    /// @brief Get the current button action
-    /// @return ButtonAction indicating the type of press detected
     ButtonAction GetButtonAction();
     
-    /// @brief Check if a button action is ready
-    /// @return true if a valid button action has been detected
     bool HasButtonAction() const;
     
-    /// @brief Clear the current button action (after processing)
     void ClearButtonAction();
     
-    /// @brief Get current raw button state
-    /// @return true if button is currently pressed, false otherwise
     bool IsButtonPressed();
     
     // BaseSensor interface
@@ -89,15 +82,9 @@ class ButtonSensor : public BaseSensor
     bool actionReady_ = false;
     const char* triggerInterruptId_ = nullptr;  // ID of interrupt to trigger on action
     
-    /// @brief Read GPIO pin and determine button state
-    /// @return Button state based on GPIO pin reading
     bool ReadButtonState();
     
-    /// @brief Process button state changes and detect actions
     void ProcessButtonState();
     
-    /// @brief Determine button action based on press duration
-    /// @param duration Press duration in milliseconds
-    /// @return ButtonAction type based on duration
     ButtonAction DetermineAction(unsigned long duration);
 };

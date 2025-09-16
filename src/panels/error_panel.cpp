@@ -8,7 +8,16 @@
 #include <Arduino.h>
 #include <algorithm>
 
-// Constructors and Destructors
+/**
+ * @brief Constructs error panel with required service dependencies
+ * @param gpio GPIO provider for hardware interaction
+ * @param display Display provider for screen management
+ * @param styleService Style service for theme management
+ *
+ * Creates error panel with stack-allocated error component for memory efficiency.
+ * Initializes component state and sets error panel as active in ErrorManager
+ * for proper coordination with the trigger system.
+ */
 ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       errorComponent_(styleService), componentInitialized_(false), panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
@@ -16,6 +25,13 @@ ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleSer
     log_v("ErrorPanel constructor called");
 }
 
+/**
+ * @brief Destructor cleans up error panel resources and resets error state
+ *
+ * Safely deletes LVGL screen objects and resets ErrorManager error panel
+ * active flag. Allows trigger system to resume normal operation after
+ * error panel cleanup. Stack-allocated component is automatically destroyed.
+ */
 ErrorPanel::~ErrorPanel()
 {
     log_v("~ErrorPanel() destructor called");
@@ -34,8 +50,13 @@ ErrorPanel::~ErrorPanel()
     // The CheckRestoration() method will apply the correct theme based on active triggers
 }
 
-// Core Functionality Methods
-/// @brief Initialize the error panel and its UI structure
+/**
+ * @brief Initializes error panel UI structure and loads current errors
+ *
+ * Creates LVGL screen, applies dark theme for error visibility, initializes
+ * stack-allocated error component, and loads current error queue. Sets up
+ * button action handlers for error navigation and exit functionality.
+ */
 void ErrorPanel::Init()
 {
     log_v("Init() called");
@@ -65,7 +86,14 @@ void ErrorPanel::Init()
     log_i("ErrorPanel initialization completed");
 }
 
-/// @brief Load the error panel UI components
+/**
+ * @brief Loads error panel UI components and applies error theme
+ *
+ * Renders error component on screen, fetches current error queue, and applies
+ * ERROR theme for optimal visibility. Sets up screen loading callback and
+ * loads the LVGL screen. Critical for displaying system errors to the user
+ * in automotive applications where error visibility is essential.
+ */
 void ErrorPanel::Load()
 {
     log_v("Load() called");
@@ -114,7 +142,14 @@ void ErrorPanel::Load()
     log_t("ErrorPanel loaded successfully");
 }
 
-/// @brief Update the error panel with current error data
+/**
+ * @brief Updates error panel with current error data and manages auto-restoration
+ *
+ * Monitors ErrorManager for error queue changes, updates display when errors
+ * change, and triggers auto-restoration when no errors remain. Handles error
+ * sorting by severity and maintains current error index for navigation.
+ * Essential for real-time error monitoring in automotive systems.
+ */
 void ErrorPanel::Update()
 {
     log_v("Update() called");
@@ -191,7 +226,14 @@ void ErrorPanel::Update()
     // Error panel updates are handled internally - no notification needed
 }
 
-// Static Event Callbacks
+/**
+ * @brief Static callback function for LVGL screen load completion
+ * @param event LVGL event containing panel instance data
+ *
+ * Critical callback that registers button action handlers when error panel
+ * screen loading is complete. Ensures UI is ready before enabling user
+ * interactions. Essential for proper error panel navigation functionality.
+ */
 void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
     log_i("ErrorPanel::ShowPanelCompletionCallback() called - CRITICAL for UI state");
@@ -223,56 +265,15 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     }
 }
 
-// Legacy Action interface methods (retained for reference)
-/*
-Action ErrorPanel::GetShortPressAction()
-{
-    log_v("GetShortPressAction() called");
-
-    // Short press cycles through each error
-    return Action(
-        [this]()
-        {
-            log_i("ErrorPanel: Short press - cycling to next error");
-            if (currentErrors_.empty())
-            {
-                return;
-            }
-
-            // Use ErrorPanel's own cycling method (modern approach)
-            if (errorComponent_)
-            {
-                AdvanceToNextError();
-            }
-            else
-            {
-                log_e("ErrorPanel: errorComponent_ is null!");
-                ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
-                                                     "Cannot cycle errors - errorListComponent is null");
-            }
-        });
-}
-
-Action ErrorPanel::GetLongPressAction()
-{
-    log_v("GetLongPressAction() called");
-
-    // Long press clears all errors
-    return Action(
-        [this]()
-        {
-            log_i("ErrorPanel: Long press - clearing all errors");
-            // Clear all errors from the error manager
-            ErrorManager::Instance().ClearAllErrors();
-
-            // Clear local cache
-            currentErrors_.clear();
-        });
-}
-*/
-
-
-// Manager injection method
+/**
+ * @brief Injects manager dependencies for panel operation
+ * @param panelService Panel service for navigation control
+ * @param styleService Style service for theme management
+ *
+ * Dependency injection method that provides panel with required manager
+ * interfaces. Called during panel creation to establish service dependencies
+ * needed for proper panel operation and lifecycle management.
+ */
 void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     log_v("SetManagers() called");
@@ -319,21 +320,53 @@ static void ErrorPanelLongPress(void* panelContext)
     }
 }
 
+/**
+ * @brief Gets the short press callback function for this panel
+ * @return Function pointer to the short press handler
+ *
+ * Returns the static callback function that will be invoked when a short
+ * button press is detected while this panel is active. The returned function
+ * takes a panel context pointer and handles error cycling through the list.
+ */
 void (*ErrorPanel::GetShortPressFunction())(void* panelContext)
 {
     return ErrorPanelShortPress;
 }
 
+/**
+ * @brief Gets the long press callback function for this panel
+ * @return Function pointer to the long press handler
+ *
+ * Returns the static callback function that will be invoked when a long
+ * button press is detected while this panel is active. The returned function
+ * takes a panel context pointer and handles error clearing and panel exit.
+ */
 void (*ErrorPanel::GetLongPressFunction())(void* panelContext)
 {
     return ErrorPanelLongPress;
 }
 
+/**
+ * @brief Gets the panel context pointer for callback functions
+ * @return Pointer to this panel instance
+ *
+ * Returns a void pointer to this panel instance that will be passed to
+ * the button press callback functions. This enables the static callback
+ * functions to access the specific panel instance that should handle the event.
+ */
 void* ErrorPanel::GetPanelContext()
 {
     return this;
 }
 
+/**
+ * @brief Handles short button press events for error cycling
+ *
+ * Processes short button press events by advancing to the next error in the
+ * current error list. Cycles through all errors sequentially, wrapping back
+ * to the first error after reaching the last one. Does not clear errors or
+ * exit the panel - only provides navigation through the error list.
+ */
 void ErrorPanel::HandleShortPress()
 {
     log_t("ErrorPanel::HandleShortPress() - Manual cycling to next error");
@@ -355,6 +388,14 @@ void ErrorPanel::HandleShortPress()
     // User must use long press to clear and exit
 }
 
+/**
+ * @brief Handles long button press events for error clearing and panel exit
+ *
+ * Processes long button press events by clearing all errors from the error
+ * manager and exiting the error panel. Marks the error panel as inactive and
+ * triggers the restoration logic to return to the appropriate previous panel
+ * or default state. This provides the primary mechanism for dismissing errors.
+ */
 void ErrorPanel::HandleLongPress()
 {
     log_t("ErrorPanel: Long press - clearing all errors and exiting panel");
@@ -372,6 +413,14 @@ void ErrorPanel::HandleLongPress()
 }
 
 // Auto-cycling implementation
+/**
+ * @brief Sorts the current error list by severity level
+ *
+ * Arranges errors in priority order with CRITICAL errors first, ERROR level
+ * errors in the middle, and WARNING level errors last. This ensures that the
+ * most important errors are displayed first when cycling through the error list.
+ * Uses a lambda comparator to sort by the numeric severity level values.
+ */
 void ErrorPanel::SortErrorsBySeverity()
 {
     log_v("SortErrorsBySeverity() called");
@@ -385,6 +434,14 @@ void ErrorPanel::SortErrorsBySeverity()
 }
 
 
+/**
+ * @brief Advances to the next error in the current error list
+ *
+ * Increments the current error index to move to the next error, wrapping back
+ * to index 0 when reaching the end of the list. Updates the error component
+ * display to show the new current error. Handles empty error lists gracefully
+ * and ensures the component is properly initialized before updating the display.
+ */
 void ErrorPanel::AdvanceToNextError()
 {
     if (currentErrors_.empty())

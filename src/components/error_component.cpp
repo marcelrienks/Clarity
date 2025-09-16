@@ -3,7 +3,13 @@
 #include <esp32-hal-log.h>
 #include <algorithm>
 
-// Constructors and Destructors
+/**
+ * @brief Constructs an error display component with style service dependency
+ * @param styleService Style service for theme management
+ *
+ * Initializes the error component with style service for theming.
+ * Sets all UI element pointers to nullptr and initializes counters to zero.
+ */
 ErrorComponent::ErrorComponent(IStyleService *styleService)
     : styleService_(styleService), errorContainer_(nullptr), errorContentArea_(nullptr), errorCountLabel_(nullptr),
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
@@ -12,13 +18,28 @@ ErrorComponent::ErrorComponent(IStyleService *styleService)
     log_v("ErrorComponent() constructor called");
 }
 
+/**
+ * @brief Destructor for error component
+ *
+ * LVGL objects are automatically managed by the parent screen,
+ * so no manual deletion is needed. The destructor just logs cleanup.
+ */
 ErrorComponent::~ErrorComponent()
 {
     log_v("~ErrorComponent() destructor called");
     // LVGL objects are managed by the parent screen, no manual deletion needed
 }
 
-// Core Functionality Methods
+/**
+ * @brief Renders the error component on screen with full error display UI
+ * @param screen LVGL screen object to render on
+ * @param location Component positioning parameters
+ * @param display Display provider interface
+ *
+ * Creates main container with circular styling for round display, creates
+ * single error UI structure, and performs initial error display update.
+ * Reports errors if screen or display provider is null.
+ */
 void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     log_v("Render() called");
@@ -59,6 +80,14 @@ void ErrorComponent::Render(lv_obj_t *screen, const ComponentLocation &location,
     UpdateErrorDisplay();
 }
 
+/**
+ * @brief Refreshes error display (currently unused)
+ * @param reading Sensor reading value
+ *
+ * This method is part of IComponent interface but error display updates
+ * are controlled by ErrorPanel rather than through sensor readings.
+ * Updates come directly from ErrorManager when panel requests them.
+ */
 void ErrorComponent::Refresh(const Reading &reading)
 {
     // For single error display, we'll update directly from ErrorManager rather than using Reading
@@ -66,7 +95,12 @@ void ErrorComponent::Refresh(const Reading &reading)
     // Note: Don't call UpdateErrorDisplay() here during initialization - let the panel control the display
 }
 
-// Error-specific methods
+/**
+ * @brief Updates error display by fetching and sorting current errors
+ *
+ * Retrieves current error queue from ErrorManager, sorts by severity
+ * (CRITICAL first, WARNING last), and updates the display with sorted errors.
+ */
 void ErrorComponent::UpdateErrorDisplay()
 {
     // Get current errors from ErrorManager
@@ -81,6 +115,13 @@ void ErrorComponent::UpdateErrorDisplay()
     UpdateErrorDisplay(newErrors);
 }
 
+/**
+ * @brief Updates error display with provided error list
+ * @param errors Vector of ErrorInfo structures to display
+ *
+ * Stores error list, validates current index, displays the current error,
+ * and updates container border color based on error severity.
+ */
 void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
 {
     // Store current error state
@@ -104,6 +145,14 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors)
     }
 }
 
+/**
+ * @brief Updates error display with specific error index
+ * @param errors Vector of ErrorInfo structures to display
+ * @param currentIndex Index of error to display
+ *
+ * Sets specific error to display from the list, validates index bounds,
+ * and updates border color based on selected error's severity level.
+ */
 void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, size_t currentIndex)
 {
     // Store current error state
@@ -131,7 +180,14 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, si
     }
 }
 
-// Internal Methods
+/**
+ * @brief Creates UI structure for single error display
+ * @param parent Parent LVGL object to create UI in
+ *
+ * Builds complete error display UI including position indicator, content area,
+ * error level/source/message labels, and navigation hints. Uses large fonts
+ * and maximizes available space for error message display.
+ */
 void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
 {
     log_v("CreateSingleErrorUI() called");
@@ -183,6 +239,13 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_label_set_text(navigationIndicator_, "Loading...");
 }
 
+/**
+ * @brief Displays the current error from the error list
+ *
+ * Updates all UI elements with current error information including position
+ * indicator, error level with color coding, source, message text, and
+ * navigation hints. Returns early if no errors to prevent empty display.
+ */
 void ErrorComponent::DisplayCurrentError()
 {
     log_v("DisplayCurrentError() called");
@@ -224,7 +287,14 @@ void ErrorComponent::DisplayCurrentError()
 // Note: Deprecated methods CycleToNextError() and HandleCycleButtonPress() removed.
 // ErrorPanel now handles all cycling logic via HandleShortPress() -> AdvanceToNextError()
 
-// Helper Methods
+/**
+ * @brief Converts error level enum to display text
+ * @param level ErrorLevel enum value
+ * @return String representation of error level
+ *
+ * Returns abbreviated text for error levels: CRIT for CRITICAL,
+ * ERR for ERROR, WARN for WARNING, UNKN for unknown levels.
+ */
 const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
 {
     log_v("GetErrorLevelText() called");

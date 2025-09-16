@@ -7,6 +7,14 @@
 
 #include "esp32-hal-log.h"
 
+/**
+ * @brief Creates a GPIO provider for hardware pin control
+ * @return Unique pointer to IGpioProvider interface or nullptr on failure
+ *
+ * Instantiates GpioProvider with exception handling for allocation failures.
+ * Provides hardware abstraction for GPIO operations including digital/analog
+ * reads and interrupt management.
+ */
 std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 {
     try
@@ -29,6 +37,14 @@ std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
     }
 }
 
+/**
+ * @brief Creates a display provider for LVGL UI operations
+ * @param deviceProvider Device provider with initialized screen
+ * @return Unique pointer to IDisplayProvider interface or nullptr on failure
+ *
+ * Creates LvglDisplayProvider using screen from DeviceProvider. Validates
+ * device provider and screen availability. Reports critical errors on failure.
+ */
 std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceProvider* deviceProvider)
 {
     if (!deviceProvider)
@@ -67,6 +83,14 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceP
     }
 }
 
+/**
+ * @brief Creates a device provider for display hardware initialization
+ * @return Unique pointer to DeviceProvider or nullptr on failure
+ *
+ * Instantiates DeviceProvider and initializes display hardware including
+ * SPI configuration, GC9A01 panel setup, and LVGL initialization.
+ * Validates screen initialization before returning.
+ */
 std::unique_ptr<DeviceProvider> ProviderFactory::CreateDeviceProvider()
 {
     try

@@ -9,7 +9,16 @@
 #include <sstream>
 #include <cctype>
 
-// Constructors and Destructors
+/**
+ * @brief Constructs configuration panel with required service dependencies
+ * @param gpio GPIO provider for hardware interaction
+ * @param display Display provider for screen management
+ * @param styleService Style service for theme management
+ *
+ * Creates configuration panel with stack-allocated configuration component.
+ * Initializes menu system for automotive settings management including
+ * theme selection, calibration, and system configuration options.
+ */
 ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       currentMenuIndex_(0), configComponent_(), componentInitialized_(false)
@@ -17,6 +26,13 @@ ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
     log_v("ConfigPanel constructor called");
 }
 
+/**
+ * @brief Destructor cleans up configuration panel resources
+ *
+ * Safely deletes LVGL screen objects and cleans up menu state.
+ * Stack-allocated component is automatically destroyed. Ensures
+ * proper cleanup when exiting configuration interface.
+ */
 ConfigPanel::~ConfigPanel()
 {
     log_v("~ConfigPanel() destructor called");
@@ -32,6 +48,13 @@ ConfigPanel::~ConfigPanel()
 
 // Core Functionality Methods
 
+/**
+ * @brief Initializes configuration panel UI structure and menu system
+ *
+ * Creates LVGL screen, validates display provider, sets up component location,
+ * and initializes configuration menu structure. Builds menu hierarchy for
+ * automotive system configuration including themes, calibration, and settings.
+ */
 void ConfigPanel::Init()
 {
     log_v("Init() called");
@@ -53,6 +76,13 @@ void ConfigPanel::Init()
     log_i("ConfigPanel initialization completed");
 }
 
+/**
+ * @brief Loads configuration panel UI and displays main menu
+ *
+ * Renders configuration component, sets up main menu items, applies current
+ * theme styling, and loads the LVGL screen. Sets up button action handlers
+ * for menu navigation and selection. Critical for configuration interface.
+ */
 void ConfigPanel::Load()
 {
     log_v("Load() called");
@@ -98,6 +128,13 @@ void ConfigPanel::Load()
     log_t("ConfigPanel loaded successfully");
 }
 
+/**
+ * @brief Updates configuration panel display with current settings
+ *
+ * Monitors for theme changes and updates component styling accordingly.
+ * Configuration panels are primarily static with updates driven by
+ * user interactions rather than continuous data changes.
+ */
 void ConfigPanel::Update()
 {
     log_v("Update() called");
@@ -110,6 +147,13 @@ void ConfigPanel::Update()
 
 // Private methods
 
+/**
+ * @brief Executes the currently selected configuration menu option
+ *
+ * Processes the selected menu item based on its action type, handling
+ * panel navigation, submenu entry, and configuration changes. Core menu
+ * interaction logic for automotive configuration interface.
+ */
 void ConfigPanel::ExecuteCurrentOption()
 {
     log_v("ExecuteCurrentOption() called");
@@ -805,21 +849,53 @@ static void ConfigPanelLongPress(void* panelContext)
     }
 }
 
+/**
+ * @brief Gets the short press callback function for this panel
+ * @return Function pointer to the short press handler
+ *
+ * Returns the static callback function that will be invoked when a short
+ * button press is detected while this panel is active. The config panel uses
+ * short presses to cycle through menu options and navigate the interface.
+ */
 void (*ConfigPanel::GetShortPressFunction())(void* panelContext)
 {
     return ConfigPanelShortPress;
 }
 
+/**
+ * @brief Gets the long press callback function for this panel
+ * @return Function pointer to the long press handler
+ *
+ * Returns the static callback function that will be invoked when a long
+ * button press is detected while this panel is active. The config panel uses
+ * long presses to select menu items and execute configuration actions.
+ */
 void (*ConfigPanel::GetLongPressFunction())(void* panelContext)
 {
     return ConfigPanelLongPress;
 }
 
+/**
+ * @brief Gets the panel context pointer for callback functions
+ * @return Pointer to this panel instance
+ *
+ * Returns a void pointer to this panel instance that will be passed to
+ * the button press callback functions. Enables the static callback functions
+ * to access the specific panel instance that should handle the events.
+ */
 void* ConfigPanel::GetPanelContext()
 {
     return this;
 }
 
+/**
+ * @brief Handles short button press events for menu navigation
+ *
+ * Processes short button press events by cycling to the next menu item.
+ * Works in both main menu and submenu contexts, wrapping back to the first
+ * item after reaching the end. Updates the UI component to highlight the
+ * newly selected menu item and includes test logging for automation.
+ */
 void ConfigPanel::HandleShortPress()
 {
     if (menuItems_.empty())
@@ -1295,6 +1371,15 @@ std::vector<std::string> ConfigPanel::ParseOptions(const std::string& constraint
     return options;
 }
 
+/**
+ * @brief Parses a full configuration key into section and item components
+ * @param fullKey Full configuration key in format "section.item"
+ * @return Pair containing section name and item key
+ *
+ * Splits a configuration key string at the dot separator to extract the
+ * section name and item key. Returns empty section if no dot is found.
+ * Used by the dynamic configuration system to map keys to their sections.
+ */
 std::pair<std::string, std::string> ConfigPanel::ParseConfigKey(const std::string& fullKey) const
 {
     size_t dotPos = fullKey.find('.');

@@ -13,8 +13,13 @@
 #include "utilities/types.h"
 #include <esp32-hal-log.h>
 
-// Constructors
-
+/**
+ * @brief Constructs ManagerFactory with custom provider factory
+ * @param providerFactory Provider factory for creating hardware providers
+ *
+ * Accepts ownership of a provider factory for dependency injection.
+ * Falls back to creating default ProviderFactory if nullptr is provided.
+ */
 ManagerFactory::ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory)
     : providerFactory_(std::move(providerFactory))
 {
@@ -24,13 +29,24 @@ ManagerFactory::ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory
     }
 }
 
+/**
+ * @brief Default constructor creates standard provider factory
+ *
+ * Initializes ManagerFactory with default ProviderFactory for
+ * standard hardware provider creation.
+ */
 ManagerFactory::ManagerFactory()
     : providerFactory_(std::make_unique<ProviderFactory>())
 {
 }
 
-// Private Helper Methods
-
+/**
+ * @brief Initializes hardware providers if not already created
+ * @return true if all providers initialized successfully
+ *
+ * Creates device, GPIO, and display providers through the provider factory.
+ * Ensures all providers are available before manager creation.
+ */
 bool ManagerFactory::InitializeProviders()
 {
     
@@ -67,8 +83,18 @@ bool ManagerFactory::InitializeProviders()
     return true;
 }
 
-// Implementation Methods
-
+/**
+ * @brief Internal implementation for creating PanelManager
+ * @param display Display provider for UI rendering
+ * @param gpio GPIO provider for hardware interaction
+ * @param styleService Style service for theme management
+ * @param preferenceService Preference service for configuration
+ * @param interruptManager Interrupt manager for event handling
+ * @return Unique pointer to PanelManager or nullptr on failure
+ *
+ * Validates all dependencies, creates PanelManager with dependency injection,
+ * and initializes it before returning. Reports critical errors on failure.
+ */
 std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
                                                                       IStyleService *styleService,
                                                                       IPreferenceService *preferenceService,
@@ -120,6 +146,14 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
     return panelManager;
 }
 
+/**
+ * @brief Internal implementation for creating StyleManager
+ * @param theme Initial theme name (defaults to DAY if null)
+ * @return Unique pointer to StyleManager or nullptr on failure
+ *
+ * Creates StyleManager with specified or default theme.
+ * Reports critical error if allocation fails.
+ */
 std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char *theme)
 {
 
@@ -136,6 +170,13 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 }
 
 
+/**
+ * @brief Internal implementation for creating PreferenceManager
+ * @return Unique pointer to IPreferenceService or nullptr on failure
+ *
+ * Creates PreferenceManager for modern configuration capabilities.
+ * Returns as IPreferenceService interface for abstraction.
+ */
 std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManagerImpl()
 {
     // Create PreferenceManager for modern configuration capabilities
@@ -151,6 +192,14 @@ std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManagerImpl(
     return manager;
 }
 
+/**
+ * @brief Internal implementation for creating InterruptManager
+ * @param gpioProvider GPIO provider for hardware interrupts
+ * @return Pointer to InterruptManager singleton or nullptr on failure
+ *
+ * Gets singleton instance of InterruptManager and initializes it with GPIO provider.
+ * Initialization creates handlers that own sensors for interrupt processing.
+ */
 InterruptManager* ManagerFactory::CreateInterruptManagerImpl(IGpioProvider* gpioProvider)
 {
 
@@ -176,6 +225,13 @@ InterruptManager* ManagerFactory::CreateInterruptManagerImpl(IGpioProvider* gpio
     return manager;
 }
 
+/**
+ * @brief Internal implementation for creating ErrorManager
+ * @return Pointer to ErrorManager singleton or nullptr on failure
+ *
+ * Returns the singleton instance of ErrorManager for system-wide
+ * error reporting and management.
+ */
 ErrorManager *ManagerFactory::CreateErrorManagerImpl()
 {
 
@@ -189,8 +245,18 @@ ErrorManager *ManagerFactory::CreateErrorManagerImpl()
     return errorManager;
 }
 
-// IManagerFactory Interface Implementation
-
+/**
+ * @brief Creates PanelManager with provided or factory-created providers
+ * @param display Display provider (optional, created if null)
+ * @param gpio GPIO provider (optional, created if null)
+ * @param styleService Style service for theme management
+ * @param preferenceService Preference service for configuration
+ * @param interruptManager Interrupt manager for event handling
+ * @return Unique pointer to PanelManager or nullptr on failure
+ *
+ * Public interface method that uses provided providers or creates them
+ * through provider factory if not supplied. Delegates to implementation method.
+ */
 std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
                                                                   IStyleService *styleService,
                                                                   IPreferenceService *preferenceService,
@@ -214,16 +280,37 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManager(IDisplayProvide
     return CreatePanelManagerImpl(displayToUse, gpioToUse, styleService, preferenceService, interruptManager);
 }
 
+/**
+ * @brief Creates StyleManager with specified theme
+ * @param theme Theme name to initialize with
+ * @return Unique pointer to StyleManager
+ *
+ * Public interface method that delegates to implementation.
+ */
 std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManager(const char *theme)
 {
     return CreateStyleManagerImpl(theme);
 }
 
+/**
+ * @brief Creates PreferenceManager for configuration management
+ * @return Unique pointer to IPreferenceService interface
+ *
+ * Public interface method that delegates to implementation.
+ */
 std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManager()
 {
     return CreatePreferenceManagerImpl();
 }
 
+/**
+ * @brief Creates InterruptManager with provided or factory-created GPIO provider
+ * @param gpioProvider GPIO provider (optional, created if null)
+ * @return Pointer to InterruptManager singleton
+ *
+ * Public interface method that uses provided GPIO provider or creates one
+ * through provider factory if not supplied.
+ */
 InterruptManager* ManagerFactory::CreateInterruptManager(IGpioProvider* gpioProvider)
 {
     
@@ -240,6 +327,12 @@ InterruptManager* ManagerFactory::CreateInterruptManager(IGpioProvider* gpioProv
     return CreateInterruptManagerImpl(gpioToUse);
 }
 
+/**
+ * @brief Creates ErrorManager singleton instance
+ * @return Pointer to ErrorManager singleton
+ *
+ * Public interface method that delegates to implementation.
+ */
 ErrorManager* ManagerFactory::CreateErrorManager()
 {
     return CreateErrorManagerImpl();

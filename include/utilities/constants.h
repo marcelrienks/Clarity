@@ -78,9 +78,6 @@ enum class UIState
     BUSY  ///< UI operations in progress (loading, updating, animating), no interrupts allowed
 };
 
-/// @brief Convert UIState enum to string for debugging
-/// @param state UIState to convert
-/// @return String representation of the UIState
 inline const char* UIStateToString(UIState state)
 {
     switch (state)

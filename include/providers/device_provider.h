@@ -51,46 +51,18 @@ class DeviceProvider : public lgfx::LGFX_Device, public IDeviceProvider
 {
 public:
     // ========== Constructors and Destructor ==========
-    /**
-     * @brief Construct DeviceProvider and configure hardware components
-     * @details Sets up SPI bus, GC9A01 panel, and backlight configurations
-     */
     DeviceProvider();
     DeviceProvider(const DeviceProvider &) = delete;
     DeviceProvider &operator=(const DeviceProvider &) = delete;
-    /**
-     * @brief Default destructor
-     */
     ~DeviceProvider() = default;
 
     // ========== Public Interface Methods ==========
-    /**
-     * @brief Initialize display hardware and LVGL subsystem
-     * @details Performs full display initialization, LVGL setup, and screen creation
-     */
     void prepare() override;
-
-    /**
-     * @brief Get the active LVGL screen object
-     * @return Pointer to the main LVGL screen object
-     */
     lv_obj_t* GetScreen() const override;
-
-    /**
-     * @brief Check if display provider is ready for use
-     * @return true if display is initialized and screen is available
-     */
     bool IsReady() const override;
 
 private:
     // ========== Static Methods ==========
-    /**
-     * @brief LVGL display flush callback for rendering pixel data to hardware
-     * @param display LVGL display object
-     * @param area Screen area to render
-     * @param data Pixel data buffer to flush to display
-     * @details Handles RGB565 byte swapping and DMA transfer to GC9A01
-     */
     static void display_flush_callback(lv_display_t *display, const lv_area_t *area, unsigned char *data);
 
     // ========== Private Data Members ==========

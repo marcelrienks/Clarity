@@ -66,18 +66,8 @@ class IPanel : public IActionService
     virtual ~IPanel() = default;
 
     // Core Interface Methods
-    /// @brief Initialize the panel and its components
-    /// Uses stored providers injected via constructor
     virtual void Init() = 0;
-
-    /// @brief Load the panel (async completion via notification service)
-    /// Uses stored providers injected via constructor
-    /// Calls notification service when loading is complete
     virtual void Load() = 0;
-
-    /// @brief Update the panel data (async completion via notification service)  
-    /// Uses stored providers injected via constructor
-    /// Calls notification service when update is complete
     virtual void Update() = 0;
 
     // Note: Button handling methods inherited from IActionService
@@ -86,10 +76,6 @@ class IPanel : public IActionService
     // - void (*GetLongPressFunction())(void* panelContext) 
     // - void* GetPanelContext()
 
-    /// @brief Set manager services for panels that need them
-    /// @param panelService Service for panel switching
-    /// @param styleService Service for theme management
-    /// @details Called after panel construction to inject manager dependencies
     virtual void SetManagers(IPanelService *panelService, IStyleService *styleService)
     {
     }

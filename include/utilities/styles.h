@@ -128,13 +128,6 @@ namespace ThemeDefinitions
 
 namespace StyleUtils
 {
-    /// @brief Get color for error level
-    /// @param level The error severity level
-    /// @return LVGL color corresponding to the error level
-    /// @details Maps error levels to appropriate colors:
-    /// - CRITICAL: Red (0xFF0000)
-    /// - ERROR: Yellow (0xFFFF00) 
-    /// - WARNING: White (0xFFFFFF)
     inline lv_color_t GetErrorColor(ErrorLevel level)
     {
         switch (level)

@@ -56,7 +56,8 @@
       "Bash(git restore:*)",
       "Bash(mkdir:*)",
       "Bash(xtensa-esp32-elf-g++:*)",
-      "Bash(gcc:*)"
+      "Bash(gcc:*)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

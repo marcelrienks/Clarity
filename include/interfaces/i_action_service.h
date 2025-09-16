@@ -60,21 +60,6 @@ public:
     
     // New interface methods for Trigger/Action architecture
     
-    /**
-     * @brief Get simple static function pointer for short button press - NEW ARCHITECTURE
-     * @details Returns static callback function that will be injected into
-     * ActionHandler. Function uses static context or singleton access.
-     * @return Static function pointer with signature: void(*)()
-     * @note Default implementation returns nullptr (no action)
-     */
     virtual void (*GetShortPressAction())() { return nullptr; }
-
-    /**
-     * @brief Get simple static function pointer for long button press - NEW ARCHITECTURE  
-     * @details Returns static callback function that will be injected into
-     * ActionHandler. Function uses static context or singleton access.
-     * @return Static function pointer with signature: void(*)()
-     * @note Default implementation returns nullptr (no action)
-     */
     virtual void (*GetLongPressAction())() { return nullptr; }
 };

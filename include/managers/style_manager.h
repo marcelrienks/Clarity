@@ -69,185 +69,90 @@ class StyleManager : public IStyleService
 
 public:
     // ========== Constructors and Destructor ==========
-    /**
-     * @brief Construct StyleManager with initial theme
-     * @param theme Initial theme name (e.g., "night", "day")
-     */
     explicit StyleManager(const char *theme);
     StyleManager(const StyleManager &) = delete;
     StyleManager &operator=(const StyleManager &) = delete;
-    /**
-     * @brief Destructor - cleans up LVGL style objects
-     */
     ~StyleManager();
 
     // ========== Static Methods ==========
-    /**
-     * @brief Get singleton instance for interrupt architecture
-     * @return Reference to the global StyleManager instance
-     */
     static StyleManager& Instance();
 
     // ========== Public Interface Methods ==========
-    /**
-     * @brief Initialize all LVGL style objects and apply initial theme
-     * @details Must be called after LVGL initialization
-     */
     void InitializeStyles() override;
 
-    /**
-     * @brief Change the current theme and refresh all styles
-     * @param theme Theme name to switch to (e.g., "night", "day")
-     */
     void SetTheme(const char *theme) override;
 
-    /**
-     * @brief Apply background theme styles to a specific screen
-     * @param screen LVGL screen object to apply theme to
-     */
     void ApplyThemeToScreen(lv_obj_t *screen) override;
 
-    /**
-     * @brief Refresh theme from preferences and apply changes
-     * @details Reads current theme from preference service and updates if changed
-     */
     void ApplyCurrentTheme() override;
 
-    /**
-     * @brief Get color scheme for a specified theme
-     * @param theme Theme name to get colors for
-     * @return ThemeColors structure containing all theme colors
-     */
     const ThemeColors &GetColours(const std::string& theme) const;
 
-    /**
-     * @brief Get shared background style object
-     * @return Reference to the background LVGL style
-     */
     lv_style_t &GetBackgroundStyle() override
     {
         return backgroundStyle_;
     }
 
-    /**
-     * @brief Get shared text style object
-     * @return Reference to the text LVGL style
-     */
     lv_style_t &GetTextStyle() override
     {
         return textStyle_;
     }
 
-    /**
-     * @brief Get gauge style for normal/safe operating range
-     * @return Reference to the normal gauge LVGL style
-     */
     lv_style_t &GetGaugeNormalStyle() override
     {
         return gaugeNormalStyle_;
     }
 
-    /**
-     * @brief Get gauge style for warning operating range
-     * @return Reference to the warning gauge LVGL style
-     */
     lv_style_t &GetGaugeWarningStyle() override
     {
         return gaugeWarningStyle_;
     }
 
-    /**
-     * @brief Get gauge style for danger/critical operating range
-     * @return Reference to the danger gauge LVGL style
-     */
     lv_style_t &GetGaugeDangerStyle() override
     {
         return gaugeDangerStyle_;
     }
 
-    /**
-     * @brief Get shared gauge indicator style for major tick marks
-     * @return Reference to the gauge indicator LVGL style
-     */
     lv_style_t &GetGaugeIndicatorStyle() override
     {
         return gaugeIndicatorStyle_;
     }
 
-    /**
-     * @brief Get shared gauge items style for minor tick marks
-     * @return Reference to the gauge items LVGL style
-     */
     lv_style_t &GetGaugeItemsStyle() override
     {
         return gaugeItemsStyle_;
     }
 
-    /**
-     * @brief Get shared gauge main style for arc background
-     * @return Reference to the gauge main LVGL style
-     */
     lv_style_t &GetGaugeMainStyle() override
     {
         return gaugeMainStyle_;
     }
 
-    /**
-     * @brief Get shared gauge danger section highlighting style
-     * @return Reference to the gauge danger section LVGL style
-     */
     lv_style_t &GetGaugeDangerSectionStyle() override
     {
         return gaugeDangerSectionStyle_;
     }
 
-    /**
-     * @brief Get name of currently active theme
-     * @return String reference to current theme name
-     */
     const std::string& GetCurrentTheme() const override;
 
-    /**
-     * @brief Get color scheme of currently active theme
-     * @return Reference to current theme's color structure
-     */
     const ThemeColors &GetThemeColors() const override
     {
         return GetColours(GetCurrentTheme());
     }
 
-    /**
-     * @brief Check if StyleManager has been properly initialized
-     * @return true if initialized, false otherwise
-     */
     bool IsInitialized() const override
     {
         return initialized_;
     }
 
-    /**
-     * @brief Switch to a different theme immediately
-     * @param themeName Name of theme to switch to
-     * @details Direct theme switching for panel actions
-     */
     void SwitchTheme(const char* themeName);
 
-    /**
-     * @brief Inject preference service for theme persistence
-     * @param preferenceService Pointer to preference service instance
-     */
     void SetPreferenceService(IPreferenceService* preferenceService);
 
-    /**
-     * @brief Load configuration from preference system
-     */
     void LoadConfiguration();
 
 private:
     // ========== Private Methods ==========
-    /**
-     * @brief Reset all LVGL style objects to default state
-     */
     void ResetStyles();
 
     // ========== Private Data Members ==========

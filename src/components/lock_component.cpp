@@ -3,7 +3,6 @@
 #include <esp32-hal-log.h>
 #include <icons/lock_alt_solid.h>
 
-// Constructors and Destructors
 LockComponent::LockComponent(IStyleService *styleService) : lockIcon_(nullptr), styleService_(styleService)
 {
     log_v("LockComponent constructor called");
@@ -18,8 +17,6 @@ LockComponent::~LockComponent()
         lv_obj_del(lockIcon_);
     }
 }
-
-// Core Functionality Methods
 
 /// @brief This method initializes the lock status icon with location parameters
 /// @param screen The screen object to render the component on.

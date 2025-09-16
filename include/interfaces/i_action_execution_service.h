@@ -19,11 +19,6 @@ class IActionExecutionService {
 public:
     virtual ~IActionExecutionService() = default;
     
-    /// @brief Handle short button press events
-    /// Routes to current panel's short press handler
     virtual void HandleShortPress() = 0;
-    
-    /// @brief Handle long button press events  
-    /// Routes to current panel's long press handler
     virtual void HandleLongPress() = 0;
 };

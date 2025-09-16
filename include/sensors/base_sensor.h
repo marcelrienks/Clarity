@@ -56,29 +56,6 @@ class BaseSensor : public ISensor
 protected:
     bool initialized_ = false; ///< Initialization flag for first-read handling
 
-    /**
-     * @brief Template method for consistent change detection across all sensor types
-     * @tparam T The data type being compared (bool, int32_t, double, etc.)
-     * @param currentValue The current sensor reading
-     * @param previousValue Reference to stored previous value (updated by this method)
-     * @return true if value has changed since last call, false otherwise
-     *
-     * @details This template method provides consistent change detection logic:
-     * - First call (initialization): Sets previousValue, returns false (no change)
-     * - Subsequent calls: Compares values, updates previousValue, returns change status
-     * - Atomic operation: Value comparison and update happen together
-     * - Thread-safe: Designed for ESP32 single-threaded interrupt processing
-     *
-     * @change_detection_rules:
-     * 1. First read never reports a change (initialization)
-     * 2. Previous state is updated atomically with comparison
-     * 3. Each sensor maintains its own change detection state
-     * 4. Template supports any comparable type (bool, int32_t, double, etc.)
-     *
-     * @corruption_prevention This method must be called exactly once per evaluation
-     * cycle to prevent change detection corruption. Multiple calls in the same
-     * cycle will corrupt the previousValue state.
-     */
     template<typename T>
     bool DetectChange(T currentValue, T& previousValue)
     {
@@ -100,19 +77,8 @@ public:
     virtual void Init() = 0;
     virtual Reading GetReading() = 0;
     
-    /**
-     * @brief Check if this sensor has state changes (must be implemented by derived classes)
-     * @return true if sensor state has changed since last evaluation
-     * @note This method should use DetectChange template for consistency
-     * @note This is required by the interrupt system and must be implemented
-     */
     virtual bool HasStateChanged() = 0;
 
-    /**
-     * @brief Virtual method for sensor-specific interrupt execution (override in derived classes)
-     * @details This method is called when the interrupt condition is met
-     * Default implementation does nothing - sensors should override for specific behavior
-     */
     virtual void OnInterruptTriggered() {
     }
 

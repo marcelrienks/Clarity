@@ -32,64 +32,16 @@ public:
     ~InterruptManager() = default;
 
     // ========== Static Methods ==========
-    /**
-     * @brief Get singleton instance using Meyer's singleton pattern
-     * @return Reference to the global InterruptManager instance
-     */
     static InterruptManager& Instance();
 
     // ========== Public Interface Methods ==========
-    /**
-     * @brief Initialize interrupt system with GPIO provider
-     * @param gpioProvider Pointer to GPIO provider for hardware access
-     * @details Creates TriggerHandler and ActionHandler, registers system interrupts
-     */
     void Init(IGpioProvider* gpioProvider = nullptr);
-
-    /**
-     * @brief Process all registered interrupts based on UI state
-     * @details Actions processed continuously, triggers only during UI idle periods
-     */
     void Process();
-
-    /**
-     * @brief Register a trigger condition for monitoring
-     * @param trigger Trigger configuration to register
-     * @return true if registration successful, false otherwise
-     */
     bool RegisterTrigger(const Trigger& trigger);
-
-    /**
-     * @brief Remove trigger by identifier
-     * @param id Unique identifier of trigger to unregister
-     */
     void UnregisterTrigger(const char* id);
-
-    /**
-     * @brief Register an action for execution
-     * @param action Action configuration to register
-     * @return true if registration successful, false otherwise
-     */
     bool RegisterAction(const Action& action);
-
-    /**
-     * @brief Remove action by identifier
-     * @param id Unique identifier of action to unregister
-     */
     void UnregisterAction(const char* id);
-
-    /**
-     * @brief Update panel button handler functions
-     * @param shortPressFunc Function to call on short button press
-     * @param longPressFunc Function to call on long button press
-     * @param context Context pointer to pass to handler functions
-     */
     void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
-
-    /**
-     * @brief Register a legacy interrupt handler
-     * @param handler Shared pointer to handler implementation
-     */
     void RegisterHandler(std::shared_ptr<IHandler> handler);
 
     /**

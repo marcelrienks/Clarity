@@ -7,8 +7,16 @@
 #include "utilities/constants.h"
 #include "utilities/logging.h"
 
-// Constructors and Destructors
-
+/**
+ * @brief Constructs OEM oil monitoring panel with dual gauge display
+ * @param gpio GPIO provider for sensor hardware access
+ * @param display Display provider for screen management
+ * @param styleService Style service for theme-based styling
+ *
+ * Creates automotive oil monitoring panel with pressure and temperature gauges.
+ * Initializes stack-allocated components, creates sensor instances, and sets up
+ * LVGL animation structures for smooth needle movements.
+ */
 OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       oemOilPressureComponent_(styleService), oemOilTemperatureComponent_(styleService),
@@ -23,6 +31,13 @@ OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleS
     lv_anim_init(&temperatureAnimation_);
 }
 
+/**
+ * @brief Destructor cleans up panel resources and stops animations
+ *
+ * Safely stops any running LVGL animations, deletes animation objects,
+ * cleans up LVGL screen, and stops sensor readings. Ensures proper cleanup
+ * of automotive monitoring resources and prevents animation memory leaks.
+ */
 OemOilPanel::~OemOilPanel()
 {
     log_v("~OemOilPanel() destructor called");
@@ -61,6 +76,13 @@ OemOilPanel::~OemOilPanel()
 
 /// @brief Initialize the panel for showing Oil related information
 /// Creates screen and initializes sensors with sentinel values
+/**
+ * @brief Initializes OEM oil panel UI structure and sensor configuration
+ *
+ * Creates LVGL screen, validates providers, configures oil pressure and
+ * temperature sensors, and sets up component positioning. Establishes
+ * sensor reading intervals appropriate for automotive monitoring.
+ */
 void OemOilPanel::Init()
 {
     log_v("Init() called");
@@ -102,6 +124,13 @@ void OemOilPanel::Init()
 
 /// @brief Load the panel with component rendering and screen display
 /// @param callbackFunction to be called when the panel load is completed
+/**
+ * @brief Loads OEM oil panel UI components and starts sensor monitoring
+ *
+ * Renders oil pressure and temperature components, performs initial sensor
+ * readings, starts sensor monitoring, and loads LVGL screen. Critical for
+ * establishing real-time automotive oil system monitoring.
+ */
 void OemOilPanel::Load()
 {
     log_v("Load() called");
@@ -183,6 +212,13 @@ void OemOilPanel::Load()
 }
 
 /// @brief Update the reading on the screen
+/**
+ * @brief Updates OEM oil panel with current sensor readings and animations
+ *
+ * Monitors for theme changes, applies sensor settings periodically, and updates
+ * both oil pressure and temperature readings. Manages LVGL animations for smooth
+ * needle movements and coordinates UI state with panel service.
+ */
 void OemOilPanel::Update()
 {
     // Check for theme changes and apply immediately
@@ -689,6 +725,16 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
     return mappedValue;
 }
 
+/**
+ * @brief Maps pressure sensor value to display scale based on unit type
+ * @param sensorValue Raw sensor reading
+ * @param unit Pressure unit (PSI, kPa, or Bar)
+ * @return Mapped value for gauge display (0-60 scale)
+ *
+ * Dispatches to appropriate unit-specific mapping function based on
+ * user preference settings. Ensures consistent gauge display regardless
+ * of configured pressure units.
+ */
 int32_t OemOilPanel::MapPressureByUnit(int32_t sensorValue, const std::string& unit)
 {
     if (unit == "PSI") return MapPSIPressure(sensorValue);
@@ -697,6 +743,15 @@ int32_t OemOilPanel::MapPressureByUnit(int32_t sensorValue, const std::string& u
     return MapBarPressure(sensorValue);
 }
 
+/**
+ * @brief Maps PSI pressure sensor value to display scale
+ * @param sensorValue Raw sensor reading in PSI (0-145 range)
+ * @return Mapped value for gauge display (0-60 scale)
+ *
+ * Maps automotive PSI pressure range (15-145 PSI) to gauge display scale.
+ * Clamps to valid operating range and provides linear mapping for
+ * consistent gauge needle positioning.
+ */
 int32_t OemOilPanel::MapPSIPressure(int32_t sensorValue)
 {
     // Sensor returns 0-145 PSI, map to 0-60 display
@@ -707,6 +762,15 @@ int32_t OemOilPanel::MapPSIPressure(int32_t sensorValue)
     return ((clampedValue - 15) * 60) / 130;
 }
 
+/**
+ * @brief Maps kPa pressure sensor value to display scale
+ * @param sensorValue Raw sensor reading in kPa (0-1000 range)
+ * @return Mapped value for gauge display (0-60 scale)
+ *
+ * Maps automotive kPa pressure range (100-1000 kPa) to gauge display scale.
+ * Clamps to valid operating range and provides linear mapping for
+ * consistent gauge needle positioning.
+ */
 int32_t OemOilPanel::MapkPaPressure(int32_t sensorValue)
 {
     // Sensor returns 0-1000 kPa, map to 0-60 display
@@ -717,6 +781,15 @@ int32_t OemOilPanel::MapkPaPressure(int32_t sensorValue)
     return ((clampedValue - 100) * 60) / 900;
 }
 
+/**
+ * @brief Maps Bar pressure sensor value to display scale
+ * @param sensorValue Raw sensor reading in Bar (0-10 range)
+ * @return Mapped value for gauge display (0-60 scale)
+ *
+ * Maps automotive Bar pressure range (1-10 Bar) to gauge display scale.
+ * Clamps to valid operating range and provides linear mapping for
+ * consistent gauge needle positioning.
+ */
 int32_t OemOilPanel::MapBarPressure(int32_t sensorValue)
 {
     // Bar: sensor returns 0-10 Bar, map to 0-60 display
@@ -727,6 +800,17 @@ int32_t OemOilPanel::MapBarPressure(int32_t sensorValue)
     return ((clampedValue - 1) * 60) / 9;
 }
 
+/**
+ * @brief Clamps a value to specified minimum and maximum bounds
+ * @param value Input value to clamp
+ * @param minVal Minimum allowed value
+ * @param maxVal Maximum allowed value
+ * @return Clamped value within bounds
+ *
+ * Utility function that ensures sensor values stay within valid operational
+ * ranges for automotive applications. Prevents gauge display errors from
+ * out-of-range sensor readings.
+ */
 int32_t OemOilPanel::ClampValue(int32_t value, int32_t minVal, int32_t maxVal)
 {
     if (value < minVal) return minVal;
@@ -803,21 +887,53 @@ static void OemOilPanelLongPress(void* panelContext)
     }
 }
 
+/**
+ * @brief Gets the short press callback function for this panel
+ * @return Function pointer to the short press handler
+ *
+ * Returns the static callback function for short button presses. Currently
+ * the oil panel does not respond to short presses, so this returns a no-op
+ * function that maintains the interface contract.
+ */
 void (*OemOilPanel::GetShortPressFunction())(void* panelContext)
 {
     return OemOilPanelShortPress;
 }
 
+/**
+ * @brief Gets the long press callback function for this panel
+ * @return Function pointer to the long press handler
+ *
+ * Returns the static callback function that will be invoked when a long
+ * button press is detected while this panel is active. The oil panel responds
+ * to long presses by navigating to the configuration panel.
+ */
 void (*OemOilPanel::GetLongPressFunction())(void* panelContext)
 {
     return OemOilPanelLongPress;
 }
 
+/**
+ * @brief Gets the panel context pointer for callback functions
+ * @return Pointer to this panel instance
+ *
+ * Returns a void pointer to this panel instance that will be passed to
+ * the button press callback functions. Enables the static callback functions
+ * to access the specific panel instance that should handle the events.
+ */
 void* OemOilPanel::GetPanelContext()
 {
     return this;
 }
 
+/**
+ * @brief Handles long button press events for panel navigation
+ *
+ * Processes long button press events by navigating to the configuration panel.
+ * This provides users with access to system settings and calibration options
+ * from the main oil monitoring display. Includes error handling for cases where
+ * the panel service is not available.
+ */
 void OemOilPanel::HandleLongPress()
 {
     if (panelService_)

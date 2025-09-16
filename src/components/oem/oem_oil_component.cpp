@@ -6,8 +6,6 @@
 #include <esp32-hal-log.h>
 #include <math.h>
 
-// Constructors and Destructors
-
 OemOilComponent::OemOilComponent(IStyleService *styleService)
     : styleService_(styleService), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
       needleHighlightLine_(nullptr), needleHighlightMiddle_(nullptr), needleHighlightBase_(nullptr), oilIcon_(nullptr),
@@ -24,7 +22,7 @@ OemOilComponent::OemOilComponent(IStyleService *styleService)
 
 OemOilComponent::~OemOilComponent()
 {
-    // Cleanup LVGL objects
+    // LVGL objects are managed by parent screen - explicit cleanup for safety
     if (needleLine_)
         lv_obj_del(needleLine_);
     if (needleMiddle_)

@@ -9,6 +9,14 @@
 
 #include "esp32-hal-log.h"
 
+/**
+ * @brief Constructs TriggerHandler with GPIO provider and initializes all sensors
+ * @param gpioProvider GPIO provider for hardware sensor access
+ *
+ * Creates TriggerHandler instance that owns and manages multiple GPIO sensors
+ * for monitoring vehicle state changes. Initializes priority tracking system
+ * and creates sensors for key presence, lock status, lights, and debug error.
+ */
 TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider),
       triggerCount_(0)
@@ -50,14 +58,36 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
     }
 }
 
+/**
+ * @brief Destructor cleans up TriggerHandler resources
+ *
+ * GPIO sensors are automatically cleaned up through unique_ptr.
+ * No manual cleanup required for GPIO resources.
+ */
 TriggerHandler::~TriggerHandler() {
 }
 
+/**
+ * @brief Main processing loop for trigger evaluation
+ *
+ * Called during UI idle periods to evaluate all registered triggers
+ * for state changes. Ensures trigger processing doesn't interfere
+ * with UI responsiveness in automotive applications.
+ */
 void TriggerHandler::Process() {
     // Only evaluate triggers during UI idle - this is called from InterruptManager
     EvaluateTriggers();
 }
 
+/**
+ * @brief Registers a trigger for state monitoring and execution
+ * @param trigger Trigger configuration including ID, type, priority, and functions
+ * @return true if registration successful, false if duplicate ID or array full
+ *
+ * Adds trigger to internal registry with priority and type classification.
+ * Prevents duplicate IDs and enforces maximum trigger limit for memory safety.
+ * Essential for automotive state monitoring and panel transitions.
+ */
 bool TriggerHandler::RegisterTrigger(const Trigger& trigger) {
     if (triggerCount_ >= MAX_TRIGGERS) {
         log_e("Cannot register trigger '%s' - maximum triggers reached (%d)", 
@@ -81,6 +111,14 @@ bool TriggerHandler::RegisterTrigger(const Trigger& trigger) {
     return true;
 }
 
+/**
+ * @brief Removes a registered trigger from monitoring
+ * @param id Unique identifier of trigger to remove
+ *
+ * Finds and removes trigger from registry, compacting the array.
+ * Used during panel transitions to clean up previous triggers
+ * and prevent unwanted state change responses.
+ */
 void TriggerHandler::UnregisterTrigger(const char* id) {
     Trigger* trigger = FindTrigger(id);
     if (!trigger) {
@@ -98,6 +136,13 @@ void TriggerHandler::UnregisterTrigger(const char* id) {
     log_i("Unregistered trigger '%s'", id);
 }
 
+/**
+ * @brief Evaluates all registered triggers for state changes
+ *
+ * Core trigger processing that examines each registered trigger
+ * for sensor state changes and executes appropriate responses.
+ * Implements priority-based execution and same-type restoration.
+ */
 void TriggerHandler::EvaluateTriggers() {
     // Process each trigger for state changes
     for (size_t i = 0; i < triggerCount_; i++) {
@@ -105,6 +150,15 @@ void TriggerHandler::EvaluateTriggers() {
     }
 }
 
+/**
+ * @brief Evaluates single trigger for state change and priority-based execution
+ * @param trigger Trigger to evaluate
+ *
+ * Complex trigger evaluation implementing priority blocking system and same-type
+ * restoration. Handles activation/deactivation flows with automotive reliability
+ * requirements. Preserves trigger state even when execution is blocked by higher
+ * priority triggers, enabling proper restoration when priorities change.
+ */
 void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     if (!trigger.sensor) {
         return; // No sensor associated
@@ -183,21 +237,54 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     }
 }
 
+/**
+ * @brief Determines if trigger should activate based on priority system
+ * @param trigger Trigger to check for activation
+ * @return true if trigger should activate (not blocked by higher priority)
+ *
+ * Priority-based activation logic that prevents lower priority triggers
+ * from executing when higher priority triggers are active.
+ */
 bool TriggerHandler::ShouldActivate(const Trigger& trigger) const {
     // Block activation if higher priority trigger is active
     return !IsBlocked(trigger);
 }
 
+/**
+ * @brief Determines if trigger should deactivate
+ * @param trigger Trigger to check for deactivation
+ * @return Always returns true - deactivation is always allowed
+ *
+ * Deactivation policy that allows all triggers to deactivate regardless
+ * of priority. This ensures proper cleanup and state transitions.
+ */
 bool TriggerHandler::ShouldDeactivate(const Trigger& trigger) const {
     // Always allow deactivation
     return true;
 }
 
+/**
+ * @brief Checks if trigger execution is blocked by higher priority triggers
+ * @param trigger Trigger to check for blocking
+ * @return true if higher priority trigger is active
+ *
+ * Priority blocking logic that determines if trigger execution should
+ * be suppressed due to higher priority trigger activity.
+ */
 bool TriggerHandler::IsBlocked(const Trigger& trigger) const {
     // Check if any higher priority trigger is active
     return HasHigherPriorityActive(trigger.priority);
 }
 
+/**
+ * @brief Checks if any trigger with higher priority is currently active
+ * @param priority Priority level to compare against
+ * @return true if higher priority trigger is active
+ *
+ * Priority comparison logic using numeric values where higher numbers
+ * indicate higher priority (CRITICAL=2 > IMPORTANT=1 > NORMAL=0).
+ * Essential for implementing priority-based trigger blocking.
+ */
 bool TriggerHandler::HasHigherPriorityActive(Priority priority) const {
     // Priority comparison: Higher numeric values = higher priority
     // CRITICAL=2 > IMPORTANT=1 > NORMAL=0 (reverse of typical enum ordering)
@@ -217,6 +304,14 @@ bool TriggerHandler::HasHigherPriorityActive(Priority priority) const {
     return false;
 }
 
+/**
+ * @brief Updates priority tracking state for given priority level
+ * @param priority Priority level to update
+ * @param active Whether this priority level should be marked active
+ *
+ * Maintains priority state tracking array for efficient priority
+ * queries. Used during trigger activation/deactivation cycles.
+ */
 void TriggerHandler::UpdatePriorityState(Priority priority, bool active) {
     int priorityIndex = static_cast<int>(priority);
     if (priorityIndex >= 0 && priorityIndex < 3) {
@@ -224,6 +319,15 @@ void TriggerHandler::UpdatePriorityState(Priority priority, bool active) {
     }
 }
 
+/**
+ * @brief Restores highest priority trigger of same type after deactivation
+ * @param type Trigger type to search for restoration candidates
+ * @param excludePriority Priority level to exclude (kept for API compatibility)
+ *
+ * Same-type restoration logic that finds and activates the highest priority
+ * trigger of the same type when a trigger deactivates. Critical for maintaining
+ * consistent automotive state display during priority transitions.
+ */
 void TriggerHandler::RestoreSameTypeTrigger(TriggerType type, Priority excludePriority) {
     // Find the highest priority trigger of the same type that is still active
     // Note: excludePriority is kept for API compatibility but not used in new logic
@@ -233,6 +337,15 @@ void TriggerHandler::RestoreSameTypeTrigger(TriggerType type, Priority excludePr
     }
 }
 
+/**
+ * @brief Finds highest priority active trigger of specified type
+ * @param type Trigger type to search for
+ * @return Pointer to highest priority trigger of type, or nullptr if none found
+ *
+ * Searches registered triggers for active triggers of specified type,
+ * returning the one with highest priority value. Used for same-type
+ * restoration during trigger deactivation sequences.
+ */
 Trigger* TriggerHandler::FindHighestPrioritySameType(TriggerType type) {
     Trigger* highest = nullptr;
     int highestPriorityValue = -1;  // Track numeric priority value
@@ -255,6 +368,15 @@ Trigger* TriggerHandler::FindHighestPrioritySameType(TriggerType type) {
     return highest;
 }
 
+/**
+ * @brief Executes trigger function based on activation state
+ * @param trigger Trigger containing functions to execute
+ * @param isActivation true for activation function, false for deactivation
+ *
+ * Utility function that executes either activate or deactivate function
+ * based on the activation state. Provides centralized function execution
+ * with null checking for safety.
+ */
 void TriggerHandler::ExecuteTriggerFunction(const Trigger& trigger, bool isActivation) {
     if (isActivation && trigger.activateFunc) {
         trigger.activateFunc();
@@ -264,6 +386,14 @@ void TriggerHandler::ExecuteTriggerFunction(const Trigger& trigger, bool isActiv
     }
 }
 
+/**
+ * @brief Determines if trigger's sensor is currently in active state
+ * @param trigger Trigger whose sensor to check
+ * @return true if sensor reading indicates active state
+ *
+ * Reads current sensor state and interprets boolean readings as active/inactive.
+ * Essential for trigger state evaluation and automotive condition monitoring.
+ */
 bool TriggerHandler::IsSensorActive(const Trigger& trigger) const {
     if (!trigger.sensor) {
         return false;
@@ -281,6 +411,14 @@ bool TriggerHandler::IsSensorActive(const Trigger& trigger) const {
     return false;
 }
 
+/**
+ * @brief Finds registered trigger by unique identifier
+ * @param id Unique identifier of trigger to find
+ * @return Pointer to trigger if found, nullptr otherwise
+ *
+ * Linear search through registered triggers array to locate trigger by ID.
+ * Used for trigger management operations and duplicate prevention.
+ */
 Trigger* TriggerHandler::FindTrigger(const char* id) {
     for (size_t i = 0; i < triggerCount_; i++) {
         if (strcmp(triggers_[i].id, id) == 0) {
@@ -293,10 +431,24 @@ Trigger* TriggerHandler::FindTrigger(const char* id) {
 // Handler interface implementation complete
 
 // Status and diagnostics
+/**
+ * @brief Gets current number of registered triggers
+ * @return Number of triggers currently registered
+ *
+ * Provides count of registered triggers for diagnostic purposes
+ * and capacity management in automotive systems.
+ */
 size_t TriggerHandler::GetTriggerCount() const {
     return triggerCount_;
 }
 
+/**
+ * @brief Checks if any triggers are currently in active state
+ * @return true if at least one trigger is active
+ *
+ * Scans all registered triggers to determine if any are currently
+ * active. Used for system state assessment and coordination.
+ */
 bool TriggerHandler::HasActiveTriggers() const {
     for (size_t i = 0; i < triggerCount_; i++) {
         if (triggers_[i].isActive) {
@@ -306,6 +458,13 @@ bool TriggerHandler::HasActiveTriggers() const {
     return false;
 }
 
+/**
+ * @brief Prints comprehensive diagnostic information about trigger handler state
+ *
+ * Outputs detailed status including registered triggers, priority states,
+ * and individual trigger activity. Essential for debugging automotive
+ * state management and trigger behavior issues.
+ */
 void TriggerHandler::PrintTriggerStatus() const {
     log_i("TriggerHandler Status:");
     log_i("  Total triggers: %d", triggerCount_);
@@ -323,10 +482,26 @@ void TriggerHandler::PrintTriggerStatus() const {
 }
 
 // Priority control methods (for external coordination)
+/**
+ * @brief Manually sets higher priority as active for external coordination
+ * @param priority Priority level to mark as active
+ *
+ * External interface for coordinating priority state with other system
+ * components. Used when external events (like error panels) need to
+ * block trigger execution temporarily.
+ */
 void TriggerHandler::SetHigherPriorityActive(Priority priority) {
     UpdatePriorityState(priority, true);
 }
 
+/**
+ * @brief Manually clears higher priority active state for external coordination
+ * @param priority Priority level to mark as inactive
+ *
+ * External interface for releasing priority blocks when external conditions
+ * are resolved. Allows normal trigger processing to resume after temporary
+ * blocking conditions are cleared.
+ */
 void TriggerHandler::ClearHigherPriorityActive(Priority priority) {
     UpdatePriorityState(priority, false);
 }

@@ -10,12 +10,27 @@
 
 #include "esp32-hal-log.h"
 
+/**
+ * @brief Gets the singleton instance of ComponentFactory
+ * @return Reference to the singleton ComponentFactory
+ *
+ * Provides global access to the component factory using the singleton pattern.
+ * The instance is created on first access and persists for the application lifetime.
+ */
 ComponentFactory& ComponentFactory::Instance()
 {
     static ComponentFactory instance;
     return instance;
 }
 
+/**
+ * @brief Creates a Clarity splash screen component
+ * @param style Style service for theme management
+ * @return Unique pointer to ClarityComponent or nullptr on failure
+ *
+ * Instantiates a ClarityComponent with style service dependency.
+ * Logs error and returns nullptr if allocation fails.
+ */
 std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyleService* style)
 {
     auto component = std::make_unique<ClarityComponent>(style);
@@ -26,6 +41,14 @@ std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyl
     return component;
 }
 
+/**
+ * @brief Creates an oil pressure gauge component
+ * @param style Style service for theme management
+ * @return Unique pointer to IComponent interface or nullptr on failure
+ *
+ * Instantiates an OemOilPressureComponent for displaying oil pressure readings.
+ * Returns as IComponent interface for polymorphic usage.
+ */
 std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleService* style)
 {
     auto component = std::make_unique<OemOilPressureComponent>(style);
@@ -36,6 +59,14 @@ std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleS
     return component;
 }
 
+/**
+ * @brief Creates an oil temperature gauge component
+ * @param style Style service for theme management
+ * @return Unique pointer to IComponent interface or nullptr on failure
+ *
+ * Instantiates an OemOilTemperatureComponent for displaying oil temperature readings.
+ * Returns as IComponent interface for polymorphic usage.
+ */
 std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(IStyleService* style)
 {
     auto component = std::make_unique<OemOilTemperatureComponent>(style);
@@ -46,6 +77,14 @@ std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(ISty
     return component;
 }
 
+/**
+ * @brief Creates an error display component
+ * @param style Style service for theme management
+ * @return Unique pointer to ErrorComponent or nullptr on failure
+ *
+ * Instantiates an ErrorComponent for displaying system errors.
+ * Provides full error display functionality with navigation.
+ */
 std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleService* style)
 {
     auto component = std::make_unique<ErrorComponent>(style);
@@ -56,6 +95,14 @@ std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleSer
     return component;
 }
 
+/**
+ * @brief Creates a key icon component
+ * @param style Style service for theme management
+ * @return Unique pointer to KeyComponent or nullptr on failure
+ *
+ * Instantiates a KeyComponent for displaying key presence status.
+ * Shows colored key icon based on ignition key state.
+ */
 std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleService* style)
 {
     auto component = std::make_unique<KeyComponent>(style);
@@ -66,6 +113,14 @@ std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleService
     return component;
 }
 
+/**
+ * @brief Creates a lock icon component
+ * @param style Style service for theme management
+ * @return Unique pointer to LockComponent or nullptr on failure
+ *
+ * Instantiates a LockComponent for displaying security lock status.
+ * Shows lock icon to indicate system security state.
+ */
 std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleService* style)
 {
     auto component = std::make_unique<LockComponent>(style);
@@ -76,6 +131,14 @@ std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleServi
     return component;
 }
 
+/**
+ * @brief Creates a configuration menu component
+ * @param style Style service for theme management (unused)
+ * @return Unique pointer to ConfigComponent or nullptr on failure
+ *
+ * Instantiates a ConfigComponent for configuration menu display.
+ * Note: ConfigComponent doesn't use style service in constructor.
+ */
 std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleService* style)
 {
     // ConfigComponent doesn't use style service in constructor

@@ -26,6 +26,14 @@ std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
+/**
+ * @brief Initializes all system services and managers using factory pattern
+ * @return true if all services initialized successfully, false on failure
+ *
+ * Creates and initializes all core system components in the correct dependency
+ * order. Uses dual factory pattern with ProviderFactory for hardware abstraction
+ * and ManagerFactory for system services. Reports critical errors on failure.
+ */
 bool initializeServices()
 {
     log_i("Starting Clarity service initialization with dual factory pattern...");
@@ -114,6 +122,13 @@ bool initializeServices()
     return true;
 }
 
+/**
+ * @brief Arduino setup function - initializes the Clarity application
+ *
+ * Entry point for ESP32 application initialization. Initializes all system
+ * services, configures display styles, and loads the initial panel based on
+ * user preferences. Called once at system startup before the main loop.
+ */
 void setup()
 {
     log_i("Starting Clarity application...");
@@ -136,6 +151,14 @@ void setup()
     log_i("Clarity application started successfully");
 }
 
+/**
+ * @brief Arduino main loop - processes system events and updates UI
+ *
+ * Continuously processes interrupt events, monitors error conditions,
+ * and updates the active panel. Handles error panel triggering when
+ * UI is idle to avoid conflicts with other operations. Maintains
+ * responsive system behavior through dynamic delay management.
+ */
 void loop()
 {
     // Always process - ActionHandler runs always, TriggerHandler only on IDLE

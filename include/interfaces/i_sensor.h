@@ -57,16 +57,10 @@ class ISensor
     virtual Reading GetReading() = 0;
 
     // Optional Unit Support
-    /// @brief Set the target unit of measure for sensor readings
-    /// @param unit The unit to use for readings (e.g., "Bar", "PSI", "C", "F")
-    /// @note Default implementation does nothing for sensors without units
     virtual void SetTargetUnit(const std::string &unit)
     {
     }
 
-    /// @brief Get supported units for this sensor
-    /// @return Vector of supported unit strings, empty if no units
-    /// @note Default returns empty vector for sensors without units
     virtual std::vector<std::string> GetSupportedUnits() const
     {
         return {};
