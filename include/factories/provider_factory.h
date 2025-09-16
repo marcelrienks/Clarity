@@ -40,15 +40,13 @@ class DeviceProvider;
 class ProviderFactory : public IProviderFactory
 {
 public:
+    // ========== Constructors and Destructor ==========
     ProviderFactory() = default;
-    
     ~ProviderFactory() override = default;
     
+    // ========== Public Interface Methods ==========
     // IProviderFactory implementation
-    
     std::unique_ptr<IGpioProvider> CreateGpioProvider() override;
-    
     std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider) override;
-    
     std::unique_ptr<DeviceProvider> CreateDeviceProvider() override;
 };

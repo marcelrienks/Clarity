@@ -8,6 +8,8 @@
 #include <Arduino.h>
 #include <variant>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs key panel with required service dependencies
  * @param gpio GPIO provider for hardware sensor access
@@ -25,6 +27,8 @@ KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService
     // Determine current key state by checking which sensor is currently active
     currentKeyState_ = DetermineCurrentKeyState();
 }
+
+// ========== Protected Methods ==========
 
 /**
  * @brief Creates key panel UI content with current key state display

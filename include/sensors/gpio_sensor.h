@@ -69,10 +69,11 @@ struct GpioSensorConfig {
 class GpioSensor : public BaseSensor
 {
 public:
+    // ========== Constructors and Destructor ==========
     GpioSensor(const GpioSensorConfig& config, IGpioProvider* gpioProvider);
-
     ~GpioSensor();
 
+    // ========== Public Interface Methods ==========
     // ISensor interface implementation
     void Init() override;
     Reading GetReading() override;
@@ -87,16 +88,18 @@ public:
     uint8_t GetPin() const { return config_.pin; }
 
 protected:
+    // ========== Protected Methods ==========
     void OnInterruptTriggered() override;
 
 private:
+    // ========== Private Methods ==========
+    bool readRawPinState();
+    bool readLogicalState();
+
+    // ========== Private Data Members ==========
     GpioSensorConfig config_;       ///< Sensor configuration
     IGpioProvider* gpioProvider_;   ///< GPIO hardware abstraction
     bool previousState_;            ///< Previous state for change detection
-
-    bool readRawPinState();
-
-    bool readLogicalState();
 };
 
 // Predefined sensor configurations for common use cases

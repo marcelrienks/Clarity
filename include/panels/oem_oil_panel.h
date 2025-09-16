@@ -50,11 +50,11 @@
 class OemOilPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~OemOilPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::OIL;
     void Init() override;
     void Load() override;
@@ -75,11 +75,11 @@ class OemOilPanel : public IPanel
     // Public action handler
     void HandleLongPress();
 
-    // Static Data Members
+    // ========== Public Data Members ==========
     static constexpr int32_t _animation_duration = 750;
 
   private:
-    // Core Functionality Methods
+    // ========== Private Methods ==========
     void UpdateOilPressure(bool forceRefresh = false);
     void UpdateOilTemperature(bool forceRefresh = false);
 
@@ -95,13 +95,13 @@ class OemOilPanel : public IPanel
 
     int32_t MapTemperatureValue(int32_t sensorValue);
 
-    // Static Callback Methods
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);
     static void UpdatePanelCompletionCallback(lv_anim_t *animation);
     static void ExecutePressureAnimationCallback(void *target, int32_t value);
     static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
 
-    // Instance Data Members - Dependencies
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;

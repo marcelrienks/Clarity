@@ -14,6 +14,8 @@
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
+// ========== Global Variables ==========
+
 // Global variable definitions (declarations are in main.h)
 std::unique_ptr<IProviderFactory> providerFactory;
 std::unique_ptr<ManagerFactory> managerFactory;
@@ -25,6 +27,8 @@ std::unique_ptr<IPreferenceService> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
+
+// ========== Private Methods ==========
 
 /**
  * @brief Initializes all system services and managers using factory pattern
@@ -121,6 +125,8 @@ bool initializeServices()
     log_t("System ready");
     return true;
 }
+
+// ========== Arduino Functions ==========
 
 /**
  * @brief Arduino setup function - initializes the Clarity application

@@ -41,12 +41,12 @@
 class SplashPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                 IPanelNotificationService* notificationService = nullptr);
     ~SplashPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::SPLASH;
     void Init() override;
     void Load() override;
@@ -67,13 +67,18 @@ class SplashPanel : public IPanel
     void HandleLongPress();
 
   private:
-    // Private Data Members
+    // ========== Private Methods ==========
+    int GetAnimationTime() const;
+
+    // ========== Static Methods ==========
+    static void fade_in_timer_callback(lv_timer_t *timer);
+    static void display_timer_callback(lv_timer_t *timer);
+    static void fade_out_timer_callback(lv_timer_t *timer);
+
+    // ========== Private Data Members ==========
     // Panel specific constants
     static constexpr const int _DISPLAY_TIME = 500;
     static constexpr const int _DELAY_TIME = 200; //NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory becomes corrupted
-
-    // Calculate timing based on splash duration from config
-    int GetAnimationTime() const;
 
     // Dependencies
     IGpioProvider *gpioProvider_;
@@ -89,8 +94,4 @@ class SplashPanel : public IPanel
     bool componentInitialized_ = false;
     lv_obj_t *blankScreen_;
 
-    // Static Callback Methods
-    static void fade_in_timer_callback(lv_timer_t *timer);
-    static void display_timer_callback(lv_timer_t *timer);
-    static void fade_out_timer_callback(lv_timer_t *timer);
 };

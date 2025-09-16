@@ -41,11 +41,11 @@
 class ErrorPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~ErrorPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::ERROR;
     void Init() override;
     void Load() override;
@@ -64,10 +64,14 @@ class ErrorPanel : public IPanel
     void HandleLongPress();
 
   private:
-    // Static Methods
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
-    // Instance Data Members
+    // ========== Private Methods ==========
+    void SortErrorsBySeverity();                    // Sort errors by severity (CRITICAL first, WARNING last)
+    void AdvanceToNextError();                      // Move to next error and update component
+
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
@@ -82,7 +86,4 @@ class ErrorPanel : public IPanel
     
     // Error cycling functionality
     size_t currentErrorIndex_;                       // Index of currently displayed error
-    
-    void SortErrorsBySeverity();                    // Sort errors by severity (CRITICAL first, WARNING last)
-    void AdvanceToNextError();                      // Move to next error and update component
 };

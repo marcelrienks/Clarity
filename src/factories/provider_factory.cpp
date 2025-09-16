@@ -7,6 +7,8 @@
 
 #include "esp32-hal-log.h"
 
+// ========== Public Interface Methods ==========
+
 /**
  * @brief Creates a GPIO provider for hardware pin control
  * @return Unique pointer to IGpioProvider interface or nullptr on failure

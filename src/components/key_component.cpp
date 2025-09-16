@@ -4,6 +4,8 @@
 #include <esp32-hal-log.h>
 #include <icons/key_solid.h>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs a key icon component with style service dependency
  * @param styleService Style service for theme-based color management
@@ -29,7 +31,7 @@ KeyComponent::~KeyComponent()
     }
 }
 
-// Core Functionality Methods
+// ========== IComponent Implementation ==========
 
 /// @brief This method initializes the key present icon with location parameters
 /// @param screen The screen object to render the component on.
@@ -52,6 +54,8 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
     // Apply location settings
     lv_obj_align(keyIcon_, location.align, location.x_offset, location.y_offset);
 }
+
+// ========== Public Interface Methods ==========
 
 /// @brief Set the key icon color based on key state
 /// @param keyState The current key state to determine color

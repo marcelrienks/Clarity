@@ -9,6 +9,8 @@
 #include "esp32-hal-log.h"
 #include "utilities/logging.h"
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs ActionHandler with GPIO provider and initializes button sensor
  * @param gpioProvider GPIO provider for hardware button access
@@ -44,6 +46,8 @@ ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
  */
 ActionHandler::~ActionHandler() {
 }
+
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Main processing loop for action detection and execution

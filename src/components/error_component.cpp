@@ -3,6 +3,8 @@
 #include <esp32-hal-log.h>
 #include <algorithm>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs an error display component with style service dependency
  * @param styleService Style service for theme management
@@ -29,6 +31,8 @@ ErrorComponent::~ErrorComponent()
     log_v("~ErrorComponent() destructor called");
     // LVGL objects are managed by the parent screen, no manual deletion needed
 }
+
+// ========== IComponent Implementation ==========
 
 /**
  * @brief Renders the error component on screen with full error display UI
@@ -94,6 +98,8 @@ void ErrorComponent::Refresh(const Reading &reading)
     // This allows us to get the complete error queue information and maintain current position
     // Note: Don't call UpdateErrorDisplay() here during initialization - let the panel control the display
 }
+
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Updates error display by fetching and sorting current errors
@@ -179,6 +185,8 @@ void ErrorComponent::UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, si
         lv_obj_set_style_border_color(errorContainer_, borderColor, 0);
     }
 }
+
+// ========== Private Methods ==========
 
 /**
  * @brief Creates UI structure for single error display
@@ -286,6 +294,8 @@ void ErrorComponent::DisplayCurrentError()
 
 // Note: Deprecated methods CycleToNextError() and HandleCycleButtonPress() removed.
 // ErrorPanel now handles all cycling logic via HandleShortPress() -> AdvanceToNextError()
+
+// ========== Helper Methods ==========
 
 /**
  * @brief Converts error level enum to display text

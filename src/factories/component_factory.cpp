@@ -10,6 +10,8 @@
 
 #include "esp32-hal-log.h"
 
+// ========== Static Methods ==========
+
 /**
  * @brief Gets the singleton instance of ComponentFactory
  * @return Reference to the singleton ComponentFactory
@@ -22,6 +24,8 @@ ComponentFactory& ComponentFactory::Instance()
     static ComponentFactory instance;
     return instance;
 }
+
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Creates a Clarity splash screen component

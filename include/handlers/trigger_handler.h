@@ -28,9 +28,11 @@ class GpioSensor;
 class TriggerHandler : public IHandler
 {
 public:
+    // ========== Constructors and Destructor ==========
     TriggerHandler(IGpioProvider* gpioProvider);
     ~TriggerHandler();
     
+    // ========== Public Interface Methods ==========
     // IHandler interface - new interrupt system only
     void Process() override;
     
@@ -63,6 +65,7 @@ public:
     Trigger* FindHighestPrioritySameType(TriggerType type);
     
 private:
+    // ========== Private Methods ==========
     // Core trigger processing
     void EvaluateIndividualTrigger(Trigger& trigger);
     void ExecuteTriggerFunction(const Trigger& trigger, bool isActivation);
@@ -77,6 +80,7 @@ private:
     Trigger* FindTrigger(const char* id);
     bool IsSensorActive(const Trigger& trigger) const;
     
+    // ========== Private Data Members ==========
     static constexpr size_t MAX_TRIGGERS = 16;
     
     // Trigger storage

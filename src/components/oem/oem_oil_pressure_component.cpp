@@ -1,10 +1,14 @@
 #include "components/oem/oem_oil_pressure_component.h"
 #include <esp32-hal-log.h>
 
+// ========== Constructors and Destructor ==========
+
 OemOilPressureComponent::OemOilPressureComponent(IStyleService *styleService) : OemOilComponent(styleService)
 {
     // Constructor delegates initialization to base OemOilComponent
 }
+
+// ========== Protected Methods ==========
 
 /// @brief Gets the icon for the oil pressure component.
 /// @return Pointer to the icon image descriptor.

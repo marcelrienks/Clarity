@@ -28,9 +28,11 @@ class ButtonSensor;
 class ActionHandler : public IHandler
 {
 public:
+    // ========== Constructors and Destructor ==========
     ActionHandler(IGpioProvider* gpioProvider);
     ~ActionHandler();
     
+    // ========== Public Interface Methods ==========
     // IHandler interface - new interrupt system only
     void Process() override;
     
@@ -56,6 +58,7 @@ public:
     bool HasPendingActions() const;
     void PrintActionStatus() const;
 
+    // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
     enum class ButtonState {
         IDLE,
@@ -65,6 +68,7 @@ public:
     };
 
 private:
+    // ========== Private Methods ==========
     // Core action processing
     void EvaluateIndividualAction(Action& action);
     bool EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction);
@@ -84,6 +88,7 @@ private:
     bool IsButtonPressed() const;
     const char* StateToString(ButtonState state) const;
     
+    // ========== Private Data Members ==========
     // Timing constants - based on automotive UI best practices and user testing
     static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum to avoid accidental presses
     static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Optimal for quick actions

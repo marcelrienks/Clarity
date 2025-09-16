@@ -5,6 +5,8 @@
 #include <esp32-hal-log.h>
 #include <variant>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs lock panel for vehicle security status display
  * @param gpio GPIO provider for hardware interaction
@@ -23,6 +25,8 @@ LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleServi
     // Since this panel is only loaded when lock state changes, assume engaged
     isLockEngaged_ = true;
 }
+
+// ========== Protected Methods ==========
 
 /**
  * @brief Creates lock panel UI content with security status display

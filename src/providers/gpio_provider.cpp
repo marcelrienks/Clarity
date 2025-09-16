@@ -1,6 +1,8 @@
 #include "providers/gpio_provider.h"
 #include <esp32-hal-log.h>
 
+// ========== IGpioProvider Implementation ==========
+
 /**
  * @brief Reads the digital state of a GPIO pin
  * @param pin The GPIO pin number to read

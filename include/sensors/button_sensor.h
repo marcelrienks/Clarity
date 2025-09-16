@@ -36,14 +36,10 @@
 class ButtonSensor : public BaseSensor
 {
   public:
-    // Button timing constants
-    static constexpr uint32_t DEBOUNCE_MS = 50;
-    static constexpr uint32_t SHORT_PRESS_MAX_MS = 2000;
-    static constexpr uint32_t LONG_PRESS_MAX_MS = 5000;
-
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     ButtonSensor(IGpioProvider *gpioProvider);
 
+    // ========== Public Interface Methods ==========
     // ISensor Interface Implementation
     void Init() override;
     Reading GetReading() override;
@@ -62,11 +58,23 @@ class ButtonSensor : public BaseSensor
     // Simplified interrupt system
     const char* GetTriggerInterruptId() const;
 
+    // ========== Public Data Members ==========
+    // Button timing constants
+    static constexpr uint32_t DEBOUNCE_MS = 50;
+    static constexpr uint32_t SHORT_PRESS_MAX_MS = 2000;
+    static constexpr uint32_t LONG_PRESS_MAX_MS = 5000;
+
   protected:
-    // Custom interrupt behavior
+    // ========== Protected Methods ==========
     void OnInterruptTriggered() override;
 
   private:
+    // ========== Private Methods ==========
+    bool ReadButtonState();
+    void ProcessButtonState();
+    ButtonAction DetermineAction(unsigned long duration);
+    
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     
     // Button state tracking
@@ -81,10 +89,4 @@ class ButtonSensor : public BaseSensor
     ButtonAction detectedAction_ = ButtonAction::NONE;
     bool actionReady_ = false;
     const char* triggerInterruptId_ = nullptr;  // ID of interrupt to trigger on action
-    
-    bool ReadButtonState();
-    
-    void ProcessButtonState();
-    
-    ButtonAction DetermineAction(unsigned long duration);
 };

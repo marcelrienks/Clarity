@@ -2,6 +2,8 @@
 #include "managers/style_manager.h"
 #include <esp32-hal-log.h>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs the LVGL display provider with the main screen reference
  * @param mainScreen Pointer to the main LVGL screen object
@@ -14,6 +16,8 @@ LvglDisplayProvider::LvglDisplayProvider(lv_obj_t *mainScreen) : mainScreen_(mai
 {
     log_v("LvglDisplayProvider() constructor called");
 }
+
+// ========== IDisplayProvider Implementation ==========
 
 /**
  * @brief Initializes the LVGL display provider

@@ -29,19 +29,19 @@
 class LockComponent : public IComponent
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     explicit LockComponent(IStyleService *styleService);
     virtual ~LockComponent();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
 
   protected:
-    // Protected Data Members
+    // ========== Protected Data Members ==========
     lv_obj_t *lockIcon_;
     IStyleService *styleService_;
 
   private:
-    // Core Functionality Methods
+    // ========== Private Methods ==========
     void create_icon();
 };

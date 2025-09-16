@@ -6,6 +6,8 @@
 #include <esp32-hal-log.h>
 #include <math.h>
 
+// ========== Constructors and Destructor ==========
+
 OemOilComponent::OemOilComponent(IStyleService *styleService)
     : styleService_(styleService), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
       needleHighlightLine_(nullptr), needleHighlightMiddle_(nullptr), needleHighlightBase_(nullptr), oilIcon_(nullptr),
@@ -51,7 +53,7 @@ OemOilComponent::~OemOilComponent()
     // No style cleanup needed - styles are managed by StyleManager
 }
 
-// Core Functionality Methods
+// ========== IComponent Implementation ==========
 
 /// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
 /// @param screen The screen object to render the component on.

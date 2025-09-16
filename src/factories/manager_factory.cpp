@@ -13,6 +13,8 @@
 #include "utilities/types.h"
 #include <esp32-hal-log.h>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs ManagerFactory with custom provider factory
  * @param providerFactory Provider factory for creating hardware providers
@@ -39,6 +41,8 @@ ManagerFactory::ManagerFactory()
     : providerFactory_(std::make_unique<ProviderFactory>())
 {
 }
+
+// ========== Private Methods ==========
 
 /**
  * @brief Initializes hardware providers if not already created

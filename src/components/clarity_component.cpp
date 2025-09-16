@@ -2,6 +2,8 @@
 #include "managers/error_manager.h"
 #include <esp32-hal-log.h>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs a clarity component with style service dependency
  * @param styleService Style service for theme and styling management
@@ -13,6 +15,8 @@ ClarityComponent::ClarityComponent(IStyleService *styleService) : styleService_(
 {
     log_v("ClarityComponent constructor called");
 }
+
+// ========== IComponent Implementation ==========
 
 /// @brief Initialises the Clarity Component by rendering a splash screen with location parameters
 /// @param screen the screen on which to render the component

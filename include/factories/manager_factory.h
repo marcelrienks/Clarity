@@ -37,14 +37,13 @@ class IProviderFactory;
 class ManagerFactory : public IManagerFactory
 {
 public:
+    // ========== Constructors and Destructor ==========
     explicit ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory);
-    
     ManagerFactory();
-    
     ~ManagerFactory() override = default;
     
+    // ========== Public Interface Methods ==========
     // IManagerFactory implementation
-
     std::unique_ptr<PanelManager> CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
                                                       IStyleService *styleService, 
                                                       IPreferenceService *preferenceService,
@@ -59,14 +58,10 @@ public:
     ErrorManager* CreateErrorManager() override;
 
 private:
-    std::unique_ptr<IProviderFactory> providerFactory_;
-    
-    std::unique_ptr<IGpioProvider> gpioProvider_;
-    std::unique_ptr<IDisplayProvider> displayProvider_;
-    std::unique_ptr<DeviceProvider> deviceProvider_;
-    
+    // ========== Private Methods ==========
     bool InitializeProviders();
     
+    // ========== Static Methods ==========
     static std::unique_ptr<PanelManager> CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
                                                                 IStyleService *styleService, 
                                                                 IPreferenceService *preferenceService,
@@ -79,4 +74,11 @@ private:
     static InterruptManager* CreateInterruptManagerImpl(IGpioProvider* gpioProvider);
 
     static ErrorManager* CreateErrorManagerImpl();
+
+    // ========== Private Data Members ==========
+    std::unique_ptr<IProviderFactory> providerFactory_;
+    
+    std::unique_ptr<IGpioProvider> gpioProvider_;
+    std::unique_ptr<IDisplayProvider> displayProvider_;
+    std::unique_ptr<DeviceProvider> deviceProvider_;
 };

@@ -39,16 +39,11 @@
 class OilPressureSensor : public BaseSensor
 {
   public:
-    // Configuration constants for dynamic config system
-    static constexpr const char* CONFIG_SECTION = "oil_pressure";
-    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
-    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
-    static constexpr const char* CONFIG_CALIBRATION_OFFSET = "oil_pressure.offset";
-    static constexpr const char* CONFIG_CALIBRATION_SCALE = "oil_pressure.scale";
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     OilPressureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
     OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs = 500);
 
+    // ========== Public Interface Methods ==========
     // BaseSensor interface implementation
     void Init() override;
     Reading GetReading() override;
@@ -66,13 +61,21 @@ class OilPressureSensor : public BaseSensor
 
     void RegisterLiveUpdateCallbacks();
 
+    // ========== Public Data Members ==========
+    // Configuration constants for dynamic config system
+    static constexpr const char* CONFIG_SECTION = "oil_pressure";
+    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
+    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
+    static constexpr const char* CONFIG_CALIBRATION_OFFSET = "oil_pressure.offset";
+    static constexpr const char* CONFIG_CALIBRATION_SCALE = "oil_pressure.scale";
+
   protected:
-    // Internal methods
+    // ========== Protected Methods ==========
     int32_t ReadRawValue();
     int32_t ConvertReading(int32_t rawValue);
 
   private:
-    // Instance members
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;
     float calibrationOffset_ = 0.0f;

@@ -9,6 +9,8 @@
 
 #include "esp32-hal-log.h"
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs TriggerHandler with GPIO provider and initializes all sensors
  * @param gpioProvider GPIO provider for hardware sensor access

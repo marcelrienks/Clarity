@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstring>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs a configuration menu component with service dependencies
  * @param panelService Panel service for navigation control
@@ -16,6 +18,8 @@ ConfigComponent::ConfigComponent(IPanelService* panelService, IStyleService* sty
 {
     log_v("ConfigComponent constructor called");
 }
+
+// ========== IComponent Implementation ==========
 
 /**
  * @brief Renders the configuration component on screen
@@ -45,6 +49,8 @@ void ConfigComponent::SetValue(int32_t value)
     log_v("SetValue() called");
     // Not used for config menu - updates handled via specific methods
 }
+
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Executes configuration menu actions
@@ -85,6 +91,8 @@ void ConfigComponent::ExecuteAction(const std::string& actionType, const std::st
         log_w("Unknown action type: %s", actionType.c_str());
     }
 }
+
+// ========== Private Methods ==========
 
 /**
  * @brief Initializes the configuration component UI structure
@@ -323,6 +331,8 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
         return lv_color_hex((gray << 16) | (gray << 8) | gray);
     }
 }
+
+// ========== Helper Methods ==========
 
 /**
  * @brief Creates all UI elements for the configuration menu

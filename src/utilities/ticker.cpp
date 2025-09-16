@@ -2,7 +2,7 @@
 #include <functional>
 #include <esp32-hal-log.h>
 
-// Static Methods
+// ========== Static Methods ==========
 
 /// @brief Adaptive Timing to generate a ~60fps refresh rate
 /// @param start_time the start time of the loop method

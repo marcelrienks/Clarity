@@ -53,9 +53,22 @@
  */
 class BaseSensor : public ISensor
 {
-protected:
-    bool initialized_ = false; ///< Initialization flag for first-read handling
+public:
+    // ========== Constructors and Destructor ==========
+    virtual ~BaseSensor() = default;
+    
+    // ========== Public Interface Methods ==========
+    // ISensor interface methods (must be implemented by concrete sensors)
+    virtual void Init() = 0;
+    virtual Reading GetReading() = 0;
+    
+    virtual bool HasStateChanged() = 0;
 
+    virtual void OnInterruptTriggered() {
+    }
+
+protected:
+    // ========== Protected Methods ==========
     template<typename T>
     bool DetectChange(T currentValue, T& previousValue)
     {
@@ -70,17 +83,6 @@ protected:
         return changed;
     }
 
-public:
-    virtual ~BaseSensor() = default;
-    
-    // ISensor interface methods (must be implemented by concrete sensors)
-    virtual void Init() = 0;
-    virtual Reading GetReading() = 0;
-    
-    virtual bool HasStateChanged() = 0;
-
-    virtual void OnInterruptTriggered() {
-    }
-
-protected:
+    // ========== Protected Data Members ==========
+    bool initialized_ = false; ///< Initialization flag for first-read handling
 };

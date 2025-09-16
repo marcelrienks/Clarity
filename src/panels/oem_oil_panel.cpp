@@ -7,6 +7,8 @@
 #include "utilities/constants.h"
 #include "utilities/logging.h"
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs OEM oil monitoring panel with dual gauge display
  * @param gpio GPIO provider for sensor hardware access

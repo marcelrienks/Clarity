@@ -48,11 +48,11 @@
 class ConfigPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~ConfigPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::CONFIG;
     void Init() override;
     void Load() override;
@@ -72,25 +72,7 @@ class ConfigPanel : public IPanel
     void HandleLongPress();
 
   private:
-    // Menu state enum
-    enum class MenuState
-    {
-        MainMenu,
-        PanelSubmenu,
-        ThemeSubmenu,
-        UpdateRateSubmenu,
-        SplashSubmenu,
-        SplashDurationSubmenu,
-        PressureUnitSubmenu,
-        TempUnitSubmenu,
-        CalibrationSubmenu,
-        PressureOffsetSubmenu,
-        PressureScaleSubmenu,
-        TempOffsetSubmenu,
-        TempScaleSubmenu
-    };
-
-    // Private methods
+    // ========== Private Methods ==========
     void InitializeMenuItems();
     void UpdateMenuItemsWithCurrentValues();
     void ExecuteCurrentOption();
@@ -109,8 +91,27 @@ class ConfigPanel : public IPanel
     std::vector<std::string> ParseOptions(const std::string& constraints) const;
     std::pair<std::string, std::string> ParseConfigKey(const std::string& fullKey) const;
 
-    // Static callback
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);
+
+    // ========== Private Data Members ==========
+    // Menu state enum
+    enum class MenuState
+    {
+        MainMenu,
+        PanelSubmenu,
+        ThemeSubmenu,
+        UpdateRateSubmenu,
+        SplashSubmenu,
+        SplashDurationSubmenu,
+        PressureUnitSubmenu,
+        TempUnitSubmenu,
+        CalibrationSubmenu,
+        PressureOffsetSubmenu,
+        PressureScaleSubmenu,
+        TempOffsetSubmenu,
+        TempScaleSubmenu
+    };
 
     // Instance Data Members
     IGpioProvider *gpioProvider_;

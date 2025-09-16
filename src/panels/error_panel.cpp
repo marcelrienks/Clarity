@@ -8,6 +8,8 @@
 #include <Arduino.h>
 #include <algorithm>
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs error panel with required service dependencies
  * @param gpio GPIO provider for hardware interaction
@@ -49,6 +51,8 @@ ErrorPanel::~ErrorPanel()
     // Don't restore theme here - let the trigger system manage themes
     // The CheckRestoration() method will apply the correct theme based on active triggers
 }
+
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Initializes error panel UI structure and loads current errors

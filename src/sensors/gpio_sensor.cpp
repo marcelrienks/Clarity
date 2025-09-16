@@ -6,6 +6,8 @@
 #include "managers/error_manager.h"
 #endif
 
+// ========== Constructors and Destructor ==========
+
 /**
  * @brief Constructs a GPIO sensor with configuration and provider dependencies
  * @param config Sensor configuration including pin, mode, and behavior settings
@@ -40,6 +42,8 @@ GpioSensor::~GpioSensor()
         }
     }
 }
+
+// ========== ISensor Implementation ==========
 
 /**
  * @brief Initializes the GPIO sensor hardware configuration
