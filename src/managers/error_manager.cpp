@@ -154,7 +154,9 @@ bool ErrorManager::IsErrorPanelActive() const
     return errorPanelActive_;
 }
 
-/// @brief Process error queue and manage error panel state
+/**
+ * @brief Process error queue and manage error panel state
+ */
 void ErrorManager::Process()
 {
     // Process error queue
@@ -203,7 +205,9 @@ void ErrorManager::TrimErrorQueue()
     }
 }
 
-/// @brief Auto-dismiss warnings older than timeout
+/**
+ * @brief Auto-dismiss warnings older than timeout
+ */
 void ErrorManager::AutoDismissOldWarnings()
 {
     auto now = millis();

@@ -85,8 +85,10 @@ void StyleManager::InitializeStyles()
     initialized_ = true;
 }
 
-/// @brief Apply a specified theme to the styles
-/// @param theme the theme to be applied
+/**
+ * @brief Apply a specified theme to the styles
+ * @param theme the theme to be applied
+ */
 void StyleManager::SetTheme(const char *theme)
 {
     log_t("SetTheme() called");
@@ -144,8 +146,10 @@ void StyleManager::SetTheme(const char *theme)
     }
 }
 
-/// @brief Apply the current theme to a specific screen
-/// @param screen the screen to which the theme will be applied
+/**
+ * @brief Apply the current theme to a specific screen
+ * @param screen the screen to which the theme will be applied
+ */
 void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
     log_v("ApplyThemeToScreen() called");
@@ -171,7 +175,9 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
     // Components should apply their own specific styles as needed
 }
 
-/// @brief Apply current theme from preferences and refresh styles
+/**
+ * @brief Apply current theme from preferences and refresh styles
+ */
 void StyleManager::ApplyCurrentTheme()
 {
     log_i("StyleManager::ApplyCurrentTheme() called");
@@ -196,9 +202,11 @@ void StyleManager::ApplyCurrentTheme()
     }
 }
 
-/// @brief Get the colours scheme for the supplied theme
-/// @param theme the theme to retrieve the colour scheme for
-/// @return the colour scheme for the specified theme
+/**
+ * @brief Get the colours scheme for the supplied theme
+ * @param theme the theme to retrieve the colour scheme for
+ * @return the colour scheme for the specified theme
+ */
 /**
  * @brief Resolve theme name to corresponding color scheme
  * @details Returns day theme as fallback for unknown themes
@@ -280,7 +288,9 @@ void StyleManager::ResetStyles()
     lv_style_reset(&gaugeDangerSectionStyle_);
 }
 
-/// @brief Load configuration from preference system
+/**
+ * @brief Load configuration from preference system
+ */
 void StyleManager::LoadConfiguration()
 {
     if (!preferenceService_) return;

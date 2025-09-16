@@ -76,8 +76,10 @@ OemOilPanel::~OemOilPanel()
 
 // Core Functionality Methods
 
-/// @brief Initialize the panel for showing Oil related information
-/// Creates screen and initializes sensors with sentinel values
+/**
+ * @brief Initialize the panel for showing Oil related information
+ * Creates screen and initializes sensors with sentinel values
+ */
 /**
  * @brief Initializes OEM oil panel UI structure and sensor configuration
  *
@@ -124,8 +126,10 @@ void OemOilPanel::Init()
     log_i("OemOilPanel initialization completed");
 }
 
-/// @brief Load the panel with component rendering and screen display
-/// @param callbackFunction to be called when the panel load is completed
+/**
+ * @brief Load the panel with component rendering and screen display
+ * @param callbackFunction to be called when the panel load is completed
+ */
 /**
  * @brief Loads OEM oil panel UI components and starts sensor monitoring
  *
@@ -213,7 +217,9 @@ void OemOilPanel::Load()
     log_t("OemOilPanel loaded successfully");
 }
 
-/// @brief Update the reading on the screen
+/**
+ * @brief Update the reading on the screen
+ */
 /**
  * @brief Updates OEM oil panel with current sensor readings and animations
  *
@@ -259,7 +265,9 @@ void OemOilPanel::Update()
 
 // Private Methods
 
-/// @brief Update the oil pressure reading on the screen
+/**
+ * @brief Update the oil pressure reading on the screen
+ */
 void OemOilPanel::UpdateOilPressure(bool forceRefresh)
 {
     // Skip if pressure animation is running unless this is a forced refresh
@@ -357,7 +365,9 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
     lv_anim_start(&pressureAnimation_);
 }
 
-/// @brief Update the oil temperature reading on the screen
+/**
+ * @brief Update the oil temperature reading on the screen
+ */
 void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
 {
 
@@ -503,9 +513,11 @@ Action OemOilPanel::GetLongPressAction()
 }
 */
 
-/// @brief Manager injection method to prevent circular references
-/// @param panelService the panel manager instance
-/// @param styleService  the style manager instance
+/**
+ * @brief Manager injection method to prevent circular references
+ * @param panelService the panel manager instance
+ * @param styleService  the style manager instance
+ */
 void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
 {
     log_v("SetManagers() called");
@@ -518,8 +530,10 @@ void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
     }
 }
 
-/// @brief Set preference service and apply sensor update rate from preferences
-/// @param preferenceService The preference service to use for configuration
+/**
+ * @brief Set preference service and apply sensor update rate from preferences
+ * @param preferenceService The preference service to use for configuration
+ */
 void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
     log_v("SetPreferenceService() called");
@@ -530,7 +544,9 @@ void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
     ApplyCurrentSensorSettings();
 }
 
-/// @brief Apply current sensor settings from preferences directly
+/**
+ * @brief Apply current sensor settings from preferences directly
+ */
 void OemOilPanel::ApplyCurrentSensorSettings()
 {
     // Apply updateRate and units from preferences to sensors if preference service is available
@@ -591,8 +607,10 @@ void OemOilPanel::ApplyCurrentSensorSettings()
 
 // Static Callback Methods
 
-/// @brief The callback to be run once show panel has completed
-/// @param event LVGL event that was used to call this
+/**
+ * @brief The callback to be run once show panel has completed
+ * @param event LVGL event that was used to call this
+ */
 void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
 {
     log_v("ShowPanelCompletionCallback() called");
@@ -617,8 +635,10 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
     // Animation completed - no callback needed for interface-based approach
 }
 
-/// @brief Callback when animation has completed. aka update complete
-/// @param animation the object that was animated
+/**
+ * @brief Callback when animation has completed. aka update complete
+ * @param animation the object that was animated
+ */
 void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
 {
 
@@ -664,9 +684,11 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
     }
 }
 
-/// @brief callback used by the animation to set the values smoothly until ultimate value is reached
-/// @param target the object being animated
-/// @param value the next value in a sequence to create a smooth transition
+/**
+ * @brief callback used by the animation to set the values smoothly until ultimate value is reached
+ * @param target the object being animated
+ * @param value the next value in a sequence to create a smooth transition
+ */
 void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
 {
     log_v("ExecutePressureAnimationCallback() called with value: %d", value);
@@ -684,9 +706,11 @@ void OemOilPanel::ExecutePressureAnimationCallback(void *target, int32_t value)
     thisInstance->oemOilPressureComponent_.SetValue(value);
 }
 
-/// @brief callback used by the animation to set the values smoothly until ultimate value is reached
-/// @param target the object being animated
-/// @param value the next value in a sequence to create a smooth transition
+/**
+ * @brief callback used by the animation to set the values smoothly until ultimate value is reached
+ * @param target the object being animated
+ * @param value the next value in a sequence to create a smooth transition
+ */
 void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t value)
 {
     log_v("ExecuteTemperatureAnimationCallback() called with value: %d", value);
@@ -706,9 +730,11 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 
 // Value mapping methods
 
-/// @brief Map oil pressure sensor value to display scale
-/// @param sensorValue Raw sensor value (1-10 Bar)
-/// @return Mapped value for display (0-60, representing pressure range)
+/**
+ * @brief Map oil pressure sensor value to display scale
+ * @param sensorValue Raw sensor value (1-10 Bar)
+ * @return Mapped value for display (0-60, representing pressure range)
+ */
 int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
 
@@ -820,9 +846,11 @@ int32_t OemOilPanel::ClampValue(int32_t value, int32_t minVal, int32_t maxVal)
     return value;
 }
 
-/// @brief Map oil temperature sensor value to display scale
-/// @param sensorValue Temperature value in configured units
-/// @return Mapped value for display (0-120 scale)
+/**
+ * @brief Map oil temperature sensor value to display scale
+ * @param sensorValue Temperature value in configured units
+ * @return Mapped value for display (0-120 scale)
+ */
 int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 {
     

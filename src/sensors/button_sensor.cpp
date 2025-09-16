@@ -40,8 +40,10 @@ void ButtonSensor::Init()
     log_i("ButtonSensor initialization completed on GPIO %d", gpio_pins::INPUT_BUTTON);
 }
 
-/// @brief Get the current button state as a sensor reading
-/// @return Reading containing the current button state (bool)
+/**
+ * @brief Get the current button state as a sensor reading
+ * @return Reading containing the current button state (bool)
+ */
 Reading ButtonSensor::GetReading()
 {
     // Process button state to detect actions
@@ -53,30 +55,38 @@ Reading ButtonSensor::GetReading()
     return state;
 }
 
-/// @brief Get the current button action
-/// @return ButtonAction indicating the type of press detected
+/**
+ * @brief Get the current button action
+ * @return ButtonAction indicating the type of press detected
+ */
 ButtonAction ButtonSensor::GetButtonAction()
 {
     ProcessButtonState();
     return detectedAction_;
 }
 
-/// @brief Check if a button action is ready
-/// @return true if a valid button action has been detected
+/**
+ * @brief Check if a button action is ready
+ * @return true if a valid button action has been detected
+ */
 bool ButtonSensor::HasButtonAction() const
 {
     return actionReady_;
 }
 
-/// @brief Clear the current button action (after processing)
+/**
+ * @brief Clear the current button action (after processing)
+ */
 void ButtonSensor::ClearButtonAction()
 {
     detectedAction_ = ButtonAction::NONE;
     actionReady_ = false;
 }
 
-/// @brief Check if the action button is currently pressed
-/// @return true if button is pressed (GPIO HIGH), false otherwise
+/**
+ * @brief Check if the action button is currently pressed
+ * @return true if button is pressed (GPIO HIGH), false otherwise
+ */
 bool ButtonSensor::IsButtonPressed()
 {
     // GPIO 32 reads HIGH when button is pressed (connected to 3.3V)
@@ -222,9 +232,11 @@ void ButtonSensor::ProcessButtonState()
     }
 }
 
-/// @brief Determine button action based on press duration
-/// @param duration Press duration in milliseconds
-/// @return ButtonAction type based on duration
+/**
+ * @brief Determine button action based on press duration
+ * @param duration Press duration in milliseconds
+ * @return ButtonAction type based on duration
+ */
 ButtonAction ButtonSensor::DetermineAction(unsigned long duration)
 {
     if (duration < DEBOUNCE_MS)

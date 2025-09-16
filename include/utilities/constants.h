@@ -35,24 +35,28 @@
 //=============================================================================
 
 
-/// @enum OilSensorTypes
-/// @brief Types of oil monitoring sensors
-///
-/// @details Used for identifying different oil sensor types in
-/// animations and callbacks within the OemOilPanel system.
+/**
+ * @enum OilSensorTypes
+ * @brief Types of oil monitoring sensors
+ * 
+ * @details Used for identifying different oil sensor types in
+ * animations and callbacks within the OemOilPanel system.
+ */
 enum class OilSensorTypes
 {
     Pressure,   ///< Oil pressure sensor (PSI)
     Temperature ///< Oil temperature sensor (degrees)
 };
 
-/// @enum KeyState
-/// @brief Key presence states for automotive ignition monitoring
-///
-/// @details Represents the three possible states of the ignition key system:
-/// - Inactive: Neither pin active (no key panel, restore previous)
-/// - Present: Key inserted and detected (green key display)
-/// - NotPresent: Key explicitly not detected (red key display)
+/**
+ * @enum KeyState
+ * @brief Key presence states for automotive ignition monitoring
+ *
+ * @details Represents the three possible states of the ignition key system:
+ * - Inactive: Neither pin active (no key panel, restore previous)
+ * - Present: Key inserted and detected (green key display)
+ * - NotPresent: Key explicitly not detected (red key display)
+ */
 enum class KeyState
 {
     Inactive,  ///< Neither pin active - restore previous panel
@@ -60,18 +64,22 @@ enum class KeyState
     NotPresent ///< Key is not present (GPIO 26 HIGH) - show red key
 };
 
-/// @enum TriggerActionType
-/// @brief Types of actions that triggers can request
-///
-/// @details Used for dependency injection - triggers return action requests
-/// that main loop processes by calling appropriate manager methods
+/**
+ * @enum TriggerActionType
+ * @brief Types of actions that triggers can request
+ *
+ * @details Used for dependency injection - triggers return action requests
+ * that main loop processes by calling appropriate manager methods
+ */
 enum class TriggerActionType
 {
     LoadPanel,  ///< Request to load a specific panel
     ToggleTheme ///< Request to toggle theme
 };
 
-/// @brief UI state for processing decisions
+/**
+ * @brief UI state for processing decisions
+ */
 enum class UIState
 {
     IDLE, ///< No UI activity, safe for button actions and interrupts
@@ -88,7 +96,9 @@ inline const char* UIStateToString(UIState state)
     }
 }
 
-/// @brief Priority levels for trigger messages
+/**
+ * @brief Priority levels for trigger messages
+ */
 enum class TriggerPriority
 {
     CRITICAL = 0,  ///< Critical triggers (key presence, safety)
@@ -96,8 +106,10 @@ enum class TriggerPriority
     NORMAL = 2     ///< Non-critical triggers (theme changes, settings)
 };
 
-/// @brief Priority levels for coordinated interrupt system
-/// @details Higher numeric values = higher priority (CRITICAL > IMPORTANT > NORMAL)
+/**
+ * @brief Priority levels for coordinated interrupt system
+ * @details Higher numeric values = higher priority (CRITICAL > IMPORTANT > NORMAL)
+ */
 enum class Priority
 {
     NORMAL = 0,    ///< Non-critical interrupts (theme changes, button actions, preferences)
@@ -105,14 +117,18 @@ enum class Priority
     CRITICAL = 2   ///< Critical interrupts (key presence, errors, safety) - highest priority
 };
 
-/// @brief Interrupt source types for coordinated handler system
+/**
+ * @brief Interrupt source types for coordinated handler system
+ */
 enum class InterruptSource
 {
     TRIGGER,    ///< GPIO state monitoring (managed by TriggerHandler)
     ACTION      ///< Button event processing (managed by ActionHandler)
 };
 
-/// @brief Interrupt effect types for simplified execution logic
+/**
+ * @brief Interrupt effect types for simplified execution logic
+ */
 enum class InterruptEffect
 {
     LOAD_PANEL,        ///< Panel switching with restoration tracking
@@ -121,7 +137,9 @@ enum class InterruptEffect
     BUTTON_ACTION      ///< Panel-specific button functions (ACTION only)
 };
 
-/// @brief Button action types detected by timing
+/**
+ * @brief Button action types detected by timing
+ */
 enum class ButtonAction
 {
     NONE = 0,          ///< No action detected
@@ -129,7 +147,9 @@ enum class ButtonAction
     LONG_PRESS = 2     ///< Long press (2000ms - 5000ms)
 };
 
-/// @brief Trigger types for the new Trigger/Action architecture
+/**
+ * @brief Trigger types for the new Trigger/Action architecture
+ */
 enum class TriggerType
 {
     PANEL,     ///< Panel loading triggers
@@ -137,14 +157,18 @@ enum class TriggerType
     FUNCTION   ///< General function triggers
 };
 
-/// @brief Action press types for button duration detection
+/**
+ * @brief Action press types for button duration detection
+ */
 enum class ActionPress
 {
     SHORT,     ///< Short press (50ms - 2000ms)
     LONG       ///< Long press (2000ms - 5000ms)
 };
 
-/// @brief Trigger execution state enumeration
+/**
+ * @brief Trigger execution state enumeration
+ */
 enum class TriggerExecutionState
 {
     INIT = 0,    ///< Initial state - no action required during system startup
@@ -152,8 +176,10 @@ enum class TriggerExecutionState
     INACTIVE = 2 ///< Inactive state - execute restore function
 };
 
-/// @enum ErrorLevel
-/// @brief Severity levels for application errors
+/**
+ * @enum ErrorLevel
+ * @brief Severity levels for application errors
+ */
 enum class ErrorLevel
 {
     WARNING, ///< Non-critical issues that don't affect core functionality
@@ -166,12 +192,14 @@ enum class ErrorLevel
 // String identifiers, names, and configuration keys used throughout the system
 //=============================================================================
 
-/// @struct Themes
-/// @brief Static constants for visual theme options
-///
-/// @details Defines available visual themes with different color schemes
-/// as string constants. Managed by StyleManager for consistent
-/// application-wide theming.
+/**
+ * @struct Themes
+ * @brief Static constants for visual theme options
+ *
+ * @details Defines available visual themes with different color schemes
+ * as string constants. Managed by StyleManager for consistent
+ * application-wide theming.
+ */
 struct Themes
 {
     static constexpr const char *NIGHT = "Night"; ///< Dark theme with red accents (default)
@@ -179,12 +207,14 @@ struct Themes
     static constexpr const char *ERROR = "Error"; ///< Error-specific theme with high contrast for alerts
 };
 
-/// @struct PanelNames
-/// @brief Static constants for panel type identifiers
-///
-/// @details Defines the available panel types used in the PanelManager
-/// factory system and configuration as string constants for direct use
-/// without conversion overhead.
+/**
+ * @struct PanelNames
+ * @brief Static constants for panel type identifiers
+ *
+ * @details Defines the available panel types used in the PanelManager
+ * factory system and configuration as string constants for direct use
+ * without conversion overhead.
+ */
 struct PanelNames
 {
     static constexpr const char *SPLASH = "SplashPanel"; ///< Startup splash screen
@@ -195,11 +225,13 @@ struct PanelNames
     static constexpr const char *CONFIG = "ConfigPanel"; ///< Configuration settings panel
 };
 
-/// @struct TriggerNames
-/// @brief String constants for trigger identification
-///
-/// @details Provides consistent string identifiers for trigger types
-/// used in the InterruptManager registration system.
+/**
+ * @struct TriggerNames
+ * @brief String constants for trigger identification
+ *
+ * @details Provides consistent string identifiers for trigger types
+ * used in the InterruptManager registration system.
+ */
 struct TriggerNames
 {
     static constexpr const char *KEY_PRESENT = "key_present_trigger";         ///< Key present detection trigger
@@ -209,11 +241,13 @@ struct TriggerNames
     static constexpr const char *ERROR_OCCURRED = "error_occurred_trigger";   ///< Error occurred trigger
 };
 
-/// @struct TriggerIds
-/// @brief Short trigger ID constants for internal use
-///
-/// @details Short identifiers used internally, different from the
-/// longer TriggerNames used for registration.
+/**
+ * @struct TriggerIds
+ * @brief Short trigger ID constants for internal use
+ *
+ * @details Short identifiers used internally, different from the
+ * longer TriggerNames used for registration.
+ */
 struct TriggerIds
 {
     static constexpr const char *KEY_PRESENT = "key_present";         ///< Key present trigger ID
@@ -225,11 +259,13 @@ struct TriggerIds
     static constexpr const char *LONG_PRESS = "universal_long_press";   ///< Long press button ID
 };
 
-/// @enum class InterruptFlags
-/// @brief Type-safe bit flag enumeration for interrupt state management
-///
-/// @details Provides type-safe flag operations for interrupt state tracking.
-/// Uses enum class for type safety while supporting bitwise operations.
+/**
+ * @enum class InterruptFlags
+ * @brief Type-safe bit flag enumeration for interrupt state management
+ *
+ * @details Provides type-safe flag operations for interrupt state tracking.
+ * Uses enum class for type safety while supporting bitwise operations.
+ */
 enum class InterruptFlags : uint8_t
 {
     NONE = 0x00,           ///< No flags set
@@ -239,42 +275,54 @@ enum class InterruptFlags : uint8_t
     ALWAYS_EXECUTE = 0x08  ///< Always execute regardless of state (bit 3)
 };
 
-/// @brief Bitwise OR operator for InterruptFlags
+/**
+ * @brief Bitwise OR operator for InterruptFlags
+ */
 constexpr InterruptFlags operator|(InterruptFlags lhs, InterruptFlags rhs) {
     return static_cast<InterruptFlags>(
         static_cast<uint8_t>(lhs) | static_cast<uint8_t>(rhs)
     );
 }
 
-/// @brief Bitwise AND operator for InterruptFlags  
+/**
+ * @brief Bitwise AND operator for InterruptFlags
+ */  
 constexpr InterruptFlags operator&(InterruptFlags lhs, InterruptFlags rhs) {
     return static_cast<InterruptFlags>(
         static_cast<uint8_t>(lhs) & static_cast<uint8_t>(rhs)
     );
 }
 
-/// @brief Bitwise NOT operator for InterruptFlags
+/**
+ * @brief Bitwise NOT operator for InterruptFlags
+ */
 constexpr InterruptFlags operator~(InterruptFlags flags) {
     return static_cast<InterruptFlags>(~static_cast<uint8_t>(flags));
 }
 
-/// @brief Bitwise OR-assign operator for InterruptFlags
+/**
+ * @brief Bitwise OR-assign operator for InterruptFlags
+ */
 constexpr InterruptFlags& operator|=(InterruptFlags& lhs, InterruptFlags rhs) {
     lhs = lhs | rhs;
     return lhs;
 }
 
-/// @brief Bitwise AND-assign operator for InterruptFlags  
+/**
+ * @brief Bitwise AND-assign operator for InterruptFlags
+ */  
 constexpr InterruptFlags& operator&=(InterruptFlags& lhs, InterruptFlags rhs) {
     lhs = lhs & rhs;
     return lhs;
 }
 
-/// @struct JsonDocNames
-/// @brief JSON field names for configuration serialization
-///
-/// @details Defines consistent field names used in JSON configuration
-/// documents for PreferenceManager serialization.
+/**
+ * @struct JsonDocNames
+ * @brief JSON field names for configuration serialization
+ *
+ * @details Defines consistent field names used in JSON configuration
+ * documents for PreferenceManager serialization.
+ */
 struct JsonDocNames
 {
     static constexpr const char *PANEL_NAME = "panel_name";           ///< Default panel setting
@@ -295,21 +343,25 @@ struct JsonDocNames
 // Sensor measurement ranges, calibration values, and system configuration
 //=============================================================================
 
-/// @struct SystemConstants
-/// @brief Static constants for system configuration
-///
-/// @details Defines system-level constants like preferences namespace
-/// and configuration keys.
+/**
+ * @struct SystemConstants
+ * @brief Static constants for system configuration
+ *
+ * @details Defines system-level constants like preferences namespace
+ * and configuration keys.
+ */
 struct SystemConstants
 {
     static constexpr const char *PREFERENCES_NAMESPACE = "clarity"; ///< NVS preferences namespace
 };
 
-/// @struct SensorConstants
-/// @brief Static constants for sensor calibration and ranges
-///
-/// @details Defines calibration constants for oil temperature and pressure
-/// sensors including their measurement ranges in various units.
+/**
+ * @struct SensorConstants
+ * @brief Static constants for sensor calibration and ranges
+ *
+ * @details Defines calibration constants for oil temperature and pressure
+ * sensors including their measurement ranges in various units.
+ */
 struct SensorConstants
 {
     // Temperature sensor calibration constants
@@ -328,11 +380,13 @@ struct SensorConstants
 // User interface text, labels, and visual theme definitions
 //=============================================================================
 
-/// @struct UIConstants
-/// @brief Static constants for UI text and labels
-///
-/// @details Defines reusable UI text constants to avoid magic strings
-/// and ensure consistency across components.
+/**
+ * @struct UIConstants
+ * @brief Static constants for UI text and labels
+ *
+ * @details Defines reusable UI text constants to avoid magic strings
+ * and ensure consistency across components.
+ */
 struct UIConstants
 {
     static constexpr const char *APP_NAME = "Clarity";   ///< Application name

@@ -4,8 +4,10 @@
 
 // ========== Static Methods ==========
 
-/// @brief Adaptive Timing to generate a ~60fps refresh rate
-/// @param start_time the start time of the loop method
+/**
+ * @brief Adaptive Timing to generate a ~60fps refresh rate
+ * @param start_time the start time of the loop method
+ */
 void Ticker::handleDynamicDelay(uint32_t startTime)
 {
     // Calculate how long processing took
@@ -20,7 +22,9 @@ void Ticker::handleDynamicDelay(uint32_t startTime)
         delay(1); // No delay needed, just yield to other tasks
 }
 
-/// @brief Handle lv tasks by calculating the time differences since start up
+/**
+ * @brief Handle lv tasks by calculating the time differences since start up
+ */
 void Ticker::handleLvTasks()
 {
     static uint32_t lastTickIncrement = 0;

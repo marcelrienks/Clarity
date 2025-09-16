@@ -18,9 +18,11 @@ ClarityComponent::ClarityComponent(IStyleService *styleService) : styleService_(
 
 // ========== IComponent Implementation ==========
 
-/// @brief Initialises the Clarity Component by rendering a splash screen with location parameters
-/// @param screen the screen on which to render the component
-/// @param location the location parameters for positioning the component
+/**
+ * @brief Initialises the Clarity Component by rendering a splash screen with location parameters
+ * @param screen the screen on which to render the component
+ * @param location the location parameters for positioning the component
+ */
 void ClarityComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     log_v("Render() called");

@@ -57,7 +57,8 @@
       "Bash(mkdir:*)",
       "Bash(xtensa-esp32-elf-g++:*)",
       "Bash(gcc:*)",
-      "Bash(xargs:*)"
+      "Bash(xargs:*)",
+      "Bash(awk:*)"
     ],
     "deny": [],
     "ask": []

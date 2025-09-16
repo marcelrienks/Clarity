@@ -33,9 +33,11 @@ KeyComponent::~KeyComponent()
 
 // ========== IComponent Implementation ==========
 
-/// @brief This method initializes the key present icon with location parameters
-/// @param screen The screen object to render the component on.
-/// @param location The location parameters for positioning the component.
+/**
+ * @brief This method initializes the key present icon with location parameters
+ * @param screen The screen object to render the component on.
+ * @param location The location parameters for positioning the component.
+ */
 void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     
@@ -57,8 +59,10 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
 
 // ========== Public Interface Methods ==========
 
-/// @brief Set the key icon color based on key state
-/// @param keyState The current key state to determine color
+/**
+ * @brief Set the key icon color based on key state
+ * @param keyState The current key state to determine color
+ */
 void KeyComponent::SetColor(KeyState keyState)
 {
     

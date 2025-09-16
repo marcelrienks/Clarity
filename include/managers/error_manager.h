@@ -4,18 +4,20 @@
 #include <string>
 #include <vector>
 
-/// @class ErrorManager
-/// @brief Global error management service for application-level error handling
-///
-/// @details Singleton service that collects, manages, and coordinates error
-/// reporting across the Clarity application. Integrates with the trigger system
-/// to automatically display error panels when critical issues occur.
-///
-/// @design_constraints:
-/// - Memory efficient with bounded error queue
-/// - Non-intrusive - preserves Arduino crash reporting
-/// - Priority-aware error handling via trigger system
-/// - Automatic cleanup of old errors when queue is full
+/**
+ * @class ErrorManager
+ * @brief Global error management service for application-level error handling
+ *
+ * @details Singleton service that collects, manages, and coordinates error
+ * reporting across the Clarity application. Integrates with the trigger system
+ * to automatically display error panels when critical issues occur.
+ *
+ * @design_constraints:
+ * - Memory efficient with bounded error queue
+ * - Non-intrusive - preserves Arduino crash reporting
+ * - Priority-aware error handling via trigger system
+ * - Automatic cleanup of old errors when queue is full
+ */
 class ErrorManager
 {
 public:

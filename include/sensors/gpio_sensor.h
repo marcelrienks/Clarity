@@ -104,27 +104,37 @@ private:
 
 // Predefined sensor configurations for common use cases
 namespace sensor_configs {
-    /// @brief Key present sensor configuration (GPIO 25)
+    /**
+     * @brief Key present sensor configuration (GPIO 25)
+     */
     constexpr GpioSensorConfig KEY_PRESENT{
         gpio_pins::KEY_PRESENT, INPUT_PULLDOWN, "KeyPresent", true, false
     };
 
-    /// @brief Key not present sensor configuration (GPIO 26)
+    /**
+     * @brief Key not present sensor configuration (GPIO 26)
+     */
     constexpr GpioSensorConfig KEY_NOT_PRESENT{
         gpio_pins::KEY_NOT_PRESENT, INPUT_PULLDOWN, "KeyNotPresent", true, false
     };
 
-    /// @brief Lock sensor configuration (GPIO 27)
+    /**
+     * @brief Lock sensor configuration (GPIO 27)
+     */
     constexpr GpioSensorConfig LOCK{
         gpio_pins::LOCK, INPUT_PULLDOWN, "Lock", true, false
     };
 
-    /// @brief Lights sensor configuration (GPIO 33)
+    /**
+     * @brief Lights sensor configuration (GPIO 33)
+     */
     constexpr GpioSensorConfig LIGHTS{
         gpio_pins::LIGHTS, INPUT_PULLDOWN, "Lights", true, false
     };
 
-    /// @brief Debug error sensor configuration (GPIO 34, debug builds only)
+    /**
+     * @brief Debug error sensor configuration (GPIO 34, debug builds only)
+     */
     constexpr GpioSensorConfig DEBUG_ERROR{
         gpio_pins::DEBUG_ERROR, INPUT, "DebugError", true, true
     };

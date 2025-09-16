@@ -70,10 +70,12 @@ using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>
 //=============================================================================
 
 /// @struct ComponentLocation
-/// @brief UI component positioning and sizing parameters
-///
-/// @details Comprehensive structure for defining component placement
-/// within LVGL screens. Supports both absolute positioning (x,y) and
+/**
+ * @brief UI component positioning and sizing parameters
+ *
+ * @details Comprehensive structure for defining component placement
+ * within LVGL screens. Supports both absolute positioning (x,y) and
+ */
 /// relative alignment with offsets.
 ///
 /// @positioning_modes:
@@ -120,7 +122,9 @@ struct ComponentLocation
 //=============================================================================
 
 
-/// @brief State-based Trigger for GPIO monitoring with dual functions
+/**
+ * @brief State-based Trigger for GPIO monitoring with dual functions
+ */
 struct Trigger
 {
     const char* id;                      ///< Static string identifier
@@ -148,7 +152,9 @@ struct Trigger
 };
 
 /// @struct ErrorInfo
-/// @brief Complete error information structure
+/**
+ * @brief Complete error information structure
+ */
 struct ErrorInfo
 {
     static constexpr size_t MAX_MESSAGE_LENGTH = 128; ///< Fixed buffer size for embedded optimization
@@ -177,7 +183,9 @@ struct ErrorInfo
 //=============================================================================
 
 /// @struct Action  
-/// @brief Event-based Action for button processing
+/**
+ * @brief Event-based Action for button processing
+ */
 struct Action
 {
     const char* id;                      ///< Static string identifier

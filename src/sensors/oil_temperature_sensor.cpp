@@ -294,10 +294,12 @@ void OilTemperatureSensor::LoadConfiguration()
           targetUnit_.c_str(), updateIntervalMs_, calibrationOffset_, calibrationScale_);
 }
 
-/// @brief Register configuration with dynamic config system
-/// @details Implements component self-registration pattern from dynamic-config-implementation.md
-/// This allows the sensor to define its own configuration requirements including:
-/// - Temperature unit selection (C/F)
+/**
+ * @brief Register configuration with dynamic config system
+ * @details Implements component self-registration pattern from dynamic-config-implementation.md
+ * This allows the sensor to define its own configuration requirements including:
+ * - Temperature unit selection (C/F)
+ */
 /// - Update rate options
 /// - Calibration parameters with validation ranges
 void OilTemperatureSensor::RegisterConfiguration()
@@ -331,9 +333,11 @@ void OilTemperatureSensor::RegisterConfiguration()
     log_i("Registered oil temperature sensor configuration");
 }
 
-/// @brief Register callbacks for live configuration updates
-/// @details Sets up real-time response to configuration changes without requiring restart
-/// Implements live update system from dynamic-config-implementation.md Phase 4
+/**
+ * @brief Register callbacks for live configuration updates
+ * @details Sets up real-time response to configuration changes without requiring restart
+ * Implements live update system from dynamic-config-implementation.md Phase 4
+ */
 void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
     if (!preferenceService_) return;
 
