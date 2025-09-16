@@ -1,4 +1,5 @@
 #include "managers/style_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <cstring>
 #include <esp32-hal-log.h>
@@ -43,6 +44,8 @@ StyleManager::~StyleManager()
 StyleManager& StyleManager::Instance() {
     if (!styleInstancePtr_) {
         log_e("StyleManager::Instance() called before initialization");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "Instance() called before initialization - UI will not function");
         // In embedded systems, we need a valid instance
         // This should be set during ManagerFactory initialization
     }
@@ -157,13 +160,17 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
     // Safety checks
     if (!screen)
     {
-        log_w("Cannot apply theme to null screen");
+        log_e("Cannot apply theme to null screen. Display will not function!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "Cannot apply theme to null screen - display will not function");
         return;
     }
 
     if (!initialized_)
     {
-        log_w("StyleManager not initialized, skipping theme application");
+        log_e("StyleManager not initialized, cannot apply theme to screen. Application will not display correctly!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "Not initialized - cannot apply theme to screen");
         return;
     }
 
@@ -184,6 +191,8 @@ void StyleManager::ApplyCurrentTheme()
 
     if (!preferenceService_) {
         log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "StyleManager",
+                                            "No PreferenceService available - cannot persist theme");
         log_v("Current cached theme is: %s", theme_.c_str());
         return;
     }

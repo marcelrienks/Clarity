@@ -1,4 +1,5 @@
 #include "managers/preference_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <algorithm>
 #include <sstream>
@@ -23,6 +24,8 @@ PreferenceManager::PreferenceManager() {
     configMutex_ = xSemaphoreCreateMutex();
     if (!configMutex_) {
         log_e("Failed to create config mutex");
+        ErrorManager::Instance().ReportCriticalError("PreferenceManager",
+                                                     "Failed to create config mutex - thread safety compromised");
         return;
     }
 
@@ -35,6 +38,8 @@ PreferenceManager::PreferenceManager() {
 
     if (err != ESP_OK) {
         log_e("Failed to initialize NVS: %s", esp_err_to_name(err));
+        ErrorManager::Instance().ReportCriticalError("PreferenceManager",
+                                                     "Failed to initialize NVS - preferences cannot be saved");
         return;
     }
 
@@ -235,6 +240,8 @@ bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
     for (const auto& item : section.items) {
         if (!StoreValueToNVS(preferences_, item.key, item.value, item.type)) {
             log_e("Failed to store config item: %s.%s", sectionName.c_str(), item.key.c_str());
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                                                "Failed to store config item to NVS");
             success = false;
         }
     }
@@ -462,6 +469,8 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
                     log_t("Notified callback %u for update: %s", callbackId, fullKey.c_str());
                 } catch (const std::exception& e) {
                     log_e("Exception in change callback %u: %s", callbackId, e.what());
+                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                                                        "Exception in change callback");
                 }
             }
         }
@@ -469,6 +478,8 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
         // Rollback in-memory value on NVS write failure
         itemIt->value = *oldValue;
         log_e("Failed to save config to NVS for key: %s", fullKey.c_str());
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                                            "Failed to save config value to NVS");
     }
 
     return success;

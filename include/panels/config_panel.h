@@ -72,6 +72,25 @@ class ConfigPanel : public IPanel
     void HandleLongPress();
 
   private:
+    // ========== Private Types ==========
+    // Menu state enum
+    enum class MenuState
+    {
+        MainMenu,
+        PanelSubmenu,
+        ThemeSubmenu,
+        UpdateRateSubmenu,
+        SplashSubmenu,
+        SplashDurationSubmenu,
+        PressureUnitSubmenu,
+        TempUnitSubmenu,
+        CalibrationSubmenu,
+        PressureOffsetSubmenu,
+        PressureScaleSubmenu,
+        TempOffsetSubmenu,
+        TempScaleSubmenu
+    };
+
     // ========== Private Methods ==========
     void InitializeMenuItems();
     void UpdateMenuItemsWithCurrentValues();
@@ -95,23 +114,6 @@ class ConfigPanel : public IPanel
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
     // ========== Private Data Members ==========
-    // Menu state enum
-    enum class MenuState
-    {
-        MainMenu,
-        PanelSubmenu,
-        ThemeSubmenu,
-        UpdateRateSubmenu,
-        SplashSubmenu,
-        SplashDurationSubmenu,
-        PressureUnitSubmenu,
-        TempUnitSubmenu,
-        CalibrationSubmenu,
-        PressureOffsetSubmenu,
-        PressureScaleSubmenu,
-        TempOffsetSubmenu,
-        TempScaleSubmenu
-    };
 
     // Instance Data Members
     IGpioProvider *gpioProvider_;

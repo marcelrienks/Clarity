@@ -38,7 +38,6 @@ public:
     
     // New Trigger system interface
     bool RegisterTrigger(const Trigger& trigger);
-    void UnregisterTrigger(const char* id);
     void EvaluateTriggers();  // Called during UI idle only
     
     // Priority override and restoration logic
@@ -68,6 +67,8 @@ private:
     // ========== Private Methods ==========
     // Core trigger processing
     void EvaluateIndividualTrigger(Trigger& trigger);
+    void HandleTriggerActivation(Trigger& trigger);
+    void HandleTriggerDeactivation(Trigger& trigger);
     void ExecuteTriggerFunction(const Trigger& trigger, bool isActivation);
     bool ShouldActivate(const Trigger& trigger) const;
     bool ShouldDeactivate(const Trigger& trigger) const;

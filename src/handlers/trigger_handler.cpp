@@ -56,7 +56,9 @@ TriggerHandler::TriggerHandler(IGpioProvider* gpioProvider)
 #endif
     }
     else {
-        log_w("TriggerHandler created without GPIO provider - sensors not initialized");
+        log_e("TriggerHandler created without GPIO provider - sensors not initialized. Application will not function correctly!");
+        ErrorManager::Instance().ReportCriticalError("TriggerHandler",
+                                                     "Created without GPIO provider - sensors will not function");
     }
 }
 
@@ -92,8 +94,10 @@ void TriggerHandler::Process() {
  */
 bool TriggerHandler::RegisterTrigger(const Trigger& trigger) {
     if (triggerCount_ >= MAX_TRIGGERS) {
-        log_e("Cannot register trigger '%s' - maximum triggers reached (%d)", 
+        log_e("Cannot register trigger '%s' - maximum triggers reached (%d)",
               trigger.id, MAX_TRIGGERS);
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "TriggerHandler",
+                                            "Maximum triggers reached - cannot register new trigger");
         return false;
     }
     
@@ -111,31 +115,6 @@ bool TriggerHandler::RegisterTrigger(const Trigger& trigger) {
     log_i("Registered trigger '%s' (type: %d, priority: %d)", 
           trigger.id, static_cast<int>(trigger.type), static_cast<int>(trigger.priority));
     return true;
-}
-
-/**
- * @brief Removes a registered trigger from monitoring
- * @param id Unique identifier of trigger to remove
- *
- * Finds and removes trigger from registry, compacting the array.
- * Used during panel transitions to clean up previous triggers
- * and prevent unwanted state change responses.
- */
-void TriggerHandler::UnregisterTrigger(const char* id) {
-    Trigger* trigger = FindTrigger(id);
-    if (!trigger) {
-        log_w("Cannot unregister trigger '%s' - not found", id);
-        return;
-    }
-    
-    // Find index and shift array
-    size_t index = trigger - triggers_;
-    for (size_t i = index; i < triggerCount_ - 1; i++) {
-        triggers_[i] = triggers_[i + 1];
-    }
-    triggerCount_--;
-    
-    log_i("Unregistered trigger '%s'", id);
 }
 
 /**
@@ -162,80 +141,99 @@ void TriggerHandler::EvaluateTriggers() {
  * priority triggers, enabling proper restoration when priorities change.
  */
 void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
+    // Early return for guard clauses
     if (!trigger.sensor) {
         return; // No sensor associated
     }
-    
-    // Extra debugging for lock trigger
-    
+
     // Check if sensor state has changed
     bool hasChanged = trigger.sensor->HasStateChanged();
-    
     if (!hasChanged) {
         return; // No change, nothing to do
     }
-    
+
     // Get current sensor state
     bool sensorActive = IsSensorActive(trigger);
     bool wasActive = trigger.isActive;
-    
+
     // Debug logging for KeyPresent trigger specifically
     if (strcmp(trigger.id, "key_present") == 0) {
-        log_t("KeyPresent trigger evaluation: hasChanged=%s, wasActive=%s, sensorActive=%s", 
+        log_t("KeyPresent trigger evaluation: hasChanged=%s, wasActive=%s, sensorActive=%s",
               hasChanged ? "true" : "false",
-              wasActive ? "true" : "false", 
+              wasActive ? "true" : "false",
               sensorActive ? "true" : "false");
     }
-    
-    
-    // Determine if trigger should activate or deactivate
+
+    // Handle activation flow
     if (!wasActive && sensorActive) {
-        // CRITICAL ARCHITECTURE: Priority-based execution with state preservation
-        // 1. isActive flag ALWAYS updated when sensor changes (regardless of priority)
-        // 2. Function execution BLOCKED by higher priority but state preserved
-        // 3. This preserves trigger state for restoration when higher priority clears
-        // 4. Error panel active check prevents UI corruption during error display
-
-        // Activation Flow with Priority Logic (as per interrupt-architecture.md)
-        // ALWAYS set isActive when sensor becomes active, regardless of priority
-        trigger.isActive = true;
-        UpdatePriorityState(trigger.priority, true);
-
-        // Call sensor's OnInterruptTriggered method for sensor-specific behavior (e.g., debug error generation)
-        if (trigger.sensor) {
-            trigger.sensor->OnInterruptTriggered();
-        }
-
-        // But only execute the activate function if not blocked by higher priority or error panel
-        if (!HasHigherPriorityActive(trigger.priority)) {
-            // Check if error panel is active - if so, suppress trigger execution but keep state
-            if (ErrorManager::Instance().IsErrorPanelActive()) {
-            } else {
-                if (trigger.activateFunc) {
-                    trigger.activateFunc();
-                }
-            }
-        } else {
-        }
+        HandleTriggerActivation(trigger);
+        return;
     }
-    else if (wasActive && !sensorActive && ShouldDeactivate(trigger)) {
-        // Deactivation Flow with Type-Based Restoration (as per interrupt-architecture.md)
-        
-        // First, mark this trigger as inactive and update priority state
-        trigger.isActive = false;
-        UpdatePriorityState(trigger.priority, false);
-        
-        // Find highest priority active trigger of same type (don't exclude any priority)
-        Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type);
-        if (sameTypeTrigger) {
-            // Same-type trigger activation
-            sameTypeTrigger->ExecuteActivate();
-        } else {
-            // Only call deactivate function (which does restoration) if no same-type triggers found
-            if (trigger.deactivateFunc) {
-                trigger.deactivateFunc();
-            }
-        }
+
+    // Handle deactivation flow
+    if (wasActive && !sensorActive && ShouldDeactivate(trigger)) {
+        HandleTriggerDeactivation(trigger);
+        return;
+    }
+}
+
+/**
+ * @brief Handles trigger activation flow with priority logic
+ * @param trigger Trigger to activate
+ *
+ * Activation Flow with Priority Logic (as per interrupt-architecture.md).
+ * Always sets isActive when sensor becomes active, regardless of priority.
+ * Only executes function if not blocked by higher priority or error panel.
+ */
+void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
+    // ALWAYS set isActive when sensor becomes active, regardless of priority
+    trigger.isActive = true;
+    UpdatePriorityState(trigger.priority, true);
+
+    // Call sensor's OnInterruptTriggered method for sensor-specific behavior
+    if (trigger.sensor) {
+        trigger.sensor->OnInterruptTriggered();
+    }
+
+    // Early return if blocked by higher priority
+    if (HasHigherPriorityActive(trigger.priority)) {
+        return;
+    }
+
+    // Early return if error panel is active - suppress trigger execution but keep state
+    if (ErrorManager::Instance().IsErrorPanelActive()) {
+        return;
+    }
+
+    // Execute activation function if available
+    if (trigger.activateFunc) {
+        trigger.activateFunc();
+    }
+}
+
+/**
+ * @brief Handles trigger deactivation flow with type-based restoration
+ * @param trigger Trigger to deactivate
+ *
+ * Deactivation Flow with Type-Based Restoration (as per interrupt-architecture.md).
+ * Marks trigger as inactive and either restores same-type trigger or calls deactivate function.
+ */
+void TriggerHandler::HandleTriggerDeactivation(Trigger& trigger) {
+    // Mark this trigger as inactive and update priority state
+    trigger.isActive = false;
+    UpdatePriorityState(trigger.priority, false);
+
+    // Find highest priority active trigger of same type
+    Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type);
+    if (sameTypeTrigger) {
+        // Same-type trigger activation
+        sameTypeTrigger->ExecuteActivate();
+        return;
+    }
+
+    // Only call deactivate function (restoration) if no same-type triggers found
+    if (trigger.deactivateFunc) {
+        trigger.deactivateFunc();
     }
 }
 

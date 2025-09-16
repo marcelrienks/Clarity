@@ -1,10 +1,8 @@
 #include "sensors/gpio_sensor.h"
+#include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
-#ifdef CLARITY_DEBUG
-#include "managers/error_manager.h"
-#endif
 
 // ========== Constructors and Destructor ==========
 
@@ -214,7 +212,9 @@ void GpioSensor::OnInterruptTriggered()
 bool GpioSensor::readRawPinState()
 {
     if (!gpioProvider_) {
-        log_w("%s: GPIO provider is null, returning false", config_.name);
+        log_e("%s: GPIO provider is null - sensor cannot function!", config_.name);
+        ErrorManager::Instance().ReportCriticalError("GpioSensor",
+                                                     "GPIO provider is null - sensor cannot read pins");
         return false;
     }
 

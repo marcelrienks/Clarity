@@ -7,6 +7,7 @@
 #include "components/lock_component.h"
 #include "components/config_component.h"
 #include "interfaces/i_style_service.h"
+#include "managers/error_manager.h"
 
 #include "esp32-hal-log.h"
 
@@ -39,7 +40,9 @@ std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyl
 {
     auto component = std::make_unique<ClarityComponent>(style);
     if (!component) {
-        log_e("Failed to create ClarityComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create ClarityComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "ClarityComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;
@@ -57,7 +60,9 @@ std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleS
 {
     auto component = std::make_unique<OemOilPressureComponent>(style);
     if (!component) {
-        log_e("Failed to create OemOilPressureComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create OemOilPressureComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "OemOilPressureComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;
@@ -75,7 +80,9 @@ std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(ISty
 {
     auto component = std::make_unique<OemOilTemperatureComponent>(style);
     if (!component) {
-        log_e("Failed to create OemOilTemperatureComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create OemOilTemperatureComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "OemOilTemperatureComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;
@@ -93,7 +100,9 @@ std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleSer
 {
     auto component = std::make_unique<ErrorComponent>(style);
     if (!component) {
-        log_e("Failed to create ErrorComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create ErrorComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "ErrorComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;
@@ -111,7 +120,9 @@ std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleService
 {
     auto component = std::make_unique<KeyComponent>(style);
     if (!component) {
-        log_e("Failed to create KeyComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create KeyComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "KeyComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;
@@ -129,7 +140,9 @@ std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleServi
 {
     auto component = std::make_unique<LockComponent>(style);
     if (!component) {
-        log_e("Failed to create LockComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create LockComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "LockComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;
@@ -148,7 +161,9 @@ std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleS
     // ConfigComponent doesn't use style service in constructor
     auto component = std::make_unique<ConfigComponent>();
     if (!component) {
-        log_e("Failed to create ConfigComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create ConfigComponent - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ComponentFactory",
+                                                     "ConfigComponent allocation failed - out of memory");
         return nullptr;
     }
     return component;

@@ -92,6 +92,8 @@ PanelManager::~PanelManager()
 PanelManager& PanelManager::Instance() {
     if (!instancePtr_) {
         log_e("PanelManager::Instance() called before initialization");
+        ErrorManager::Instance().ReportCriticalError("PanelManager",
+                                                     "Instance() called before initialization - panels will not function");
         // In embedded systems, we need a valid instance
         // This should be set during ManagerFactory initialization
     }
@@ -434,6 +436,8 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     {
         log_e("Cannot update button functions - panel=%p, interrupt_manager=%p",
               (void*)panel, (void*)interruptManager_);
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
+                                            "Cannot update button functions - invalid panel or interrupt manager");
         return;
     }
 
@@ -459,6 +463,8 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     {
         log_e("UpdatePanelButtonFunctions: Panel provided null button functions - short=%p, long=%p",
               (void*)shortPressFunc, (void*)longPressFunc);
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
+                                            "Panel provided null button functions");
         return;
     }
 

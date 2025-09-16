@@ -245,6 +245,8 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!event)
     {
         log_e("ShowPanelCompletionCallback: event is null!");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                            "ShowPanelCompletionCallback received null event");
         return;
     }
 
@@ -261,11 +263,15 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
         else
         {
             log_e("ErrorPanel::ShowPanelCompletionCallback: panelService_ is null!");
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                                "PanelService is null in completion callback");
         }
     }
     else
     {
         log_e("ErrorPanel::ShowPanelCompletionCallback: thisInstance is null!");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                            "Instance is null in completion callback");
     }
 }
 
@@ -305,6 +311,8 @@ static void ErrorPanelShortPress(void* panelContext)
     else
     {
         log_e("ErrorPanel: Cannot cycle errors - invalid context (null panel)");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                            "Cannot cycle errors - invalid context");
     }
 }
 
@@ -321,6 +329,8 @@ static void ErrorPanelLongPress(void* panelContext)
     else
     {
         log_e("ErrorPanel: Cannot execute long press - invalid context (null panel)");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                            "Cannot execute long press - invalid context");
     }
 }
 
@@ -473,6 +483,8 @@ void ErrorPanel::AdvanceToNextError()
     else
     {
         log_e("AdvanceToNextError: Error component is null - cannot update display");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+                                            "Error component is null - cannot update display");
     }
     
     log_i("AdvanceToNextError: Successfully advanced to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());

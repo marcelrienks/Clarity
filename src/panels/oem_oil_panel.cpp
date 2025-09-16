@@ -186,6 +186,8 @@ void OemOilPanel::Load()
         lv_coord_t h = lv_obj_get_height(screen_);
     } else {
         log_e("  screen_ is NULL!");
+        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
+                                                     "screen_ is NULL during periodic check");
     }
     
     // Validate component pointers
@@ -201,6 +203,8 @@ void OemOilPanel::Load()
     uint32_t test_pattern = MEMORY_PATTERN;
     if (test_pattern != MEMORY_PATTERN) {
         log_e("Pattern changed from 0x%08X to 0x%08X!", MEMORY_PATTERN, test_pattern);
+        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
+                                                     "Memory corruption detected - pattern mismatch");
     }
 
     lv_screen_load(screen_);
@@ -279,7 +283,9 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
     // Safety check for sensor availability
     if (!oemOilPressureSensor_)
     {
-        log_w("Pressure sensor is null, skipping update");
+        log_e("Pressure sensor is null - cannot update pressure display!");
+        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
+                                                     "Pressure sensor is null - gauge cannot function");
         return;
     }
 
@@ -394,7 +400,9 @@ void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
     // Safety check for sensor availability
     if (!oemOilTemperatureSensor_)
     {
-        log_w("Temperature sensor is null, skipping update");
+        log_e("Temperature sensor is null - cannot update temperature display!");
+        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
+                                                     "Temperature sensor is null - gauge cannot function");
         return;
     }
 

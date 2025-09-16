@@ -1,4 +1,5 @@
 #include "components/oem/oem_oil_temperature_component.h"
+#include "managers/error_manager.h"
 #include <esp32-hal-log.h>
 
 // ========== Constructors and Destructor ==========
@@ -108,6 +109,8 @@ void OemOilTemperatureComponent::setup_danger_zone(lv_scale_section_t *section) 
     
     if (!section) {
         log_e("setup_danger_zone: section is null");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "OemOilTemperatureComponent",
+                                            "Cannot setup danger zone - section is null");
         return;
     }
     

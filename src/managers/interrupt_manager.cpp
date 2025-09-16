@@ -38,6 +38,8 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 
     if (!gpioProvider) {
         log_e("Cannot initialize InterruptManager - GPIO provider is null");
+        ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                     "Cannot initialize - GPIO provider is null");
         return;
     }
 
@@ -104,20 +106,12 @@ bool InterruptManager::RegisterTrigger(const Trigger& trigger)
 {
     if (!triggerHandler_) {
         log_e("Cannot register trigger - TriggerHandler not initialized");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                            "Cannot register trigger - TriggerHandler not initialized");
         return false;
     }
 
     return triggerHandler_->RegisterTrigger(trigger);
-}
-
-/**
- * @brief Unregister trigger by identifier
- */
-void InterruptManager::UnregisterTrigger(const char* id)
-{
-    if (triggerHandler_) {
-        triggerHandler_->UnregisterTrigger(id);
-    }
 }
 
 /**
@@ -128,20 +122,12 @@ bool InterruptManager::RegisterAction(const Action& action)
 {
     if (!actionHandler_) {
         log_e("Cannot register action - ActionHandler not initialized");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                            "Cannot register action - ActionHandler not initialized");
         return false;
     }
 
     return actionHandler_->RegisterAction(action);
-}
-
-/**
- * @brief Unregister action by identifier
- */
-void InterruptManager::UnregisterAction(const char* id)
-{
-    if (actionHandler_) {
-        actionHandler_->UnregisterAction(id);
-    }
 }
 
 /**
@@ -153,7 +139,9 @@ void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void 
     log_v("UpdatePanelFunctions() called");
 
     if (!actionHandler_) {
-        log_w("Cannot update panel functions - ActionHandler not initialized");
+        log_e("Cannot update panel functions - ActionHandler not initialized. Button input will not work!");
+        ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                     "Cannot update panel functions - button input will not work");
         return;
     }
 
@@ -169,6 +157,8 @@ void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
 {
     if (!handler) {
         log_e("Cannot register null handler");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                            "Cannot register null handler");
         return;
     }
 
@@ -356,6 +346,8 @@ void InterruptManager::RegisterSystemInterrupts()
     for (const auto& trigger : systemTriggers) {
         if (!RegisterTrigger(trigger)) {
             log_e("Failed to register system trigger: %s", trigger.id);
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                                "Failed to register system trigger");
         }
     }
 
@@ -364,6 +356,8 @@ void InterruptManager::RegisterSystemInterrupts()
     for (const auto& action : systemActions) {
         if (!RegisterAction(action)) {
             log_e("Failed to register system action: %s", action.id);
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                                "Failed to register system action");
         }
     }
 

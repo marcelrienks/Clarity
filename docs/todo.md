@@ -1,3 +1,5 @@
+* continue review fromt trigger manager
+* review all log errors, and ensure the log message is short enough to be displayed on the screen
 * delete commented out code
 * Search for any #ifdef
 * Review preference manager logic

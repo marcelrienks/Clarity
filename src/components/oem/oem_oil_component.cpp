@@ -215,6 +215,8 @@ void OemOilComponent::SetValue(int32_t value)
     uint32_t component_test = COMPONENT_PATTERN;
     if (component_test != COMPONENT_PATTERN) {
         log_e("Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
+        ErrorManager::Instance().ReportCriticalError("OemOilComponent",
+                                                     "Memory corruption detected - component pattern mismatch");
     }
 }
 

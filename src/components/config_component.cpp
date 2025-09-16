@@ -1,4 +1,5 @@
 #include "components/config_component.h"
+#include "managers/error_manager.h"
 #include <Arduino.h>
 #include <cmath>
 #include <cstring>
@@ -109,6 +110,8 @@ void ConfigComponent::Init(lv_obj_t *screen)
     if (!screen)
     {
         log_e("ConfigComponent requires screen object");
+        ErrorManager::Instance().ReportCriticalError("ConfigComponent",
+                                                     "Screen object is null - cannot display configuration menu");
         return;
     }
 

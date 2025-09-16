@@ -19,24 +19,15 @@
  */
 std::unique_ptr<IGpioProvider> ProviderFactory::CreateGpioProvider()
 {
-    try
+    auto provider = std::make_unique<GpioProvider>();
+    if (!provider)
     {
-        auto provider = std::make_unique<GpioProvider>();
-        if (provider)
-        {
-            return provider;
-        }
-        else
-        {
-            log_e("Failed to create GpioProvider - allocation failed");
-            return nullptr;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        log_e("Exception creating GpioProvider: %s", e.what());
+        log_e("Failed to create GpioProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "GpioProvider allocation failed - out of memory");
         return nullptr;
     }
+    return provider;
 }
 
 /**
@@ -51,38 +42,31 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceP
 {
     if (!deviceProvider)
     {
-        log_e("DeviceProvider parameter is null");
-        ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider parameter is null");
+        log_e("ProviderFactory: Cannot create DisplayProvider - DeviceProvider parameter is null");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "Cannot create DisplayProvider - DeviceProvider dependency is null");
         return nullptr;
     }
-    
+
     // Access the screen from the injected deviceProvider using interface method
     lv_obj_t* screen = deviceProvider->GetScreen();
     if (!screen)
     {
-        log_e("DeviceProvider screen is null");
-        ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider screen is null");
+        log_e("ProviderFactory: Cannot create DisplayProvider - DeviceProvider screen is null");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "Cannot create DisplayProvider - DeviceProvider screen not initialized");
         return nullptr;
     }
 
-    try
+    auto provider = std::make_unique<LvglDisplayProvider>(screen);
+    if (!provider)
     {
-        auto provider = std::make_unique<LvglDisplayProvider>(screen);
-        if (provider)
-        {
-            return provider;
-        }
-        else
-        {
-            log_e("Failed to create LvglDisplayProvider - allocation failed");
-            return nullptr;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        log_e("Exception creating LvglDisplayProvider: %s", e.what());
+        log_e("ProviderFactory: Failed to create LvglDisplayProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "LvglDisplayProvider allocation failed - out of memory");
         return nullptr;
     }
+    return provider;
 }
 
 /**
@@ -95,31 +79,24 @@ std::unique_ptr<IDisplayProvider> ProviderFactory::CreateDisplayProvider(DeviceP
  */
 std::unique_ptr<DeviceProvider> ProviderFactory::CreateDeviceProvider()
 {
-    try
+    auto provider = std::make_unique<DeviceProvider>();
+    if (!provider)
     {
-        auto provider = std::make_unique<DeviceProvider>();
-        if (provider)
-        {
-            // Prepare the device (initializes screen)
-            provider->prepare();
-            if (!provider->GetScreen())
-            {
-                log_e("DeviceProvider screen initialization failed");
-                ErrorManager::Instance().ReportCriticalError("ProviderFactory", "DeviceProvider screen is null");
-                return nullptr;
-            }
-            
-            return provider;
-        }
-        else
-        {
-            log_e("Failed to create DeviceProvider - allocation failed");
-            return nullptr;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        log_e("Exception creating DeviceProvider: %s", e.what());
+        log_e("ProviderFactory: Failed to create DeviceProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "DeviceProvider allocation failed - out of memory");
         return nullptr;
     }
+
+    // Prepare the device (initializes screen)
+    provider->prepare();
+    if (!provider->GetScreen())
+    {
+        log_e("ProviderFactory: DeviceProvider screen initialization failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "DeviceProvider screen initialization failed");
+        return nullptr;
+    }
+
+    return provider;
 }

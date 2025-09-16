@@ -38,9 +38,7 @@ public:
     void Init(IGpioProvider* gpioProvider = nullptr);
     void Process();
     bool RegisterTrigger(const Trigger& trigger);
-    void UnregisterTrigger(const char* id);
     bool RegisterAction(const Action& action);
-    void UnregisterAction(const char* id);
     void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
 

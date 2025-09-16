@@ -38,7 +38,6 @@ public:
     
     // New Action system interface
     bool RegisterAction(const Action& action);
-    void UnregisterAction(const char* id);
     void EvaluateActions();  // Called every main loop cycle
     
     // Function injection system for dynamic panel functions
@@ -56,7 +55,6 @@ public:
     // Status and diagnostics
     size_t GetActionCount() const;
     bool HasPendingActions() const;
-    void PrintActionStatus() const;
 
     // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)

@@ -30,11 +30,13 @@ ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
     if (gpioProvider_) {
         buttonSensor_ = std::make_unique<ButtonSensor>(gpioProvider_);
         buttonSensor_->Init();
-        
+
         log_i("ActionHandler created and initialized ButtonSensor");
     }
     else {
-        log_w("ActionHandler created without GPIO provider - ButtonSensor not initialized");
+        log_e("ActionHandler created without GPIO provider - ButtonSensor not initialized. Application will not function correctly!");
+        ErrorManager::Instance().ReportCriticalError("ActionHandler",
+                                                     "Created without GPIO provider - button input will not function");
     }
 }
 
@@ -61,7 +63,6 @@ void ActionHandler::Process() {
     static unsigned long lastProcessTime = 0;
     unsigned long currentTime = millis();
     
-    
     // Actions are evaluated every main loop cycle (continuous evaluation)
     UpdateButtonState();
     ProcessButtonEvents();
@@ -82,8 +83,10 @@ void ActionHandler::Process() {
  */
 bool ActionHandler::RegisterAction(const Action& action) {
     if (actionCount_ >= MAX_ACTIONS) {
-        log_e("Cannot register action '%s' - maximum actions reached (%d)", 
+        log_e("Cannot register action '%s' - maximum actions reached (%d)",
               action.id, MAX_ACTIONS);
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ActionHandler",
+                                            "Maximum actions reached - cannot register new action");
         return false;
     }
     
@@ -101,31 +104,6 @@ bool ActionHandler::RegisterAction(const Action& action) {
     log_i("Registered action '%s' (press type: %d) - total actions now: %zu", 
           action.id, static_cast<int>(action.pressType), actionCount_);
     return true;
-}
-
-/**
- * @brief Removes a registered action from monitoring
- * @param id Unique identifier of action to remove
- *
- * Finds and removes action from registry, compacting the array to maintain
- * sequential storage. Used during panel transitions to clean up previous
- * panel's button behaviors and register new ones.
- */
-void ActionHandler::UnregisterAction(const char* id) {
-    Action* action = FindAction(id);
-    if (!action) {
-        log_w("Cannot unregister action '%s' - not found", id);
-        return;
-    }
-    
-    // Find index and shift array
-    size_t index = action - actions_;
-    for (size_t i = index; i < actionCount_ - 1; i++) {
-        actions_[i] = actions_[i + 1];
-    }
-    actionCount_--;
-    
-    log_i("Unregistered action '%s'", id);
 }
 
 /**
@@ -353,15 +331,6 @@ void ActionHandler::UpdateButtonState() {
         case ButtonState::RELEASED:
             buttonState_ = ButtonState::IDLE;
             break;
-    }
-
-    // Debug every 2 seconds or on state changes (reduced from 1 second)
-    if ((currentTime - lastDebugTime > 2000) || (buttonState_ != previousState)) {
-        log_i("Button state: %s, raw_gpio=%s, sensor_valid=%s",
-              StateToString(buttonState_),
-              currentPressed ? "HIGH" : "LOW",
-              buttonSensor_ ? "YES" : "NO");
-        lastDebugTime = currentTime;
     }
 }
 
@@ -601,27 +570,4 @@ bool ActionHandler::HasPendingActions() const {
     // Check if any action is waiting to be triggered
     ButtonAction currentAction = const_cast<ActionHandler*>(this)->DetectButtonAction();
     return currentAction != ButtonAction::NONE;
-}
-
-/**
- * @brief Prints comprehensive diagnostic information about action handler state
- *
- * Outputs detailed status including registered actions, button state, timing
- * information, and function injection status. Essential for debugging button
- * behavior issues and verifying proper action handler operation.
- */
-void ActionHandler::PrintActionStatus() const {
-    log_i("ActionHandler Status:");
-    log_i("  Total actions: %d", actionCount_);
-    log_i("  Button state: %s", StateToString(buttonState_));
-    log_i("  Timing: start=%lu, end=%lu", buttonPressStartTime_, buttonPressEndTime_);
-    log_i("  Functions: short=%s, long=%s",
-          currentShortPressFunc_ ? "set" : "null", currentLongPressFunc_ ? "set" : "null");
-
-    for (size_t i = 0; i < actionCount_; i++) {
-        const Action& action = actions_[i];
-        log_i("  Action[%d]: id='%s', pressType=%d, triggered=%s",
-              i, action.id, static_cast<int>(action.pressType),
-              action.hasTriggered ? "yes" : "no");
-    }
 }
