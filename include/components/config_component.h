@@ -71,15 +71,6 @@ class ConfigComponent : public IComponent
     void SetCurrentIndex(size_t index);
     void SetHintText(const std::string &hint);
 
-    // Get current menu state
-    size_t GetMenuItemCount() const
-    {
-        return menuItems_.size();
-    }
-    const MenuItem &GetMenuItem(size_t index) const
-    {
-        return menuItems_[index];
-    }
 
   private:
     // ========== Private Methods ==========

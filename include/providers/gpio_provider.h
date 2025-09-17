@@ -42,7 +42,6 @@ class GpioProvider : public IGpioProvider
   private:
     // Use fixed array for ESP32 GPIO pins (0-39) - much faster than std::map
     static constexpr int MAX_GPIO_PIN = 40;
-    bool attachedInterrupts_[MAX_GPIO_PIN] = {false};
 
   public:
     bool DigitalRead(int pin) override;
@@ -54,6 +53,4 @@ class GpioProvider : public IGpioProvider
     void AttachInterrupt(int pin, void (*callback)(), int mode) override;
 
     void DetachInterrupt(int pin) override;
-
-    bool HasInterrupt(int pin) override;
 };

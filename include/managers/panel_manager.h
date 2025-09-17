@@ -108,7 +108,6 @@ class PanelManager : public IPanelService,
 
   private:
     // ========== Private Methods ==========
-    void RegisterAllPanels();
     std::shared_ptr<IPanel> CreatePanel(const char *panelName);
     void CreateAndLoadPanelDirect(const char *panelName, bool isTriggerDriven = false);
     void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
@@ -123,7 +122,6 @@ class PanelManager : public IPanelService,
     bool currentPanelIsTriggerDriven_ = false; ///< Track if current panel is trigger-driven
 
     // ========== Panel Name Storage Data Members ==========
-    std::string lastUserPanel_ = PanelNames::OIL;    ///< Last user-driven panel
     std::string splashTargetPanel_;                   ///< Target panel for splash transition
     bool splashTargetTriggerDriven_ = false;          ///< Preserve trigger state through splash transitions
 

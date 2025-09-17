@@ -43,5 +43,4 @@ class LockComponent : public IComponent
 
   private:
     // ========== Private Methods ==========
-    void create_icon();
 };

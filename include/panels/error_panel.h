@@ -76,7 +76,7 @@ class ErrorPanel : public IPanel
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
     ErrorComponent errorComponent_; // Error component - static allocation
     bool componentInitialized_ = false;
     ComponentLocation centerLocation_;               // Component positioning

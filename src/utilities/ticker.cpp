@@ -44,3 +44,4 @@ void Ticker::handleLvTasks()
     lv_timer_handler();
     lastTaskRun = currentTime;
 }
+

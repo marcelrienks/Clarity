@@ -166,6 +166,7 @@ protected:
     IStyleService* styleService_;
     IPanelService* panelService_;
     ComponentLocation centerLocation_;
+    lv_obj_t* screen_ = nullptr;
 
 private:
     // ========== Static Methods ==========

@@ -108,7 +108,7 @@ class OemOilPanel : public IPanel
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
     // Instance Data Members - UI Objects
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
 
     // Instance Data Members - Components and Sensors (static allocation)
     OemOilPressureComponent oemOilPressureComponent_;

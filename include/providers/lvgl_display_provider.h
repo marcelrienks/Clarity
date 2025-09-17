@@ -45,18 +45,11 @@ class LvglDisplayProvider : public IDisplayProvider
 {
   private:
     lv_obj_t *mainScreen_;
-    bool initialized_;
 
   public:
     explicit LvglDisplayProvider(lv_obj_t *mainScreen);
 
-    void Initialize() override;
-
-    bool IsInitialized() const override;
-
     lv_obj_t *CreateScreen() override;
-
-    void LoadScreen(lv_obj_t *screen) override;
 
     lv_obj_t *CreateLabel(lv_obj_t *parent) override;
 
@@ -68,11 +61,4 @@ class LvglDisplayProvider : public IDisplayProvider
 
     lv_obj_t *CreateImage(lv_obj_t *parent) override;
 
-    lv_obj_t *CreateLine(lv_obj_t *parent) override;
-
-    void DeleteObject(lv_obj_t *obj) override;
-
-    void AddEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code, void *user_data) override;
-
-    lv_obj_t *GetMainScreen() override;
 };

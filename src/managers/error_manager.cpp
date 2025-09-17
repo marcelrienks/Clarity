@@ -106,11 +106,6 @@ void ErrorManager::AcknowledgeError(size_t errorIndex)
             errorQueue_.erase(errorQueue_.begin() + errorIndex);
         }
 
-        // Update dismissal time tracking for warnings
-        if (errorQueue_.size() > errorIndex && errorQueue_[errorIndex].level == ErrorLevel::WARNING)
-        {
-            lastWarningDismissalTime_ = millis();
-        }
     }
 }
 
@@ -152,30 +147,6 @@ void ErrorManager::SetErrorPanelActive(bool active)
 bool ErrorManager::IsErrorPanelActive() const
 {
     return errorPanelActive_;
-}
-
-/**
- * @brief Process error queue and manage error panel state
- */
-void ErrorManager::Process()
-{
-    // Process error queue
-    AutoDismissOldWarnings();
-
-    // Check if error panel should be triggered
-    if (HasCriticalErrors() && !errorPanelActive_)
-    {
-        // Trigger error panel through interrupt system
-        // This would normally activate the error trigger
-        log_i("Critical errors present, error panel should be activated");
-    }
-
-    // Check if error panel should be deactivated
-    if (!HasPendingErrors() && errorPanelActive_)
-    {
-        errorPanelActive_ = false;
-        log_i("No pending errors, error panel can be deactivated");
-    }
 }
 
 // ========== Private Methods ==========
@@ -226,32 +197,3 @@ void ErrorManager::AutoDismissOldWarnings()
     }
 }
 
-/**
- * @brief Find highest severity among unacknowledged errors
- * @details Scans queue for highest priority unacknowledged error, returns WARNING if empty
- */
-ErrorLevel ErrorManager::GetHighestErrorLevel() const
-{
-    if (errorQueue_.empty())
-    {
-        return ErrorLevel::WARNING; // Default level when no errors exist
-    }
-
-    ErrorLevel highest = ErrorLevel::WARNING;
-    for (const auto &error : errorQueue_)
-    {
-        // Only consider unacknowledged errors
-        if (!error.acknowledged)
-        {
-            if (error.level == ErrorLevel::CRITICAL)
-            {
-                return ErrorLevel::CRITICAL; // Highest possible - short circuit
-            }
-            if (error.level == ErrorLevel::ERROR && highest == ErrorLevel::WARNING)
-            {
-                highest = ErrorLevel::ERROR;
-            }
-        }
-    }
-    return highest;
-}

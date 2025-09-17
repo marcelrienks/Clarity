@@ -56,44 +56,6 @@ Reading ButtonSensor::GetReading()
 }
 
 /**
- * @brief Get the current button action
- * @return ButtonAction indicating the type of press detected
- */
-ButtonAction ButtonSensor::GetButtonAction()
-{
-    ProcessButtonState();
-    return detectedAction_;
-}
-
-/**
- * @brief Check if a button action is ready
- * @return true if a valid button action has been detected
- */
-bool ButtonSensor::HasButtonAction() const
-{
-    return actionReady_;
-}
-
-/**
- * @brief Clear the current button action (after processing)
- */
-void ButtonSensor::ClearButtonAction()
-{
-    detectedAction_ = ButtonAction::NONE;
-    actionReady_ = false;
-}
-
-/**
- * @brief Check if the action button is currently pressed
- * @return true if button is pressed (GPIO HIGH), false otherwise
- */
-bool ButtonSensor::IsButtonPressed()
-{
-    // GPIO 32 reads HIGH when button is pressed (connected to 3.3V)
-    return gpioProvider_->DigitalRead(gpio_pins::INPUT_BUTTON);
-}
-
-/**
  * @brief Reads the raw button state from GPIO with safety checks
  * @return true if button is pressed (GPIO HIGH), false otherwise
  *
@@ -135,27 +97,10 @@ bool ButtonSensor::HasStateChanged()
 {
     ProcessButtonState();
 
-    // If no action is ready, clear the interrupt ID
-    if (!actionReady_)
-    {
-        triggerInterruptId_ = nullptr;
-    }
 
     return actionReady_;
 }
 
-/**
- * @brief Gets the interrupt ID that should be triggered for current button action
- * @return Pointer to interrupt ID string, or nullptr if no action pending
- *
- * Returns the appropriate interrupt identifier ("short_press" or "long_press")
- * based on the detected button action. Used by the interrupt manager to
- * trigger the correct system response for button events.
- */
-const char* ButtonSensor::GetTriggerInterruptId() const
-{
-    return triggerInterruptId_;
-}
 
 /**
  * @brief Processes button state changes and detects press actions
@@ -203,17 +148,6 @@ void ButtonSensor::ProcessButtonState()
             log_t("ButtonSensor: ACTION DETECTED: %s (actionReady=true)",
                   action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
 
-            // In simplified system, determine which interrupt should be triggered
-            if (action == ButtonAction::SHORT_PRESS)
-            {
-                log_t("ButtonSensor: Should trigger 'short_press' action");
-                triggerInterruptId_ = "short_press";
-            }
-            else if (action == ButtonAction::LONG_PRESS)
-            {
-                log_t("ButtonSensor: Should trigger 'long_press' action");
-                triggerInterruptId_ = "long_press";
-            }
         }
         else
         {

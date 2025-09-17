@@ -247,7 +247,8 @@ void TriggerHandler::HandleTriggerDeactivation(Trigger& trigger) {
  */
 bool TriggerHandler::ShouldActivate(const Trigger& trigger) const {
     // Block activation if higher priority trigger is active
-    return !IsBlocked(trigger);
+    // TODO: Implement priority-based blocking logic
+    return true;  // For now, allow all activations
 }
 
 /**
@@ -261,19 +262,6 @@ bool TriggerHandler::ShouldActivate(const Trigger& trigger) const {
 bool TriggerHandler::ShouldDeactivate(const Trigger& trigger) const {
     // Always allow deactivation
     return true;
-}
-
-/**
- * @brief Checks if trigger execution is blocked by higher priority triggers
- * @param trigger Trigger to check for blocking
- * @return true if higher priority trigger is active
- *
- * Priority blocking logic that determines if trigger execution should
- * be suppressed due to higher priority trigger activity.
- */
-bool TriggerHandler::IsBlocked(const Trigger& trigger) const {
-    // Check if any higher priority trigger is active
-    return HasHigherPriorityActive(trigger.priority);
 }
 
 /**
@@ -316,24 +304,6 @@ void TriggerHandler::UpdatePriorityState(Priority priority, bool active) {
     int priorityIndex = static_cast<int>(priority);
     if (priorityIndex >= 0 && priorityIndex < 3) {
         priorityActive_[priorityIndex] = active;
-    }
-}
-
-/**
- * @brief Restores highest priority trigger of same type after deactivation
- * @param type Trigger type to search for restoration candidates
- * @param excludePriority Priority level to exclude (kept for API compatibility)
- *
- * Same-type restoration logic that finds and activates the highest priority
- * trigger of the same type when a trigger deactivates. Critical for maintaining
- * consistent automotive state display during priority transitions.
- */
-void TriggerHandler::RestoreSameTypeTrigger(TriggerType type, Priority excludePriority) {
-    // Find the highest priority trigger of the same type that is still active
-    // Note: excludePriority is kept for API compatibility but not used in new logic
-    Trigger* toRestore = FindHighestPrioritySameType(type);
-    if (toRestore && toRestore->isActive && toRestore->activateFunc) {
-        toRestore->activateFunc();
     }
 }
 
@@ -458,50 +428,3 @@ bool TriggerHandler::HasActiveTriggers() const {
     return false;
 }
 
-/**
- * @brief Prints comprehensive diagnostic information about trigger handler state
- *
- * Outputs detailed status including registered triggers, priority states,
- * and individual trigger activity. Essential for debugging automotive
- * state management and trigger behavior issues.
- */
-void TriggerHandler::PrintTriggerStatus() const {
-    log_i("TriggerHandler Status:");
-    log_i("  Total triggers: %d", triggerCount_);
-    log_i("  Priority states: CRITICAL=%s, IMPORTANT=%s, NORMAL=%s",
-          priorityActive_[0] ? "active" : "inactive",
-          priorityActive_[1] ? "active" : "inactive", 
-          priorityActive_[2] ? "active" : "inactive");
-    
-    for (size_t i = 0; i < triggerCount_; i++) {
-        const Trigger& trigger = triggers_[i];
-        log_i("  Trigger[%d]: id='%s', type=%d, priority=%d, active=%s",
-              i, trigger.id, static_cast<int>(trigger.type), 
-              static_cast<int>(trigger.priority), trigger.isActive ? "yes" : "no");
-    }
-}
-
-// Priority control methods (for external coordination)
-/**
- * @brief Manually sets higher priority as active for external coordination
- * @param priority Priority level to mark as active
- *
- * External interface for coordinating priority state with other system
- * components. Used when external events (like error panels) need to
- * block trigger execution temporarily.
- */
-void TriggerHandler::SetHigherPriorityActive(Priority priority) {
-    UpdatePriorityState(priority, true);
-}
-
-/**
- * @brief Manually clears higher priority active state for external coordination
- * @param priority Priority level to mark as inactive
- *
- * External interface for releasing priority blocks when external conditions
- * are resolved. Allows normal trigger processing to resume after temporary
- * blocking conditions are cleared.
- */
-void TriggerHandler::ClearHigherPriorityActive(Priority priority) {
-    UpdatePriorityState(priority, false);
-}

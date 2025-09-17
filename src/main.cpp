@@ -150,7 +150,7 @@ void setup()
     Ticker::handleLvTasks();
 
     std::string panelName = preferenceManager->GetPreference("system.panel_name");
-    if (panelName.empty()) panelName = "oil";
+    if (panelName.empty()) panelName = PanelNames::OIL;
     panelManager->CreateAndLoadPanel(panelName.c_str());
     Ticker::handleLvTasks();
     

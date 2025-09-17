@@ -15,7 +15,7 @@
 ErrorComponent::ErrorComponent(IStyleService *styleService)
     : styleService_(styleService), errorContainer_(nullptr), errorContentArea_(nullptr), errorCountLabel_(nullptr),
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
-      currentErrorIndex_(0), buttonPressCount_(0)
+      currentErrorIndex_(0)
 {
     log_v("ErrorComponent() constructor called");
 }

@@ -94,8 +94,6 @@ void InterruptManager::Process()
         triggerHandler_->Process();
     }
 
-    // Update performance monitoring counters
-    totalEvaluations_++;
 }
 
 /**
@@ -166,17 +164,6 @@ void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
 }
 
 /**
- * @brief Unregister legacy interrupt handler
- */
-void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
-{
-    auto it = std::find(handlers_.begin(), handlers_.end(), handler);
-    if (it != handlers_.end()) {
-        handlers_.erase(it);
-    }
-}
-
-/**
  * @brief Get total count of registered interrupts (triggers + actions)
  */
 size_t InterruptManager::GetRegisteredInterruptCount() const
@@ -192,46 +179,6 @@ size_t InterruptManager::GetRegisteredInterruptCount() const
 }
 
 /**
- * @brief Retrieve performance statistics for interrupt processing
- */
-void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const
-{
-    totalEvaluations = totalEvaluations_;
-    totalExecutions = totalExecutions_;
-}
-
-/**
- * @brief Optimize memory usage - no-op with static array implementation
- * @details Static arrays are already memory-optimal, method exists for API compatibility
- */
-void InterruptManager::OptimizeMemoryUsage()
-{
-    log_v("OptimizeMemoryUsage() called");
-
-    // Memory is already optimized with static arrays
-    // This method exists for API compatibility with dynamic implementations
-
-    if (triggerHandler_) {
-        // Static arrays are already optimized - no action needed
-    }
-
-    if (actionHandler_) {
-        // Static arrays are already optimized - no action needed
-    }
-}
-
-/**
- * @brief Compact interrupt array - no-op with static array implementation
- * @details Static arrays don't fragment and don't need compaction
- */
-void InterruptManager::CompactInterruptArray()
-{
-    log_v("CompactInterruptArray() called");
-
-    // Static arrays don't need compaction - no fragmentation occurs
-}
-
-/**
  * @brief Check if any triggers or actions are currently active or pending
  */
 bool InterruptManager::HasActiveInterrupts() const
@@ -243,14 +190,6 @@ bool InterruptManager::HasActiveInterrupts() const
         return true;
     }
     return false;
-}
-
-/**
- * @brief Get interrupt count (alias for GetRegisteredInterruptCount)
- */
-size_t InterruptManager::GetInterruptCount() const
-{
-    return GetRegisteredInterruptCount();
 }
 
 /**

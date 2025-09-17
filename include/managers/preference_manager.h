@@ -206,18 +206,6 @@ private:
     std::vector<std::string> ParseOptions(const std::string& str) const;
 
     /**
-     * @brief Save section list to metadata namespace
-     * @return true if save successful
-     */
-    bool SaveSectionList();
-
-    /**
-     * @brief Load section list from metadata namespace
-     * @return true if load successful
-     */
-    bool LoadSectionList();
-
-    /**
      * @brief Convert ConfigValue to NVS-compatible type and store
      * @param prefs Preferences instance for the section
      * @param key The configuration key

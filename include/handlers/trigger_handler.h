@@ -38,13 +38,6 @@ public:
     
     // New Trigger system interface
     bool RegisterTrigger(const Trigger& trigger);
-    void EvaluateTriggers();  // Called during UI idle only
-    
-    // Priority override and restoration logic
-    void SetHigherPriorityActive(Priority priority);
-    void ClearHigherPriorityActive(Priority priority);
-    bool IsBlocked(const Trigger& trigger) const;
-    void RestoreSameTypeTrigger(TriggerType type, Priority priority);
     
     // Sensor access for trigger context
     GpioSensor* GetKeyPresentSensor() const { return keyPresentSensor_.get(); }
@@ -58,13 +51,12 @@ public:
     // Status and diagnostics
     size_t GetTriggerCount() const;
     bool HasActiveTriggers() const;
-    void PrintTriggerStatus() const;
-    
     // Find highest priority trigger of given type (public for InterruptManager)
     Trigger* FindHighestPrioritySameType(TriggerType type);
     
 private:
     // ========== Private Methods ==========
+    void EvaluateTriggers();  // Called during UI idle only (by Process)
     // Core trigger processing
     void EvaluateIndividualTrigger(Trigger& trigger);
     void HandleTriggerActivation(Trigger& trigger);

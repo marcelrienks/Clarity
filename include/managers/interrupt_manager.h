@@ -43,47 +43,16 @@ public:
     void RegisterHandler(std::shared_ptr<IHandler> handler);
 
     /**
-     * @brief Unregister a legacy interrupt handler
-     * @param handler Shared pointer to handler to remove
-     */
-    void UnregisterHandler(std::shared_ptr<IHandler> handler);
-
-    /**
      * @brief Get total count of registered interrupts (triggers + actions)
      * @return Total number of registered interrupts
      */
     size_t GetRegisteredInterruptCount() const;
 
     /**
-     * @brief Get performance statistics for interrupt processing
-     * @param totalEvaluations Reference to store total evaluation count
-     * @param totalExecutions Reference to store total execution count
-     */
-    void GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const;
-
-    /**
-     * @brief Optimize memory usage (no-op with static arrays)
-     * @details Provided for API compatibility, static arrays are already optimized
-     */
-    void OptimizeMemoryUsage();
-
-    /**
-     * @brief Compact interrupt array (no-op with static arrays)
-     * @details Provided for API compatibility, static arrays don't need compaction
-     */
-    void CompactInterruptArray();
-
-    /**
      * @brief Check if any triggers or actions are currently active
      * @return true if active interrupts exist, false otherwise
      */
     bool HasActiveInterrupts() const;
-
-    /**
-     * @brief Get total interrupt count (alias for GetRegisteredInterruptCount)
-     * @return Total number of registered interrupts
-     */
-    size_t GetInterruptCount() const;
 
     /**
      * @brief Get direct access to trigger handler
@@ -146,10 +115,6 @@ private:
     // System state
     bool initialized_ = false;
     unsigned long lastEvaluationTime_ = 0;
-
-    // Performance monitoring
-    mutable size_t totalEvaluations_ = 0;
-    mutable size_t totalExecutions_ = 0;
 
     // GPIO provider reference
     IGpioProvider* gpioProvider_ = nullptr;

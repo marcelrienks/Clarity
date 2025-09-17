@@ -83,10 +83,6 @@ public:
 
     bool GetState();
 
-    const char* GetName() const { return config_.name; }
-
-    uint8_t GetPin() const { return config_.pin; }
-
 protected:
     // ========== Protected Methods ==========
     void OnInterruptTriggered() override;

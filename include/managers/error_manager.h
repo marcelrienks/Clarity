@@ -41,8 +41,6 @@ public:
     bool ShouldTriggerErrorPanel() const;
     void SetErrorPanelActive(bool active);
     bool IsErrorPanelActive() const;
-    void Process();
-
 private:
     // ========== Constructors and Destructor ==========
     ErrorManager() = default;
@@ -50,13 +48,10 @@ private:
     // ========== Private Methods ==========
     void TrimErrorQueue();
     void AutoDismissOldWarnings();
-    ErrorLevel GetHighestErrorLevel() const;
-
     // ========== Private Data Members ==========
     static constexpr size_t MAX_ERROR_QUEUE_SIZE = 10;                ///< Memory-constrained device limit
     static constexpr unsigned long WARNING_AUTO_DISMISS_TIME = 10000; ///< 10 seconds for warnings
 
     std::vector<ErrorInfo> errorQueue_;
     bool errorPanelActive_ = false;
-    unsigned long lastWarningDismissalTime_ = 0;
 };

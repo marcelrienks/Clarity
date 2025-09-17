@@ -248,9 +248,6 @@ bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
 
     preferences_.end();
 
-    if (success) {
-        }
-
     return success;
 }
 

@@ -44,19 +44,8 @@ class ButtonSensor : public BaseSensor
     void Init() override;
     Reading GetReading() override;
 
-    ButtonAction GetButtonAction();
-    
-    bool HasButtonAction() const;
-    
-    void ClearButtonAction();
-    
-    bool IsButtonPressed();
-    
     // BaseSensor interface
     bool HasStateChanged() override;
-    
-    // Simplified interrupt system
-    const char* GetTriggerInterruptId() const;
 
     // ========== Public Data Members ==========
     // Button timing constants
@@ -88,5 +77,4 @@ class ButtonSensor : public BaseSensor
     // Action detection
     ButtonAction detectedAction_ = ButtonAction::NONE;
     bool actionReady_ = false;
-    const char* triggerInterruptId_ = nullptr;  // ID of interrupt to trigger on action
 };

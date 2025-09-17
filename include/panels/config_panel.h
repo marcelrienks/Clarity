@@ -122,7 +122,7 @@ class ConfigPanel : public IPanel
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
     bool useDynamicConfig_ = false;
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
 
     // Component (View) - static allocation
     ConfigComponent configComponent_;

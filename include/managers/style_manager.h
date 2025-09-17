@@ -62,11 +62,6 @@
  */
 class StyleManager : public IStyleService
 {
-    // Configuration constants for dynamic config system
-    static constexpr const char* CONFIG_SECTION = "style";
-    static constexpr const char* CONFIG_THEME = "style.theme";
-    static constexpr const char* CONFIG_BRIGHTNESS = "style.brightness";
-
 public:
     // ========== Constructors and Destructor ==========
     explicit StyleManager(const char *theme);

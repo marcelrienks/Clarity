@@ -520,7 +520,7 @@ void ConfigPanel::UpdateMenuItemsWithCurrentValues()
 
     // Get individual preferences with defaults
     std::string panelName = preferenceService_->GetPreference("system.panel_name");
-    if (panelName.empty()) panelName = "oil";
+    if (panelName.empty()) panelName = PanelNames::OIL;
 
     std::string theme = preferenceService_->GetPreference("system.theme");
     if (theme.empty()) theme = "day";
@@ -634,7 +634,7 @@ void ConfigPanel::UpdateSubmenuItems()
 
     // Get individual preferences with defaults
     std::string panelName = preferenceService_->GetPreference("system.panel_name");
-    if (panelName.empty()) panelName = "oil";
+    if (panelName.empty()) panelName = PanelNames::OIL;
 
     std::string theme = preferenceService_->GetPreference("system.theme");
     if (theme.empty()) theme = "day";

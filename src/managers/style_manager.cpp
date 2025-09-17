@@ -79,13 +79,15 @@ void StyleManager::InitializeStyles()
     lv_style_init(&gaugeMainStyle_);
     lv_style_init(&gaugeDangerSectionStyle_);
 
+    // Mark as initialized before applying theme (since SetTheme checks this flag)
+    initialized_ = true;
+
     // Apply theme from preferences
     if (preferenceService_) {
         LoadConfiguration();
     } else {
         SetTheme(theme_.c_str());
     }
-    initialized_ = true;
 }
 
 /**

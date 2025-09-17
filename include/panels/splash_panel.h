@@ -89,7 +89,7 @@ class SplashPanel : public IPanel
     IPanelNotificationService *notificationService_;
 
     // Components - static allocation
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
     ClarityComponent component_;
     bool componentInitialized_ = false;
     lv_obj_t *blankScreen_;

@@ -59,7 +59,6 @@ private:
     // ========== Private Methods ==========
     void CreateSingleErrorUI(lv_obj_t *parent);
     void DisplayCurrentError();
-    void CreateNavigationIndicators(lv_obj_t *parent);
     const char *GetErrorLevelText(ErrorLevel level);
 
     // ========== Private Data Members ==========
@@ -74,7 +73,6 @@ private:
 
     std::vector<ErrorInfo> currentErrors_; // Cache of current error state
     size_t currentErrorIndex_;             // Index of currently displayed error
-    size_t buttonPressCount_;              // Track button presses to know when all errors shown
 
     // Note: clearButton_ removed but ClearAllErrorsCallback logic preserved
     // for future implementation via alternative interaction method

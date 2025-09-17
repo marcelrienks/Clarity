@@ -42,5 +42,4 @@ class IGpioProvider
     virtual void PinMode(int pin, int mode) = 0;
     virtual void AttachInterrupt(int pin, void (*callback)(), int mode) = 0;
     virtual void DetachInterrupt(int pin) = 0;
-    virtual bool HasInterrupt(int pin) = 0;
 };

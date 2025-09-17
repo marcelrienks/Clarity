@@ -44,5 +44,4 @@ protected:
 
 private:
     // ========== Private Methods ==========
-    void create_icon();
 };

@@ -38,18 +38,10 @@ class IDisplayProvider
   public:
     virtual ~IDisplayProvider() = default;
 
-    virtual void Initialize() = 0;
-    virtual bool IsInitialized() const = 0;
     virtual lv_obj_t *CreateScreen() = 0;
-    virtual void LoadScreen(lv_obj_t *screen) = 0;
     virtual lv_obj_t *CreateLabel(lv_obj_t *parent) = 0;
     virtual lv_obj_t *CreateObject(lv_obj_t *parent) = 0;
     virtual lv_obj_t *CreateArc(lv_obj_t *parent) = 0;
     virtual lv_obj_t *CreateScale(lv_obj_t *parent) = 0;
     virtual lv_obj_t *CreateImage(lv_obj_t *parent) = 0;
-    virtual lv_obj_t *CreateLine(lv_obj_t *parent) = 0;
-    virtual void DeleteObject(lv_obj_t *obj) = 0;
-    virtual void AddEventCallback(lv_obj_t *obj, lv_event_cb_t callback, lv_event_code_t event_code,
-                                  void *user_data) = 0;
-    virtual lv_obj_t *GetMainScreen() = 0;
 };
