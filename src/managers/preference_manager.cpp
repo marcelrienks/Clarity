@@ -19,6 +19,13 @@ public:
 
 // ========== Constructor ==========
 
+/**
+ * @brief Constructs PreferenceManager with thread safety and NVS initialization
+ *
+ * Initializes the preference management system with thread-safe access,
+ * NVS storage backend, and default configuration sections. Handles NVS
+ * initialization errors and creates default system configuration.
+ */
 PreferenceManager::PreferenceManager() {
     // Initialize thread safety semaphore
     configMutex_ = xSemaphoreCreateMutex();
@@ -50,92 +57,6 @@ PreferenceManager::PreferenceManager() {
     LoadAllConfigSections();
 
     log_i("PreferenceManager initialized");
-}
-
-// ========== IPreferenceManager Implementation ==========
-
-
-/**
- * @brief Save current configuration to persistent storage
- *
- * Legacy interface method that delegates to SaveAllConfigSections().
- * Provides backward compatibility while using the new sectioned storage system.
- */
-void PreferenceManager::SaveConfig() {
-    log_v("SaveConfig() called");
-    SemaphoreGuard lock(configMutex_);
-    SaveAllConfigSections();
-}
-
-/**
- * @brief Load configuration from persistent storage
- *
- * Legacy interface method that delegates to LoadAllConfigSections().
- * Restores all registered configuration sections from their respective NVS namespaces.
- */
-void PreferenceManager::LoadConfig() {
-    log_v("LoadConfig() called");
-    SemaphoreGuard lock(configMutex_);
-    LoadAllConfigSections();
-}
-
-/**
- * @brief Create default configuration if none exists
- *
- * Creates default system configuration sections and saves them to storage.
- * Called during first boot or when configuration reset is requested.
- */
-void PreferenceManager::CreateDefaultConfig() {
-    log_v("CreateDefaultConfig() called");
-    SemaphoreGuard lock(configMutex_);
-    CreateDefaultSections();
-    SaveAllConfigSections();
-    log_i("Default configuration created");
-}
-
-
-/**
- * @brief Get a preference value by key
- * @param key The preference key (dot-separated format)
- * @return String representation of the value
- *
- * Legacy string-based interface that delegates to the type-safe QueryConfig system.
- * Automatically converts the stored ConfigValue to string representation.
- */
-std::string PreferenceManager::GetPreference(const std::string& key) const {
-    log_v("GetPreference() called");
-    SemaphoreGuard lock(configMutex_);
-    if (auto value = QueryConfigImpl(key)) {
-        return Config::ConfigValueHelper::ToString(*value);
-    }
-    return "";
-}
-
-/**
- * @brief Set a preference value by key
- * @param key The preference key (dot-separated format)
- * @param value String representation of the value
- *
- * Legacy string-based interface that delegates to the type-safe UpdateConfig system.
- * Automatically converts the string value to appropriate ConfigValue type.
- */
-void PreferenceManager::SetPreference(const std::string& key, const std::string& value) {
-    log_v("SetPreference() called");
-    SemaphoreGuard lock(configMutex_);
-    UpdateConfigImpl(key, Config::ConfigValue(value));
-}
-
-/**
- * @brief Check if a preference exists
- * @param key The preference key to check
- * @return true if preference exists in any registered section
- *
- * Queries the dynamic configuration system to determine if the specified
- * key exists in any registered configuration section.
- */
-bool PreferenceManager::HasPreference(const std::string& key) const {
-    SemaphoreGuard lock(configMutex_);
-    return QueryConfigImpl(key).has_value();
 }
 
 // ========== Dynamic Configuration Implementation ==========
@@ -492,6 +413,14 @@ std::pair<std::string, std::string> PreferenceManager::ParseConfigKey(const std:
     return {fullKey.substr(0, dotPos), fullKey.substr(dotPos + 1)};
 }
 
+/**
+ * @brief Generate NVS namespace string for a configuration section
+ * @param sectionName Name of the configuration section
+ * @return NVS namespace string with prefix, truncated if necessary
+ *
+ * Creates proper NVS namespace by prefixing section name and ensuring
+ * it fits within NVS 15-character namespace limit. Truncates if needed.
+ */
 std::string PreferenceManager::GetSectionNamespace(const std::string& sectionName) const {
     std::string ns = SECTION_PREFIX_ + sectionName;
     if (ns.length() > MAX_NAMESPACE_LEN_) {
@@ -500,6 +429,13 @@ std::string PreferenceManager::GetSectionNamespace(const std::string& sectionNam
     return ns;
 }
 
+/**
+ * @brief Create and register default configuration sections
+ *
+ * Initializes system configuration sections with default values.
+ * Currently creates a "System" section with basic application settings
+ * like panel name, splash screen preference, and dynamic UI toggle.
+ */
 void PreferenceManager::CreateDefaultSections() {
     using namespace Config;
 
@@ -519,6 +455,15 @@ void PreferenceManager::CreateDefaultSections() {
 }
 
 
+/**
+ * @brief Validate integer value against range constraints
+ * @param value Integer value to validate
+ * @param constraints Range string in format "min-max" (e.g., "0-100")
+ * @return true if value is within range or constraints are invalid
+ *
+ * Parses range constraints and validates integer values. Returns true
+ * for empty constraints or parsing errors (permissive validation).
+ */
 bool PreferenceManager::ValidateIntRange(int value, const std::string& constraints) const {
     if (constraints.empty()) return true;
 
@@ -534,6 +479,15 @@ bool PreferenceManager::ValidateIntRange(int value, const std::string& constrain
     }
 }
 
+/**
+ * @brief Validate float value against range constraints
+ * @param value Float value to validate
+ * @param constraints Range string in format "min-max" (e.g., "0.0-1.0")
+ * @return true if value is within range or constraints are invalid
+ *
+ * Parses range constraints and validates float values. Returns true
+ * for empty constraints or parsing errors (permissive validation).
+ */
 bool PreferenceManager::ValidateFloatRange(float value, const std::string& constraints) const {
     if (constraints.empty()) return true;
 
@@ -549,6 +503,15 @@ bool PreferenceManager::ValidateFloatRange(float value, const std::string& const
     }
 }
 
+/**
+ * @brief Validate enum value against allowed options
+ * @param value String value to validate
+ * @param constraints Comma-separated options (e.g., "PSI,Bar,kPa")
+ * @return true if value is in the allowed list or constraints are empty
+ *
+ * Parses comma-separated options and checks if value is valid.
+ * Used for dropdown/enum configuration validation.
+ */
 bool PreferenceManager::ValidateEnumValue(const std::string& value, const std::string& constraints) const {
     if (constraints.empty()) return true;
 
@@ -556,6 +519,14 @@ bool PreferenceManager::ValidateEnumValue(const std::string& value, const std::s
     return std::find(options.begin(), options.end(), value) != options.end();
 }
 
+/**
+ * @brief Parse comma-separated string into vector of options
+ * @param str Comma-separated string to parse
+ * @return Vector of trimmed, non-empty options
+ *
+ * Splits string by commas, trims whitespace from each option,
+ * and filters out empty entries. Used for enum validation.
+ */
 std::vector<std::string> PreferenceManager::ParseOptions(const std::string& str) const {
     std::vector<std::string> options;
     std::stringstream ss(str);
@@ -573,6 +544,17 @@ std::vector<std::string> PreferenceManager::ParseOptions(const std::string& str)
     return options;
 }
 
+/**
+ * @brief Store ConfigValue to NVS using type-appropriate method
+ * @param prefs Preferences instance for the section namespace
+ * @param key Configuration key to store
+ * @param value ConfigValue containing the data to store
+ * @param type Expected configuration value type
+ * @return true if storage successful, false on type mismatch or NVS error
+ *
+ * Converts ConfigValue to appropriate NVS type and stores using type-specific
+ * putters. Handles type safety by validating ConfigValue content matches expected type.
+ */
 bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& key,
                                                const Config::ConfigValue& value, Config::ConfigValueType type) {
     switch (type) {
@@ -605,6 +587,18 @@ bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& k
     return false;
 }
 
+/**
+ * @brief Load configuration value from NVS storage and convert to ConfigValue
+ * @param prefs Preferences instance for the section namespace
+ * @param key Configuration key to load
+ * @param type Expected configuration value type for type-safe loading
+ * @return ConfigValue containing the loaded value or default value if not found
+ *
+ * Loads type-specific values from NVS using appropriate getter methods.
+ * Returns sensible defaults for missing values (0 for numbers, false for bool, empty for string).
+ * Handles both String and Enum types as strings since enums are stored as their string values.
+ * Returns std::monostate for unknown types to indicate invalid/unhandled configuration.
+ */
 Config::ConfigValue PreferenceManager::LoadValueFromNVS(Preferences& prefs, const std::string& key,
                                                                Config::ConfigValueType type) {
     switch (type) {

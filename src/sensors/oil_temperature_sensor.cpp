@@ -67,17 +67,13 @@ void OilTemperatureSensor::Init()
     if (preferenceService_) {
         LoadConfiguration();
 
-        // Check if dynamic config is enabled (system-wide setting)
-        std::string dynamicEnabled = preferenceService_->GetPreference("dynamic_ui_enabled");
-        if (dynamicEnabled == "true" || dynamicEnabled.empty()) {
-            // Register this sensor's configuration section with the preference service
-            // This enables self-registration per docs/plans/dynamic-config-implementation.md
-            RegisterConfiguration();
+        // Register this sensor's configuration section with the preference service
+        // This enables self-registration per docs/plans/dynamic-config-implementation.md
+        RegisterConfiguration();
 
-            // Set up live callbacks to respond to configuration changes
-            RegisterLiveUpdateCallbacks();
-            log_i("OilTemperatureSensor registered with dynamic config system");
-        }
+        // Set up live callbacks to respond to configuration changes
+        RegisterLiveUpdateCallbacks();
+        log_i("OilTemperatureSensor registered with dynamic config system");
     }
 
     // Take initial reading to establish baseline
@@ -265,27 +261,27 @@ void OilTemperatureSensor::LoadConfiguration()
 {
     if (!preferenceService_) return;
 
-    // Load from dynamic config system
-    targetUnit_ = preferenceService_->GetPreference("oil_temperature.unit");
-    if (targetUnit_.empty()) targetUnit_ = "C";
+    // Load using type-safe config system with static constants
+    if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
+        targetUnit_ = *unitValue;
+    } else {
+        targetUnit_ = "C";
+    }
 
-    std::string updateRateStr = preferenceService_->GetPreference("oil_temperature.update_rate");
-    if (!updateRateStr.empty()) {
-        updateIntervalMs_ = std::stoi(updateRateStr);
+    if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
+        updateIntervalMs_ = *rateValue;
     } else {
         updateIntervalMs_ = 500;
     }
 
-    std::string offsetStr = preferenceService_->GetPreference("oil_temperature.offset");
-    if (!offsetStr.empty()) {
-        calibrationOffset_ = std::stof(offsetStr);
+    if (auto offsetValue = preferenceService_->QueryConfig<float>(CONFIG_CALIBRATION_OFFSET)) {
+        calibrationOffset_ = *offsetValue;
     } else {
         calibrationOffset_ = 0.0f;
     }
 
-    std::string scaleStr = preferenceService_->GetPreference("oil_temperature.scale");
-    if (!scaleStr.empty()) {
-        calibrationScale_ = std::stof(scaleStr);
+    if (auto scaleValue = preferenceService_->QueryConfig<float>(CONFIG_CALIBRATION_SCALE)) {
+        calibrationScale_ = *scaleValue;
     } else {
         calibrationScale_ = 1.0f;
     }
@@ -348,7 +344,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
                           const Config::ConfigValue& newValue) {
 
         // Handle temperature unit change (C/F) - immediate effect on readings
-        if (fullKey == "oil_temperature.unit") {
+        if (fullKey == CONFIG_UNIT) {
             if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
                 SetTargetUnit(*newUnit);
                 log_i("Oil temperature unit changed to: %s", newUnit->c_str());
@@ -356,7 +352,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
         }
 
         // Handle update rate change - controls sensor reading frequency
-        else if (fullKey == "oil_temperature.update_rate") {
+        else if (fullKey == CONFIG_UPDATE_RATE) {
             if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
                 SetUpdateRate(*newRate);
                 log_i("Oil temperature update rate changed to: %d ms", *newRate);
@@ -364,7 +360,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
         }
 
         // Handle calibration offset change
-        else if (fullKey == "oil_temperature.offset") {
+        else if (fullKey == CONFIG_CALIBRATION_OFFSET) {
             if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
                 calibrationOffset_ = *newOffset;
                 log_i("Oil temperature calibration offset changed to: %.2f", *newOffset);
@@ -372,7 +368,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
         }
 
         // Handle calibration scale change
-        else if (fullKey == "oil_temperature.scale") {
+        else if (fullKey == CONFIG_CALIBRATION_SCALE) {
             if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
                 calibrationScale_ = *newScale;
                 log_i("Oil temperature calibration scale changed to: %.2f", *newScale);

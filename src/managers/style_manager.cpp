@@ -199,9 +199,11 @@ void StyleManager::ApplyCurrentTheme()
         return;
     }
 
-    // Read theme directly from preferences
-    std::string preferenceTheme = preferenceService_->GetPreference("system.theme");
-    if (preferenceTheme.empty()) preferenceTheme = "day";
+    // Read theme using type-safe config system
+    std::string preferenceTheme = "Day"; // Default
+    if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+        preferenceTheme = *themeValue;
+    }
     log_v("Read theme from preferences: %s (cached: %s)", preferenceTheme.c_str(), theme_.c_str());
 
     // Apply the theme if it's different from cached value
@@ -241,11 +243,14 @@ const ThemeColors &StyleManager::GetColours(const std::string& theme) const
  */
 const std::string& StyleManager::GetCurrentTheme() const
 {
-    // Always pull theme directly from preferences to ensure consistency
+    // Always pull theme using type-safe config system for consistency
     if (preferenceService_) {
         static std::string currentTheme;
-        currentTheme = preferenceService_->GetPreference("system.theme");
-        if (currentTheme.empty()) currentTheme = "day";
+        if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+            currentTheme = *themeValue;
+        } else {
+            currentTheme = "Day";
+        }
         return currentTheme;
     }
 
@@ -300,16 +305,48 @@ void StyleManager::ResetStyles()
 }
 
 /**
+ * @brief Register StyleManager configuration section
+ */
+void StyleManager::RegisterConfiguration()
+{
+    if (!preferenceService_) return;
+
+    using namespace Config;
+
+    ConfigSection section("StyleManager", "style_manager", "Theme & Display");
+    section.displayOrder = 10; // Lower priority than sensors
+
+    // Theme selection
+    ConfigItem themeItem("theme", "Theme", ConfigValueType::Enum,
+                        std::string("Day"), ConfigMetadata("Day,Night"));
+
+    // Brightness setting (future feature)
+    ConfigItem brightnessItem("brightness", "Brightness", ConfigValueType::Integer,
+                             80, ConfigMetadata("0-100", "%"));
+
+    section.AddItem(themeItem);
+    section.AddItem(brightnessItem);
+
+    preferenceService_->RegisterConfigSection(section);
+    log_i("StyleManager configuration registered");
+}
+
+/**
  * @brief Load configuration from preference system
  */
 void StyleManager::LoadConfiguration()
 {
     if (!preferenceService_) return;
 
-    // Load from dynamic config system
-    std::string themePreference = preferenceService_->GetPreference("system.theme");
-    if (themePreference.empty()) themePreference = "day";
-    SetTheme(themePreference.c_str());
+    // Register configuration first
+    RegisterConfiguration();
+
+    // Load theme using type-safe config system
+    if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+        SetTheme(themeValue->c_str());
+    } else {
+        SetTheme("Day"); // Default theme
+    }
 
     log_i("Loaded style configuration: theme=%s", theme_.c_str());
 }

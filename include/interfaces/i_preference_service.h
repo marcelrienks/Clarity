@@ -39,22 +39,6 @@ public:
                                                    const std::optional<Config::ConfigValue>& oldValue,
                                                    const Config::ConfigValue& newValue)>;
 
-    // ========== Core Functionality Methods ==========
-
-    virtual void SaveConfig() = 0;
-
-    virtual void LoadConfig() = 0;
-
-    virtual void CreateDefaultConfig() = 0;
-
-    // ========== Legacy String-based Access (for simple cases) ==========
-
-    virtual std::string GetPreference(const std::string& key) const = 0;
-
-    virtual void SetPreference(const std::string& key, const std::string& value) = 0;
-
-    virtual bool HasPreference(const std::string& key) const = 0;
-
     // ========== Dynamic Configuration Registration ==========
 
     virtual bool RegisterConfigSection(const Config::ConfigSection& section) = 0;

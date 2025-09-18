@@ -36,12 +36,6 @@ public:
     ~PreferenceManager() = default;
 
     // ========== IPreferenceService Implementation ==========
-    void SaveConfig() override;
-    void LoadConfig() override;
-    void CreateDefaultConfig() override;
-    std::string GetPreference(const std::string& key) const override;
-    void SetPreference(const std::string& key, const std::string& value) override;
-    bool HasPreference(const std::string& key) const override;
 
     // ========== Dynamic Configuration Methods ==========
 

@@ -66,6 +66,13 @@ class SplashPanel : public IPanel
     // Public action handler
     void HandleLongPress();
 
+    // Configuration management
+    void RegisterConfiguration();
+
+    // ========== Configuration Constants ==========
+    static constexpr const char* CONFIG_SHOW_SPLASH = "splash_panel.show_splash";
+    static constexpr const char* CONFIG_DURATION = "splash_panel.duration";
+
   private:
     // ========== Private Methods ==========
     int GetAnimationTime() const;

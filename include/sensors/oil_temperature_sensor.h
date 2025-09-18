@@ -60,13 +60,11 @@ class OilTemperatureSensor : public BaseSensor
 
     void RegisterLiveUpdateCallbacks();
 
-    // ========== Public Data Members ==========
-    // Configuration constants for dynamic config system
-    static constexpr const char* CONFIG_SECTION = "oil_temperature";
-    static constexpr const char* CONFIG_UNIT = "oil_temperature.unit";
-    static constexpr const char* CONFIG_UPDATE_RATE = "oil_temperature.update_rate";
-    static constexpr const char* CONFIG_CALIBRATION_OFFSET = "oil_temperature.offset";
-    static constexpr const char* CONFIG_CALIBRATION_SCALE = "oil_temperature.scale";
+    // ========== Configuration Constants ==========
+    static constexpr const char* CONFIG_UNIT = "oil_temperature_sensor.unit";
+    static constexpr const char* CONFIG_UPDATE_RATE = "oil_temperature_sensor.update_rate";
+    static constexpr const char* CONFIG_CALIBRATION_OFFSET = "oil_temperature_sensor.calibration_offset";
+    static constexpr const char* CONFIG_CALIBRATION_SCALE = "oil_temperature_sensor.calibration_scale";
 
   protected:
     // ========== Protected Methods ==========

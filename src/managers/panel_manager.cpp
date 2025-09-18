@@ -160,8 +160,12 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
     bool showSplash = false;
     if (preferenceService_ && !isTriggerDriven)
     {
-        std::string showSplashStr = preferenceService_->GetPreference("system.show_splash");
-        showSplash = (showSplashStr == "true" || showSplashStr.empty()); // Default to true
+        // Use the proper constant from SystemManager
+        if (auto splashValue = preferenceService_->QueryConfig<bool>("system.show_splash")) {
+            showSplash = *splashValue;
+        } else {
+            showSplash = true; // Default to true
+        }
     }
 
     if (showSplash)

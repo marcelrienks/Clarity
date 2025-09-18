@@ -85,8 +85,10 @@ bool initializeServices()
     }
     
     // Initialize StyleManager with user's theme preference
-    std::string userTheme = preferenceManager->GetPreference("system.theme");
-    if (userTheme.empty()) userTheme = "day";
+    std::string userTheme = "Day"; // Default
+    if (auto themeValue = preferenceManager->QueryConfig<std::string>("system.theme")) {
+        userTheme = *themeValue;
+    }
     styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
@@ -149,8 +151,10 @@ void setup()
     styleManager->InitializeStyles();
     Ticker::handleLvTasks();
 
-    std::string panelName = preferenceManager->GetPreference("system.panel_name");
-    if (panelName.empty()) panelName = PanelNames::OIL;
+    std::string panelName = PanelNames::OIL; // Default
+    if (auto nameValue = preferenceManager->QueryConfig<std::string>("system.default_panel")) {
+        panelName = *nameValue;
+    }
     panelManager->CreateAndLoadPanel(panelName.c_str());
     Ticker::handleLvTasks();
     

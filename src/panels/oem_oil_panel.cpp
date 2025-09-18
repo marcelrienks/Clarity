@@ -560,15 +560,21 @@ void OemOilPanel::ApplyCurrentSensorSettings()
     // Apply updateRate and units from preferences to sensors if preference service is available
     if (preferenceService_ && cachedPressureSensor_ && cachedTemperatureSensor_)
     {
-        // Get individual preferences with defaults
-        std::string updateRateStr = preferenceService_->GetPreference("system.update_rate");
-        int updateRate = updateRateStr.empty() ? 500 : std::stoi(updateRateStr);
+        // Get individual preferences using type-safe config system
+        int updateRate = 500; // Default
+        if (auto rateValue = preferenceService_->QueryConfig<int>("system.update_rate")) {
+            updateRate = *rateValue;
+        }
 
-        std::string pressureUnit = preferenceService_->GetPreference("oil_pressure.unit");
-        if (pressureUnit.empty()) pressureUnit = "Bar";
+        std::string pressureUnit = "Bar"; // Default
+        if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_pressure.unit")) {
+            pressureUnit = *unitValue;
+        }
 
-        std::string tempUnit = preferenceService_->GetPreference("oil_temperature.unit");
-        if (tempUnit.empty()) tempUnit = "C";
+        std::string tempUnit = "C"; // Default
+        if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_temperature.unit")) {
+            tempUnit = *unitValue;
+        }
 
         // Only update settings if they have changed
         bool updateRateChanged = (lastUpdateRate_ != updateRate);
@@ -753,8 +759,10 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
         return result;
     }
 
-    std::string pressureUnit = preferenceService_->GetPreference("oil_pressure.unit");
-    if (pressureUnit.empty()) pressureUnit = "Bar";
+    std::string pressureUnit = "Bar"; // Default
+    if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_pressure.unit")) {
+        pressureUnit = *unitValue;
+    }
     int32_t mappedValue = MapPressureByUnit(sensorValue, pressureUnit);
     
     log_v("MapPressureValue() returning: %d", mappedValue);
@@ -867,8 +875,10 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 
     if (preferenceService_)
     {
-        std::string tempUnit = preferenceService_->GetPreference("oil_temperature.unit");
-        if (tempUnit.empty()) tempUnit = "C";
+        std::string tempUnit = "C"; // Default
+        if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_temperature.unit")) {
+            tempUnit = *unitValue;
+        }
         if (tempUnit == "F")
         {
             // Sensor returns 32-248°F, map to 0-120 display scale

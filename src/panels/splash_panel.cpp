@@ -234,6 +234,36 @@ void SplashPanel::SetPreferenceService(IPreferenceService *preferenceService)
 {
     log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
+
+    // Register configuration when preference service is available
+    RegisterConfiguration();
+}
+
+/**
+ * @brief Register SplashPanel configuration section
+ */
+void SplashPanel::RegisterConfiguration()
+{
+    if (!preferenceService_) return;
+
+    using namespace Config;
+
+    ConfigSection section("SplashPanel", "splash_panel", "Splash Screen");
+    section.displayOrder = 20; // Lower priority than core systems
+
+    // Show splash screen toggle
+    ConfigItem showSplashItem("show_splash", "Show Splash Screen", ConfigValueType::Boolean,
+                             true, ConfigMetadata());
+
+    // Splash duration selection
+    ConfigItem durationItem("duration", "Splash Duration", ConfigValueType::Enum,
+                           std::string("1500"), ConfigMetadata("1500,1750,2000,2500", "ms"));
+
+    section.AddItem(showSplashItem);
+    section.AddItem(durationItem);
+
+    preferenceService_->RegisterConfigSection(section);
+    log_i("SplashPanel configuration registered");
 }
 
 /**
@@ -248,9 +278,13 @@ int SplashPanel::GetAnimationTime() const
 {
     log_v("GetAnimationTime() called");
 
-    // Get splash duration preference with default
-    std::string splashDurationStr = preferenceService_ ? preferenceService_->GetPreference("system.splash_duration") : "";
-    int splashDuration = splashDurationStr.empty() ? 1500 : std::stoi(splashDurationStr);
+    // Get splash duration using type-safe config system
+    int splashDuration = 1500; // Default value
+    if (preferenceService_) {
+        if (auto durationValue = preferenceService_->QueryConfig<std::string>(CONFIG_DURATION)) {
+            splashDuration = std::stoi(*durationValue);
+        }
+    }
 
     int animTime = (splashDuration - _DISPLAY_TIME) / 2;
 

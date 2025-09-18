@@ -72,33 +72,7 @@ class ConfigPanel : public IPanel
     void HandleLongPress();
 
   private:
-    // ========== Private Types ==========
-    // Menu state enum
-    enum class MenuState
-    {
-        MainMenu,
-        PanelSubmenu,
-        ThemeSubmenu,
-        UpdateRateSubmenu,
-        SplashSubmenu,
-        SplashDurationSubmenu,
-        PressureUnitSubmenu,
-        TempUnitSubmenu,
-        CalibrationSubmenu,
-        PressureOffsetSubmenu,
-        PressureScaleSubmenu,
-        TempOffsetSubmenu,
-        TempScaleSubmenu
-    };
-
     // ========== Private Methods ==========
-    void InitializeMenuItems();
-    void UpdateMenuItemsWithCurrentValues();
-    void ExecuteCurrentOption();
-    void EnterSubmenu(MenuState submenu);
-    void ExitSubmenu();
-    void UpdateSubmenuItems();
-    void UpdateCalibration(const std::string& key, float value);
 
     // Dynamic configuration methods
     void BuildDynamicMenus();
@@ -121,17 +95,16 @@ class ConfigPanel : public IPanel
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
-    bool useDynamicConfig_ = false;
     lv_obj_t* screen_ = nullptr;
 
     // Component (View) - static allocation
     ConfigComponent configComponent_;
     bool componentInitialized_ = false;
 
-    // Menu state (Presenter logic)
+    // Dynamic menu state
     std::vector<ConfigComponent::MenuItem> menuItems_;
     size_t currentMenuIndex_ = 0;
-    MenuState currentMenuState_ = MenuState::MainMenu;
+    std::string currentSectionName_;
 
     // Callback function removed - using interface-based notifications
 };
