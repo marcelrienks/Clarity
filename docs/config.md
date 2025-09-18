@@ -1,331 +1,304 @@
-# Dynamic Configuration Management System
+# Dynamic Configuration System
 
 ## Overview
 
-The dynamic configuration system in Clarity enables components to self-register their configuration requirements with the PreferenceManager, which automatically handles persistence, validation, and UI generation. This documentation describes how the system currently works in the codebase.
+The Clarity configuration system enables components to self-register their settings with automatic UI generation, validation, and persistence. All configuration is managed through the `PreferenceManager` and displayed via the `ConfigPanel`. The system uses **type-safe constants** to eliminate hardcoded strings and provide compile-time validation.
 
-## Core Principles
+## How It Works
 
-1. **Component Self-Registration**: Components register their configuration needs during initialization
-2. **Default-First Architecture**: Default configurations are applied on first startup, persisted configurations used thereafter
-3. **Dynamic UI Generation**: Config panel dynamically builds menus based on registered configurations
-4. **Type Safety**: Strong typing for configuration values with validation
-5. **Live Updates**: Real-time configuration changes without system restart
+1. **Component Registration**: Components register their configuration during initialization using constants
+2. **System Registration**: System-wide settings are registered directly in main.cpp setup
+3. **Automatic UI**: ConfigPanel dynamically builds menus based on registered configurations
+4. **Type Safety**: Strong typing with compile-time validation via configuration constants
+5. **Persistence**: Settings saved to ESP32 NVS storage with sectioned organization
+6. **Live Updates**: Real-time configuration changes without restart
 
-## Architecture Overview
+## Configuration Tree
+
+The following tree shows all configuration sections as they appear in the ConfigPanel, organized by display order:
 
 ```
-┌─────────────────┐    Register    ┌──────────────────┐    Query     ┌─────────────────┐
-│ Any Component   │ ───────────────► │ PreferenceManager│ ◄─────────── │   ConfigPanel   │
-│                 │                 │                  │              │                 │
-│ - Sensors       │                 │ - Config Cache   │              │ - Dynamic Menus │
-│ - Panels        │                 │ - ESP32 NVS      │              │ - Validation    │
-│ - Managers      │                 │ - Validation     │              │ - Persistence   │
-│ - Components    │                 │                  │              │                 │
-└─────────────────┘                 └──────────────────┘              └─────────────────┘
+Configuration Menu
+├── System (displayOrder: 0) [main.cpp]
+│   ├── Default Panel (Enum) → Options: OemOilPanel,ConfigPanel,DiagnosticPanel | Default: OemOilPanel
+│   ├── Update Rate (Integer) → Range: 100-2000 ms | Default: 500
+│   ├── Show Splash (Boolean) → Default: true
+│   └── Panel Name (String) → Default: "OEM Oil" [Legacy]
+│
+├── Oil Pressure Sensor (displayOrder: 2) [OilPressureSensor]
+│   ├── Pressure Unit (Enum) → Options: PSI,Bar,kPa | Default: Bar
+│   ├── Update Rate (ms) (Enum) → Options: 250,500,1000,2000 | Default: 500
+│   ├── Calibration Offset (Float) → Range: -1.0 to 1.0 | Default: 0.0
+│   └── Calibration Scale (Float) → Range: 0.9 to 1.1 | Default: 1.0
+│
+├── Oil Temperature Sensor (displayOrder: 3) [OilTemperatureSensor]
+│   ├── Temperature Unit (Enum) → Options: C,F | Default: C
+│   ├── Update Rate (ms) (Enum) → Options: 250,500,1000,2000 | Default: 500
+│   ├── Calibration Offset (Float) → Range: -5.0 to 5.0 | Default: 0.0
+│   └── Calibration Scale (Float) → Range: 0.9 to 1.1 | Default: 1.0
+│
+├── Display (displayOrder: 10) [StyleManager]
+│   ├── Theme (Enum) → Options: Day,Night | Default: Day
+│   └── Brightness (Integer) → Range: 0-100% | Default: 80
+│
+└── Splash Screen (displayOrder: 20) [SplashPanel]
+    └── Duration (Enum) → Options: 1500,1750,2000,2500 ms | Default: 1500
 ```
 
-## Configuration Data Structures
+## Configuration Constants
 
-### ConfigValue Type System
+All configuration keys are defined as constants in their respective headers to ensure type safety and eliminate hardcoded strings.
+
+### System Configuration (`include/config/system_config.h`)
 
 ```cpp
-namespace Config {
-    enum class ConfigValueType {
-        Integer,
-        Float,
-        String,
-        Boolean,
-        Enum           // String with predefined options
-    };
-
-    using ConfigValue = std::variant<int, float, std::string, bool>;
+namespace SystemConfig {
+    // Configuration section and keys
+    static constexpr const char* CONFIG_SECTION = "system";
+    static constexpr const char* CONFIG_DEFAULT_PANEL = "system.default_panel";
+    static constexpr const char* CONFIG_UPDATE_RATE = "system.update_rate";
+    static constexpr const char* CONFIG_SHOW_SPLASH = "system.show_splash";
 }
 ```
 
-### ConfigItem Structure
+### Component Constants Pattern
+
+Each component defines its constants in its header file:
 
 ```cpp
-struct ConfigItem {
-    std::string key;                    // Unique identifier within section
-    std::string displayName;            // Human-readable name for UI
-    ConfigValueType type;               // Data type (int, float, string, bool, enum)
-    ConfigValue value;                  // Current/default value
-    ConfigMetadata metadata;            // UI constraints and options
-
-    ConfigItem(const std::string& k, const std::string& display,
-               ConfigValueType t, const ConfigValue& val,
-               const ConfigMetadata& meta = ConfigMetadata());
+// Example: include/sensors/oil_pressure_sensor.h
+class OilPressureSensor {
+public:
+    // Configuration Constants
+    static constexpr const char* CONFIG_SECTION = "oil_pressure";
+    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
+    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
+    static constexpr const char* CONFIG_OFFSET = "oil_pressure.offset";
+    static constexpr const char* CONFIG_SCALE = "oil_pressure.scale";
 };
 ```
 
-### ConfigSection Structure
+## System Configuration (main.cpp)
+
+System-wide settings are registered directly in main.cpp during application startup using constants for all configuration keys.
+
+### Registration Implementation
 
 ```cpp
-struct ConfigSection {
-    std::string sectionName;            // Unique section identifier
-    std::string storageKey;             // NVS storage key
-    std::string displayName;            // Human-readable section name
-    std::vector<ConfigItem> items;      // Configuration items in this section
-    int displayOrder = 0;               // Order for UI display (lower = earlier)
+#include "config/system_config.h"
 
-    void AddItem(const ConfigItem& item);
-};
-```
-
-## Current Configuration Hierarchy
-
-The config panel displays sections ordered by `displayOrder` (lower numbers first):
-
-```
-Config Panel
-├── System Settings (displayOrder: 0)
-│   ├── Panel Name (String) - Default: "OEM Oil"
-│   ├── Show Splash Screen (Boolean) - Default: true
-│   └── Dynamic UI (Boolean) - Default: true
-│
-├── Oil Pressure Sensor (displayOrder: 2)
-│   ├── Pressure Unit (Enum) - Options: PSI, Bar, kPa | Default: Bar
-│   ├── Update Rate (ms) (Enum) - Options: 250, 500, 1000, 2000 | Default: 500
-│   ├── Calibration Offset (Float) - Range: -1.0 to 1.0 | Default: 0.0
-│   └── Calibration Scale (Float) - Range: 0.9 to 1.1 | Default: 1.0
-│
-├── Oil Temperature Sensor (displayOrder: 3)
-│   ├── Temperature Unit (Enum) - Options: C, F | Default: C
-│   ├── Update Rate (ms) (Enum) - Options: 250, 500, 1000, 2000 | Default: 500
-│   ├── Calibration Offset (Float) - Range: -5.0 to 5.0 | Default: 0.0
-│   └── Calibration Scale (Float) - Range: 0.9 to 1.1 | Default: 1.0
-│
-├── System Settings (displayOrder: 5) [SystemManager]
-│   ├── Default Panel (Enum) - Options: OemOilPanel, ConfigPanel, DiagnosticPanel | Default: OemOilPanel
-│   ├── Update Rate (Integer) - Range: 100-2000 ms | Default: 500
-│   └── Show Splash Screen (Boolean) - Default: true
-│
-├── Theme & Display (displayOrder: 10)
-│   ├── Theme (Enum) - Options: Day, Night | Default: Day
-│   └── Brightness (Integer) - Range: 0-100% | Default: 80
-│
-└── Splash Screen (displayOrder: 20)
-    ├── Show Splash Screen (Boolean) - Default: true
-    └── Splash Duration (Enum) - Options: 1500, 1750, 2000, 2500 ms | Default: 1500
-```
-
-**Note**: There's currently a duplicate "System Settings" section (displayOrder 0 & 5) that needs resolution.
-
-## Registration Flow
-
-The system follows this registration and initialization flow:
-
-1. **Component Registration**: Component calls `RegisterConfigSection()` with defaults and metadata
-2. **Cache Initialization**: PreferenceManager stores the complete section in cache (with metadata)
-3. **NVS Override**: PreferenceManager loads any persisted values from NVS but only if the key exists
-4. **Result**: Cache contains original metadata from registration, current values from NVS or defaults
-
-```cpp
-bool PreferenceManager::RegisterConfigSection(const ConfigSection& section) {
-    registeredSections_[section.sectionName] = section;
-
-    // Load any existing persisted values for this section from NVS
-    LoadConfigSection(section.sectionName);
-    return true;
-}
-
-bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
-    // ... setup preferences namespace ...
-
-    for (auto& item : section.items) {
-        // Only overwrite default if value exists in NVS
-        if (preferences_.isKey(item.key.c_str())) {
-            item.value = LoadValueFromNVS(preferences_, item.key, item.type);
-        }
-        // Otherwise preserve the default value
+/**
+ * @brief Register system-wide configuration settings
+ */
+void registerSystemConfiguration()
+{
+    if (!preferenceManager) {
+        log_e("Cannot register system configuration - preference manager not available");
+        return;
     }
 
-    return true;
+    using namespace Config;
+
+    ConfigSection section("System", SystemConfig::CONFIG_SECTION, "System Settings");
+    section.displayOrder = 0; // Highest priority - show first in config menu
+
+    // Default panel selection - controls which panel loads at startup
+    section.AddItem(ConfigItem("default_panel", "Default Panel", ConfigValueType::Enum,
+        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel")));
+
+    // Global update rate for sensors and components
+    section.AddItem(ConfigItem("update_rate", "Update Rate", ConfigValueType::Integer,
+        500, ConfigMetadata("100-2000", "ms")));
+
+    // Splash screen control
+    section.AddItem(ConfigItem("show_splash", "Show Splash Screen", ConfigValueType::Boolean,
+        true, ConfigMetadata()));
+
+    // Legacy panel name setting (kept for backward compatibility)
+    section.AddItem(ConfigItem("panel_name", "Panel Name", ConfigValueType::String,
+        std::string("OEM Oil"), ConfigMetadata()));
+
+    preferenceManager->RegisterConfigSection(section);
+    log_i("System configuration registered");
+}
+
+void setup() {
+    // ... initialize services ...
+
+    // Register system configuration after services are initialized
+    registerSystemConfiguration();
+
+    // Access system configuration using constants
+    if (auto nameValue = preferenceManager->QueryConfig<std::string>(SystemConfig::CONFIG_DEFAULT_PANEL)) {
+        panelName = *nameValue;
+    }
+
+    // ... rest of setup ...
 }
 ```
 
-## Component Integration Pattern
+## Component Registration Pattern
 
-### Example: Oil Temperature Sensor
+Individual components follow this pattern to register their configuration using constants:
 
 ```cpp
-void OilTemperatureSensor::RegisterConfiguration() {
+// Example: OilPressureSensor::RegisterConfiguration()
+void OilPressureSensor::RegisterConfiguration() {
     if (!preferenceService_) return;
 
     using namespace Config;
-    ConfigSection section("OilTemperatureSensor", "oil_temperature", "Oil Temperature Sensor");
-    section.displayOrder = 3;
 
-    // Temperature unit selection
-    section.AddItem(ConfigItem("unit", "Temperature Unit", ConfigValueType::Enum,
-        std::string("C"), ConfigMetadata("C,F")));
+    // Use constant for section name
+    ConfigSection section("OilPressureSensor", CONFIG_SECTION, "Oil Pressure Sensor");
+    section.displayOrder = 2; // Controls menu order
 
-    // Update rate
+    // Add configuration items (key names only, full paths are constants)
+    section.AddItem(ConfigItem("unit", "Pressure Unit", ConfigValueType::Enum,
+        std::string("Bar"), ConfigMetadata("PSI,Bar,kPa")));
+
     section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
         500, ConfigMetadata("250,500,1000,2000")));
-
-    // Calibration parameters
-    section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
-        0.0f, ConfigMetadata("-5.0,5.0")));
-    section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
-        1.0f, ConfigMetadata("0.9,1.1")));
 
     preferenceService_->RegisterConfigSection(section);
 }
 ```
 
-### Live Configuration Updates
-
-Components can register callbacks for real-time configuration changes:
-
-```cpp
-void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
-    if (!preferenceService_) return;
-
-    auto callback = [this](const std::string& fullKey,
-                          const std::optional<Config::ConfigValue>& oldValue,
-                          const Config::ConfigValue& newValue) {
-
-        if (fullKey == CONFIG_UNIT) {
-            if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
-                SetTargetUnit(*newUnit);
-                log_i("Temperature unit changed to: %s", newUnit->c_str());
-            }
-        }
-        // Handle other configuration changes...
-    };
-
-    configCallbackId_ = preferenceService_->RegisterChangeCallback("oil_temperature", callback);
-}
-```
-
 ## Type-Safe Configuration Access
 
-Components access configuration using constant identifiers:
+Components access their configuration using constant identifiers defined in their headers:
 
 ```cpp
-// Configuration constants (in oil_temperature_sensor.h)
-static constexpr const char* CONFIG_UNIT = "oil_temperature.unit";
-static constexpr const char* CONFIG_UPDATE_RATE = "oil_temperature.update_rate";
+// System configuration access (any component can access these)
+#include "config/system_config.h"
 
-// Loading configuration
-void OilTemperatureSensor::LoadConfiguration() {
-    if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
-        SetTargetUnit(*unitValue);
-    }
+if (auto panel = preferenceManager->QueryConfig<std::string>(SystemConfig::CONFIG_DEFAULT_PANEL)) {
+    panelManager->CreateAndLoadPanel(panel->c_str());
+}
 
-    if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
-        SetUpdateRate(*rateValue);
-    }
+if (auto rate = preferenceManager->QueryConfig<int>(SystemConfig::CONFIG_UPDATE_RATE)) {
+    // Use global update rate for component timing
+}
+
+// Component-specific configuration access
+if (auto unit = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
+    SetTargetUnit(*unit);
+}
+
+if (auto offset = preferenceService_->QueryConfig<float>(OilPressureSensor::CONFIG_OFFSET)) {
+    SetCalibrationOffset(*offset);
 }
 ```
 
-## ESP32 NVS Storage Structure
+## Cross-Component Configuration Access
 
-Each configuration section is stored as a separate namespace in NVS:
+Components can access other components' configuration by including their headers:
+
+```cpp
+// In oem_oil_panel.cpp
+#include "sensors/oil_pressure_sensor.h"
+#include "sensors/oil_temperature_sensor.h"
+
+// Access sensor configuration for display purposes
+if (auto unit = preferenceService_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
+    updatePressureUnitDisplay(*unit);
+}
+
+if (auto unit = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
+    updateTemperatureUnitDisplay(*unit);
+}
+```
+
+## Storage Organization
+
+Configuration is stored in ESP32 NVS with separate namespaces per component:
 
 ```
 NVS Structure:
-├── cfg_system                         // System settings namespace
-│   ├── panel_name                     // Individual config items
-│   ├── show_splash
-│   └── dynamic_ui_enabled
-├── cfg_oil_pressure                   // Oil pressure sensor namespace
-│   ├── unit
-│   ├── update_rate
-│   ├── offset
-│   └── scale
-├── cfg_oil_temperature               // Oil temperature sensor namespace
-│   ├── unit
-│   ├── update_rate
-│   ├── offset
-│   └── scale
-├── cfg_style_manager                 // Style manager namespace
-│   ├── theme
-│   └── brightness
-└── cfg_splash_panel                  // Splash panel namespace
-    ├── show_splash
-    └── duration
+├── cfg_system                    // System settings (main.cpp)
+├── cfg_oil_pressure             // Oil pressure sensor
+├── cfg_oil_temperature          // Oil temperature sensor
+├── cfg_style_manager            // Theme & display
+└── cfg_splash_panel             // Splash screen
 ```
 
-## ConfigPanel UI Generation
+## Value Types and Validation
 
-The ConfigPanel generates its interface dynamically based on registered sections:
+- **Enum**: Dropdown selection with comma-separated options in metadata
+- **Integer**: Numeric input with range validation (e.g., "100-2000")
+- **Float**: Decimal input with range validation (e.g., "-5.0,5.0")
+- **Boolean**: Toggle switch (true/false)
+- **String**: Text input (no validation by default)
 
+## Registration Flow
+
+1. **Application Startup** (main.cpp):
+   - Initialize all services and managers
+   - Register system configuration via `registerSystemConfiguration()`
+   - System settings available immediately
+
+2. **Component Initialization**:
+   - Each component registers its configuration during initialization
+   - Components can access system settings using constants
+   - All configuration sections available to ConfigPanel
+
+3. **Dynamic UI Generation**:
+   - ConfigPanel automatically discovers all registered sections
+   - Builds menus in display order
+   - Provides type-appropriate input controls
+
+## Adding New Configuration
+
+### For System-Wide Settings:
+
+1. **Add constant to `include/config/system_config.h`**:
 ```cpp
-void ConfigPanel::BuildDynamicMenus() {
-    // Get all registered configuration sections
-    std::vector<std::string> sectionNames = preferenceService_->GetRegisteredSectionNames();
+static constexpr const char* CONFIG_NEW_SETTING = "system.new_setting";
+```
 
-    // Sort by displayOrder
-    std::sort(sectionNames.begin(), sectionNames.end(), [this](const auto& a, const auto& b) {
-        auto sectionA = preferenceService_->GetConfigSection(a);
-        auto sectionB = preferenceService_->GetConfigSection(b);
-        return sectionA->displayOrder < sectionB->displayOrder;
-    });
+2. **Add item to `registerSystemConfiguration()` in main.cpp**:
+```cpp
+section.AddItem(ConfigItem("new_setting", "New Setting", ConfigValueType::Boolean,
+    true, ConfigMetadata()));
+```
 
-    // Build menus for each section
-    for (const auto& sectionName : sectionNames) {
-        if (auto section = preferenceService_->GetConfigSection(sectionName)) {
-            BuildSectionMenu(*section);
-        }
-    }
+3. **Access using constant**:
+```cpp
+if (auto value = preferenceManager->QueryConfig<bool>(SystemConfig::CONFIG_NEW_SETTING)) {
+    // Use the value
 }
 ```
 
-## Key Features
+### For Component Settings:
 
-### Validation and Constraints
+1. **Add constants to component header**:
+```cpp
+static constexpr const char* CONFIG_NEW_SETTING = "component_section.new_setting";
+```
 
-- **Enum types**: Options defined in metadata (e.g., "C,F" or "PSI,Bar,kPa")
-- **Integer ranges**: Specified in metadata (e.g., "100-2000" or "250,500,1000,2000")
-- **Float ranges**: Specified in metadata (e.g., "-5.0,5.0" or "0.9,1.1")
-- **Boolean types**: Toggle interface with true/false values
+2. **Register in component's `RegisterConfiguration()` method**:
+```cpp
+section.AddItem(ConfigItem("new_setting", "New Setting", ConfigValueType::Boolean,
+    true, ConfigMetadata()));
+```
 
-### Persistence
+3. **Access using constant in component code**:
+```cpp
+if (auto value = preferenceService_->QueryConfig<bool>(CONFIG_NEW_SETTING)) {
+    // Use the value
+}
+```
 
-- **Default preservation**: Missing NVS values don't overwrite defaults
-- **Sectioned storage**: Each component gets its own NVS namespace
-- **Type-safe loading**: Values loaded with proper type conversion
-- **Atomic updates**: Individual configuration changes persist immediately
+The ConfigPanel will automatically discover and display new configuration without any additional code changes.
 
-### Extensibility
+## Architecture Benefits
 
-Any component can add configuration by:
-1. Implementing `RegisterConfiguration()` method
-2. Calling `preferenceService_->RegisterConfigSection(section)`
-3. Using `QueryConfig<T>()` to access values
-4. Optionally registering live update callbacks
-
-## Error Handling
-
-### Registration Failures
-- Graceful handling of missing preference service
-- Logging of registration failures
-- Fallback to default values when NVS unavailable
-
-### Runtime Failures
-- Type-safe configuration queries with std::optional return
-- Validation of configuration values before storage
-- Recovery from corrupted NVS data using defaults
-
-## Benefits
-
-### For Developers
-- **Simple Integration**: Components just register their needs and query values
-- **Automatic UI**: No manual config panel updates needed
-- **Type Safety**: Compile-time checking of configuration types
-- **Live Updates**: Real-time configuration changes without restart
-
-### For Users
-- **Consistent Interface**: All configuration follows the same UI patterns
-- **Logical Organization**: Settings grouped by component function
-- **Dynamic Options**: Available choices reflect actual capabilities
-- **Immediate Feedback**: Changes take effect in real-time
-
-### For System
-- **Maintainability**: Configuration logic centralized
-- **Reliability**: Strong typing prevents configuration errors
-- **Performance**: Efficient sectioned storage and caching
-- **Extensibility**: Easy addition of new configurable components
+- **Type Safety**: Compile-time validation of configuration keys via constants
+- **Refactoring Safety**: IDE can track all usages when constants are renamed
+- **No Magic Strings**: All configuration keys defined as named constants
+- **Single Source of Truth**: Constants serve as configuration API documentation
+- **Centralized System Settings**: Global configuration managed at application entry point
+- **Component Autonomy**: Each component manages its own configuration needs
+- **Cross-Component Access**: Type-safe access to other components' configuration
+- **Automatic UI**: Zero-configuration UI generation based on registered sections
+- **Persistent Storage**: Automatic NVS persistence with proper namespace isolation
+- **Error Prevention**: Eliminates typos and mismatches in configuration key strings

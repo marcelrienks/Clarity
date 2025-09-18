@@ -62,10 +62,11 @@ class OilPressureSensor : public BaseSensor
     void RegisterLiveUpdateCallbacks();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_UNIT = "oil_pressure_sensor.unit";
-    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure_sensor.update_rate";
-    static constexpr const char* CONFIG_CALIBRATION_OFFSET = "oil_pressure_sensor.calibration_offset";
-    static constexpr const char* CONFIG_CALIBRATION_SCALE = "oil_pressure_sensor.calibration_scale";
+    static constexpr const char* CONFIG_SECTION = "oil_pressure";
+    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
+    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
+    static constexpr const char* CONFIG_OFFSET = "oil_pressure.offset";
+    static constexpr const char* CONFIG_SCALE = "oil_pressure.scale";
 
   protected:
     // ========== Protected Methods ==========

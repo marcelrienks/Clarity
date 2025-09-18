@@ -51,7 +51,6 @@ PreferenceManager::PreferenceManager() {
     }
 
     // Create default sections
-    CreateDefaultSections();
 
     // Load all registered sections
     LoadAllConfigSections();
@@ -433,30 +432,6 @@ std::string PreferenceManager::GetSectionNamespace(const std::string& sectionNam
     return ns;
 }
 
-/**
- * @brief Create and register default configuration sections
- *
- * Initializes system configuration sections with default values.
- * Currently creates a "System" section with basic application settings
- * like panel name, splash screen preference, and dynamic UI toggle.
- */
-void PreferenceManager::CreateDefaultSections() {
-    using namespace Config;
-
-    // System section
-    ConfigSection systemSection("System", "system", "System Settings");
-    systemSection.displayOrder = 0;
-    systemSection.AddItem(ConfigItem("panel_name", "Panel Name", ConfigValueType::String,
-        std::string("OEM Oil"), ConfigMetadata()));
-    systemSection.AddItem(ConfigItem("show_splash", "Show Splash Screen", ConfigValueType::Boolean,
-        true, ConfigMetadata()));
-    systemSection.AddItem(ConfigItem("dynamic_ui_enabled", "Dynamic UI", ConfigValueType::Boolean,
-        true, ConfigMetadata()));
-
-    registeredSections_["system"] = systemSection;
-
-    log_i("Created default configuration sections");
-}
 
 
 /**

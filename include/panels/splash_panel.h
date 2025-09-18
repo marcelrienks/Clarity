@@ -70,7 +70,8 @@ class SplashPanel : public IPanel
     void RegisterConfiguration();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SHOW_SPLASH = "splash_panel.show_splash";
+    // Note: show_splash is managed by system settings in main.cpp
+    static constexpr const char* CONFIG_SECTION = "splash_panel";
     static constexpr const char* CONFIG_DURATION = "splash_panel.duration";
 
   private:

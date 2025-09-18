@@ -5,6 +5,8 @@
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "interfaces/i_preference_service.h"
+#include "config/config_types.h"
+#include "config/system_config.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
@@ -29,6 +31,40 @@ InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
 // ========== Private Methods ==========
+
+/**
+ * @brief Register system-wide configuration settings
+ *
+ * Consolidates all system settings (panel selection, update rate, splash screen)
+ * into a single configuration section managed directly by main.cpp.
+ */
+void registerSystemConfiguration()
+{
+    if (!preferenceManager) {
+        log_e("Cannot register system configuration - preference manager not available");
+        return;
+    }
+
+    using namespace Config;
+
+    ConfigSection section("System", SystemConfig::CONFIG_SECTION, "System");
+    section.displayOrder = 0; // Highest priority - show first in config menu
+
+    // Default panel selection
+    section.AddItem(ConfigItem("default_panel", "Default Panel", ConfigValueType::Enum,
+        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel")));
+
+    // Global update rate for sensors and components
+    section.AddItem(ConfigItem("update_rate", "Update Rate", ConfigValueType::Integer,
+        500, ConfigMetadata("100-2000", "ms")));
+
+    // Splash screen control
+    section.AddItem(ConfigItem("show_splash", "Show Splash", ConfigValueType::Boolean,
+        true, ConfigMetadata()));
+
+    preferenceManager->RegisterConfigSection(section);
+    log_i("System configuration registered");
+}
 
 /**
  * @brief Initializes all system services and managers using factory pattern
@@ -146,13 +182,16 @@ void setup()
         return;
     }
 
+    // Register system configuration after services are initialized
+    registerSystemConfiguration();
+
     Ticker::handleLvTasks();
 
     styleManager->InitializeStyles();
     Ticker::handleLvTasks();
 
     std::string panelName = PanelNames::OIL; // Default
-    if (auto nameValue = preferenceManager->QueryConfig<std::string>("system.default_panel")) {
+    if (auto nameValue = preferenceManager->QueryConfig<std::string>(SystemConfig::CONFIG_DEFAULT_PANEL)) {
         panelName = *nameValue;
     }
     panelManager->CreateAndLoadPanel(panelName.c_str());

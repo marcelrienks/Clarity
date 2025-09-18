@@ -1,6 +1,8 @@
 #include "panels/oem_oil_panel.h"
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"
+#include "sensors/oil_pressure_sensor.h"
+#include "sensors/oil_temperature_sensor.h"
 #include "managers/error_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
@@ -567,12 +569,12 @@ void OemOilPanel::ApplyCurrentSensorSettings()
         }
 
         std::string pressureUnit = "Bar"; // Default
-        if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_pressure.unit")) {
+        if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
             pressureUnit = *unitValue;
         }
 
         std::string tempUnit = "C"; // Default
-        if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_temperature.unit")) {
+        if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
 
@@ -760,7 +762,7 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
     }
 
     std::string pressureUnit = "Bar"; // Default
-    if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_pressure.unit")) {
+    if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
         pressureUnit = *unitValue;
     }
     int32_t mappedValue = MapPressureByUnit(sensorValue, pressureUnit);
@@ -876,7 +878,7 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     if (preferenceService_)
     {
         std::string tempUnit = "C"; // Default
-        if (auto unitValue = preferenceService_->QueryConfig<std::string>("oil_temperature.unit")) {
+        if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
         if (tempUnit == "F")

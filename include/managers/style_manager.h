@@ -149,6 +149,7 @@ public:
     void RegisterConfiguration();
 
     // ========== Configuration Constants ==========
+    static constexpr const char* CONFIG_SECTION = "style_manager";
     static constexpr const char* CONFIG_THEME = "style_manager.theme";
     static constexpr const char* CONFIG_BRIGHTNESS = "style_manager.brightness";
 

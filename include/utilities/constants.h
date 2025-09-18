@@ -325,7 +325,6 @@ constexpr InterruptFlags& operator&=(InterruptFlags& lhs, InterruptFlags rhs) {
  */
 struct JsonDocNames
 {
-    static constexpr const char *PANEL_NAME = "panel_name";           ///< Default panel setting
     static constexpr const char *SHOW_SPLASH = "show_splash";         ///< Show splash screen setting
     static constexpr const char *SPLASH_DURATION = "splash_duration"; ///< Splash duration setting
     static constexpr const char *THEME = "theme";                     ///< Theme setting

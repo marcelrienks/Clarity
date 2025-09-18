@@ -161,11 +161,6 @@ private:
      */
     std::string GetSectionNamespace(const std::string& sectionName) const;
 
-    /**
-     * @brief Create default configuration sections
-     * @details Registers default sections for system components
-     */
-    void CreateDefaultSections();
 
 
     /**

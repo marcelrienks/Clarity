@@ -1,4 +1,5 @@
 #include "managers/panel_manager.h"
+#include "config/system_config.h"
 #include "utilities/logging.h"
 
 // Static instance for singleton pattern
@@ -160,8 +161,8 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
     bool showSplash = false;
     if (preferenceService_ && !isTriggerDriven)
     {
-        // Use the proper constant from SystemManager
-        if (auto splashValue = preferenceService_->QueryConfig<bool>("system.show_splash")) {
+        // Query system configuration for splash screen setting
+        if (auto splashValue = preferenceService_->QueryConfig<bool>(SystemConfig::CONFIG_SHOW_SPLASH)) {
             showSplash = *splashValue;
         } else {
             showSplash = true; // Default to true

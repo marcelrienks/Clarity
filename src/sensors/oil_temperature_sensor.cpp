@@ -274,13 +274,13 @@ void OilTemperatureSensor::LoadConfiguration()
         updateIntervalMs_ = 500;
     }
 
-    if (auto offsetValue = preferenceService_->QueryConfig<float>(CONFIG_CALIBRATION_OFFSET)) {
+    if (auto offsetValue = preferenceService_->QueryConfig<float>(CONFIG_OFFSET)) {
         calibrationOffset_ = *offsetValue;
     } else {
         calibrationOffset_ = 0.0f;
     }
 
-    if (auto scaleValue = preferenceService_->QueryConfig<float>(CONFIG_CALIBRATION_SCALE)) {
+    if (auto scaleValue = preferenceService_->QueryConfig<float>(CONFIG_SCALE)) {
         calibrationScale_ = *scaleValue;
     } else {
         calibrationScale_ = 1.0f;
@@ -305,7 +305,7 @@ void OilTemperatureSensor::RegisterConfiguration()
     using namespace Config;
 
     // Create configuration section for this sensor component
-    ConfigSection section("OilTemperatureSensor", "oil_temperature", "Oil Temperature Sensor");
+    ConfigSection section("OilTemperatureSensor", CONFIG_SECTION, "Oil Temperature Sensor");
     section.displayOrder = 3; // Controls UI ordering in config menus
 
     // Temperature unit selection - enum with C/F options
@@ -360,7 +360,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
         }
 
         // Handle calibration offset change
-        else if (fullKey == CONFIG_CALIBRATION_OFFSET) {
+        else if (fullKey == CONFIG_OFFSET) {
             if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
                 calibrationOffset_ = *newOffset;
                 log_i("Oil temperature calibration offset changed to: %.2f", *newOffset);
@@ -368,7 +368,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
         }
 
         // Handle calibration scale change
-        else if (fullKey == CONFIG_CALIBRATION_SCALE) {
+        else if (fullKey == CONFIG_SCALE) {
             if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
                 calibrationScale_ = *newScale;
                 log_i("Oil temperature calibration scale changed to: %.2f", *newScale);

@@ -313,7 +313,7 @@ void StyleManager::RegisterConfiguration()
 
     using namespace Config;
 
-    ConfigSection section("StyleManager", "style_manager", "Theme & Display");
+    ConfigSection section("StyleManager", CONFIG_SECTION, "Display");
     section.displayOrder = 10; // Lower priority than sensors
 
     // Theme selection

@@ -248,18 +248,13 @@ void SplashPanel::RegisterConfiguration()
 
     using namespace Config;
 
-    ConfigSection section("SplashPanel", "splash_panel", "Splash Screen");
+    ConfigSection section("SplashPanel", CONFIG_SECTION, "Splash Screen");
     section.displayOrder = 20; // Lower priority than core systems
 
-    // Show splash screen toggle
-    ConfigItem showSplashItem("show_splash", "Show Splash Screen", ConfigValueType::Boolean,
-                             true, ConfigMetadata());
-
-    // Splash duration selection
-    ConfigItem durationItem("duration", "Splash Duration", ConfigValueType::Enum,
+    // Splash duration selection (show_splash is managed by system settings)
+    ConfigItem durationItem("duration", "Duration", ConfigValueType::Enum,
                            std::string("1500"), ConfigMetadata("1500,1750,2000,2500", "ms"));
 
-    section.AddItem(showSplashItem);
     section.AddItem(durationItem);
 
     preferenceService_->RegisterConfigSection(section);
