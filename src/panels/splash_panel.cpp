@@ -118,7 +118,6 @@ void SplashPanel::Update()
 {
     log_v("Update() called");
     // Splash panel doesn't need regular updates - animation handles its own state
-    notificationService_->OnPanelUpdateComplete(this);
 }
 
 // Static Callback Methods

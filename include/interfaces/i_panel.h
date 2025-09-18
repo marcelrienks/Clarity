@@ -13,6 +13,7 @@
 // Forward declarations
 class IPanelService;
 class IStyleService;
+class IPreferenceService;
 
 /**
  * @interface IPanel
@@ -73,12 +74,12 @@ class IPanel : public IActionService
     // Note: Button handling methods inherited from IActionService
     // All panels must implement:
     // - void (*GetShortPressFunction())(void* panelContext)
-    // - void (*GetLongPressFunction())(void* panelContext) 
+    // - void (*GetLongPressFunction())(void* panelContext)
     // - void* GetPanelContext()
 
-    virtual void SetManagers(IPanelService *panelService, IStyleService *styleService)
-    {
-    }
+    // Optional dependency injection methods with default no-op implementations
+    virtual void SetManagers(IPanelService *panelService, IStyleService *styleService) {}
+    virtual void SetPreferenceService(IPreferenceService *preferenceService) {}
 
   protected:
     // Protected Data Members

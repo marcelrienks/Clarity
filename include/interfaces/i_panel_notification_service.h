@@ -22,7 +22,6 @@ class IPanel;
 class IPanelNotificationService {
 public:
     virtual ~IPanelNotificationService() = default;
-    
+
     virtual void OnPanelLoadComplete(IPanel* panel) = 0;
-    virtual void OnPanelUpdateComplete(IPanel* panel) = 0;
 };

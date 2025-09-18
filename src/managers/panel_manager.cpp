@@ -51,7 +51,6 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
         return;
     }
 
-
     // Panel names are already const char* constants, no conversion needed
     currentPanel_ = PanelNames::OIL;
     restorationPanel_ = PanelNames::OIL;
@@ -129,7 +128,6 @@ void PanelManager::SetUiState(UIState state)
 {
     log_v("SetUiState() called with state: %s", UIStateToString(state));
     uiState_ = state;
-    // UI state logging removed - was causing test loop due to frequent BUSY/IDLE transitions
 }
 
 /**
@@ -164,10 +162,6 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
     {
         std::string showSplashStr = preferenceService_->GetPreference("system.show_splash");
         showSplash = (showSplashStr == "true" || showSplashStr.empty()); // Default to true
-    }
-    else
-    {
-        // Trigger-driven panel load - skip splash screen
     }
 
     if (showSplash)
@@ -287,19 +281,6 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     }
 }
 
-/**
- * @brief Handles panel update completion notifications
- * @param panel Pointer to the panel that completed updating
- *
- * Part of the IPanelNotificationService interface. Called when a panel
- * finishes its update cycle. Currently doesn't require special handling
- * as panels continue normal operation after updates.
- */
-void PanelManager::OnPanelUpdateComplete(IPanel* panel) {
-    log_v("Panel update completed for panel: %p", panel);
-    // Update completion doesn't require special handling - panel continues normal operation
-}
-
 // ========== IActionExecutionService Implementation ==========
 
 /**
@@ -355,8 +336,6 @@ void PanelManager::HandleLongPress() {
         if (longPressFunc) {
             longPressFunc(panelContext);
         }
-    } else {
-        // Current panel does not support button actions
     }
 }
 
@@ -410,11 +389,56 @@ void PanelManager::CheckRestoration() {
         // Restoration should ALWAYS be direct - never use splash screen
         // Splash is only for application startup, not trigger restoration
         CreateAndLoadPanelDirect(restorationPanel_.c_str(), false);  // Direct restoration without splash
-
-        // Note: restoration panel persists for future trigger activations
-    } else {
-        // No restoration panel to restore to
     }
+}
+
+// ========== Helper Methods ==========
+
+/**
+ * @brief Updates restoration tracking for panel transitions
+ * @param panelName Name of the panel being loaded
+ * @param isTriggerDriven Whether the panel load was trigger-driven
+ */
+void PanelManager::UpdateRestorationTracking(const char* panelName, bool isTriggerDriven) {
+    // Skip tracking for splash panel - it's purely transitional
+    if (strcmp(panelName, PanelNames::SPLASH) == 0) {
+        return;
+    }
+
+    // Save current panel for restoration if loading a trigger-driven panel
+    if (isTriggerDriven && !currentPanelIsTriggerDriven_ && !currentPanel_.empty()) {
+        restorationPanel_ = currentPanel_;
+        log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel_.c_str());
+    }
+
+    // Track trigger state for non-splash panels
+    currentPanelIsTriggerDriven_ = isTriggerDriven;
+}
+
+/**
+ * @brief Injects preference service into panels that support it
+ * @param panelName Name of the panel to inject service into
+ */
+void PanelManager::InjectPreferenceService(const char* panelName) {
+    if (!preferenceService_ || !panel_) {
+        return;
+    }
+
+    // Simply call the interface method - panels that need it will override it
+    panel_->SetPreferenceService(preferenceService_);
+}
+
+/**
+ * @brief Handles panel creation errors
+ * @param panelName Name of the panel that failed to create
+ */
+void PanelManager::HandlePanelCreationError(const char* panelName) {
+    log_e("Failed to create panel: %s", panelName);
+
+    // Use char buffer to avoid string allocation in error path
+    char errorMsg[128];
+    snprintf(errorMsg, sizeof(errorMsg), "Panel creation failed for: %s", panelName);
+    errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager", errorMsg);
 }
 
 // ========== Other Public Methods ==========
@@ -441,17 +465,7 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
         return;
     }
 
-
-    // Try to cast panel to IActionService to get button functions
     IActionService* actionService = dynamic_cast<IActionService*>(panel);
-    if (!actionService)
-    {
-        log_w("UpdatePanelButtonFunctions: Panel does not implement IActionService - no button functions available");
-        return;
-    }
-
-
-    // Extract button functions from panel
     void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
     void (*longPressFunc)(void* context) = actionService->GetLongPressFunction();
     void* panelContext = actionService->GetPanelContext();
@@ -517,6 +531,7 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
 
     // Unknown panel type
     log_e("Failed to create panel: %s", panelName);
+    
     // Use char buffer to avoid string allocation in error path
     char errorMsg[128];
     snprintf(errorMsg, sizeof(errorMsg), "Failed to create panel: %s", panelName);
@@ -537,78 +552,26 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
 {
     log_v("CreateAndLoadPanelDirect() called for: %s", panelName);
 
-    // Splash panel is purely transitional - don't track for restoration purposes
-    bool isSplashPanel = strcmp(panelName, PanelNames::SPLASH) == 0;
+    // Update restoration tracking for non-splash panels
+    UpdateRestorationTracking(panelName, isTriggerDriven);
 
-    if (!isSplashPanel)
-    {
-        // If loading a trigger-driven panel, save the current panel for restoration
-        if (isTriggerDriven && !currentPanelIsTriggerDriven_ && !currentPanel_.empty())
-        {
-            // Save the current non-trigger panel as the restoration target
-            restorationPanel_ = currentPanel_;
-            log_i("Saving current panel '%s' for restoration when triggers deactivate", restorationPanel_.c_str());
-        }
-
-        // Track current panel trigger state (only for non-splash panels)
-        currentPanelIsTriggerDriven_ = isTriggerDriven;
-    }
-
-    // Clean up existing panel before creating new one
-    if (panel_)
-    {
-        // ActionManager removed - button handling moved to handler-based system
+    // Clean up existing panel
+    if (panel_) {
         panel_.reset();
     }
 
+    // Create new panel
     panel_ = CreatePanel(panelName);
-    if (!panel_)
-    {
-        log_e("Failed to create panel: %s", panelName);
-        // Use char buffer to avoid string allocation in error path
-        char errorMsg[128];
-        snprintf(errorMsg, sizeof(errorMsg), "Panel creation failed for: %s", panelName);
-        errorManager_.ReportError(ErrorLevel::ERROR, "PanelManager", errorMsg);
+    if (!panel_) {
+        HandlePanelCreationError(panelName);
         return;
     }
 
-    // Inject managers for all panels (they can choose to use them or not)
+    // Inject core dependencies
     panel_->SetManagers(this, styleService_);
+    InjectPreferenceService(panelName);
 
-    // Special injection for ConfigPanel - inject preference service
-    bool isConfig = strcmp(panelName, PanelNames::CONFIG) == 0;
-    bool isOil = strcmp(panelName, PanelNames::OIL) == 0;
-    bool isSplash = strcmp(panelName, PanelNames::SPLASH) == 0;
-
-    if (isConfig)
-    {
-        ConfigPanel *configPanel = static_cast<ConfigPanel *>(panel_.get());
-        if (configPanel && preferenceService_)
-        {
-            configPanel->SetPreferenceService(preferenceService_);
-        }
-    }
-
-    // Special injection for OemOilPanel - inject preference service to apply sensor update rates
-    if (isOil)
-    {
-        OemOilPanel *oemOilPanel = static_cast<OemOilPanel *>(panel_.get());
-        if (oemOilPanel && preferenceService_)
-        {
-            oemOilPanel->SetPreferenceService(preferenceService_);
-        }
-    }
-
-    // Special injection for SplashPanel - inject preference service for configurable duration
-    if (isSplash)
-    {
-        SplashPanel *splashPanel = static_cast<SplashPanel *>(panel_.get());
-        if (splashPanel && preferenceService_)
-        {
-            splashPanel->SetPreferenceService(preferenceService_);
-        }
-    }
-
+    // Initialize panel
     panel_->Init();
 
     // Update current panel directly (PanelNames are static constants)
@@ -618,13 +581,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     // This ensures correct theme is set before any rendering happens
     if (styleService_)
     {
-        log_i("PanelManager: About to call ApplyCurrentTheme for panel: %s", panelName);
         styleService_->ApplyCurrentTheme();
-        log_i("PanelManager: ApplyCurrentTheme completed for panel: %s", panelName);
-    }
-    else
-    {
-        log_w("PanelManager: No style service available to apply theme");
     }
 
     // Update universal button interrupts with this panel's functions

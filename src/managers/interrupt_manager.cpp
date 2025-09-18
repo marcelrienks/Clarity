@@ -204,7 +204,6 @@ void InterruptManager::CheckRestoration()
 
     // Check if any non-overridable triggers are still active
     bool hasActiveTrigger = triggerHandler_->HasActiveTriggers();
-
     if (!hasActiveTrigger) {
         // Let the PanelManager handle restoration logic
         // This method provides coordination point for restoration
@@ -306,11 +305,6 @@ void InterruptManager::RegisterSystemInterrupts()
 
 bool InterruptManager::IsUIIdle() const
 {
-    // PERFORMANCE OPTIMIZATION: Cache UI idle state to reduce LVGL queries
-    // LVGL query is expensive (requires display lock + calculation)
-    // 5ms cache timeout balances responsiveness vs performance
-    // 10ms idle threshold prevents interrupting smooth animations
-
     // Cache UI idle state with timeout to reduce LVGL query frequency
     static bool cached_idle = false;
     static unsigned long last_check = 0;

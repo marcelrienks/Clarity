@@ -93,7 +93,6 @@ class PanelManager : public IPanelService,
 
     // ========== IPanelNotificationService Implementation ==========
     void OnPanelLoadComplete(IPanel* panel) override;
-    void OnPanelUpdateComplete(IPanel* panel) override;
 
     // ========== IActionExecutionService Implementation ==========
     void HandleShortPress() override;
@@ -113,6 +112,11 @@ class PanelManager : public IPanelService,
     void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
     void SplashCompletionCallback(const char *panelName);
     void PanelCompletionCallback();
+
+    // Helper methods for CreateAndLoadPanelDirect
+    void UpdateRestorationTracking(const char* panelName, bool isTriggerDriven);
+    void InjectPreferenceService(const char* panelName);
+    void HandlePanelCreationError(const char* panelName);
 
     // ========== Panel State Data Members ==========
     std::string currentPanel_ = PanelNames::OIL;     ///< Current panel state

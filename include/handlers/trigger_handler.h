@@ -63,7 +63,6 @@ private:
     void HandleTriggerDeactivation(Trigger& trigger);
     void ExecuteTriggerFunction(const Trigger& trigger, bool isActivation);
     bool ShouldActivate(const Trigger& trigger) const;
-    bool ShouldDeactivate(const Trigger& trigger) const;
     
     // Priority and blocking logic
     bool HasHigherPriorityActive(Priority priority) const;

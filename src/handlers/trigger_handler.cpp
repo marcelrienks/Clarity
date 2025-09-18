@@ -171,7 +171,7 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     }
 
     // Handle deactivation flow
-    if (wasActive && !sensorActive && ShouldDeactivate(trigger)) {
+    if (wasActive && !sensorActive) {
         HandleTriggerDeactivation(trigger);
         return;
     }
@@ -247,22 +247,11 @@ void TriggerHandler::HandleTriggerDeactivation(Trigger& trigger) {
  */
 bool TriggerHandler::ShouldActivate(const Trigger& trigger) const {
     // Block activation if higher priority trigger is active
-    // TODO: Implement priority-based blocking logic
-    return true;  // For now, allow all activations
+    // Uses the existing HasHigherPriorityActive() method which checks if any
+    // active trigger has a higher numeric priority value than this trigger
+    return !HasHigherPriorityActive(trigger.priority);
 }
 
-/**
- * @brief Determines if trigger should deactivate
- * @param trigger Trigger to check for deactivation
- * @return Always returns true - deactivation is always allowed
- *
- * Deactivation policy that allows all triggers to deactivate regardless
- * of priority. This ensures proper cleanup and state transitions.
- */
-bool TriggerHandler::ShouldDeactivate(const Trigger& trigger) const {
-    // Always allow deactivation
-    return true;
-}
 
 /**
  * @brief Checks if any trigger with higher priority is currently active
