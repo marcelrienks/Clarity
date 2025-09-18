@@ -193,7 +193,11 @@ bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
     preferences_.begin(nsName.c_str(), true); // read-only
 
     for (auto& item : section.items) {
-        item.value = LoadValueFromNVS(preferences_, item.key, item.type);
+        // Only overwrite default if value exists in NVS
+        if (preferences_.isKey(item.key.c_str())) {
+            item.value = LoadValueFromNVS(preferences_, item.key, item.type);
+        }
+        // Otherwise preserve the default value in item.value
     }
 
     preferences_.end();

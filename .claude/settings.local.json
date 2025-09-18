@@ -58,7 +58,8 @@
       "Bash(xtensa-esp32-elf-g++:*)",
       "Bash(gcc:*)",
       "Bash(xargs:*)",
-      "Bash(awk:*)"
+      "Bash(awk:*)",
+      "Read(//mnt/c/Users/marcelr/OneDrive - Network International LLC/Pictures/Screenshots/**)"
     ],
     "deny": [],
     "ask": []
