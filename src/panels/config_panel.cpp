@@ -144,6 +144,44 @@ void ConfigPanel::Update()
     }
 }
 
+/**
+ * @brief Injects manager service dependencies
+ * @param panelService Panel service for UI state management and panel operations
+ * @param styleService Style service for theme management
+ */
+void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
+{
+    log_v("SetManagers() called");
+    panelService_ = panelService;
+    if (styleService != styleService_) {
+        styleService_ = styleService;
+    }
+}
+
+/**
+ * @brief Injects preference service dependency for dynamic configuration
+ * @param preferenceService Preference service for configuration management
+ */
+void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
+{
+    log_v("SetPreferenceService() called");
+    preferenceService_ = preferenceService;
+}
+
+/**
+ * @brief Static callback for screen loaded event
+ * @param event LVGL event containing panel context
+ */
+void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
+{
+    log_v("ShowPanelCompletionCallback() called");
+    // Get the panel pointer from event user data
+    auto *panel = static_cast<ConfigPanel *>(lv_event_get_user_data(event));
+    if (panel && panel->panelService_) {
+        panel->panelService_->SetUiState(UIState::IDLE);
+    }
+}
+
 // ========== IActionService Interface Implementation ==========
 
 static void ConfigPanelShortPress(void* panelContext)
