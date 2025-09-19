@@ -131,6 +131,7 @@ void ButtonSensor::ProcessButtonState()
     {
         buttonPressStartTime_ = currentTime;
         currentButtonState_ = true;
+        longPressTriggeredDuringHold_ = false;  // Reset for new press
         log_t("ButtonSensor: PRESS STARTED at %lu ms (GPIO HIGH detected)", buttonPressStartTime_);
     }
     else if (!currentState && currentButtonState_)
@@ -139,6 +140,13 @@ void ButtonSensor::ProcessButtonState()
         currentButtonState_ = false;
 
         log_t("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
+
+        // If long press was already triggered during hold, ignore this release
+        if (longPressTriggeredDuringHold_) {
+            log_t("ButtonSensor: Ignoring release - long press already processed during hold");
+            longPressTriggeredDuringHold_ = false;  // Reset for next press
+            return;
+        }
 
         ButtonAction action = DetermineAction(buttonPressDuration_);
         if (action != ButtonAction::NONE)
@@ -157,11 +165,22 @@ void ButtonSensor::ProcessButtonState()
     else if (currentState && currentButtonState_)
     {
         unsigned long heldDuration = currentTime - buttonPressStartTime_;
-        if (heldDuration > LONG_PRESS_MAX_MS)
+
+        // Check for long press during hold (case #3)
+        if (heldDuration > SHORT_PRESS_MAX_MS && !longPressTriggeredDuringHold_) {
+            log_t("ButtonSensor: LONG PRESS TRIGGERED during hold at %lu ms", heldDuration);
+            detectedAction_ = ButtonAction::LONG_PRESS;
+            actionReady_ = true;
+            longPressTriggeredDuringHold_ = true;
+            log_t("ButtonSensor: ACTION DETECTED: LONG_PRESS (actionReady=true, during hold)");
+        }
+        // Timeout protection - reset if held too long
+        else if (heldDuration > LONG_PRESS_MAX_MS)
         {
             log_w("ButtonSensor: PRESS TIMEOUT after %lu ms - resetting state", heldDuration);
             currentButtonState_ = false;
             buttonPressStartTime_ = 0;
+            longPressTriggeredDuringHold_ = false;
         }
     }
 }
@@ -191,6 +210,30 @@ ButtonAction ButtonSensor::DetermineAction(unsigned long duration)
         log_v("Press duration %lu ms - ignored (timeout)", duration);
         return ButtonAction::NONE;
     }
+}
+
+/**
+ * @brief Gets and consumes the currently detected action
+ * @return ButtonAction that was detected, or NONE if no action
+ *
+ * This method returns the detected action and clears the action state,
+ * preventing the same action from being processed multiple times.
+ * Essential for proper action handling in the interrupt system.
+ */
+ButtonAction ButtonSensor::GetAndConsumeAction()
+{
+    ButtonAction action = detectedAction_;
+
+    // Clear the action state after consumption
+    detectedAction_ = ButtonAction::NONE;
+    actionReady_ = false;
+
+    if (action != ButtonAction::NONE) {
+        log_t("ButtonSensor: Action consumed: %s",
+              action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
+    }
+
+    return action;
 }
 
 /**

@@ -390,13 +390,8 @@ const char* ActionHandler::StateToString(ButtonState state) const {
  * responsive button handling.
  */
 void ActionHandler::ProcessButtonEvents() {
-    // Detect button action and set as pending if found
+    // ButtonSensor now handles all action detection including long press during hold
     ButtonAction detectedAction = DetectButtonAction();
-
-    // Also check for long press during hold
-    if (detectedAction == ButtonAction::NONE) {
-        detectedAction = DetectLongPressDuringHold();
-    }
 
     // Set pending action (replaces any existing pending action)
     if (detectedAction != ButtonAction::NONE) {
@@ -405,25 +400,25 @@ void ActionHandler::ProcessButtonEvents() {
 }
 
 /**
- * @brief Detects completed button action based on press duration
+ * @brief Detects completed button action using ButtonSensor detection
  * @return ButtonAction type (SHORT_PRESS, LONG_PRESS, or NONE)
  *
- * Analyzes completed button press (RELEASED state) to determine action type
- * based on press duration timing. Only triggers when button has been released
- * to ensure accurate duration measurement for automotive reliability.
+ * Uses the ButtonSensor's built-in action detection and consumption to avoid
+ * duplicate action processing. This ensures actions are only processed once
+ * and prevents double-triggering when long press is detected during hold.
  */
 ButtonAction ActionHandler::DetectButtonAction() {
-    // Only detect action when button is in RELEASED state
-    if (buttonState_ != ButtonState::RELEASED || buttonPressEndTime_ == 0) {
+    if (!buttonSensor_) {
         return ButtonAction::NONE;
     }
 
-    unsigned long pressDuration = buttonPressEndTime_ - buttonPressStartTime_;
-    ButtonAction action = CalculateButtonAction(pressDuration);
+    // Use the button sensor's action detection and consume the action
+    ButtonAction action = buttonSensor_->GetAndConsumeAction();
 
-    log_i("DetectButtonAction: Duration=%lu ms, Action=%s", pressDuration,
-          action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
-          action == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE");
+    if (action != ButtonAction::NONE) {
+        log_i("DetectButtonAction: ButtonSensor reported action: %s",
+              action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
+    }
 
     return action;
 }
@@ -435,6 +430,7 @@ ButtonAction ActionHandler::DetectButtonAction() {
  * Provides immediate long press detection without waiting for button release.
  * Critical for responsive user interface in automotive applications where
  * immediate feedback is expected for long press actions.
+ * Also consumes any pending action from ButtonSensor to prevent double processing.
  */
 ButtonAction ActionHandler::DetectLongPressDuringHold() {
     // Check for long press during button hold (state machine handles this better now)
@@ -442,6 +438,15 @@ ButtonAction ActionHandler::DetectLongPressDuringHold() {
         unsigned long currentTime = millis();
         unsigned long pressDuration = currentTime - buttonPressStartTime_;
         log_i("DetectLongPressDuringHold: Long press detected during hold at %lu ms", pressDuration);
+
+        // Consume any pending action from ButtonSensor to prevent double processing
+        if (buttonSensor_) {
+            ButtonAction sensorAction = buttonSensor_->GetAndConsumeAction();
+            if (sensorAction != ButtonAction::NONE) {
+                log_t("DetectLongPressDuringHold: Consumed ButtonSensor action to prevent double processing");
+            }
+        }
+
         return ButtonAction::LONG_PRESS;
     }
 

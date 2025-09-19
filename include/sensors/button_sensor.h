@@ -47,6 +47,9 @@ class ButtonSensor : public BaseSensor
     // BaseSensor interface
     bool HasStateChanged() override;
 
+    // Action handling
+    ButtonAction GetAndConsumeAction();
+
     // ========== Public Data Members ==========
     // Button timing constants
     static constexpr uint32_t DEBOUNCE_MS = 50;
@@ -77,4 +80,5 @@ class ButtonSensor : public BaseSensor
     // Action detection
     ButtonAction detectedAction_ = ButtonAction::NONE;
     bool actionReady_ = false;
+    bool longPressTriggeredDuringHold_ = false;
 };

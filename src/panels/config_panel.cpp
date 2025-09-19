@@ -218,16 +218,19 @@ void ConfigPanel::HandleShortPress()
  */
 void ConfigPanel::HandleLongPress()
 {
-    log_v("HandleLongPress() called");
+    log_d("ConfigPanel::HandleLongPress() called - currentMenuIndex_: %zu, menuItems_.size(): %zu", currentMenuIndex_, menuItems_.size());
 
     if (!ValidateMenuState()) {
+        log_e("ConfigPanel::HandleLongPress() - ValidateMenuState failed");
         return;
     }
 
     const auto& item = menuItems_[currentMenuIndex_];
-    log_i("Executing option: %s", item.label.c_str());
+    log_d("ConfigPanel::HandleLongPress() - Executing option: %s, actionType: %s, actionParam: %s",
+          item.label.c_str(), item.actionType.c_str(), item.actionParam.c_str());
 
     ExecuteMenuAction(item);
+    log_d("ConfigPanel::HandleLongPress() - ExecuteMenuAction completed");
 }
 
 // ========== Helper Methods for HandleLongPress ==========
@@ -263,35 +266,45 @@ bool ConfigPanel::ValidateMenuState() const
  */
 void ConfigPanel::ExecuteMenuAction(const ConfigComponent::MenuItem& item)
 {
+    log_d("ExecuteMenuAction called with actionType: %s, actionParam: %s", item.actionType.c_str(), item.actionParam.c_str());
+
     MenuActionType actionType = ParseActionType(item.actionType);
+    log_d("ExecuteMenuAction - Parsed actionType enum: %d", static_cast<int>(actionType));
 
     switch (actionType) {
         case MenuActionType::ENTER_SECTION:
+            log_d("ExecuteMenuAction - Executing ENTER_SECTION");
             HandleEnterSection(item.actionParam);
             break;
         case MenuActionType::TOGGLE_BOOLEAN:
+            log_d("ExecuteMenuAction - Executing TOGGLE_BOOLEAN");
             HandleToggleBoolean(item.actionParam);
             break;
         case MenuActionType::SHOW_OPTIONS:
+            log_d("ExecuteMenuAction - Executing SHOW_OPTIONS");
             HandleShowOptions(item.actionParam);
             break;
         case MenuActionType::SET_CONFIG_VALUE:
+            log_d("ExecuteMenuAction - Executing SET_CONFIG_VALUE");
             HandleSetConfigValue(item.actionParam);
             break;
         case MenuActionType::BACK:
+            log_d("ExecuteMenuAction - Executing BACK");
             HandleBackAction(item.actionParam);
             break;
         case MenuActionType::NONE:
-            log_v("Display-only item selected: %s", item.label.c_str());
+            log_d("ExecuteMenuAction - Display-only item selected: %s", item.label.c_str());
             break;
         case MenuActionType::PANEL_EXIT:
+            log_d("ExecuteMenuAction - Executing PANEL_EXIT");
             HandlePanelExit();
             break;
         case MenuActionType::UNKNOWN:
         default:
-            log_w("Unknown action type: %s", item.actionType.c_str());
+            log_w("ExecuteMenuAction - Unknown action type: %s (enum: %d)", item.actionType.c_str(), static_cast<int>(actionType));
             break;
     }
+    log_d("ExecuteMenuAction - Completed");
 }
 
 /**
@@ -381,44 +394,60 @@ void ConfigPanel::HandleShowOptions(const std::string& fullKey)
  */
 void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
 {
+    log_d("HandleSetConfigValue called with actionParam: %s", actionParam.c_str());
+
     size_t colonPos = actionParam.find(':');
     if (colonPos == std::string::npos) {
-        log_w("Invalid set_config_value format: %s", actionParam.c_str());
+        log_e("HandleSetConfigValue - Invalid set_config_value format: %s", actionParam.c_str());
         return;
     }
 
     std::string fullKey = actionParam.substr(0, colonPos);
     std::string value = actionParam.substr(colonPos + 1);
+    log_d("HandleSetConfigValue - Parsed fullKey: %s, value: %s", fullKey.c_str(), value.c_str());
 
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+    log_d("HandleSetConfigValue - Parsed sectionName: %s, itemKey: %s", sectionName.c_str(), itemKey.c_str());
+
     if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+        log_d("HandleSetConfigValue - Found section, searching for item key: %s", itemKey.c_str());
         for (const auto& configItem : section->items) {
             if (configItem.key == itemKey) {
+                log_d("HandleSetConfigValue - Found config item, type: %d", static_cast<int>(configItem.type));
                 // Update the configuration based on type
                 switch (configItem.type) {
                     case Config::ConfigValueType::String:
+                        log_d("HandleSetConfigValue - Updating as String");
                         preferenceService_->UpdateConfig(fullKey, value);
                         break;
                     case Config::ConfigValueType::Integer:
+                        log_d("HandleSetConfigValue - Updating as Integer");
                         preferenceService_->UpdateConfig(fullKey, std::stoi(value));
                         break;
                     case Config::ConfigValueType::Float:
+                        log_d("HandleSetConfigValue - Updating as Float");
                         preferenceService_->UpdateConfig(fullKey, std::stof(value));
                         break;
                     case Config::ConfigValueType::Boolean:
+                        log_d("HandleSetConfigValue - Updating as Boolean");
                         preferenceService_->UpdateConfig(fullKey, value == "true");
                         break;
                     case Config::ConfigValueType::Enum:
+                        log_d("HandleSetConfigValue - Updating as Enum");
                         preferenceService_->UpdateConfig(fullKey, value);
                         break;
                 }
 
                 // Go back to section menu
+                log_d("HandleSetConfigValue - Building section menu for: %s", sectionName.c_str());
                 BuildSectionMenu(sectionName);
-                log_i("Updated %s to %s", fullKey.c_str(), value.c_str());
-                break;
+                log_d("HandleSetConfigValue - Successfully updated %s to %s", fullKey.c_str(), value.c_str());
+                return;
             }
         }
+        log_e("HandleSetConfigValue - Config item not found for key: %s", itemKey.c_str());
+    } else {
+        log_e("HandleSetConfigValue - Section not found: %s", sectionName.c_str());
     }
 }
 
@@ -771,7 +800,7 @@ ConfigComponent::MenuItem ConfigPanel::CreateMenuItemWithSelection(const std::st
 
     // Show marker for current selection
     if (isSelected) {
-        menuItem.label = "► " + label;
+        menuItem.label = "> " + label;
     } else {
         menuItem.label = "  " + label;
     }
