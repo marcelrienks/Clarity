@@ -36,26 +36,22 @@ public:
     // ========== Public Interface Methods ==========
     // IHandler interface - new interrupt system only
     void Process() override;
-    
-    // New Action system interface
-    bool RegisterAction(const Action& action);
-    void EvaluateActions();  // Called every main loop cycle
-    
+
     // Panel management for direct method calls
     void SetCurrentPanel(IActionService* panel);
     void ClearCurrentPanel();
-    
+
     // Button event processing
     void ProcessButtonEvents();
     ButtonAction DetectButtonAction();
     ButtonAction DetectLongPressDuringHold();
-    
+
     // Sensor access for action context
     ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
-    
+
     // Status and diagnostics
-    size_t GetActionCount() const;
-    bool HasPendingActions() const;
+    bool HasPendingAction() const;
+    void ClearPendingAction();
 
     // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
@@ -69,21 +65,16 @@ public:
 private:
     // ========== Private Methods ==========
     // Core action processing
-    void EvaluateIndividualAction(Action& action);
-    bool EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction);
-    void ExecutePendingActions();
-    void ExecuteAction(const Action& action);  // Legacy compatibility
-    bool ShouldTriggerAction(const Action& action);
-    bool ShouldTriggerActionWithDetectedAction(const Action& action, ButtonAction detectedAction);
-    
+    void ExecutePendingAction();
+    void SetPendingAction(ButtonAction actionType);
+
     // Button timing detection
     void UpdateButtonState();
     void StartButtonTiming();
     void StopButtonTiming();
     ButtonAction CalculateButtonAction(unsigned long pressDuration);
-    
+
     // Helper methods
-    Action* FindAction(const char* id);
     bool IsButtonPressed() const;
     const char* StateToString(ButtonState state) const;
     
@@ -93,21 +84,19 @@ private:
     static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Optimal for quick actions
     static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Clear distinction from short press
     static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;      // Not used for detection, kept for compatibility
-    
-    static constexpr size_t MAX_ACTIONS = 8;
-    
-    // Action storage
-    Action actions_[MAX_ACTIONS];
-    size_t actionCount_ = 0;
+
+    // Single pending action (LIFO with size 1)
+    ButtonAction pendingActionType_ = ButtonAction::NONE;
+    bool hasPendingAction_ = false;
 
     // Button state
     ButtonState buttonState_ = ButtonState::IDLE;
     unsigned long buttonPressStartTime_ = 0;
     unsigned long buttonPressEndTime_ = 0;
-    
+
     // Current panel for direct method calls
     class IActionService* currentPanel_ = nullptr;
-    
+
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;
     std::unique_ptr<ButtonSensor> buttonSensor_;

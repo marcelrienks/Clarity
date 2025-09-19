@@ -124,7 +124,9 @@ bool InterruptManager::RegisterAction(const Action& action)
         return false;
     }
 
-    return actionHandler_->RegisterAction(action);
+    // Action registration no longer needed - panels handle actions directly
+    log_w("RegisterAction called but no longer supported - use panel methods directly");
+    return true;
 }
 
 /**
@@ -172,7 +174,8 @@ size_t InterruptManager::GetRegisteredInterruptCount() const
         count += triggerHandler_->GetTriggerCount();
     }
     if (actionHandler_) {
-        count += actionHandler_->GetActionCount();
+        // GetActionCount no longer available - using single pending action
+        count += actionHandler_->HasPendingAction() ? 1 : 0;
     }
     return count;
 }
@@ -185,7 +188,7 @@ bool InterruptManager::HasActiveInterrupts() const
     if (triggerHandler_ && triggerHandler_->HasActiveTriggers()) {
         return true;
     }
-    if (actionHandler_ && actionHandler_->HasPendingActions()) {
+    if (actionHandler_ && actionHandler_->HasPendingAction()) {
         return true;
     }
     return false;

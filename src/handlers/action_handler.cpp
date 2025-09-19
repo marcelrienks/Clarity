@@ -22,7 +22,8 @@
  */
 ActionHandler::ActionHandler(IGpioProvider* gpioProvider)
     : gpioProvider_(gpioProvider),
-      actionCount_(0),
+      pendingActionType_(ButtonAction::NONE),
+      hasPendingAction_(false),
       buttonState_(ButtonState::IDLE),
       buttonPressStartTime_(0),
       buttonPressEndTime_(0)
@@ -56,55 +57,83 @@ ActionHandler::~ActionHandler() {
  * @brief Main processing loop for action detection and execution
  *
  * Called every main loop cycle to provide continuous button monitoring.
- * Updates button state machine, processes button events, evaluates registered
- * actions against detected button events, and executes any triggered actions.
+ * Updates button state machine, processes button events, detects button
+ * actions, and executes any pending action.
  * Designed for real-time responsiveness in automotive applications.
  */
 void ActionHandler::Process() {
-    static unsigned long lastProcessTime = 0;
-    unsigned long currentTime = millis();
-    
-    // Actions are evaluated every main loop cycle (continuous evaluation)
+    // Update button state machine
     UpdateButtonState();
+
+    // Process button events and detect action type
     ProcessButtonEvents();
-    EvaluateActions();
-    
-    // Execute pending actions (this will be called during UI IDLE by InterruptManager)
-    ExecutePendingActions();
+
+    // Execute any pending action immediately
+    if (hasPendingAction_) {
+        ExecutePendingAction();
+    }
+}
+
+// REMOVED: RegisterAction method - no longer using action registry
+// Actions are now handled directly through panel methods
+
+/**
+ * @brief Sets the pending action, replacing any existing one
+ * @param actionType The type of button action to set as pending
+ *
+ * Implements LIFO behavior with size 1 - only the most recent action
+ * is kept. This ensures we always execute the latest user input.
+ */
+void ActionHandler::SetPendingAction(ButtonAction actionType) {
+    pendingActionType_ = actionType;
+    hasPendingAction_ = true;
+
+    log_i("Set pending action: %s",
+          actionType == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
+          actionType == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE");
 }
 
 /**
- * @brief Registers a button action for monitoring and execution
- * @param action Action configuration including ID, press type, and function
- * @return true if registration successful, false if duplicate ID or array full
- *
- * Adds action to internal registry for monitoring. Each action specifies
- * a button press type (short/long) and execution function. Prevents duplicate
- * IDs and enforces maximum action limit for memory safety.
+ * @brief Clears the pending action after execution
  */
-bool ActionHandler::RegisterAction(const Action& action) {
-    if (actionCount_ >= MAX_ACTIONS) {
-        log_e("Cannot register action '%s' - maximum actions reached (%d)",
-              action.id, MAX_ACTIONS);
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ActionHandler",
-                                            "Maximum actions reached - cannot register new action");
-        return false;
+void ActionHandler::ClearPendingAction() {
+    pendingActionType_ = ButtonAction::NONE;
+    hasPendingAction_ = false;
+}
+
+/**
+ * @brief Checks if there's a pending action to execute
+ * @return true if an action is pending
+ */
+bool ActionHandler::HasPendingAction() const {
+    return hasPendingAction_;
+}
+
+/**
+ * @brief Executes the single pending action
+ *
+ * Executes the pending action through the current panel's methods.
+ * Only one action is pending at a time (LIFO with size 1), ensuring
+ * we always execute the most recent user input. Clears the pending
+ * action after execution.
+ */
+void ActionHandler::ExecutePendingAction() {
+    if (!hasPendingAction_ || !currentPanel_) {
+        return;
     }
-    
-    // Check for duplicate ID
-    if (FindAction(action.id) != nullptr) {
-        log_w("Action with ID '%s' already registered", action.id);
-        return false;
+
+    log_i("ExecutePendingAction: Executing %s press",
+          pendingActionType_ == ButtonAction::SHORT_PRESS ? "SHORT" : "LONG");
+
+    // Execute through panel methods
+    if (pendingActionType_ == ButtonAction::SHORT_PRESS) {
+        currentPanel_->HandleShortPress();
+    } else if (pendingActionType_ == ButtonAction::LONG_PRESS) {
+        currentPanel_->HandleLongPress();
     }
-    
-    // Copy action to storage
-    actions_[actionCount_] = action;
-    actions_[actionCount_].hasTriggered = false;  // Always start untriggered
-    actionCount_++;
-    
-    log_i("Registered action '%s' (press type: %d) - total actions now: %zu", 
-          action.id, static_cast<int>(action.pressType), actionCount_);
-    return true;
+
+    // Clear pending action after execution
+    ClearPendingAction();
 }
 
 /**
@@ -115,48 +144,48 @@ bool ActionHandler::RegisterAction(const Action& action) {
  * press events and long press detection during button hold. Prevents
  * duplicate triggering by clearing timing data after evaluation.
  */
-void ActionHandler::EvaluateActions() {
-    // Process each action for trigger conditions
-    
-    // Check if there's a valid button action to evaluate
-    ButtonAction detectedAction = DetectButtonAction();
-    
-    // Also check for long press during button hold (without waiting for release)
-    if (detectedAction == ButtonAction::NONE) {
-        detectedAction = DetectLongPressDuringHold();
-    }
-    
-    bool anyActionTriggered = false;
-    
-    for (size_t i = 0; i < actionCount_; i++) {
-        // Evaluating action
-        
-        if (EvaluateIndividualActionWithDetectedAction(actions_[i], detectedAction)) {
-            anyActionTriggered = true;
-        }
-    }
-    
-    // Clear timing data after all actions have been evaluated to prevent duplicate triggers
-    if (detectedAction != ButtonAction::NONE && anyActionTriggered) {
-        buttonPressStartTime_ = 0;
-        buttonPressEndTime_ = 0;
-    }
-}
-
-/**
- * @brief Evaluates single action for trigger condition
- * @param action Action to evaluate for triggering
- *
- * Legacy method that evaluates individual action using current button state.
- * Marks action as triggered if conditions are met. Superseded by the more
- * efficient EvaluateIndividualActionWithDetectedAction method.
- */
-void ActionHandler::EvaluateIndividualAction(Action& action) {
-    if (ShouldTriggerAction(action)) {
-        action.hasTriggered = true;
-    }
-}
-
+// void ActionHandler::EvaluateActions() {
+//     // Process each action for trigger conditions
+//     
+//     // Check if there's a valid button action to evaluate
+//     ButtonAction detectedAction = DetectButtonAction();
+//     
+//     // Also check for long press during button hold (without waiting for release)
+//     if (detectedAction == ButtonAction::NONE) {
+//         detectedAction = DetectLongPressDuringHold();
+//     }
+//     
+//     bool anyActionTriggered = false;
+//     
+//     for (size_t i = 0; i < actionCount_; i++) {
+//         // Evaluating action
+//         
+//         if (EvaluateIndividualActionWithDetectedAction(actions_[i], detectedAction)) {
+//             anyActionTriggered = true;
+//         }
+//     }
+//     
+//     // Clear timing data after all actions have been evaluated to prevent duplicate triggers
+//     if (detectedAction != ButtonAction::NONE && anyActionTriggered) {
+//         buttonPressStartTime_ = 0;
+//         buttonPressEndTime_ = 0;
+//     }
+// }
+// 
+// /**
+//  * @brief Evaluates single action for trigger condition
+//  * @param action Action to evaluate for triggering
+//  *
+//  * Legacy method that evaluates individual action using current button state.
+//  * Marks action as triggered if conditions are met. Superseded by the more
+//  * efficient EvaluateIndividualActionWithDetectedAction method.
+//  */
+// void ActionHandler::EvaluateIndividualAction(Action& action) {
+//     if (ShouldTriggerAction(action)) {
+//         action.hasTriggered = true;
+//     }
+// }
+// 
 /**
  * @brief Evaluates single action against specific detected button action
  * @param action Action to evaluate for triggering
@@ -167,14 +196,14 @@ void ActionHandler::EvaluateIndividualAction(Action& action) {
  * than re-detecting. Improves performance and ensures consistency across
  * all action evaluations in the same processing cycle.
  */
-bool ActionHandler::EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction) {
-    if (ShouldTriggerActionWithDetectedAction(action, detectedAction)) {
-        action.hasTriggered = true;
-        return true;
-    }
-    return false;
-}
-
+// bool ActionHandler::EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction) {
+//     if (ShouldTriggerActionWithDetectedAction(action, detectedAction)) {
+//         action.hasTriggered = true;
+//         return true;
+//     }
+//     return false;
+// }
+// 
 /**
  * @brief Determines if action should be triggered based on current button state
  * @param action Action to check for trigger conditions
@@ -183,11 +212,11 @@ bool ActionHandler::EvaluateIndividualActionWithDetectedAction(Action& action, B
  * Legacy trigger evaluation that detects current button action and delegates
  * to the optimized ShouldTriggerActionWithDetectedAction method.
  */
-bool ActionHandler::ShouldTriggerAction(const Action& action) {
-    // Check if we have a button event that matches this action's press type
-    ButtonAction detectedAction = DetectButtonAction();
-    return ShouldTriggerActionWithDetectedAction(action, detectedAction);
-}
+// bool ActionHandler::ShouldTriggerAction(const Action& action) {
+//     // Check if we have a button event that matches this action's press type
+//     ButtonAction detectedAction = DetectButtonAction();
+//     return ShouldTriggerActionWithDetectedAction(action, detectedAction);
+// }
 
 /**
  * @brief Determines if action should trigger for specific detected button action
@@ -199,27 +228,27 @@ bool ActionHandler::ShouldTriggerAction(const Action& action) {
  * Ensures actions only trigger once per button event and provides appropriate
  * logging for automotive diagnostics.
  */
-bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, ButtonAction detectedAction) {
-    if (detectedAction == ButtonAction::NONE) {
-        return false;
-    }
-    
-    // Action evaluation completed
-    
-    // Match detected button action to action press type
-    if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
-        bool shouldTrigger = !action.hasTriggered;
-        if (shouldTrigger) log_t("Button action detected: SHORT_PRESS");
-        return shouldTrigger;  // Only trigger once per press event
-    }
-    else if (action.pressType == ActionPress::LONG && detectedAction == ButtonAction::LONG_PRESS) {
-        bool shouldTrigger = !action.hasTriggered;
-        if (shouldTrigger) log_t("Button action detected: LONG_PRESS");
-        return shouldTrigger;  // Only trigger once per press event
-    }
-    
-    return false;
-}
+// bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, ButtonAction detectedAction) {
+//     if (detectedAction == ButtonAction::NONE) {
+//         return false;
+//     }
+//     
+//     // Action evaluation completed
+//     
+//     // Match detected button action to action press type
+//     if (action.pressType == ActionPress::SHORT && detectedAction == ButtonAction::SHORT_PRESS) {
+//         bool shouldTrigger = !action.hasTriggered;
+//         if (shouldTrigger) log_t("Button action detected: SHORT_PRESS");
+//         return shouldTrigger;  // Only trigger once per press event
+//     }
+//     else if (action.pressType == ActionPress::LONG && detectedAction == ButtonAction::LONG_PRESS) {
+//         bool shouldTrigger = !action.hasTriggered;
+//         if (shouldTrigger) log_t("Button action detected: LONG_PRESS");
+//         return shouldTrigger;  // Only trigger once per press event
+//     }
+//
+//     return false;
+// }
 
 /**
  * @brief Executes all actions that have been triggered
@@ -229,67 +258,67 @@ bool ActionHandler::ShouldTriggerActionWithDetectedAction(const Action& action, 
  * Called during UI idle periods to ensure smooth user experience. Clears
  * trigger flags after execution to prevent duplicate execution.
  */
-void ActionHandler::ExecutePendingActions() {
-    // Process all pending actions using the documented Execute method
-    for (size_t i = 0; i < actionCount_; i++) {
-        Action& action = actions_[i];
-        if (action.hasTriggered) {
-            log_i("ExecutePendingActions: Executing triggered action '%s' (type: %s)", 
-                  action.id, action.pressType == ActionPress::SHORT ? "SHORT" : "LONG");
-            
-            // Use current panel methods if available, otherwise use action's own function
-            if (action.pressType == ActionPress::SHORT && currentPanel_) {
-                log_i("Executing panel SHORT press method for action '%s'", action.id);
-                currentPanel_->HandleShortPress();
-                action.hasTriggered = false;  // Clear manually since we're using panel method
-            }
-            else if (action.pressType == ActionPress::LONG && currentPanel_) {
-                log_i("Executing panel LONG press method for action '%s'", action.id);
-                currentPanel_->HandleLongPress();
-                action.hasTriggered = false;  // Clear manually since we're using panel method
-            }
-            else {
-                log_i("Using action's own execute function for '%s'", action.id);
-                // Use the documented Execute method
-                action.Execute();  // This will clear hasTriggered automatically
-            }
-        }
-    }
-}
-
-/**
- * @brief Executes a specific action immediately
- * @param action Action to execute
- *
- * Direct action execution that uses either injected panel functions or
- * the action's own execution function. Provides immediate execution without
- * waiting for the normal pending action processing cycle.
- */
-void ActionHandler::ExecuteAction(const Action& action) {
-    // Execute action based on press type
-    // Check if we should use panel function or action's own function
-    if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
-        currentShortPressFunc_(currentPanelContext_);
-    }
-    else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
-        currentLongPressFunc_(currentPanelContext_);
-    }
-    else if (action.executeFunc) {
-        action.executeFunc();
-    }
-    else {
-        log_w("No function to execute for action '%s'", action.id);
-    }
-}
-
-/**
- * @brief Updates button state machine based on current GPIO reading
- *
- * Core state machine that tracks button press lifecycle from IDLE through
- * PRESSED to RELEASED or LONG_PRESS_TRIGGERED. Handles timing capture for
- * press duration calculation and provides debug logging for automotive
- * diagnostics. Essential for reliable button event detection.
- */
+// void ActionHandler::ExecutePendingActions() {
+//     // Process all pending actions using the documented Execute method
+//     for (size_t i = 0; i < actionCount_; i++) {
+//         Action& action = actions_[i];
+//         if (action.hasTriggered) {
+//             log_i("ExecutePendingActions: Executing triggered action '%s' (type: %s)", 
+//                   action.id, action.pressType == ActionPress::SHORT ? "SHORT" : "LONG");
+//             
+//             // Use current panel methods if available, otherwise use action's own function
+//             if (action.pressType == ActionPress::SHORT && currentPanel_) {
+//                 log_i("Executing panel SHORT press method for action '%s'", action.id);
+//                 currentPanel_->HandleShortPress();
+//                 action.hasTriggered = false;  // Clear manually since we're using panel method
+//             }
+//             else if (action.pressType == ActionPress::LONG && currentPanel_) {
+//                 log_i("Executing panel LONG press method for action '%s'", action.id);
+//                 currentPanel_->HandleLongPress();
+//                 action.hasTriggered = false;  // Clear manually since we're using panel method
+//             }
+//             else {
+//                 log_i("Using action's own execute function for '%s'", action.id);
+//                 // Use the documented Execute method
+//                 action.Execute();  // This will clear hasTriggered automatically
+//             }
+//         }
+//     }
+// }
+// 
+// /**
+//  * @brief Executes a specific action immediately
+//  * @param action Action to execute
+//  *
+//  * Direct action execution that uses either injected panel functions or
+//  * the action's own execution function. Provides immediate execution without
+//  * waiting for the normal pending action processing cycle.
+//  */
+// void ActionHandler::ExecuteAction(const Action& action) {
+//     // Execute action based on press type
+//     // Check if we should use panel function or action's own function
+//     if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
+//         currentShortPressFunc_(currentPanelContext_);
+//     }
+//     else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
+//         currentLongPressFunc_(currentPanelContext_);
+//     }
+//     else if (action.executeFunc) {
+//         action.executeFunc();
+//     }
+//     else {
+//         log_w("No function to execute for action '%s'", action.id);
+//     }
+// }
+// 
+// /**
+//  * @brief Updates button state machine based on current GPIO reading
+//  *
+//  * Core state machine that tracks button press lifecycle from IDLE through
+//  * PRESSED to RELEASED or LONG_PRESS_TRIGGERED. Handles timing capture for
+//  * press duration calculation and provides debug logging for automotive
+//  * diagnostics. Essential for reliable button event detection.
+// */
 void ActionHandler::UpdateButtonState() {
     bool currentPressed = IsButtonPressed();
     unsigned long currentTime = millis();
@@ -354,18 +383,24 @@ const char* ActionHandler::StateToString(ButtonState state) const {
 }
 
 /**
- * @brief Processes button state transitions and manages action flags
+ * @brief Processes button state changes and sets pending action
  *
- * Handles state-dependent event processing, particularly resetting triggered
- * flags when button returns to IDLE state. Ensures actions can be triggered
- * again for subsequent button presses.
+ * Detects button actions and stores them as pending. Only the most recent
+ * action is kept (LIFO with size 1). Called every loop cycle to ensure
+ * responsive button handling.
  */
 void ActionHandler::ProcessButtonEvents() {
-    // Reset triggered flags when button transitions to idle
-    if (buttonState_ == ButtonState::IDLE) {
-        for (size_t i = 0; i < actionCount_; i++) {
-            actions_[i].hasTriggered = false;
-        }
+    // Detect button action and set as pending if found
+    ButtonAction detectedAction = DetectButtonAction();
+
+    // Also check for long press during hold
+    if (detectedAction == ButtonAction::NONE) {
+        detectedAction = DetectLongPressDuringHold();
+    }
+
+    // Set pending action (replaces any existing pending action)
+    if (detectedAction != ButtonAction::NONE) {
+        SetPendingAction(detectedAction);
     }
 }
 
@@ -505,14 +540,14 @@ bool ActionHandler::IsButtonPressed() const {
  * Used for action management operations like unregistration and duplicate
  * prevention during registration.
  */
-Action* ActionHandler::FindAction(const char* id) {
-    for (size_t i = 0; i < actionCount_; i++) {
-        if (strcmp(actions_[i].id, id) == 0) {
-            return &actions_[i];
-        }
-    }
-    return nullptr;
-}
+// Action* ActionHandler::FindAction(const char* id) {
+//     for (size_t i = 0; i < actionCount_; i++) {
+//         if (strcmp(actions_[i].id, id) == 0) {
+//             return &actions_[i];
+//         }
+//     }
+//     return nullptr;
+// }
 
 // Function injection system
 /**
@@ -552,9 +587,9 @@ void ActionHandler::ClearCurrentPanel() {
  * Provides count of registered actions for diagnostic purposes and
  * capacity management. Useful for debugging action registration issues.
  */
-size_t ActionHandler::GetActionCount() const {
-    return actionCount_;
-}
+// size_t ActionHandler::GetActionCount() const {
+//     return actionCount_;
+// }
 
 /**
  * @brief Checks if there are actions waiting to be executed
@@ -564,8 +599,8 @@ size_t ActionHandler::GetActionCount() const {
  * Used by InterruptManager to coordinate action execution during UI idle
  * periods for optimal user experience.
  */
-bool ActionHandler::HasPendingActions() const {
-    // Check if any action is waiting to be triggered
-    ButtonAction currentAction = const_cast<ActionHandler*>(this)->DetectButtonAction();
-    return currentAction != ButtonAction::NONE;
-}
+// bool ActionHandler::HasPendingActions() const {
+//     // Check if any action is waiting to be triggered
+//     ButtonAction currentAction = const_cast<ActionHandler*>(this)->DetectButtonAction();
+//     return currentAction != ButtonAction::NONE;
+// }

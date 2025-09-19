@@ -945,37 +945,7 @@ static void OemOilPanelLongPress(void* panelContext)
  * the oil panel does not respond to short presses, so this returns a no-op
  * function that maintains the interface contract.
  */
-void (*OemOilPanel::GetShortPressFunction())(void* panelContext)
-{
-    return OemOilPanelShortPress;
-}
-
-/**
- * @brief Gets the long press callback function for this panel
- * @return Function pointer to the long press handler
- *
- * Returns the static callback function that will be invoked when a long
- * button press is detected while this panel is active. The oil panel responds
- * to long presses by navigating to the configuration panel.
- */
-void (*OemOilPanel::GetLongPressFunction())(void* panelContext)
-{
-    return OemOilPanelLongPress;
-}
-
-/**
- * @brief Gets the panel context pointer for callback functions
- * @return Pointer to this panel instance
- *
- * Returns a void pointer to this panel instance that will be passed to
- * the button press callback functions. Enables the static callback functions
- * to access the specific panel instance that should handle the events.
- */
-void* OemOilPanel::GetPanelContext()
-{
-    return this;
-}
-
+ 
 /**
  * @brief Handles long button press events for panel navigation
  *
@@ -984,6 +954,18 @@ void* OemOilPanel::GetPanelContext()
  * from the main oil monitoring display. Includes error handling for cases where
  * the panel service is not available.
  */
+
+/**
+ * @brief Handles short button press during oil monitoring display
+ *
+ * Currently provides no-op functionality. The OEM oil panel
+ * is primarily a monitoring display without direct interaction.
+ */
+void OemOilPanel::HandleShortPress()
+{
+    // No action on short press - monitoring panel
+    log_v("OemOilPanel short press - no action");
+}
 void OemOilPanel::HandleLongPress()
 {
     if (panelService_)

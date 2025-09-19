@@ -68,12 +68,11 @@ class OemOilPanel : public IPanel
     void ApplyCurrentSensorSettings();
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
+    // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     
-    // Public action handler
-    void HandleLongPress();
+    // Public action handlers
+    void HandleShortPress() override;
+    void HandleLongPress() override;
 
     // ========== Public Data Members ==========
     static constexpr int32_t _animation_duration = 750;

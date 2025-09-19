@@ -330,37 +330,17 @@ static void SplashPanelLongPress(void* panelContext)
  * handles short press events for this panel. Short press is disabled during
  * splash screen to maintain animation integrity.
  */
-void (*SplashPanel::GetShortPressFunction())(void* panelContext)
-{
-    return SplashPanelShortPress;
-}
-
 /**
- * @brief Gets the long press handler function pointer
- * @return Function pointer for long press handling
+ * @brief Handles short button press during splash screen display
  *
- * Part of the IActionService interface. Returns the static function that
- * handles long press events for this panel. Long press loads the configuration
- * panel for quick access to settings during startup.
+ * Currently provides no-op functionality during splash screen.
+ * The splash screen is intended to display branding without interruption.
  */
-void (*SplashPanel::GetLongPressFunction())(void* panelContext)
+void SplashPanel::HandleShortPress()
 {
-    return SplashPanelLongPress;
+    // No action on short press - let splash screen complete normally
+    log_v("SplashPanel short press - no action");
 }
-
-/**
- * @brief Gets the panel instance pointer for button handler context
- * @return Pointer to this panel instance
- *
- * Part of the IActionService interface. Provides the panel instance as
- * context for button handler functions. This allows static button handlers
- * to access the specific panel instance that should handle the action.
- */
-void* SplashPanel::GetPanelContext()
-{
-    return this;
-}
-
 /**
  * @brief Handles long press action by loading configuration panel
  *

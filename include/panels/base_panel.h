@@ -114,7 +114,7 @@ public:
      * @brief Get panel instance pointer for button handler context
      * @return Pointer to this panel instance
      */
-    void* GetPanelContext() final;
+    // Old GetPanelContext method removed - no longer needed
 
 protected:
     // ========== Protected Methods ==========

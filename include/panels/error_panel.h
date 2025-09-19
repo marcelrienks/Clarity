@@ -55,9 +55,7 @@ class ErrorPanel : public IPanel
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
+    // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     
     // Public action handlers
     void HandleShortPress();

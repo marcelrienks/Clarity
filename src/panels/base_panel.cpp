@@ -114,26 +114,6 @@ void BasePanel::SetManagers(IPanelService* panelService, IStyleService* styleSer
 /**
  * @brief Get short press handler function pointer
  */
-void (*BasePanel::GetShortPressFunction())(void* panelContext)
-{
-    return BasePanelShortPress;
-}
-
-/**
- * @brief Get long press handler function pointer
- */
-void (*BasePanel::GetLongPressFunction())(void* panelContext)
-{
-    return BasePanelLongPress;
-}
-
-/**
- * @brief Get panel instance pointer for button handler context
- */
-void* BasePanel::GetPanelContext()
-{
-    return this;
-}
 
 // ========== Static Methods ==========
 

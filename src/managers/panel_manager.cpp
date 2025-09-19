@@ -307,11 +307,7 @@ void PanelManager::HandleShortPress() {
     // Try to cast panel to IActionService to handle press
     IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
     if (actionService) {
-        void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
-        void* panelContext = actionService->GetPanelContext();
-        if (shortPressFunc) {
-            shortPressFunc(panelContext);
-        }
+        actionService->HandleShortPress();
     } else {
         // Current panel does not support button actions
     }
@@ -336,11 +332,7 @@ void PanelManager::HandleLongPress() {
     // Try to cast panel to IActionService to handle press
     IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
     if (actionService) {
-        void (*longPressFunc)(void* context) = actionService->GetLongPressFunction();
-        void* panelContext = actionService->GetPanelContext();
-        if (longPressFunc) {
-            longPressFunc(panelContext);
-        }
+        actionService->HandleLongPress();
     }
 }
 

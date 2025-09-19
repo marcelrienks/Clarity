@@ -342,37 +342,7 @@ static void ErrorPanelLongPress(void* panelContext)
  * button press is detected while this panel is active. The returned function
  * takes a panel context pointer and handles error cycling through the list.
  */
-void (*ErrorPanel::GetShortPressFunction())(void* panelContext)
-{
-    return ErrorPanelShortPress;
-}
-
-/**
- * @brief Gets the long press callback function for this panel
- * @return Function pointer to the long press handler
- *
- * Returns the static callback function that will be invoked when a long
- * button press is detected while this panel is active. The returned function
- * takes a panel context pointer and handles error clearing and panel exit.
- */
-void (*ErrorPanel::GetLongPressFunction())(void* panelContext)
-{
-    return ErrorPanelLongPress;
-}
-
-/**
- * @brief Gets the panel context pointer for callback functions
- * @return Pointer to this panel instance
- *
- * Returns a void pointer to this panel instance that will be passed to
- * the button press callback functions. This enables the static callback
- * functions to access the specific panel instance that should handle the event.
- */
-void* ErrorPanel::GetPanelContext()
-{
-    return this;
-}
-
+// REMOVED: 
 /**
  * @brief Handles short button press events for error cycling
  *

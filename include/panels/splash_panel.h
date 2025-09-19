@@ -59,12 +59,11 @@ class SplashPanel : public IPanel
     void SetPreferenceService(IPreferenceService *preferenceService);
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
+    // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     
-    // Public action handler
-    void HandleLongPress();
+    // Public action handlers
+    void HandleShortPress() override;
+    void HandleLongPress() override;
 
     // Configuration management
     void RegisterConfiguration();
