@@ -322,7 +322,7 @@ void StyleManager::RegisterConfiguration()
 
     // Brightness setting (future feature)
     ConfigItem brightnessItem("brightness", "Brightness", ConfigValueType::Integer,
-                             80, ConfigMetadata("0-100", "%"));
+                             80, ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%"));
 
     section.AddItem(themeItem);
     section.AddItem(brightnessItem);

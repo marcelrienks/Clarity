@@ -316,13 +316,13 @@ void OilTemperatureSensor::RegisterConfiguration()
     section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
         500, ConfigMetadata("250,500,1000,2000")));
 
-    // Calibration offset - float with range validation (-5.0 to +5.0)
+    // Calibration offset - float with selectable values
     section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
-        0.0f, ConfigMetadata("-5.0,5.0")));
+        0.0f, ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0")));
 
-    // Calibration scale - float with range validation (0.9 to 1.1)
+    // Calibration scale - float with selectable values
     section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
-        1.0f, ConfigMetadata("0.9,1.1")));
+        1.0f, ConfigMetadata("0.9,0.95,1.0,1.05,1.1")));
 
     // Register with preference service for persistence and UI generation
     preferenceService_->RegisterConfigSection(section);

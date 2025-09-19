@@ -93,7 +93,6 @@ void InterruptManager::Process()
     if (IsUIIdle() && triggerHandler_) {
         triggerHandler_->Process();
     }
-
 }
 
 /**
@@ -132,20 +131,20 @@ bool InterruptManager::RegisterAction(const Action& action)
  * @brief Update panel button handler functions for current panel
  * @details Called when switching panels to update button behavior
  */
-void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context)
+void InterruptManager::SetCurrentPanel(IActionService* panel)
 {
-    log_v("UpdatePanelFunctions() called");
+    log_v("SetCurrentPanel() called");
 
     if (!actionHandler_) {
-        log_e("Cannot update panel functions - ActionHandler not initialized. Button input will not work!");
+        log_e("Cannot set current panel - ActionHandler not initialized. Button input will not work!");
         ErrorManager::Instance().ReportCriticalError("InterruptManager",
-                                                     "Cannot update panel functions - button input will not work");
+                                                     "Cannot set current panel - button input will not work");
         return;
     }
 
-    // Delegate to ActionHandler to update button behavior
-    actionHandler_->UpdatePanelFunctions(shortPressFunc, longPressFunc, context);
-    log_i("Updated panel functions in ActionHandler");
+    // Delegate to ActionHandler to set current panel
+    actionHandler_->SetCurrentPanel(panel);
+    log_i("Set current panel in ActionHandler");
 }
 
 /**

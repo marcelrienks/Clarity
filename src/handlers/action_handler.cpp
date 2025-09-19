@@ -1,4 +1,5 @@
 #include "handlers/action_handler.h"
+#include "interfaces/i_action_service.h"
 #include "managers/error_manager.h"
 #include "sensors/button_sensor.h"
 #include "hardware/gpio_pins.h"
@@ -236,16 +237,16 @@ void ActionHandler::ExecutePendingActions() {
             log_i("ExecutePendingActions: Executing triggered action '%s' (type: %s)", 
                   action.id, action.pressType == ActionPress::SHORT ? "SHORT" : "LONG");
             
-            // Use injected panel functions if available, otherwise use action's own function
-            if (action.pressType == ActionPress::SHORT && currentShortPressFunc_) {
-                log_i("Executing injected SHORT press function for action '%s'", action.id);
-                currentShortPressFunc_(currentPanelContext_);
-                action.hasTriggered = false;  // Clear manually since we're using injected function
+            // Use current panel methods if available, otherwise use action's own function
+            if (action.pressType == ActionPress::SHORT && currentPanel_) {
+                log_i("Executing panel SHORT press method for action '%s'", action.id);
+                currentPanel_->HandleShortPress();
+                action.hasTriggered = false;  // Clear manually since we're using panel method
             }
-            else if (action.pressType == ActionPress::LONG && currentLongPressFunc_) {
-                log_i("Executing injected LONG press function for action '%s'", action.id);
-                currentLongPressFunc_(currentPanelContext_);
-                action.hasTriggered = false;  // Clear manually since we're using injected function
+            else if (action.pressType == ActionPress::LONG && currentPanel_) {
+                log_i("Executing panel LONG press method for action '%s'", action.id);
+                currentPanel_->HandleLongPress();
+                action.hasTriggered = false;  // Clear manually since we're using panel method
             }
             else {
                 log_i("Using action's own execute function for '%s'", action.id);
@@ -524,11 +525,9 @@ Action* ActionHandler::FindAction(const char* id) {
  * execution. Enables dynamic button behavior changes during panel transitions
  * while maintaining consistent action registration.
  */
-void ActionHandler::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context) {
-    currentShortPressFunc_ = shortPressFunc;
-    currentLongPressFunc_ = longPressFunc;
-    currentPanelContext_ = context;
-    // Panel functions updated
+void ActionHandler::SetCurrentPanel(IActionService* panel) {
+    currentPanel_ = panel;
+    log_i("Set current panel: %p", (void*)panel);
 }
 
 /**
@@ -538,10 +537,9 @@ void ActionHandler::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*l
  * Called during panel cleanup to ensure clean state for next panel.
  * Prevents accidental execution of previous panel's functions.
  */
-void ActionHandler::ClearPanelFunctions() {
-    currentShortPressFunc_ = nullptr;
-    currentLongPressFunc_ = nullptr;
-    currentPanelContext_ = nullptr;
+void ActionHandler::ClearCurrentPanel() {
+    currentPanel_ = nullptr;
+    log_i("Cleared current panel");
 }
 
 // Handler interface implementation complete

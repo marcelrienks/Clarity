@@ -471,24 +471,17 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
     }
 
     IActionService* actionService = dynamic_cast<IActionService*>(panel);
-    void (*shortPressFunc)(void* context) = actionService->GetShortPressFunction();
-    void (*longPressFunc)(void* context) = actionService->GetLongPressFunction();
-    void* panelContext = actionService->GetPanelContext();
-
-    log_i("UpdatePanelButtonFunctions: Extracted functions - short=%p, long=%p, context=%p",
-          (void*)shortPressFunc, (void*)longPressFunc, panelContext);
-
-    if (!shortPressFunc || !longPressFunc)
-    {
-        log_e("UpdatePanelButtonFunctions: Panel provided null button functions - short=%p, long=%p",
-              (void*)shortPressFunc, (void*)longPressFunc);
+    if (!actionService) {
+        log_e("UpdatePanelButtonFunctions: Panel does not implement IActionService");
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
-                                            "Panel provided null button functions");
+                                            "Panel does not implement IActionService");
         return;
     }
 
-    // Inject functions into universal button interrupts
-    interruptManager_->UpdatePanelFunctions(shortPressFunc, longPressFunc, panelContext);
+    log_i("UpdatePanelButtonFunctions: Setting current panel - panel=%p", (void*)actionService);
+
+    // Set the current panel for direct method calls
+    interruptManager_->SetCurrentPanel(actionService);
 
     log_i("UpdatePanelButtonFunctions: Successfully updated universal button interrupts with panel functions");
 }

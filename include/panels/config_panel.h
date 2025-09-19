@@ -63,26 +63,61 @@ class ConfigPanel : public IPanel
     void SetPreferenceService(IPreferenceService *preferenceService);
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
-    
-    // Public action handlers
-    void HandleShortPress();
-    void HandleLongPress();
+    void HandleShortPress() override;
+    void HandleLongPress() override;
 
   private:
+    // ========== Private Types ==========
+
+    enum class MenuActionType {
+        ENTER_SECTION,
+        TOGGLE_BOOLEAN,
+        SHOW_OPTIONS,
+        SET_CONFIG_VALUE,
+        BACK,
+        NONE,
+        PANEL_EXIT,
+        UNKNOWN
+    };
+
     // ========== Private Methods ==========
 
     // Dynamic configuration methods
     void BuildDynamicMenus();
     void BuildSectionMenu(const std::string& sectionName);
     std::string FormatItemLabel(const Config::ConfigItem& item) const;
-    void ShowEnumSelector(const std::string& fullKey, const Config::ConfigItem& item);
-    void ShowNumericEditor(const std::string& fullKey, const Config::ConfigItem& item);
+    void ShowOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item);
     void ShowBooleanToggle(const std::string& fullKey, const Config::ConfigItem& item);
+
+    // Extracted ShowOptionsMenu helpers
+    void ShowEnumOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item, const std::vector<std::string>& options);
+    void ShowNumericOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item);
+    void ShowStringOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item);
+    ConfigComponent::MenuItem CreateMenuItemWithSelection(const std::string& label, const std::string& fullKey, const std::string& value, bool isSelected) const;
+
+    // Extracted ShowNumericOptionsMenu helpers
+    struct NumericRange {
+        float minValue;
+        float maxValue;
+        float currentValue;
+    };
+    NumericRange ParseNumericRange(const Config::ConfigItem& item) const;
+    std::vector<float> GenerateNumericValues(const NumericRange& range, const Config::ConfigItem& item) const;
+    std::string FormatNumericValue(float value, const Config::ConfigItem& item) const;
+
     std::vector<std::string> ParseOptions(const std::string& constraints) const;
     std::pair<std::string, std::string> ParseConfigKey(const std::string& fullKey) const;
+
+    // Helper methods for HandleLongPress
+    bool ValidateMenuState() const;
+    void ExecuteMenuAction(const ConfigComponent::MenuItem& item);
+    MenuActionType ParseActionType(const std::string& actionTypeStr) const;
+    void HandleEnterSection(const std::string& sectionName);
+    void HandleToggleBoolean(const std::string& fullKey);
+    void HandleShowOptions(const std::string& fullKey);
+    void HandleSetConfigValue(const std::string& actionParam);
+    void HandleBackAction(const std::string& actionParam);
+    void HandlePanelExit();
 
     // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);

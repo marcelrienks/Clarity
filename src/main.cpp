@@ -56,7 +56,7 @@ void registerSystemConfiguration()
 
     // Global update rate for sensors and components
     section.AddItem(ConfigItem("update_rate", "Update Rate", ConfigValueType::Integer,
-        500, ConfigMetadata("100-2000", "ms")));
+        500, ConfigMetadata("100,250,500,750,1000,1500,2000", "ms")));
 
     // Splash screen control
     section.AddItem(ConfigItem("show_splash", "Show Splash", ConfigValueType::Boolean,

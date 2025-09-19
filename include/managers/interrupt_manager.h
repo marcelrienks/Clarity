@@ -39,7 +39,7 @@ public:
     void Process();
     bool RegisterTrigger(const Trigger& trigger);
     bool RegisterAction(const Action& action);
-    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
+    void SetCurrentPanel(class IActionService* panel);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
 
     /**

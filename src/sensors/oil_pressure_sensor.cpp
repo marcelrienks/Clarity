@@ -315,11 +315,11 @@ void OilPressureSensor::RegisterConfiguration()
 
     // Calibration offset
     section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
-        0.0f, ConfigMetadata("-1.0,1.0")));
+        0.0f, ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0")));
 
     // Calibration scale
     section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
-        1.0f, ConfigMetadata("0.9,1.1")));
+        1.0f, ConfigMetadata("0.9,0.95,1.0,1.05,1.1")));
 
     preferenceService_->RegisterConfigSection(section);
     log_i("Registered oil pressure sensor configuration");

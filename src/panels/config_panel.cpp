@@ -8,6 +8,7 @@
 #include <cstring>
 #include <sstream>
 #include <cctype>
+#include <unordered_map>
 
 /**
  * @brief Constructs configuration panel with required service dependencies
@@ -182,57 +183,15 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     }
 }
 
-// ========== IActionService Interface Implementation ==========
-
-static void ConfigPanelShortPress(void* panelContext)
-{
-    log_v("ConfigPanelShortPress() called");
-    auto* panel = static_cast<ConfigPanel*>(panelContext);
-
-    if (panel) {
-        panel->HandleShortPress();
-    }
-}
-
-static void ConfigPanelLongPress(void* panelContext)
-{
-    log_v("ConfigPanelLongPress() called");
-    auto* panel = static_cast<ConfigPanel*>(panelContext);
-
-    if (panel) {
-        panel->HandleLongPress();
-    }
-}
-
-/**
- * @brief Gets the short press callback function for this panel
- * @return Function pointer to the short press handler
- */
-void (*ConfigPanel::GetShortPressFunction())(void* panelContext)
-{
-    return ConfigPanelShortPress;
-}
-
-/**
- * @brief Gets the long press callback function for this panel
- * @return Function pointer to the long press handler
- */
-void (*ConfigPanel::GetLongPressFunction())(void* panelContext)
-{
-    return ConfigPanelLongPress;
-}
-
-/**
- * @brief Gets the panel context for button callbacks
- * @return Pointer to this panel instance
- */
-void* ConfigPanel::GetPanelContext()
-{
-    return this;
-}
-
 // ========== Public Action Handlers ==========
 
+/**
+ * @brief Handles short button press to cycle through menu items
+ *
+ * Increments the current menu index to navigate to the next menu item.
+ * Wraps around to the first item when reaching the end of the menu.
+ * Updates the UI component to reflect the new selection.
+ */
 void ConfigPanel::HandleShortPress()
 {
     log_v("HandleShortPress() called");
@@ -248,106 +207,271 @@ void ConfigPanel::HandleShortPress()
     if (componentInitialized_) {
         configComponent_.SetCurrentIndex(currentMenuIndex_);
     }
-
-    log_i("Menu index: %zu/%zu", currentMenuIndex_, menuItems_.size());
 }
 
+/**
+ * @brief Handles long button press to execute selected menu action
+ *
+ * Validates the current menu state and executes the action associated
+ * with the selected menu item. Actions include entering sections,
+ * toggling booleans, showing options, or exiting the panel.
+ */
 void ConfigPanel::HandleLongPress()
 {
     log_v("HandleLongPress() called");
 
-    if (menuItems_.empty()) {
-        log_w("No menu items available");
-        return;
-    }
-
-    if (currentMenuIndex_ >= menuItems_.size()) {
-        log_w("Invalid menu index: %zu", currentMenuIndex_);
+    if (!ValidateMenuState()) {
         return;
     }
 
     const auto& item = menuItems_[currentMenuIndex_];
     log_i("Executing option: %s", item.label.c_str());
 
-    // Handle different action types for dynamic configuration
-    if (item.actionType == "enter_section") {
-        // Navigate to section menu
-        currentSectionName_ = item.actionParam;
-        BuildSectionMenu(currentSectionName_);
-    } else if (item.actionType == "toggle_boolean") {
-        // Handle boolean toggle
-        auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
-        if (auto section = preferenceService_->GetConfigSection(sectionName)) {
-            for (const auto& configItem : section->items) {
-                if (configItem.key == itemKey) {
-                    ShowBooleanToggle(item.actionParam, configItem);
-                    break;
-                }
+    ExecuteMenuAction(item);
+}
+
+// ========== Helper Methods for HandleLongPress ==========
+
+/**
+ * @brief Validates the current menu state before executing actions
+ * @return true if menu state is valid, false otherwise
+ *
+ * Checks if menu items exist and current index is within valid range.
+ * Logs warnings for invalid states to aid debugging.
+ */
+bool ConfigPanel::ValidateMenuState() const
+{
+    if (menuItems_.empty()) {
+        log_w("No menu items available");
+        return false;
+    }
+
+    if (currentMenuIndex_ >= menuItems_.size()) {
+        log_w("Invalid menu index: %zu", currentMenuIndex_);
+        return false;
+    }
+
+    return true;
+}
+
+/**
+ * @brief Executes the action associated with a menu item
+ * @param item The menu item containing action type and parameters
+ *
+ * Parses the action type and delegates to appropriate handler method.
+ * Supports section navigation, value toggling, options display, and panel exit.
+ */
+void ConfigPanel::ExecuteMenuAction(const ConfigComponent::MenuItem& item)
+{
+    MenuActionType actionType = ParseActionType(item.actionType);
+
+    switch (actionType) {
+        case MenuActionType::ENTER_SECTION:
+            HandleEnterSection(item.actionParam);
+            break;
+        case MenuActionType::TOGGLE_BOOLEAN:
+            HandleToggleBoolean(item.actionParam);
+            break;
+        case MenuActionType::SHOW_OPTIONS:
+            HandleShowOptions(item.actionParam);
+            break;
+        case MenuActionType::SET_CONFIG_VALUE:
+            HandleSetConfigValue(item.actionParam);
+            break;
+        case MenuActionType::BACK:
+            HandleBackAction(item.actionParam);
+            break;
+        case MenuActionType::NONE:
+            log_v("Display-only item selected: %s", item.label.c_str());
+            break;
+        case MenuActionType::PANEL_EXIT:
+            HandlePanelExit();
+            break;
+        case MenuActionType::UNKNOWN:
+        default:
+            log_w("Unknown action type: %s", item.actionType.c_str());
+            break;
+    }
+}
+
+/**
+ * @brief Parses string action type to enum value
+ * @param actionTypeStr String representation of action type
+ * @return Corresponding MenuActionType enum value
+ *
+ * Maps string action types from menu items to strongly-typed enum values.
+ * Returns UNKNOWN for unrecognized action types.
+ */
+ConfigPanel::MenuActionType ConfigPanel::ParseActionType(const std::string& actionTypeStr) const
+{
+    static const std::unordered_map<std::string, MenuActionType> actionTypeMap = {
+        {"enter_section", MenuActionType::ENTER_SECTION},
+        {"toggle_boolean", MenuActionType::TOGGLE_BOOLEAN},
+        {"show_options", MenuActionType::SHOW_OPTIONS},
+        {"set_config_value", MenuActionType::SET_CONFIG_VALUE},
+        {"back", MenuActionType::BACK},
+        {"none", MenuActionType::NONE},
+        {"panel_exit", MenuActionType::PANEL_EXIT}
+    };
+
+    auto it = actionTypeMap.find(actionTypeStr);
+    return (it != actionTypeMap.end()) ? it->second : MenuActionType::UNKNOWN;
+}
+
+/**
+ * @brief Handles entering a configuration section
+ * @param sectionName Name of the section to enter
+ *
+ * Stores the current section name and builds the section-specific menu.
+ * Used when user selects a configuration category from main menu.
+ */
+void ConfigPanel::HandleEnterSection(const std::string& sectionName)
+{
+    currentSectionName_ = sectionName;
+    BuildSectionMenu(currentSectionName_);
+}
+
+/**
+ * @brief Handles toggling of boolean configuration values
+ * @param fullKey Full configuration key (section.item format)
+ *
+ * Retrieves the configuration item, toggles its boolean value,
+ * and refreshes the menu to show the updated state.
+ */
+void ConfigPanel::HandleToggleBoolean(const std::string& fullKey)
+{
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+    if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+        for (const auto& configItem : section->items) {
+            if (configItem.key == itemKey) {
+                ShowBooleanToggle(fullKey, configItem);
+                break;
             }
         }
-    } else if (item.actionType == "show_enum_selector") {
-        // Handle enum selection
-        auto [sectionName, itemKey] = ParseConfigKey(item.actionParam);
-        if (auto section = preferenceService_->GetConfigSection(sectionName)) {
-            for (const auto& configItem : section->items) {
-                if (configItem.key == itemKey) {
-                    ShowEnumSelector(item.actionParam, configItem);
-                    break;
-                }
+    }
+}
+
+/**
+ * @brief Displays options menu for a configuration item
+ * @param fullKey Full configuration key (section.item format)
+ *
+ * Retrieves the configuration item and displays appropriate options
+ * based on its type (enum, numeric, or string).
+ */
+void ConfigPanel::HandleShowOptions(const std::string& fullKey)
+{
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+    if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+        for (const auto& configItem : section->items) {
+            if (configItem.key == itemKey) {
+                ShowOptionsMenu(fullKey, configItem);
+                break;
             }
         }
-    } else if (item.actionType == "set_config_value") {
-        // Handle direct value setting
-        size_t colonPos = item.actionParam.find(':');
-        if (colonPos != std::string::npos) {
-            std::string fullKey = item.actionParam.substr(0, colonPos);
-            std::string value = item.actionParam.substr(colonPos + 1);
+    }
+}
 
-            auto [sectionName, itemKey] = ParseConfigKey(fullKey);
-            if (auto section = preferenceService_->GetConfigSection(sectionName)) {
-                for (const auto& configItem : section->items) {
-                    if (configItem.key == itemKey) {
-                        // Update the configuration based on type
-                        switch (configItem.type) {
-                            case Config::ConfigValueType::String:
-                                preferenceService_->UpdateConfig(fullKey, value);
-                                break;
-                            case Config::ConfigValueType::Integer:
-                                preferenceService_->UpdateConfig(fullKey, std::stoi(value));
-                                break;
-                            case Config::ConfigValueType::Float:
-                                preferenceService_->UpdateConfig(fullKey, std::stof(value));
-                                break;
-                            case Config::ConfigValueType::Boolean:
-                                preferenceService_->UpdateConfig(fullKey, value == "true");
-                                break;
-                            case Config::ConfigValueType::Enum:
-                                preferenceService_->UpdateConfig(fullKey, value);
-                                break;
-                        }
+/**
+ * @brief Sets a configuration value from menu selection
+ * @param actionParam Combined key:value string
+ *
+ * Parses the action parameter to extract key and value, updates the
+ * configuration based on item type, and returns to section menu.
+ * Handles string, integer, float, boolean, and enum types.
+ */
+void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
+{
+    size_t colonPos = actionParam.find(':');
+    if (colonPos == std::string::npos) {
+        log_w("Invalid set_config_value format: %s", actionParam.c_str());
+        return;
+    }
 
-                        // Go back to section menu
-                        BuildSectionMenu(sectionName);
-                        log_i("Updated %s to %s", fullKey.c_str(), value.c_str());
+    std::string fullKey = actionParam.substr(0, colonPos);
+    std::string value = actionParam.substr(colonPos + 1);
+
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+    if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+        for (const auto& configItem : section->items) {
+            if (configItem.key == itemKey) {
+                // Update the configuration based on type
+                switch (configItem.type) {
+                    case Config::ConfigValueType::String:
+                        preferenceService_->UpdateConfig(fullKey, value);
                         break;
-                    }
+                    case Config::ConfigValueType::Integer:
+                        preferenceService_->UpdateConfig(fullKey, std::stoi(value));
+                        break;
+                    case Config::ConfigValueType::Float:
+                        preferenceService_->UpdateConfig(fullKey, std::stof(value));
+                        break;
+                    case Config::ConfigValueType::Boolean:
+                        preferenceService_->UpdateConfig(fullKey, value == "true");
+                        break;
+                    case Config::ConfigValueType::Enum:
+                        preferenceService_->UpdateConfig(fullKey, value);
+                        break;
                 }
+
+                // Go back to section menu
+                BuildSectionMenu(sectionName);
+                log_i("Updated %s to %s", fullKey.c_str(), value.c_str());
+                break;
             }
         }
-    } else if (item.actionType == "back") {
+    }
+}
+
+/**
+ * @brief Handles navigation back to previous menu level
+ * @param actionParam Optional parameter specifying target menu
+ *
+ * Navigates back from submenu to section menu or from section to main menu.
+ * Uses stored section name to determine appropriate navigation target.
+ */
+void ConfigPanel::HandleBackAction(const std::string& actionParam)
+{
+    if (!currentSectionName_.empty()) {
+        // If in a submenu, go back to section menu
+        auto [sectionName, itemKey] = ParseConfigKey(actionParam);
+        if (sectionName.empty() && !currentSectionName_.empty()) {
+            // Use the stored section name if not in actionParam
+            BuildSectionMenu(currentSectionName_);
+        } else if (!sectionName.empty()) {
+            BuildSectionMenu(sectionName);
+        } else {
+            // Go back to main menu
+            BuildDynamicMenus();
+        }
+    } else {
         // Go back to main menu
         BuildDynamicMenus();
-    } else if (item.actionType == "panel_exit") {
-        // Exit config panel
-        if (panelService_) {
-            const char *restorationPanel = panelService_->GetRestorationPanel();
-            panelService_->CreateAndLoadPanel(restorationPanel, true);
-        }
+    }
+}
+
+/**
+ * @brief Handles exit from configuration panel
+ *
+ * Retrieves the restoration panel from panel service and loads it.
+ * Typically returns to the previous operational panel.
+ */
+void ConfigPanel::HandlePanelExit()
+{
+    if (panelService_) {
+        const char *restorationPanel = panelService_->GetRestorationPanel();
+        panelService_->CreateAndLoadPanel(restorationPanel, true);
     }
 }
 
 // ========== Dynamic Configuration Implementation ==========
 
+/**
+ * @brief Builds main configuration menu from registered sections
+ *
+ * Queries preference service for all registered configuration sections
+ * and creates menu items for each. Adds exit option at the end.
+ * Updates UI component with generated menu structure.
+ */
 void ConfigPanel::BuildDynamicMenus()
 {
     log_v("BuildDynamicMenus() called");
@@ -388,6 +512,14 @@ void ConfigPanel::BuildDynamicMenus()
     log_i("Built dynamic menu with %zu sections", sectionNames.size());
 }
 
+/**
+ * @brief Builds menu for a specific configuration section
+ * @param sectionName Name of the section to build menu for
+ *
+ * Creates menu items for each configuration item in the section.
+ * Boolean items use toggle action, others show options menu.
+ * Adds back option to return to main menu.
+ */
 void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
 {
     log_v("BuildSectionMenu() called for section: %s", sectionName.c_str());
@@ -407,20 +539,12 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
 
         // Create action based on item type
         std::string fullKey = sectionName + "." + item.key;
-        switch (item.type) {
-            case Config::ConfigValueType::Enum:
-                menuItem.actionType = "show_enum_selector";
-                break;
-            case Config::ConfigValueType::Boolean:
-                menuItem.actionType = "toggle_boolean";
-                break;
-            case Config::ConfigValueType::Integer:
-            case Config::ConfigValueType::Float:
-                menuItem.actionType = "show_numeric_editor";
-                break;
-            case Config::ConfigValueType::String:
-                menuItem.actionType = "show_string_editor";
-                break;
+
+        // For booleans, use direct toggle. For everything else, show options
+        if (item.type == Config::ConfigValueType::Boolean) {
+            menuItem.actionType = "toggle_boolean";
+        } else {
+            menuItem.actionType = "show_options";
         }
         menuItem.actionParam = fullKey;
         menuItems_.push_back(menuItem);
@@ -439,31 +563,46 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
     currentMenuIndex_ = 0;
 }
 
+/**
+ * @brief Formats configuration item label with current value
+ * @param item Configuration item to format
+ * @return Formatted string "DisplayName: Value"
+ *
+ * Creates user-friendly label showing both item name and current value.
+ * Used in section menus to display configuration state.
+ */
 std::string ConfigPanel::FormatItemLabel(const Config::ConfigItem& item) const
 {
     std::string valueStr = Config::ConfigValueHelper::ToString(item.value);
     return item.displayName + ": " + valueStr;
 }
 
-void ConfigPanel::ShowEnumSelector(const std::string& fullKey, const Config::ConfigItem& item)
+/**
+ * @brief Displays options menu for configuration item selection
+ * @param fullKey Full configuration key (section.item format)
+ * @param item Configuration item to show options for
+ *
+ * Main coordinator that delegates to specialized handlers based on item type.
+ * Handles enum options, numeric ranges, and string values appropriately.
+ * Updates UI with generated options and back navigation.
+ */
+void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item)
 {
-    log_i("ShowEnumSelector() for key: %s", fullKey.c_str());
-
-    auto options = ParseOptions(item.metadata.constraints);
-    if (options.empty()) {
-        log_w("No options available for enum: %s", fullKey.c_str());
-        return;
-    }
+    log_i("ShowOptionsMenu() for key: %s", fullKey.c_str());
 
     menuItems_.clear();
 
-    // Add each option as a menu item
-    for (const auto& option : options) {
-        ConfigComponent::MenuItem menuItem;
-        menuItem.label = option;
-        menuItem.actionType = "set_config_value";
-        menuItem.actionParam = fullKey + ":" + option;
-        menuItems_.push_back(menuItem);
+    // Parse constraints to get available options
+    auto options = ParseOptions(item.metadata.constraints);
+
+    // Delegate to appropriate specialized method based on data type and available options
+    if (!options.empty()) {
+        ShowEnumOptionsMenu(fullKey, item, options);
+    } else if (item.type == Config::ConfigValueType::Integer ||
+               item.type == Config::ConfigValueType::Float) {
+        ShowNumericOptionsMenu(fullKey, item);
+    } else {
+        ShowStringOptionsMenu(fullKey, item);
     }
 
     // Add back option
@@ -479,13 +618,14 @@ void ConfigPanel::ShowEnumSelector(const std::string& fullKey, const Config::Con
     currentMenuIndex_ = 0;
 }
 
-void ConfigPanel::ShowNumericEditor(const std::string& fullKey, const Config::ConfigItem& item)
-{
-    log_i("ShowNumericEditor() for key: %s", fullKey.c_str());
-    // For now, just show current value - full numeric editing would require input handling
-    log_i("Current value: %s", Config::ConfigValueHelper::ToString(item.value).c_str());
-}
-
+/**
+ * @brief Toggles boolean configuration value immediately
+ * @param fullKey Full configuration key (section.item format)
+ * @param item Boolean configuration item to toggle
+ *
+ * Directly toggles boolean value without showing options menu.
+ * Updates configuration and refreshes section menu to show new state.
+ */
 void ConfigPanel::ShowBooleanToggle(const std::string& fullKey, const Config::ConfigItem& item)
 {
     log_i("ShowBooleanToggle() for key: %s", fullKey.c_str());
@@ -503,6 +643,14 @@ void ConfigPanel::ShowBooleanToggle(const std::string& fullKey, const Config::Co
     }
 }
 
+/**
+ * @brief Parses comma-separated constraint string into options list
+ * @param constraints Comma-separated string of valid options
+ * @return Vector of trimmed option strings
+ *
+ * Splits constraint string by commas and trims whitespace.
+ * Used for enum-type configuration items with discrete choices.
+ */
 std::vector<std::string> ConfigPanel::ParseOptions(const std::string& constraints) const
 {
     std::vector<std::string> options;
@@ -523,6 +671,14 @@ std::vector<std::string> ConfigPanel::ParseOptions(const std::string& constraint
     return options;
 }
 
+/**
+ * @brief Splits configuration key into section and item components
+ * @param fullKey Full configuration key in "section.item" format
+ * @return Pair of (section, item) strings
+ *
+ * Separates section name from item key at the dot delimiter.
+ * Returns empty section if no dot is found.
+ */
 std::pair<std::string, std::string> ConfigPanel::ParseConfigKey(const std::string& fullKey) const
 {
     size_t dotPos = fullKey.find('.');
@@ -530,4 +686,212 @@ std::pair<std::string, std::string> ConfigPanel::ParseConfigKey(const std::strin
         return {"", fullKey};
     }
     return {fullKey.substr(0, dotPos), fullKey.substr(dotPos + 1)};
+}
+
+// ========== Extracted ShowOptionsMenu Helper Methods ==========
+
+/**
+ * @brief Shows menu for enum-type configuration with discrete options
+ * @param fullKey Full configuration key for action handling
+ * @param item Configuration item being configured
+ * @param options Vector of valid option strings
+ *
+ * Creates menu items for each option with selection indicator.
+ * Current value is marked with arrow prefix for visual feedback.
+ */
+void ConfigPanel::ShowEnumOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item, const std::vector<std::string>& options)
+{
+    std::string currentValue = Config::ConfigValueHelper::ToString(item.value);
+
+    for (const auto& option : options) {
+        bool isSelected = (option == currentValue);
+        ConfigComponent::MenuItem menuItem = CreateMenuItemWithSelection(option, fullKey, option, isSelected);
+        menuItems_.push_back(menuItem);
+    }
+}
+
+/**
+ * @brief Shows menu for numeric configuration with generated values
+ * @param fullKey Full configuration key for action handling
+ * @param item Numeric configuration item (integer or float)
+ *
+ * Parses numeric range, generates appropriate step values, and creates
+ * menu items with formatted values and units. Includes current value,
+ * min/max bounds, and calculated increment options.
+ */
+void ConfigPanel::ShowNumericOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item)
+{
+    // Parse range constraints and get current value
+    NumericRange range = ParseNumericRange(item);
+
+    // Generate appropriate numeric values based on range and current value
+    std::vector<float> values = GenerateNumericValues(range, item);
+
+    // Create menu items for each value
+    for (float value : values) {
+        std::string valueStr = FormatNumericValue(value, item);
+        bool isSelected = (value == range.currentValue);
+        ConfigComponent::MenuItem menuItem = CreateMenuItemWithSelection(valueStr, fullKey, std::to_string(value), isSelected);
+        menuItems_.push_back(menuItem);
+    }
+}
+
+/**
+ * @brief Shows display-only menu for string configuration
+ * @param fullKey Full configuration key (unused for strings)
+ * @param item String configuration item
+ *
+ * Displays current string value in read-only format.
+ * String editing not supported through menu interface.
+ */
+void ConfigPanel::ShowStringOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item)
+{
+    // For string types without options, just show current value
+    ConfigComponent::MenuItem currentItem;
+    currentItem.label = "Current: " + Config::ConfigValueHelper::ToString(item.value);
+    currentItem.actionType = "none";
+    currentItem.actionParam = "";
+    menuItems_.push_back(currentItem);
+}
+
+/**
+ * @brief Creates menu item with selection indicator
+ * @param label Display text for the menu item
+ * @param fullKey Configuration key for action parameter
+ * @param value Value to set when item is selected
+ * @param isSelected Whether this item represents current value
+ * @return Configured MenuItem struct
+ *
+ * Centralizes menu item creation with consistent selection marking.
+ * Selected items are prefixed with arrow indicator.
+ */
+ConfigComponent::MenuItem ConfigPanel::CreateMenuItemWithSelection(const std::string& label, const std::string& fullKey, const std::string& value, bool isSelected) const
+{
+    ConfigComponent::MenuItem menuItem;
+
+    // Show marker for current selection
+    if (isSelected) {
+        menuItem.label = "► " + label;
+    } else {
+        menuItem.label = "  " + label;
+    }
+
+    menuItem.actionType = "set_config_value";
+    menuItem.actionParam = fullKey + ":" + value;
+
+    return menuItem;
+}
+
+// ========== Extracted ShowNumericOptionsMenu Helper Methods ==========
+
+/**
+ * @brief Parses numeric constraints into range structure
+ * @param item Configuration item with numeric constraints
+ * @return NumericRange struct with min, max, and current values
+ *
+ * Extracts range boundaries from constraint string (format: "min-max" or "min,max").
+ * Defaults to 0-100 range if constraints are not specified.
+ * Includes current value from configuration item.
+ */
+ConfigPanel::NumericRange ConfigPanel::ParseNumericRange(const Config::ConfigItem& item) const
+{
+    NumericRange range;
+    range.minValue = 0;
+    range.maxValue = 100;
+    range.currentValue = std::stof(Config::ConfigValueHelper::ToString(item.value));
+
+    if (!item.metadata.constraints.empty()) {
+        std::string constraints = item.metadata.constraints;
+        // Replace comma with dash for consistent parsing
+        std::replace(constraints.begin(), constraints.end(), ',', '-');
+        size_t dashPos = constraints.find('-');
+        if (dashPos != std::string::npos) {
+            range.minValue = std::stof(constraints.substr(0, dashPos));
+            range.maxValue = std::stof(constraints.substr(dashPos + 1));
+        }
+    }
+
+    return range;
+}
+
+/**
+ * @brief Generates selectable numeric values within range
+ * @param range Numeric range with min, max, and current values
+ * @param item Configuration item to determine type (int/float)
+ * @return Vector of numeric values for menu options
+ *
+ * Creates intelligent value options including current value, min/max bounds,
+ * and calculated small/large steps. Integer types use rounded steps.
+ * Ensures all generated values stay within specified range.
+ */
+std::vector<float> ConfigPanel::GenerateNumericValues(const NumericRange& range, const Config::ConfigItem& item) const
+{
+    // Generate reasonable step options
+    float rangeSize = range.maxValue - range.minValue;
+    float smallStep = rangeSize / 20.0f;  // 5% of range
+    float largeStep = rangeSize / 4.0f;   // 25% of range
+
+    // For integers, round steps
+    if (item.type == Config::ConfigValueType::Integer) {
+        smallStep = std::max(1.0f, std::round(smallStep));
+        largeStep = std::max(5.0f, std::round(largeStep));
+    }
+
+    // Generate option values
+    std::vector<float> values;
+
+    // Add preset values
+    if (range.currentValue - largeStep >= range.minValue) {
+        values.push_back(range.currentValue - largeStep);
+    }
+    if (range.currentValue - smallStep >= range.minValue) {
+        values.push_back(range.currentValue - smallStep);
+    }
+    values.push_back(range.currentValue);  // Current value
+    if (range.currentValue + smallStep <= range.maxValue) {
+        values.push_back(range.currentValue + smallStep);
+    }
+    if (range.currentValue + largeStep <= range.maxValue) {
+        values.push_back(range.currentValue + largeStep);
+    }
+
+    // Also add min and max if not already included
+    if (std::find(values.begin(), values.end(), range.minValue) == values.end()) {
+        values.insert(values.begin(), range.minValue);
+    }
+    if (std::find(values.begin(), values.end(), range.maxValue) == values.end()) {
+        values.push_back(range.maxValue);
+    }
+
+    return values;
+}
+
+/**
+ * @brief Formats numeric value for display with units
+ * @param value Numeric value to format
+ * @param item Configuration item containing type and unit metadata
+ * @return Formatted string with appropriate precision and units
+ *
+ * Integers displayed without decimals, floats with one decimal place.
+ * Appends unit suffix from metadata if specified.
+ */
+std::string ConfigPanel::FormatNumericValue(float value, const Config::ConfigItem& item) const
+{
+    std::string valueStr;
+
+    if (item.type == Config::ConfigValueType::Integer) {
+        valueStr = std::to_string(static_cast<int>(value));
+    } else {
+        // Format float with 1 decimal place
+        char buffer[32];
+        snprintf(buffer, sizeof(buffer), "%.1f", value);
+        valueStr = buffer;
+    }
+
+    // Add units if specified
+    if (!item.metadata.unit.empty()) {
+        valueStr += " " + item.metadata.unit;
+    }
+
+    return valueStr;
 }

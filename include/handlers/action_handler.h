@@ -9,6 +9,7 @@
 
 // Forward declarations for sensors
 class ButtonSensor;
+class IActionService;
 
 #include "esp32-hal-log.h"
 
@@ -40,9 +41,9 @@ public:
     bool RegisterAction(const Action& action);
     void EvaluateActions();  // Called every main loop cycle
     
-    // Function injection system for dynamic panel functions
-    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
-    void ClearPanelFunctions();
+    // Panel management for direct method calls
+    void SetCurrentPanel(IActionService* panel);
+    void ClearCurrentPanel();
     
     // Button event processing
     void ProcessButtonEvents();
@@ -104,10 +105,8 @@ private:
     unsigned long buttonPressStartTime_ = 0;
     unsigned long buttonPressEndTime_ = 0;
     
-    // Function injection for dynamic panel functions
-    void (*currentShortPressFunc_)(void*) = nullptr;
-    void (*currentLongPressFunc_)(void*) = nullptr;
-    void* currentPanelContext_ = nullptr;
+    // Current panel for direct method calls
+    class IActionService* currentPanel_ = nullptr;
     
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;
