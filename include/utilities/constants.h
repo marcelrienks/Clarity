@@ -63,8 +63,8 @@ namespace DataConstants {
 
 namespace UIConstants {
     static constexpr const char* APP_NAME = "Clarity";
-    static constexpr const char* GAUGE_LOW_LABEL = "0";
-    static constexpr const char* GAUGE_HIGH_LABEL = "100";
+    static constexpr const char* GAUGE_LOW_LABEL = "L";
+    static constexpr const char* GAUGE_HIGH_LABEL = "H";
 }
 
 namespace UIStrings {
