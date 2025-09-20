@@ -41,12 +41,12 @@
 class OemOilPressureComponent : public OemOilComponent
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     OemOilPressureComponent(IStyleService *styleService);
     ~OemOilPressureComponent() = default;
 
   protected:
-    // Override virtual methods from base class
+    // ========== Protected Methods ==========
     const lv_image_dsc_t *get_icon() const override;
     int32_t get_scale_min() const override;
     int32_t get_scale_max() const override;

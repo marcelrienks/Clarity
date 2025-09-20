@@ -20,13 +20,6 @@
 
 namespace SystemDefinitions {
 
-/// @brief Get all system triggers as documented in interrupt-architecture.md
-/// @param keyPresentSensor Pointer to the key present sensor
-/// @param keyNotPresentSensor Pointer to the key not present sensor  
-/// @param lockSensor Pointer to the lock sensor
-/// @param lightsSensor Pointer to the lights sensor
-/// @param errorSensor Pointer to the error sensor (if available)
-/// @return Array of system triggers
 inline std::vector<Trigger> GetSystemTriggers(
     class BaseSensor* keyPresentSensor,
     class BaseSensor* keyNotPresentSensor, 
@@ -141,8 +134,6 @@ inline std::vector<Trigger> GetSystemTriggers(
     return triggers;
 }
 
-/// @brief Get all system actions as documented in interrupt-architecture.md
-/// @return Array of system actions
 inline std::vector<Action> GetSystemActions() {
     return {
         // Button actions

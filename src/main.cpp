@@ -4,7 +4,9 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "managers/preference_manager.h"
+#include "interfaces/i_preference_service.h"
+#include "config/config_types.h"
+#include "config/system_config.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
@@ -14,28 +16,68 @@
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
-// Global factories - dual factory pattern implementation
+// ========== Global Variables ==========
+
+// Global variable definitions (declarations are in main.h)
 std::unique_ptr<IProviderFactory> providerFactory;
 std::unique_ptr<ManagerFactory> managerFactory;
-
-// Global providers - created by ProviderFactory
 std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
-
-// Global managers - created by ManagerFactory
 std::unique_ptr<StyleManager> styleManager;
-std::unique_ptr<PreferenceManager> preferenceManager;
+std::unique_ptr<IPreferenceService> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
+// ========== Private Methods ==========
+
+/**
+ * @brief Register system-wide configuration settings
+ *
+ * Consolidates all system settings (panel selection, update rate, splash screen)
+ * into a single configuration section managed directly by main.cpp.
+ */
+void registerSystemConfiguration()
+{
+    if (!preferenceManager) {
+        log_e("Cannot register system configuration - preference manager not available");
+        return;
+    }
+
+    using namespace Config;
+
+    ConfigSection section("System", SystemConfig::CONFIG_SECTION, "System");
+    section.displayOrder = 0; // Highest priority - show first in config menu
+
+    // Default panel selection
+    section.AddItem(ConfigItem("default_panel", "Default Panel",
+        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", ConfigItemType::Selection)));
+
+    // Global update rate for sensors and components
+    section.AddItem(ConfigItem("update_rate", "Update Rate",
+        500, ConfigMetadata("100,250,500,750,1000,1500,2000", "ms", ConfigItemType::Selection)));
+
+    // Splash screen control
+    section.AddItem(ConfigItem("show_splash", "Show Splash",
+        true, ConfigMetadata()));
+
+    preferenceManager->RegisterConfigSection(section);
+    log_i("System configuration registered");
+}
+
+/**
+ * @brief Initializes all system services and managers using factory pattern
+ * @return true if all services initialized successfully, false on failure
+ *
+ * Creates and initializes all core system components in the correct dependency
+ * order. Uses dual factory pattern with ProviderFactory for hardware abstraction
+ * and ManagerFactory for system services. Reports critical errors on failure.
+ */
 bool initializeServices()
 {
-    log_v("initializeServices() called");
     log_i("Starting Clarity service initialization with dual factory pattern...");
 
-    // Step 1: Create ProviderFactory
     providerFactory = std::make_unique<ProviderFactory>();
     if (!providerFactory) {
         log_e("Failed to create ProviderFactory - allocation failed");
@@ -43,7 +85,6 @@ bool initializeServices()
         return false;
     }
 
-    // Step 2: Create providers using ProviderFactory
     deviceProvider = providerFactory->CreateDeviceProvider();
     if (!deviceProvider) {
         log_e("Failed to create DeviceProvider via factory");
@@ -65,7 +106,6 @@ bool initializeServices()
         return false;
     }
 
-    // Step 3: Create ManagerFactory with dependency injection
     managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
     if (!managerFactory) {
         log_e("Failed to create ManagerFactory - allocation failed");
@@ -73,9 +113,6 @@ bool initializeServices()
         return false;
     }
 
-    // Step 4: Create managers using ManagerFactory
-    
-    // Create PreferenceManager
     preferenceManager = managerFactory->CreatePreferenceManager();
     if (!preferenceManager) {
         log_e("Failed to create PreferenceManager via factory");
@@ -84,15 +121,17 @@ bool initializeServices()
     }
     
     // Initialize StyleManager with user's theme preference
-    const char *userTheme = preferenceManager->GetConfig().theme.c_str();
-    styleManager = managerFactory->CreateStyleManager(userTheme);
+    std::string userTheme = "Day"; // Default
+    if (auto themeValue = preferenceManager->QueryConfig<std::string>("system.theme")) {
+        userTheme = *themeValue;
+    }
+    styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
         ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
         return false;
     }
-    
-    // Inject PreferenceService into StyleManager for direct preference reading
+ 
     styleManager->SetPreferenceService(preferenceManager.get());
     
     // Create InterruptManager with GPIO provider dependency
@@ -107,121 +146,76 @@ bool initializeServices()
     panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(), 
                                                       styleManager.get(), preferenceManager.get(), 
                                                       interruptManager);
+
     if (!panelManager) {
         log_e("Failed to create PanelManager via factory");
         ErrorManager::Instance().ReportCriticalError("main", "PanelManager creation failed");
         return false;
     }
-    
-    // Create ErrorManager
+
     errorManager = managerFactory->CreateErrorManager();
     if (!errorManager) {
         log_e("Failed to create ErrorManager via factory");
         ErrorManager::Instance().ReportCriticalError("main", "ErrorManager creation failed");
         return false;
     }
-    
 
-    // Verify all critical services were created (redundant check as we already checked individually)
-    bool allServicesCreated = deviceProvider && gpioProvider && displayProvider && 
-                              styleManager && preferenceManager && panelManager && 
-                              interruptManager && errorManager;
-
-    if (!allServicesCreated)
-    {
-        log_e("Critical service creation failed - check logs above for specific failures");
-        return false;
-    }
-
-    log_i("All services initialized successfully");
     log_t("System ready");
     return true;
 }
 
+// ========== Arduino Functions ==========
+
+/**
+ * @brief Arduino setup function - initializes the Clarity application
+ *
+ * Entry point for ESP32 application initialization. Initializes all system
+ * services, configures display styles, and loads the initial panel based on
+ * user preferences. Called once at system startup before the main loop.
+ */
 void setup()
 {
-    log_v("setup() called");
     log_i("Starting Clarity application...");
 
     if (!initializeServices())
     {
-        log_e("Service initialization failed - cannot continue");
         return;
     }
 
+    // Register system configuration after services are initialized
+    registerSystemConfiguration();
+
     Ticker::handleLvTasks();
+
     styleManager->InitializeStyles();
-    // Interrupt system initialized by factory with all handlers
     Ticker::handleLvTasks();
 
-    // Load startup panel from configuration
-    // Note: Key override logic handled by interrupt system after startup
-    auto config = preferenceManager->GetConfig();
-    panelManager->CreateAndLoadPanel(config.panelName.c_str());
-
-    Ticker::handleLvTasks();
-    
-    // Display complete system configuration
-    if (interruptManager)
-    {
-        interruptManager->PrintSystemStatus();
+    std::string panelName = PanelNames::OIL; // Default
+    if (auto nameValue = preferenceManager->QueryConfig<std::string>(SystemConfig::CONFIG_DEFAULT_PANEL)) {
+        panelName = *nameValue;
     }
+    panelManager->CreateAndLoadPanel(panelName.c_str());
+    Ticker::handleLvTasks();
     
     log_i("Clarity application started successfully");
 }
 
+/**
+ * @brief Arduino main loop - processes system events and updates UI
+ *
+ * Continuously processes interrupt events, monitors error conditions,
+ * and updates the active panel. Handles error panel triggering when
+ * UI is idle to avoid conflicts with other operations. Maintains
+ * responsive system behavior through dynamic delay management.
+ */
 void loop()
 {
-    static unsigned long loopCount = 0;
-    static unsigned long lastLoopLogTime = 0;
-    loopCount++;
-    unsigned long currentTime = millis();
-
-    // Log every 2 seconds to detect hangs more quickly
-    if (currentTime - lastLoopLogTime > 2000)
-    {
-        UIState currentUiState = panelManager ? panelManager->GetUiState() : UIState::BUSY;
-        const char* currentPanel = panelManager ? panelManager->GetCurrentPanel() : "UNKNOWN";
-        
-        log_i("MAIN LOOP alive: iteration %lu, UI state: %s, panel: %s", 
-              loopCount, 
-              currentUiState == UIState::IDLE ? "IDLE" : "BUSY",
-              currentPanel ? currentPanel : "NULL");
-        lastLoopLogTime = currentTime;
-    }
-
-    // Log every 1000 loops to verify main loop is running
-    if (loopCount % 1000 == 0)
-    {
-    }
-    
-    // Periodic system health monitoring (every 30 seconds)
-    static unsigned long lastDiagnosticTime = 0;
-    static constexpr unsigned long DIAGNOSTIC_INTERVAL_MS = 30000;
-    if (interruptManager && (millis() - lastDiagnosticTime) > DIAGNOSTIC_INTERVAL_MS)
-    {
-        log_i("=== Periodic System Diagnostics ===");
-        size_t interruptCount = interruptManager->GetRegisteredInterruptCount();
-        size_t totalEvals, totalExecs;
-        interruptManager->GetInterruptStatistics(totalEvals, totalExecs);
-        log_i("Interrupts: %d registered, %lu evaluations, %lu executions", 
-              interruptCount, totalEvals, totalExecs);
-        lastDiagnosticTime = millis();
-    }
-
-    // Process interrupts - Actions (button timing) always run, Triggers only during IDLE
-    if (interruptManager && panelManager)
-    {
-        interruptManager->Process(); // Always process - ActionHandler runs always, TriggerHandler only on IDLE
-    }
-    else if (!interruptManager)
-    {
-        log_e("interruptManager is null!");
-    }
+    // Always process - ActionHandler runs always, TriggerHandler only on IDLE
+    interruptManager->Process();
 
     // Check for error panel trigger - must be processed when UI is IDLE to avoid conflicts
     static bool errorPanelTriggered = false;  // Track if error panel was already triggered
-    if (errorManager && panelManager && panelManager->GetUiState() == UIState::IDLE)
+    if (panelManager->GetUiState() == UIState::IDLE)
     {
         bool shouldTriggerError = errorManager->ShouldTriggerErrorPanel();
         const char* currentPanel = panelManager->GetCurrentPanel();
@@ -244,7 +238,7 @@ void loop()
     }
 
     // Update panel state only when IDLE - allows loading and animations to complete
-    if (panelManager && panelManager->GetUiState() == UIState::IDLE)
+    if (panelManager->GetUiState() == UIState::IDLE)
     {
         panelManager->UpdatePanel();
     }
@@ -252,3 +246,4 @@ void loop()
     Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
 }
+//CLEANED

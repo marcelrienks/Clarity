@@ -37,32 +37,31 @@
  */
 class ErrorComponent : public IComponent
 {
-  public:
-    // Constructors and Destructors
+public:
+    // ========== Constructors and Destructor ==========
     explicit ErrorComponent(IStyleService *styleService);
     virtual ~ErrorComponent();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
     void Refresh(const Reading &reading) override;
 
-    // Error-specific methods
+    // ========== Error-specific Methods ==========
     void UpdateErrorDisplay();
     void UpdateErrorDisplay(const std::vector<ErrorInfo> &errors);
     void UpdateErrorDisplay(const std::vector<ErrorInfo> &errors, size_t currentIndex);
     // Note: GPIO button cycling is now handled by ErrorPanel via AdvanceToNextError()
 
-  protected:
+protected:
     // Note: LVGL event handlers removed - never connected to UI elements
 
-  private:
-    // Internal Methods
+private:
+    // ========== Private Methods ==========
     void CreateSingleErrorUI(lv_obj_t *parent);
     void DisplayCurrentError();
-    void CreateNavigationIndicators(lv_obj_t *parent);
     const char *GetErrorLevelText(ErrorLevel level);
 
-    // Protected Data Members
+    // ========== Private Data Members ==========
     IStyleService *styleService_;
     lv_obj_t *errorContainer_;      // Main container for error display
     lv_obj_t *errorContentArea_;    // Single error content display area
@@ -74,7 +73,6 @@ class ErrorComponent : public IComponent
 
     std::vector<ErrorInfo> currentErrors_; // Cache of current error state
     size_t currentErrorIndex_;             // Index of currently displayed error
-    size_t buttonPressCount_;              // Track button presses to know when all errors shown
 
     // Note: clearButton_ removed but ClearAllErrorsCallback logic preserved
     // for future implementation via alternative interaction method

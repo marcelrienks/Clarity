@@ -28,21 +28,20 @@
  */
 class KeyComponent : public IComponent
 {
-  public:
-    // Constructors and Destructors
+public:
+    // ========== Constructors and Destructor ==========
     explicit KeyComponent(IStyleService *styleService);
     virtual ~KeyComponent();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
     void SetColor(KeyState keyState);
 
-  protected:
-    // Protected Data Members
+protected:
+    // ========== Protected Data Members ==========
     lv_obj_t *keyIcon_;
     IStyleService *styleService_;
 
-  private:
-    // Core Functionality Methods
-    void create_icon();
+private:
+    // ========== Private Methods ==========
 };

@@ -37,82 +37,48 @@ class IProviderFactory;
 class ManagerFactory : public IManagerFactory
 {
 public:
-    /// @brief Constructor accepting provider factory for dependency injection
-    /// @param providerFactory Factory for creating hardware providers (takes ownership)
+    // ========== Constructors and Destructor ==========
     explicit ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory);
-    
-    /// @brief Default constructor for backward compatibility (creates ProviderFactory internally)
     ManagerFactory();
-    
-    /// @brief Default destructor
     ~ManagerFactory() override = default;
     
+    // ========== Public Interface Methods ==========
     // IManagerFactory implementation
-
-    /// @brief Create PanelManager with injected dependencies
-    /// @param display Display provider for UI operations
-    /// @param gpio GPIO provider for hardware access
-    /// @param styleService Style service for UI theming
-    /// @param preferenceService Preference service for configuration settings
-    /// @param interruptManager Interrupt manager for button function injection
-    /// @return Unique pointer to configured PanelManager instance or nullptr on failure
-    /// @note ActionManager dependency removed - button handling moved to handler-based system
     std::unique_ptr<PanelManager> CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
                                                       IStyleService *styleService, 
                                                       IPreferenceService *preferenceService,
                                                       InterruptManager *interruptManager) override;
 
-    /// @brief Create StyleManager with optional theme
-    /// @param theme Initial theme to apply (defaults to DAY theme)
-    /// @return Unique pointer to configured StyleManager instance or nullptr on failure
     std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr) override;
 
-    /// @brief Create PreferenceManager (no dependencies currently)
-    /// @return Unique pointer to configured PreferenceManager instance or nullptr on failure
-    std::unique_ptr<PreferenceManager> CreatePreferenceManager() override;
+    std::unique_ptr<IPreferenceService> CreatePreferenceManager() override;
 
-    /// @brief Initialize InterruptManager singleton instance with GPIO provider
-    /// @param gpioProvider GPIO provider for handler sensor ownership
-    /// @return Pointer to configured InterruptManager instance or nullptr on failure
     InterruptManager* CreateInterruptManager(IGpioProvider* gpioProvider) override;
 
-    /// @brief Create ErrorManager singleton instance
-    /// @return Pointer to configured ErrorManager instance or nullptr on failure
     ErrorManager* CreateErrorManager() override;
 
 private:
-    /// @brief Provider factory for creating hardware providers
-    std::unique_ptr<IProviderFactory> providerFactory_;
-    
-    /// @brief Cached providers created from provider factory
-    std::unique_ptr<IGpioProvider> gpioProvider_;
-    std::unique_ptr<IDisplayProvider> displayProvider_;
-    std::unique_ptr<DeviceProvider> deviceProvider_;
-    
-    /// @brief Initialize providers from factory if not already created
+    // ========== Private Methods ==========
     bool InitializeProviders();
     
-    /// @brief Implementation helper for creating managers
-    /// @param display Display provider for UI operations
-    /// @param gpio GPIO provider for hardware access  
-    /// @param styleService Style service for UI theming
-    /// @param preferenceService Preference service for configuration settings
-    /// @param interruptManager Interrupt manager for button function injection
-    /// @return Unique pointer to configured PanelManager instance or nullptr on failure
+    // ========== Static Methods ==========
     static std::unique_ptr<PanelManager> CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
                                                                 IStyleService *styleService, 
                                                                 IPreferenceService *preferenceService,
                                                                 InterruptManager *interruptManager);
 
-    /// @brief Implementation helper for creating StyleManager
     static std::unique_ptr<StyleManager> CreateStyleManagerImpl(const char *theme = nullptr);
 
-    /// @brief Implementation helper for creating PreferenceManager
-    static std::unique_ptr<PreferenceManager> CreatePreferenceManagerImpl();
+    static std::unique_ptr<IPreferenceService> CreatePreferenceManagerImpl();
 
-    /// @brief Implementation helper for creating InterruptManager
     static InterruptManager* CreateInterruptManagerImpl(IGpioProvider* gpioProvider);
 
-    /// @brief Implementation helper for creating ErrorManager
     static ErrorManager* CreateErrorManagerImpl();
+
+    // ========== Private Data Members ==========
+    std::unique_ptr<IProviderFactory> providerFactory_;
+    
+    std::unique_ptr<IGpioProvider> gpioProvider_;
+    std::unique_ptr<IDisplayProvider> displayProvider_;
+    std::unique_ptr<DeviceProvider> deviceProvider_;
 };

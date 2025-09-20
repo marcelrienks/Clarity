@@ -42,36 +42,15 @@ class GpioProvider : public IGpioProvider
   private:
     // Use fixed array for ESP32 GPIO pins (0-39) - much faster than std::map
     static constexpr int MAX_GPIO_PIN = 40;
-    bool attachedInterrupts_[MAX_GPIO_PIN] = {false};
 
   public:
-    /// @brief Read digital value from a GPIO pin
-    /// @param pin GPIO pin number
-    /// @return true if pin is HIGH, false if LOW
     bool DigitalRead(int pin) override;
 
-    /// @brief Read analog value from an ADC pin
-    /// @param pin ADC pin number
-    /// @return ADC reading (0-4095 for 12-bit ADC)
     uint16_t AnalogRead(int pin) override;
 
-    /// @brief Configure pin mode
-    /// @param pin GPIO pin number
-    /// @param mode Pin mode (INPUT, OUTPUT, INPUT_PULLUP, etc.)
     void PinMode(int pin, int mode) override;
 
-    /// @brief Attach interrupt to a GPIO pin
-    /// @param pin GPIO pin number
-    /// @param callback Interrupt callback function
-    /// @param mode Interrupt trigger mode (RISING, FALLING, CHANGE)
     void AttachInterrupt(int pin, void (*callback)(), int mode) override;
 
-    /// @brief Detach interrupt from a GPIO pin
-    /// @param pin GPIO pin number
     void DetachInterrupt(int pin) override;
-
-    /// @brief Check if pin has an interrupt attached
-    /// @param pin GPIO pin number
-    /// @return true if interrupt is attached, false otherwise
-    bool HasInterrupt(int pin) override;
 };

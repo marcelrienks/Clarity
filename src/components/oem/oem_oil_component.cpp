@@ -6,7 +6,7 @@
 #include <esp32-hal-log.h>
 #include <math.h>
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
 
 OemOilComponent::OemOilComponent(IStyleService *styleService)
     : styleService_(styleService), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
@@ -24,7 +24,7 @@ OemOilComponent::OemOilComponent(IStyleService *styleService)
 
 OemOilComponent::~OemOilComponent()
 {
-    // Cleanup LVGL objects
+    // LVGL objects are managed by parent screen - explicit cleanup for safety
     if (needleLine_)
         lv_obj_del(needleLine_);
     if (needleMiddle_)
@@ -53,11 +53,13 @@ OemOilComponent::~OemOilComponent()
     // No style cleanup needed - styles are managed by StyleManager
 }
 
-// Core Functionality Methods
+// ========== IComponent Implementation ==========
 
-/// @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
-/// @param screen The screen object to render the component on.
-/// @param location The location parameters for positioning the component.
+/**
+ * @brief This method initializes the scale, needle, and icon for the oil component with location parameters.
+ * @param screen The screen object to render the component on.
+ * @param location The location parameters for positioning the component.
+ */
 void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     if (!screen || !display)
@@ -88,8 +90,10 @@ void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location
     // Component rendering complete
 }
 
-/// @brief Updates the rendered oil component.
-/// @param reading The Reading value to update the component with.
+/**
+ * @brief Updates the rendered oil component.
+ * @param reading The Reading value to update the component with.
+ */
 void OemOilComponent::Refresh(const Reading &reading)
 {
     int32_t value = std::get<int32_t>(reading);
@@ -151,9 +155,11 @@ void OemOilComponent::Refresh(const Reading &reading)
     // Component update complete
 }
 
-/// @brief Sets the value of the oil component.
-/// This method updates the needle position based on the provided value.
-/// @param value
+/**
+ * @brief Sets the value of the oil component.
+ * This method updates the needle position based on the provided value.
+ * @param value
+ */
 void OemOilComponent::SetValue(int32_t value)
 {
 
@@ -209,12 +215,16 @@ void OemOilComponent::SetValue(int32_t value)
     uint32_t component_test = COMPONENT_PATTERN;
     if (component_test != COMPONENT_PATTERN) {
         log_e("Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
+        ErrorManager::Instance().ReportCriticalError("OemOilComponent",
+                                                     "Memory corruption detected - component pattern mismatch");
     }
 }
 
-/// @brief Maps the value for display on the oil component.
-/// @param value The original value to map.
-/// @return The mapped value for display.
+/**
+ * @brief Maps the value for display on the oil component.
+ * @param value The original value to map.
+ * @return The mapped value for display.
+ */
 int32_t OemOilComponent::map_value_for_display(int32_t value) const
 {
     // Default implementation - no mapping
@@ -222,7 +232,9 @@ int32_t OemOilComponent::map_value_for_display(int32_t value) const
     return value;
 }
 
-/// @brief Updates pivot styling based on current theme
+/**
+ * @brief Updates pivot styling based on current theme
+ */
 void OemOilComponent::update_pivot_styling()
 {
     if (pivotCircle_)
@@ -285,7 +297,9 @@ void OemOilComponent::update_pivot_styling()
 
 // Private Methods
 
-/// @brief Creates the oil icon for the oil component.
+/**
+ * @brief Creates the oil icon for the oil component.
+ */
 void OemOilComponent::create_icon()
 {
     const ThemeColors &colours = styleService_->GetThemeColors();
@@ -299,8 +313,10 @@ void OemOilComponent::create_icon()
     lv_obj_set_style_image_recolor_opa(oilIcon_, LV_OPA_COVER, MAIN_DEFAULT);
 }
 
-/// @brief Creates L and H labels positioned relative to the scale rotation and angle range.
-/// Labels automatically follow when scale rotation changes.
+/**
+ * @brief Creates L and H labels positioned relative to the scale rotation and angle range.
+ * Labels automatically follow when scale rotation changes.
+ */
 void OemOilComponent::create_labels()
 {
     const ThemeColors &colours = styleService_->GetThemeColors();
@@ -344,7 +360,9 @@ void OemOilComponent::create_labels()
     lv_obj_align(highLabel_, LV_ALIGN_CENTER, hX, hY);
 }
 
-/// @brief Creates the needle line for the oil component.
+/**
+ * @brief Creates the needle line for the oil component.
+ */
 void OemOilComponent::create_needle()
 {
     const ThemeColors &colours = styleService_->GetThemeColors();
@@ -416,7 +434,9 @@ void OemOilComponent::create_needle()
     update_pivot_styling();
 }
 
-/// @brief Sets up the scale properties for the oil component.
+/**
+ * @brief Sets up the scale properties for the oil component.
+ */
 void OemOilComponent::create_scale(int32_t rotation)
 {
     if (!scale_)

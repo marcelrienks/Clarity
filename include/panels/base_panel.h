@@ -57,70 +57,151 @@
 class BasePanel : public IPanel
 {
 public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
+    /**
+     * @brief Construct BasePanel with required service dependencies
+     * @param gpio GPIO provider for hardware access
+     * @param display Display provider for screen management
+     * @param styleService Style service for theming
+     */
     BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    BasePanel(const BasePanel&) = delete;
+    BasePanel& operator=(const BasePanel&) = delete;
+    /**
+     * @brief Virtual destructor ensuring proper cleanup of LVGL screen
+     */
     virtual ~BasePanel();
 
-    // Core Functionality Methods - Final implementations using Template Method pattern
+    // ========== Public Interface Methods ==========
+    /**
+     * @brief Initialize panel - validate providers and setup screen
+     * @details Template method - calls CustomInit() for derived class setup
+     */
     void Init() final;
+
+    /**
+     * @brief Load panel content and display on screen
+     * @details Template method - calls CreateContent() and PostLoad() hooks
+     */
     void Load() final;
+
+    /**
+     * @brief Update panel with fresh data
+     * @details Template method - calls UpdateContent() and resets UI state
+     */
     void Update() final;
 
-    // Manager injection method
+    /**
+     * @brief Inject panel and style service dependencies
+     * @param panelService Panel management service
+     * @param styleService Style service for theming
+     */
     void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
 
-    // IActionService Interface Implementation
+    /**
+     * @brief Get function pointer for short button press handling
+     * @return Pointer to static wrapper function
+     */
     void (*GetShortPressFunction())(void* panelContext) final;
+
+    /**
+     * @brief Get function pointer for long button press handling
+     * @return Pointer to static wrapper function
+     */
     void (*GetLongPressFunction())(void* panelContext) final;
-    void* GetPanelContext() final;
+
+    /**
+     * @brief Get panel instance pointer for button handler context
+     * @return Pointer to this panel instance
+     */
+    // Old GetPanelContext method removed - no longer needed
 
 protected:
-    // Template Method hooks - derived classes implement these
-
-    /// @brief Create and render panel-specific UI components
-    /// Called during Load() after screen setup but before screen loading
+    // ========== Protected Methods ==========
+    /**
+     * @brief Create panel-specific UI content - must be implemented by derived classes
+     * @details Called during Load() to create and render panel components
+     */
     virtual void CreateContent() = 0;
 
-    /// @brief Update components with fresh data
-    /// Called during Update() to refresh display with current data
+    /**
+     * @brief Update panel content with fresh data - must be implemented by derived classes
+     * @details Called during Update() to refresh component data
+     */
     virtual void UpdateContent() = 0;
 
-    /// @brief Return panel name constant for logging and identification
+    /**
+     * @brief Get panel name constant for logging and identification
+     * @return Panel name constant (e.g., PanelNames::OIL)
+     */
     virtual const char* GetPanelName() const = 0;
 
-    // Optional hooks - default implementations provided
-
-    /// @brief Additional initialization before screen creation
-    /// Override for custom setup that needs to happen before screen creation
+    /**
+     * @brief Optional custom initialization hook for derived classes
+     * @details Called during Init() before screen setup
+     */
     virtual void CustomInit() {}
 
-    /// @brief Additional setup after content creation but before screen loading
-    /// Override for custom setup after components are created
+    /**
+     * @brief Optional post-load setup hook for derived classes
+     * @details Called during Load() after CreateContent()
+     */
     virtual void PostLoad() {}
 
-    /// @brief Handle short button press - default does nothing
+    /**
+     * @brief Handle short button press - override for panel-specific behavior
+     * @details Default implementation does nothing
+     */
     virtual void HandleShortPress() {}
 
-    /// @brief Handle long button press - default does nothing
+    /**
+     * @brief Handle long button press - override for panel-specific behavior
+     * @details Default implementation does nothing
+     */
     virtual void HandleLongPress() {}
 
-    // Protected members available to derived classes
+    // ========== Protected Data Members ==========
     IGpioProvider* gpioProvider_;
     IDisplayProvider* displayProvider_;
     IStyleService* styleService_;
     IPanelService* panelService_;
     ComponentLocation centerLocation_;
+    lv_obj_t* screen_ = nullptr;
 
 private:
-    // Static event callback for LVGL
+    // ========== Static Methods ==========
+    /**
+     * @brief LVGL callback for screen load completion
+     * @param event LVGL event object containing panel context
+     */
     static void ShowPanelCompletionCallback(lv_event_t* event);
 
-    // Static button press functions for IActionService
+    /**
+     * @brief Static wrapper for short button press handling
+     * @param panelContext Pointer to BasePanel instance
+     */
     static void BasePanelShortPress(void* panelContext);
+
+    /**
+     * @brief Static wrapper for long button press handling
+     * @param panelContext Pointer to BasePanel instance
+     */
     static void BasePanelLongPress(void* panelContext);
 
-    // Common validation and setup methods
+    // ========== Private Methods ==========
+    /**
+     * @brief Validate required providers are non-null
+     * @details Reports critical error if display or GPIO provider missing
+     */
     void ValidateProviders();
+
+    /**
+     * @brief Create LVGL screen and apply initial theme
+     */
     void SetupScreen();
+
+    /**
+     * @brief Load screen and ensure current theme is applied
+     */
     void ApplyThemeAndLoadScreen();
 };

@@ -40,27 +40,13 @@ class DeviceProvider;
 class ProviderFactory : public IProviderFactory
 {
 public:
-    /// @brief Default constructor
+    // ========== Constructors and Destructor ==========
     ProviderFactory() = default;
-    
-    /// @brief Default destructor
     ~ProviderFactory() override = default;
     
+    // ========== Public Interface Methods ==========
     // IProviderFactory implementation
-    
-    /// @brief Create GPIO provider for digital/analog I/O operations
-    /// @return Unique pointer to configured GpioProvider instance
-    /// @note Creates concrete GpioProvider with ESP32 pin configurations
     std::unique_ptr<IGpioProvider> CreateGpioProvider() override;
-    
-    /// @brief Create display provider for LVGL screen operations
-    /// @param deviceProvider Device provider instance to use for display initialization
-    /// @return Unique pointer to configured DisplayProvider instance
-    /// @note Creates concrete DisplayProvider with 240x240 round display setup
     std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider) override;
-    
-    /// @brief Create device provider for low-level hardware driver operations
-    /// @return Unique pointer to configured DeviceProvider instance
-    /// @note Creates concrete DeviceProvider for GC9A01 display driver
     std::unique_ptr<DeviceProvider> CreateDeviceProvider() override;
 };

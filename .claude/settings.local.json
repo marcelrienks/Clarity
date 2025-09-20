@@ -53,7 +53,13 @@
       "Bash(git add:*)",
       "Bash(git commit:*)",
       "Bash(git rm:*)",
-      "Bash(git restore:*)"
+      "Bash(git restore:*)",
+      "Bash(mkdir:*)",
+      "Bash(xtensa-esp32-elf-g++:*)",
+      "Bash(gcc:*)",
+      "Bash(xargs:*)",
+      "Bash(awk:*)",
+      "Read(//mnt/c/Users/marcelr/OneDrive - Network International LLC/Pictures/Screenshots/**)"
     ],
     "deny": [],
     "ask": []

@@ -38,10 +38,11 @@
 class OilTemperatureSensor : public BaseSensor
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     OilTemperatureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
     OilTemperatureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs = 500);
 
+    // ========== Public Interface Methods ==========
     // BaseSensor interface implementation
     void Init() override;
     Reading GetReading() override;
@@ -51,23 +52,37 @@ class OilTemperatureSensor : public BaseSensor
     void SetTargetUnit(const std::string &unit) override;
     std::vector<std::string> GetSupportedUnits() const override;
 
-    /// @brief Set the update rate in milliseconds
-    /// @param updateRateMs Update interval in milliseconds
     void SetUpdateRate(int updateRateMs);
 
+    void LoadConfiguration();
+
+    void RegisterConfiguration();
+
+    void RegisterLiveUpdateCallbacks();
+
+    // ========== Configuration Constants ==========
+    static constexpr const char* CONFIG_SECTION = "oil_temperature";
+    static constexpr const char* CONFIG_UNIT = "oil_temperature.unit";
+    static constexpr const char* CONFIG_UPDATE_RATE = "oil_temperature.update_rate";
+    static constexpr const char* CONFIG_OFFSET = "oil_temperature.offset";
+    static constexpr const char* CONFIG_SCALE = "oil_temperature.scale";
+
   protected:
-    // Internal methods
+    // ========== Protected Methods ==========
     int32_t ReadRawValue();
     int32_t ConvertReading(int32_t rawValue);
 
   private:
-    // Instance members
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;
+    float calibrationOffset_ = 0.0f;
+    float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "C";
     int32_t currentReading_ = 0;
     int32_t previousReading_ = 0;  // For GetReading() change tracking
     int32_t previousChangeReading_ = 0;  // For HasStateChanged() separate tracking
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
+    uint32_t configCallbackId_ = 0;  // For live update callback management
 };

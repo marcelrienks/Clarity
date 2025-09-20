@@ -4,10 +4,14 @@
 
 #ifdef TEST_LOGS
 
+// ========== Static Variables ==========
+
 // Static variables to track duplicate messages
 static char last_message[256] = {0};
 static int duplicate_count = 0;
 static bool suppressing = false;
+
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Test logging function with duplicate suppression

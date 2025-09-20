@@ -64,127 +64,78 @@ class PanelManager : public IPanelService,
                      public ITriggerExecutionService
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors/Destructor ==========
     PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
                  IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
 
-    // Core Functionality Methods (IPanelService implementation)
-    /// @brief Initialize the panel service and register available panels
-    void Init() override;
-
-    /// @brief Set current UI state for synchronization
-    /// @param state Current UI processing state
-    void SetUiState(UIState state) override;
-
-    /// @brief Get the current UI state
-    /// @return Current UI processing state
-    UIState GetUiState() const override;
-
-    /// @brief Create and load a panel by name
-    /// @param panelName Name of the panel to create and load
-    /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void CreateAndLoadPanel(const char *panelName, bool isTriggerDriven = false) override;
-
-    /// @brief Update the currently active panel (called from main loop)
-    void UpdatePanel() override;
-    
-    /// @brief Update universal button interrupts with current panel's functions
-    /// @param panel The panel to extract button functions from
-    void UpdatePanelButtonFunctions(IPanel* panel);
-
-    // State Management Methods (IPanelService implementation)
-    /// @brief Get the current panel name
-    /// @return Current panel identifier string
-    const char *GetCurrentPanel() const override;
-
-    /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
-    /// @return Restoration panel identifier string
-    const char *GetRestorationPanel() const override;
-
-    /// @brief Check if the current panel is trigger-driven
-    /// @return True if current panel was loaded by a trigger, false for user-driven panels
-    bool IsCurrentPanelTriggerDriven() const override;
-
-    // Trigger Integration Methods (IPanelService implementation)
-    /// @brief Callback executed when trigger-driven panel loading is complete
-    /// @param triggerId ID of the trigger that initiated the panel switch
-    void TriggerPanelSwitchCallback(const char *triggerId) override;
-
-  private:
-    // Core Functionality Methods
-    
-    /// @brief Register all available panels
-    void RegisterAllPanels();
-
-    /// @brief Create a panel instance by name using the registered factory
-    /// @param panel_name Name of the panel type to create
-    /// @return Shared pointer to the created panel instance
-    std::shared_ptr<IPanel> CreatePanel(const char *panelName);
-
-    /// @brief Internal method to create and load a panel directly without splash
-    /// @param panelName Name of the panel to create and load
-    /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-    void CreateAndLoadPanelDirect(const char *panelName, bool isTriggerDriven = false);
-
-    /// @brief Internal method to load a panel after first showing a splash screen transition
-    /// @param panelName Name of the target panel to load after splash
-    /// @param isTriggerDriven Whether the target panel load is trigger-driven
-    void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
-
-    // Callback Methods
-    
-    /// @brief Callback executed when splash screen loading is complete
-    /// @param panel_name Name of the target panel to load after splash
-    void SplashCompletionCallback(const char *panelName);
-
-    /// @brief Callback executed when normal panel loading is complete
-    void PanelCompletionCallback();
-
-  public:
+    // ========== Static Methods ==========
     // Singleton access for new interrupt architecture
     static PanelManager& Instance();
-    
+
     // Interface accessors for dependency injection (CRITICAL for testability)
     static IPanelNotificationService& NotificationService() { return Instance(); }
     static IActionExecutionService& ActionService() { return Instance(); }
     static ITriggerExecutionService& TriggerService() { return Instance(); }
-    
-    // IPanelNotificationService implementation
+
+    // ========== IPanelService Implementation ==========
+    void Init() override;
+    void SetUiState(UIState state) override;
+    UIState GetUiState() const override;
+    void CreateAndLoadPanel(const char *panelName, bool isTriggerDriven = false) override;
+    void UpdatePanel() override;
+    const char *GetCurrentPanel() const override;
+    const char *GetRestorationPanel() const override;
+    bool IsCurrentPanelTriggerDriven() const override;
+    void TriggerPanelSwitchCallback(const char *triggerId) override;
+
+    // ========== IPanelNotificationService Implementation ==========
     void OnPanelLoadComplete(IPanel* panel) override;
-    void OnPanelUpdateComplete(IPanel* panel) override;
-    
-    // IActionExecutionService implementation  
+
+    // ========== IActionExecutionService Implementation ==========
     void HandleShortPress() override;
     void HandleLongPress() override;
-    
-    // ITriggerExecutionService implementation
+
+    // ========== ITriggerExecutionService Implementation ==========
     void LoadPanel(const char* panelName) override;
     void CheckRestoration() override;
-    
-    // Public Data Members - using std::string for safety (see docs/guidelines.md)
-    std::string currentPanel = PanelNames::OIL;     ///< Current panel state
-    std::string restorationPanel = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
+
+    // ========== Other Public Methods ==========
+    void UpdatePanelButtonFunctions(IPanel* panel);
 
   private:
-    // Instance Data Members
+    // ========== Private Methods ==========
+    std::shared_ptr<IPanel> CreatePanel(const char *panelName);
+    void CreateAndLoadPanelDirect(const char *panelName, bool isTriggerDriven = false);
+    void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
+    void SplashCompletionCallback(const char *panelName);
+    void PanelCompletionCallback();
+
+    // Helper methods for CreateAndLoadPanelDirect
+    void UpdateRestorationTracking(const char* panelName, bool isTriggerDriven);
+    void InjectPreferenceService(const char* panelName);
+    void HandlePanelCreationError(const char* panelName);
+
+    // ========== Panel State Data Members ==========
+    std::string currentPanel_ = PanelNames::OIL;     ///< Current panel state
+    std::string restorationPanel_ = PanelNames::OIL; ///< Panel to restore when all triggers are inactive
     std::shared_ptr<IPanel> panel_ = nullptr;
     UIState uiState_ = UIState::IDLE;          ///< Current UI processing state
     bool currentPanelIsTriggerDriven_ = false; ///< Track if current panel is trigger-driven
 
-    // Panel name storage - using std::string for safety (see docs/guidelines.md)
-    std::string lastUserPanel_ = PanelNames::OIL;    ///< Last user-driven panel
+    // ========== Panel Name Storage Data Members ==========
     std::string splashTargetPanel_;                   ///< Target panel for splash transition
     bool splashTargetTriggerDriven_ = false;          ///< Preserve trigger state through splash transitions
+
+    // ========== Service Dependencies ==========
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
     IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
-    // IActionManager removed - button handling moved to handler-based system
     InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
     IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
 
-    // Cached service references to avoid repeated singleton calls
+    // ========== Cached Service References ==========
     class ErrorManager& errorManager_;                ///< Cached ErrorManager reference
 };

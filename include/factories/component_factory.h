@@ -42,8 +42,10 @@ class ConfigComponent;
  */
 class ComponentFactory : public IComponentFactory {
 public:
+    // ========== Static Methods ==========
     static ComponentFactory& Instance();
     
+    // ========== Public Interface Methods ==========
     // IComponentFactory implementation
     std::unique_ptr<ClarityComponent> CreateClarityComponent(IStyleService* style) override;
     std::unique_ptr<IComponent> CreateOilPressureComponent(IStyleService* style) override;
@@ -54,6 +56,7 @@ public:
     std::unique_ptr<ConfigComponent> CreateConfigComponent(IStyleService* style) override;
     
 private:
+    // ========== Constructors and Destructor ==========
     ComponentFactory() = default;
     ~ComponentFactory() = default;
     ComponentFactory(const ComponentFactory&) = delete;

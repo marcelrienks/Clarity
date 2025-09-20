@@ -41,11 +41,11 @@
 class ErrorPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~ErrorPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::ERROR;
     void Init() override;
     void Load() override;
@@ -55,24 +55,26 @@ class ErrorPanel : public IPanel
     void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
+    // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     
     // Public action handlers
     void HandleShortPress();
     void HandleLongPress();
 
   private:
-    // Static Methods
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);
 
-    // Instance Data Members
+    // ========== Private Methods ==========
+    void SortErrorsBySeverity();                    // Sort errors by severity (CRITICAL first, WARNING last)
+    void AdvanceToNextError();                      // Move to next error and update component
+
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
     ErrorComponent errorComponent_; // Error component - static allocation
     bool componentInitialized_ = false;
     ComponentLocation centerLocation_;               // Component positioning
@@ -82,7 +84,4 @@ class ErrorPanel : public IPanel
     
     // Error cycling functionality
     size_t currentErrorIndex_;                       // Index of currently displayed error
-    
-    void SortErrorsBySeverity();                    // Sort errors by severity (CRITICAL first, WARNING last)
-    void AdvanceToNextError();                      // Move to next error and update component
 };

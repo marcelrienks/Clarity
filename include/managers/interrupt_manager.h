@@ -26,87 +26,96 @@
 class InterruptManager
 {
 public:
-    // Singleton access
-    static InterruptManager& Instance();
-    
-    // Core functionality
-    void Init(IGpioProvider* gpioProvider = nullptr);
-    void Process();
-    
-    
-    // New Trigger/Action system interface
-    bool RegisterTrigger(const Trigger& trigger);
-    void UnregisterTrigger(const char* id);
-    bool RegisterAction(const Action& action);
-    void UnregisterAction(const char* id);
-    
-    // Panel function injection for new ActionHandler
-    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
-    
-    // Handler registration for specialized processing
-    void RegisterHandler(std::shared_ptr<IHandler> handler);
-    void UnregisterHandler(std::shared_ptr<IHandler> handler);
-    
-    // System monitoring and diagnostics
-    void PrintSystemStatus() const;
-    size_t GetRegisteredInterruptCount() const;
-    void GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const;
-    
-    // Performance optimization
-    void OptimizeMemoryUsage();
-    void CompactInterruptArray();
-    
-    // Status queries
-    bool HasActiveInterrupts() const;
-    size_t GetInterruptCount() const;
-    
-    
-    // New handler access for Trigger/Action architecture
-    class TriggerHandler* GetTriggerHandler() const { return triggerHandler_.get(); }
-    class ActionHandler* GetActionHandler() const { return actionHandler_.get(); }
-    
-    // Public restoration checking for handlers
-    void CheckRestoration();
-    
-    // Check and execute highest priority active trigger
-    bool CheckAndExecuteHighestPriorityTrigger();
-    
-    // Check and execute active style triggers
-    void CheckAndExecuteActiveStyleTriggers();
-    
-private:
-    InterruptManager() = default;
-    ~InterruptManager() = default;
+    // ========== Constructors and Destructor ==========
     InterruptManager(const InterruptManager&) = delete;
     InterruptManager& operator=(const InterruptManager&) = delete;
-    
-    
-    // Internal system registration
+    ~InterruptManager() = default;
+
+    // ========== Static Methods ==========
+    static InterruptManager& Instance();
+
+    // ========== Public Interface Methods ==========
+    void Init(IGpioProvider* gpioProvider = nullptr);
+    void Process();
+    bool RegisterTrigger(const Trigger& trigger);
+    bool RegisterAction(const Action& action);
+    void SetCurrentPanel(class IActionService* panel);
+    void RegisterHandler(std::shared_ptr<IHandler> handler);
+
+    /**
+     * @brief Get total count of registered interrupts (triggers + actions)
+     * @return Total number of registered interrupts
+     */
+    size_t GetRegisteredInterruptCount() const;
+
+    /**
+     * @brief Check if any triggers or actions are currently active
+     * @return true if active interrupts exist, false otherwise
+     */
+    bool HasActiveInterrupts() const;
+
+    /**
+     * @brief Get direct access to trigger handler
+     * @return Pointer to TriggerHandler instance
+     */
+    class TriggerHandler* GetTriggerHandler() const { return triggerHandler_.get(); }
+
+    /**
+     * @brief Get direct access to action handler
+     * @return Pointer to ActionHandler instance
+     */
+    class ActionHandler* GetActionHandler() const { return actionHandler_.get(); }
+
+    /**
+     * @brief Check if panel restoration is needed after interrupt deactivation
+     * @details Coordinates with PanelManager for seamless panel restoration
+     */
+    void CheckRestoration();
+
+    /**
+     * @brief Find and execute highest priority PANEL trigger
+     * @return true if trigger was found and executed, false otherwise
+     */
+    bool CheckAndExecuteHighestPriorityTrigger();
+
+    /**
+     * @brief Find and execute highest priority STYLE trigger
+     * @details Handles theme and styling triggers separately from panel triggers
+     */
+    void CheckAndExecuteActiveStyleTriggers();
+
+private:
+    // ========== Constructors and Destructor ==========
+    InterruptManager() = default;
+
+    // ========== Private Methods ==========
+    /**
+     * @brief Register all system-level triggers and actions
+     * @details Creates sensors and registers standard system interrupts
+     */
     void RegisterSystemInterrupts();
-    
-    // Helper methods
+
+    /**
+     * @brief Check if UI is idle for trigger processing optimization
+     * @return true if UI has been idle for sufficient time
+     * @details Uses cached result with 5ms timeout to reduce LVGL query overhead
+     */
     bool IsUIIdle() const;
-    
-    // Static storage for memory safety
+
+    // ========== Private Data Members ==========
     static constexpr size_t MAX_HANDLERS = 8;
-    
+
     // Handler management - Legacy and new handlers
     std::vector<std::shared_ptr<IHandler>> handlers_;
-    
-    
+
     // New Trigger/Action architecture handlers
     std::shared_ptr<class TriggerHandler> triggerHandler_;
     std::shared_ptr<class ActionHandler> actionHandler_;
-    
+
     // System state
     bool initialized_ = false;
     unsigned long lastEvaluationTime_ = 0;
-    
-    // Performance monitoring
-    mutable size_t totalEvaluations_ = 0;
-    mutable size_t totalExecutions_ = 0;
-    
-    
+
     // GPIO provider reference
     IGpioProvider* gpioProvider_ = nullptr;
 };

@@ -31,14 +31,14 @@
 class KeyPanel : public BasePanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
 
-    // Panel identification
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::KEY;
 
   protected:
-    // BasePanel template method implementations
+    // ========== Protected Methods ==========
     void CreateContent() override;
     void UpdateContent() override;
     const char* GetPanelName() const override { return PanelNames::KEY; }
@@ -47,10 +47,10 @@ class KeyPanel : public BasePanel
     void HandleLongPress() override;
 
   private:
-    // Helper methods
+    // ========== Private Methods ==========
     KeyState DetermineCurrentKeyState();
 
-    // Instance Data Members - static allocation
+    // ========== Private Data Members ==========
     KeyComponent keyComponent_;
     bool componentInitialized_ = false;
     KeyState currentKeyState_ = KeyState::Inactive;

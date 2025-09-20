@@ -20,29 +20,45 @@ namespace gpio_pins
 {
 // Analog Input Pins (ADC)
 
-/// @brief Oil pressure sensor analog input pin
+/**
+ * @brief Oil pressure sensor analog input pin
+ */
 constexpr int OIL_PRESSURE = 36;
 
-/// @brief Oil temperature sensor analog input pin
+/**
+ * @brief Oil temperature sensor analog input pin
+ */
 constexpr int OIL_TEMPERATURE = 39;
 
 // Digital Input Pins
 
-/// @brief Key presence detection digital input pin
+/**
+ * @brief Key presence detection digital input pin
+ */
 constexpr int KEY_PRESENT = 25;
 
-/// @brief Key not present detection digital input pin
+/**
+ * @brief Key not present detection digital input pin
+ */
 constexpr int KEY_NOT_PRESENT = 26;
 
-/// @brief Lock state digital input pin
+/**
+ * @brief Lock state digital input pin
+ */
 constexpr int LOCK = 27;
 
-/// @brief Lights detection digital input pin
+/**
+ * @brief Lights detection digital input pin
+ */
 constexpr int LIGHTS = 33;
 
-/// @brief Debug error trigger pin (for development only)
+/**
+ * @brief Debug error trigger pin (for development only)
+ */
 constexpr int DEBUG_ERROR = 34;
 
-/// @brief Input button pin for single button navigation
+/**
+ * @brief Input button pin for single button navigation
+ */
 constexpr int INPUT_BUTTON = 32;
 } // namespace gpio_pins

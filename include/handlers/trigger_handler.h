@@ -28,22 +28,16 @@ class GpioSensor;
 class TriggerHandler : public IHandler
 {
 public:
+    // ========== Constructors and Destructor ==========
     TriggerHandler(IGpioProvider* gpioProvider);
     ~TriggerHandler();
     
+    // ========== Public Interface Methods ==========
     // IHandler interface - new interrupt system only
     void Process() override;
     
     // New Trigger system interface
     bool RegisterTrigger(const Trigger& trigger);
-    void UnregisterTrigger(const char* id);
-    void EvaluateTriggers();  // Called during UI idle only
-    
-    // Priority override and restoration logic
-    void SetHigherPriorityActive(Priority priority);
-    void ClearHigherPriorityActive(Priority priority);
-    bool IsBlocked(const Trigger& trigger) const;
-    void RestoreSameTypeTrigger(TriggerType type, Priority priority);
     
     // Sensor access for trigger context
     GpioSensor* GetKeyPresentSensor() const { return keyPresentSensor_.get(); }
@@ -57,17 +51,18 @@ public:
     // Status and diagnostics
     size_t GetTriggerCount() const;
     bool HasActiveTriggers() const;
-    void PrintTriggerStatus() const;
-    
     // Find highest priority trigger of given type (public for InterruptManager)
     Trigger* FindHighestPrioritySameType(TriggerType type);
     
 private:
+    // ========== Private Methods ==========
+    void EvaluateTriggers();  // Called during UI idle only (by Process)
     // Core trigger processing
     void EvaluateIndividualTrigger(Trigger& trigger);
+    void HandleTriggerActivation(Trigger& trigger);
+    void HandleTriggerDeactivation(Trigger& trigger);
     void ExecuteTriggerFunction(const Trigger& trigger, bool isActivation);
     bool ShouldActivate(const Trigger& trigger) const;
-    bool ShouldDeactivate(const Trigger& trigger) const;
     
     // Priority and blocking logic
     bool HasHigherPriorityActive(Priority priority) const;
@@ -77,6 +72,7 @@ private:
     Trigger* FindTrigger(const char* id);
     bool IsSensorActive(const Trigger& trigger) const;
     
+    // ========== Private Data Members ==========
     static constexpr size_t MAX_TRIGGERS = 16;
     
     // Trigger storage

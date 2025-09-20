@@ -1,322 +1,582 @@
 #include "managers/preference_manager.h"
-#include <esp32-hal-log.h>
+#include "managers/error_manager.h"
+#include "utilities/logging.h"
+#include <algorithm>
+#include <sstream>
 
-// Static Methods removed - using dependency injection
+// Helper class for RAII mutex handling
+class SemaphoreGuard {
+private:
+    SemaphoreHandle_t& semaphore_;
+public:
+    SemaphoreGuard(SemaphoreHandle_t& sem) : semaphore_(sem) {
+        xSemaphoreTake(semaphore_, portMAX_DELAY);
+    }
+    ~SemaphoreGuard() {
+        xSemaphoreGive(semaphore_);
+    }
+};
 
-// Core Functionality Methods
+// ========== Constructor ==========
 
-/// @brief Initialises the preference manager to handle application preferences_
-void PreferenceManager::Init()
-{
-    log_v("Init() called");
+/**
+ * @brief Constructs PreferenceManager with thread safety and NVS initialization
+ *
+ * Initializes the preference management system with thread-safe access,
+ * NVS storage backend, and default configuration sections. Handles NVS
+ * initialization errors and creates default system configuration.
+ */
+PreferenceManager::PreferenceManager() {
+    // Initialize thread safety semaphore
+    configMutex_ = xSemaphoreCreateMutex();
+    if (!configMutex_) {
+        log_e("Failed to create config mutex");
+        ErrorManager::Instance().ReportCriticalError("PreferenceManager",
+                                                     "Failed to create config mutex - thread safety compromised");
+        return;
+    }
 
-    // Initialize preferences_
-    if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
-    {
-        log_w("Failed to initialize preferences_, retrying after format");
-
-        // Format NVS if opening failed
+    // Initialize NVS
+    esp_err_t err = nvs_flash_init();
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         nvs_flash_erase();
-
-        // Try again
-        if (!preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false))
-            log_w("Failed to initialize preferences_ after format");
-
-        else
-            log_w("Preferences initialized successfully after format");
+        err = nvs_flash_init();
     }
 
-    else
-        log_i("PreferenceManager service started successfully - configuration loaded and ready");
+    if (err != ESP_OK) {
+        log_e("Failed to initialize NVS: %s", esp_err_to_name(err));
+        ErrorManager::Instance().ReportCriticalError("PreferenceManager",
+                                                     "Failed to initialize NVS - preferences cannot be saved");
+        return;
+    }
 
-    LoadConfig();
+    // Create default sections
+
+    // Load all registered sections
+    LoadAllConfigSections();
+
+    log_i("PreferenceManager initialized");
 }
 
-/// @brief Create and save a list of default panels
-/// @return true if the save was successful
-void PreferenceManager::CreateDefaultConfig()
-{
-    log_v("CreateDefaultConfig() called");
-    log_v("CreateDefaultConfig() called");
+// ========== Dynamic Configuration Implementation ==========
 
-    config.panelName = PanelNames::OIL;
+/**
+ * @brief Register a configuration section for component self-registration
+ * @param section ConfigSection containing items, metadata, and validation rules
+ * @return true if registration successful, false if section already exists
+ *
+ * Implements component self-registration pattern from dynamic-config-implementation.md.
+ * Components call this during initialization to register their configuration requirements.
+ * The section defines configuration items with types, default values, validation constraints,
+ * and UI metadata for automatic menu generation.
+ *
+ * After registration, any existing persisted values are automatically loaded from NVS,
+ * allowing components to immediately access their stored configuration.
+ */
+bool PreferenceManager::RegisterConfigSection(const Config::ConfigSection& section) {
+    log_v("RegisterConfigSection() called");
+    SemaphoreGuard lock(configMutex_);
 
-    PreferenceManager::SaveConfig();
-    PreferenceManager::LoadConfig();
+    // Check if section already exists - prevent duplicate registration
+    if (registeredSections_.find(section.sectionName) != registeredSections_.end()) {
+        log_w("Section '%s' already registered", section.sectionName.c_str());
+        return false;
+    }
+
+    // Store section definition in memory for later access
+    registeredSections_[section.sectionName] = section;
+    log_i("Registered config section: %s", section.sectionName.c_str());
+
+    // Load any existing persisted values for this section from NVS
+    // This allows components to register config and immediately access stored values
+    LoadConfigSection(section.sectionName);
+
+    return true;
 }
 
-/// @brief Load the configuration from preferences_
-/// @return true if the load was successful, false otherwise
-void PreferenceManager::LoadConfig()
-{
-    log_v("LoadConfig() called");
-    log_v("LoadConfig() called");
+/**
+ * @brief Get list of all registered configuration section names
+ * @return Vector of section names for UI generation and iteration
+ *
+ * Used primarily by ConfigPanel for automatic menu generation. The returned
+ * list enables dynamic UI creation where menus are built based on what
+ * components have registered, rather than hardcoded menu structures.
+ */
+std::vector<std::string> PreferenceManager::GetRegisteredSectionNames() const {
+    SemaphoreGuard lock(configMutex_);
+    std::vector<std::string> names;
+    names.reserve(registeredSections_.size());
 
-    String jsonString = preferences_.getString(CONFIG_KEY, "");
-    if (jsonString.length() == 0)
-    {
-        log_w("No config found, creating default");
-        return PreferenceManager::CreateDefaultConfig();
-    }
-
-    JsonDocument doc;
-    DeserializationError result = deserializeJson(doc, jsonString);
-    if (result != DeserializationError::Ok)
-    {
-        log_w("Error deserializing config");
-        return PreferenceManager::CreateDefaultConfig();
+    for (const auto& [name, section] : registeredSections_) {
+        names.push_back(name);
     }
 
-    if (doc[JsonDocNames::PANEL_NAME].isNull())
-    {
-        log_w("Error reading config");
-        return PreferenceManager::CreateDefaultConfig();
+    return names;
+}
+
+/**
+ * @brief Retrieve a specific configuration section by name
+ * @param sectionName Name of the section to retrieve
+ * @return Optional containing section if found, nullopt if not registered
+ *
+ * Returns the complete section definition including current values and metadata.
+ * Used by ConfigPanel to build configuration UIs and by components to access
+ * their registered configuration structure.
+ */
+std::optional<Config::ConfigSection> PreferenceManager::GetConfigSection(const std::string& sectionName) const {
+    SemaphoreGuard lock(configMutex_);
+
+    auto it = registeredSections_.find(sectionName);
+    if (it != registeredSections_.end()) {
+        return it->second;
     }
 
-    config.panelName = std::string(doc[JsonDocNames::PANEL_NAME].as<const char *>());
+    return std::nullopt;
+}
 
-    // Load all settings with defaults if not present
-    if (!doc[JsonDocNames::SHOW_SPLASH].isNull())
-    {
-        config.showSplash = doc[JsonDocNames::SHOW_SPLASH].as<bool>();
-    }
 
-    if (!doc[JsonDocNames::SPLASH_DURATION].isNull())
-    {
-        config.splashDuration = doc[JsonDocNames::SPLASH_DURATION].as<int>();
-    }
-
-    if (!doc[JsonDocNames::THEME].isNull())
-    {
-        config.theme = std::string(doc[JsonDocNames::THEME].as<const char *>());
-    }
-
-    if (!doc[JsonDocNames::UPDATE_RATE].isNull())
-    {
-        config.updateRate = doc[JsonDocNames::UPDATE_RATE].as<int>();
+/**
+ * @brief Save a specific configuration section to NVS storage
+ * @param sectionName Name of the section to persist
+ * @return true if save operation successful
+ *
+ * Persists all configuration items in the specified section to sectioned NVS storage.
+ * Each section gets its own NVS namespace for organization. Used when components
+ * want to save their specific configuration without affecting other sections.
+ */
+bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
+    auto it = registeredSections_.find(sectionName);
+    if (it == registeredSections_.end()) {
+        log_w("Section not found: %s", sectionName.c_str());
+        return false;
     }
 
-    if (!doc[JsonDocNames::PRESSURE_UNIT].isNull())
-    {
-        config.pressureUnit = std::string(doc[JsonDocNames::PRESSURE_UNIT].as<const char *>());
+    const Config::ConfigSection& section = it->second;
+    std::string nsName = GetSectionNamespace(sectionName);
+
+    preferences_.begin(nsName.c_str(), false);
+    bool success = true;
+
+    for (const auto& item : section.items) {
+        if (!StoreValueToNVS(preferences_, item.key, item.value)) {
+            log_e("Failed to store config item: %s.%s", sectionName.c_str(), item.key.c_str());
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                                                "Failed to store config item to NVS");
+            success = false;
+        }
     }
 
-    if (!doc[JsonDocNames::TEMP_UNIT].isNull())
-    {
-        config.tempUnit = std::string(doc[JsonDocNames::TEMP_UNIT].as<const char *>());
+    preferences_.end();
+
+    return success;
+}
+
+/**
+ * @brief Load a specific configuration section from NVS storage
+ * @param sectionName Name of the section to load
+ * @return true if load operation successful
+ *
+ * Loads persisted values from sectioned NVS storage into the in-memory section definition.
+ * Called automatically after component registration to restore previous configuration.
+ * Updates the registered section with stored values while preserving metadata.
+ */
+bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
+    auto it = registeredSections_.find(sectionName);
+    if (it == registeredSections_.end()) {
+        return false;
     }
 
-    // Load calibration settings
-    if (!doc[JsonDocNames::PRESSURE_OFFSET].isNull())
-    {
-        config.pressureOffset = doc[JsonDocNames::PRESSURE_OFFSET].as<float>();
+    Config::ConfigSection& section = it->second;
+    std::string nsName = GetSectionNamespace(sectionName);
+
+    preferences_.begin(nsName.c_str(), true); // read-only
+
+    for (auto& item : section.items) {
+        // Only overwrite default if value exists in NVS
+        if (preferences_.isKey(item.key.c_str())) {
+            item.value = LoadValueFromNVS(preferences_, item.key, item.defaultValue);
+        }
+        // Otherwise preserve the default value in item.value
     }
-    if (!doc[JsonDocNames::PRESSURE_SCALE].isNull())
-    {
-        config.pressureScale = doc[JsonDocNames::PRESSURE_SCALE].as<float>();
+
+    preferences_.end();
+    return true;
+}
+
+/**
+ * @brief Save all registered configuration sections to storage
+ * @return true if all sections saved successfully
+ *
+ * Batch operation for complete configuration persistence. Iterates through all
+ * registered sections and saves each one to its respective NVS namespace.
+ * Used during application shutdown or when performing complete configuration backup.
+ */
+bool PreferenceManager::SaveAllConfigSections() {
+    bool allSuccess = true;
+    for (const auto& [name, section] : registeredSections_) {
+        if (!SaveConfigSection(name)) {
+            allSuccess = false;
+        }
     }
-    if (!doc[JsonDocNames::TEMP_OFFSET].isNull())
-    {
-        config.tempOffset = doc[JsonDocNames::TEMP_OFFSET].as<float>();
+    return allSuccess;
+}
+
+/**
+ * @brief Load all registered configuration sections from storage
+ * @return true if all sections loaded successfully
+ *
+ * Batch operation for complete configuration restoration. Iterates through all
+ * registered sections and loads persisted values from their respective NVS namespaces.
+ * Called during application startup to restore previous configuration state.
+ */
+bool PreferenceManager::LoadAllConfigSections() {
+    bool allSuccess = true;
+    for (const auto& [name, section] : registeredSections_) {
+        if (!LoadConfigSection(name)) {
+            allSuccess = false;
+        }
     }
-    if (!doc[JsonDocNames::TEMP_SCALE].isNull())
-    {
-        config.tempScale = doc[JsonDocNames::TEMP_SCALE].as<float>();
+    return allSuccess;
+}
+
+bool PreferenceManager::ValidateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) const {
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+
+    auto sectionIt = registeredSections_.find(sectionName);
+    if (sectionIt == registeredSections_.end()) {
+        return false;
+    }
+
+    const Config::ConfigSection& section = sectionIt->second;
+    auto itemIt = std::find_if(section.items.begin(), section.items.end(),
+        [&itemKey](const Config::ConfigItem& item) { return item.key == itemKey; });
+
+    if (itemIt == section.items.end()) {
+        return false;
+    }
+
+    const Config::ConfigItem& item = *itemIt;
+
+    // Type validation - ensure types match between new value and existing value
+    if (!Config::ConfigValueHelper::TypesMatch(value, item.value)) {
+        log_w("Type mismatch for key %s - expected %s, got %s",
+              fullKey.c_str(),
+              Config::ConfigValueHelper::GetTypeName(item.value).c_str(),
+              Config::ConfigValueHelper::GetTypeName(value).c_str());
+        return false;
+    }
+
+    // Validate based on value type and metadata
+    if (std::holds_alternative<int>(value)) {
+        auto val = std::get<int>(value);
+        return ValidateIntRange(val, item.metadata.constraints);
+    }
+    else if (std::holds_alternative<float>(value)) {
+        auto val = std::get<float>(value);
+        return ValidateFloatRange(val, item.metadata.constraints);
+    }
+    else if (std::holds_alternative<std::string>(value)) {
+        auto val = std::get<std::string>(value);
+        // For selection items (enum-like), validate against constraints
+        if (item.metadata.itemType == Config::ConfigItemType::Selection) {
+            return ValidateEnumValue(val, item.metadata.constraints);
+        }
+        return true; // Free-form strings always valid
+    }
+    else if (std::holds_alternative<bool>(value)) {
+        return true; // Booleans always valid
+    }
+
+    return false;
+}
+
+
+
+// ========== Live Update Implementation ==========
+
+uint32_t PreferenceManager::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
+    SemaphoreGuard lock(configMutex_);
+    uint32_t callbackId = nextCallbackId_++;
+    changeCallbacks_[callbackId] = std::make_pair(fullKey, callback);
+    return callbackId;
+}
+
+
+
+
+
+
+
+// ========== Protected Implementation Methods ==========
+
+std::optional<Config::ConfigValue> PreferenceManager::QueryConfigImpl(const std::string& fullKey) const {
+    // Parse dot-separated key into section and item (e.g., "oil_temp_sensor.unit")
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+
+    // Find the registered section by name
+    auto sectionIt = registeredSections_.find(sectionName);
+    if (sectionIt == registeredSections_.end()) {
+        return std::nullopt; // Section not registered
+    }
+
+    // Search for the specific configuration item within the section
+    const Config::ConfigSection& section = sectionIt->second;
+    auto itemIt = std::find_if(section.items.begin(), section.items.end(),
+        [&itemKey](const Config::ConfigItem& item) { return item.key == itemKey; });
+
+    if (itemIt == section.items.end()) {
+        return std::nullopt; // Item not found in section
+    }
+
+    // Return the current value stored in memory
+    return itemIt->value;
+}
+
+bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) {
+    // Parse dot-separated key into section and item components
+    auto [sectionName, itemKey] = ParseConfigKey(fullKey);
+
+    // Find the registered section
+    auto sectionIt = registeredSections_.find(sectionName);
+    if (sectionIt == registeredSections_.end()) {
+        log_w("Section not found for key: %s", fullKey.c_str());
+        return false;
+    }
+
+    // Find the specific configuration item within the section
+    Config::ConfigSection& section = sectionIt->second;
+    auto itemIt = std::find_if(section.items.begin(), section.items.end(),
+        [&itemKey](Config::ConfigItem& item) { return item.key == itemKey; });
+
+    if (itemIt == section.items.end()) {
+        log_w("Item not found for key: %s", fullKey.c_str());
+        return false;
+    }
+
+    // Store old value for change notifications
+    std::optional<Config::ConfigValue> oldValue = itemIt->value;
+
+    // Validate new value against metadata constraints (range, enum options, etc.)
+    if (!ValidateConfigValue(fullKey, value)) {
+        log_w("Validation failed for key: %s", fullKey.c_str());
+        return false;
+    }
+
+    // Update in-memory value
+    itemIt->value = value;
+
+    // Persist to sectioned NVS storage - each section gets its own namespace
+    std::string nsName = GetSectionNamespace(sectionName);
+    preferences_.begin(nsName.c_str(), false); // false = read/write mode
+    bool success = StoreValueToNVS(preferences_, itemKey, value);
+    preferences_.end();
+
+    if (success) {
+        log_i("Updated config %s = %s", fullKey.c_str(),
+              Config::ConfigValueHelper::ToString(value).c_str());
+
+        // Notify all registered callbacks about the configuration change
+        // Callbacks can watch specific keys or all changes (empty watchedKey)
+        for (const auto& [callbackId, keyCallbackPair] : changeCallbacks_) {
+            const std::string& watchedKey = keyCallbackPair.first;
+            const ConfigChangeCallback& callback = keyCallbackPair.second;
+
+            // Check if callback watches this key specifically or all changes
+            if (watchedKey.empty() || watchedKey == fullKey) {
+                try {
+                    // Call registered callback with old and new values
+                    callback(fullKey, oldValue, value);
+                    log_t("Notified callback %u for update: %s", callbackId, fullKey.c_str());
+                } catch (const std::exception& e) {
+                    log_e("Exception in change callback %u: %s", callbackId, e.what());
+                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                                                        "Exception in change callback");
+                }
+            }
+        }
+    } else {
+        // Rollback in-memory value on NVS write failure
+        itemIt->value = *oldValue;
+        log_e("Failed to save config to NVS for key: %s", fullKey.c_str());
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                                            "Failed to save config value to NVS");
+    }
+
+    return success;
+}
+
+// ========== Private Helper Methods ==========
+
+std::pair<std::string, std::string> PreferenceManager::ParseConfigKey(const std::string& fullKey) const {
+    size_t dotPos = fullKey.find('.');
+    if (dotPos == std::string::npos) {
+        return {"", fullKey};
+    }
+    return {fullKey.substr(0, dotPos), fullKey.substr(dotPos + 1)};
+}
+
+/**
+ * @brief Generate NVS namespace string for a configuration section
+ * @param sectionName Name of the configuration section
+ * @return NVS namespace string with prefix, truncated if necessary
+ *
+ * Creates proper NVS namespace by prefixing section name and ensuring
+ * it fits within NVS 15-character namespace limit. Truncates if needed.
+ */
+std::string PreferenceManager::GetSectionNamespace(const std::string& sectionName) const {
+    std::string ns = SECTION_PREFIX_ + sectionName;
+    if (ns.length() > MAX_NAMESPACE_LEN_) {
+        ns = ns.substr(0, MAX_NAMESPACE_LEN_);
+    }
+    return ns;
+}
+
+
+
+/**
+ * @brief Validate integer value against range constraints
+ * @param value Integer value to validate
+ * @param constraints Range string in format "min-max" (e.g., "0-100")
+ * @return true if value is within range or constraints are invalid
+ *
+ * Parses range constraints and validates integer values. Returns true
+ * for empty constraints or parsing errors (permissive validation).
+ */
+bool PreferenceManager::ValidateIntRange(int value, const std::string& constraints) const {
+    if (constraints.empty()) return true;
+
+    size_t dashPos = constraints.find('-');
+    if (dashPos == std::string::npos) return true;
+
+    try {
+        int min = std::stoi(constraints.substr(0, dashPos));
+        int max = std::stoi(constraints.substr(dashPos + 1));
+        return value >= min && value <= max;
+    } catch (...) {
+        return true; // If parsing fails, allow the value
     }
 }
 
-/// @brief Save the current configuration to preferences_
-/// @return true if the save was successful, false otherwise
-void PreferenceManager::SaveConfig()
-{
-    log_v("SaveConfig() called");
-    log_v("SaveConfig() called");
+/**
+ * @brief Validate float value against range constraints
+ * @param value Float value to validate
+ * @param constraints Range string in format "min-max" (e.g., "0.0-1.0")
+ * @return true if value is within range or constraints are invalid
+ *
+ * Parses range constraints and validates float values. Returns true
+ * for empty constraints or parsing errors (permissive validation).
+ */
+bool PreferenceManager::ValidateFloatRange(float value, const std::string& constraints) const {
+    if (constraints.empty()) return true;
 
-    preferences_.remove(CONFIG_KEY);
+    size_t dashPos = constraints.find('-');
+    if (dashPos == std::string::npos) return true;
 
-    // Use the new JsonDocument instead of the deprecated classes
-    JsonDocument doc;
-    doc[JsonDocNames::PANEL_NAME] = config.panelName.c_str();
-    doc[JsonDocNames::SHOW_SPLASH] = config.showSplash;
-    doc[JsonDocNames::SPLASH_DURATION] = config.splashDuration;
-    doc[JsonDocNames::THEME] = config.theme.c_str();
-    doc[JsonDocNames::UPDATE_RATE] = config.updateRate;
-    doc[JsonDocNames::PRESSURE_UNIT] = config.pressureUnit.c_str();
-    doc[JsonDocNames::TEMP_UNIT] = config.tempUnit.c_str();
-    
-    // Serialize calibration settings
-    doc[JsonDocNames::PRESSURE_OFFSET] = config.pressureOffset;
-    doc[JsonDocNames::PRESSURE_SCALE] = config.pressureScale;
-    doc[JsonDocNames::TEMP_OFFSET] = config.tempOffset;
-    doc[JsonDocNames::TEMP_SCALE] = config.tempScale;
-
-    // Serialize to JSON string
-    String jsonString;
-    serializeJson(doc, jsonString);
-
-
-    // Save the JSON string to preferences_
-    size_t written = preferences_.putString(CONFIG_KEY, jsonString);
-    if (written > 0)
-    {
-        log_i("Configuration saved successfully (%zu bytes written)", written);
-        // Commit changes to NVS - this is critical for persistence across reboots
-        preferences_.end();
-        // Reopen preferences for future operations
-        preferences_.begin(SystemConstants::PREFERENCES_NAMESPACE, false);
-        log_i("System configuration updated and persisted to NVS storage");
-    }
-    else
-    {
-        log_e("Failed to save configuration to NVS");
+    try {
+        float min = std::stof(constraints.substr(0, dashPos));
+        float max = std::stof(constraints.substr(dashPos + 1));
+        return value >= min && value <= max;
+    } catch (...) {
+        return true;
     }
 }
 
-// IPreferenceService interface implementation
+/**
+ * @brief Validate enum value against allowed options
+ * @param value String value to validate
+ * @param constraints Comma-separated options (e.g., "PSI,Bar,kPa")
+ * @return true if value is in the allowed list or constraints are empty
+ *
+ * Parses comma-separated options and checks if value is valid.
+ * Used for dropdown/enum configuration validation.
+ */
+bool PreferenceManager::ValidateEnumValue(const std::string& value, const std::string& constraints) const {
+    if (constraints.empty()) return true;
 
-/// @brief Get the current configuration object
-/// @return Reference to current configuration settings
-Configs &PreferenceManager::GetConfig()
-{
-    return config;
+    auto options = ParseOptions(constraints);
+    return std::find(options.begin(), options.end(), value) != options.end();
 }
 
-/// @brief Get the current configuration object (read-only)
-/// @return Const reference to current configuration settings
-const Configs &PreferenceManager::GetConfig() const
-{
-    log_v("GetConfig() const called");
-    return config;
+/**
+ * @brief Parse comma-separated string into vector of options
+ * @param str Comma-separated string to parse
+ * @return Vector of trimmed, non-empty options
+ *
+ * Splits string by commas, trims whitespace from each option,
+ * and filters out empty entries. Used for enum validation.
+ */
+std::vector<std::string> PreferenceManager::ParseOptions(const std::string& str) const {
+    std::vector<std::string> options;
+    std::stringstream ss(str);
+    std::string option;
+
+    while (std::getline(ss, option, ',')) {
+        // Trim whitespace
+        option.erase(0, option.find_first_not_of(" \t"));
+        option.erase(option.find_last_not_of(" \t") + 1);
+        if (!option.empty()) {
+            options.push_back(option);
+        }
+    }
+
+    return options;
 }
 
-/// @brief Update the configuration object
-/// @param newConfig New configuration settings to apply
-void PreferenceManager::SetConfig(const Configs &newConfig)
-{
-    log_v("SetConfig() called");
-    // Configuration updated
-    config = newConfig;
+/**
+ * @brief Store ConfigValue to NVS using type-appropriate method
+ * @param prefs Preferences instance for the section namespace
+ * @param key Configuration key to store
+ * @param value ConfigValue containing the data to store
+ * @param type Expected configuration value type
+ * @return true if storage successful, false on type mismatch or NVS error
+ *
+ * Converts ConfigValue to appropriate NVS type and stores using type-specific
+ * putters. Handles type safety by validating ConfigValue content matches expected type.
+ */
+bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& key,
+                                               const Config::ConfigValue& value) {
+    if (std::holds_alternative<int>(value)) {
+        return prefs.putInt(key.c_str(), std::get<int>(value));
+    }
+    else if (std::holds_alternative<float>(value)) {
+        return prefs.putFloat(key.c_str(), std::get<float>(value));
+    }
+    else if (std::holds_alternative<bool>(value)) {
+        return prefs.putBool(key.c_str(), std::get<bool>(value));
+    }
+    else if (std::holds_alternative<std::string>(value)) {
+        return prefs.putString(key.c_str(), std::get<std::string>(value).c_str());
+    }
+
+    return false;
 }
 
-// Generic preference access methods for dynamic menus
-
-/// @brief Get a preference value by key
-/// @param key The preference key
-/// @return String representation of the value
-std::string PreferenceManager::GetPreference(const std::string &key) const
-{
-    log_v("GetPreference() called");
-    if (key == "panel_name")
-        return config.panelName;
-    if (key == "show_splash")
-        return config.showSplash ? "true" : "false";
-    if (key == "splash_duration") {
-        static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%d", config.splashDuration);
-        return buffer;
+/**
+ * @brief Load configuration value from NVS storage and convert to ConfigValue
+ * @param prefs Preferences instance for the section namespace
+ * @param key Configuration key to load
+ * @param type Expected configuration value type for type-safe loading
+ * @return ConfigValue containing the loaded value or default value if not found
+ *
+ * Loads type-specific values from NVS using appropriate getter methods.
+ * Returns sensible defaults for missing values (0 for numbers, false for bool, empty for string).
+ * Handles both String and Enum types as strings since enums are stored as their string values.
+ * Returns std::monostate for unknown types to indicate invalid/unhandled configuration.
+ */
+Config::ConfigValue PreferenceManager::LoadValueFromNVS(Preferences& prefs, const std::string& key,
+                                                               const Config::ConfigValue& templateValue) {
+    if (std::holds_alternative<int>(templateValue)) {
+        return prefs.getInt(key.c_str(), std::get<int>(templateValue));
     }
-    if (key == "theme")
-        return config.theme;
-    if (key == "update_rate") {
-        static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%d", config.updateRate);
-        return buffer;
+    else if (std::holds_alternative<float>(templateValue)) {
+        return prefs.getFloat(key.c_str(), std::get<float>(templateValue));
     }
-    if (key == "pressure_unit")
-        return config.pressureUnit;
-    if (key == "temp_unit")
-        return config.tempUnit;
-    if (key == "pressure_offset") {
-        static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.pressureOffset);
-        return buffer;
+    else if (std::holds_alternative<bool>(templateValue)) {
+        return prefs.getBool(key.c_str(), std::get<bool>(templateValue));
     }
-    if (key == "pressure_scale") {
-        static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.pressureScale);
-        return buffer;
-    }
-    if (key == "temp_offset") {
-        static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.tempOffset);
-        return buffer;
-    }
-    if (key == "temp_scale") {
-        static char buffer[16];
-        snprintf(buffer, sizeof(buffer), "%.2f", config.tempScale);
-        return buffer;
+    else if (std::holds_alternative<std::string>(templateValue)) {
+        return std::string(prefs.getString(key.c_str(), std::get<std::string>(templateValue).c_str()).c_str());
     }
 
-    log_w("Unknown preference key: %s", key.c_str());
-    return "";
+    return std::monostate{};
 }
-
-/// @brief Set a preference value by key
-/// @param key The preference key
-/// @param value String representation of the value
-void PreferenceManager::SetPreference(const std::string &key, const std::string &value)
-{
-    log_v("SetPreference() called");
-    if (key == "panel_name")
-    {
-        config.panelName = value;
-    }
-    else if (key == "show_splash")
-    {
-        config.showSplash = (value == "true");
-    }
-    else if (key == "splash_duration")
-    {
-        config.splashDuration = std::stoi(value);
-    }
-    else if (key == "theme")
-    {
-        config.theme = value;
-    }
-    else if (key == "update_rate")
-    {
-        config.updateRate = std::stoi(value);
-    }
-    else if (key == "pressure_unit")
-    {
-        config.pressureUnit = value;
-    }
-    else if (key == "temp_unit")
-    {
-        config.tempUnit = value;
-    }
-    else if (key == "pressure_offset")
-    {
-        config.pressureOffset = std::stof(value);
-    }
-    else if (key == "pressure_scale")
-    {
-        config.pressureScale = std::stof(value);
-    }
-    else if (key == "temp_offset")
-    {
-        config.tempOffset = std::stof(value);
-    }
-    else if (key == "temp_scale")
-    {
-        config.tempScale = std::stof(value);
-    }
-    else
-    {
-        log_w("Unknown preference key: %s", key.c_str());
-    }
-}
-
-/// @brief Check if a preference exists
-/// @param key The preference key
-/// @return true if preference exists
-bool PreferenceManager::HasPreference(const std::string &key) const
-{
-    log_v("HasPreference() called");
-    bool hasKey = (key == "panel_name" || key == "show_splash" || key == "splash_duration" || key == "theme" ||
-                   key == "update_rate" || key == "pressure_unit" || key == "temp_unit" ||
-                   key == "pressure_offset" || key == "pressure_scale" || key == "temp_offset" || key == "temp_scale");
-    return hasKey;
-}
-
-// Private Methods
