@@ -9,7 +9,6 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_preference_service.h"
 #include "sensors/base_sensor.h"
-#include "utilities/sensor_helper.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
 

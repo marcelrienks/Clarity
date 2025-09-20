@@ -10,7 +10,7 @@
 #endif
 
 /**
- * @file interrupts/system_definitions.h
+ * @file definitions/interrupts.h
  * @brief System trigger and action definitions for the interrupt architecture
  *
  * @details This file contains all the system-wide interrupt trigger and action
@@ -19,7 +19,7 @@
  * interrupt-driven system behavior.
  */
 
-namespace SystemDefinitions {
+namespace Interrupts {
 
 inline std::vector<Trigger> GetSystemTriggers(
     class BaseSensor* keyPresentSensor,
@@ -159,4 +159,4 @@ inline std::vector<Action> GetSystemActions() {
     };
 }
 
-} // namespace SystemDefinitions
+} // namespace Interrupts

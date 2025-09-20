@@ -6,6 +6,7 @@
 #include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
+#include <algorithm>
 
 // Constructors and Destructors
 
@@ -108,7 +109,7 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
     log_v("SetTargetUnit() called");
     // Validate unit is supported
     auto supportedUnits = GetSupportedUnits();
-    if (!SensorHelper::IsUnitSupported(unit, supportedUnits))
+    if (std::find(supportedUnits.begin(), supportedUnits.end(), unit) == supportedUnits.end())
     {
         // Use static string to avoid allocation in error path
         static const char* errorMsg = "Unsupported pressure unit requested. Using default Bar.";
@@ -134,13 +135,13 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
 Reading OilPressureSensor::GetReading()
 {
     // Check if enough time has passed for update
-    if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
+    if (ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
         // Read raw value from ADC
         int32_t rawValue = ReadRawValue();
 
         // Validate ADC reading
-        if (!SensorHelper::IsValidAdcReading(rawValue))
+        if (!IsValidAdcReading(rawValue))
         {
             // Use char buffer to avoid std::to_string allocation in error path
             static char errorBuffer[64];
@@ -213,7 +214,7 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 
     // Convert calibrated ADC value to Bar (base unit)
     // Base calibration: 0-4095 ADC = 0-10 Bar
-    float barValue = (calibratedValue * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
+    float barValue = (calibratedValue * SensorConstants::PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
 
     // Convert from base unit (Bar) to target unit
     if (targetUnit_ == ConfigConstants::Units::PSI_UPPER)

@@ -6,6 +6,7 @@
 #include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
+#include <algorithm>
 
 // Constructors and Destructors
 
@@ -110,7 +111,7 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
     log_v("SetTargetUnit() called");
     // Validate unit is supported
     auto supportedUnits = GetSupportedUnits();
-    if (!SensorHelper::IsUnitSupported(unit, supportedUnits))
+    if (std::find(supportedUnits.begin(), supportedUnits.end(), unit) == supportedUnits.end())
     {
         // Use static string to avoid allocation in error path
         static const char* errorMsg = "Unsupported temperature unit requested. Using default C.";
@@ -136,13 +137,13 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
 Reading OilTemperatureSensor::GetReading()
 {
     // Check if enough time has passed for update
-    if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
+    if (ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
         // Read raw value from ADC
         int32_t rawValue = ReadRawValue();
 
         // Validate ADC reading
-        if (!SensorHelper::IsValidAdcReading(rawValue))
+        if (!IsValidAdcReading(rawValue))
         {
             // Use char buffer to avoid std::to_string allocation in error path
             static char errorBuffer[64];
@@ -215,7 +216,7 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 
     // Convert calibrated ADC value to Celsius (base unit)
     // Base calibration: 0-4095 ADC = 0-120°C
-    float celsiusValue = (calibratedValue * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
+    float celsiusValue = (calibratedValue * SensorConstants::TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
 
     // Convert from base unit (Celsius) to target unit
     if (targetUnit_ == ConfigConstants::Units::FAHRENHEIT)

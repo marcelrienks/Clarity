@@ -2,7 +2,7 @@
 #include "managers/error_manager.h"
 #include "handlers/trigger_handler.h"
 #include "handlers/action_handler.h"
-#include "interrupts/system_definitions.h"
+#include "definitions/interrupts.h"
 #include "definitions/constants.h"
 #include "sensors/gpio_sensor.h"
 #include <Arduino.h>
@@ -270,7 +270,7 @@ void InterruptManager::RegisterSystemInterrupts()
 
     // Get system triggers with handler-owned sensors
     // Note: static_cast is safe here as all sensors inherit from BaseSensor
-    auto systemTriggers = SystemDefinitions::GetSystemTriggers(
+    auto systemTriggers = Interrupts::GetSystemTriggers(
         static_cast<BaseSensor*>(triggerHandler_->GetKeyPresentSensor()),
         static_cast<BaseSensor*>(triggerHandler_->GetKeyNotPresentSensor()),
         static_cast<BaseSensor*>(triggerHandler_->GetLockSensor()),
@@ -292,7 +292,7 @@ void InterruptManager::RegisterSystemInterrupts()
     }
 
     // Get and register system actions
-    auto systemActions = SystemDefinitions::GetSystemActions();
+    auto systemActions = Interrupts::GetSystemActions();
     for (const auto& action : systemActions) {
         if (!RegisterAction(action)) {
             log_e("Failed to register system action: %s", action.id);
