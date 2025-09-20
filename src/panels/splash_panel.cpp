@@ -252,8 +252,8 @@ void SplashPanel::RegisterConfiguration()
     section.displayOrder = 20; // Lower priority than core systems
 
     // Splash duration selection (show_splash is managed by system settings)
-    ConfigItem durationItem("duration", "Duration", ConfigValueType::Enum,
-                           std::string("1500"), ConfigMetadata("1500,1750,2000,2500", "ms"));
+    ConfigItem durationItem("duration", "Duration", std::string("1500"),
+                           ConfigMetadata("1500,1750,2000,2500", "ms", ConfigItemType::Selection));
 
     section.AddItem(durationItem);
 

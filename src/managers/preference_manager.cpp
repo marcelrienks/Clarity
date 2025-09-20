@@ -158,7 +158,7 @@ bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
     bool success = true;
 
     for (const auto& item : section.items) {
-        if (!StoreValueToNVS(preferences_, item.key, item.value, item.type)) {
+        if (!StoreValueToNVS(preferences_, item.key, item.value)) {
             log_e("Failed to store config item: %s.%s", sectionName.c_str(), item.key.c_str());
             ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
                                                 "Failed to store config item to NVS");
@@ -194,7 +194,7 @@ bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
     for (auto& item : section.items) {
         // Only overwrite default if value exists in NVS
         if (preferences_.isKey(item.key.c_str())) {
-            item.value = LoadValueFromNVS(preferences_, item.key, item.type);
+            item.value = LoadValueFromNVS(preferences_, item.key, item.defaultValue);
         }
         // Otherwise preserve the default value in item.value
     }
@@ -257,35 +257,34 @@ bool PreferenceManager::ValidateConfigValue(const std::string& fullKey, const Co
 
     const Config::ConfigItem& item = *itemIt;
 
-    // Type validation
-    if (value.index() != static_cast<size_t>(item.type)) {
-        log_w("Type mismatch for key %s", fullKey.c_str());
+    // Type validation - ensure types match between new value and existing value
+    if (!Config::ConfigValueHelper::TypesMatch(value, item.value)) {
+        log_w("Type mismatch for key %s - expected %s, got %s",
+              fullKey.c_str(),
+              Config::ConfigValueHelper::GetTypeName(item.value).c_str(),
+              Config::ConfigValueHelper::GetTypeName(value).c_str());
         return false;
     }
 
-    // Range validation based on metadata
-    switch (item.type) {
-        case Config::ConfigValueType::Integer:
-            if (auto val = Config::ConfigValueHelper::GetValue<int>(value)) {
-                return ValidateIntRange(*val, item.metadata.constraints);
-            }
-            break;
-
-        case Config::ConfigValueType::Float:
-            if (auto val = Config::ConfigValueHelper::GetValue<float>(value)) {
-                return ValidateFloatRange(*val, item.metadata.constraints);
-            }
-            break;
-
-        case Config::ConfigValueType::Enum:
-            if (auto val = Config::ConfigValueHelper::GetValue<std::string>(value)) {
-                return ValidateEnumValue(*val, item.metadata.constraints);
-            }
-            break;
-
-        case Config::ConfigValueType::Boolean:
-        case Config::ConfigValueType::String:
-            return true; // No additional validation needed
+    // Validate based on value type and metadata
+    if (std::holds_alternative<int>(value)) {
+        auto val = std::get<int>(value);
+        return ValidateIntRange(val, item.metadata.constraints);
+    }
+    else if (std::holds_alternative<float>(value)) {
+        auto val = std::get<float>(value);
+        return ValidateFloatRange(val, item.metadata.constraints);
+    }
+    else if (std::holds_alternative<std::string>(value)) {
+        auto val = std::get<std::string>(value);
+        // For selection items (enum-like), validate against constraints
+        if (item.metadata.itemType == Config::ConfigItemType::Selection) {
+            return ValidateEnumValue(val, item.metadata.constraints);
+        }
+        return true; // Free-form strings always valid
+    }
+    else if (std::holds_alternative<bool>(value)) {
+        return true; // Booleans always valid
     }
 
     return false;
@@ -369,7 +368,7 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
     // Persist to sectioned NVS storage - each section gets its own namespace
     std::string nsName = GetSectionNamespace(sectionName);
     preferences_.begin(nsName.c_str(), false); // false = read/write mode
-    bool success = StoreValueToNVS(preferences_, itemKey, value, itemIt->type);
+    bool success = StoreValueToNVS(preferences_, itemKey, value);
     preferences_.end();
 
     if (success) {
@@ -535,32 +534,18 @@ std::vector<std::string> PreferenceManager::ParseOptions(const std::string& str)
  * putters. Handles type safety by validating ConfigValue content matches expected type.
  */
 bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& key,
-                                               const Config::ConfigValue& value, Config::ConfigValueType type) {
-    switch (type) {
-        case Config::ConfigValueType::Integer:
-            if (auto val = Config::ConfigValueHelper::GetValue<int>(value)) {
-                return prefs.putInt(key.c_str(), *val);
-            }
-            break;
-
-        case Config::ConfigValueType::Float:
-            if (auto val = Config::ConfigValueHelper::GetValue<float>(value)) {
-                return prefs.putFloat(key.c_str(), *val);
-            }
-            break;
-
-        case Config::ConfigValueType::Boolean:
-            if (auto val = Config::ConfigValueHelper::GetValue<bool>(value)) {
-                return prefs.putBool(key.c_str(), *val);
-            }
-            break;
-
-        case Config::ConfigValueType::String:
-        case Config::ConfigValueType::Enum:
-            if (auto val = Config::ConfigValueHelper::GetValue<std::string>(value)) {
-                return prefs.putString(key.c_str(), val->c_str());
-            }
-            break;
+                                               const Config::ConfigValue& value) {
+    if (std::holds_alternative<int>(value)) {
+        return prefs.putInt(key.c_str(), std::get<int>(value));
+    }
+    else if (std::holds_alternative<float>(value)) {
+        return prefs.putFloat(key.c_str(), std::get<float>(value));
+    }
+    else if (std::holds_alternative<bool>(value)) {
+        return prefs.putBool(key.c_str(), std::get<bool>(value));
+    }
+    else if (std::holds_alternative<std::string>(value)) {
+        return prefs.putString(key.c_str(), std::get<std::string>(value).c_str());
     }
 
     return false;
@@ -579,20 +564,18 @@ bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& k
  * Returns std::monostate for unknown types to indicate invalid/unhandled configuration.
  */
 Config::ConfigValue PreferenceManager::LoadValueFromNVS(Preferences& prefs, const std::string& key,
-                                                               Config::ConfigValueType type) {
-    switch (type) {
-        case Config::ConfigValueType::Integer:
-            return prefs.getInt(key.c_str(), 0);
-
-        case Config::ConfigValueType::Float:
-            return prefs.getFloat(key.c_str(), 0.0f);
-
-        case Config::ConfigValueType::Boolean:
-            return prefs.getBool(key.c_str(), false);
-
-        case Config::ConfigValueType::String:
-        case Config::ConfigValueType::Enum:
-            return std::string(prefs.getString(key.c_str(), "").c_str());
+                                                               const Config::ConfigValue& templateValue) {
+    if (std::holds_alternative<int>(templateValue)) {
+        return prefs.getInt(key.c_str(), std::get<int>(templateValue));
+    }
+    else if (std::holds_alternative<float>(templateValue)) {
+        return prefs.getFloat(key.c_str(), std::get<float>(templateValue));
+    }
+    else if (std::holds_alternative<bool>(templateValue)) {
+        return prefs.getBool(key.c_str(), std::get<bool>(templateValue));
+    }
+    else if (std::holds_alternative<std::string>(templateValue)) {
+        return std::string(prefs.getString(key.c_str(), std::get<std::string>(templateValue).c_str()).c_str());
     }
 
     return std::monostate{};

@@ -18,18 +18,6 @@
 namespace Config {
 
 /**
- * @enum ConfigValueType
- * @brief Supported configuration value types
- */
-enum class ConfigValueType {
-    Integer,    ///< Integer values with optional range constraints
-    Float,      ///< Floating-point values with optional range constraints
-    String,     ///< Free-form text values
-    Boolean,    ///< True/false toggle values
-    Enum        ///< Enumerated values from a predefined list
-};
-
-/**
  * @typedef ConfigValue
  * @brief Variant type for storing configuration values
  *
@@ -39,26 +27,38 @@ enum class ConfigValueType {
 using ConfigValue = std::variant<std::monostate, int, float, std::string, bool>;
 
 /**
+ * @enum ConfigItemType
+ * @brief UI hint for how to display the configuration item
+ */
+enum class ConfigItemType {
+    Value,      ///< Single value (int, float, string, bool)
+    Selection,  ///< Selection from predefined options (enum-like)
+    Range       ///< Value with min/max constraints
+};
+
+/**
  * @struct ConfigMetadata
  * @brief Metadata for configuration items
  *
  * @details Provides validation constraints and UI hints for configuration items.
  * The metadata string format depends on the value type:
  * - Integer/Float ranges: "min-max" (e.g., "0-100")
- * - Enum options: Comma-separated list (e.g., "PSI,Bar,kPa")
+ * - Enum/Selection options: Comma-separated list (e.g., "PSI,Bar,kPa")
  * - Integer/Float options: Comma-separated list (e.g., "250,500,1000,2000")
  */
 struct ConfigMetadata {
     std::string constraints;     ///< Validation constraints or enum options
     std::string unit;            ///< Unit of measurement (optional)
     std::string description;     ///< Detailed description for UI tooltips
+    ConfigItemType itemType = ConfigItemType::Value; ///< UI display hint
     bool readOnly = false;       ///< Whether this config is read-only
     bool advanced = false;       ///< Whether to show in advanced settings only
 
     ConfigMetadata() = default;
-    ConfigMetadata(const std::string& constraints) : constraints(constraints) {}
-    ConfigMetadata(const std::string& constraints, const std::string& unit)
-        : constraints(constraints), unit(unit) {}
+    ConfigMetadata(const std::string& constraints, ConfigItemType type = ConfigItemType::Selection)
+        : constraints(constraints), itemType(type) {}
+    ConfigMetadata(const std::string& constraints, const std::string& unit, ConfigItemType type = ConfigItemType::Value)
+        : constraints(constraints), unit(unit), itemType(type) {}
 };
 
 /**
@@ -71,7 +71,6 @@ struct ConfigMetadata {
 struct ConfigItem {
     std::string key;              ///< Unique key within the section
     std::string displayName;      ///< Human-readable name for UI
-    ConfigValueType type;         ///< Data type of the configuration value
     ConfigValue value;            ///< Current value
     ConfigValue defaultValue;     ///< Default value for reset functionality
     ConfigMetadata metadata;      ///< Validation and UI metadata
@@ -80,17 +79,15 @@ struct ConfigItem {
 
     ConfigItem(const std::string& key,
                const std::string& displayName,
-               ConfigValueType type,
                const ConfigValue& defaultValue)
-        : key(key), displayName(displayName), type(type),
+        : key(key), displayName(displayName),
           value(defaultValue), defaultValue(defaultValue) {}
 
     ConfigItem(const std::string& key,
                const std::string& displayName,
-               ConfigValueType type,
                const ConfigValue& defaultValue,
                const ConfigMetadata& metadata)
-        : key(key), displayName(displayName), type(type),
+        : key(key), displayName(displayName),
           value(defaultValue), defaultValue(defaultValue), metadata(metadata) {}
 };
 
@@ -173,6 +170,43 @@ public:
     }
 
     /**
+     * @brief Determine the type category of a ConfigValue
+     * @param value The ConfigValue to check
+     * @return Type name as string for UI/logging
+     */
+    static std::string GetTypeName(const ConfigValue& value) {
+        return std::visit([](const auto& v) -> std::string {
+            using T = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<T, std::monostate>) {
+                return "unset";
+            } else if constexpr (std::is_same_v<T, int>) {
+                return "integer";
+            } else if constexpr (std::is_same_v<T, float>) {
+                return "float";
+            } else if constexpr (std::is_same_v<T, bool>) {
+                return "boolean";
+            } else if constexpr (std::is_same_v<T, std::string>) {
+                return "string";
+            }
+            return "unknown";
+        }, value);
+    }
+
+    /**
+     * @brief Check if a value is numeric (int or float)
+     */
+    static bool IsNumeric(const ConfigValue& value) {
+        return std::holds_alternative<int>(value) || std::holds_alternative<float>(value);
+    }
+
+    /**
+     * @brief Check if value type matches another value's type
+     */
+    static bool TypesMatch(const ConfigValue& a, const ConfigValue& b) {
+        return a.index() == b.index();
+    }
+
+    /**
      * @brief Convert a ConfigValue to string representation
      * @param value The ConfigValue to convert
      * @return String representation of the value
@@ -193,37 +227,41 @@ public:
     }
 
     /**
-     * @brief Parse a string into a ConfigValue based on type
+     * @brief Parse a string into a ConfigValue, inferring type from existing value
      * @param str The string to parse
-     * @param type The expected type
+     * @param templateValue Value whose type to match
      * @return ConfigValue containing the parsed value
      */
-    static ConfigValue FromString(const std::string& str, ConfigValueType type) {
-        switch (type) {
-            case ConfigValueType::Integer:
+    static ConfigValue FromString(const std::string& str, const ConfigValue& templateValue) {
+        return std::visit([&str](const auto& v) -> ConfigValue {
+            using T = std::decay_t<decltype(v)>;
+            if constexpr (std::is_same_v<T, std::monostate>) {
+                // Try to infer: if it looks like a number, parse as int
+                // Otherwise return as string
+                try {
+                    return std::stoi(str);
+                } catch (...) {
+                    return str;
+                }
+            } else if constexpr (std::is_same_v<T, int>) {
                 try {
                     return std::stoi(str);
                 } catch (...) {
                     return std::monostate{};
                 }
-
-            case ConfigValueType::Float:
+            } else if constexpr (std::is_same_v<T, float>) {
                 try {
                     return std::stof(str);
                 } catch (...) {
                     return std::monostate{};
                 }
-
-            case ConfigValueType::Boolean:
+            } else if constexpr (std::is_same_v<T, bool>) {
                 return (str == "true" || str == "1");
-
-            case ConfigValueType::String:
-            case ConfigValueType::Enum:
+            } else if constexpr (std::is_same_v<T, std::string>) {
                 return str;
-
-            default:
-                return std::monostate{};
-        }
+            }
+            return std::monostate{};
+        }, templateValue);
     }
 };
 

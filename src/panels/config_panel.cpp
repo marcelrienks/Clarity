@@ -413,29 +413,21 @@ void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
         log_d("HandleSetConfigValue - Found section, searching for item key: %s", itemKey.c_str());
         for (const auto& configItem : section->items) {
             if (configItem.key == itemKey) {
-                log_d("HandleSetConfigValue - Found config item, type: %d", static_cast<int>(configItem.type));
-                // Update the configuration based on type
-                switch (configItem.type) {
-                    case Config::ConfigValueType::String:
-                        log_d("HandleSetConfigValue - Updating as String");
-                        preferenceService_->UpdateConfig(fullKey, value);
-                        break;
-                    case Config::ConfigValueType::Integer:
-                        log_d("HandleSetConfigValue - Updating as Integer");
-                        preferenceService_->UpdateConfig(fullKey, std::stoi(value));
-                        break;
-                    case Config::ConfigValueType::Float:
-                        log_d("HandleSetConfigValue - Updating as Float");
-                        preferenceService_->UpdateConfig(fullKey, std::stof(value));
-                        break;
-                    case Config::ConfigValueType::Boolean:
-                        log_d("HandleSetConfigValue - Updating as Boolean");
-                        preferenceService_->UpdateConfig(fullKey, value == "true");
-                        break;
-                    case Config::ConfigValueType::Enum:
-                        log_d("HandleSetConfigValue - Updating as Enum");
-                        preferenceService_->UpdateConfig(fullKey, value);
-                        break;
+                log_d("HandleSetConfigValue - Found config item, type: %s",
+                      Config::ConfigValueHelper::GetTypeName(configItem.value).c_str());
+
+                // Parse the string value into the correct type based on existing value
+                Config::ConfigValue newValue = Config::ConfigValueHelper::FromString(value, configItem.value);
+
+                log_d("HandleSetConfigValue - Parsed value type: %s",
+                      Config::ConfigValueHelper::GetTypeName(newValue).c_str());
+
+                // Update the configuration
+                preferenceService_->UpdateConfig(fullKey, newValue);
+
+                // If this was a theme change, update the config component colors
+                if (fullKey == "style_manager.theme") {
+                    configComponent_.UpdateThemeColors();
                 }
 
                 // Go back to section menu
@@ -460,20 +452,17 @@ void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
  */
 void ConfigPanel::HandleBackAction(const std::string& actionParam)
 {
+    log_d("HandleBackAction called with actionParam: '%s', currentSectionName_: '%s'",
+          actionParam.c_str(), currentSectionName_.c_str());
+
+    // If we're in a section menu, go back to main menu
     if (!currentSectionName_.empty()) {
-        // If in a submenu, go back to section menu
-        auto [sectionName, itemKey] = ParseConfigKey(actionParam);
-        if (sectionName.empty() && !currentSectionName_.empty()) {
-            // Use the stored section name if not in actionParam
-            BuildSectionMenu(currentSectionName_);
-        } else if (!sectionName.empty()) {
-            BuildSectionMenu(sectionName);
-        } else {
-            // Go back to main menu
-            BuildDynamicMenus();
-        }
+        log_d("Going back from section '%s' to main menu", currentSectionName_.c_str());
+        currentSectionName_.clear(); // Clear the current section
+        BuildDynamicMenus();
     } else {
-        // Go back to main menu
+        // Already at main menu, go back to main menu anyway
+        log_d("Already at main menu, staying in main menu");
         BuildDynamicMenus();
     }
 }
@@ -570,7 +559,7 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
         std::string fullKey = sectionName + "." + item.key;
 
         // For booleans, use direct toggle. For everything else, show options
-        if (item.type == Config::ConfigValueType::Boolean) {
+        if (std::holds_alternative<bool>(item.value)) {
             menuItem.actionType = "toggle_boolean";
         } else {
             menuItem.actionType = "show_options";
@@ -619,6 +608,9 @@ void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::Conf
 {
     log_i("ShowOptionsMenu() for key: %s", fullKey.c_str());
 
+    // Make a copy of fullKey to avoid reference invalidation when menuItems_ is cleared
+    std::string keyStr = fullKey;
+
     menuItems_.clear();
 
     // Parse constraints to get available options
@@ -626,12 +618,11 @@ void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::Conf
 
     // Delegate to appropriate specialized method based on data type and available options
     if (!options.empty()) {
-        ShowEnumOptionsMenu(fullKey, item, options);
-    } else if (item.type == Config::ConfigValueType::Integer ||
-               item.type == Config::ConfigValueType::Float) {
-        ShowNumericOptionsMenu(fullKey, item);
+        ShowEnumOptionsMenu(keyStr, item, options);
+    } else if (Config::ConfigValueHelper::IsNumeric(item.value)) {
+        ShowNumericOptionsMenu(keyStr, item);
     } else {
-        ShowStringOptionsMenu(fullKey, item);
+        ShowStringOptionsMenu(keyStr, item);
     }
 
     // Add back option
@@ -861,7 +852,7 @@ std::vector<float> ConfigPanel::GenerateNumericValues(const NumericRange& range,
     float largeStep = rangeSize / 4.0f;   // 25% of range
 
     // For integers, round steps
-    if (item.type == Config::ConfigValueType::Integer) {
+    if (std::holds_alternative<int>(item.value)) {
         smallStep = std::max(1.0f, std::round(smallStep));
         largeStep = std::max(5.0f, std::round(largeStep));
     }
@@ -908,7 +899,7 @@ std::string ConfigPanel::FormatNumericValue(float value, const Config::ConfigIte
 {
     std::string valueStr;
 
-    if (item.type == Config::ConfigValueType::Integer) {
+    if (std::holds_alternative<int>(item.value)) {
         valueStr = std::to_string(static_cast<int>(value));
     } else {
         // Format float with 1 decimal place

@@ -203,7 +203,7 @@ private:
      * @return true if storage successful
      */
     bool StoreValueToNVS(Preferences& prefs, const std::string& key,
-                        const Config::ConfigValue& value, Config::ConfigValueType type);
+                        const Config::ConfigValue& value);
 
     /**
      * @brief Load value from NVS and convert to ConfigValue
@@ -213,5 +213,5 @@ private:
      * @return ConfigValue containing the loaded value
      */
     Config::ConfigValue LoadValueFromNVS(Preferences& prefs, const std::string& key,
-                                         Config::ConfigValueType type);
+                                         const Config::ConfigValue& templateValue);
 };

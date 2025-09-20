@@ -51,15 +51,15 @@ void registerSystemConfiguration()
     section.displayOrder = 0; // Highest priority - show first in config menu
 
     // Default panel selection
-    section.AddItem(ConfigItem("default_panel", "Default Panel", ConfigValueType::Enum,
-        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel")));
+    section.AddItem(ConfigItem("default_panel", "Default Panel",
+        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", ConfigItemType::Selection)));
 
     // Global update rate for sensors and components
-    section.AddItem(ConfigItem("update_rate", "Update Rate", ConfigValueType::Integer,
-        500, ConfigMetadata("100,250,500,750,1000,1500,2000", "ms")));
+    section.AddItem(ConfigItem("update_rate", "Update Rate",
+        500, ConfigMetadata("100,250,500,750,1000,1500,2000", "ms", ConfigItemType::Selection)));
 
     // Splash screen control
-    section.AddItem(ConfigItem("show_splash", "Show Splash", ConfigValueType::Boolean,
+    section.AddItem(ConfigItem("show_splash", "Show Splash",
         true, ConfigMetadata()));
 
     preferenceManager->RegisterConfigSection(section);

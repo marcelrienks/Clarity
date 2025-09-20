@@ -309,20 +309,20 @@ void OilTemperatureSensor::RegisterConfiguration()
     section.displayOrder = 3; // Controls UI ordering in config menus
 
     // Temperature unit selection - enum with C/F options
-    section.AddItem(ConfigItem("unit", "Temperature Unit", ConfigValueType::Enum,
-        std::string("C"), ConfigMetadata("C,F")));
+    section.AddItem(ConfigItem("unit", "Temperature Unit", std::string("C"),
+        ConfigMetadata("C,F", ConfigItemType::Selection)));
 
     // Update rate - predefined options for sensor reading frequency
-    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
-        500, ConfigMetadata("250,500,1000,2000")));
+    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", 500,
+        ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
 
     // Calibration offset - float with selectable values
-    section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
-        0.0f, ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0")));
+    section.AddItem(ConfigItem("offset", "Calibration Offset", 0.0f,
+        ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0", ConfigItemType::Selection)));
 
     // Calibration scale - float with selectable values
-    section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
-        1.0f, ConfigMetadata("0.9,0.95,1.0,1.05,1.1")));
+    section.AddItem(ConfigItem("scale", "Calibration Scale", 1.0f,
+        ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
 
     // Register with preference service for persistence and UI generation
     preferenceService_->RegisterConfigSection(section);

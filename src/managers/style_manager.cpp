@@ -317,12 +317,12 @@ void StyleManager::RegisterConfiguration()
     section.displayOrder = 10; // Lower priority than sensors
 
     // Theme selection
-    ConfigItem themeItem("theme", "Theme", ConfigValueType::Enum,
-                        std::string("Day"), ConfigMetadata("Day,Night"));
+    ConfigItem themeItem("theme", "Theme", std::string("Day"),
+                        ConfigMetadata("Day,Night", ConfigItemType::Selection));
 
     // Brightness setting (future feature)
-    ConfigItem brightnessItem("brightness", "Brightness", ConfigValueType::Integer,
-                             80, ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%"));
+    ConfigItem brightnessItem("brightness", "Brightness", 80,
+                             ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%", ConfigItemType::Selection));
 
     section.AddItem(themeItem);
     section.AddItem(brightnessItem);

@@ -306,20 +306,20 @@ void OilPressureSensor::RegisterConfiguration()
     section.displayOrder = 2;
 
     // Pressure unit selection
-    section.AddItem(ConfigItem("unit", "Pressure Unit", ConfigValueType::Enum,
-        std::string("Bar"), ConfigMetadata("PSI,Bar,kPa")));
+    section.AddItem(ConfigItem("unit", "Pressure Unit", std::string("Bar"),
+        ConfigMetadata("PSI,Bar,kPa", ConfigItemType::Selection)));
 
     // Update rate
-    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", ConfigValueType::Enum,
-        500, ConfigMetadata("250,500,1000,2000")));
+    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", 500,
+        ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
 
     // Calibration offset
-    section.AddItem(ConfigItem("offset", "Calibration Offset", ConfigValueType::Float,
-        0.0f, ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0")));
+    section.AddItem(ConfigItem("offset", "Calibration Offset", 0.0f,
+        ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0", ConfigItemType::Selection)));
 
     // Calibration scale
-    section.AddItem(ConfigItem("scale", "Calibration Scale", ConfigValueType::Float,
-        1.0f, ConfigMetadata("0.9,0.95,1.0,1.05,1.1")));
+    section.AddItem(ConfigItem("scale", "Calibration Scale", 1.0f,
+        ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
 
     preferenceService_->RegisterConfigSection(section);
     log_i("Registered oil pressure sensor configuration");
