@@ -2,6 +2,7 @@
 #include "managers/error_manager.h"
 #include "config/config_types.h"
 #include "utilities/logging.h"
+#include "constants.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -21,7 +22,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
 {
     log_v("OilTemperatureSensor() constructor called");
     // Set default unit to Celsius
-    targetUnit_ = "C";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -40,7 +41,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPrefere
 {
     log_v("OilTemperatureSensor() constructor with preference service called");
     // Set default unit to Celsius
-    targetUnit_ = "C";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -91,7 +92,7 @@ void OilTemperatureSensor::Init()
 std::vector<std::string> OilTemperatureSensor::GetSupportedUnits() const
 {
     log_v("GetSupportedUnits() called");
-    return {"C", "F"};
+    return {ConfigConstants::Units::CELSIUS, ConfigConstants::Units::FAHRENHEIT};
 }
 
 /**
@@ -113,7 +114,7 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
         // Use static string to avoid allocation in error path
         static const char* errorMsg = "Unsupported temperature unit requested. Using default C.";
         ErrorManager::Instance().ReportError(ErrorLevel::WARNING, "OilTemperatureSensor", errorMsg);
-        targetUnit_ = "C";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     }
     else
     {
@@ -215,7 +216,7 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
     // Base calibration: 0-4095 ADC = 0-120°C
     int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
 
-    if (targetUnit_ == "F")
+    if (targetUnit_ == ConfigConstants::Units::FAHRENHEIT)
     {
         // Direct conversion to Fahrenheit
         // ADC 0-4095 maps to 32-248°F (0-120°C converted)
@@ -265,7 +266,7 @@ void OilTemperatureSensor::LoadConfiguration()
     if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
         targetUnit_ = *unitValue;
     } else {
-        targetUnit_ = "C";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     }
 
     if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
@@ -305,23 +306,23 @@ void OilTemperatureSensor::RegisterConfiguration()
     using namespace Config;
 
     // Create configuration section for this sensor component
-    ConfigSection section("OilTemperatureSensor", CONFIG_SECTION, "Oil Temperature Sensor");
+    ConfigSection section(ConfigConstants::Sections::OIL_TEMPERATURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_TEMPERATURE_SENSOR);
     section.displayOrder = 3; // Controls UI ordering in config menus
 
     // Temperature unit selection - enum with C/F options
-    section.AddItem(ConfigItem("unit", "Temperature Unit", std::string("C"),
+    section.AddItem(ConfigItem(ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::TEMPERATURE_UNIT, std::string(ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT),
         ConfigMetadata("C,F", ConfigItemType::Selection)));
 
     // Update rate - predefined options for sensor reading frequency
-    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", 500,
+    section.AddItem(ConfigItem(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS, ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
         ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
 
     // Calibration offset - float with selectable values
-    section.AddItem(ConfigItem("offset", "Calibration Offset", 0.0f,
+    section.AddItem(ConfigItem(ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET, ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
         ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0", ConfigItemType::Selection)));
 
     // Calibration scale - float with selectable values
-    section.AddItem(ConfigItem("scale", "Calibration Scale", 1.0f,
+    section.AddItem(ConfigItem(ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE, ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
         ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
 
     // Register with preference service for persistence and UI generation

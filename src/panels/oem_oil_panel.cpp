@@ -8,6 +8,7 @@
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
 #include "utilities/logging.h"
+#include "constants.h"
 
 // ========== Constructors and Destructor ==========
 
@@ -564,16 +565,16 @@ void OemOilPanel::ApplyCurrentSensorSettings()
     {
         // Get individual preferences using type-safe config system
         int updateRate = 500; // Default
-        if (auto rateValue = preferenceService_->QueryConfig<int>("system.update_rate")) {
+        if (auto rateValue = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::SYSTEM_UPDATE_RATE)) {
             updateRate = *rateValue;
         }
 
-        std::string pressureUnit = "Bar"; // Default
+        std::string pressureUnit = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT; // Default
         if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
             pressureUnit = *unitValue;
         }
 
-        std::string tempUnit = "C"; // Default
+        std::string tempUnit = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT; // Default
         if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
@@ -783,8 +784,8 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
  */
 int32_t OemOilPanel::MapPressureByUnit(int32_t sensorValue, const std::string& unit)
 {
-    if (unit == "PSI") return MapPSIPressure(sensorValue);
-    if (unit == "kPa") return MapkPaPressure(sensorValue);
+    if (unit == ConfigConstants::Units::PSI_UPPER) return MapPSIPressure(sensorValue);
+    if (unit == ConfigConstants::Units::KPA_UPPER) return MapkPaPressure(sensorValue);
     
     return MapBarPressure(sensorValue);
 }
@@ -877,11 +878,11 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 
     if (preferenceService_)
     {
-        std::string tempUnit = "C"; // Default
+        std::string tempUnit = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT; // Default
         if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
-        if (tempUnit == "F")
+        if (tempUnit == ConfigConstants::Units::FAHRENHEIT)
         {
             // Sensor returns 32-248°F, map to 0-120 display scale
             // Clamp to valid range (32-248°F equivalent to 0-120°C)

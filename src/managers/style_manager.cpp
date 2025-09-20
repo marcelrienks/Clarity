@@ -1,6 +1,7 @@
 #include "managers/style_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
+#include "constants.h"
 #include <cstring>
 #include <esp32-hal-log.h>
 
@@ -200,7 +201,7 @@ void StyleManager::ApplyCurrentTheme()
     }
 
     // Read theme using type-safe config system
-    std::string preferenceTheme = "Day"; // Default
+    std::string preferenceTheme = UIStrings::ThemeNames::DAY; // Default
     if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
         preferenceTheme = *themeValue;
     }
@@ -249,7 +250,7 @@ const std::string& StyleManager::GetCurrentTheme() const
         if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
             currentTheme = *themeValue;
         } else {
-            currentTheme = "Day";
+            currentTheme = UIStrings::ThemeNames::DAY;
         }
         return currentTheme;
     }
@@ -313,15 +314,15 @@ void StyleManager::RegisterConfiguration()
 
     using namespace Config;
 
-    ConfigSection section("StyleManager", CONFIG_SECTION, "Display");
+    ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, UIStrings::MenuLabels::DISPLAY_MENU);
     section.displayOrder = 10; // Lower priority than sensors
 
     // Theme selection
-    ConfigItem themeItem("theme", "Theme", std::string("Day"),
+    ConfigItem themeItem(ConfigConstants::Items::THEME, UIStrings::ConfigLabels::THEME, std::string(UIStrings::ThemeNames::DAY),
                         ConfigMetadata("Day,Night", ConfigItemType::Selection));
 
     // Brightness setting (future feature)
-    ConfigItem brightnessItem("brightness", "Brightness", 80,
+    ConfigItem brightnessItem(ConfigConstants::Items::BRIGHTNESS, UIStrings::ConfigLabels::BRIGHTNESS, ConfigConstants::Defaults::DEFAULT_BRIGHTNESS,
                              ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%", ConfigItemType::Selection));
 
     section.AddItem(themeItem);
@@ -345,7 +346,7 @@ void StyleManager::LoadConfiguration()
     if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
         SetTheme(themeValue->c_str());
     } else {
-        SetTheme("Day"); // Default theme
+        SetTheme(UIStrings::ThemeNames::DAY); // Default theme
     }
 
     log_i("Loaded style configuration: theme=%s", theme_.c_str());

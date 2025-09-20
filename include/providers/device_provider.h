@@ -5,8 +5,9 @@
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
 #include "interfaces/i_device_provider.h"
+#include "constants.h"
 
-// Screen
+// Screen - use constants from centralized location
 #define SCREEN_WIDTH 240
 #define SCREEN_HEIGHT 240
 #define SCREEN_OFFSET_X 0
@@ -17,7 +18,7 @@
 // Display
 #define SPI SPI2_HOST
 
-// Pins
+// Pins - use constants from centralized location
 #define SCLK 18
 #define MOSI 23
 #define MISO -1

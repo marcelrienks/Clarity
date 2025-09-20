@@ -11,6 +11,7 @@
 #include "sensors/base_sensor.h"
 #include "utilities/sensor_helper.h"
 #include "utilities/types.h"
+#include "constants.h"
 
 /**
  * @class OilPressureSensor
@@ -62,11 +63,11 @@ class OilPressureSensor : public BaseSensor
     void RegisterLiveUpdateCallbacks();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = "oil_pressure";
-    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
-    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
-    static constexpr const char* CONFIG_OFFSET = "oil_pressure.offset";
-    static constexpr const char* CONFIG_SCALE = "oil_pressure.scale";
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE;
+    static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_PRESSURE_UNIT;
+    static constexpr const char* CONFIG_UPDATE_RATE = ConfigConstants::Keys::OIL_PRESSURE_UPDATE_RATE;
+    static constexpr const char* CONFIG_OFFSET = ConfigConstants::Keys::OIL_PRESSURE_OFFSET;
+    static constexpr const char* CONFIG_SCALE = ConfigConstants::Keys::OIL_PRESSURE_SCALE;
 
   protected:
     // ========== Protected Methods ==========

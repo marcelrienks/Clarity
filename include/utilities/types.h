@@ -157,11 +157,9 @@ struct Trigger
  */
 struct ErrorInfo
 {
-    static constexpr size_t MAX_MESSAGE_LENGTH = 128; ///< Fixed buffer size for embedded optimization
-
     ErrorLevel level;        ///< Severity level of the error
     const char *source;      ///< Component/manager that reported the error
-    char message[MAX_MESSAGE_LENGTH]; ///< Fixed-size error message buffer (optimized for embedded)
+    char message[DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH]; ///< Fixed-size error message buffer (optimized for embedded)
     unsigned long timestamp; ///< millis() timestamp when error occurred
     bool acknowledged;       ///< Whether user has acknowledged the error
 
@@ -172,8 +170,8 @@ struct ErrorInfo
 
     // Helper method to set message safely
     void SetMessage(const std::string& msg) {
-        strncpy(message, msg.c_str(), MAX_MESSAGE_LENGTH - 1);
-        message[MAX_MESSAGE_LENGTH - 1] = '\0'; // Ensure null termination
+        strncpy(message, msg.c_str(), DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH - 1);
+        message[DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH - 1] = '\0'; // Ensure null termination
     }
 };
 

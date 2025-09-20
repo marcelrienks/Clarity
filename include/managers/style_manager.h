@@ -4,6 +4,7 @@
 #include "interfaces/i_preference_service.h"
 #include "utilities/styles.h"
 #include "utilities/types.h"
+#include "constants.h"
 
 #include <lvgl.h>
 #include <memory>
@@ -149,9 +150,9 @@ public:
     void RegisterConfiguration();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = "style_manager";
-    static constexpr const char* CONFIG_THEME = "style_manager.theme";
-    static constexpr const char* CONFIG_BRIGHTNESS = "style_manager.brightness";
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER_LOWER;
+    static constexpr const char* CONFIG_THEME = ConfigConstants::Keys::STYLE_MANAGER_THEME;
+    static constexpr const char* CONFIG_BRIGHTNESS = ConfigConstants::Keys::STYLE_MANAGER_BRIGHTNESS;
 
 private:
     // ========== Private Methods ==========

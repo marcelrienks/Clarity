@@ -1,6 +1,7 @@
 #include "managers/preference_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
+#include "constants.h"
 #include <algorithm>
 #include <sstream>
 

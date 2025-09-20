@@ -1,4 +1,5 @@
 #include "handlers/trigger_handler.h"
+#include "constants.h"
 #include "managers/error_manager.h"
 #include "sensors/gpio_sensor.h"
 #include "hardware/gpio_pins.h"
@@ -157,7 +158,7 @@ void TriggerHandler::EvaluateIndividualTrigger(Trigger& trigger) {
     bool wasActive = trigger.isActive;
 
     // Debug logging for KeyPresent trigger specifically
-    if (strcmp(trigger.id, "key_present") == 0) {
+    if (strcmp(trigger.id, HardwareConstants::TriggerIDs::KEY_PRESENT) == 0) {
         log_t("KeyPresent trigger evaluation: hasChanged=%s, wasActive=%s, sensorActive=%s",
               hasChanged ? "true" : "false",
               wasActive ? "true" : "false",

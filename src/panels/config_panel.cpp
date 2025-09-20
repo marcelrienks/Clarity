@@ -769,9 +769,9 @@ void ConfigPanel::ShowStringOptionsMenu(const std::string& fullKey, const Config
 {
     // For string types without options, just show current value
     ConfigComponent::MenuItem currentItem;
-    currentItem.label = "Current: " + Config::ConfigValueHelper::ToString(item.value);
-    currentItem.actionType = "none";
-    currentItem.actionParam = "";
+    currentItem.label = UIStrings::ConfigUI::CURRENT_LABEL_PREFIX + Config::ConfigValueHelper::ToString(item.value);
+    currentItem.actionType = UIStrings::ConfigUI::ACTION_TYPE_NONE;
+    currentItem.actionParam = UIStrings::ConfigUI::EMPTY_PARAM;
     menuItems_.push_back(currentItem);
 }
 
@@ -792,9 +792,9 @@ ConfigComponent::MenuItem ConfigPanel::CreateMenuItemWithSelection(const std::st
 
     // Show marker for current selection
     if (isSelected) {
-        menuItem.label = "> " + label;
+        menuItem.label = UIStrings::ConfigUI::SELECTED_MENU_PREFIX + label;
     } else {
-        menuItem.label = "  " + label;
+        menuItem.label = UIStrings::ConfigUI::UNSELECTED_MENU_PREFIX + label;
     }
 
     menuItem.actionType = UIStrings::ActionTypes::SET_CONFIG_VALUE;
@@ -911,7 +911,7 @@ std::string ConfigPanel::FormatNumericValue(float value, const Config::ConfigIte
 
     // Add units if specified
     if (!item.metadata.unit.empty()) {
-        valueStr += " " + item.metadata.unit;
+        valueStr += UIStrings::ConfigUI::UNIT_SEPARATOR + item.metadata.unit;
     }
 
     return valueStr;

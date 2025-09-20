@@ -263,8 +263,8 @@ void OemOilComponent::update_pivot_styling()
         else
         {
             // Day mode - visible plastic appearance with radial gradient
-            lv_obj_set_style_bg_color(pivotCircle_, lv_color_hex(0x505050), MAIN_DEFAULT);      // Medium gray center
-            lv_obj_set_style_bg_grad_color(pivotCircle_, lv_color_hex(0x2A2A2A), MAIN_DEFAULT); // Dark gray edge
+            lv_obj_set_style_bg_color(pivotCircle_, lv_color_hex(UIStrings::Colors::PIVOT_CIRCLE_CENTER), MAIN_DEFAULT);      // Medium gray center
+            lv_obj_set_style_bg_grad_color(pivotCircle_, lv_color_hex(UIStrings::Colors::PIVOT_CIRCLE_EDGE), MAIN_DEFAULT); // Dark gray edge
             lv_obj_set_style_bg_grad_dir(pivotCircle_, LV_GRAD_DIR_HOR,
                                          MAIN_DEFAULT);                        // Horizontal for radial-like effect
             lv_obj_set_style_bg_grad_stop(pivotCircle_, 180, MAIN_DEFAULT);    // Gradient more toward edge
@@ -272,11 +272,11 @@ void OemOilComponent::update_pivot_styling()
 
             // Dark beveled border (darker than main body)
             lv_obj_set_style_border_width(pivotCircle_, 2, MAIN_DEFAULT);
-            lv_obj_set_style_border_color(pivotCircle_, lv_color_hex(0x1A1A1A), MAIN_DEFAULT); // Very dark border
+            lv_obj_set_style_border_color(pivotCircle_, lv_color_hex(UIStrings::Colors::PIVOT_CIRCLE_BORDER), MAIN_DEFAULT); // Very dark border
             lv_obj_set_style_border_opa(pivotCircle_, LV_OPA_COVER, MAIN_DEFAULT);             // Solid border
 
             // Subtle shadow for depth
-            lv_obj_set_style_shadow_color(pivotCircle_, lv_color_hex(0x000000), MAIN_DEFAULT);
+            lv_obj_set_style_shadow_color(pivotCircle_, lv_color_hex(UIStrings::Colors::PIVOT_CIRCLE_SHADOW), MAIN_DEFAULT);
             lv_obj_set_style_shadow_width(pivotCircle_, 3U, MAIN_DEFAULT);      // Moderate shadow
             lv_obj_set_style_shadow_opa(pivotCircle_, LV_OPA_20, MAIN_DEFAULT); // Subtle
             lv_obj_set_style_shadow_spread(pivotCircle_, 1, MAIN_DEFAULT);
@@ -397,21 +397,21 @@ void OemOilComponent::create_needle()
 
     // Highlight for tip section - very subtle white highlight
     needleHighlightLine_ = lv_line_create(scale_);
-    lv_obj_set_style_line_color(needleHighlightLine_, lv_color_hex(0xFFFFFF), MAIN_DEFAULT); // Pure white highlight
+    lv_obj_set_style_line_color(needleHighlightLine_, lv_color_hex(UIStrings::Colors::NEEDLE_HIGHLIGHT), MAIN_DEFAULT); // Pure white highlight
     lv_obj_set_style_line_width(needleHighlightLine_, 1, MAIN_DEFAULT);                      // Thin highlight line
     lv_obj_set_style_line_rounded(needleHighlightLine_, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(needleHighlightLine_, LV_OPA_20, MAIN_DEFAULT); // Very subtle
 
     // Highlight for middle section
     needleHighlightMiddle_ = lv_line_create(scale_);
-    lv_obj_set_style_line_color(needleHighlightMiddle_, lv_color_hex(0xFFFFFF), MAIN_DEFAULT); // Pure white highlight
+    lv_obj_set_style_line_color(needleHighlightMiddle_, lv_color_hex(UIStrings::Colors::NEEDLE_HIGHLIGHT), MAIN_DEFAULT); // Pure white highlight
     lv_obj_set_style_line_width(needleHighlightMiddle_, 1, MAIN_DEFAULT);                      // Thin highlight line
     lv_obj_set_style_line_rounded(needleHighlightMiddle_, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(needleHighlightMiddle_, LV_OPA_20, MAIN_DEFAULT); // Very subtle
 
     // Highlight for base section
     needleHighlightBase_ = lv_line_create(scale_);
-    lv_obj_set_style_line_color(needleHighlightBase_, lv_color_hex(0xFFFFFF), MAIN_DEFAULT); // Pure white highlight
+    lv_obj_set_style_line_color(needleHighlightBase_, lv_color_hex(UIStrings::Colors::NEEDLE_HIGHLIGHT), MAIN_DEFAULT); // Pure white highlight
     lv_obj_set_style_line_width(needleHighlightBase_, 1, MAIN_DEFAULT);                      // Thin highlight line
     lv_obj_set_style_line_rounded(needleHighlightBase_, true, MAIN_DEFAULT);
     lv_obj_set_style_line_opa(needleHighlightBase_, LV_OPA_20, MAIN_DEFAULT); // Very subtle
@@ -427,7 +427,7 @@ void OemOilComponent::create_needle()
     lv_obj_set_size(pivotHighlight_, 16U, 16U); // Proportional to larger pivot
     lv_obj_center(pivotHighlight_);
     lv_obj_set_style_radius(pivotHighlight_, LV_RADIUS_CIRCLE, MAIN_DEFAULT);
-    lv_obj_set_style_bg_color(pivotHighlight_, lv_color_hex(0x707070), MAIN_DEFAULT); // Light gray highlight
+    lv_obj_set_style_bg_color(pivotHighlight_, lv_color_hex(UIStrings::Colors::PIVOT_HIGHLIGHT), MAIN_DEFAULT); // Light gray highlight
     lv_obj_set_style_bg_opa(pivotHighlight_, LV_OPA_80, MAIN_DEFAULT);                // More opaque for plastic look
     lv_obj_set_style_border_width(pivotHighlight_, 0, MAIN_DEFAULT);
 

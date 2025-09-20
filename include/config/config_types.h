@@ -5,6 +5,7 @@
 #include <vector>
 #include <optional>
 #include <map>
+#include "constants.h"
 
 /**
  * @file config_types.h
@@ -178,17 +179,17 @@ public:
         return std::visit([](const auto& v) -> std::string {
             using T = std::decay_t<decltype(v)>;
             if constexpr (std::is_same_v<T, std::monostate>) {
-                return "unset";
+                return ConfigConstants::Types::UNSET;
             } else if constexpr (std::is_same_v<T, int>) {
-                return "integer";
+                return ConfigConstants::Types::INTEGER_INTERNAL;
             } else if constexpr (std::is_same_v<T, float>) {
-                return "float";
+                return ConfigConstants::Types::FLOAT_INTERNAL;
             } else if constexpr (std::is_same_v<T, bool>) {
-                return "boolean";
+                return ConfigConstants::Types::BOOLEAN_INTERNAL;
             } else if constexpr (std::is_same_v<T, std::string>) {
-                return "string";
+                return ConfigConstants::Types::STRING_INTERNAL;
             }
-            return "unknown";
+            return ConfigConstants::Types::UNKNOWN;
         }, value);
     }
 
@@ -215,9 +216,9 @@ public:
         return std::visit([](const auto& v) -> std::string {
             using T = std::decay_t<decltype(v)>;
             if constexpr (std::is_same_v<T, std::monostate>) {
-                return "";
+                return ConfigConstants::BooleanValues::EMPTY_STRING;
             } else if constexpr (std::is_same_v<T, bool>) {
-                return v ? "true" : "false";
+                return v ? ConfigConstants::BooleanValues::TRUE_STRING : ConfigConstants::BooleanValues::FALSE_STRING;
             } else if constexpr (std::is_same_v<T, std::string>) {
                 return v;
             } else {
@@ -256,7 +257,7 @@ public:
                     return std::monostate{};
                 }
             } else if constexpr (std::is_same_v<T, bool>) {
-                return (str == "true" || str == "1");
+                return (str == ConfigConstants::BooleanValues::TRUE_STRING || str == ConfigConstants::BooleanValues::TRUE_NUMERIC);
             } else if constexpr (std::is_same_v<T, std::string>) {
                 return str;
             }

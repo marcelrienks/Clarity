@@ -10,6 +10,7 @@
 #include "interfaces/i_panel_notification_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
+#include "constants.h"
 #include <memory>
 
 
@@ -70,8 +71,8 @@ class SplashPanel : public IPanel
 
     // ========== Configuration Constants ==========
     // Note: show_splash is managed by system settings in main.cpp
-    static constexpr const char* CONFIG_SECTION = "splash_panel";
-    static constexpr const char* CONFIG_DURATION = "splash_panel.duration";
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::SPLASH_PANEL_LOWER;
+    static constexpr const char* CONFIG_DURATION = ConfigConstants::Keys::SPLASH_PANEL_DURATION;
 
   private:
     // ========== Private Methods ==========

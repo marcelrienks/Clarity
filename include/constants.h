@@ -34,18 +34,26 @@ namespace UIStrings {
         static constexpr const char* SUBMENU = "submenu";
     }
 
+    // ========== Button Action Strings ==========
+    namespace ButtonActionStrings {
+        static constexpr const char* SHORT_PRESS = "SHORT_PRESS";
+        static constexpr const char* LONG_PRESS = "LONG_PRESS";
+        static constexpr const char* NONE = "NONE";
+        static constexpr const char* SHORT = "SHORT";
+        static constexpr const char* LONG = "LONG";
+    }
+
     // ========== Menu Labels ==========
     namespace MenuLabels {
         static constexpr const char* EXIT = "Exit";
         static constexpr const char* BACK = "Back";
         static constexpr const char* CONFIGURATION = "Configuration";
-        static constexpr const char* DISPLAY = "Display";
+        static constexpr const char* DISPLAY_MENU = "Display";
     }
 
     // ========== Configuration Keys ==========
     namespace ConfigKeys {
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
-        static constexpr const char* STYLE_MANAGER_SECTION = "style_manager";
     }
 
     // ========== Color Constants (frequently used colors) ==========
@@ -71,41 +79,284 @@ namespace UIStrings {
         // Common colors
         static constexpr uint32_t WHITE = 0xFFFFFF;                   // Pure white
         static constexpr uint32_t BLACK = 0x000000;                   // Pure black
+
+        // Component-specific colors
+        static constexpr uint32_t PIVOT_CIRCLE_CENTER = 0x505050;     // Medium gray for pivot center
+        static constexpr uint32_t PIVOT_CIRCLE_EDGE = 0x2A2A2A;       // Dark gray for pivot edge
+        static constexpr uint32_t PIVOT_CIRCLE_BORDER = 0x1A1A1A;     // Very dark border
+        static constexpr uint32_t PIVOT_CIRCLE_SHADOW = 0x000000;     // Black shadow
+        static constexpr uint32_t NEEDLE_HIGHLIGHT = 0xFFFFFF;        // Pure white needle highlight
+        static constexpr uint32_t PIVOT_HIGHLIGHT = 0x707070;         // Light gray pivot highlight
     }
 
-    // ========== Component Constants ==========
-    namespace Component {
-        // OEM Oil Component
-        static constexpr uint32_t OEM_COMPONENT_PATTERN = 0xBEEFCAFE;
-        static constexpr uint32_t OEM_PIVOT_MEDIUM_GRAY = 0x505050;
-        static constexpr uint32_t OEM_PIVOT_DARK_GRAY = 0x2A2A2A;
-        static constexpr uint32_t OEM_PIVOT_BORDER = 0x1A1A1A;
-        static constexpr uint32_t OEM_PIVOT_HIGHLIGHT = 0x707070;
-
-        // OEM Oil Panel
-        static constexpr uint32_t OEM_MEMORY_PATTERN = 0xDEADBEEF;
-    }
 
     // ========== Default Hint Text ==========
     namespace HintText {
         static constexpr const char* SHORT_LONG_PRESS = "Short: Next | Long: Select";
     }
+
+    // ========== Configuration UI Labels ==========
+    namespace ConfigLabels {
+        static constexpr const char* DEFAULT_PANEL = "Default Panel";
+        static constexpr const char* UPDATE_RATE = "Update Rate";
+        static constexpr const char* SHOW_SPLASH = "Show Splash";
+        static constexpr const char* THEME = "Theme";
+        static constexpr const char* BRIGHTNESS = "Brightness";
+        static constexpr const char* TEMPERATURE_UNIT = "Temperature Unit";
+        static constexpr const char* PRESSURE_UNIT = "Pressure Unit";
+        static constexpr const char* UPDATE_RATE_MS = "Update Rate (ms)";
+        static constexpr const char* CALIBRATION_OFFSET = "Calibration Offset";
+        static constexpr const char* CALIBRATION_SCALE = "Calibration Scale";
+    }
+
+    // ========== Config Component UI Text ==========
+    namespace ConfigUI {
+        static constexpr const char* CURRENT_LABEL_PREFIX = "Current: ";
+        static constexpr const char* SELECTED_MENU_PREFIX = "> ";
+        static constexpr const char* UNSELECTED_MENU_PREFIX = "  ";
+        static constexpr const char* UNIT_SEPARATOR = " ";
+        static constexpr const char* ACTION_TYPE_NONE = "none";
+        static constexpr const char* EMPTY_PARAM = "";
+    }
+
+    // ========== Error Component UI Text ==========
+    namespace ErrorUI {
+        static constexpr const char* SINGLE_ERROR_COUNT = "1/1";
+        static constexpr const char* DEFAULT_ERROR_LEVEL = "ERROR";
+        static constexpr const char* DEFAULT_ERROR_SOURCE = "System";
+        static constexpr const char* LOADING_ERRORS_MESSAGE = "Loading errors...";
+        static constexpr const char* LOADING_NAVIGATION = "Loading...";
+        static constexpr const char* NAVIGATION_INSTRUCTIONS = "short: next, long: exit";
+
+        // Error level text
+        static constexpr const char* LEVEL_CRITICAL = "CRIT";
+        static constexpr const char* LEVEL_ERROR = "ERR";
+        static constexpr const char* LEVEL_WARNING = "WARN";
+        static constexpr const char* LEVEL_UNKNOWN = "UNKN";
+    }
 }
 
 /*============================================================================*/
-/*                            HARDWARE CONSTANTS                             */
+/*                            ERROR MESSAGES                                 */
 /*============================================================================*/
 
-// Future: Hardware-related constants can be added here
+namespace ErrorMessages {
+    // System startup errors
+    namespace System {
+        static constexpr const char* PROVIDER_FACTORY_ALLOCATION_FAILED = "ProviderFactory allocation failed";
+        static constexpr const char* MANAGER_FACTORY_ALLOCATION_FAILED = "ManagerFactory allocation failed";
+        static constexpr const char* DEVICE_PROVIDER_CREATION_FAILED = "DeviceProvider creation failed";
+        static constexpr const char* GPIO_PROVIDER_CREATION_FAILED = "GpioProvider creation failed";
+        static constexpr const char* DISPLAY_PROVIDER_CREATION_FAILED = "DisplayProvider creation failed";
+        static constexpr const char* PREFERENCE_MANAGER_CREATION_FAILED = "PreferenceManager creation failed";
+        static constexpr const char* STYLE_MANAGER_CREATION_FAILED = "StyleManager creation failed";
+        static constexpr const char* INTERRUPT_MANAGER_CREATION_FAILED = "InterruptManager creation failed";
+        static constexpr const char* PANEL_MANAGER_CREATION_FAILED = "PanelManager creation failed";
+        static constexpr const char* ERROR_MANAGER_CREATION_FAILED = "ErrorManager creation failed";
+    }
+
+    // Component creation errors
+    namespace Component {
+        static constexpr const char* CONFIG_COMPONENT_ALLOCATION_FAILED = "ConfigComponent allocation failed";
+    }
+
+
+
+    // Generic failure messages
+    namespace Generic {
+        static constexpr const char* ALLOCATION_FAILED = "allocation failed";
+    }
+}
+
 
 /*============================================================================*/
-/*                            NETWORK CONSTANTS                              */
+/*                            STORAGE CONSTANTS                              */
 /*============================================================================*/
 
-// Future: Network-related constants can be added here
+namespace StorageConstants {
+    // ========== NVS Storage Configuration ==========
+    namespace NVS {
+        static constexpr const char* CONFIG_KEY = "config";
+        static constexpr const char* META_NAMESPACE = "config_meta";
+        static constexpr const char* SECTION_PREFIX = "cfg_";
+        static constexpr const char* MIGRATION_FLAG = "migration_v1";
+        static constexpr int MAX_NAMESPACE_LEN = 15;
+    }
+}
+
+/*============================================================================*/
+/*                       CONFIGURATION CONSTANTS                             */
+/*============================================================================*/
+
+namespace ConfigConstants {
+    // Section Names
+    namespace Sections {
+        static constexpr const char* SYSTEM = "System";
+        static constexpr const char* STYLE_MANAGER = "StyleManager";
+        static constexpr const char* OIL_PRESSURE_SENSOR = "OilPressureSensor";
+        static constexpr const char* OIL_TEMPERATURE_SENSOR = "OilTemperatureSensor";
+        static constexpr const char* BUTTON_SENSOR = "ButtonSensor";
+        static constexpr const char* SPLASH_PANEL = "SplashPanel";
+
+        // Section identifiers (lowercase for config keys)
+        static constexpr const char* OIL_PRESSURE = "oil_pressure";
+        static constexpr const char* OIL_TEMPERATURE = "oil_temperature";
+        static constexpr const char* STYLE_MANAGER_LOWER = "style_manager";
+        static constexpr const char* SPLASH_PANEL_LOWER = "splash_panel";
+    }
+
+    // Item Keys
+    namespace Items {
+        static constexpr const char* DEFAULT_PANEL = "default_panel";
+        static constexpr const char* UPDATE_RATE = "update_rate";
+        static constexpr const char* SHOW_SPLASH = "show_splash";
+        static constexpr const char* THEME = "theme";
+        static constexpr const char* DURATION = "duration";
+        static constexpr const char* UNIT = "unit";
+        static constexpr const char* OFFSET = "offset";
+        static constexpr const char* SCALE = "scale";
+        static constexpr const char* BRIGHTNESS = "brightness";
+    }
+
+    // Configuration Keys (full dotted paths)
+    namespace Keys {
+        static constexpr const char* SYSTEM_THEME = "system.theme";
+        static constexpr const char* SYSTEM_UPDATE_RATE = "system.update_rate";
+        static constexpr const char* SYSTEM_DEFAULT_PANEL = "system.default_panel";
+        static constexpr const char* SYSTEM_SHOW_SPLASH = "system.show_splash";
+
+        // Oil pressure sensor configuration keys
+        static constexpr const char* OIL_PRESSURE_UNIT = "oil_pressure.unit";
+        static constexpr const char* OIL_PRESSURE_UPDATE_RATE = "oil_pressure.update_rate";
+        static constexpr const char* OIL_PRESSURE_OFFSET = "oil_pressure.offset";
+        static constexpr const char* OIL_PRESSURE_SCALE = "oil_pressure.scale";
+
+        // Oil temperature sensor configuration keys
+        static constexpr const char* OIL_TEMPERATURE_UNIT = "oil_temperature.unit";
+        static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature.update_rate";
+        static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature.offset";
+        static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature.scale";
+
+        // Style manager configuration keys
+        static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
+        static constexpr const char* STYLE_MANAGER_BRIGHTNESS = "style_manager.brightness";
+
+        // Splash panel configuration keys
+        static constexpr const char* SPLASH_PANEL_DURATION = "splash_panel.duration";
+    }
+
+    // Panel Names
+    namespace Panels {
+        static constexpr const char* OEM_OIL_PANEL = "OemOilPanel";
+    }
+
+    // Config Item Types
+    namespace Types {
+        static constexpr const char* SELECTION = "Selection";
+        static constexpr const char* BOOLEAN = "Boolean";
+        static constexpr const char* INTEGER = "Integer";
+        static constexpr const char* FLOAT = "Float";
+        static constexpr const char* STRING = "String";
+
+        // Type names for internal logic
+        static constexpr const char* UNSET = "unset";
+        static constexpr const char* INTEGER_INTERNAL = "integer";
+        static constexpr const char* FLOAT_INTERNAL = "float";
+        static constexpr const char* BOOLEAN_INTERNAL = "boolean";
+        static constexpr const char* STRING_INTERNAL = "string";
+        static constexpr const char* UNKNOWN = "unknown";
+    }
+
+    // Boolean Values
+    namespace BooleanValues {
+        static constexpr const char* TRUE_STRING = "true";
+        static constexpr const char* FALSE_STRING = "false";
+        static constexpr const char* TRUE_NUMERIC = "1";
+        static constexpr const char* EMPTY_STRING = "";
+    }
+
+    // Units
+    namespace Units {
+        static constexpr const char* MILLISECONDS = "ms";
+        static constexpr const char* PSI = "psi";
+        static constexpr const char* BAR = "bar";
+        static constexpr const char* PERCENT = "%";
+
+        // Unit strings for logic comparisons
+        static constexpr const char* PSI_UPPER = "PSI";
+        static constexpr const char* KPA_UPPER = "kPa";
+        static constexpr const char* BAR_UPPER = "Bar";
+        static constexpr const char* FAHRENHEIT = "F";
+        static constexpr const char* CELSIUS = "C";
+    }
+
+    // Default Values
+    namespace Defaults {
+        static constexpr const char* DEFAULT_PRESSURE_UNIT = "Bar";
+        static constexpr const char* DEFAULT_TEMPERATURE_UNIT = "C";
+        static constexpr int DEFAULT_UPDATE_RATE = 500;
+        static constexpr float DEFAULT_CALIBRATION_OFFSET = 0.0f;
+        static constexpr float DEFAULT_CALIBRATION_SCALE = 1.0f;
+        static constexpr int DEFAULT_BRIGHTNESS = 80;
+    }
+
+    // Section Display Names
+    namespace SectionNames {
+        static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Pressure Sensor";
+        static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temperature Sensor";
+    }
+}
 
 /*============================================================================*/
 /*                            TIMING CONSTANTS                               */
 /*============================================================================*/
 
-// Future: Timing-related constants can be added here
+namespace TimingConstants {
+    // Splash panel specific
+    namespace Splash {
+        static constexpr uint32_t DISPLAY_TIME_MS = 500;
+        static constexpr uint32_t DELAY_TIME_MS = 200;
+        static constexpr const char* DEFAULT_DURATION = "1500";
+        static constexpr const char* DURATION_OPTIONS = "1500,1750,2000,2500";
+        static constexpr const char* SECTION_DISPLAY_NAME = "Splash Screen";
+        static constexpr const char* DURATION_LABEL = "Duration";
+        static constexpr const char* DURATION_UNIT = "ms";
+    }
+}
+
+/*============================================================================*/
+/*                           HARDWARE CONSTANTS                              */
+/*============================================================================*/
+
+namespace HardwareConstants {
+    // ========== Display Hardware Constants ==========
+    namespace Display {
+        static constexpr int SCREEN_WIDTH = 240;
+        static constexpr int SCREEN_HEIGHT = 240;
+        static constexpr int SCREEN_OFFSET_X = 0;
+        static constexpr int SCREEN_OFFSET_Y = 0;
+        static constexpr bool SCREEN_RGB_ORDER = false;
+        static constexpr int SCREEN_DEFAULT_BRIGHTNESS = 100;
+        static constexpr unsigned int BUFFER_LINE_COUNT = 40;
+        static constexpr unsigned int LV_BUFFER_SIZE = (SCREEN_WIDTH * BUFFER_LINE_COUNT * sizeof(uint16_t));
+    }
+
+    // ========== SPI Configuration Constants ==========
+    namespace SPI {
+        static constexpr int SPI_HOST_VALUE = 2; // SPI2_HOST value
+        static constexpr int SCLK_PIN = 18;
+        static constexpr int MOSI_PIN = 23;
+        static constexpr int MISO_PIN = -1;
+        static constexpr int DC_PIN = 16;
+        static constexpr int CS_PIN = 22;
+        static constexpr int RST_PIN = 4;
+        static constexpr int BL_PIN = 3;
+        static constexpr int BUZZER_PIN = -1;
+    }
+
+    // ========== Trigger IDs for logic comparisons ==========
+    namespace TriggerIDs {
+        static constexpr const char* KEY_PRESENT = "key_present";
+    }
+}
+

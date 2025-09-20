@@ -5,6 +5,7 @@
 #include "utilities/logging.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
+#include "constants.h"
 #ifdef CLARITY_DEBUG
 #include "managers/error_manager.h"
 #endif
@@ -30,7 +31,7 @@ inline std::vector<Trigger> GetSystemTriggers(
     std::vector<Trigger> triggers = {
         // Key triggers - CRITICAL priority
         {
-            .id = "key_present",
+            .id = TriggerIds::KEY_PRESENT,
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
             .activateFunc = []() { 
@@ -45,7 +46,7 @@ inline std::vector<Trigger> GetSystemTriggers(
             .isActive = false
         },
         {
-            .id = "key_not_present", 
+            .id = TriggerIds::KEY_NOT_PRESENT, 
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,
             .activateFunc = []() { 
@@ -62,7 +63,7 @@ inline std::vector<Trigger> GetSystemTriggers(
         
         // Lock trigger - IMPORTANT priority
         {
-            .id = "lock",
+            .id = TriggerIds::LOCK,
             .priority = Priority::IMPORTANT,
             .type = TriggerType::PANEL,
             .activateFunc = []() { 
@@ -79,7 +80,7 @@ inline std::vector<Trigger> GetSystemTriggers(
         
         // Lights trigger - NORMAL priority
         {
-            .id = "lights",
+            .id = TriggerIds::LIGHTS,
             .priority = Priority::NORMAL,
             .type = TriggerType::STYLE,
             .activateFunc = []() { 
@@ -100,7 +101,7 @@ inline std::vector<Trigger> GetSystemTriggers(
     // The sensor generates errors when button is pressed, error panel loading is handled automatically
     if (errorSensor) {
         triggers.push_back({
-            .id = "error",
+            .id = TriggerIds::ERROR,
             .priority = Priority::CRITICAL,
             .type = TriggerType::PANEL,  // Keep as PANEL type for priority handling
             .activateFunc = []() {
@@ -138,7 +139,7 @@ inline std::vector<Action> GetSystemActions() {
     return {
         // Button actions
         {
-            .id = "short_press",
+            .id = TriggerIds::SHORT_PRESS,
             .executeFunc = []() { 
                 log_t("ShortPressActivate() - Executing short press action");
                 PanelManager::ActionService().HandleShortPress(); 
@@ -147,7 +148,7 @@ inline std::vector<Action> GetSystemActions() {
             .pressType = ActionPress::SHORT
         },
         {
-            .id = "long_press",
+            .id = TriggerIds::LONG_PRESS,
             .executeFunc = []() { 
                 log_t("LongPressActivate() - Executing long press action");
                 PanelManager::ActionService().HandleLongPress(); 

@@ -4,6 +4,7 @@
 #include "handlers/action_handler.h"
 #include "utilities/system_definitions.h"
 #include "utilities/constants.h"
+#include "constants.h"
 #include "sensors/gpio_sensor.h"
 #include <Arduino.h>
 #include <cstring>

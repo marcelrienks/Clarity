@@ -2,6 +2,7 @@
 #include "managers/error_manager.h"
 #include "config/config_types.h"
 #include "utilities/logging.h"
+#include "constants.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -21,7 +22,7 @@ OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, int updateRate
 {
     log_v("OilPressureSensor() constructor called");
     // Set default unit to Bar
-    targetUnit_ = "Bar";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -40,7 +41,7 @@ OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceSer
 {
     log_v("OilPressureSensor() constructor with preference service called");
     // Set default unit to Bar
-    targetUnit_ = "Bar";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -89,7 +90,7 @@ void OilPressureSensor::Init()
 std::vector<std::string> OilPressureSensor::GetSupportedUnits() const
 {
     log_v("GetSupportedUnits() called");
-    return {"Bar", "PSI", "kPa"};
+    return {ConfigConstants::Units::BAR_UPPER, ConfigConstants::Units::PSI_UPPER, ConfigConstants::Units::KPA_UPPER};
 }
 
 /**
@@ -111,7 +112,7 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
         // Use static string to avoid allocation in error path
         static const char* errorMsg = "Unsupported pressure unit requested. Using default Bar.";
         ErrorManager::Instance().ReportError(ErrorLevel::WARNING, "OilPressureSensor", errorMsg);
-        targetUnit_ = "Bar";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     }
     else
     {
@@ -213,12 +214,12 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
     // Base calibration: 0-4095 ADC = 0-10 Bar
     int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
 
-    if (targetUnit_ == "PSI")
+    if (targetUnit_ == ConfigConstants::Units::PSI_UPPER)
     {
         // Map 0-4095 ADC to 0-145 PSI (0-10 Bar equivalent)
         return (calibratedRaw * SensorConstants::PRESSURE_MAX_PSI) / SensorHelper::ADC_MAX_VALUE;
     }
-    else if (targetUnit_ == "kPa")
+    else if (targetUnit_ == ConfigConstants::Units::KPA_UPPER)
     {
         // Map 0-4095 ADC to 0-1000 kPa (0-10 Bar equivalent)
         return (calibratedRaw * SensorConstants::PRESSURE_MAX_KPA) / SensorHelper::ADC_MAX_VALUE;
@@ -263,7 +264,7 @@ void OilPressureSensor::LoadConfiguration()
     if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
         targetUnit_ = *unitValue;
     } else {
-        targetUnit_ = "Bar";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     }
 
     if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
@@ -302,23 +303,23 @@ void OilPressureSensor::RegisterConfiguration()
 
     using namespace Config;
 
-    ConfigSection section("OilPressureSensor", CONFIG_SECTION, "Oil Pressure Sensor");
+    ConfigSection section(ConfigConstants::Sections::OIL_PRESSURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_PRESSURE_SENSOR);
     section.displayOrder = 2;
 
     // Pressure unit selection
-    section.AddItem(ConfigItem("unit", "Pressure Unit", std::string("Bar"),
+    section.AddItem(ConfigItem(ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::PRESSURE_UNIT, std::string(ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT),
         ConfigMetadata("PSI,Bar,kPa", ConfigItemType::Selection)));
 
     // Update rate
-    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", 500,
+    section.AddItem(ConfigItem(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS, ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
         ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
 
     // Calibration offset
-    section.AddItem(ConfigItem("offset", "Calibration Offset", 0.0f,
+    section.AddItem(ConfigItem(ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET, ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
         ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0", ConfigItemType::Selection)));
 
     // Calibration scale
-    section.AddItem(ConfigItem("scale", "Calibration Scale", 1.0f,
+    section.AddItem(ConfigItem(ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE, ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
         ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
 
     preferenceService_->RegisterConfigSection(section);

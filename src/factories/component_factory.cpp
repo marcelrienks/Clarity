@@ -8,6 +8,7 @@
 #include "components/config_component.h"
 #include "interfaces/i_style_service.h"
 #include "managers/error_manager.h"
+#include "constants.h"
 
 #include "esp32-hal-log.h"
 
@@ -161,9 +162,9 @@ std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleS
     // ConfigComponent doesn't use style service in constructor
     auto component = std::make_unique<ConfigComponent>();
     if (!component) {
-        log_e("ComponentFactory: Failed to create ConfigComponent - allocation failed");
+        log_e("ComponentFactory: Failed to create ConfigComponent - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
         ErrorManager::Instance().ReportCriticalError("ComponentFactory",
-                                                     "ConfigComponent allocation failed - out of memory");
+                                                     ErrorMessages::Component::CONFIG_COMPONENT_ALLOCATION_FAILED);
         return nullptr;
     }
     return component;

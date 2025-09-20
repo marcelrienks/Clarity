@@ -1,4 +1,5 @@
 #include "components/error_component.h"
+#include "constants.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>
@@ -205,7 +206,7 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_obj_align(errorCountLabel_, LV_ALIGN_TOP_MID, 0, 8); // Near top with minimal margin
     lv_obj_set_style_text_font(errorCountLabel_, &lv_font_montserrat_12, 0);
     lv_obj_set_style_text_color(errorCountLabel_, lv_color_white(), 0); // Always white for dark background
-    lv_label_set_text(errorCountLabel_, "1/1");
+    lv_label_set_text(errorCountLabel_, UIStrings::ErrorUI::SINGLE_ERROR_COUNT);
 
     // Create main content area using most of the 220x220 available space
     errorContentArea_ = lv_obj_create(parent);
@@ -220,14 +221,14 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_obj_align(errorLevelLabel_, LV_ALIGN_TOP_MID, 0, 5);
     lv_obj_set_style_text_font(errorLevelLabel_, &lv_font_montserrat_24, 0); // Large font
     lv_obj_set_style_text_color(errorLevelLabel_, lv_color_white(), 0);
-    lv_label_set_text(errorLevelLabel_, "ERROR");
+    lv_label_set_text(errorLevelLabel_, UIStrings::ErrorUI::DEFAULT_ERROR_LEVEL);
 
     // Create error source label
     errorSourceLabel_ = lv_label_create(errorContentArea_);
     lv_obj_align(errorSourceLabel_, LV_ALIGN_TOP_MID, 0, 45);
     lv_obj_set_style_text_font(errorSourceLabel_, &lv_font_montserrat_14, 0);
     lv_obj_set_style_text_color(errorSourceLabel_, lv_color_white(), 0);
-    lv_label_set_text(errorSourceLabel_, "System");
+    lv_label_set_text(errorSourceLabel_, UIStrings::ErrorUI::DEFAULT_ERROR_SOURCE);
 
     // Create error message display with maximum available space
     errorMessageLabel_ = lv_label_create(errorContentArea_);
@@ -237,14 +238,14 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
     lv_obj_set_style_text_color(errorMessageLabel_, lv_color_white(), 0);
     lv_obj_set_style_text_align(errorMessageLabel_, LV_TEXT_ALIGN_CENTER, 0);
     lv_label_set_long_mode(errorMessageLabel_, LV_LABEL_LONG_WRAP); // Multi-line text
-    lv_label_set_text(errorMessageLabel_, "Loading errors...");
+    lv_label_set_text(errorMessageLabel_, UIStrings::ErrorUI::LOADING_ERRORS_MESSAGE);
 
     // Create navigation indicator at bottom
     navigationIndicator_ = lv_label_create(parent);
     lv_obj_align(navigationIndicator_, LV_ALIGN_BOTTOM_MID, 0, -8);
     lv_obj_set_style_text_font(navigationIndicator_, &lv_font_montserrat_10, 0);
     lv_obj_set_style_text_color(navigationIndicator_, lv_color_white(), 0);
-    lv_label_set_text(navigationIndicator_, "Loading...");
+    lv_label_set_text(navigationIndicator_, UIStrings::ErrorUI::LOADING_NAVIGATION);
 }
 
 /**
@@ -289,7 +290,7 @@ void ErrorComponent::DisplayCurrentError()
 
     // Update navigation indicator - same for all errors
     // Short press cycles through errors, long press exits from any error
-    lv_label_set_text(navigationIndicator_, "short: next, long: exit");
+    lv_label_set_text(navigationIndicator_, UIStrings::ErrorUI::NAVIGATION_INSTRUCTIONS);
 }
 
 // Note: Deprecated methods CycleToNextError() and HandleCycleButtonPress() removed.
@@ -311,13 +312,13 @@ const char *ErrorComponent::GetErrorLevelText(ErrorLevel level)
     switch (level)
     {
         case ErrorLevel::CRITICAL:
-            return "CRIT";
+            return UIStrings::ErrorUI::LEVEL_CRITICAL;
         case ErrorLevel::ERROR:
-            return "ERR";
+            return UIStrings::ErrorUI::LEVEL_ERROR;
         case ErrorLevel::WARNING:
-            return "WARN";
+            return UIStrings::ErrorUI::LEVEL_WARNING;
         default:
-            return "UNKN";
+            return UIStrings::ErrorUI::LEVEL_UNKNOWN;
     }
 }
 

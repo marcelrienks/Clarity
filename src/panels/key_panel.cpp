@@ -5,6 +5,7 @@
 #include "managers/error_manager.h"
 #include "sensors/gpio_sensor.h"
 #include "utilities/logging.h"
+#include "constants.h"
 #include <Arduino.h>
 #include <variant>
 

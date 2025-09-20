@@ -12,6 +12,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
 #include "utilities/constants.h"
+#include "constants.h"
 #include "utilities/logging.h"
 #include "utilities/ticker.h"
 #include "utilities/types.h"
@@ -47,19 +48,19 @@ void registerSystemConfiguration()
 
     using namespace Config;
 
-    ConfigSection section("System", SystemConfig::CONFIG_SECTION, "System");
+    ConfigSection section(ConfigConstants::Sections::SYSTEM, SystemConfig::CONFIG_SECTION, ConfigConstants::Sections::SYSTEM);
     section.displayOrder = 0; // Highest priority - show first in config menu
 
     // Default panel selection
-    section.AddItem(ConfigItem("default_panel", "Default Panel",
-        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", ConfigItemType::Selection)));
+    section.AddItem(ConfigItem(ConfigConstants::Items::DEFAULT_PANEL, UIStrings::ConfigLabels::DEFAULT_PANEL,
+        std::string(ConfigConstants::Panels::OEM_OIL_PANEL), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", ConfigItemType::Selection)));
 
     // Global update rate for sensors and components
-    section.AddItem(ConfigItem("update_rate", "Update Rate",
-        500, ConfigMetadata("100,250,500,750,1000,1500,2000", "ms", ConfigItemType::Selection)));
+    section.AddItem(ConfigItem(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE,
+        500, ConfigMetadata("100,250,500,750,1000,1500,2000", ConfigConstants::Units::MILLISECONDS, ConfigItemType::Selection)));
 
     // Splash screen control
-    section.AddItem(ConfigItem("show_splash", "Show Splash",
+    section.AddItem(ConfigItem(ConfigConstants::Items::SHOW_SPLASH, UIStrings::ConfigLabels::SHOW_SPLASH,
         true, ConfigMetadata()));
 
     preferenceManager->RegisterConfigSection(section);
@@ -80,55 +81,55 @@ bool initializeServices()
 
     providerFactory = std::make_unique<ProviderFactory>();
     if (!providerFactory) {
-        log_e("Failed to create ProviderFactory - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("main", "ProviderFactory allocation failed");
+        log_e("Failed to create ProviderFactory - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PROVIDER_FACTORY_ALLOCATION_FAILED);
         return false;
     }
 
     deviceProvider = providerFactory->CreateDeviceProvider();
     if (!deviceProvider) {
         log_e("Failed to create DeviceProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::DEVICE_PROVIDER_CREATION_FAILED);
         return false;
     }
 
     gpioProvider = providerFactory->CreateGpioProvider();
     if (!gpioProvider) {
         log_e("Failed to create GpioProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "GpioProvider creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::GPIO_PROVIDER_CREATION_FAILED);
         return false;
     }
 
     displayProvider = providerFactory->CreateDisplayProvider(deviceProvider.get());
     if (!displayProvider) {
         log_e("Failed to create DisplayProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "DisplayProvider creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::DISPLAY_PROVIDER_CREATION_FAILED);
         return false;
     }
 
     managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
     if (!managerFactory) {
-        log_e("Failed to create ManagerFactory - allocation failed");
-        ErrorManager::Instance().ReportCriticalError("main", "ManagerFactory allocation failed");
+        log_e("Failed to create ManagerFactory - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::MANAGER_FACTORY_ALLOCATION_FAILED);
         return false;
     }
 
     preferenceManager = managerFactory->CreatePreferenceManager();
     if (!preferenceManager) {
         log_e("Failed to create PreferenceManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "PreferenceManager creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PREFERENCE_MANAGER_CREATION_FAILED);
         return false;
     }
     
     // Initialize StyleManager with user's theme preference
-    std::string userTheme = "Day"; // Default
-    if (auto themeValue = preferenceManager->QueryConfig<std::string>("system.theme")) {
+    std::string userTheme = UIStrings::ThemeNames::DAY; // Default
+    if (auto themeValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
         userTheme = *themeValue;
     }
     styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::STYLE_MANAGER_CREATION_FAILED);
         return false;
     }
  
@@ -138,7 +139,7 @@ bool initializeServices()
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
     if (!interruptManager) {
         log_e("Failed to create InterruptManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "InterruptManager creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::INTERRUPT_MANAGER_CREATION_FAILED);
         return false;
     }
     
@@ -149,14 +150,14 @@ bool initializeServices()
 
     if (!panelManager) {
         log_e("Failed to create PanelManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "PanelManager creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PANEL_MANAGER_CREATION_FAILED);
         return false;
     }
 
     errorManager = managerFactory->CreateErrorManager();
     if (!errorManager) {
         log_e("Failed to create ErrorManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "ErrorManager creation failed");
+        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::ERROR_MANAGER_CREATION_FAILED);
         return false;
     }
 

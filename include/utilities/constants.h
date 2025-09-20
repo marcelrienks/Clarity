@@ -252,11 +252,16 @@ struct TriggerIds
 {
     static constexpr const char *KEY_PRESENT = "key_present";         ///< Key present trigger ID
     static constexpr const char *KEY_NOT_PRESENT = "key_not_present"; ///< Key not present trigger ID
-    static constexpr const char *LOCK_STATE = "lock_state";           ///< Lock state trigger ID
-    static constexpr const char *LIGHTS_STATE = "lights_state";       ///< Lights state trigger ID
-    static constexpr const char *ERROR_OCCURRED = "error_occurred";   ///< Error occurred trigger ID
-    static constexpr const char *SHORT_PRESS = "universal_short_press"; ///< Short press button ID
-    static constexpr const char *LONG_PRESS = "universal_long_press";   ///< Long press button ID
+    static constexpr const char *LOCK = "lock";                       ///< Lock state trigger ID
+    static constexpr const char *LIGHTS = "lights";                   ///< Lights state trigger ID
+    static constexpr const char *ERROR = "error";                     ///< Error trigger ID
+    static constexpr const char *SHORT_PRESS = "short_press";         ///< Short press button ID
+    static constexpr const char *LONG_PRESS = "long_press";           ///< Long press button ID
+
+    // Legacy constants for backward compatibility
+    static constexpr const char *LOCK_STATE = "lock_state";           ///< Legacy lock state trigger ID
+    static constexpr const char *LIGHTS_STATE = "lights_state";       ///< Legacy lights state trigger ID
+    static constexpr const char *ERROR_OCCURRED = "error_occurred";   ///< Legacy error occurred trigger ID
 };
 
 /**
@@ -392,4 +397,22 @@ struct UIConstants
     static constexpr const char *GAUGE_LOW_LABEL = "L";  ///< Low gauge indicator
     static constexpr const char *GAUGE_HIGH_LABEL = "H"; ///< High gauge indicator
 };
+
+//=============================================================================
+// DATA CONSTANTS
+// Constants for data structure sizing and limits
+//=============================================================================
+
+/**
+ * @struct DataConstants
+ * @brief Constants for data structure sizing and embedded optimization
+ *
+ * @details Defines constants used in data structure sizing, particularly
+ * for embedded systems where buffer sizes must be predetermined.
+ */
+namespace DataConstants {
+    namespace ErrorInfo {
+        static constexpr size_t MAX_MESSAGE_LENGTH = 128; ///< Fixed buffer size for embedded optimization
+    }
+}
 
