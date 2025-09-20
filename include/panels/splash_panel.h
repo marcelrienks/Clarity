@@ -10,7 +10,7 @@
 #include "interfaces/i_panel_notification_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
-#include "constants.h"
+#include "utilities/constants.h"
 #include <memory>
 
 

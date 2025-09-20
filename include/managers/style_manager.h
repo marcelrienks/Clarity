@@ -4,7 +4,7 @@
 #include "interfaces/i_preference_service.h"
 #include "utilities/styles.h"
 #include "utilities/types.h"
-#include "constants.h"
+#include "utilities/constants.h"
 
 #include <lvgl.h>
 #include <memory>

@@ -26,6 +26,7 @@
 
 // Project Includes
 #include "utilities/constants.h"
+#include "utilities/types.h"
 
 //=============================================================================
 // THEME COLOR DEFINITIONS

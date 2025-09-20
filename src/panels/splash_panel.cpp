@@ -5,7 +5,6 @@
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
 #include "utilities/logging.h"
-#include "constants.h"
 #include <algorithm>
 #include <esp32-hal-log.h>
 

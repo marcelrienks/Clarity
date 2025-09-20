@@ -3,7 +3,7 @@
 #include "managers/style_manager.h"
 #include "utilities/types.h"
 #include "utilities/logging.h"
-#include "constants.h"
+#include "utilities/constants.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>

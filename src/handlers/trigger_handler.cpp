@@ -1,5 +1,5 @@
 #include "handlers/trigger_handler.h"
-#include "constants.h"
+#include "utilities/constants.h"
 #include "managers/error_manager.h"
 #include "sensors/gpio_sensor.h"
 #include "hardware/gpio_pins.h"

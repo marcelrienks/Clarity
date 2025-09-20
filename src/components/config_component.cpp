@@ -1,6 +1,6 @@
 #include "components/config_component.h"
 #include "managers/error_manager.h"
-#include "constants.h"
+#include "utilities/constants.h"
 #include <Arduino.h>
 #include <cmath>
 #include <cstring>

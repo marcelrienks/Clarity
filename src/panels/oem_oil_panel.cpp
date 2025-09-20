@@ -8,7 +8,6 @@
 #include "managers/style_manager.h"
 #include "utilities/constants.h"
 #include "utilities/logging.h"
-#include "constants.h"
 
 // ========== Constructors and Destructor ==========
 

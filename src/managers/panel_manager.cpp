@@ -1,7 +1,7 @@
 #include "managers/panel_manager.h"
 #include "config/system_config.h"
 #include "utilities/logging.h"
-#include "constants.h"
+#include "utilities/constants.h"
 
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
