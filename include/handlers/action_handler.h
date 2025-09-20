@@ -9,6 +9,7 @@
 
 // Forward declarations for sensors
 class ButtonSensor;
+class IActionService;
 
 #include "esp32-hal-log.h"
 
@@ -28,34 +29,31 @@ class ButtonSensor;
 class ActionHandler : public IHandler
 {
 public:
+    // ========== Constructors and Destructor ==========
     ActionHandler(IGpioProvider* gpioProvider);
     ~ActionHandler();
     
+    // ========== Public Interface Methods ==========
     // IHandler interface - new interrupt system only
     void Process() override;
-    
-    // New Action system interface
-    bool RegisterAction(const Action& action);
-    void UnregisterAction(const char* id);
-    void EvaluateActions();  // Called every main loop cycle
-    
-    // Function injection system for dynamic panel functions
-    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
-    void ClearPanelFunctions();
-    
+
+    // Panel management for direct method calls
+    void SetCurrentPanel(IActionService* panel);
+    void ClearCurrentPanel();
+
     // Button event processing
     void ProcessButtonEvents();
     ButtonAction DetectButtonAction();
     ButtonAction DetectLongPressDuringHold();
-    
+
     // Sensor access for action context
     ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
-    
-    // Status and diagnostics
-    size_t GetActionCount() const;
-    bool HasPendingActions() const;
-    void PrintActionStatus() const;
 
+    // Status and diagnostics
+    bool HasPendingAction() const;
+    void ClearPendingAction();
+
+    // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
     enum class ButtonState {
         IDLE,
@@ -65,47 +63,40 @@ public:
     };
 
 private:
+    // ========== Private Methods ==========
     // Core action processing
-    void EvaluateIndividualAction(Action& action);
-    bool EvaluateIndividualActionWithDetectedAction(Action& action, ButtonAction detectedAction);
-    void ExecutePendingActions();
-    void ExecuteAction(const Action& action);  // Legacy compatibility
-    bool ShouldTriggerAction(const Action& action);
-    bool ShouldTriggerActionWithDetectedAction(const Action& action, ButtonAction detectedAction);
-    
+    void ExecutePendingAction();
+    void SetPendingAction(ButtonAction actionType);
+
     // Button timing detection
     void UpdateButtonState();
     void StartButtonTiming();
     void StopButtonTiming();
     ButtonAction CalculateButtonAction(unsigned long pressDuration);
-    
+
     // Helper methods
-    Action* FindAction(const char* id);
     bool IsButtonPressed() const;
     const char* StateToString(ButtonState state) const;
     
+    // ========== Private Data Members ==========
     // Timing constants - based on automotive UI best practices and user testing
     static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum to avoid accidental presses
     static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Optimal for quick actions
     static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Clear distinction from short press
     static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;      // Not used for detection, kept for compatibility
-    
-    static constexpr size_t MAX_ACTIONS = 8;
-    
-    // Action storage
-    Action actions_[MAX_ACTIONS];
-    size_t actionCount_ = 0;
+
+    // Single pending action (LIFO with size 1)
+    ButtonAction pendingActionType_ = ButtonAction::NONE;
+    bool hasPendingAction_ = false;
 
     // Button state
     ButtonState buttonState_ = ButtonState::IDLE;
     unsigned long buttonPressStartTime_ = 0;
     unsigned long buttonPressEndTime_ = 0;
-    
-    // Function injection for dynamic panel functions
-    void (*currentShortPressFunc_)(void*) = nullptr;
-    void (*currentLongPressFunc_)(void*) = nullptr;
-    void* currentPanelContext_ = nullptr;
-    
+
+    // Current panel for direct method calls
+    class IActionService* currentPanel_ = nullptr;
+
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;
     std::unique_ptr<ButtonSensor> buttonSensor_;

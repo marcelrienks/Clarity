@@ -30,61 +30,17 @@ class IPanelService
     virtual ~IPanelService() = default;
 
     // Core Functionality Methods
-
-    /**
-     * @brief Initialize the panel service and register available panels
-     */
     virtual void Init() = 0;
-
-    /**
-     * @brief Create and load a panel by name
-     * @param panelName Name of the panel to create and load
-     * @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
-     */
     virtual void CreateAndLoadPanel(const char *panelName, bool isTriggerDriven = false) = 0;
-
-    /**
-     * @brief Update the currently active panel (called from main loop)
-     */
     virtual void UpdatePanel() = 0;
 
     // State Management Methods
-
-    /**
-     * @brief Set current UI state for synchronization
-     * @param state Current UI processing state
-     */
     virtual void SetUiState(UIState state) = 0;
-
-    /**
-     * @brief Get the current UI state
-     * @return Current UI processing state
-     */
     virtual UIState GetUiState() const = 0;
-
-    /**
-     * @brief Get the current panel name
-     * @return Current panel identifier string
-     */
     virtual const char *GetCurrentPanel() const = 0;
-
-    /**
-     * @brief Get the restoration panel name (panel to restore when triggers are inactive)
-     * @return Restoration panel identifier string
-     */
     virtual const char *GetRestorationPanel() const = 0;
-
-    /**
-     * @brief Check if the current panel is trigger-driven
-     * @return True if current panel was loaded by a trigger, false for user-driven panels
-     */
     virtual bool IsCurrentPanelTriggerDriven() const = 0;
 
     // Trigger Integration Methods
-
-    /**
-     * @brief Callback executed when trigger-driven panel loading is complete
-     * @param triggerId ID of the trigger that initiated the panel switch
-     */
     virtual void TriggerPanelSwitchCallback(const char *triggerId) = 0;
 };

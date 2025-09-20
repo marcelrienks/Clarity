@@ -44,12 +44,12 @@ class ConfigComponent : public IComponent
         std::string actionParam; // Parameter for the action
     };
 
-    // Constructor with dependency injection
+    // ========== Constructors and Destructor ==========
     ConfigComponent(IPanelService* panelService = nullptr, 
                    IStyleService* styleService = nullptr);
     ~ConfigComponent() = default;
     
-    // Execute action directly through injected interfaces
+    // ========== Public Interface Methods ==========
     void ExecuteAction(const std::string& actionType, const std::string& actionParam);
 
     // IComponent interface implementation
@@ -71,18 +71,9 @@ class ConfigComponent : public IComponent
     void SetCurrentIndex(size_t index);
     void SetHintText(const std::string &hint);
 
-    // Get current menu state
-    size_t GetMenuItemCount() const
-    {
-        return menuItems_.size();
-    }
-    const MenuItem &GetMenuItem(size_t index) const
-    {
-        return menuItems_[index];
-    }
 
   private:
-    // UI creation methods
+    // ========== Private Methods ==========
     void CreateUI();
     void UpdateMenuDisplay();
     
@@ -94,7 +85,7 @@ class ConfigComponent : public IComponent
     // Theme-aware color helpers
     lv_color_t GetThemeGradientColor(int distanceFromCenter, bool isSelected = false) const;
 
-    // LVGL objects
+    // ========== Private Data Members ==========
     lv_obj_t *screen_ = nullptr;
     lv_obj_t *container_ = nullptr;
     lv_obj_t *titleLabel_ = nullptr;

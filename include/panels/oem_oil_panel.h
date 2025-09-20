@@ -50,11 +50,11 @@
 class OemOilPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~OemOilPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::OIL;
     void Init() override;
     void Load() override;
@@ -63,33 +63,26 @@ class OemOilPanel : public IPanel
     // Manager injection method
     void SetManagers(IPanelService *panelService, IStyleService *styleService);
 
-    /// @brief Set preference service and apply sensor update rate from preferences
-    /// @param preferenceService The preference service to use for configuration
     void SetPreferenceService(IPreferenceService *preferenceService);
     
-    /// @brief Apply current sensor settings from preferences directly
     void ApplyCurrentSensorSettings();
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
+    // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     
-    // Public action handler
-    void HandleLongPress();
+    // Public action handlers
+    void HandleShortPress() override;
+    void HandleLongPress() override;
 
-    // Static Data Members
+    // ========== Public Data Members ==========
     static constexpr int32_t _animation_duration = 750;
 
   private:
-    // Core Functionality Methods
+    // ========== Private Methods ==========
     void UpdateOilPressure(bool forceRefresh = false);
     void UpdateOilTemperature(bool forceRefresh = false);
 
     // Value mapping methods
-    /// @brief Map oil pressure sensor value to display scale
-    /// @param sensor_value Raw sensor value (1-10 Bar)
-    /// @return Mapped value for display (0-60, representing 0.0-6.0 Bar x10)
     int32_t MapPressureValue(int32_t sensorValue);
     
     // Helper methods for pressure mapping
@@ -99,25 +92,22 @@ class OemOilPanel : public IPanel
     int32_t MapBarPressure(int32_t sensorValue);
     int32_t ClampValue(int32_t value, int32_t minVal, int32_t maxVal);
 
-    /// @brief Map oil temperature sensor value to display scale
-    /// @param sensor_value Raw sensor value (0-120°C)
-    /// @return Mapped value for display
     int32_t MapTemperatureValue(int32_t sensorValue);
 
-    // Static Callback Methods
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);
     static void UpdatePanelCompletionCallback(lv_anim_t *animation);
     static void ExecutePressureAnimationCallback(void *target, int32_t value);
     static void ExecuteTemperatureAnimationCallback(void *target, int32_t value);
 
-    // Instance Data Members - Dependencies
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
     // Instance Data Members - UI Objects
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
 
     // Instance Data Members - Components and Sensors (static allocation)
     OemOilPressureComponent oemOilPressureComponent_;

@@ -36,44 +36,37 @@
 class ButtonSensor : public BaseSensor
 {
   public:
+    // ========== Constructors and Destructor ==========
+    ButtonSensor(IGpioProvider *gpioProvider);
+
+    // ========== Public Interface Methods ==========
+    // ISensor Interface Implementation
+    void Init() override;
+    Reading GetReading() override;
+
+    // BaseSensor interface
+    bool HasStateChanged() override;
+
+    // Action handling
+    ButtonAction GetAndConsumeAction();
+
+    // ========== Public Data Members ==========
     // Button timing constants
     static constexpr uint32_t DEBOUNCE_MS = 50;
     static constexpr uint32_t SHORT_PRESS_MAX_MS = 2000;
     static constexpr uint32_t LONG_PRESS_MAX_MS = 5000;
 
-    // Constructors and Destructors
-    ButtonSensor(IGpioProvider *gpioProvider);
-
-    // ISensor Interface Implementation
-    void Init() override;
-    Reading GetReading() override;
-
-    /// @brief Get the current button action
-    /// @return ButtonAction indicating the type of press detected
-    ButtonAction GetButtonAction();
-    
-    /// @brief Check if a button action is ready
-    /// @return true if a valid button action has been detected
-    bool HasButtonAction() const;
-    
-    /// @brief Clear the current button action (after processing)
-    void ClearButtonAction();
-    
-    /// @brief Get current raw button state
-    /// @return true if button is currently pressed, false otherwise
-    bool IsButtonPressed();
-    
-    // BaseSensor interface
-    bool HasStateChanged() override;
-    
-    // Simplified interrupt system
-    const char* GetTriggerInterruptId() const;
-
   protected:
-    // Custom interrupt behavior
+    // ========== Protected Methods ==========
     void OnInterruptTriggered() override;
 
   private:
+    // ========== Private Methods ==========
+    bool ReadButtonState();
+    void ProcessButtonState();
+    ButtonAction DetermineAction(unsigned long duration);
+    
+    // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     
     // Button state tracking
@@ -87,17 +80,5 @@ class ButtonSensor : public BaseSensor
     // Action detection
     ButtonAction detectedAction_ = ButtonAction::NONE;
     bool actionReady_ = false;
-    const char* triggerInterruptId_ = nullptr;  // ID of interrupt to trigger on action
-    
-    /// @brief Read GPIO pin and determine button state
-    /// @return Button state based on GPIO pin reading
-    bool ReadButtonState();
-    
-    /// @brief Process button state changes and detect actions
-    void ProcessButtonState();
-    
-    /// @brief Determine button action based on press duration
-    /// @param duration Press duration in milliseconds
-    /// @return ButtonAction type based on duration
-    ButtonAction DetermineAction(unsigned long duration);
+    bool longPressTriggeredDuringHold_ = false;
 };

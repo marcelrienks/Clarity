@@ -1,16 +1,36 @@
 #include "components/config_component.h"
+#include "managers/error_manager.h"
 #include <Arduino.h>
 #include <cmath>
 #include <cstring>
 
-// Constructor
+// ========== Constructors and Destructor ==========
+
+/**
+ * @brief Constructs a configuration menu component with service dependencies
+ * @param panelService Panel service for navigation control
+ * @param styleService Style service for theme management
+ *
+ * Initializes the configuration component with dependencies for panel navigation
+ * and theme styling. These services enable menu interactions and visual theming.
+ */
 ConfigComponent::ConfigComponent(IPanelService* panelService, IStyleService* styleService)
     : panelService_(panelService), styleService_(styleService)
 {
     log_v("ConfigComponent constructor called");
 }
 
-// IComponent interface implementation
+// ========== IComponent Implementation ==========
+
+/**
+ * @brief Renders the configuration component on screen
+ * @param screen LVGL screen object to render on
+ * @param location Component positioning parameters
+ * @param display Display provider interface
+ *
+ * Main rendering method that creates and displays the configuration UI.
+ * Delegates to Init() for actual UI creation. Part of IComponent interface.
+ */
 void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     log_v("Render() called");
@@ -18,12 +38,29 @@ void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location
 }
 
 
+/**
+ * @brief Sets component value (not used for configuration menu)
+ * @param value Integer value to set
+ *
+ * This method is part of IComponent interface but is not applicable
+ * for configuration menu which uses specific methods for updates.
+ */
 void ConfigComponent::SetValue(int32_t value)
 {
     log_v("SetValue() called");
     // Not used for config menu - updates handled via specific methods
 }
 
+// ========== Public Interface Methods ==========
+
+/**
+ * @brief Executes configuration menu actions
+ * @param actionType Type of action to execute (submenu, panel_exit, panel_load)
+ * @param actionParam Parameter for the action (e.g., panel name)
+ *
+ * Handles menu navigation actions including submenu entry, panel exit to restoration,
+ * and direct panel loading. Used by ConfigPanel for menu interaction handling.
+ */
 void ConfigComponent::ExecuteAction(const std::string& actionType, const std::string& actionParam)
 {
     log_v("ExecuteAction() called with type: %s, param: %s", actionType.c_str(), actionParam.c_str());
@@ -56,7 +93,16 @@ void ConfigComponent::ExecuteAction(const std::string& actionType, const std::st
     }
 }
 
-// ConfigComponent specific initialization
+// ========== Private Methods ==========
+
+/**
+ * @brief Initializes the configuration component UI structure
+ * @param screen LVGL screen object to create UI on
+ *
+ * Creates the main container with circular styling for the round display,
+ * sets up transparent background, and creates all UI elements including
+ * title, menu items, and hint text.
+ */
 void ConfigComponent::Init(lv_obj_t *screen)
 {
     log_v("Init() called");
@@ -64,6 +110,8 @@ void ConfigComponent::Init(lv_obj_t *screen)
     if (!screen)
     {
         log_e("ConfigComponent requires screen object");
+        ErrorManager::Instance().ReportCriticalError("ConfigComponent",
+                                                     "Screen object is null - cannot display configuration menu");
         return;
     }
 
@@ -84,8 +132,13 @@ void ConfigComponent::Init(lv_obj_t *screen)
     CreateUI();
 }
 
-// Configuration menu specific methods
-
+/**
+ * @brief Sets the title text of the configuration menu
+ * @param title Title string to display
+ *
+ * Updates the title label at the top of the configuration menu.
+ * Used to indicate the current menu level or section.
+ */
 void ConfigComponent::SetTitle(const std::string &title)
 {
     log_v("SetTitle() called");
@@ -96,6 +149,13 @@ void ConfigComponent::SetTitle(const std::string &title)
     }
 }
 
+/**
+ * @brief Sets the menu items to display
+ * @param items Vector of MenuItem structures with labels and actions
+ *
+ * Updates the menu with new items and refreshes the display.
+ * Each MenuItem contains a label and associated action information.
+ */
 void ConfigComponent::SetMenuItems(const std::vector<MenuItem> &items)
 {
     log_v("SetMenuItems() called");
@@ -103,6 +163,13 @@ void ConfigComponent::SetMenuItems(const std::vector<MenuItem> &items)
     UpdateMenuDisplay();
 }
 
+/**
+ * @brief Sets the currently selected menu item index
+ * @param index Zero-based index of the item to select
+ *
+ * Updates the selected menu item and refreshes the display to show
+ * the selection with proper highlighting and positioning.
+ */
 void ConfigComponent::SetCurrentIndex(size_t index)
 {
     log_v("SetCurrentIndex() called");
@@ -113,6 +180,13 @@ void ConfigComponent::SetCurrentIndex(size_t index)
     }
 }
 
+/**
+ * @brief Sets the hint text at the bottom of the menu
+ * @param hint Hint text to display
+ *
+ * Updates the hint label that shows button instructions or
+ * contextual help for the current menu state.
+ */
 void ConfigComponent::SetHintText(const std::string &hint)
 {
     log_v("SetHintText() called");
@@ -122,6 +196,13 @@ void ConfigComponent::SetHintText(const std::string &hint)
     }
 }
 
+/**
+ * @brief Sets the style service for theme management
+ * @param styleService Pointer to style service
+ *
+ * Updates the style service reference and immediately applies
+ * the current theme colors to all UI elements.
+ */
 void ConfigComponent::SetStyleService(IStyleService* styleService)
 {
     log_v("SetStyleService() called");
@@ -129,6 +210,13 @@ void ConfigComponent::SetStyleService(IStyleService* styleService)
     UpdateThemeColors();
 }
 
+/**
+ * @brief Updates all UI elements with current theme colors
+ *
+ * Applies theme-specific colors to container background, title,
+ * hint text, and menu items. Handles both day and night themes
+ * with appropriate color schemes.
+ */
 void ConfigComponent::UpdateThemeColors()
 {
     log_v("UpdateThemeColors() called");
@@ -177,8 +265,15 @@ void ConfigComponent::UpdateThemeColors()
     UpdateMenuDisplay();
 }
 
-// Private methods
-
+/**
+ * @brief Calculates gradient color for menu items based on theme and position
+ * @param distanceFromCenter Distance from the center selected item
+ * @param isSelected Whether this is the selected item
+ * @return LVGL color for the menu item
+ *
+ * Creates a gradient effect where items further from center are darker.
+ * Uses red gradients for night theme and gray gradients for day theme.
+ */
 lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool isSelected) const
 {
     if (!styleService_) 
@@ -240,6 +335,15 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     }
 }
 
+// ========== Helper Methods ==========
+
+/**
+ * @brief Creates all UI elements for the configuration menu
+ *
+ * Builds the complete UI structure including title label, menu container,
+ * menu item labels array, and hint text. Sets up initial styling and
+ * positioning for all elements.
+ */
 void ConfigComponent::CreateUI()
 {
     log_v("CreateUI() called");
@@ -291,6 +395,13 @@ void ConfigComponent::CreateUI()
     UpdateMenuDisplay();
 }
 
+/**
+ * @brief Updates the menu display with current items and selection
+ *
+ * Refreshes all visible menu items with scrolling effect, applies
+ * distance-based styling including font size, opacity, and color gradients.
+ * Handles circular scrolling and item positioning adjustments.
+ */
 void ConfigComponent::UpdateMenuDisplay()
 {
     log_v("UpdateMenuDisplay() called");
@@ -377,6 +488,13 @@ void ConfigComponent::UpdateMenuDisplay()
     }
 }
 
+/**
+ * @brief Applies highlighting style to the selected center item
+ * @param label LVGL label object to style
+ *
+ * Applies enhanced styling to the selected menu item including larger font,
+ * full opacity, background highlight with border, and theme-specific colors.
+ */
 void ConfigComponent::ApplyCenterItemStyle(lv_obj_t* label)
 {
     if (!label) return;
@@ -395,6 +513,13 @@ void ConfigComponent::ApplyCenterItemStyle(lv_obj_t* label)
     lv_obj_set_style_border_width(label, 1, LV_PART_MAIN);
 }
 
+/**
+ * @brief Applies background color to selected item based on theme
+ * @param label LVGL label object to style
+ *
+ * Sets background and border colors for the selected menu item.
+ * Uses dark red for night theme and gray for day theme.
+ */
 void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
 {
     if (!styleService_)
@@ -416,6 +541,13 @@ void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
     lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
 }
 
+/**
+ * @brief Applies default background when no style service available
+ * @param label LVGL label object to style
+ *
+ * Fallback styling for selected item when style service is not set.
+ * Uses default gray color scheme.
+ */
 void ConfigComponent::ApplyDefaultCenterBackground(lv_obj_t* label)
 {
     lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);

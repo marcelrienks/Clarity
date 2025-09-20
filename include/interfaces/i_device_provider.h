@@ -38,14 +38,7 @@ class IDeviceProvider
 public:
     virtual ~IDeviceProvider() = default;
 
-    /// @brief Prepare and initialize the device hardware
     virtual void prepare() = 0;
-
-    /// @brief Get the main screen object
-    /// @return Pointer to the screen object, nullptr if not initialized
     virtual lv_obj_t* GetScreen() const = 0;
-
-    /// @brief Check if the device has been properly initialized
-    /// @return True if device is ready, false otherwise
     virtual bool IsReady() const = 0;
 };

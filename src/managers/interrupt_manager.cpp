@@ -38,6 +38,8 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 
     if (!gpioProvider) {
         log_e("Cannot initialize InterruptManager - GPIO provider is null");
+        ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                     "Cannot initialize - GPIO provider is null");
         return;
     }
 
@@ -91,9 +93,6 @@ void InterruptManager::Process()
     if (IsUIIdle() && triggerHandler_) {
         triggerHandler_->Process();
     }
-
-    // Update performance monitoring counters
-    totalEvaluations_++;
 }
 
 /**
@@ -104,20 +103,12 @@ bool InterruptManager::RegisterTrigger(const Trigger& trigger)
 {
     if (!triggerHandler_) {
         log_e("Cannot register trigger - TriggerHandler not initialized");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                            "Cannot register trigger - TriggerHandler not initialized");
         return false;
     }
 
     return triggerHandler_->RegisterTrigger(trigger);
-}
-
-/**
- * @brief Unregister trigger by identifier
- */
-void InterruptManager::UnregisterTrigger(const char* id)
-{
-    if (triggerHandler_) {
-        triggerHandler_->UnregisterTrigger(id);
-    }
 }
 
 /**
@@ -128,38 +119,34 @@ bool InterruptManager::RegisterAction(const Action& action)
 {
     if (!actionHandler_) {
         log_e("Cannot register action - ActionHandler not initialized");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                            "Cannot register action - ActionHandler not initialized");
         return false;
     }
 
-    return actionHandler_->RegisterAction(action);
-}
-
-/**
- * @brief Unregister action by identifier
- */
-void InterruptManager::UnregisterAction(const char* id)
-{
-    if (actionHandler_) {
-        actionHandler_->UnregisterAction(id);
-    }
+    // Action registration no longer needed - panels handle actions directly
+    log_w("RegisterAction called but no longer supported - use panel methods directly");
+    return true;
 }
 
 /**
  * @brief Update panel button handler functions for current panel
  * @details Called when switching panels to update button behavior
  */
-void InterruptManager::UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context)
+void InterruptManager::SetCurrentPanel(IActionService* panel)
 {
-    log_v("UpdatePanelFunctions() called");
+    log_v("SetCurrentPanel() called");
 
     if (!actionHandler_) {
-        log_w("Cannot update panel functions - ActionHandler not initialized");
+        log_e("Cannot set current panel - ActionHandler not initialized. Button input will not work!");
+        ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                     "Cannot set current panel - button input will not work");
         return;
     }
 
-    // Delegate to ActionHandler to update button behavior
-    actionHandler_->UpdatePanelFunctions(shortPressFunc, longPressFunc, context);
-    log_i("Updated panel functions in ActionHandler");
+    // Delegate to ActionHandler to set current panel
+    actionHandler_->SetCurrentPanel(panel);
+    log_i("Set current panel in ActionHandler");
 }
 
 /**
@@ -169,21 +156,12 @@ void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
 {
     if (!handler) {
         log_e("Cannot register null handler");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                            "Cannot register null handler");
         return;
     }
 
     handlers_.push_back(handler);
-}
-
-/**
- * @brief Unregister legacy interrupt handler
- */
-void InterruptManager::UnregisterHandler(std::shared_ptr<IHandler> handler)
-{
-    auto it = std::find(handlers_.begin(), handlers_.end(), handler);
-    if (it != handlers_.end()) {
-        handlers_.erase(it);
-    }
 }
 
 /**
@@ -196,49 +174,10 @@ size_t InterruptManager::GetRegisteredInterruptCount() const
         count += triggerHandler_->GetTriggerCount();
     }
     if (actionHandler_) {
-        count += actionHandler_->GetActionCount();
+        // GetActionCount no longer available - using single pending action
+        count += actionHandler_->HasPendingAction() ? 1 : 0;
     }
     return count;
-}
-
-/**
- * @brief Retrieve performance statistics for interrupt processing
- */
-void InterruptManager::GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const
-{
-    totalEvaluations = totalEvaluations_;
-    totalExecutions = totalExecutions_;
-}
-
-/**
- * @brief Optimize memory usage - no-op with static array implementation
- * @details Static arrays are already memory-optimal, method exists for API compatibility
- */
-void InterruptManager::OptimizeMemoryUsage()
-{
-    log_v("OptimizeMemoryUsage() called");
-
-    // Memory is already optimized with static arrays
-    // This method exists for API compatibility with dynamic implementations
-
-    if (triggerHandler_) {
-        // Static arrays are already optimized - no action needed
-    }
-
-    if (actionHandler_) {
-        // Static arrays are already optimized - no action needed
-    }
-}
-
-/**
- * @brief Compact interrupt array - no-op with static array implementation
- * @details Static arrays don't fragment and don't need compaction
- */
-void InterruptManager::CompactInterruptArray()
-{
-    log_v("CompactInterruptArray() called");
-
-    // Static arrays don't need compaction - no fragmentation occurs
 }
 
 /**
@@ -249,18 +188,10 @@ bool InterruptManager::HasActiveInterrupts() const
     if (triggerHandler_ && triggerHandler_->HasActiveTriggers()) {
         return true;
     }
-    if (actionHandler_ && actionHandler_->HasPendingActions()) {
+    if (actionHandler_ && actionHandler_->HasPendingAction()) {
         return true;
     }
     return false;
-}
-
-/**
- * @brief Get interrupt count (alias for GetRegisteredInterruptCount)
- */
-size_t InterruptManager::GetInterruptCount() const
-{
-    return GetRegisteredInterruptCount();
 }
 
 /**
@@ -275,7 +206,6 @@ void InterruptManager::CheckRestoration()
 
     // Check if any non-overridable triggers are still active
     bool hasActiveTrigger = triggerHandler_->HasActiveTriggers();
-
     if (!hasActiveTrigger) {
         // Let the PanelManager handle restoration logic
         // This method provides coordination point for restoration
@@ -356,6 +286,8 @@ void InterruptManager::RegisterSystemInterrupts()
     for (const auto& trigger : systemTriggers) {
         if (!RegisterTrigger(trigger)) {
             log_e("Failed to register system trigger: %s", trigger.id);
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                                "Failed to register system trigger");
         }
     }
 
@@ -364,6 +296,8 @@ void InterruptManager::RegisterSystemInterrupts()
     for (const auto& action : systemActions) {
         if (!RegisterAction(action)) {
             log_e("Failed to register system action: %s", action.id);
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
+                                                "Failed to register system action");
         }
     }
 
@@ -373,11 +307,6 @@ void InterruptManager::RegisterSystemInterrupts()
 
 bool InterruptManager::IsUIIdle() const
 {
-    // PERFORMANCE OPTIMIZATION: Cache UI idle state to reduce LVGL queries
-    // LVGL query is expensive (requires display lock + calculation)
-    // 5ms cache timeout balances responsiveness vs performance
-    // 10ms idle threshold prevents interrupting smooth animations
-
     // Cache UI idle state with timeout to reduce LVGL query frequency
     static bool cached_idle = false;
     static unsigned long last_check = 0;

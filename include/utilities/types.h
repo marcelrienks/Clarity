@@ -70,10 +70,12 @@ using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>
 //=============================================================================
 
 /// @struct ComponentLocation
-/// @brief UI component positioning and sizing parameters
-///
-/// @details Comprehensive structure for defining component placement
-/// within LVGL screens. Supports both absolute positioning (x,y) and
+/**
+ * @brief UI component positioning and sizing parameters
+ *
+ * @details Comprehensive structure for defining component placement
+ * within LVGL screens. Supports both absolute positioning (x,y) and
+ */
 /// relative alignment with offsets.
 ///
 /// @positioning_modes:
@@ -113,39 +115,6 @@ struct ComponentLocation
     }
 };
 
-//=============================================================================
-// CONFIGURATION DATA
-// User-modifiable settings and application preferences
-//=============================================================================
-
-/// @struct Configs
-/// @brief Application configuration settings
-///
-/// @details Holds all persistent configuration values managed by
-/// PreferenceManager. Automatically serialized to/from JSON in NVS.
-///
-/// @default_values All fields have sensible defaults for first-run
-struct Configs
-{
-    // General settings
-    std::string panelName = PanelNames::OIL; ///< Default panel on startup
-    bool showSplash = true;                  ///< Show splash screen on startup
-    int splashDuration = 1500;               ///< Splash screen duration in milliseconds
-
-    // Display settings
-    std::string theme = Themes::DAY; ///< Theme preference (Day/Night)
-
-    // Sensor settings
-    int updateRate = 500;             ///< Sensor update rate in milliseconds
-    std::string pressureUnit = "Bar"; ///< Pressure unit (PSI, Bar, kPa)
-    std::string tempUnit = "C";       ///< Temperature unit (C, F)
-    
-    // Sensor calibration settings
-    float pressureOffset = 0.0f;      ///< Pressure sensor offset correction
-    float pressureScale = 1.0f;       ///< Pressure sensor scaling factor
-    float tempOffset = 0.0f;          ///< Temperature sensor offset correction
-    float tempScale = 1.0f;           ///< Temperature sensor scaling factor
-};
 
 //=============================================================================
 // RUNTIME STATE STRUCTURES
@@ -153,7 +122,9 @@ struct Configs
 //=============================================================================
 
 
-/// @brief State-based Trigger for GPIO monitoring with dual functions
+/**
+ * @brief State-based Trigger for GPIO monitoring with dual functions
+ */
 struct Trigger
 {
     const char* id;                      ///< Static string identifier
@@ -181,7 +152,9 @@ struct Trigger
 };
 
 /// @struct ErrorInfo
-/// @brief Complete error information structure
+/**
+ * @brief Complete error information structure
+ */
 struct ErrorInfo
 {
     static constexpr size_t MAX_MESSAGE_LENGTH = 128; ///< Fixed buffer size for embedded optimization
@@ -210,7 +183,9 @@ struct ErrorInfo
 //=============================================================================
 
 /// @struct Action  
-/// @brief Event-based Action for button processing
+/**
+ * @brief Event-based Action for button processing
+ */
 struct Action
 {
     const char* id;                      ///< Static string identifier

@@ -31,14 +31,14 @@
 class LockPanel : public BasePanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
 
-    // Panel identification
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::LOCK;
 
   protected:
-    // BasePanel template method implementations
+    // ========== Protected Methods ==========
     void CreateContent() override;
     void UpdateContent() override;
     const char* GetPanelName() const override { return PanelNames::LOCK; }
@@ -47,7 +47,7 @@ class LockPanel : public BasePanel
     void HandleLongPress() override;
 
   private:
-    // Instance Data Members - static allocation
+    // ========== Private Data Members ==========
     LockComponent lockComponent_;
     bool componentInitialized_ = false;
     bool isLockEngaged_ = false;

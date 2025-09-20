@@ -4,7 +4,9 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "managers/preference_manager.h"
+#include "interfaces/i_preference_service.h"
+#include "config/config_types.h"
+#include "config/system_config.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
@@ -14,6 +16,8 @@
 #include "utilities/ticker.h"
 #include "utilities/types.h"
 
+// ========== Global Variables ==========
+
 // Global variable definitions (declarations are in main.h)
 std::unique_ptr<IProviderFactory> providerFactory;
 std::unique_ptr<ManagerFactory> managerFactory;
@@ -21,11 +25,55 @@ std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
-std::unique_ptr<PreferenceManager> preferenceManager;
+std::unique_ptr<IPreferenceService> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
+// ========== Private Methods ==========
+
+/**
+ * @brief Register system-wide configuration settings
+ *
+ * Consolidates all system settings (panel selection, update rate, splash screen)
+ * into a single configuration section managed directly by main.cpp.
+ */
+void registerSystemConfiguration()
+{
+    if (!preferenceManager) {
+        log_e("Cannot register system configuration - preference manager not available");
+        return;
+    }
+
+    using namespace Config;
+
+    ConfigSection section("System", SystemConfig::CONFIG_SECTION, "System");
+    section.displayOrder = 0; // Highest priority - show first in config menu
+
+    // Default panel selection
+    section.AddItem(ConfigItem("default_panel", "Default Panel",
+        std::string("OemOilPanel"), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", ConfigItemType::Selection)));
+
+    // Global update rate for sensors and components
+    section.AddItem(ConfigItem("update_rate", "Update Rate",
+        500, ConfigMetadata("100,250,500,750,1000,1500,2000", "ms", ConfigItemType::Selection)));
+
+    // Splash screen control
+    section.AddItem(ConfigItem("show_splash", "Show Splash",
+        true, ConfigMetadata()));
+
+    preferenceManager->RegisterConfigSection(section);
+    log_i("System configuration registered");
+}
+
+/**
+ * @brief Initializes all system services and managers using factory pattern
+ * @return true if all services initialized successfully, false on failure
+ *
+ * Creates and initializes all core system components in the correct dependency
+ * order. Uses dual factory pattern with ProviderFactory for hardware abstraction
+ * and ManagerFactory for system services. Reports critical errors on failure.
+ */
 bool initializeServices()
 {
     log_i("Starting Clarity service initialization with dual factory pattern...");
@@ -73,8 +121,11 @@ bool initializeServices()
     }
     
     // Initialize StyleManager with user's theme preference
-    const char *userTheme = preferenceManager->GetConfig().theme.c_str();
-    styleManager = managerFactory->CreateStyleManager(userTheme);
+    std::string userTheme = "Day"; // Default
+    if (auto themeValue = preferenceManager->QueryConfig<std::string>("system.theme")) {
+        userTheme = *themeValue;
+    }
+    styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
         ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
@@ -113,6 +164,15 @@ bool initializeServices()
     return true;
 }
 
+// ========== Arduino Functions ==========
+
+/**
+ * @brief Arduino setup function - initializes the Clarity application
+ *
+ * Entry point for ESP32 application initialization. Initializes all system
+ * services, configures display styles, and loads the initial panel based on
+ * user preferences. Called once at system startup before the main loop.
+ */
 void setup()
 {
     log_i("Starting Clarity application...");
@@ -122,18 +182,32 @@ void setup()
         return;
     }
 
+    // Register system configuration after services are initialized
+    registerSystemConfiguration();
+
     Ticker::handleLvTasks();
 
     styleManager->InitializeStyles();
     Ticker::handleLvTasks();
 
-    auto config = preferenceManager->GetConfig();
-    panelManager->CreateAndLoadPanel(config.panelName.c_str());
+    std::string panelName = PanelNames::OIL; // Default
+    if (auto nameValue = preferenceManager->QueryConfig<std::string>(SystemConfig::CONFIG_DEFAULT_PANEL)) {
+        panelName = *nameValue;
+    }
+    panelManager->CreateAndLoadPanel(panelName.c_str());
     Ticker::handleLvTasks();
     
     log_i("Clarity application started successfully");
 }
 
+/**
+ * @brief Arduino main loop - processes system events and updates UI
+ *
+ * Continuously processes interrupt events, monitors error conditions,
+ * and updates the active panel. Handles error panel triggering when
+ * UI is idle to avoid conflicts with other operations. Maintains
+ * responsive system behavior through dynamic delay management.
+ */
 void loop()
 {
     // Always process - ActionHandler runs always, TriggerHandler only on IDLE

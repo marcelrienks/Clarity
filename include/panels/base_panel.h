@@ -114,7 +114,7 @@ public:
      * @brief Get panel instance pointer for button handler context
      * @return Pointer to this panel instance
      */
-    void* GetPanelContext() final;
+    // Old GetPanelContext method removed - no longer needed
 
 protected:
     // ========== Protected Methods ==========
@@ -166,6 +166,7 @@ protected:
     IStyleService* styleService_;
     IPanelService* panelService_;
     ComponentLocation centerLocation_;
+    lv_obj_t* screen_ = nullptr;
 
 private:
     // ========== Static Methods ==========

@@ -21,11 +21,6 @@ class ITriggerExecutionService {
 public:
     virtual ~ITriggerExecutionService() = default;
     
-    /// @brief Load a specific panel by name
-    /// @param panelName Name of the panel to load
     virtual void LoadPanel(const char* panelName) = 0;
-    
-    /// @brief Check restoration conditions and load appropriate panel
-    /// Called when triggers deactivate to restore previous state
     virtual void CheckRestoration() = 0;
 };

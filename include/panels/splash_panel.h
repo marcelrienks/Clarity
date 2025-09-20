@@ -41,12 +41,12 @@
 class SplashPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
                 IPanelNotificationService* notificationService = nullptr);
     ~SplashPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::SPLASH;
     void Init() override;
     void Load() override;
@@ -59,21 +59,33 @@ class SplashPanel : public IPanel
     void SetPreferenceService(IPreferenceService *preferenceService);
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
+    // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     
-    // Public action handler
-    void HandleLongPress();
+    // Public action handlers
+    void HandleShortPress() override;
+    void HandleLongPress() override;
+
+    // Configuration management
+    void RegisterConfiguration();
+
+    // ========== Configuration Constants ==========
+    // Note: show_splash is managed by system settings in main.cpp
+    static constexpr const char* CONFIG_SECTION = "splash_panel";
+    static constexpr const char* CONFIG_DURATION = "splash_panel.duration";
 
   private:
-    // Private Data Members
+    // ========== Private Methods ==========
+    int GetAnimationTime() const;
+
+    // ========== Static Methods ==========
+    static void fade_in_timer_callback(lv_timer_t *timer);
+    static void display_timer_callback(lv_timer_t *timer);
+    static void fade_out_timer_callback(lv_timer_t *timer);
+
+    // ========== Private Data Members ==========
     // Panel specific constants
     static constexpr const int _DISPLAY_TIME = 500;
     static constexpr const int _DELAY_TIME = 200; //NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory becomes corrupted
-
-    // Calculate timing based on splash duration from config
-    int GetAnimationTime() const;
 
     // Dependencies
     IGpioProvider *gpioProvider_;
@@ -84,13 +96,9 @@ class SplashPanel : public IPanel
     IPanelNotificationService *notificationService_;
 
     // Components - static allocation
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
     ClarityComponent component_;
     bool componentInitialized_ = false;
     lv_obj_t *blankScreen_;
 
-    // Static Callback Methods
-    static void fade_in_timer_callback(lv_timer_t *timer);
-    static void display_timer_callback(lv_timer_t *timer);
-    static void fade_out_timer_callback(lv_timer_t *timer);
 };

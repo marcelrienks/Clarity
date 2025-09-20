@@ -32,71 +32,15 @@ public:
     ~InterruptManager() = default;
 
     // ========== Static Methods ==========
-    /**
-     * @brief Get singleton instance using Meyer's singleton pattern
-     * @return Reference to the global InterruptManager instance
-     */
     static InterruptManager& Instance();
 
     // ========== Public Interface Methods ==========
-    /**
-     * @brief Initialize interrupt system with GPIO provider
-     * @param gpioProvider Pointer to GPIO provider for hardware access
-     * @details Creates TriggerHandler and ActionHandler, registers system interrupts
-     */
     void Init(IGpioProvider* gpioProvider = nullptr);
-
-    /**
-     * @brief Process all registered interrupts based on UI state
-     * @details Actions processed continuously, triggers only during UI idle periods
-     */
     void Process();
-
-    /**
-     * @brief Register a trigger condition for monitoring
-     * @param trigger Trigger configuration to register
-     * @return true if registration successful, false otherwise
-     */
     bool RegisterTrigger(const Trigger& trigger);
-
-    /**
-     * @brief Remove trigger by identifier
-     * @param id Unique identifier of trigger to unregister
-     */
-    void UnregisterTrigger(const char* id);
-
-    /**
-     * @brief Register an action for execution
-     * @param action Action configuration to register
-     * @return true if registration successful, false otherwise
-     */
     bool RegisterAction(const Action& action);
-
-    /**
-     * @brief Remove action by identifier
-     * @param id Unique identifier of action to unregister
-     */
-    void UnregisterAction(const char* id);
-
-    /**
-     * @brief Update panel button handler functions
-     * @param shortPressFunc Function to call on short button press
-     * @param longPressFunc Function to call on long button press
-     * @param context Context pointer to pass to handler functions
-     */
-    void UpdatePanelFunctions(void (*shortPressFunc)(void*), void (*longPressFunc)(void*), void* context);
-
-    /**
-     * @brief Register a legacy interrupt handler
-     * @param handler Shared pointer to handler implementation
-     */
+    void SetCurrentPanel(class IActionService* panel);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
-
-    /**
-     * @brief Unregister a legacy interrupt handler
-     * @param handler Shared pointer to handler to remove
-     */
-    void UnregisterHandler(std::shared_ptr<IHandler> handler);
 
     /**
      * @brief Get total count of registered interrupts (triggers + actions)
@@ -105,35 +49,10 @@ public:
     size_t GetRegisteredInterruptCount() const;
 
     /**
-     * @brief Get performance statistics for interrupt processing
-     * @param totalEvaluations Reference to store total evaluation count
-     * @param totalExecutions Reference to store total execution count
-     */
-    void GetInterruptStatistics(size_t& totalEvaluations, size_t& totalExecutions) const;
-
-    /**
-     * @brief Optimize memory usage (no-op with static arrays)
-     * @details Provided for API compatibility, static arrays are already optimized
-     */
-    void OptimizeMemoryUsage();
-
-    /**
-     * @brief Compact interrupt array (no-op with static arrays)
-     * @details Provided for API compatibility, static arrays don't need compaction
-     */
-    void CompactInterruptArray();
-
-    /**
      * @brief Check if any triggers or actions are currently active
      * @return true if active interrupts exist, false otherwise
      */
     bool HasActiveInterrupts() const;
-
-    /**
-     * @brief Get total interrupt count (alias for GetRegisteredInterruptCount)
-     * @return Total number of registered interrupts
-     */
-    size_t GetInterruptCount() const;
 
     /**
      * @brief Get direct access to trigger handler
@@ -196,10 +115,6 @@ private:
     // System state
     bool initialized_ = false;
     unsigned long lastEvaluationTime_ = 0;
-
-    // Performance monitoring
-    mutable size_t totalEvaluations_ = 0;
-    mutable size_t totalExecutions_ = 0;
 
     // GPIO provider reference
     IGpioProvider* gpioProvider_ = nullptr;

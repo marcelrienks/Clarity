@@ -4,11 +4,25 @@
 #include <esp32-hal-log.h>
 #include <icons/key_solid.h>
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
+
+/**
+ * @brief Constructs a key icon component with style service dependency
+ * @param styleService Style service for theme-based color management
+ *
+ * Initializes the key component with style service for applying theme colors.
+ * Sets key icon pointer to nullptr for later initialization.
+ */
 KeyComponent::KeyComponent(IStyleService *styleService) : keyIcon_(nullptr), styleService_(styleService)
 {
 }
 
+/**
+ * @brief Destructor that cleans up the key icon
+ *
+ * Deletes the LVGL key icon object if it exists to prevent memory leaks.
+ * Uses LVGL's object deletion function for proper cleanup.
+ */
 KeyComponent::~KeyComponent()
 {
     if (keyIcon_)
@@ -17,11 +31,13 @@ KeyComponent::~KeyComponent()
     }
 }
 
-// Core Functionality Methods
+// ========== IComponent Implementation ==========
 
-/// @brief This method initializes the key present icon with location parameters
-/// @param screen The screen object to render the component on.
-/// @param location The location parameters for positioning the component.
+/**
+ * @brief This method initializes the key present icon with location parameters
+ * @param screen The screen object to render the component on.
+ * @param location The location parameters for positioning the component.
+ */
 void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display)
 {
     
@@ -41,8 +57,12 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
     lv_obj_align(keyIcon_, location.align, location.x_offset, location.y_offset);
 }
 
-/// @brief Set the key icon color based on key state
-/// @param keyState The current key state to determine color
+// ========== Public Interface Methods ==========
+
+/**
+ * @brief Set the key icon color based on key state
+ * @param keyState The current key state to determine color
+ */
 void KeyComponent::SetColor(KeyState keyState)
 {
     

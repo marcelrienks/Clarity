@@ -54,41 +54,19 @@ class ConfigComponent;
  */
 class IComponentFactory {
 public:
-    /// @brief Virtual destructor for interface
     virtual ~IComponentFactory() = default;
 
-    /// @brief Create a Clarity branding/logo component
-    /// @param style Style service for theme and appearance management
-    /// @return Unique pointer to ClarityComponent instance
     virtual std::unique_ptr<ClarityComponent> CreateClarityComponent(IStyleService* style) = 0;
 
-    /// @brief Create an oil pressure gauge component
-    /// @param style Style service for theme and gauge styling
-    /// @return Unique pointer to IComponent instance (OilPressureComponent)
     virtual std::unique_ptr<IComponent> CreateOilPressureComponent(IStyleService* style) = 0;
 
-    /// @brief Create an oil temperature gauge component
-    /// @param style Style service for theme and gauge styling
-    /// @return Unique pointer to IComponent instance (OilTemperatureComponent)
     virtual std::unique_ptr<IComponent> CreateOilTemperatureComponent(IStyleService* style) = 0;
 
-    /// @brief Create an error message display component
-    /// @param style Style service for error styling and themes
-    /// @return Unique pointer to ErrorComponent instance
     virtual std::unique_ptr<ErrorComponent> CreateErrorComponent(IStyleService* style) = 0;
 
-    /// @brief Create a key presence status indicator component
-    /// @param style Style service for indicator styling
-    /// @return Unique pointer to KeyComponent instance
     virtual std::unique_ptr<KeyComponent> CreateKeyComponent(IStyleService* style) = 0;
 
-    /// @brief Create a vehicle lock status indicator component
-    /// @param style Style service for indicator styling
-    /// @return Unique pointer to LockComponent instance
     virtual std::unique_ptr<LockComponent> CreateLockComponent(IStyleService* style) = 0;
 
-    /// @brief Create a configuration UI component
-    /// @param style Style service for configuration UI styling
-    /// @return Unique pointer to ConfigComponent instance
     virtual std::unique_ptr<ConfigComponent> CreateConfigComponent(IStyleService* style) = 0;
 };

@@ -26,14 +26,15 @@
  */
 class ClarityComponent : public IComponent
 {
-  public:
-    // Constructors and Destructors
+public:
+    // ========== Constructors and Destructor ==========
     explicit ClarityComponent(IStyleService *styleService);
     virtual ~ClarityComponent() = default;
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
 
-  private:
+private:
+    // ========== Private Data Members ==========
     IStyleService *styleService_;
 };

@@ -46,20 +46,17 @@
 class OemOilComponent : public IComponent
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     OemOilComponent(IStyleService *styleService);
     virtual ~OemOilComponent();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     void Render(lv_obj_t *screen, const ComponentLocation &location, IDisplayProvider *display) override;
     void Refresh(const Reading &reading) override;
     void SetValue(int32_t value) override;
 
   protected:
-    // Protected Data Members
-    IStyleService *styleService_;
-
-    // Protected Methods
+    // ========== Protected Methods ==========
     virtual const lv_image_dsc_t *get_icon() const = 0;
     virtual int32_t get_scale_min() const = 0;
     virtual int32_t get_scale_max() const = 0;
@@ -72,7 +69,9 @@ class OemOilComponent : public IComponent
     virtual int32_t get_icon_y_offset() const = 0;
     virtual void get_label_angles(int32_t &lAngle, int32_t &hAngle) const = 0;
 
-    // Protected Data Members
+    // ========== Protected Data Members ==========
+    IStyleService *styleService_;
+
     // LVGL objects
     lv_obj_t *scale_;
     lv_obj_t *needleLine_;            // Tip section - thinnest
@@ -94,7 +93,7 @@ class OemOilComponent : public IComponent
     int32_t scaleRotation_;
 
   private:
-    // Private Methods
+    // ========== Private Methods ==========
     void create_icon();
     void create_labels();
     void create_needle();

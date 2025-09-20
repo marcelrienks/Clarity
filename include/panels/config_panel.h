@@ -8,6 +8,7 @@
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
+#include "config/config_types.h"
 #include "utilities/types.h"
 
 #include <memory>
@@ -47,11 +48,11 @@
 class ConfigPanel : public IPanel
 {
   public:
-    // Constructors and Destructors
+    // ========== Constructors and Destructor ==========
     ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
     ~ConfigPanel();
 
-    // Core Functionality Methods
+    // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::CONFIG;
     void Init() override;
     void Load() override;
@@ -62,44 +63,66 @@ class ConfigPanel : public IPanel
     void SetPreferenceService(IPreferenceService *preferenceService);
 
     // IActionService Interface Implementation (inherited through IPanel)
-    void (*GetShortPressFunction())(void* panelContext) override;
-    void (*GetLongPressFunction())(void* panelContext) override;
-    void* GetPanelContext() override;
-    
-    // Public action handlers
-    void HandleShortPress();
-    void HandleLongPress();
+    void HandleShortPress() override;
+    void HandleLongPress() override;
 
   private:
-    // Menu state enum
-    enum class MenuState
-    {
-        MainMenu,
-        PanelSubmenu,
-        ThemeSubmenu,
-        UpdateRateSubmenu,
-        SplashSubmenu,
-        SplashDurationSubmenu,
-        PressureUnitSubmenu,
-        TempUnitSubmenu,
-        CalibrationSubmenu,
-        PressureOffsetSubmenu,
-        PressureScaleSubmenu,
-        TempOffsetSubmenu,
-        TempScaleSubmenu
+    // ========== Private Types ==========
+
+    enum class MenuActionType {
+        ENTER_SECTION,
+        TOGGLE_BOOLEAN,
+        SHOW_OPTIONS,
+        SET_CONFIG_VALUE,
+        BACK,
+        NONE,
+        PANEL_EXIT,
+        UNKNOWN
     };
 
-    // Private methods
-    void InitializeMenuItems();
-    void UpdateMenuItemsWithCurrentValues();
-    void ExecuteCurrentOption();
-    void EnterSubmenu(MenuState submenu);
-    void ExitSubmenu();
-    void UpdateSubmenuItems();
-    void UpdateCalibration(const std::string& key, float value);
+    // ========== Private Methods ==========
 
-    // Static callback
+    // Dynamic configuration methods
+    void BuildDynamicMenus();
+    void BuildSectionMenu(const std::string& sectionName);
+    std::string FormatItemLabel(const Config::ConfigItem& item) const;
+    void ShowOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item);
+    void ShowBooleanToggle(const std::string& fullKey, const Config::ConfigItem& item);
+
+    // Extracted ShowOptionsMenu helpers
+    void ShowEnumOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item, const std::vector<std::string>& options);
+    void ShowNumericOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item);
+    void ShowStringOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item);
+    ConfigComponent::MenuItem CreateMenuItemWithSelection(const std::string& label, const std::string& fullKey, const std::string& value, bool isSelected) const;
+
+    // Extracted ShowNumericOptionsMenu helpers
+    struct NumericRange {
+        float minValue;
+        float maxValue;
+        float currentValue;
+    };
+    NumericRange ParseNumericRange(const Config::ConfigItem& item) const;
+    std::vector<float> GenerateNumericValues(const NumericRange& range, const Config::ConfigItem& item) const;
+    std::string FormatNumericValue(float value, const Config::ConfigItem& item) const;
+
+    std::vector<std::string> ParseOptions(const std::string& constraints) const;
+    std::pair<std::string, std::string> ParseConfigKey(const std::string& fullKey) const;
+
+    // Helper methods for HandleLongPress
+    bool ValidateMenuState() const;
+    void ExecuteMenuAction(const ConfigComponent::MenuItem& item);
+    MenuActionType ParseActionType(const std::string& actionTypeStr) const;
+    void HandleEnterSection(const std::string& sectionName);
+    void HandleToggleBoolean(const std::string& fullKey);
+    void HandleShowOptions(const std::string& fullKey);
+    void HandleSetConfigValue(const std::string& actionParam);
+    void HandleBackAction(const std::string& actionParam);
+    void HandlePanelExit();
+
+    // ========== Static Methods ==========
     static void ShowPanelCompletionCallback(lv_event_t *event);
+
+    // ========== Private Data Members ==========
 
     // Instance Data Members
     IGpioProvider *gpioProvider_;
@@ -107,16 +130,16 @@ class ConfigPanel : public IPanel
     IStyleService *styleService_;
     IPanelService *panelService_;
     IPreferenceService *preferenceService_ = nullptr;
-    // screen_ is inherited from IPanel base class
+    lv_obj_t* screen_ = nullptr;
 
     // Component (View) - static allocation
     ConfigComponent configComponent_;
     bool componentInitialized_ = false;
 
-    // Menu state (Presenter logic)
+    // Dynamic menu state
     std::vector<ConfigComponent::MenuItem> menuItems_;
     size_t currentMenuIndex_ = 0;
-    MenuState currentMenuState_ = MenuState::MainMenu;
+    std::string currentSectionName_;
 
     // Callback function removed - using interface-based notifications
 };

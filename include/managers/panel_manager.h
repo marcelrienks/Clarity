@@ -81,44 +81,18 @@ class PanelManager : public IPanelService,
     static ITriggerExecutionService& TriggerService() { return Instance(); }
 
     // ========== IPanelService Implementation ==========
-    /// @brief Initialize the panel service and register available panels
     void Init() override;
-
-    /// @brief Set current UI state for synchronization
-    /// @param state Current UI processing state
     void SetUiState(UIState state) override;
-
-    /// @brief Get the current UI state
-    /// @return Current UI processing state
     UIState GetUiState() const override;
-
-    /// @brief Create and load a panel by name
-    /// @param panelName Name of the panel to create and load
-    /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
     void CreateAndLoadPanel(const char *panelName, bool isTriggerDriven = false) override;
-
-    /// @brief Update the currently active panel (called from main loop)
     void UpdatePanel() override;
-
-    /// @brief Get the current panel name
-    /// @return Current panel identifier string
     const char *GetCurrentPanel() const override;
-
-    /// @brief Get the restoration panel name (panel to restore when triggers are inactive)
-    /// @return Restoration panel identifier string
     const char *GetRestorationPanel() const override;
-
-    /// @brief Check if the current panel is trigger-driven
-    /// @return True if current panel was loaded by a trigger, false for user-driven panels
     bool IsCurrentPanelTriggerDriven() const override;
-
-    /// @brief Callback executed when trigger-driven panel loading is complete
-    /// @param triggerId ID of the trigger that initiated the panel switch
     void TriggerPanelSwitchCallback(const char *triggerId) override;
 
     // ========== IPanelNotificationService Implementation ==========
     void OnPanelLoadComplete(IPanel* panel) override;
-    void OnPanelUpdateComplete(IPanel* panel) override;
 
     // ========== IActionExecutionService Implementation ==========
     void HandleShortPress() override;
@@ -129,36 +103,20 @@ class PanelManager : public IPanelService,
     void CheckRestoration() override;
 
     // ========== Other Public Methods ==========
-    /// @brief Update universal button interrupts with current panel's functions
-    /// @param panel The panel to extract button functions from
     void UpdatePanelButtonFunctions(IPanel* panel);
 
   private:
     // ========== Private Methods ==========
-    /// @brief Register all available panels
-    void RegisterAllPanels();
-
-    /// @brief Create a panel instance by name using the registered factory
-    /// @param panelName Name of the panel type to create
-    /// @return Shared pointer to the created panel instance
     std::shared_ptr<IPanel> CreatePanel(const char *panelName);
-
-    /// @brief Internal method to create and load a panel directly without splash
-    /// @param panelName Name of the panel to create and load
-    /// @param isTriggerDriven Whether this panel change is triggered by an interrupt trigger
     void CreateAndLoadPanelDirect(const char *panelName, bool isTriggerDriven = false);
-
-    /// @brief Internal method to load a panel after first showing a splash screen transition
-    /// @param panelName Name of the target panel to load after splash
-    /// @param isTriggerDriven Whether the target panel load is trigger-driven
     void CreateAndLoadPanelWithSplash(const char *panelName, bool isTriggerDriven);
-
-    /// @brief Callback executed when splash screen loading is complete
-    /// @param panelName Name of the target panel to load after splash
     void SplashCompletionCallback(const char *panelName);
-
-    /// @brief Callback executed when normal panel loading is complete
     void PanelCompletionCallback();
+
+    // Helper methods for CreateAndLoadPanelDirect
+    void UpdateRestorationTracking(const char* panelName, bool isTriggerDriven);
+    void InjectPreferenceService(const char* panelName);
+    void HandlePanelCreationError(const char* panelName);
 
     // ========== Panel State Data Members ==========
     std::string currentPanel_ = PanelNames::OIL;     ///< Current panel state
@@ -168,7 +126,6 @@ class PanelManager : public IPanelService,
     bool currentPanelIsTriggerDriven_ = false; ///< Track if current panel is trigger-driven
 
     // ========== Panel Name Storage Data Members ==========
-    std::string lastUserPanel_ = PanelNames::OIL;    ///< Last user-driven panel
     std::string splashTargetPanel_;                   ///< Target panel for splash transition
     bool splashTargetTriggerDriven_ = false;          ///< Preserve trigger state through splash transitions
 

@@ -1,11 +1,20 @@
 #include "sensors/gpio_sensor.h"
+#include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
-#ifdef CLARITY_DEBUG
-#include "managers/error_manager.h"
-#endif
 
+// ========== Constructors and Destructor ==========
+
+/**
+ * @brief Constructs a GPIO sensor with configuration and provider dependencies
+ * @param config Sensor configuration including pin, mode, and behavior settings
+ * @param gpioProvider Pointer to GPIO provider interface for hardware abstraction
+ *
+ * Initializes the sensor with the provided configuration and GPIO provider.
+ * Constructor is kept lightweight - actual hardware initialization occurs in Init().
+ * This follows the dependency injection pattern for hardware abstraction.
+ */
 GpioSensor::GpioSensor(const GpioSensorConfig& config, IGpioProvider* gpioProvider)
     : config_(config)
     , gpioProvider_(gpioProvider)
@@ -14,6 +23,13 @@ GpioSensor::GpioSensor(const GpioSensorConfig& config, IGpioProvider* gpioProvid
     // Constructor should be lightweight - initialization happens in Init()
 }
 
+/**
+ * @brief Destructor that cleans up GPIO resources
+ *
+ * Detaches GPIO interrupts for key sensors to prevent dangling interrupt
+ * handlers. Only key present/not present sensors use interrupts in the
+ * original implementation. Ensures proper cleanup of hardware resources.
+ */
 GpioSensor::~GpioSensor()
 {
     if (gpioProvider_ && initialized_) {
@@ -25,6 +41,16 @@ GpioSensor::~GpioSensor()
     }
 }
 
+// ========== ISensor Implementation ==========
+
+/**
+ * @brief Initializes the GPIO sensor hardware configuration
+ *
+ * Configures the GPIO pin according to the sensor configuration and reads
+ * the initial state. Handles debug-only sensors by checking build configuration.
+ * Sets the previous state to prevent false change detection on first read.
+ * This is part of the ISensor interface implementation.
+ */
 void GpioSensor::Init()
 {
     if (!gpioProvider_) {
@@ -53,17 +79,43 @@ void GpioSensor::Init()
           previousState_ ? "ACTIVE" : "INACTIVE");
 }
 
+/**
+ * @brief Gets the current sensor reading as a Reading object
+ * @return Reading containing the current logical state as a boolean
+ *
+ * Reads the current logical state and wraps it in a Reading object for
+ * compatibility with the ISensor interface. The logical state accounts
+ * for the activeHigh configuration setting.
+ */
 Reading GpioSensor::GetReading()
 {
     bool currentState = readLogicalState();
     return Reading(currentState);
 }
 
+/**
+ * @brief Gets the current logical state of the sensor
+ * @return true if sensor is in active state, false otherwise
+ *
+ * Returns the current logical state accounting for the activeHigh configuration.
+ * This provides direct boolean access to the sensor state without wrapping
+ * in a Reading object.
+ */
 bool GpioSensor::GetState()
 {
     return readLogicalState();
 }
 
+/**
+ * @brief Checks if the sensor state has changed since last check
+ * @return true if state has changed, false otherwise
+ *
+ * Compares current state with previous state and updates the previous state
+ * if a change is detected. Handles debug-only sensors by returning false
+ * in release builds. Includes detailed logging for test automation and
+ * special case logging for key and light sensors to maintain compatibility
+ * with existing test expectations.
+ */
 bool GpioSensor::HasStateChanged()
 {
     if (!initialized_) {
@@ -116,6 +168,14 @@ bool GpioSensor::HasStateChanged()
     return changed;
 }
 
+/**
+ * @brief Handles GPIO interrupt events for this sensor
+ *
+ * Called when a hardware interrupt is triggered on this sensor's GPIO pin.
+ * Provides sensor-specific handling for different pin types including lights
+ * (for theme switching) and debug error button (for error generation).
+ * Logs the interrupt event and current state for debugging purposes.
+ */
 void GpioSensor::OnInterruptTriggered()
 {
     log_t("%s interrupt triggered - state changed", config_.name);
@@ -141,10 +201,20 @@ void GpioSensor::OnInterruptTriggered()
     }
 }
 
+/**
+ * @brief Reads the raw GPIO pin state without logical interpretation
+ * @return true if pin is HIGH, false if LOW or on error
+ *
+ * Performs a direct GPIO read through the provider interface with null
+ * pointer safety check. Returns the raw electrical state without considering
+ * the activeHigh configuration setting.
+ */
 bool GpioSensor::readRawPinState()
 {
     if (!gpioProvider_) {
-        log_w("%s: GPIO provider is null, returning false", config_.name);
+        log_e("%s: GPIO provider is null - sensor cannot function!", config_.name);
+        ErrorManager::Instance().ReportCriticalError("GpioSensor",
+                                                     "GPIO provider is null - sensor cannot read pins");
         return false;
     }
 
@@ -152,6 +222,14 @@ bool GpioSensor::readRawPinState()
     return gpioProvider_->DigitalRead(config_.pin);
 }
 
+/**
+ * @brief Reads the logical sensor state accounting for activeHigh configuration
+ * @return true if sensor is logically active, false otherwise
+ *
+ * Converts the raw GPIO state to logical state based on the activeHigh
+ * configuration. If activeHigh is true, HIGH means active. If activeHigh
+ * is false, LOW means active (inverted logic for sensors with pullup resistors).
+ */
 bool GpioSensor::readLogicalState()
 {
     bool rawState = readRawPinState();

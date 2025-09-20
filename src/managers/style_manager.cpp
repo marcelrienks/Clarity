@@ -1,4 +1,5 @@
 #include "managers/style_manager.h"
+#include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <cstring>
 #include <esp32-hal-log.h>
@@ -43,6 +44,8 @@ StyleManager::~StyleManager()
 StyleManager& StyleManager::Instance() {
     if (!styleInstancePtr_) {
         log_e("StyleManager::Instance() called before initialization");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "Instance() called before initialization - UI will not function");
         // In embedded systems, we need a valid instance
         // This should be set during ManagerFactory initialization
     }
@@ -76,19 +79,21 @@ void StyleManager::InitializeStyles()
     lv_style_init(&gaugeMainStyle_);
     lv_style_init(&gaugeDangerSectionStyle_);
 
-    // Apply theme colors after style objects are initialized
-    // Pull theme from preferences if available, otherwise use constructor default
+    // Mark as initialized before applying theme (since SetTheme checks this flag)
+    initialized_ = true;
+
+    // Apply theme from preferences
     if (preferenceService_) {
-        const auto& config = preferenceService_->GetConfig();
-        SetTheme(config.theme.c_str());
+        LoadConfiguration();
     } else {
         SetTheme(theme_.c_str());
     }
-    initialized_ = true;
 }
 
-/// @brief Apply a specified theme to the styles
-/// @param theme the theme to be applied
+/**
+ * @brief Apply a specified theme to the styles
+ * @param theme the theme to be applied
+ */
 void StyleManager::SetTheme(const char *theme)
 {
     log_t("SetTheme() called");
@@ -146,8 +151,10 @@ void StyleManager::SetTheme(const char *theme)
     }
 }
 
-/// @brief Apply the current theme to a specific screen
-/// @param screen the screen to which the theme will be applied
+/**
+ * @brief Apply the current theme to a specific screen
+ * @param screen the screen to which the theme will be applied
+ */
 void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
 {
     log_v("ApplyThemeToScreen() called");
@@ -155,13 +162,17 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
     // Safety checks
     if (!screen)
     {
-        log_w("Cannot apply theme to null screen");
+        log_e("Cannot apply theme to null screen. Display will not function!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "Cannot apply theme to null screen - display will not function");
         return;
     }
 
     if (!initialized_)
     {
-        log_w("StyleManager not initialized, skipping theme application");
+        log_e("StyleManager not initialized, cannot apply theme to screen. Application will not display correctly!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "Not initialized - cannot apply theme to screen");
         return;
     }
 
@@ -173,33 +184,42 @@ void StyleManager::ApplyThemeToScreen(lv_obj_t *screen)
     // Components should apply their own specific styles as needed
 }
 
-/// @brief Apply current theme from preferences and refresh styles
+/**
+ * @brief Apply current theme from preferences and refresh styles
+ */
 void StyleManager::ApplyCurrentTheme()
 {
     log_i("StyleManager::ApplyCurrentTheme() called");
 
     if (!preferenceService_) {
         log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "StyleManager",
+                                            "No PreferenceService available - cannot persist theme");
         log_v("Current cached theme is: %s", theme_.c_str());
         return;
     }
 
-    // Read theme directly from preferences
-    const auto& config = preferenceService_->GetConfig();
-    log_v("Read theme from preferences: %s (cached: %s)", config.theme.c_str(), theme_.c_str());
+    // Read theme using type-safe config system
+    std::string preferenceTheme = "Day"; // Default
+    if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+        preferenceTheme = *themeValue;
+    }
+    log_v("Read theme from preferences: %s (cached: %s)", preferenceTheme.c_str(), theme_.c_str());
 
     // Apply the theme if it's different from cached value
-    if (theme_ != config.theme) {
-        log_t("StyleManager: Theme changed from %s to %s - applying new theme", theme_.c_str(), config.theme.c_str());
-        SetTheme(config.theme.c_str());
+    if (theme_ != preferenceTheme) {
+        log_t("StyleManager: Theme changed from %s to %s - applying new theme", theme_.c_str(), preferenceTheme.c_str());
+        SetTheme(preferenceTheme.c_str());
     } else {
-        log_v("Theme unchanged (%s) - no update needed", config.theme.c_str());
+        log_v("Theme unchanged (%s) - no update needed", preferenceTheme.c_str());
     }
 }
 
-/// @brief Get the colours scheme for the supplied theme
-/// @param theme the theme to retrieve the colour scheme for
-/// @return the colour scheme for the specified theme
+/**
+ * @brief Get the colours scheme for the supplied theme
+ * @param theme the theme to retrieve the colour scheme for
+ * @return the colour scheme for the specified theme
+ */
 /**
  * @brief Resolve theme name to corresponding color scheme
  * @details Returns day theme as fallback for unknown themes
@@ -223,10 +243,15 @@ const ThemeColors &StyleManager::GetColours(const std::string& theme) const
  */
 const std::string& StyleManager::GetCurrentTheme() const
 {
-    // Always pull theme directly from preferences to ensure consistency
+    // Always pull theme using type-safe config system for consistency
     if (preferenceService_) {
-        const auto& config = preferenceService_->GetConfig();
-        return config.theme;
+        static std::string currentTheme;
+        if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+            currentTheme = *themeValue;
+        } else {
+            currentTheme = "Day";
+        }
+        return currentTheme;
     }
 
     // Fallback to cached value if preference service not available
@@ -277,4 +302,51 @@ void StyleManager::ResetStyles()
     lv_style_reset(&gaugeItemsStyle_);
     lv_style_reset(&gaugeMainStyle_);
     lv_style_reset(&gaugeDangerSectionStyle_);
+}
+
+/**
+ * @brief Register StyleManager configuration section
+ */
+void StyleManager::RegisterConfiguration()
+{
+    if (!preferenceService_) return;
+
+    using namespace Config;
+
+    ConfigSection section("StyleManager", CONFIG_SECTION, "Display");
+    section.displayOrder = 10; // Lower priority than sensors
+
+    // Theme selection
+    ConfigItem themeItem("theme", "Theme", std::string("Day"),
+                        ConfigMetadata("Day,Night", ConfigItemType::Selection));
+
+    // Brightness setting (future feature)
+    ConfigItem brightnessItem("brightness", "Brightness", 80,
+                             ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%", ConfigItemType::Selection));
+
+    section.AddItem(themeItem);
+    section.AddItem(brightnessItem);
+
+    preferenceService_->RegisterConfigSection(section);
+    log_i("StyleManager configuration registered");
+}
+
+/**
+ * @brief Load configuration from preference system
+ */
+void StyleManager::LoadConfiguration()
+{
+    if (!preferenceService_) return;
+
+    // Register configuration first
+    RegisterConfiguration();
+
+    // Load theme using type-safe config system
+    if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+        SetTheme(themeValue->c_str());
+    } else {
+        SetTheme("Day"); // Default theme
+    }
+
+    log_i("Loaded style configuration: theme=%s", theme_.c_str());
 }

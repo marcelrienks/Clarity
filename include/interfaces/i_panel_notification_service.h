@@ -22,12 +22,6 @@ class IPanel;
 class IPanelNotificationService {
 public:
     virtual ~IPanelNotificationService() = default;
-    
-    /// @brief Called when a panel completes its loading operation
-    /// @param panel Pointer to the panel that completed loading
+
     virtual void OnPanelLoadComplete(IPanel* panel) = 0;
-    
-    /// @brief Called when a panel completes its update operation
-    /// @param panel Pointer to the panel that completed updating
-    virtual void OnPanelUpdateComplete(IPanel* panel) = 0;
 };

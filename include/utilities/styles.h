@@ -32,20 +32,22 @@
 // Color schemes and theme-specific color structures
 //=============================================================================
 
-/// @struct ThemeColors
-/// @brief Color scheme structure for theme management
-///
-/// @details Defines all colors used by a specific theme including background,
-/// text, gauges, and status indicators. Used by StyleManager to provide
-/// consistent theming across all components.
-///
-/// @color_categories:
-/// - background: Screen/panel background color
-/// - text: General text and labels
-/// - primary: Primary accent color
-/// - gauge colors: Normal, warning, and danger state colors
-/// - needle colors: Normal and danger needle colors
-/// - key colors: Key presence status indicators
+/**
+ * @struct ThemeColors
+ * @brief Color scheme structure for theme management
+ *
+ * @details Defines all colors used by a specific theme including background,
+ * text, gauges, and status indicators. Used by StyleManager to provide
+ * consistent theming across all components.
+ *
+ * @color_categories:
+ * - background: Screen/panel background color
+ * - text: General text and labels
+ * - primary: Primary accent color
+ * - gauge colors: Normal, warning, and danger state colors
+ * - needle colors: Normal and danger needle colors
+ * - key colors: Key presence status indicators
+ */
 struct ThemeColors
 {
     lv_color_t background;    ///< Background color
@@ -69,8 +71,10 @@ struct ThemeColors
 
 namespace ThemeDefinitions
 {
-    /// @brief Day theme colors - Light background with white accents
-    /// @details Provides a bright, readable interface for daytime use
+    /**
+     * @brief Day theme colors - Light background with white accents
+     * @details Provides a bright, readable interface for daytime use
+     */
     inline const ThemeColors DAY_THEME = {
         .background = lv_color_hex(0x121212),   ///< Dark gray background for readability
         .text = lv_color_hex(0xEEEEEE),         ///< Light gray text
@@ -86,8 +90,10 @@ namespace ThemeDefinitions
         .lockEngaged = lv_color_hex(0xDC143C)   ///< Crimson red for lock engaged
     };
 
-    /// @brief Night theme colors - Black background with red accents
-    /// @details Optimized for nighttime driving with minimal eye strain
+    /**
+     * @brief Night theme colors - Black background with red accents
+     * @details Optimized for nighttime driving with minimal eye strain
+     */
     inline const ThemeColors NIGHT_THEME = {
         .background = lv_color_hex(0x000000),   ///< Solid black background
         .text = lv_color_hex(0xB00020),         ///< Deep red text for night vision
@@ -103,8 +109,10 @@ namespace ThemeDefinitions
         .lockEngaged = lv_color_hex(0xDC143C)   ///< Crimson red for lock engaged
     };
 
-    /// @brief Error theme colors - High contrast for error display
-    /// @details Maximum readability and attention-grabbing colors for error states
+    /**
+     * @brief Error theme colors - High contrast for error display
+     * @details Maximum readability and attention-grabbing colors for error states
+     */
     inline const ThemeColors ERROR_THEME = {
         .background = lv_color_hex(0x000000),   ///< Black background for high contrast
         .text = lv_color_hex(0xFFFFFF),         ///< White text for maximum readability
@@ -128,13 +136,6 @@ namespace ThemeDefinitions
 
 namespace StyleUtils
 {
-    /// @brief Get color for error level
-    /// @param level The error severity level
-    /// @return LVGL color corresponding to the error level
-    /// @details Maps error levels to appropriate colors:
-    /// - CRITICAL: Red (0xFF0000)
-    /// - ERROR: Yellow (0xFFFF00) 
-    /// - WARNING: White (0xFFFFFF)
     inline lv_color_t GetErrorColor(ErrorLevel level)
     {
         switch (level)

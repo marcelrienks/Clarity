@@ -5,7 +5,18 @@
 #include <esp32-hal-log.h>
 #include <variant>
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
+
+/**
+ * @brief Constructs lock panel for vehicle security status display
+ * @param gpio GPIO provider for hardware interaction
+ * @param display Display provider for screen management
+ * @param styleService Style service for theme-based styling
+ *
+ * Creates lock panel that displays vehicle security lock status. Assumes
+ * lock engaged state since panel is only loaded when lock state changes.
+ * Uses stack-allocated component for efficient memory management.
+ */
 LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
     : BasePanel(gpio, display, styleService),
       lockComponent_(styleService), componentInitialized_(false)
@@ -15,7 +26,15 @@ LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleServi
     isLockEngaged_ = true;
 }
 
-// BasePanel template method implementations
+// ========== Protected Methods ==========
+
+/**
+ * @brief Creates lock panel UI content with security status display
+ *
+ * Renders lock component on screen showing current lock engagement state.
+ * Always displays red (engaged) state as panel is triggered by lock events.
+ * Provides immediate visual confirmation of vehicle security activation.
+ */
 void LockPanel::CreateContent()
 {
     // Component is now stack-allocated and initialized in constructor
@@ -25,13 +44,26 @@ void LockPanel::CreateContent()
     lockComponent_.Render(screen_, centerLocation_, displayProvider_);
 }
 
+/**
+ * @brief Updates lock panel content (static panel - no updates needed)
+ *
+ * Lock panel displays static state determined by trigger system.
+ * State changes result in panel transitions rather than content updates
+ * within the same panel instance. Interrupt system manages state changes.
+ */
 void LockPanel::UpdateContent()
 {
     // Lock panel is static - no updates needed
     // State changes are handled by the interrupt system loading different panels
 }
 
-// Panel-specific button handling
+/**
+ * @brief Handles long press button action to access configuration menu
+ *
+ * Responds to long press by loading configuration panel, providing access
+ * to system settings from the lock display. Essential for automotive user
+ * interface navigation from security status screen.
+ */
 void LockPanel::HandleLongPress()
 {
     if (panelService_)
