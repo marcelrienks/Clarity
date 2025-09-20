@@ -390,8 +390,8 @@ namespace SensorConstants {
     static constexpr int32_t PRESSURE_MAX_BAR = 10; // 10 Bar max
 
     // Temperature sensor constants
-    static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 200; // 200°C max
-    static constexpr int32_t TEMPERATURE_MAX_FAHRENHEIT = 392; // 392°F max
+    static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // 120°C max for oil temp
+    static constexpr int32_t TEMPERATURE_MAX_FAHRENHEIT = 248; // 248°F max (120°C converted)
     static constexpr int32_t TEMPERATURE_MIN_FAHRENHEIT = 32; // 32°F min (freezing)
 }
 
