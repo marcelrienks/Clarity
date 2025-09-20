@@ -2,8 +2,8 @@
 #include "managers/error_manager.h"
 #include "handlers/trigger_handler.h"
 #include "handlers/action_handler.h"
-#include "utilities/system_definitions.h"
-#include "utilities/constants.h"
+#include "interrupts/system_definitions.h"
+#include "definitions/constants.h"
 #include "sensors/gpio_sensor.h"
 #include <Arduino.h>
 #include <cstring>

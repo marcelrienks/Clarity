@@ -2,7 +2,8 @@
 #include "managers/error_manager.h"
 #include "config/config_types.h"
 #include "utilities/logging.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
+#include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -203,8 +204,8 @@ int32_t OilTemperatureSensor::ReadRawValue()
  *
  * Applies calibration scale and offset to the raw ADC reading, then converts
  * to the requested temperature unit. The base calibration maps 0-4095 ADC to
- * 0-120°C. Supports conversion to Fahrenheit (32-248°F) and Celsius (0-120°C)
- * temperature ranges for automotive applications.
+ * 0-120°C. All values are stored internally as Celsius and converted to the
+ * requested unit for display.
  */
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
@@ -212,25 +213,19 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
     float calibratedValue = static_cast<float>(rawValue);
     calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
 
-    // Convert calibrated ADC value to requested temperature unit
+    // Convert calibrated ADC value to Celsius (base unit)
     // Base calibration: 0-4095 ADC = 0-120°C
-    int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
+    float celsiusValue = (calibratedValue * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
 
+    // Convert from base unit (Celsius) to target unit
     if (targetUnit_ == ConfigConstants::Units::FAHRENHEIT)
     {
-        // Direct conversion to Fahrenheit
-        // ADC 0-4095 maps to 32-248°F (0-120°C converted)
-        // Formula: F = (rawValue * (248-32) / 4095) + 32
-        return (calibratedRaw *
-                (SensorConstants::TEMPERATURE_MAX_FAHRENHEIT - SensorConstants::TEMPERATURE_MIN_FAHRENHEIT)) /
-                   SensorHelper::ADC_MAX_VALUE +
-               SensorConstants::TEMPERATURE_MIN_FAHRENHEIT;
+        return static_cast<int32_t>(UnitConverter::CelsiusToFahrenheit(celsiusValue));
     }
     else
     {
-        // Direct conversion to Celsius (default)
-        // ADC 0-4095 maps to 0-120°C
-        return (calibratedRaw * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
+        // Already in Celsius
+        return static_cast<int32_t>(celsiusValue);
     }
 }
 

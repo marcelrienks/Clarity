@@ -8,7 +8,7 @@
 #include "interfaces/i_panel_notification_service.h"
 #include "interfaces/i_action_execution_service.h"
 #include "interfaces/i_trigger_execution_service.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 #include <functional>
 #include <memory>

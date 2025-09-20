@@ -8,7 +8,7 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 /**
  * @interface IPanelService

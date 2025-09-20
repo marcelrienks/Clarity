@@ -9,7 +9,7 @@
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
 #include "config/config_types.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 #include <memory>
 #include <string>

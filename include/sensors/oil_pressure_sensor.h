@@ -10,8 +10,8 @@
 #include "interfaces/i_preference_service.h"
 #include "sensors/base_sensor.h"
 #include "utilities/sensor_helper.h"
-#include "utilities/types.h"
-#include "utilities/constants.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
 
 /**
  * @class OilPressureSensor

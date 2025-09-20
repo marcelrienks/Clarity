@@ -1,7 +1,7 @@
 #include "sensors/gpio_sensor.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 

@@ -3,8 +3,8 @@
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"
 #include "managers/error_manager.h"
-#include "utilities/styles.h"
-#include "utilities/types.h"
+#include "definitions/styles.h"
+#include "definitions/types.h"
 
 #include <lvgl.h>
 #include <vector>

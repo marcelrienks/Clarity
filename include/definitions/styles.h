@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file styles.h
+ * @file definitions/styles.h
  * @brief Centralized style utilities and color definitions for the Clarity automotive gauge system
  * 
  * @details This header contains style-related utilities including:
@@ -25,8 +25,8 @@
 #endif
 
 // Project Includes
-#include "utilities/constants.h"
-#include "utilities/types.h"
+#include "definitions/constants.h"
+#include "definitions/types.h"
 
 //=============================================================================
 // THEME COLOR DEFINITIONS

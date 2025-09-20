@@ -1,8 +1,8 @@
 #pragma once
 
 #include "interfaces/i_sensor.h"
-#include "utilities/types.h"
-#include "utilities/constants.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
 #include <functional>
 
 #include "esp32-hal-log.h"

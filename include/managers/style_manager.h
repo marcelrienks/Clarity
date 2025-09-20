@@ -2,9 +2,9 @@
 
 #include "interfaces/i_style_service.h"
 #include "interfaces/i_preference_service.h"
-#include "utilities/styles.h"
-#include "utilities/types.h"
-#include "utilities/constants.h"
+#include "definitions/styles.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
 
 #include <lvgl.h>
 #include <memory>

@@ -5,7 +5,7 @@
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
 #include "interfaces/i_device_provider.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 
 // Screen - use constants from centralized location
 #define SCREEN_WIDTH 240

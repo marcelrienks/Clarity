@@ -3,7 +3,7 @@
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include "utilities/logging.h"
 #include <algorithm>
 #include <esp32-hal-log.h>

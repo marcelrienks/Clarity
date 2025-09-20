@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file constants.h
+ * @file definitions/constants.h
  * @brief Centralized constants to replace magic strings and values
  *
  * This file contains various categories of constants used throughout the application
@@ -384,15 +384,13 @@ namespace TimingConstants {
 /*============================================================================*/
 
 namespace SensorConstants {
-    // Pressure sensor constants (max values for different units)
-    static constexpr int32_t PRESSURE_MAX_PSI = 145; // 145 PSI max
-    static constexpr int32_t PRESSURE_MAX_KPA = 1000; // 1000 kPa max
-    static constexpr int32_t PRESSURE_MAX_BAR = 10; // 10 Bar max
+    // Base pressure values (Bar)
+    static constexpr int32_t PRESSURE_MIN_BAR = 0;  // 0 Bar minimum
+    static constexpr int32_t PRESSURE_MAX_BAR = 10; // 10 Bar maximum
 
-    // Temperature sensor constants
-    static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // 120°C max for oil temp
-    static constexpr int32_t TEMPERATURE_MAX_FAHRENHEIT = 248; // 248°F max (120°C converted)
-    static constexpr int32_t TEMPERATURE_MIN_FAHRENHEIT = 32; // 32°F min (freezing)
+    // Base temperature values (Celsius)
+    static constexpr int32_t TEMPERATURE_MIN_CELSIUS = 0;   // 0°C minimum
+    static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // 120°C maximum for oil temp
 }
 
 

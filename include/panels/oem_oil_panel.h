@@ -11,7 +11,7 @@
 #include "interfaces/i_style_service.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 #include <Arduino.h>
 
 // Forward declarations

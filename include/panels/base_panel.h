@@ -5,7 +5,7 @@
 #include "interfaces/i_panel.h"
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_style_service.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 
 /**

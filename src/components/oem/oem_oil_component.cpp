@@ -1,7 +1,7 @@
 #include "components/oem/oem_oil_component.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h" // For MAIN_DEFAULT, ITEMS_DEFAULT, INDICATOR_DEFAULT constants
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <cstring>
 #include <esp32-hal-log.h>

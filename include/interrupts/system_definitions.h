@@ -1,7 +1,7 @@
 #pragma once
 
-#include "utilities/types.h"
-#include "utilities/constants.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
 #include "utilities/logging.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
@@ -10,12 +10,13 @@
 #endif
 
 /**
- * @file system_definitions.h
- * @brief System trigger and action definitions for the new interrupt architecture
- * 
- * @details This file contains all the system-wide trigger and action definitions
- * exactly as specified in docs/interrupt-architecture.md. These definitions
- * implement the modern Trigger/Action separation architecture.
+ * @file interrupts/system_definitions.h
+ * @brief System trigger and action definitions for the interrupt architecture
+ *
+ * @details This file contains all the system-wide interrupt trigger and action
+ * definitions exactly as specified in docs/interrupt-architecture.md. These
+ * definitions implement the modern Trigger/Action separation architecture for
+ * interrupt-driven system behavior.
  */
 
 namespace SystemDefinitions {

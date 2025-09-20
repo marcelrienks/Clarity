@@ -1,9 +1,9 @@
 #include "panels/config_panel.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 #include "utilities/logging.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>

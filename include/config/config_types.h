@@ -5,7 +5,7 @@
 #include <vector>
 #include <optional>
 #include <map>
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 
 /**
  * @file config_types.h

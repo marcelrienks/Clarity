@@ -2,8 +2,8 @@
 
 #include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
-#include "utilities/types.h"
-#include "utilities/constants.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
 #include <vector>
 #include <memory>
 

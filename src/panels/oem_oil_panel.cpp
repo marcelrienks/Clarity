@@ -6,7 +6,8 @@
 #include "managers/error_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
+#include "utilities/unit_converter.h"
 #include "utilities/logging.h"
 
 // ========== Constructors and Destructor ==========
@@ -773,58 +774,55 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 
 /**
  * @brief Maps pressure sensor value to display scale based on unit type
- * @param sensorValue Raw sensor reading
+ * @param sensorValue Raw sensor reading (in configured unit)
  * @param unit Pressure unit (PSI, kPa, or Bar)
  * @return Mapped value for gauge display (0-60 scale)
  *
- * Dispatches to appropriate unit-specific mapping function based on
- * user preference settings. Ensures consistent gauge display regardless
- * of configured pressure units.
+ * Converts sensor value to base Bar unit if needed, then maps to display scale.
+ * This simplifies the logic by always working with Bar internally.
  */
 int32_t OemOilPanel::MapPressureByUnit(int32_t sensorValue, const std::string& unit)
 {
-    if (unit == ConfigConstants::Units::PSI_UPPER) return MapPSIPressure(sensorValue);
-    if (unit == ConfigConstants::Units::KPA_UPPER) return MapkPaPressure(sensorValue);
-    
-    return MapBarPressure(sensorValue);
+    // Convert to base unit (Bar) if needed
+    float barValue;
+    if (unit == ConfigConstants::Units::PSI_UPPER) {
+        barValue = UnitConverter::PsiToBar(static_cast<float>(sensorValue));
+    } else if (unit == ConfigConstants::Units::KPA_UPPER) {
+        barValue = UnitConverter::KpaToBar(static_cast<float>(sensorValue));
+    } else {
+        barValue = static_cast<float>(sensorValue);
+    }
+
+    // Map Bar value to display scale
+    return MapBarPressure(static_cast<int32_t>(barValue));
 }
 
 /**
  * @brief Maps PSI pressure sensor value to display scale
- * @param sensorValue Raw sensor reading in PSI (0-145 range)
+ * @param sensorValue Raw sensor reading in PSI
  * @return Mapped value for gauge display (0-60 scale)
  *
- * Maps automotive PSI pressure range (15-145 PSI) to gauge display scale.
- * Clamps to valid operating range and provides linear mapping for
- * consistent gauge needle positioning.
+ * Converts PSI to Bar and uses unified Bar mapping.
  */
 int32_t OemOilPanel::MapPSIPressure(int32_t sensorValue)
 {
-    // Sensor returns 0-145 PSI, map to 0-60 display
-    // Clamp to valid range (14.5-145 PSI equivalent to 1-10 Bar)
-    int32_t clampedValue = ClampValue(sensorValue, 15, 145);
-    
-    // Map useful PSI range (15-145) to display scale (0-60)
-    return ((clampedValue - 15) * 60) / 130;
+    // Convert PSI to Bar and use unified mapping
+    float barValue = UnitConverter::PsiToBar(static_cast<float>(sensorValue));
+    return MapBarPressure(static_cast<int32_t>(barValue));
 }
 
 /**
  * @brief Maps kPa pressure sensor value to display scale
- * @param sensorValue Raw sensor reading in kPa (0-1000 range)
+ * @param sensorValue Raw sensor reading in kPa
  * @return Mapped value for gauge display (0-60 scale)
  *
- * Maps automotive kPa pressure range (100-1000 kPa) to gauge display scale.
- * Clamps to valid operating range and provides linear mapping for
- * consistent gauge needle positioning.
+ * Converts kPa to Bar and uses unified Bar mapping.
  */
 int32_t OemOilPanel::MapkPaPressure(int32_t sensorValue)
 {
-    // Sensor returns 0-1000 kPa, map to 0-60 display
-    // Clamp to valid range (100-1000 kPa equivalent to 1-10 Bar)
-    int32_t clampedValue = ClampValue(sensorValue, 100, 1000);
-    
-    // Map useful kPa range (100-1000) to display scale (0-60)
-    return ((clampedValue - 100) * 60) / 900;
+    // Convert kPa to Bar and use unified mapping
+    float barValue = UnitConverter::KpaToBar(static_cast<float>(sensorValue));
+    return MapBarPressure(static_cast<int32_t>(barValue));
 }
 
 /**
@@ -833,17 +831,16 @@ int32_t OemOilPanel::MapkPaPressure(int32_t sensorValue)
  * @return Mapped value for gauge display (0-60 scale)
  *
  * Maps automotive Bar pressure range (1-10 Bar) to gauge display scale.
- * Clamps to valid operating range and provides linear mapping for
- * consistent gauge needle positioning.
+ * This is the base mapping function used by all unit conversions.
  */
 int32_t OemOilPanel::MapBarPressure(int32_t sensorValue)
 {
     // Bar: sensor returns 0-10 Bar, map to 0-60 display
     // Clamp to valid range (1-10 Bar)
-    int32_t clampedValue = ClampValue(sensorValue, 1, 10);
-    
+    int32_t clampedValue = ClampValue(sensorValue, 1, SensorConstants::PRESSURE_MAX_BAR);
+
     // Map Bar range (1-10) to display scale (0-60)
-    return ((clampedValue - 1) * 60) / 9;
+    return ((clampedValue - 1) * 60) / (SensorConstants::PRESSURE_MAX_BAR - 1);
 }
 
 /**
@@ -871,9 +868,8 @@ int32_t OemOilPanel::ClampValue(int32_t value, int32_t minVal, int32_t maxVal)
  */
 int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
 {
-    
-    // Sensor now returns values in configured units, map to display scale (0-120)
-    int32_t mappedValue;
+    // Convert to base unit (Celsius) if needed
+    float celsiusValue;
 
     if (preferenceService_)
     {
@@ -881,38 +877,29 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
         if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
+
         if (tempUnit == ConfigConstants::Units::FAHRENHEIT)
         {
-            // Sensor returns 32-248°F, map to 0-120 display scale
-            // Clamp to valid range (32-248°F equivalent to 0-120°C)
-            if (sensorValue < 32)
-                sensorValue = 32;
-            if (sensorValue > 248)
-                sensorValue = 248;
-            // Map Fahrenheit range (32-248) to display scale (0-120)
-            mappedValue = ((sensorValue - 32) * 120) / 216;
+            // Convert Fahrenheit to Celsius
+            celsiusValue = UnitConverter::FahrenheitToCelsius(static_cast<float>(sensorValue));
         }
         else
         {
-            // Celsius: sensor returns 0-120°C, direct mapping to display scale
-            // Clamp to valid range (0-120°C)
-            if (sensorValue < 0)
-                sensorValue = 0;
-            if (sensorValue > 120)
-                sensorValue = 120;
-            mappedValue = sensorValue;
+            // Already in Celsius
+            celsiusValue = static_cast<float>(sensorValue);
         }
     }
     else
     {
-        // Fallback to Celsius mapping
-        if (sensorValue < 0)
-            sensorValue = 0;
-        if (sensorValue > 120)
-            sensorValue = 120;
-        mappedValue = sensorValue;
+        // No preference service - assume Celsius
+        celsiusValue = static_cast<float>(sensorValue);
     }
 
+    // Clamp to valid range (0-120°C) and map directly to display scale
+    int32_t mappedValue = static_cast<int32_t>(celsiusValue);
+    mappedValue = ClampValue(mappedValue, SensorConstants::TEMPERATURE_MIN_CELSIUS, SensorConstants::TEMPERATURE_MAX_CELSIUS);
+
+    // Direct 1:1 mapping for Celsius to display scale (0-120)
     log_v("MapTemperatureValue() returning: %d", mappedValue);
     return mappedValue;
 }

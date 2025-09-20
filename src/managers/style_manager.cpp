@@ -1,7 +1,7 @@
 #include "managers/style_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include <cstring>
 #include <esp32-hal-log.h>
 

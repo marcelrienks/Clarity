@@ -8,7 +8,7 @@
 #include "components/config_component.h"
 #include "interfaces/i_style_service.h"
 #include "managers/error_manager.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 
 #include "esp32-hal-log.h"
 

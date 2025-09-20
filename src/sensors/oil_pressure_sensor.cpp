@@ -2,7 +2,8 @@
 #include "managers/error_manager.h"
 #include "config/config_types.h"
 #include "utilities/logging.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
+#include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 
@@ -201,8 +202,8 @@ int32_t OilPressureSensor::ReadRawValue()
  *
  * Applies calibration scale and offset to the raw ADC reading, then converts
  * to the requested pressure unit. The base calibration maps 0-4095 ADC to
- * 0-10 Bar. Supports conversion to PSI (0-145), kPa (0-1000), and Bar (0-10)
- * pressure ranges for automotive applications.
+ * 0-10 Bar. All values are stored internally as Bar and converted to the
+ * requested unit for display.
  */
 int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 {
@@ -210,24 +211,23 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
     float calibratedValue = static_cast<float>(rawValue);
     calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
 
-    // Convert calibrated ADC value to requested pressure unit
+    // Convert calibrated ADC value to Bar (base unit)
     // Base calibration: 0-4095 ADC = 0-10 Bar
-    int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
+    float barValue = (calibratedValue * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
 
+    // Convert from base unit (Bar) to target unit
     if (targetUnit_ == ConfigConstants::Units::PSI_UPPER)
     {
-        // Map 0-4095 ADC to 0-145 PSI (0-10 Bar equivalent)
-        return (calibratedRaw * SensorConstants::PRESSURE_MAX_PSI) / SensorHelper::ADC_MAX_VALUE;
+        return static_cast<int32_t>(UnitConverter::BarToPsi(barValue));
     }
     else if (targetUnit_ == ConfigConstants::Units::KPA_UPPER)
     {
-        // Map 0-4095 ADC to 0-1000 kPa (0-10 Bar equivalent)
-        return (calibratedRaw * SensorConstants::PRESSURE_MAX_KPA) / SensorHelper::ADC_MAX_VALUE;
+        return static_cast<int32_t>(UnitConverter::BarToKpa(barValue));
     }
     else
     {
-        // Default Bar mapping: 0-4095 ADC to 0-10 Bar
-        return (calibratedRaw * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
+        // Already in Bar
+        return static_cast<int32_t>(barValue);
     }
 }
 

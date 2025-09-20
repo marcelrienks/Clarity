@@ -10,7 +10,7 @@
 #ifdef CLARITY_DEBUG
 #include "sensors/gpio_sensor.h"
 #endif
-#include "utilities/types.h"
+#include "definitions/types.h"
 #include <esp32-hal-log.h>
 
 // ========== Constructors and Destructor ==========

@@ -2,7 +2,7 @@
 
 #include "interfaces/i_preference_service.h"
 #include "config/config_types.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 
 #include <ArduinoJson.h>
 #include <Preferences.h>

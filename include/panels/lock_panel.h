@@ -2,7 +2,7 @@
 
 #include "panels/base_panel.h"
 #include "components/lock_component.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 
 
 /**

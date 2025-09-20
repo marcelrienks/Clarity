@@ -5,7 +5,7 @@
 #include "managers/style_manager.h"
 #include "managers/panel_manager.h"
 #include "utilities/logging.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <algorithm>
 

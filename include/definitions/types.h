@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file types.h
+ * @file definitions/types.h
  * @brief Mutable types, structs, and runtime data containers for the Clarity automotive gauge system
  *
  * @details This header contains all mutable data structures and types that can change
@@ -38,7 +38,7 @@
 #include <vector>
 
 // Project Includes
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 
 //=============================================================================
 // ENUMS AND TYPE DEFINITIONS

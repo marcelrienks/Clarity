@@ -1,5 +1,5 @@
 #include "components/error_component.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>

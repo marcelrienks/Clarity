@@ -5,7 +5,7 @@
 #include <vector>
 
 // Project Includes
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 /**
  * @interface ISensor

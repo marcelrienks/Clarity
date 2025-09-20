@@ -11,10 +11,10 @@
 #include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_display_provider.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include "utilities/logging.h"
 #include "utilities/ticker.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 // ========== Global Variables ==========
 
