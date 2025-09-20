@@ -1,5 +1,6 @@
 #include "components/config_component.h"
 #include "managers/error_manager.h"
+#include "constants.h"
 #include <Arduino.h>
 #include <cmath>
 #include <cstring>
@@ -65,12 +66,12 @@ void ConfigComponent::ExecuteAction(const std::string& actionType, const std::st
 {
     log_v("ExecuteAction() called with type: %s, param: %s", actionType.c_str(), actionParam.c_str());
     
-    if (actionType == "submenu")
+    if (actionType == UIStrings::ActionTypes::SUBMENU)
     {
         // Handle submenu navigation - delegate back to config panel
         // This would require a callback to the ConfigPanel
     }
-    else if (actionType == "panel_exit")
+    else if (actionType == UIStrings::ActionTypes::PANEL_EXIT)
     {
         // Exit config panel and return to restoration panel
         if (panelService_)
@@ -79,7 +80,7 @@ void ConfigComponent::ExecuteAction(const std::string& actionType, const std::st
             panelService_->CreateAndLoadPanel(restorationPanel, true);
         }
     }
-    else if (actionType == "panel_load")
+    else if (actionType == UIStrings::ActionTypes::PANEL_LOAD)
     {
         // Load specific panel
         if (panelService_)
@@ -229,35 +230,35 @@ void ConfigComponent::UpdateThemeColors()
 
     
     const std::string& theme = styleService_->GetCurrentTheme();
-    bool isNightTheme = (theme == "Night");
+    bool isNightTheme = (theme == UIStrings::ThemeNames::NIGHT);
     
     // Update container background
     if (container_) {
         if (isNightTheme) {
             // Use very dark red background for night theme
-            lv_obj_set_style_bg_color(container_, lv_color_hex(0x1A0000), LV_PART_MAIN);
+            lv_obj_set_style_bg_color(container_, lv_color_hex(UIStrings::Colors::NIGHT_BACKGROUND), LV_PART_MAIN);
             lv_obj_set_style_bg_opa(container_, LV_OPA_COVER, LV_PART_MAIN);
         } else {
             // Transparent to use panel's theme background
             lv_obj_set_style_bg_opa(container_, LV_OPA_TRANSP, LV_PART_MAIN);
         }
     }
-    
+
     // Update title color
     if (titleLabel_) {
         if (isNightTheme) {
-            lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xFF6666), LV_PART_MAIN); // Light red for night theme
+            lv_obj_set_style_text_color(titleLabel_, lv_color_hex(UIStrings::Colors::NIGHT_TITLE_TEXT), LV_PART_MAIN); // Light red for night theme
         } else {
-            lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN); // Light gray for day theme
+            lv_obj_set_style_text_color(titleLabel_, lv_color_hex(UIStrings::Colors::DAY_TITLE_TEXT), LV_PART_MAIN); // Light gray for day theme
         }
     }
-    
+
     // Update hint text color
     if (hintLabel_) {
         if (isNightTheme) {
-            lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x993333), LV_PART_MAIN); // Darker red for night theme
+            lv_obj_set_style_text_color(hintLabel_, lv_color_hex(UIStrings::Colors::NIGHT_HINT_TEXT), LV_PART_MAIN); // Darker red for night theme
         } else {
-            lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN); // Gray for day theme
+            lv_obj_set_style_text_color(hintLabel_, lv_color_hex(UIStrings::Colors::DAY_HINT_TEXT), LV_PART_MAIN); // Gray for day theme
         }
     }
     
@@ -276,10 +277,10 @@ void ConfigComponent::UpdateThemeColors()
  */
 lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool isSelected) const
 {
-    if (!styleService_) 
+    if (!styleService_)
     {
         // Fallback to default colors if no style service
-        return isSelected ? lv_color_hex(0xFFFFFF) : lv_color_hex(0x888888);
+        return isSelected ? lv_color_hex(UIStrings::Colors::WHITE) : lv_color_hex(UIStrings::Colors::DAY_FALLBACK);
     }
 
     const ThemeColors& colors = styleService_->GetThemeColors();
@@ -288,21 +289,21 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     if (isSelected)
     {
         // Selected item color based on theme
-        if (theme == "Night")
+        if (theme == UIStrings::ThemeNames::NIGHT)
         {
-            return lv_color_hex(0xFF0000); // Bright red for selected item in night theme
+            return lv_color_hex(UIStrings::Colors::NIGHT_SELECTED_ITEM); // Bright red for selected item in night theme
         }
         else
         {
-            return lv_color_hex(0xFFFFFF); // White for selected item in day theme
+            return lv_color_hex(UIStrings::Colors::DAY_SELECTED_ITEM); // White for selected item in day theme
         }
     }
     
     // Create gradient based on theme
-    if (theme == "Night")
+    if (theme == UIStrings::ThemeNames::NIGHT)
     {
         // Night theme - shades of red based on distance
-        uint32_t baseColor = 0xB00020; // Deep red from night theme
+        uint32_t baseColor = UIStrings::Colors::NIGHT_BASE_COLOR; // Deep red from night theme
         uint8_t red = (baseColor >> 16) & 0xFF;
         uint8_t green = (baseColor >> 8) & 0xFF;
         uint8_t blue = baseColor & 0xFF;
@@ -321,8 +322,8 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     }
     else
     {
-        // Day theme - shades of gray based on distance  
-        uint32_t baseColor = 0xEEEEEE; // Light gray from day theme
+        // Day theme - shades of gray based on distance
+        uint32_t baseColor = UIStrings::Colors::DAY_BASE_COLOR; // Light gray from day theme
         uint8_t gray = (baseColor >> 16) & 0xFF;
         
         // Reduce intensity based on distance (further = darker)
@@ -353,7 +354,7 @@ void ConfigComponent::CreateUI()
     // Create title label (child of container, not screen)
     titleLabel_ = lv_label_create(container_);
     lv_label_set_text(titleLabel_, currentTitle_.c_str());
-    lv_obj_set_style_text_color(titleLabel_, lv_color_hex(0xCCCCCC), LV_PART_MAIN); // Default color
+    lv_obj_set_style_text_color(titleLabel_, lv_color_hex(UIStrings::Colors::DAY_TITLE_TEXT), LV_PART_MAIN); // Default color
     lv_obj_set_style_text_font(titleLabel_, &lv_font_montserrat_18, LV_PART_MAIN);
     lv_obj_align(titleLabel_, LV_ALIGN_TOP_MID, 0, 15);
 
@@ -386,8 +387,8 @@ void ConfigComponent::CreateUI()
 
     // Create hint label (child of container, not screen)
     hintLabel_ = lv_label_create(container_);
-    lv_label_set_text(hintLabel_, "Short: Next | Long: Select");
-    lv_obj_set_style_text_color(hintLabel_, lv_color_hex(0x888888), LV_PART_MAIN); // Default color
+    lv_label_set_text(hintLabel_, UIStrings::HintText::SHORT_LONG_PRESS);
+    lv_obj_set_style_text_color(hintLabel_, lv_color_hex(UIStrings::Colors::DAY_HINT_TEXT), LV_PART_MAIN); // Default color
     lv_obj_set_style_text_font(hintLabel_, &lv_font_montserrat_10, LV_PART_MAIN);
     lv_obj_align(hintLabel_, LV_ALIGN_BOTTOM_MID, 0, -15);
 
@@ -529,16 +530,16 @@ void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
     }
 
     const std::string& theme = styleService_->GetCurrentTheme();
-    if (theme == "Night")
+    if (theme == UIStrings::ThemeNames::NIGHT)
     {
-        lv_obj_set_style_bg_color(label, lv_color_hex(0x4D1F1F), LV_PART_MAIN);
-        lv_obj_set_style_border_color(label, lv_color_hex(0x993333), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(label, lv_color_hex(UIStrings::Colors::NIGHT_SELECTED_BG), LV_PART_MAIN);
+        lv_obj_set_style_border_color(label, lv_color_hex(UIStrings::Colors::NIGHT_SELECTED_BORDER), LV_PART_MAIN);
         return;
     }
 
     // Default day theme
-    lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);
-    lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(label, lv_color_hex(UIStrings::Colors::DAY_SELECTED_BG), LV_PART_MAIN);
+    lv_obj_set_style_border_color(label, lv_color_hex(UIStrings::Colors::DAY_SELECTED_BORDER), LV_PART_MAIN);
 }
 
 /**
@@ -550,6 +551,6 @@ void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
  */
 void ConfigComponent::ApplyDefaultCenterBackground(lv_obj_t* label)
 {
-    lv_obj_set_style_bg_color(label, lv_color_hex(0x555555), LV_PART_MAIN);
-    lv_obj_set_style_border_color(label, lv_color_hex(0x888888), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(label, lv_color_hex(UIStrings::Colors::DAY_SELECTED_BG), LV_PART_MAIN);
+    lv_obj_set_style_border_color(label, lv_color_hex(UIStrings::Colors::DAY_SELECTED_BORDER), LV_PART_MAIN);
 }

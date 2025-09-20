@@ -3,6 +3,7 @@
 #include "managers/style_manager.h"
 #include "utilities/types.h"
 #include "utilities/logging.h"
+#include "constants.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -99,8 +100,8 @@ void ConfigPanel::Load()
         
         // For night theme, override the screen background to use dark red instead of black
         const std::string& theme = styleService_->GetCurrentTheme();
-        if (theme == "Night") {
-            lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
+        if (theme == UIStrings::ThemeNames::NIGHT) {
+            lv_obj_set_style_bg_color(screen_, lv_color_hex(UIStrings::Colors::NIGHT_BACKGROUND), LV_PART_MAIN); // Very dark red
             lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
         }
     }
@@ -318,13 +319,13 @@ void ConfigPanel::ExecuteMenuAction(const ConfigComponent::MenuItem& item)
 ConfigPanel::MenuActionType ConfigPanel::ParseActionType(const std::string& actionTypeStr) const
 {
     static const std::unordered_map<std::string, MenuActionType> actionTypeMap = {
-        {"enter_section", MenuActionType::ENTER_SECTION},
-        {"toggle_boolean", MenuActionType::TOGGLE_BOOLEAN},
-        {"show_options", MenuActionType::SHOW_OPTIONS},
-        {"set_config_value", MenuActionType::SET_CONFIG_VALUE},
-        {"back", MenuActionType::BACK},
-        {"none", MenuActionType::NONE},
-        {"panel_exit", MenuActionType::PANEL_EXIT}
+        {UIStrings::ActionTypes::ENTER_SECTION, MenuActionType::ENTER_SECTION},
+        {UIStrings::ActionTypes::TOGGLE_BOOLEAN, MenuActionType::TOGGLE_BOOLEAN},
+        {UIStrings::ActionTypes::SHOW_OPTIONS, MenuActionType::SHOW_OPTIONS},
+        {UIStrings::ActionTypes::SET_CONFIG_VALUE, MenuActionType::SET_CONFIG_VALUE},
+        {UIStrings::ActionTypes::BACK, MenuActionType::BACK},
+        {UIStrings::ActionTypes::NONE, MenuActionType::NONE},
+        {UIStrings::ActionTypes::PANEL_EXIT, MenuActionType::PANEL_EXIT}
     };
 
     auto it = actionTypeMap.find(actionTypeStr);
@@ -426,7 +427,7 @@ void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
                 preferenceService_->UpdateConfig(fullKey, newValue);
 
                 // If this was a theme change, update the config component colors
-                if (fullKey == "style_manager.theme") {
+                if (fullKey == UIStrings::ConfigKeys::STYLE_MANAGER_THEME) {
                     configComponent_.UpdateThemeColors();
                 }
 
@@ -510,18 +511,18 @@ void ConfigPanel::BuildDynamicMenus()
         if (auto section = preferenceService_->GetConfigSection(sectionName)) {
             ConfigComponent::MenuItem item;
             item.label = section->displayName;
-            item.actionType = "enter_section";
+            item.actionType = UIStrings::ActionTypes::ENTER_SECTION;
             item.actionParam = sectionName;
             menuItems_.push_back(item);
         }
     }
 
     // Add exit option
-    menuItems_.push_back({"Exit", "panel_exit", ""});
+    menuItems_.push_back({UIStrings::MenuLabels::EXIT, UIStrings::ActionTypes::PANEL_EXIT, ""});
 
     // Update component
     if (componentInitialized_) {
-        configComponent_.SetTitle("Configuration");
+        configComponent_.SetTitle(UIStrings::MenuLabels::CONFIGURATION);
         configComponent_.SetMenuItems(menuItems_);
         configComponent_.SetCurrentIndex(0);
     }
@@ -560,16 +561,16 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
 
         // For booleans, use direct toggle. For everything else, show options
         if (std::holds_alternative<bool>(item.value)) {
-            menuItem.actionType = "toggle_boolean";
+            menuItem.actionType = UIStrings::ActionTypes::TOGGLE_BOOLEAN;
         } else {
-            menuItem.actionType = "show_options";
+            menuItem.actionType = UIStrings::ActionTypes::SHOW_OPTIONS;
         }
         menuItem.actionParam = fullKey;
         menuItems_.push_back(menuItem);
     }
 
     // Add back option
-    menuItems_.push_back({"Back", "back", ""});
+    menuItems_.push_back({UIStrings::MenuLabels::BACK, UIStrings::ActionTypes::BACK, ""});
 
     // Update component
     if (componentInitialized_) {
@@ -626,7 +627,7 @@ void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::Conf
     }
 
     // Add back option
-    menuItems_.push_back({"Back", "back", ""});
+    menuItems_.push_back({UIStrings::MenuLabels::BACK, UIStrings::ActionTypes::BACK, ""});
 
     // Update component
     if (componentInitialized_) {
@@ -796,7 +797,7 @@ ConfigComponent::MenuItem ConfigPanel::CreateMenuItemWithSelection(const std::st
         menuItem.label = "  " + label;
     }
 
-    menuItem.actionType = "set_config_value";
+    menuItem.actionType = UIStrings::ActionTypes::SET_CONFIG_VALUE;
     menuItem.actionParam = fullKey + ":" + value;
 
     return menuItem;
