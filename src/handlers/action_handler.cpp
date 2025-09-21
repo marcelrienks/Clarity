@@ -10,6 +10,13 @@
 
 #include "esp32-hal-log.h"
 #include "utilities/logging.h"
+#include "managers/configuration_manager.h"
+
+// Self-registration at program startup
+static bool action_handler_config_registered = []() {
+    ConfigurationManager::AddSchema(ActionHandler::RegisterConfigSchema);
+    return true;
+}();
 
 // ========== Constructors and Destructor ==========
 
@@ -345,7 +352,7 @@ void ActionHandler::UpdateButtonState() {
             } else {
                 // Check for long press during hold
                 unsigned long pressDuration = currentTime - buttonPressStartTime_;
-                if (pressDuration >= LONG_PRESS_MIN_MS) {
+                if (pressDuration >= GetLongPressMs()) {
                     buttonState_ = ButtonState::LONG_PRESS_TRIGGERED;
                     log_t("Long press triggered during hold");
                 }
@@ -488,20 +495,18 @@ void ActionHandler::StopButtonTiming() {
  * 2000ms+ for long press. Handles edge cases and provides diagnostic logging.
  */
 ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
-    if (pressDuration < MIN_PRESS_DURATION_MS) {
+    unsigned long debounceMs = GetDebounceMs();
+    unsigned long longPressMs = GetLongPressMs();
+
+    if (pressDuration < debounceMs) {
         return ButtonAction::NONE;
     }
-    else if (pressDuration <= SHORT_PRESS_MAX_MS) {
+    else if (pressDuration < longPressMs) {
         return ButtonAction::SHORT_PRESS;
     }
-    else if (pressDuration >= LONG_PRESS_MIN_MS) {
-        // Any press >= 1500ms is a long press when released
-        return ButtonAction::LONG_PRESS;
-    }
     else {
-        // This should never be reached since we cover all cases above
-        log_w("Unexpected button press duration: %lu ms", pressDuration);
-        return ButtonAction::NONE;
+        // Any press >= longPressMs is a long press when released
+        return ButtonAction::LONG_PRESS;
     }
 }
 
@@ -610,3 +615,69 @@ void ActionHandler::ClearCurrentPanel() {
 //     ButtonAction currentAction = const_cast<ActionHandler*>(this)->DetectButtonAction();
 //     return currentAction != ButtonAction::NONE;
 // }
+
+/**
+ * @brief Registers button timing configuration schema with preference service
+ * @param preferenceService The preference service to register with
+ *
+ * Registers configurable button press timing values including:
+ * - Debounce timing: 300-700ms (default 500ms)
+ * - Long press threshold: 1000-2000ms (default 1500ms)
+ */
+void ActionHandler::RegisterConfigSchema(IPreferenceService* preferenceService)
+{
+    if (!preferenceService) return;
+
+    // Check if already registered to prevent duplicates
+    if (preferenceService->IsSchemaRegistered(ConfigConstants::Sections::BUTTON_SENSOR)) {
+        log_d("ActionHandler schema already registered");
+        return;
+    }
+
+    using namespace Config;
+
+    ConfigSection section(ConfigConstants::Sections::BUTTON_SENSOR, ConfigConstants::Sections::BUTTON_SENSOR, ConfigConstants::SectionNames::BUTTON_SENSOR);
+
+    section.AddItem(debounceConfig_);
+    section.AddItem(longPressConfig_);
+
+    preferenceService->RegisterConfigSection(section);
+    log_i("ActionHandler configuration schema registered (static)");
+}
+
+/**
+ * @brief Sets preference service for configuration access
+ * @param preferenceService The preference service to use for configuration
+ */
+void ActionHandler::SetPreferenceService(IPreferenceService* preferenceService)
+{
+    preferenceService_ = preferenceService;
+}
+
+/**
+ * @brief Gets configured debounce time in milliseconds
+ * @return Debounce time in ms, or default if config unavailable
+ */
+unsigned long ActionHandler::GetDebounceMs() const
+{
+    if (!preferenceService_) {
+        return ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS;
+    }
+
+    auto value = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_DEBOUNCE_MS);
+    return value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS;
+}
+
+/**
+ * @brief Gets configured long press threshold in milliseconds
+ * @return Long press threshold in ms, or default if config unavailable
+ */
+unsigned long ActionHandler::GetLongPressMs() const
+{
+    if (!preferenceService_) {
+        return ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
+    }
+
+    auto value = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
+    return value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
+}

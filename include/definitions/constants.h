@@ -123,6 +123,8 @@ namespace UIStrings {
         static constexpr const char* UPDATE_RATE_MS = "Update Rate (ms)";
         static constexpr const char* CALIBRATION_OFFSET = "Calibration Offset";
         static constexpr const char* CALIBRATION_SCALE = "Calibration Scale";
+        static constexpr const char* DEBOUNCE_MS = "Debounce (ms)";
+        static constexpr const char* LONG_PRESS_MS = "Long Press (ms)";
     }
 
     // ========== Config Component UI Text ==========
@@ -201,6 +203,8 @@ namespace ConfigConstants {
         static constexpr const char* OFFSET = "offset";
         static constexpr const char* SCALE = "scale";
         static constexpr const char* BRIGHTNESS = "brightness";
+        static constexpr const char* DEBOUNCE_MS = "debounce_ms";
+        static constexpr const char* LONG_PRESS_MS = "long_press_ms";
     }
 
     // Configuration Keys (full dotted paths)
@@ -209,6 +213,10 @@ namespace ConfigConstants {
         static constexpr const char* SYSTEM_UPDATE_RATE = "system.update_rate";
         static constexpr const char* SYSTEM_DEFAULT_PANEL = "system.default_panel";
         static constexpr const char* SYSTEM_SHOW_SPLASH = "system.show_splash";
+
+        // Button sensor configuration keys
+        static constexpr const char* BUTTON_DEBOUNCE_MS = "button_sensor.debounce_ms";
+        static constexpr const char* BUTTON_LONG_PRESS_MS = "button_sensor.long_press_ms";
 
         // Oil pressure sensor configuration keys
         static constexpr const char* OIL_PRESSURE_UNIT = "oil_pressure.unit";
@@ -283,6 +291,8 @@ namespace ConfigConstants {
         static constexpr float DEFAULT_CALIBRATION_OFFSET = 0.0f;
         static constexpr float DEFAULT_CALIBRATION_SCALE = 1.0f;
         static constexpr int DEFAULT_BRIGHTNESS = 80;
+        static constexpr int DEFAULT_DEBOUNCE_MS = 500;
+        static constexpr int DEFAULT_LONG_PRESS_MS = 1500;
     }
 
     // Section Display Names
@@ -290,6 +300,7 @@ namespace ConfigConstants {
         static constexpr const char* SYSTEM = "System";
         static constexpr const char* STYLE_MANAGER = "Display";
         static constexpr const char* SPLASH_PANEL = "Splash Scr.";
+        static constexpr const char* BUTTON_SENSOR = "Button";
         static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Press.";
         static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temp.";
     }

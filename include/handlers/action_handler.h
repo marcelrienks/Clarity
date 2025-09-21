@@ -4,6 +4,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
+#include "definitions/configs.h"
 #include <vector>
 #include <memory>
 
@@ -53,6 +54,10 @@ public:
     bool HasPendingAction() const;
     void ClearPendingAction();
 
+    // Configuration management
+    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+    void SetPreferenceService(IPreferenceService* preferenceService);
+
     // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
     enum class ButtonState {
@@ -77,13 +82,19 @@ private:
     // Helper methods
     bool IsButtonPressed() const;
     const char* StateToString(ButtonState state) const;
+
+    // Configuration helpers
+    unsigned long GetDebounceMs() const;
+    unsigned long GetLongPressMs() const;
     
     // ========== Private Data Members ==========
-    // Timing constants - based on automotive UI best practices and user testing
-    static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum to avoid accidental presses
-    static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Optimal for quick actions
-    static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Clear distinction from short press
-    static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;      // Not used for detection, kept for compatibility
+    // Configuration items for button timing
+    inline static Config::ConfigItem debounceConfig_{ConfigConstants::Items::DEBOUNCE_MS, UIStrings::ConfigLabels::DEBOUNCE_MS,
+                                                      ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS,
+                                                      Config::ConfigMetadata("200,400,600", "ms", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem longPressConfig_{ConfigConstants::Items::LONG_PRESS_MS, UIStrings::ConfigLabels::LONG_PRESS_MS,
+                                                       ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS,
+                                                       Config::ConfigMetadata("1000,1500,2000,2500", "ms", Config::ConfigItemType::Selection)};
 
     // Single pending action (LIFO with size 1)
     ButtonAction pendingActionType_ = ButtonAction::NONE;
@@ -96,6 +107,9 @@ private:
 
     // Current panel for direct method calls
     class IActionService* currentPanel_ = nullptr;
+
+    // Preference service for configuration access
+    IPreferenceService* preferenceService_ = nullptr;
 
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;
