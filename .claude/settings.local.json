@@ -60,7 +60,8 @@
       "Bash(xargs:*)",
       "Bash(awk:*)",
       "Read(//mnt/c/Users/marcelr/OneDrive - Network International LLC/Pictures/Screenshots/**)",
-      "Bash(./remove_duplicates.sh)"
+      "Bash(./remove_duplicates.sh)",
+      "Bash(do echo \"=== $interface ===\")"
     ],
     "deny": [],
     "ask": []

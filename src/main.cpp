@@ -5,8 +5,7 @@
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "interfaces/i_preference_service.h"
-#include "config/config_types.h"
-#include "config/system_config.h"
+#include "definitions/configs.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "interfaces/i_gpio_provider.h"
@@ -30,7 +29,7 @@ std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
 
-// ========== Private Methods ==========
+// ========== System Configuration ==========
 
 /**
  * @brief Register system-wide configuration settings
@@ -45,26 +44,18 @@ void registerSystemConfiguration()
         return;
     }
 
-    using namespace Config;
-
-    ConfigSection section(ConfigConstants::Sections::SYSTEM, SystemConfig::CONFIG_SECTION, ConfigConstants::Sections::SYSTEM);
+    Config::ConfigSection section(ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM);
     section.displayOrder = 0; // Highest priority - show first in config menu
 
-    // Default panel selection
-    section.AddItem(ConfigItem(ConfigConstants::Items::DEFAULT_PANEL, UIStrings::ConfigLabels::DEFAULT_PANEL,
-        std::string(ConfigConstants::Panels::OEM_OIL_PANEL), ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", ConfigItemType::Selection)));
-
-    // Global update rate for sensors and components
-    section.AddItem(ConfigItem(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE,
-        500, ConfigMetadata("100,250,500,750,1000,1500,2000", ConfigConstants::Units::MILLISECONDS, ConfigItemType::Selection)));
-
-    // Splash screen control
-    section.AddItem(ConfigItem(ConfigConstants::Items::SHOW_SPLASH, UIStrings::ConfigLabels::SHOW_SPLASH,
-        true, ConfigMetadata()));
+    section.AddItem(defaultPanelConfig);
+    section.AddItem(updateRateConfig);
+    section.AddItem(showSplashConfig);
 
     preferenceManager->RegisterConfigSection(section);
     log_i("System configuration registered");
 }
+
+// ========== Private Methods ==========
 
 /**
  * @brief Initializes all system services and managers using factory pattern
@@ -191,7 +182,7 @@ void setup()
     Ticker::handleLvTasks();
 
     std::string panelName = PanelNames::OIL; // Default
-    if (auto nameValue = preferenceManager->QueryConfig<std::string>(SystemConfig::CONFIG_DEFAULT_PANEL)) {
+    if (auto nameValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
         panelName = *nameValue;
     }
     panelManager->CreateAndLoadPanel(panelName.c_str());

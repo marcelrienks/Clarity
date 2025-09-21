@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_preference_service.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
 #include "definitions/constants.h"
 
 #include <ArduinoJson.h>

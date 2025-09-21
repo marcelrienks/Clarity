@@ -1,6 +1,6 @@
 #include "sensors/oil_temperature_sensor.h"
 #include "managers/error_manager.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
@@ -72,7 +72,7 @@ void OilTemperatureSensor::Init()
 
         // Register this sensor's configuration section with the preference service
         // This enables self-registration per docs/plans/dynamic-config-implementation.md
-        RegisterConfiguration();
+        RegisterConfig(preferenceService_);
 
         // Set up live callbacks to respond to configuration changes
         RegisterLiveUpdateCallbacks();
@@ -295,9 +295,9 @@ void OilTemperatureSensor::LoadConfiguration()
  */
 /// - Update rate options
 /// - Calibration parameters with validation ranges
-void OilTemperatureSensor::RegisterConfiguration()
+void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
 {
-    if (!preferenceService_) return;
+    if (!preferenceService) return;
 
     using namespace Config;
 
@@ -305,24 +305,13 @@ void OilTemperatureSensor::RegisterConfiguration()
     ConfigSection section(ConfigConstants::Sections::OIL_TEMPERATURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_TEMPERATURE_SENSOR);
     section.displayOrder = 3; // Controls UI ordering in config menus
 
-    // Temperature unit selection - enum with C/F options
-    section.AddItem(ConfigItem(ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::TEMPERATURE_UNIT, std::string(ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT),
-        ConfigMetadata("C,F", ConfigItemType::Selection)));
-
-    // Update rate - predefined options for sensor reading frequency
-    section.AddItem(ConfigItem(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS, ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
-        ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
-
-    // Calibration offset - float with selectable values
-    section.AddItem(ConfigItem(ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET, ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
-        ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0", ConfigItemType::Selection)));
-
-    // Calibration scale - float with selectable values
-    section.AddItem(ConfigItem(ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE, ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
-        ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
+    section.AddItem(unitConfig_);
+    section.AddItem(updateRateConfig_);
+    section.AddItem(offsetConfig_);
+    section.AddItem(scaleConfig_);
 
     // Register with preference service for persistence and UI generation
-    preferenceService_->RegisterConfigSection(section);
+    preferenceService->RegisterConfigSection(section);
     log_i("Registered oil temperature sensor configuration");
 }
 

@@ -1,6 +1,6 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "managers/error_manager.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
@@ -71,7 +71,7 @@ void OilPressureSensor::Init()
         LoadConfiguration();
 
         // Use unified preference service interface for dynamic configuration
-        RegisterConfiguration();
+        RegisterConfig(preferenceService_);
         RegisterLiveUpdateCallbacks();
         log_i("OilPressureSensor registered with dynamic config system");
     }
@@ -298,32 +298,21 @@ void OilPressureSensor::LoadConfiguration()
  * Creates a configuration section that appears in the dynamic UI for
  * real-time sensor adjustment and calibration.
  */
-void OilPressureSensor::RegisterConfiguration()
+void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
 {
-    if (!preferenceService_) return;
+    if (!preferenceService) return;
 
     using namespace Config;
 
     ConfigSection section(ConfigConstants::Sections::OIL_PRESSURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_PRESSURE_SENSOR);
     section.displayOrder = 2;
 
-    // Pressure unit selection
-    section.AddItem(ConfigItem(ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::PRESSURE_UNIT, std::string(ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT),
-        ConfigMetadata("PSI,Bar,kPa", ConfigItemType::Selection)));
+    section.AddItem(unitConfig_);
+    section.AddItem(updateRateConfig_);
+    section.AddItem(offsetConfig_);
+    section.AddItem(scaleConfig_);
 
-    // Update rate
-    section.AddItem(ConfigItem(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS, ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
-        ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
-
-    // Calibration offset
-    section.AddItem(ConfigItem(ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET, ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
-        ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0", ConfigItemType::Selection)));
-
-    // Calibration scale
-    section.AddItem(ConfigItem(ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE, ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
-        ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
-
-    preferenceService_->RegisterConfigSection(section);
+    preferenceService->RegisterConfigSection(section);
     log_i("Registered oil pressure sensor configuration");
 }
 

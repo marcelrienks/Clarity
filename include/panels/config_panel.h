@@ -8,7 +8,7 @@
 #include "interfaces/i_panel_service.h"
 #include "interfaces/i_preference_service.h"
 #include "interfaces/i_style_service.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
 #include "definitions/types.h"
 
 #include <memory>

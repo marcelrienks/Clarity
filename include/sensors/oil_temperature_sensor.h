@@ -8,9 +8,11 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_preference_service.h"
+#include "interfaces/i_config.h"
 #include "sensors/base_sensor.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
+#include "definitions/configs.h"
 
 /**
  * @class OilTemperatureSensor
@@ -35,7 +37,7 @@
  * @context This sensor provides temperature readings in the unit requested
  * by the panel, removing unit conversion logic from display components.
  */
-class OilTemperatureSensor : public BaseSensor
+class OilTemperatureSensor : public BaseSensor, public IConfig
 {
   public:
     // ========== Constructors and Destructor ==========
@@ -56,7 +58,8 @@ class OilTemperatureSensor : public BaseSensor
 
     void LoadConfiguration();
 
-    void RegisterConfiguration();
+    // IConfig implementation
+    void RegisterConfig(IPreferenceService* preferenceService) override;
 
     void RegisterLiveUpdateCallbacks();
 
@@ -73,6 +76,20 @@ class OilTemperatureSensor : public BaseSensor
     int32_t ConvertReading(int32_t rawValue);
 
   private:
+    // ========== Configuration Items (inline definitions) ==========
+    inline static Config::ConfigItem unitConfig_{ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::TEMPERATURE_UNIT,
+                                                  std::string(ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT),
+                                                  Config::ConfigMetadata("C,F", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem updateRateConfig_{ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS,
+                                                        ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
+                                                        Config::ConfigMetadata("250,500,1000,2000", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem offsetConfig_{ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET,
+                                                    ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
+                                                    Config::ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem scaleConfig_{ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE,
+                                                   ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
+                                                   Config::ConfigMetadata("0.9,0.95,1.0,1.05,1.1", Config::ConfigItemType::Selection)};
+
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;

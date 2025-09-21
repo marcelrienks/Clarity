@@ -1,5 +1,4 @@
 #include "managers/panel_manager.h"
-#include "config/system_config.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 
@@ -163,7 +162,7 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
     if (preferenceService_ && !isTriggerDriven)
     {
         // Query system configuration for splash screen setting
-        if (auto splashValue = preferenceService_->QueryConfig<bool>(SystemConfig::CONFIG_SHOW_SPLASH)) {
+        if (auto splashValue = preferenceService_->QueryConfig<bool>(ConfigConstants::Keys::SYSTEM_SHOW_SPLASH)) {
             showSplash = *splashValue;
         } else {
             showSplash = true; // Default to true

@@ -308,27 +308,19 @@ void StyleManager::ResetStyles()
 /**
  * @brief Register StyleManager configuration section
  */
-void StyleManager::RegisterConfiguration()
+void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
 {
-    if (!preferenceService_) return;
+    if (!preferenceService) return;
 
     using namespace Config;
 
     ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, UIStrings::MenuLabels::DISPLAY_MENU);
     section.displayOrder = 10; // Lower priority than sensors
 
-    // Theme selection
-    ConfigItem themeItem(ConfigConstants::Items::THEME, UIStrings::ConfigLabels::THEME, std::string(UIStrings::ThemeNames::DAY),
-                        ConfigMetadata("Day,Night", ConfigItemType::Selection));
+    section.AddItem(themeConfig_);
+    section.AddItem(brightnessConfig_);
 
-    // Brightness setting (future feature)
-    ConfigItem brightnessItem(ConfigConstants::Items::BRIGHTNESS, UIStrings::ConfigLabels::BRIGHTNESS, ConfigConstants::Defaults::DEFAULT_BRIGHTNESS,
-                             ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%", ConfigItemType::Selection));
-
-    section.AddItem(themeItem);
-    section.AddItem(brightnessItem);
-
-    preferenceService_->RegisterConfigSection(section);
+    preferenceService->RegisterConfigSection(section);
     log_i("StyleManager configuration registered");
 }
 
@@ -340,7 +332,7 @@ void StyleManager::LoadConfiguration()
     if (!preferenceService_) return;
 
     // Register configuration first
-    RegisterConfiguration();
+    RegisterConfig(preferenceService_);
 
     // Load theme using type-safe config system
     if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {

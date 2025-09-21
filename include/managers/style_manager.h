@@ -2,9 +2,11 @@
 
 #include "interfaces/i_style_service.h"
 #include "interfaces/i_preference_service.h"
+#include "interfaces/i_config.h"
 #include "definitions/styles.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
+#include "definitions/configs.h"
 
 #include <lvgl.h>
 #include <memory>
@@ -61,7 +63,7 @@
  * Components get their styles from here to ensure consistency. The night
  * theme uses red accents while day theme uses white/neutral colors.
  */
-class StyleManager : public IStyleService
+class StyleManager : public IStyleService, public IConfig
 {
 public:
     // ========== Constructors and Destructor ==========
@@ -147,7 +149,8 @@ public:
 
     void LoadConfiguration();
 
-    void RegisterConfiguration();
+    // IConfig implementation
+    void RegisterConfig(IPreferenceService* preferenceService) override;
 
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER_LOWER;
@@ -157,6 +160,14 @@ public:
 private:
     // ========== Private Methods ==========
     void ResetStyles();
+
+    // ========== Configuration Items (inline definitions) ==========
+    inline static Config::ConfigItem themeConfig_{ConfigConstants::Items::THEME, UIStrings::ConfigLabels::THEME,
+                                                   std::string(UIStrings::ThemeNames::DAY),
+                                                   Config::ConfigMetadata("Day,Night", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem brightnessConfig_{ConfigConstants::Items::BRIGHTNESS, UIStrings::ConfigLabels::BRIGHTNESS,
+                                                        ConfigConstants::Defaults::DEFAULT_BRIGHTNESS,
+                                                        Config::ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%", Config::ConfigItemType::Selection)};
 
     // ========== Private Data Members ==========
     std::string theme_ = Themes::NIGHT;
