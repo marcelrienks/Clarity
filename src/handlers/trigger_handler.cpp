@@ -218,11 +218,18 @@ void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
  *
  * Deactivation Flow with Type-Based Restoration (as per interrupt-architecture.md).
  * Marks trigger as inactive and either restores same-type trigger or calls deactivate function.
+ * For one-shot triggers (deactivateFunc = nullptr), simply marks inactive with no further action.
  */
 void TriggerHandler::HandleTriggerDeactivation(Trigger& trigger) {
     // Mark this trigger as inactive and update priority state
     trigger.isActive = false;
     UpdatePriorityState(trigger.priority, false);
+
+    // Skip deactivation processing for one-shot triggers (nullptr deactivateFunc)
+    if (!trigger.deactivateFunc) {
+        log_t("Trigger '%s' deactivated - one-shot trigger, no restoration needed", trigger.id);
+        return;
+    }
 
     // Find highest priority active trigger of same type
     Trigger* sameTypeTrigger = FindHighestPrioritySameType(trigger.type);

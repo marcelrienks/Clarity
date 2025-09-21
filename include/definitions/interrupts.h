@@ -123,10 +123,7 @@ inline std::vector<Trigger> GetSystemTriggers(
                 log_t("Debug error generation not available in release build");
 #endif
             },
-            .deactivateFunc = []() { 
-                // No-op: Push button doesn't have deactivation, no restoration needed
-                log_t("ErrorDeactivate() - No action needed for push button");
-            },
+            .deactivateFunc = nullptr,  // No deactivate - one-shot button press only
             .sensor = errorSensor,
             .isActive = false
         });
