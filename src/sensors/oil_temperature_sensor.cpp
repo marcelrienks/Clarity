@@ -1,9 +1,12 @@
 #include "sensors/oil_temperature_sensor.h"
 #include "managers/error_manager.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
 #include "utilities/logging.h"
+#include "definitions/constants.h"
+#include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
+#include <algorithm>
 
 // Constructors and Destructors
 
@@ -21,7 +24,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
 {
     log_v("OilTemperatureSensor() constructor called");
     // Set default unit to Celsius
-    targetUnit_ = "C";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -40,7 +43,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPrefere
 {
     log_v("OilTemperatureSensor() constructor with preference service called");
     // Set default unit to Celsius
-    targetUnit_ = "C";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -69,7 +72,7 @@ void OilTemperatureSensor::Init()
 
         // Register this sensor's configuration section with the preference service
         // This enables self-registration per docs/plans/dynamic-config-implementation.md
-        RegisterConfiguration();
+        RegisterConfig(preferenceService_);
 
         // Set up live callbacks to respond to configuration changes
         RegisterLiveUpdateCallbacks();
@@ -91,7 +94,7 @@ void OilTemperatureSensor::Init()
 std::vector<std::string> OilTemperatureSensor::GetSupportedUnits() const
 {
     log_v("GetSupportedUnits() called");
-    return {"C", "F"};
+    return {ConfigConstants::Units::CELSIUS, ConfigConstants::Units::FAHRENHEIT};
 }
 
 /**
@@ -108,12 +111,12 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
     log_v("SetTargetUnit() called");
     // Validate unit is supported
     auto supportedUnits = GetSupportedUnits();
-    if (!SensorHelper::IsUnitSupported(unit, supportedUnits))
+    if (std::find(supportedUnits.begin(), supportedUnits.end(), unit) == supportedUnits.end())
     {
         // Use static string to avoid allocation in error path
         static const char* errorMsg = "Unsupported temperature unit requested. Using default C.";
         ErrorManager::Instance().ReportError(ErrorLevel::WARNING, "OilTemperatureSensor", errorMsg);
-        targetUnit_ = "C";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     }
     else
     {
@@ -134,13 +137,13 @@ void OilTemperatureSensor::SetTargetUnit(const std::string &unit)
 Reading OilTemperatureSensor::GetReading()
 {
     // Check if enough time has passed for update
-    if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
+    if (ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
         // Read raw value from ADC
         int32_t rawValue = ReadRawValue();
 
         // Validate ADC reading
-        if (!SensorHelper::IsValidAdcReading(rawValue))
+        if (!IsValidAdcReading(rawValue))
         {
             // Use char buffer to avoid std::to_string allocation in error path
             static char errorBuffer[64];
@@ -202,8 +205,8 @@ int32_t OilTemperatureSensor::ReadRawValue()
  *
  * Applies calibration scale and offset to the raw ADC reading, then converts
  * to the requested temperature unit. The base calibration maps 0-4095 ADC to
- * 0-120°C. Supports conversion to Fahrenheit (32-248°F) and Celsius (0-120°C)
- * temperature ranges for automotive applications.
+ * 0-120°C. All values are stored internally as Celsius and converted to the
+ * requested unit for display.
  */
 int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
 {
@@ -211,25 +214,19 @@ int32_t OilTemperatureSensor::ConvertReading(int32_t rawValue)
     float calibratedValue = static_cast<float>(rawValue);
     calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
 
-    // Convert calibrated ADC value to requested temperature unit
+    // Convert calibrated ADC value to Celsius (base unit)
     // Base calibration: 0-4095 ADC = 0-120°C
-    int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
+    float celsiusValue = (calibratedValue * SensorConstants::TEMPERATURE_MAX_CELSIUS) / ADC_MAX_VALUE;
 
-    if (targetUnit_ == "F")
+    // Convert from base unit (Celsius) to target unit
+    if (targetUnit_ == ConfigConstants::Units::FAHRENHEIT)
     {
-        // Direct conversion to Fahrenheit
-        // ADC 0-4095 maps to 32-248°F (0-120°C converted)
-        // Formula: F = (rawValue * (248-32) / 4095) + 32
-        return (calibratedRaw *
-                (SensorConstants::TEMPERATURE_MAX_FAHRENHEIT - SensorConstants::TEMPERATURE_MIN_FAHRENHEIT)) /
-                   SensorHelper::ADC_MAX_VALUE +
-               SensorConstants::TEMPERATURE_MIN_FAHRENHEIT;
+        return static_cast<int32_t>(UnitConverter::CelsiusToFahrenheit(celsiusValue));
     }
     else
     {
-        // Direct conversion to Celsius (default)
-        // ADC 0-4095 maps to 0-120°C
-        return (calibratedRaw * SensorConstants::TEMPERATURE_MAX_CELSIUS) / SensorHelper::ADC_MAX_VALUE;
+        // Already in Celsius
+        return static_cast<int32_t>(celsiusValue);
     }
 }
 
@@ -265,7 +262,7 @@ void OilTemperatureSensor::LoadConfiguration()
     if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
         targetUnit_ = *unitValue;
     } else {
-        targetUnit_ = "C";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     }
 
     if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
@@ -298,34 +295,22 @@ void OilTemperatureSensor::LoadConfiguration()
  */
 /// - Update rate options
 /// - Calibration parameters with validation ranges
-void OilTemperatureSensor::RegisterConfiguration()
+void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
 {
-    if (!preferenceService_) return;
+    if (!preferenceService) return;
 
     using namespace Config;
 
     // Create configuration section for this sensor component
-    ConfigSection section("OilTemperatureSensor", CONFIG_SECTION, "Oil Temperature Sensor");
-    section.displayOrder = 3; // Controls UI ordering in config menus
+    ConfigSection section(ConfigConstants::Sections::OIL_TEMPERATURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_TEMPERATURE_SENSOR);
 
-    // Temperature unit selection - enum with C/F options
-    section.AddItem(ConfigItem("unit", "Temperature Unit", std::string("C"),
-        ConfigMetadata("C,F", ConfigItemType::Selection)));
-
-    // Update rate - predefined options for sensor reading frequency
-    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", 500,
-        ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
-
-    // Calibration offset - float with selectable values
-    section.AddItem(ConfigItem("offset", "Calibration Offset", 0.0f,
-        ConfigMetadata("-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0", ConfigItemType::Selection)));
-
-    // Calibration scale - float with selectable values
-    section.AddItem(ConfigItem("scale", "Calibration Scale", 1.0f,
-        ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
+    section.AddItem(unitConfig_);
+    section.AddItem(updateRateConfig_);
+    section.AddItem(offsetConfig_);
+    section.AddItem(scaleConfig_);
 
     // Register with preference service for persistence and UI generation
-    preferenceService_->RegisterConfigSection(section);
+    preferenceService->RegisterConfigSection(section);
     log_i("Registered oil temperature sensor configuration");
 }
 

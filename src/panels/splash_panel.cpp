@@ -3,7 +3,7 @@
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include "utilities/logging.h"
 #include <algorithm>
 #include <esp32-hal-log.h>
@@ -143,7 +143,7 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     }
 
     // Create a timer for the callback
-    lv_timer_create(SplashPanel::display_timer_callback, _DISPLAY_TIME, panel);
+    lv_timer_create(SplashPanel::display_timer_callback, TimingConstants::Splash::DISPLAY_TIME_MS, panel);
 
     // Remove the fade_in_timer after transition
     lv_timer_del(fadeInTimer);
@@ -172,7 +172,7 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     lv_screen_load_anim(panel->blankScreen_, LV_SCR_LOAD_ANIM_FADE_OUT, panel->GetAnimationTime(), 0, false);
 
     // Schedule the fade-out animation
-    lv_timer_create(SplashPanel::fade_out_timer_callback, panel->GetAnimationTime() + _DELAY_TIME,
+    lv_timer_create(SplashPanel::fade_out_timer_callback, panel->GetAnimationTime() + TimingConstants::Splash::DELAY_TIME_MS,
                     panel); // NOTE: the delay time is essential, to give LVGL and the code time to cleanup, else memory
                             // becomes corrupted
 
@@ -248,12 +248,11 @@ void SplashPanel::RegisterConfiguration()
 
     using namespace Config;
 
-    ConfigSection section("SplashPanel", CONFIG_SECTION, "Splash Screen");
-    section.displayOrder = 20; // Lower priority than core systems
+    ConfigSection section(ConfigConstants::Sections::SPLASH_PANEL, CONFIG_SECTION, TimingConstants::Splash::SECTION_DISPLAY_NAME);
 
     // Splash duration selection (show_splash is managed by system settings)
-    ConfigItem durationItem("duration", "Duration", std::string("1500"),
-                           ConfigMetadata("1500,1750,2000,2500", "ms", ConfigItemType::Selection));
+    ConfigItem durationItem(ConfigConstants::Items::DURATION, TimingConstants::Splash::DURATION_LABEL, std::string(TimingConstants::Splash::DEFAULT_DURATION),
+                           ConfigMetadata(TimingConstants::Splash::DURATION_OPTIONS, TimingConstants::Splash::DURATION_UNIT, ConfigItemType::Selection));
 
     section.AddItem(durationItem);
 
@@ -274,14 +273,14 @@ int SplashPanel::GetAnimationTime() const
     log_v("GetAnimationTime() called");
 
     // Get splash duration using type-safe config system
-    int splashDuration = 1500; // Default value
+    int splashDuration = std::stoi(TimingConstants::Splash::DEFAULT_DURATION); // Default value
     if (preferenceService_) {
         if (auto durationValue = preferenceService_->QueryConfig<std::string>(CONFIG_DURATION)) {
             splashDuration = std::stoi(*durationValue);
         }
     }
 
-    int animTime = (splashDuration - _DISPLAY_TIME) / 2;
+    int animTime = (splashDuration - TimingConstants::Splash::DISPLAY_TIME_MS) / 2;
 
     return animTime;
 }

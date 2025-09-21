@@ -1,9 +1,12 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "managers/error_manager.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
 #include "utilities/logging.h"
+#include "definitions/constants.h"
+#include "utilities/unit_converter.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
+#include <algorithm>
 
 // Constructors and Destructors
 
@@ -21,7 +24,7 @@ OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, int updateRate
 {
     log_v("OilPressureSensor() constructor called");
     // Set default unit to Bar
-    targetUnit_ = "Bar";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -40,7 +43,7 @@ OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceSer
 {
     log_v("OilPressureSensor() constructor with preference service called");
     // Set default unit to Bar
-    targetUnit_ = "Bar";
+    targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     currentReading_ = 0;
 }
 
@@ -68,7 +71,7 @@ void OilPressureSensor::Init()
         LoadConfiguration();
 
         // Use unified preference service interface for dynamic configuration
-        RegisterConfiguration();
+        RegisterConfig(preferenceService_);
         RegisterLiveUpdateCallbacks();
         log_i("OilPressureSensor registered with dynamic config system");
     }
@@ -89,7 +92,7 @@ void OilPressureSensor::Init()
 std::vector<std::string> OilPressureSensor::GetSupportedUnits() const
 {
     log_v("GetSupportedUnits() called");
-    return {"Bar", "PSI", "kPa"};
+    return {ConfigConstants::Units::BAR_UPPER, ConfigConstants::Units::PSI_UPPER, ConfigConstants::Units::KPA_UPPER};
 }
 
 /**
@@ -106,12 +109,12 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
     log_v("SetTargetUnit() called");
     // Validate unit is supported
     auto supportedUnits = GetSupportedUnits();
-    if (!SensorHelper::IsUnitSupported(unit, supportedUnits))
+    if (std::find(supportedUnits.begin(), supportedUnits.end(), unit) == supportedUnits.end())
     {
         // Use static string to avoid allocation in error path
         static const char* errorMsg = "Unsupported pressure unit requested. Using default Bar.";
         ErrorManager::Instance().ReportError(ErrorLevel::WARNING, "OilPressureSensor", errorMsg);
-        targetUnit_ = "Bar";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     }
     else
     {
@@ -132,13 +135,13 @@ void OilPressureSensor::SetTargetUnit(const std::string &unit)
 Reading OilPressureSensor::GetReading()
 {
     // Check if enough time has passed for update
-    if (SensorHelper::ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
+    if (ShouldUpdate(lastUpdateTime_, updateIntervalMs_))
     {
         // Read raw value from ADC
         int32_t rawValue = ReadRawValue();
 
         // Validate ADC reading
-        if (!SensorHelper::IsValidAdcReading(rawValue))
+        if (!IsValidAdcReading(rawValue))
         {
             // Use char buffer to avoid std::to_string allocation in error path
             static char errorBuffer[64];
@@ -200,8 +203,8 @@ int32_t OilPressureSensor::ReadRawValue()
  *
  * Applies calibration scale and offset to the raw ADC reading, then converts
  * to the requested pressure unit. The base calibration maps 0-4095 ADC to
- * 0-10 Bar. Supports conversion to PSI (0-145), kPa (0-1000), and Bar (0-10)
- * pressure ranges for automotive applications.
+ * 0-10 Bar. All values are stored internally as Bar and converted to the
+ * requested unit for display.
  */
 int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
 {
@@ -209,24 +212,23 @@ int32_t OilPressureSensor::ConvertReading(int32_t rawValue)
     float calibratedValue = static_cast<float>(rawValue);
     calibratedValue = (calibratedValue * calibrationScale_) + calibrationOffset_;
 
-    // Convert calibrated ADC value to requested pressure unit
+    // Convert calibrated ADC value to Bar (base unit)
     // Base calibration: 0-4095 ADC = 0-10 Bar
-    int32_t calibratedRaw = static_cast<int32_t>(calibratedValue);
+    float barValue = (calibratedValue * SensorConstants::PRESSURE_MAX_BAR) / ADC_MAX_VALUE;
 
-    if (targetUnit_ == "PSI")
+    // Convert from base unit (Bar) to target unit
+    if (targetUnit_ == ConfigConstants::Units::PSI_UPPER)
     {
-        // Map 0-4095 ADC to 0-145 PSI (0-10 Bar equivalent)
-        return (calibratedRaw * SensorConstants::PRESSURE_MAX_PSI) / SensorHelper::ADC_MAX_VALUE;
+        return static_cast<int32_t>(UnitConverter::BarToPsi(barValue));
     }
-    else if (targetUnit_ == "kPa")
+    else if (targetUnit_ == ConfigConstants::Units::KPA_UPPER)
     {
-        // Map 0-4095 ADC to 0-1000 kPa (0-10 Bar equivalent)
-        return (calibratedRaw * SensorConstants::PRESSURE_MAX_KPA) / SensorHelper::ADC_MAX_VALUE;
+        return static_cast<int32_t>(UnitConverter::BarToKpa(barValue));
     }
     else
     {
-        // Default Bar mapping: 0-4095 ADC to 0-10 Bar
-        return (calibratedRaw * SensorConstants::PRESSURE_MAX_BAR) / SensorHelper::ADC_MAX_VALUE;
+        // Already in Bar
+        return static_cast<int32_t>(barValue);
     }
 }
 
@@ -263,7 +265,7 @@ void OilPressureSensor::LoadConfiguration()
     if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
         targetUnit_ = *unitValue;
     } else {
-        targetUnit_ = "Bar";
+        targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     }
 
     if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
@@ -296,32 +298,20 @@ void OilPressureSensor::LoadConfiguration()
  * Creates a configuration section that appears in the dynamic UI for
  * real-time sensor adjustment and calibration.
  */
-void OilPressureSensor::RegisterConfiguration()
+void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
 {
-    if (!preferenceService_) return;
+    if (!preferenceService) return;
 
     using namespace Config;
 
-    ConfigSection section("OilPressureSensor", CONFIG_SECTION, "Oil Pressure Sensor");
-    section.displayOrder = 2;
+    ConfigSection section(ConfigConstants::Sections::OIL_PRESSURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_PRESSURE_SENSOR);
 
-    // Pressure unit selection
-    section.AddItem(ConfigItem("unit", "Pressure Unit", std::string("Bar"),
-        ConfigMetadata("PSI,Bar,kPa", ConfigItemType::Selection)));
+    section.AddItem(unitConfig_);
+    section.AddItem(updateRateConfig_);
+    section.AddItem(offsetConfig_);
+    section.AddItem(scaleConfig_);
 
-    // Update rate
-    section.AddItem(ConfigItem("update_rate", "Update Rate (ms)", 500,
-        ConfigMetadata("250,500,1000,2000", ConfigItemType::Selection)));
-
-    // Calibration offset
-    section.AddItem(ConfigItem("offset", "Calibration Offset", 0.0f,
-        ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0", ConfigItemType::Selection)));
-
-    // Calibration scale
-    section.AddItem(ConfigItem("scale", "Calibration Scale", 1.0f,
-        ConfigMetadata("0.9,0.95,1.0,1.05,1.1", ConfigItemType::Selection)));
-
-    preferenceService_->RegisterConfigSection(section);
+    preferenceService->RegisterConfigSection(section);
     log_i("Registered oil pressure sensor configuration");
 }
 

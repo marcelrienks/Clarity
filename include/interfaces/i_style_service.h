@@ -4,8 +4,8 @@
 #include <lvgl.h>
 
 // Project Includes
-#include "utilities/styles.h"
-#include "utilities/types.h"
+#include "definitions/styles.h"
+#include "definitions/types.h"
 
 /**
  * @interface IStyleService

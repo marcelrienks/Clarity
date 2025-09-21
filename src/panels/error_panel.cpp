@@ -5,6 +5,7 @@
 #include "managers/style_manager.h"
 #include "managers/panel_manager.h"
 #include "utilities/logging.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <algorithm>
 
@@ -137,7 +138,7 @@ void ErrorPanel::Load()
     // Ensure ERROR theme is applied when panel is loaded
     if (styleService_)
     {
-        styleService_->SetTheme(Themes::ERROR);
+        styleService_->SetTheme(UIStrings::ThemeNames::ERROR);
         styleService_->ApplyThemeToScreen(screen_);
     }
 

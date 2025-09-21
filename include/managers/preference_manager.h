@@ -1,7 +1,8 @@
 #pragma once
 
 #include "interfaces/i_preference_service.h"
-#include "config/config_types.h"
+#include "definitions/configs.h"
+#include "definitions/constants.h"
 
 #include <ArduinoJson.h>
 #include <Preferences.h>
@@ -131,11 +132,11 @@ protected:
 
 private:
     // ========== Private Data Members ==========
-    static inline const char* CONFIG_KEY_ = "config";                 ///< Legacy config key
-    static inline const char* META_NAMESPACE_ = "config_meta";        ///< Metadata namespace
-    static inline const char* SECTION_PREFIX_ = "cfg_";              ///< Prefix for section namespaces
-    static inline const char* MIGRATION_FLAG_ = "migration_v1";      ///< Migration completion flag
-    static inline const int MAX_NAMESPACE_LEN_ = 15;                 ///< NVS namespace length limit
+    static inline const char* CONFIG_KEY_ = StorageConstants::NVS::CONFIG_KEY;                 ///< Legacy config key
+    static inline const char* META_NAMESPACE_ = StorageConstants::NVS::META_NAMESPACE;        ///< Metadata namespace
+    static inline const char* SECTION_PREFIX_ = StorageConstants::NVS::SECTION_PREFIX;              ///< Prefix for section namespaces
+    static inline const char* MIGRATION_FLAG_ = StorageConstants::NVS::MIGRATION_FLAG;      ///< Migration completion flag
+    static inline const int MAX_NAMESPACE_LEN_ = StorageConstants::NVS::MAX_NAMESPACE_LEN;                 ///< NVS namespace length limit
 
     mutable SemaphoreHandle_t configMutex_;                         ///< Thread safety semaphore
     std::map<std::string, Config::ConfigSection> registeredSections_; ///< Registered configuration sections

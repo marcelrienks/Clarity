@@ -1,9 +1,10 @@
 #pragma once
 
 #include "interfaces/i_sensor.h"
-#include "utilities/types.h"
-#include "utilities/constants.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
 #include <functional>
+#include <Arduino.h>
 
 #include "esp32-hal-log.h"
 
@@ -77,11 +78,31 @@ protected:
             initialized_ = true;
             return false; // No change on first read
         }
-        
+
         bool changed = (currentValue != previousValue);
         previousValue = currentValue;
         return changed;
     }
+
+    bool ShouldUpdate(unsigned long &lastUpdateTime, unsigned long updateIntervalMs)
+    {
+        unsigned long currentTime = millis();
+        if (currentTime - lastUpdateTime >= updateIntervalMs)
+        {
+            lastUpdateTime = currentTime;
+            return true;
+        }
+        return false;
+    }
+
+    bool IsValidAdcReading(int32_t rawValue)
+    {
+        return rawValue >= 0 && rawValue <= ADC_MAX_VALUE;
+    }
+
+    // ========== Protected Constants ==========
+    static constexpr int32_t ADC_MAX_VALUE = 4095; // 12-bit ADC
+    static constexpr float SUPPLY_VOLTAGE = 3.3f;  // ESP32 3.3V supply
 
     // ========== Protected Data Members ==========
     bool initialized_ = false; ///< Initialization flag for first-read handling

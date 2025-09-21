@@ -21,18 +21,20 @@
  * coordinating system services.
  */
 
-// Macros/Defines
+// ========== Macros/Defines ==========
 #define UI_VERSION "4.1.0"
 
-// System/Library Includes
+// ========== System/Library Includes ==========
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
 
-// Project Includes
+// ========== Project Includes ==========
 #include "utilities/ticker.h"
+#include "definitions/configs.h"
+#include "definitions/constants.h"
 #include <memory>
 
-// Forward declarations
+// ========== Forward Declarations ==========
 class IProviderFactory;
 class ManagerFactory;
 class DeviceProvider;
@@ -44,6 +46,7 @@ class PanelManager;
 class InterruptManager;
 class ErrorManager;
 
+// ========== Global Variables ==========
 // Global factories - dual factory pattern implementation
 extern std::unique_ptr<IProviderFactory> providerFactory;
 extern std::unique_ptr<ManagerFactory> managerFactory;
@@ -60,4 +63,17 @@ extern std::unique_ptr<PanelManager> panelManager;
 extern InterruptManager *interruptManager;
 extern ErrorManager *errorManager;
 
-// Function declarations
+// ========== System Configuration Items ==========
+// Inline definitions (C++17) - global scope configuration
+inline Config::ConfigItem defaultPanelConfig(ConfigConstants::Items::DEFAULT_PANEL, UIStrings::ConfigLabels::DEFAULT_PANEL,
+                                             std::string(ConfigConstants::Panels::OEM_OIL_PANEL),
+                                             Config::ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", Config::ConfigItemType::Selection));
+
+inline Config::ConfigItem updateRateConfig(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE,
+                                           500, Config::ConfigMetadata("100,250,500,750,1000,1500,2000", ConfigConstants::Units::MILLISECONDS, Config::ConfigItemType::Selection));
+
+inline Config::ConfigItem showSplashConfig(ConfigConstants::Items::SHOW_SPLASH, UIStrings::ConfigLabels::SHOW_SPLASH,
+                                           true, Config::ConfigMetadata());
+
+// ========== Function Declarations ==========
+void registerSystemConfiguration();

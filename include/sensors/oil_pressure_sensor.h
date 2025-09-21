@@ -8,9 +8,11 @@
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_preference_service.h"
+#include "interfaces/i_config.h"
 #include "sensors/base_sensor.h"
-#include "utilities/sensor_helper.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
+#include "definitions/constants.h"
+#include "definitions/configs.h"
 
 /**
  * @class OilPressureSensor
@@ -36,7 +38,7 @@
  * @context This sensor provides pressure readings in the unit requested
  * by the panel, removing unit conversion logic from display components.
  */
-class OilPressureSensor : public BaseSensor
+class OilPressureSensor : public BaseSensor, public IConfig
 {
   public:
     // ========== Constructors and Destructor ==========
@@ -57,16 +59,17 @@ class OilPressureSensor : public BaseSensor
 
     void LoadConfiguration();
 
-    void RegisterConfiguration();
+    // IConfig implementation
+    void RegisterConfig(IPreferenceService* preferenceService) override;
 
     void RegisterLiveUpdateCallbacks();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = "oil_pressure";
-    static constexpr const char* CONFIG_UNIT = "oil_pressure.unit";
-    static constexpr const char* CONFIG_UPDATE_RATE = "oil_pressure.update_rate";
-    static constexpr const char* CONFIG_OFFSET = "oil_pressure.offset";
-    static constexpr const char* CONFIG_SCALE = "oil_pressure.scale";
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE;
+    static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_PRESSURE_UNIT;
+    static constexpr const char* CONFIG_UPDATE_RATE = ConfigConstants::Keys::OIL_PRESSURE_UPDATE_RATE;
+    static constexpr const char* CONFIG_OFFSET = ConfigConstants::Keys::OIL_PRESSURE_OFFSET;
+    static constexpr const char* CONFIG_SCALE = ConfigConstants::Keys::OIL_PRESSURE_SCALE;
 
   protected:
     // ========== Protected Methods ==========
@@ -74,6 +77,20 @@ class OilPressureSensor : public BaseSensor
     int32_t ConvertReading(int32_t rawValue);
 
   private:
+    // ========== Configuration Items (inline definitions) ==========
+    inline static Config::ConfigItem unitConfig_{ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::PRESSURE_UNIT,
+                                                  std::string(ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT),
+                                                  Config::ConfigMetadata("PSI,Bar,kPa", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem updateRateConfig_{ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS,
+                                                        ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
+                                                        Config::ConfigMetadata("250,500,1000,2000", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem offsetConfig_{ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET,
+                                                    ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
+                                                    Config::ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem scaleConfig_{ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE,
+                                                   ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
+                                                   Config::ConfigMetadata("0.9,0.95,1.0,1.05,1.1", Config::ConfigItemType::Selection)};
+
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IPreferenceService *preferenceService_ = nullptr;

@@ -4,7 +4,7 @@
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
 #include "sensors/base_sensor.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 /**
  * @class ButtonSensor

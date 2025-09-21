@@ -1,5 +1,6 @@
 #include "components/clarity_component.h"
 #include "managers/error_manager.h"
+#include "definitions/constants.h"
 #include <esp32-hal-log.h>
 
 // ========== Constructors and Destructor ==========

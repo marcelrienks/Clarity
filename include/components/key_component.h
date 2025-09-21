@@ -2,7 +2,7 @@
 
 #include "interfaces/i_component.h"
 #include "interfaces/i_style_service.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 #include <lvgl.h>
 

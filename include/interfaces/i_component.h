@@ -5,7 +5,7 @@
 
 // Project Includes
 #include "interfaces/i_display_provider.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 
 /**
  * @interface IComponent

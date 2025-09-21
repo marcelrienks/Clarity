@@ -341,7 +341,7 @@ Avoiding std::function to prevent heap fragmentation on ESP32.
 
 **Example: Trigger Functions**
 ```cpp
-// include/utilities/system_definitions.h
+// include/definitions/interrupts.h
 inline std::vector<Trigger> CreateSystemTriggers(...) {
     return {
         {

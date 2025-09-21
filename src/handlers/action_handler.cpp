@@ -3,6 +3,7 @@
 #include "managers/error_manager.h"
 #include "sensors/button_sensor.h"
 #include "hardware/gpio_pins.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -89,8 +90,8 @@ void ActionHandler::SetPendingAction(ButtonAction actionType) {
     hasPendingAction_ = true;
 
     log_i("Set pending action: %s",
-          actionType == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" :
-          actionType == ButtonAction::LONG_PRESS ? "LONG_PRESS" : "NONE");
+          actionType == ButtonAction::SHORT_PRESS ? UIStrings::ButtonActionStrings::SHORT_PRESS :
+          actionType == ButtonAction::LONG_PRESS ? UIStrings::ButtonActionStrings::LONG_PRESS : UIStrings::ButtonActionStrings::NONE);
 }
 
 /**
@@ -123,7 +124,7 @@ void ActionHandler::ExecutePendingAction() {
     }
 
     log_i("ExecutePendingAction: Executing %s press",
-          pendingActionType_ == ButtonAction::SHORT_PRESS ? "SHORT" : "LONG");
+          pendingActionType_ == ButtonAction::SHORT_PRESS ? UIStrings::ButtonActionStrings::SHORT : UIStrings::ButtonActionStrings::LONG);
 
     // Execute through panel methods
     if (pendingActionType_ == ButtonAction::SHORT_PRESS) {
@@ -417,7 +418,7 @@ ButtonAction ActionHandler::DetectButtonAction() {
 
     if (action != ButtonAction::NONE) {
         log_i("DetectButtonAction: ButtonSensor reported action: %s",
-              action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
+              action == ButtonAction::SHORT_PRESS ? UIStrings::ButtonActionStrings::SHORT_PRESS : UIStrings::ButtonActionStrings::LONG_PRESS);
     }
 
     return action;

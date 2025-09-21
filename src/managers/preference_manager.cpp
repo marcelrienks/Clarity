@@ -1,6 +1,7 @@
 #include "managers/preference_manager.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
+#include "definitions/constants.h"
 #include <algorithm>
 #include <sstream>
 
@@ -104,11 +105,26 @@ bool PreferenceManager::RegisterConfigSection(const Config::ConfigSection& secti
  */
 std::vector<std::string> PreferenceManager::GetRegisteredSectionNames() const {
     SemaphoreGuard lock(configMutex_);
-    std::vector<std::string> names;
-    names.reserve(registeredSections_.size());
+
+    // Create vector of pairs (sectionName, displayName) for sorting
+    std::vector<std::pair<std::string, std::string>> sectionPairs;
+    sectionPairs.reserve(registeredSections_.size());
 
     for (const auto& [name, section] : registeredSections_) {
-        names.push_back(name);
+        sectionPairs.emplace_back(name, section.displayName);
+    }
+
+    // Sort alphabetically by displayName
+    std::sort(sectionPairs.begin(), sectionPairs.end(),
+        [](const auto& a, const auto& b) {
+            return a.second < b.second;  // Compare displayName (second element)
+        });
+
+    // Extract sorted section names
+    std::vector<std::string> names;
+    names.reserve(sectionPairs.size());
+    for (const auto& [sectionName, displayName] : sectionPairs) {
+        names.push_back(sectionName);
     }
 
     return names;

@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file types.h
+ * @file definitions/types.h
  * @brief Mutable types, structs, and runtime data containers for the Clarity automotive gauge system
  *
  * @details This header contains all mutable data structures and types that can change
@@ -38,7 +38,95 @@
 #include <vector>
 
 // Project Includes
-#include "utilities/constants.h"
+#include "definitions/constants.h"
+
+//=============================================================================
+// ENUMS AND TYPE DEFINITIONS
+// System-wide enums and fundamental type definitions
+//=============================================================================
+
+/**
+ * @brief Priority levels for triggers and system events
+ */
+enum class Priority {
+    LOW_PRIORITY = 0,
+    NORMAL = 1,
+    IMPORTANT = 2,
+    CRITICAL = 3
+};
+
+/**
+ * @brief Types of triggers in the interrupt system
+ */
+enum class TriggerType {
+    PANEL,  // Panel-related triggers
+    STYLE,  // Style and theme triggers
+    SYSTEM  // System-level triggers
+};
+
+/**
+ * @brief Error severity levels
+ */
+enum class ErrorLevel {
+    WARNING = 0,
+    ERROR = 1,
+    CRITICAL = 2
+};
+
+/**
+ * @brief Button press action types
+ */
+enum class ActionPress {
+    SHORT,
+    LONG
+};
+
+/**
+ * @brief Button action types for action handler
+ */
+enum class ButtonAction {
+    NONE,
+    SHORT_PRESS,
+    LONG_PRESS
+};
+
+/**
+ * @brief UI state for controlling system responsiveness
+ */
+enum class UIState {
+    IDLE,    // UI is idle and can accept new events
+    BUSY,    // UI is busy (animations, loading, etc.)
+    LOADING  // UI is in loading state
+};
+
+/**
+ * @brief Key state for automotive key presence detection
+ */
+enum class KeyState {
+    Present,
+    NotPresent,
+    Inactive
+};
+
+/**
+ * @brief Oil sensor types for animations and callbacks
+ */
+enum class OilSensorTypes {
+    Pressure,
+    Temperature
+};
+
+/**
+ * @brief Convert UIState enum to string for logging
+ */
+inline const char* UIStateToString(UIState state) {
+    switch (state) {
+        case UIState::IDLE: return "IDLE";
+        case UIState::BUSY: return "BUSY";
+        case UIState::LOADING: return "LOADING";
+        default: return "UNKNOWN";
+    }
+}
 
 //=============================================================================
 // CORE TYPES
@@ -157,11 +245,9 @@ struct Trigger
  */
 struct ErrorInfo
 {
-    static constexpr size_t MAX_MESSAGE_LENGTH = 128; ///< Fixed buffer size for embedded optimization
-
     ErrorLevel level;        ///< Severity level of the error
     const char *source;      ///< Component/manager that reported the error
-    char message[MAX_MESSAGE_LENGTH]; ///< Fixed-size error message buffer (optimized for embedded)
+    char message[DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH]; ///< Fixed-size error message buffer (optimized for embedded)
     unsigned long timestamp; ///< millis() timestamp when error occurred
     bool acknowledged;       ///< Whether user has acknowledged the error
 
@@ -172,8 +258,8 @@ struct ErrorInfo
 
     // Helper method to set message safely
     void SetMessage(const std::string& msg) {
-        strncpy(message, msg.c_str(), MAX_MESSAGE_LENGTH - 1);
-        message[MAX_MESSAGE_LENGTH - 1] = '\0'; // Ensure null termination
+        strncpy(message, msg.c_str(), DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH - 1);
+        message[DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH - 1] = '\0'; // Ensure null termination
     }
 };
 

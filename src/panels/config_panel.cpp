@@ -1,8 +1,9 @@
 #include "panels/config_panel.h"
 #include "managers/error_manager.h"
 #include "managers/style_manager.h"
-#include "utilities/types.h"
+#include "definitions/types.h"
 #include "utilities/logging.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 #include <algorithm>
 #include <cstring>
@@ -99,8 +100,8 @@ void ConfigPanel::Load()
         
         // For night theme, override the screen background to use dark red instead of black
         const std::string& theme = styleService_->GetCurrentTheme();
-        if (theme == "Night") {
-            lv_obj_set_style_bg_color(screen_, lv_color_hex(0x1A0000), LV_PART_MAIN); // Very dark red
+        if (theme == UIStrings::ThemeNames::NIGHT) {
+            lv_obj_set_style_bg_color(screen_, lv_color_hex(UIStrings::Colors::NIGHT_BACKGROUND), LV_PART_MAIN); // Very dark red
             lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
         }
     }
@@ -318,13 +319,13 @@ void ConfigPanel::ExecuteMenuAction(const ConfigComponent::MenuItem& item)
 ConfigPanel::MenuActionType ConfigPanel::ParseActionType(const std::string& actionTypeStr) const
 {
     static const std::unordered_map<std::string, MenuActionType> actionTypeMap = {
-        {"enter_section", MenuActionType::ENTER_SECTION},
-        {"toggle_boolean", MenuActionType::TOGGLE_BOOLEAN},
-        {"show_options", MenuActionType::SHOW_OPTIONS},
-        {"set_config_value", MenuActionType::SET_CONFIG_VALUE},
-        {"back", MenuActionType::BACK},
-        {"none", MenuActionType::NONE},
-        {"panel_exit", MenuActionType::PANEL_EXIT}
+        {UIStrings::ActionTypes::ENTER_SECTION, MenuActionType::ENTER_SECTION},
+        {UIStrings::ActionTypes::TOGGLE_BOOLEAN, MenuActionType::TOGGLE_BOOLEAN},
+        {UIStrings::ActionTypes::SHOW_OPTIONS, MenuActionType::SHOW_OPTIONS},
+        {UIStrings::ActionTypes::SET_CONFIG_VALUE, MenuActionType::SET_CONFIG_VALUE},
+        {UIStrings::ActionTypes::BACK, MenuActionType::BACK},
+        {UIStrings::ActionTypes::NONE, MenuActionType::NONE},
+        {UIStrings::ActionTypes::PANEL_EXIT, MenuActionType::PANEL_EXIT}
     };
 
     auto it = actionTypeMap.find(actionTypeStr);
@@ -426,7 +427,7 @@ void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
                 preferenceService_->UpdateConfig(fullKey, newValue);
 
                 // If this was a theme change, update the config component colors
-                if (fullKey == "style_manager.theme") {
+                if (fullKey == UIStrings::ConfigKeys::STYLE_MANAGER_THEME) {
                     configComponent_.UpdateThemeColors();
                 }
 
@@ -510,18 +511,18 @@ void ConfigPanel::BuildDynamicMenus()
         if (auto section = preferenceService_->GetConfigSection(sectionName)) {
             ConfigComponent::MenuItem item;
             item.label = section->displayName;
-            item.actionType = "enter_section";
+            item.actionType = UIStrings::ActionTypes::ENTER_SECTION;
             item.actionParam = sectionName;
             menuItems_.push_back(item);
         }
     }
 
     // Add exit option
-    menuItems_.push_back({"Exit", "panel_exit", ""});
+    menuItems_.push_back({UIStrings::MenuLabels::EXIT, UIStrings::ActionTypes::PANEL_EXIT, ""});
 
     // Update component
     if (componentInitialized_) {
-        configComponent_.SetTitle("Configuration");
+        configComponent_.SetTitle(UIStrings::MenuLabels::CONFIGURATION);
         configComponent_.SetMenuItems(menuItems_);
         configComponent_.SetCurrentIndex(0);
     }
@@ -560,16 +561,16 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
 
         // For booleans, use direct toggle. For everything else, show options
         if (std::holds_alternative<bool>(item.value)) {
-            menuItem.actionType = "toggle_boolean";
+            menuItem.actionType = UIStrings::ActionTypes::TOGGLE_BOOLEAN;
         } else {
-            menuItem.actionType = "show_options";
+            menuItem.actionType = UIStrings::ActionTypes::SHOW_OPTIONS;
         }
         menuItem.actionParam = fullKey;
         menuItems_.push_back(menuItem);
     }
 
     // Add back option
-    menuItems_.push_back({"Back", "back", ""});
+    menuItems_.push_back({UIStrings::MenuLabels::BACK, UIStrings::ActionTypes::BACK, ""});
 
     // Update component
     if (componentInitialized_) {
@@ -626,7 +627,7 @@ void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::Conf
     }
 
     // Add back option
-    menuItems_.push_back({"Back", "back", ""});
+    menuItems_.push_back({UIStrings::MenuLabels::BACK, UIStrings::ActionTypes::BACK, ""});
 
     // Update component
     if (componentInitialized_) {
@@ -768,9 +769,9 @@ void ConfigPanel::ShowStringOptionsMenu(const std::string& fullKey, const Config
 {
     // For string types without options, just show current value
     ConfigComponent::MenuItem currentItem;
-    currentItem.label = "Current: " + Config::ConfigValueHelper::ToString(item.value);
-    currentItem.actionType = "none";
-    currentItem.actionParam = "";
+    currentItem.label = UIStrings::ConfigUI::CURRENT_LABEL_PREFIX + Config::ConfigValueHelper::ToString(item.value);
+    currentItem.actionType = UIStrings::ConfigUI::ACTION_TYPE_NONE;
+    currentItem.actionParam = UIStrings::ConfigUI::EMPTY_PARAM;
     menuItems_.push_back(currentItem);
 }
 
@@ -791,12 +792,12 @@ ConfigComponent::MenuItem ConfigPanel::CreateMenuItemWithSelection(const std::st
 
     // Show marker for current selection
     if (isSelected) {
-        menuItem.label = "> " + label;
+        menuItem.label = UIStrings::ConfigUI::SELECTED_MENU_PREFIX + label;
     } else {
-        menuItem.label = "  " + label;
+        menuItem.label = UIStrings::ConfigUI::UNSELECTED_MENU_PREFIX + label;
     }
 
-    menuItem.actionType = "set_config_value";
+    menuItem.actionType = UIStrings::ActionTypes::SET_CONFIG_VALUE;
     menuItem.actionParam = fullKey + ":" + value;
 
     return menuItem;
@@ -910,7 +911,7 @@ std::string ConfigPanel::FormatNumericValue(float value, const Config::ConfigIte
 
     // Add units if specified
     if (!item.metadata.unit.empty()) {
-        valueStr += " " + item.metadata.unit;
+        valueStr += UIStrings::ConfigUI::UNIT_SEPARATOR + item.metadata.unit;
     }
 
     return valueStr;

@@ -1,6 +1,6 @@
 #include "panels/base_panel.h"
 #include "managers/error_manager.h"
-#include "utilities/constants.h"
+#include "definitions/constants.h"
 #include "utilities/logging.h"
 #include <Arduino.h>
 
