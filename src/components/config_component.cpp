@@ -231,7 +231,7 @@ void ConfigComponent::UpdateThemeColors()
 
     
     const std::string& theme = styleService_->GetCurrentTheme();
-    bool isNightTheme = (theme == UIStrings::ThemeNames::NIGHT);
+    bool isNightTheme = (theme == Themes::NIGHT);
     
     // Update container background
     if (container_) {
@@ -290,7 +290,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     if (isSelected)
     {
         // Selected item color based on theme
-        if (theme == UIStrings::ThemeNames::NIGHT)
+        if (theme == Themes::NIGHT)
         {
             return lv_color_hex(Colors::NIGHT_SELECTED_ITEM); // Bright red for selected item in night theme
         }
@@ -301,7 +301,7 @@ lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool i
     }
     
     // Create gradient based on theme
-    if (theme == UIStrings::ThemeNames::NIGHT)
+    if (theme == Themes::NIGHT)
     {
         // Night theme - shades of red based on distance
         uint32_t baseColor = Colors::NIGHT_BASE_COLOR; // Deep red from night theme
@@ -531,7 +531,7 @@ void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
     }
 
     const std::string& theme = styleService_->GetCurrentTheme();
-    if (theme == UIStrings::ThemeNames::NIGHT)
+    if (theme == Themes::NIGHT)
     {
         lv_obj_set_style_bg_color(label, lv_color_hex(Colors::NIGHT_SELECTED_BG), LV_PART_MAIN);
         lv_obj_set_style_border_color(label, lv_color_hex(Colors::NIGHT_SELECTED_BORDER), LV_PART_MAIN);

@@ -69,12 +69,6 @@ namespace UIConstants {
 
 namespace UIStrings {
 
-    // ========== Theme Names ==========
-    namespace ThemeNames {
-        static constexpr const char* DAY = "Day";
-        static constexpr const char* NIGHT = "Night";
-        static constexpr const char* ERROR = "Error";
-    }
 
     // ========== Config Panel Action Types ==========
     namespace ActionTypes {

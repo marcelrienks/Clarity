@@ -166,7 +166,7 @@ private:
 
     // ========== Configuration Items (inline definitions) ==========
     inline static Config::ConfigItem themeConfig_{ConfigConstants::Items::THEME, UIStrings::ConfigLabels::THEME,
-                                                   std::string(UIStrings::ThemeNames::DAY),
+                                                   std::string(Themes::DAY),
                                                    Config::ConfigMetadata("Day,Night", Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem brightnessConfig_{ConfigConstants::Items::BRIGHTNESS, UIStrings::ConfigLabels::BRIGHTNESS,
                                                         ConfigConstants::Defaults::DEFAULT_BRIGHTNESS,

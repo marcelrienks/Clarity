@@ -145,7 +145,7 @@ bool initializeServices()
     }
 
     // Initialize StyleManager with user's theme preference
-    std::string userTheme = UIStrings::ThemeNames::DAY; // Default
+    std::string userTheme = Themes::DAY; // Default
     if (auto themeValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
         userTheme = *themeValue;
     }

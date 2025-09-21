@@ -208,7 +208,7 @@ void StyleManager::ApplyCurrentTheme()
     }
 
     // Read theme using type-safe config system
-    std::string preferenceTheme = UIStrings::ThemeNames::DAY; // Default
+    std::string preferenceTheme = Themes::DAY; // Default
     if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
         preferenceTheme = *themeValue;
     }
@@ -257,7 +257,7 @@ const std::string& StyleManager::GetCurrentTheme() const
         if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
             currentTheme = *themeValue;
         } else {
-            currentTheme = UIStrings::ThemeNames::DAY;
+            currentTheme = Themes::DAY;
         }
         return currentTheme;
     }
@@ -369,7 +369,7 @@ void StyleManager::LoadConfiguration()
     if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
         SetTheme(themeValue->c_str());
     } else {
-        SetTheme(UIStrings::ThemeNames::DAY); // Default theme
+        SetTheme(Themes::DAY); // Default theme
     }
 
     log_i("Loaded style configuration: theme=%s", theme_.c_str());

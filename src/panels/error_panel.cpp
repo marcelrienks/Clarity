@@ -138,7 +138,7 @@ void ErrorPanel::Load()
     // Ensure ERROR theme is applied when panel is loaded
     if (styleService_)
     {
-        styleService_->SetTheme(UIStrings::ThemeNames::ERROR);
+        styleService_->SetTheme(Themes::ERROR);
         styleService_->ApplyThemeToScreen(screen_);
     }
 

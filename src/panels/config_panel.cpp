@@ -101,7 +101,7 @@ void ConfigPanel::Load()
         
         // For night theme, override the screen background to use dark red instead of black
         const std::string& theme = styleService_->GetCurrentTheme();
-        if (theme == UIStrings::ThemeNames::NIGHT) {
+        if (theme == Themes::NIGHT) {
             lv_obj_set_style_bg_color(screen_, lv_color_hex(Colors::NIGHT_BACKGROUND), LV_PART_MAIN); // Very dark red
             lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
         }
