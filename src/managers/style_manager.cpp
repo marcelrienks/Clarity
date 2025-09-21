@@ -332,7 +332,7 @@ void StyleManager::RegisterConfigSchema(IPreferenceService* preferenceService)
 
     using namespace Config;
 
-    ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, UIStrings::MenuLabels::DISPLAY_MENU);
+    ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, ConfigConstants::SectionNames::STYLE_MANAGER);
 
     section.AddItem(themeConfig_);
     section.AddItem(brightnessConfig_);

@@ -97,7 +97,6 @@ namespace UIStrings {
         static constexpr const char* EXIT = "Exit";
         static constexpr const char* BACK = "Back";
         static constexpr const char* CONFIGURATION = "Configuration";
-        static constexpr const char* DISPLAY_MENU = "Display";
     }
 
     // ========== Configuration Keys ==========
@@ -307,7 +306,6 @@ namespace TimingConstants {
         static constexpr uint32_t DELAY_TIME_MS = 200;
         static constexpr const char* DEFAULT_DURATION = "1500";
         static constexpr const char* DURATION_OPTIONS = "1500,1750,2000,2500";
-        static constexpr const char* SECTION_DISPLAY_NAME = "Splash Screen";
         static constexpr const char* DURATION_LABEL = "Duration";
         static constexpr const char* DURATION_UNIT = "ms";
     }

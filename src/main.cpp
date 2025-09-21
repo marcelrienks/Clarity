@@ -57,7 +57,7 @@ void SystemConfig::RegisterConfigSchema(IPreferenceService* preferenceService)
         return;
     }
 
-    Config::ConfigSection section(ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM);
+    Config::ConfigSection section(ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM, ConfigConstants::SectionNames::SYSTEM);
 
     section.AddItem(defaultPanelConfig);
     section.AddItem(updateRateConfig);

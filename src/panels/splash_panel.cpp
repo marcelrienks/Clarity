@@ -266,7 +266,7 @@ void SplashPanel::RegisterConfigSchema(IPreferenceService* preferenceService)
 
     using namespace Config;
 
-    ConfigSection section(ConfigConstants::Sections::SPLASH_PANEL, CONFIG_SECTION, TimingConstants::Splash::SECTION_DISPLAY_NAME);
+    ConfigSection section(ConfigConstants::Sections::SPLASH_PANEL, CONFIG_SECTION, ConfigConstants::SectionNames::SPLASH_PANEL);
 
     // Splash duration selection (show_splash is managed by system settings)
     ConfigItem durationItem(ConfigConstants::Items::DURATION, TimingConstants::Splash::DURATION_LABEL, std::string(TimingConstants::Splash::DEFAULT_DURATION),
