@@ -249,7 +249,6 @@ void SplashPanel::RegisterConfiguration()
     using namespace Config;
 
     ConfigSection section(ConfigConstants::Sections::SPLASH_PANEL, CONFIG_SECTION, TimingConstants::Splash::SECTION_DISPLAY_NAME);
-    section.displayOrder = 20; // Lower priority than core systems
 
     // Splash duration selection (show_splash is managed by system settings)
     ConfigItem durationItem(ConfigConstants::Items::DURATION, TimingConstants::Splash::DURATION_LABEL, std::string(TimingConstants::Splash::DEFAULT_DURATION),

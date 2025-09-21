@@ -303,7 +303,6 @@ void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
 
     // Create configuration section for this sensor component
     ConfigSection section(ConfigConstants::Sections::OIL_TEMPERATURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_TEMPERATURE_SENSOR);
-    section.displayOrder = 3; // Controls UI ordering in config menus
 
     section.AddItem(unitConfig_);
     section.AddItem(updateRateConfig_);

@@ -315,7 +315,6 @@ void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
     using namespace Config;
 
     ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, UIStrings::MenuLabels::DISPLAY_MENU);
-    section.displayOrder = 10; // Lower priority than sensors
 
     section.AddItem(themeConfig_);
     section.AddItem(brightnessConfig_);

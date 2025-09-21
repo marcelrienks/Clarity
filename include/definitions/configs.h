@@ -104,7 +104,6 @@ struct ConfigSection {
     std::string sectionName;      ///< Unique section identifier (e.g., "oil_temp_sensor")
     std::string displayName;      ///< Human-readable section name for UI
     std::vector<ConfigItem> items; ///< Configuration items in this section
-    int displayOrder = 0;         ///< Order for UI display (lower = earlier)
 
     ConfigSection() = default;
 

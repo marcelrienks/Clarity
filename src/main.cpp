@@ -45,7 +45,6 @@ void registerSystemConfiguration()
     }
 
     Config::ConfigSection section(ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM);
-    section.displayOrder = 0; // Highest priority - show first in config menu
 
     section.AddItem(defaultPanelConfig);
     section.AddItem(updateRateConfig);

@@ -305,7 +305,6 @@ void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
     using namespace Config;
 
     ConfigSection section(ConfigConstants::Sections::OIL_PRESSURE_SENSOR, CONFIG_SECTION, ConfigConstants::SectionNames::OIL_PRESSURE_SENSOR);
-    section.displayOrder = 2;
 
     section.AddItem(unitConfig_);
     section.AddItem(updateRateConfig_);
