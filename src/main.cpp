@@ -14,10 +14,13 @@
 #include "utilities/logging.h"
 #include "utilities/ticker.h"
 #include "definitions/types.h"
-#include "config/config_registry.h"
+#include "managers/configuration_manager.h"
 
 // Self-registration at program startup
-REGISTER_CONFIG_SCHEMA(SystemConfig)
+static bool system_config_registered = []() {
+    ConfigurationManager::AddSchema(SystemConfig::RegisterConfigSchema);
+    return true;
+}();
 
 // ========== Global Variables ==========
 
@@ -32,6 +35,7 @@ std::unique_ptr<IPreferenceService> preferenceManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
+std::unique_ptr<ConfigurationManager> configurationManager;
 
 // ========== System Configuration ==========
 
@@ -131,7 +135,15 @@ bool initializeServices()
         ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PREFERENCE_MANAGER_CREATION_FAILED);
         return false;
     }
-    
+
+    // Create ConfigurationManager for schema registration coordination
+    configurationManager = std::make_unique<ConfigurationManager>();
+    if (!configurationManager) {
+        log_e("Failed to create ConfigurationManager");
+        ErrorManager::Instance().ReportCriticalError("main", "Configuration manager allocation failed");
+        return false;
+    }
+
     // Initialize StyleManager with user's theme preference
     std::string userTheme = UIStrings::ThemeNames::DAY; // Default
     if (auto themeValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
@@ -194,8 +206,8 @@ void setup()
         return;
     }
 
-    // Register all configuration schemas from components via registry
-    ConfigRegistry::RegisterAllSchemas(preferenceManager.get());
+    // Register all configuration schemas from components via manager
+    configurationManager->RegisterAllSchemas(preferenceManager.get());
 
     Ticker::handleLvTasks();
 

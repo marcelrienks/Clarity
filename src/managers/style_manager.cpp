@@ -2,12 +2,15 @@
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
-#include "config/config_registry.h"
+#include "managers/configuration_manager.h"
 #include <cstring>
 #include <esp32-hal-log.h>
 
 // Self-registration at program startup
-REGISTER_CONFIG_SCHEMA(StyleManager)
+static bool style_manager_registered = []() {
+    ConfigurationManager::AddSchema(StyleManager::RegisterConfigSchema);
+    return true;
+}();
 
 // Static instance for singleton pattern
 static StyleManager* styleInstancePtr_ = nullptr;

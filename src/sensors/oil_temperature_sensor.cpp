@@ -4,13 +4,16 @@
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
-#include "config/config_registry.h"
+#include "managers/configuration_manager.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>
 
 // Self-registration at program startup
-REGISTER_CONFIG_SCHEMA(OilTemperatureSensor)
+static bool oil_temperature_registered = []() {
+    ConfigurationManager::AddSchema(OilTemperatureSensor::RegisterConfigSchema);
+    return true;
+}();
 
 // Constructors and Destructors
 

@@ -5,12 +5,15 @@
 #include "managers/style_manager.h"
 #include "definitions/constants.h"
 #include "utilities/logging.h"
-#include "config/config_registry.h"
+#include "managers/configuration_manager.h"
 #include <algorithm>
 #include <esp32-hal-log.h>
 
 // Self-registration at program startup
-REGISTER_CONFIG_SCHEMA(SplashPanel)
+static bool splash_panel_registered = []() {
+    ConfigurationManager::AddSchema(SplashPanel::RegisterConfigSchema);
+    return true;
+}();
 
 // Constructors and Destructors
 

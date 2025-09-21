@@ -45,6 +45,7 @@ class IPreferenceService;
 class PanelManager;
 class InterruptManager;
 class ErrorManager;
+class ConfigurationManager;
 
 // ========== Global Variables ==========
 // Global factories - dual factory pattern implementation
@@ -62,6 +63,7 @@ extern std::unique_ptr<IPreferenceService> preferenceManager;
 extern std::unique_ptr<PanelManager> panelManager;
 extern InterruptManager *interruptManager;
 extern ErrorManager *errorManager;
+extern std::unique_ptr<ConfigurationManager> configurationManager;
 
 // ========== System Configuration Items ==========
 // Inline definitions (C++17) - global scope configuration

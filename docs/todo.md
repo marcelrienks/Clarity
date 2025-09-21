@@ -1,4 +1,4 @@
-* not happy with SystemConfig, where are the other configs, i suspect this should be part of main.h
+* review what RegisterLiveUpdateCallbacks() is for
 * what is the COMPONENT_PATTERN variable for?
 * Review void ActionHandler::Process(), this is meant to ProcessButtonEvents regardless of UI State, but only meant to ExecutePendingActions during Idle, according to flow diagrams, but does not look to be set up that way
 * Are there any magic string being used, rather then constants?
