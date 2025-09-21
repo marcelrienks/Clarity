@@ -58,8 +58,11 @@ class OilTemperatureSensor : public BaseSensor, public IConfig
 
     void LoadConfiguration();
 
-    // IConfig implementation
+    // IConfig implementation (instance method for backward compatibility)
     void RegisterConfig(IPreferenceService* preferenceService) override;
+
+    // Static schema registration for self-registering pattern
+    static void RegisterConfigSchema(IPreferenceService* preferenceService);
 
     void RegisterLiveUpdateCallbacks();
 

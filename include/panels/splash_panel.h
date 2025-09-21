@@ -69,6 +69,9 @@ class SplashPanel : public IPanel
     // Configuration management
     void RegisterConfiguration();
 
+    // Static schema registration for self-registering pattern
+    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+
     // ========== Configuration Constants ==========
     // Note: show_splash is managed by system settings in main.cpp
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::SPLASH_PANEL_LOWER;

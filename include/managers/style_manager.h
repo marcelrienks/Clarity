@@ -149,8 +149,11 @@ public:
 
     void LoadConfiguration();
 
-    // IConfig implementation
+    // IConfig implementation (instance method for backward compatibility)
     void RegisterConfig(IPreferenceService* preferenceService) override;
+
+    // Static schema registration for self-registering pattern
+    static void RegisterConfigSchema(IPreferenceService* preferenceService);
 
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER_LOWER;

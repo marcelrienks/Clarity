@@ -2,8 +2,12 @@
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
+#include "config/config_registry.h"
 #include <cstring>
 #include <esp32-hal-log.h>
+
+// Self-registration at program startup
+REGISTER_CONFIG_SCHEMA(StyleManager)
 
 // Static instance for singleton pattern
 static StyleManager* styleInstancePtr_ = nullptr;
@@ -306,11 +310,22 @@ void StyleManager::ResetStyles()
 }
 
 /**
- * @brief Register StyleManager configuration section
+ * @brief Static method to register configuration schema without instance
+ * @param preferenceService Service to register schema with
+ *
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the StyleManager configuration schema without
+ * requiring a manager instance to exist.
  */
-void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
+void StyleManager::RegisterConfigSchema(IPreferenceService* preferenceService)
 {
     if (!preferenceService) return;
+
+    // Check if already registered to prevent duplicates
+    if (preferenceService->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("StyleManager schema already registered");
+        return;
+    }
 
     using namespace Config;
 
@@ -320,7 +335,21 @@ void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
     section.AddItem(brightnessConfig_);
 
     preferenceService->RegisterConfigSection(section);
-    log_i("StyleManager configuration registered");
+    log_i("StyleManager configuration schema registered (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ * @param preferenceService Service to register schema with
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once all components are migrated.
+ */
+void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(preferenceService);
 }
 
 /**

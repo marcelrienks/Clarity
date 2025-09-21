@@ -5,8 +5,12 @@
 #include "managers/style_manager.h"
 #include "definitions/constants.h"
 #include "utilities/logging.h"
+#include "config/config_registry.h"
 #include <algorithm>
 #include <esp32-hal-log.h>
+
+// Self-registration at program startup
+REGISTER_CONFIG_SCHEMA(SplashPanel)
 
 // Constructors and Destructors
 
@@ -240,11 +244,22 @@ void SplashPanel::SetPreferenceService(IPreferenceService *preferenceService)
 }
 
 /**
- * @brief Register SplashPanel configuration section
+ * @brief Static method to register configuration schema without instance
+ * @param preferenceService Service to register schema with
+ *
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the SplashPanel configuration schema without
+ * requiring a panel instance to exist.
  */
-void SplashPanel::RegisterConfiguration()
+void SplashPanel::RegisterConfigSchema(IPreferenceService* preferenceService)
 {
-    if (!preferenceService_) return;
+    if (!preferenceService) return;
+
+    // Check if already registered to prevent duplicates
+    if (preferenceService->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("SplashPanel schema already registered");
+        return;
+    }
 
     using namespace Config;
 
@@ -256,8 +271,21 @@ void SplashPanel::RegisterConfiguration()
 
     section.AddItem(durationItem);
 
-    preferenceService_->RegisterConfigSection(section);
-    log_i("SplashPanel configuration registered");
+    preferenceService->RegisterConfigSection(section);
+    log_i("SplashPanel configuration schema registered (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once migration is complete.
+ */
+void SplashPanel::RegisterConfiguration()
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(preferenceService_);
 }
 
 /**

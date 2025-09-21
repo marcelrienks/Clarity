@@ -14,6 +14,10 @@
 #include "utilities/logging.h"
 #include "utilities/ticker.h"
 #include "definitions/types.h"
+#include "config/config_registry.h"
+
+// Self-registration at program startup
+REGISTER_CONFIG_SCHEMA(SystemConfig)
 
 // ========== Global Variables ==========
 
@@ -32,15 +36,20 @@ ErrorManager *errorManager;
 // ========== System Configuration ==========
 
 /**
- * @brief Register system-wide configuration settings
+ * @brief Static method to register system configuration schema without instance
+ * @param preferenceService Service to register schema with
  *
- * Consolidates all system settings (panel selection, update rate, splash screen)
- * into a single configuration section managed directly by main.cpp.
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the SystemConfig configuration schema without
+ * requiring a manager instance to exist.
  */
-void registerSystemConfiguration()
+void SystemConfig::RegisterConfigSchema(IPreferenceService* preferenceService)
 {
-    if (!preferenceManager) {
-        log_e("Cannot register system configuration - preference manager not available");
+    if (!preferenceService) return;
+
+    // Check if already registered to prevent duplicates
+    if (preferenceService->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
+        log_d("SystemConfig schema already registered");
         return;
     }
 
@@ -50,8 +59,21 @@ void registerSystemConfiguration()
     section.AddItem(updateRateConfig);
     section.AddItem(showSplashConfig);
 
-    preferenceManager->RegisterConfigSection(section);
-    log_i("System configuration registered");
+    preferenceService->RegisterConfigSection(section);
+    log_i("SystemConfig configuration schema registered (static)");
+}
+
+/**
+ * @brief Legacy function for backward compatibility during migration
+ *
+ * This function maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once migration is complete.
+ */
+void registerSystemConfiguration()
+{
+    // During migration, just delegate to static method
+    SystemConfig::RegisterConfigSchema(preferenceManager.get());
 }
 
 // ========== Private Methods ==========
@@ -172,8 +194,8 @@ void setup()
         return;
     }
 
-    // Register system configuration after services are initialized
-    registerSystemConfiguration();
+    // Register all configuration schemas from components via registry
+    ConfigRegistry::RegisterAllSchemas(preferenceManager.get());
 
     Ticker::handleLvTasks();
 

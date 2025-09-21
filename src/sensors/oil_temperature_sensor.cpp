@@ -4,9 +4,13 @@
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
+#include "config/config_registry.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>
+
+// Self-registration at program startup
+REGISTER_CONFIG_SCHEMA(OilTemperatureSensor)
 
 // Constructors and Destructors
 
@@ -66,17 +70,11 @@ void OilTemperatureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Register with dynamic config system if available and load configuration
+    // Load configuration and register callbacks (schema already registered at startup)
     if (preferenceService_) {
         LoadConfiguration();
-
-        // Register this sensor's configuration section with the preference service
-        // This enables self-registration per docs/plans/dynamic-config-implementation.md
-        RegisterConfig(preferenceService_);
-
-        // Set up live callbacks to respond to configuration changes
         RegisterLiveUpdateCallbacks();
-        log_i("OilTemperatureSensor registered with dynamic config system");
+        log_i("OilTemperatureSensor initialized with configuration");
     }
 
     // Take initial reading to establish baseline
@@ -288,16 +286,22 @@ void OilTemperatureSensor::LoadConfiguration()
 }
 
 /**
- * @brief Register configuration with dynamic config system
- * @details Implements component self-registration pattern from dynamic-config-implementation.md
- * This allows the sensor to define its own configuration requirements including:
- * - Temperature unit selection (C/F)
+ * @brief Static method to register configuration schema without instance
+ * @param preferenceService Service to register schema with
+ *
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the oil temperature sensor configuration schema without
+ * requiring a sensor instance to exist.
  */
-/// - Update rate options
-/// - Calibration parameters with validation ranges
-void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
+void OilTemperatureSensor::RegisterConfigSchema(IPreferenceService* preferenceService)
 {
     if (!preferenceService) return;
+
+    // Check if already registered to prevent duplicates
+    if (preferenceService->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("Oil temperature sensor schema already registered");
+        return;
+    }
 
     using namespace Config;
 
@@ -311,7 +315,21 @@ void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
 
     // Register with preference service for persistence and UI generation
     preferenceService->RegisterConfigSection(section);
-    log_i("Registered oil temperature sensor configuration");
+    log_i("Registered oil temperature sensor configuration schema (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ * @param preferenceService Service to register schema with
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once all components are migrated.
+ */
+void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(preferenceService);
 }
 
 /**

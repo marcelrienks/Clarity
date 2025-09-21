@@ -4,9 +4,13 @@
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
+#include "config/config_registry.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>
+
+// Self-registration at program startup
+REGISTER_CONFIG_SCHEMA(OilPressureSensor)
 
 // Constructors and Destructors
 
@@ -66,14 +70,11 @@ void OilPressureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Register with dynamic config system if available and load configuration
+    // Load configuration and register callbacks (schema already registered at startup)
     if (preferenceService_) {
         LoadConfiguration();
-
-        // Use unified preference service interface for dynamic configuration
-        RegisterConfig(preferenceService_);
         RegisterLiveUpdateCallbacks();
-        log_i("OilPressureSensor registered with dynamic config system");
+        log_i("OilPressureSensor initialized with configuration");
     }
 
     // Take initial reading to establish baseline
@@ -291,16 +292,22 @@ void OilPressureSensor::LoadConfiguration()
 }
 
 /**
- * @brief Registers configuration schema with the dynamic config system
+ * @brief Static method to register configuration schema without instance
+ * @param preferenceService Service to register schema with
  *
- * Defines the configuration options available for the oil pressure sensor
- * including unit selection, update rate, and calibration parameters.
- * Creates a configuration section that appears in the dynamic UI for
- * real-time sensor adjustment and calibration.
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the oil pressure sensor configuration schema without
+ * requiring a sensor instance to exist.
  */
-void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
+void OilPressureSensor::RegisterConfigSchema(IPreferenceService* preferenceService)
 {
     if (!preferenceService) return;
+
+    // Check if already registered to prevent duplicates
+    if (preferenceService->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("Oil pressure sensor schema already registered");
+        return;
+    }
 
     using namespace Config;
 
@@ -312,7 +319,21 @@ void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
     section.AddItem(scaleConfig_);
 
     preferenceService->RegisterConfigSection(section);
-    log_i("Registered oil pressure sensor configuration");
+    log_i("Registered oil pressure sensor configuration schema (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ * @param preferenceService Service to register schema with
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once all components are migrated.
+ */
+void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(preferenceService);
 }
 
 /**

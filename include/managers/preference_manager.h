@@ -112,6 +112,13 @@ public:
      */
     uint32_t RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) override;
 
+    /**
+     * @brief Check if a configuration schema is registered
+     * @param sectionName Name of the section to check
+     * @return true if schema is registered, false otherwise
+     */
+    bool IsSchemaRegistered(const std::string& sectionName) const override;
+
 protected:
     /**
      * @brief Internal implementation for querying configuration values

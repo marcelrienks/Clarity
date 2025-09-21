@@ -317,6 +317,11 @@ uint32_t PreferenceManager::RegisterChangeCallback(const std::string& fullKey, C
     return callbackId;
 }
 
+bool PreferenceManager::IsSchemaRegistered(const std::string& sectionName) const {
+    SemaphoreGuard lock(configMutex_);
+    return registeredSections_.find(sectionName) != registeredSections_.end();
+}
+
 
 
 

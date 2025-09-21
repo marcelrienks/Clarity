@@ -85,6 +85,18 @@ public:
 
     virtual uint32_t RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) = 0;
 
+    // ========== Schema Query Methods ==========
+
+    /**
+     * @brief Check if a configuration schema is registered
+     * @param sectionName Name of the section to check
+     * @return true if schema is registered, false otherwise
+     *
+     * Used to determine if a schema has already been registered,
+     * useful for backward compatibility during migration.
+     */
+    virtual bool IsSchemaRegistered(const std::string& sectionName) const = 0;
+
 protected:
     // ========== Implementation Methods ==========
     // These are protected to allow template methods to work

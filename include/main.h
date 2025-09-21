@@ -77,3 +77,9 @@ inline Config::ConfigItem showSplashConfig(ConfigConstants::Items::SHOW_SPLASH, 
 
 // ========== Function Declarations ==========
 void registerSystemConfiguration();
+
+// Static schema registration for self-registering pattern
+class SystemConfig {
+public:
+    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+};
