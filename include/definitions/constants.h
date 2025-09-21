@@ -288,8 +288,11 @@ namespace ConfigConstants {
 
     // Section Display Names
     namespace SectionNames {
-        static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Pressure Sensor";
-        static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temperature Sensor";
+        static constexpr const char* SYSTEM = "System";
+        static constexpr const char* STYLE_MANAGER = "Display";
+        static constexpr const char* SPLASH_PANEL = "Splash Scr.";
+        static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Press.";
+        static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temp.";
     }
 }
 
