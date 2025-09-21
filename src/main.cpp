@@ -96,43 +96,43 @@ bool initializeServices()
 
     providerFactory = std::make_unique<ProviderFactory>();
     if (!providerFactory) {
-        log_e("Failed to create ProviderFactory - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PROVIDER_FACTORY_ALLOCATION_FAILED);
+        log_e("Failed to create ProviderFactory - %s", "allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "ProviderFactory allocation failed");
         return false;
     }
 
     deviceProvider = providerFactory->CreateDeviceProvider();
     if (!deviceProvider) {
         log_e("Failed to create DeviceProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::DEVICE_PROVIDER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider creation failed");
         return false;
     }
 
     gpioProvider = providerFactory->CreateGpioProvider();
     if (!gpioProvider) {
         log_e("Failed to create GpioProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::GPIO_PROVIDER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "GpioProvider creation failed");
         return false;
     }
 
     displayProvider = providerFactory->CreateDisplayProvider(deviceProvider.get());
     if (!displayProvider) {
         log_e("Failed to create DisplayProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::DISPLAY_PROVIDER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "DisplayProvider creation failed");
         return false;
     }
 
     managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
     if (!managerFactory) {
-        log_e("Failed to create ManagerFactory - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::MANAGER_FACTORY_ALLOCATION_FAILED);
+        log_e("Failed to create ManagerFactory - %s", "allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "ManagerFactory allocation failed");
         return false;
     }
 
     preferenceManager = managerFactory->CreatePreferenceManager();
     if (!preferenceManager) {
         log_e("Failed to create PreferenceManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PREFERENCE_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "PreferenceManager creation failed");
         return false;
     }
 
@@ -152,7 +152,7 @@ bool initializeServices()
     styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::STYLE_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
         return false;
     }
  
@@ -162,7 +162,7 @@ bool initializeServices()
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
     if (!interruptManager) {
         log_e("Failed to create InterruptManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::INTERRUPT_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "InterruptManager creation failed");
         return false;
     }
     
@@ -173,14 +173,14 @@ bool initializeServices()
 
     if (!panelManager) {
         log_e("Failed to create PanelManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PANEL_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "PanelManager creation failed");
         return false;
     }
 
     errorManager = managerFactory->CreateErrorManager();
     if (!errorManager) {
         log_e("Failed to create ErrorManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::ERROR_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "ErrorManager creation failed");
         return false;
     }
 

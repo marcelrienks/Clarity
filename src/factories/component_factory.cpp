@@ -162,9 +162,9 @@ std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleS
     // ConfigComponent doesn't use style service in constructor
     auto component = std::make_unique<ConfigComponent>();
     if (!component) {
-        log_e("ComponentFactory: Failed to create ConfigComponent - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
+        log_e("ComponentFactory: Failed to create ConfigComponent - %s", "allocation failed");
         ErrorManager::Instance().ReportCriticalError("ComponentFactory",
-                                                     ErrorMessages::Component::CONFIG_COMPONENT_ALLOCATION_FAILED);
+                                                     "ConfigComponent allocation failed");
         return nullptr;
     }
     return component;

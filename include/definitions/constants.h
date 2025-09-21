@@ -111,38 +111,6 @@ namespace UIStrings {
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
     }
 
-    // ========== Color Constants (frequently used colors) ==========
-    namespace Colors {
-        // Night theme colors
-        static constexpr uint32_t NIGHT_BACKGROUND = 0x1A0000;        // Very dark red
-        static constexpr uint32_t NIGHT_TITLE_TEXT = 0xFF6666;        // Light red
-        static constexpr uint32_t NIGHT_HINT_TEXT = 0x993333;         // Darker red
-        static constexpr uint32_t NIGHT_SELECTED_BG = 0x4D1F1F;       // Dark red background
-        static constexpr uint32_t NIGHT_SELECTED_BORDER = 0x993333;   // Red border
-        static constexpr uint32_t NIGHT_SELECTED_ITEM = 0xFF0000;     // Bright red
-        static constexpr uint32_t NIGHT_BASE_COLOR = 0xB00020;        // Deep red base
-
-        // Day theme colors
-        static constexpr uint32_t DAY_TITLE_TEXT = 0xCCCCCC;          // Light gray
-        static constexpr uint32_t DAY_HINT_TEXT = 0x888888;           // Gray
-        static constexpr uint32_t DAY_SELECTED_BG = 0x555555;         // Dark gray background
-        static constexpr uint32_t DAY_SELECTED_BORDER = 0x888888;     // Gray border
-        static constexpr uint32_t DAY_SELECTED_ITEM = 0xFFFFFF;       // White
-        static constexpr uint32_t DAY_BASE_COLOR = 0xEEEEEE;          // Light gray base
-        static constexpr uint32_t DAY_FALLBACK = 0x888888;            // Gray fallback
-
-        // Common colors
-        static constexpr uint32_t WHITE = 0xFFFFFF;                   // Pure white
-        static constexpr uint32_t BLACK = 0x000000;                   // Pure black
-
-        // Component-specific colors
-        static constexpr uint32_t PIVOT_CIRCLE_CENTER = 0x505050;     // Medium gray for pivot center
-        static constexpr uint32_t PIVOT_CIRCLE_EDGE = 0x2A2A2A;       // Dark gray for pivot edge
-        static constexpr uint32_t PIVOT_CIRCLE_BORDER = 0x1A1A1A;     // Very dark border
-        static constexpr uint32_t PIVOT_CIRCLE_SHADOW = 0x000000;     // Black shadow
-        static constexpr uint32_t NEEDLE_HIGHLIGHT = 0xFFFFFF;        // Pure white needle highlight
-        static constexpr uint32_t PIVOT_HIGHLIGHT = 0x707070;         // Light gray pivot highlight
-    }
 
 
     // ========== Default Hint Text ==========
@@ -191,37 +159,6 @@ namespace UIStrings {
     }
 }
 
-/*============================================================================*/
-/*                            ERROR MESSAGES                                 */
-/*============================================================================*/
-
-namespace ErrorMessages {
-    // System startup errors
-    namespace System {
-        static constexpr const char* PROVIDER_FACTORY_ALLOCATION_FAILED = "ProviderFactory allocation failed";
-        static constexpr const char* MANAGER_FACTORY_ALLOCATION_FAILED = "ManagerFactory allocation failed";
-        static constexpr const char* DEVICE_PROVIDER_CREATION_FAILED = "DeviceProvider creation failed";
-        static constexpr const char* GPIO_PROVIDER_CREATION_FAILED = "GpioProvider creation failed";
-        static constexpr const char* DISPLAY_PROVIDER_CREATION_FAILED = "DisplayProvider creation failed";
-        static constexpr const char* PREFERENCE_MANAGER_CREATION_FAILED = "PreferenceManager creation failed";
-        static constexpr const char* STYLE_MANAGER_CREATION_FAILED = "StyleManager creation failed";
-        static constexpr const char* INTERRUPT_MANAGER_CREATION_FAILED = "InterruptManager creation failed";
-        static constexpr const char* PANEL_MANAGER_CREATION_FAILED = "PanelManager creation failed";
-        static constexpr const char* ERROR_MANAGER_CREATION_FAILED = "ErrorManager creation failed";
-    }
-
-    // Component creation errors
-    namespace Component {
-        static constexpr const char* CONFIG_COMPONENT_ALLOCATION_FAILED = "ConfigComponent allocation failed";
-    }
-
-
-
-    // Generic failure messages
-    namespace Generic {
-        static constexpr const char* ALLOCATION_FAILED = "allocation failed";
-    }
-}
 
 
 /*============================================================================*/
