@@ -150,6 +150,24 @@ void InterruptManager::SetCurrentPanel(IActionService* panel)
 }
 
 /**
+ * @brief Sets preference service for configuration access
+ * @param preferenceService The preference service to use for configuration
+ */
+void InterruptManager::SetPreferenceService(IPreferenceService* preferenceService)
+{
+    log_v("SetPreferenceService() called");
+
+    if (!actionHandler_) {
+        log_e("Cannot set preference service - ActionHandler not initialized");
+        return;
+    }
+
+    // Delegate to ActionHandler to set preference service
+    actionHandler_->SetPreferenceService(preferenceService);
+    log_i("Set preference service in ActionHandler");
+}
+
+/**
  * @brief Register legacy interrupt handler (for backward compatibility)
  */
 void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)

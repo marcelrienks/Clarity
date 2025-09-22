@@ -291,7 +291,7 @@ namespace ConfigConstants {
         static constexpr float DEFAULT_CALIBRATION_OFFSET = 0.0f;
         static constexpr float DEFAULT_CALIBRATION_SCALE = 1.0f;
         static constexpr int DEFAULT_BRIGHTNESS = 80;
-        static constexpr int DEFAULT_DEBOUNCE_MS = 500;
+        static constexpr int DEFAULT_DEBOUNCE_MS = 400;
         static constexpr int DEFAULT_LONG_PRESS_MS = 1500;
     }
 

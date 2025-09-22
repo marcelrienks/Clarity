@@ -2,6 +2,7 @@
 
 #include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_preference_service.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
 #include "definitions/configs.h"

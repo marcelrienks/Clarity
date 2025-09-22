@@ -10,6 +10,9 @@
 
 #include "esp32-hal-log.h"
 
+// Forward declarations
+class IPreferenceService;
+
 /**
  * @class InterruptManager
  * @brief Pure coordinated interrupt system for ESP32 automotive applications
@@ -41,6 +44,7 @@ public:
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionService* panel);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
+    void SetPreferenceService(IPreferenceService* preferenceService);
 
     /**
      * @brief Get total count of registered interrupts (triggers + actions)

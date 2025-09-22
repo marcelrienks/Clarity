@@ -165,7 +165,10 @@ bool initializeServices()
         ErrorManager::Instance().ReportCriticalError("main", "InterruptManager creation failed");
         return false;
     }
-    
+
+    // Set preference service for button configuration
+    interruptManager->SetPreferenceService(preferenceManager.get());
+
     // Create PanelManager with all dependencies
     panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(), 
                                                       styleManager.get(), preferenceManager.get(), 

@@ -1,5 +1,6 @@
 #include "handlers/action_handler.h"
 #include "interfaces/i_action_service.h"
+#include "interfaces/i_preference_service.h"
 #include "managers/error_manager.h"
 #include "sensors/button_sensor.h"
 #include "hardware/gpio_pins.h"
@@ -352,9 +353,13 @@ void ActionHandler::UpdateButtonState() {
             } else {
                 // Check for long press during hold
                 unsigned long pressDuration = currentTime - buttonPressStartTime_;
-                if (pressDuration >= GetLongPressMs()) {
+                unsigned long longPressThreshold = GetLongPressMs();
+                log_v("Checking for long press: duration=%lu ms, threshold=%lu ms", pressDuration, longPressThreshold);
+                if (pressDuration >= longPressThreshold) {
                     buttonState_ = ButtonState::LONG_PRESS_TRIGGERED;
                     log_t("Long press triggered during hold");
+                    // Immediately set the pending action when long press is detected
+                    SetPendingAction(ButtonAction::LONG_PRESS);
                 }
             }
             break;
@@ -675,9 +680,12 @@ unsigned long ActionHandler::GetDebounceMs() const
 unsigned long ActionHandler::GetLongPressMs() const
 {
     if (!preferenceService_) {
+        log_w("No preference service, using default long press threshold: %d ms", ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS);
         return ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
     }
 
     auto value = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
-    return value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
+    unsigned long result = value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
+    log_v("GetLongPressMs returning: %lu ms (config key: %s)", result, ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
+    return result;
 }

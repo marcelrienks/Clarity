@@ -141,41 +141,18 @@ void ButtonSensor::ProcessButtonState()
 
         log_t("ButtonSensor: PRESS ENDED after %lu ms (GPIO LOW detected)", buttonPressDuration_);
 
-        // If long press was already triggered during hold, ignore this release
-        if (longPressTriggeredDuringHold_) {
-            log_t("ButtonSensor: Ignoring release - long press already processed during hold");
-            longPressTriggeredDuringHold_ = false;  // Reset for next press
-            return;
-        }
-
-        ButtonAction action = DetermineAction(buttonPressDuration_);
-        if (action != ButtonAction::NONE)
-        {
-            detectedAction_ = action;
-            actionReady_ = true;
-            log_t("ButtonSensor: ACTION DETECTED: %s (actionReady=true)",
-                  action == ButtonAction::SHORT_PRESS ? "SHORT_PRESS" : "LONG_PRESS");
-
-        }
-        else
-        {
-            log_w("ButtonSensor: Press duration %lu ms resulted in NO ACTION", buttonPressDuration_);
-        }
+        // ActionHandler is responsible for all timing detection
+        // ButtonSensor only reports state changes
+        longPressTriggeredDuringHold_ = false;  // Reset for next press
     }
     else if (currentState && currentButtonState_)
     {
+        // Button is being held - ActionHandler will handle timing detection
+        // ButtonSensor only reports button state, not timing interpretations
         unsigned long heldDuration = currentTime - buttonPressStartTime_;
 
-        // Check for long press during hold (case #3)
-        if (heldDuration > SHORT_PRESS_MAX_MS && !longPressTriggeredDuringHold_) {
-            log_t("ButtonSensor: LONG PRESS TRIGGERED during hold at %lu ms", heldDuration);
-            detectedAction_ = ButtonAction::LONG_PRESS;
-            actionReady_ = true;
-            longPressTriggeredDuringHold_ = true;
-            log_t("ButtonSensor: ACTION DETECTED: LONG_PRESS (actionReady=true, during hold)");
-        }
-        // Timeout protection - reset if held too long
-        else if (heldDuration > LONG_PRESS_MAX_MS)
+        // Only check for excessive hold timeout for safety
+        if (heldDuration > LONG_PRESS_MAX_MS)
         {
             log_w("ButtonSensor: PRESS TIMEOUT after %lu ms - resetting state", heldDuration);
             currentButtonState_ = false;
