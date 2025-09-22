@@ -45,8 +45,6 @@ public:
 
     // Button event processing
     void ProcessButtonEvents();
-    ButtonAction DetectButtonAction();
-    ButtonAction DetectLongPressDuringHold();
 
     // Sensor access for action context
     ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
@@ -78,7 +76,7 @@ private:
     void UpdateButtonState();
     void StartButtonTiming();
     void StopButtonTiming();
-    ButtonAction CalculateButtonAction(unsigned long pressDuration);
+    ButtonAction CalculateButtonAction(unsigned long press_duration);
 
     // Helper methods
     bool IsButtonPressed() const;
