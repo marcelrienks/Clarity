@@ -1,4 +1,4 @@
-#include "managers/preference_manager.h"
+#include "providers/storage_provider.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
@@ -21,18 +21,17 @@ public:
 // ========== Constructor ==========
 
 /**
- * @brief Constructs PreferenceManager with thread safety and NVS initialization
+ * @brief Constructs PreferenceStorage with thread safety and NVS initialization
  *
- * Initializes the preference management system with thread-safe access,
- * NVS storage backend, and default configuration sections. Handles NVS
- * initialization errors and creates default system configuration.
+ * Initializes the storage system with thread-safe access and NVS backend.
+ * Handles NVS initialization errors and prepares storage for configuration data.
  */
-PreferenceManager::PreferenceManager() {
+StorageProvider::StorageProvider() {
     // Initialize thread safety semaphore
     configMutex_ = xSemaphoreCreateMutex();
     if (!configMutex_) {
         log_e("Failed to create config mutex");
-        ErrorManager::Instance().ReportCriticalError("PreferenceManager",
+        ErrorManager::Instance().ReportCriticalError("PreferenceStorage",
                                                      "Failed to create config mutex - thread safety compromised");
         return;
     }
@@ -46,7 +45,7 @@ PreferenceManager::PreferenceManager() {
 
     if (err != ESP_OK) {
         log_e("Failed to initialize NVS: %s", esp_err_to_name(err));
-        ErrorManager::Instance().ReportCriticalError("PreferenceManager",
+        ErrorManager::Instance().ReportCriticalError("PreferenceStorage",
                                                      "Failed to initialize NVS - preferences cannot be saved");
         return;
     }
@@ -56,7 +55,7 @@ PreferenceManager::PreferenceManager() {
     // Load all registered sections
     LoadAllConfigSections();
 
-    log_i("PreferenceManager initialized");
+    log_i("ConfigurationManager initialized");
 }
 
 // ========== Dynamic Configuration Implementation ==========
@@ -74,7 +73,7 @@ PreferenceManager::PreferenceManager() {
  * After registration, any existing persisted values are automatically loaded from NVS,
  * allowing components to immediately access their stored configuration.
  */
-bool PreferenceManager::RegisterConfigSection(const Config::ConfigSection& section) {
+bool StorageProvider::RegisterConfigSection(const Config::ConfigSection& section) {
     log_v("RegisterConfigSection() called");
     SemaphoreGuard lock(configMutex_);
 
@@ -103,7 +102,7 @@ bool PreferenceManager::RegisterConfigSection(const Config::ConfigSection& secti
  * list enables dynamic UI creation where menus are built based on what
  * components have registered, rather than hardcoded menu structures.
  */
-std::vector<std::string> PreferenceManager::GetRegisteredSectionNames() const {
+std::vector<std::string> StorageProvider::GetRegisteredSectionNames() const {
     SemaphoreGuard lock(configMutex_);
 
     // Create vector of pairs (sectionName, displayName) for sorting
@@ -139,7 +138,7 @@ std::vector<std::string> PreferenceManager::GetRegisteredSectionNames() const {
  * Used by ConfigPanel to build configuration UIs and by components to access
  * their registered configuration structure.
  */
-std::optional<Config::ConfigSection> PreferenceManager::GetConfigSection(const std::string& sectionName) const {
+std::optional<Config::ConfigSection> StorageProvider::GetConfigSection(const std::string& sectionName) const {
     SemaphoreGuard lock(configMutex_);
 
     auto it = registeredSections_.find(sectionName);
@@ -160,7 +159,7 @@ std::optional<Config::ConfigSection> PreferenceManager::GetConfigSection(const s
  * Each section gets its own NVS namespace for organization. Used when components
  * want to save their specific configuration without affecting other sections.
  */
-bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
+bool StorageProvider::SaveConfigSection(const std::string& sectionName) {
     auto it = registeredSections_.find(sectionName);
     if (it == registeredSections_.end()) {
         log_w("Section not found: %s", sectionName.c_str());
@@ -176,7 +175,7 @@ bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
     for (const auto& item : section.items) {
         if (!StoreValueToNVS(preferences_, item.key, item.value)) {
             log_e("Failed to store config item: %s.%s", sectionName.c_str(), item.key.c_str());
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigurationManager",
                                                 "Failed to store config item to NVS");
             success = false;
         }
@@ -196,7 +195,7 @@ bool PreferenceManager::SaveConfigSection(const std::string& sectionName) {
  * Called automatically after component registration to restore previous configuration.
  * Updates the registered section with stored values while preserving metadata.
  */
-bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
+bool StorageProvider::LoadConfigSection(const std::string& sectionName) {
     auto it = registeredSections_.find(sectionName);
     if (it == registeredSections_.end()) {
         return false;
@@ -227,7 +226,7 @@ bool PreferenceManager::LoadConfigSection(const std::string& sectionName) {
  * registered sections and saves each one to its respective NVS namespace.
  * Used during application shutdown or when performing complete configuration backup.
  */
-bool PreferenceManager::SaveAllConfigSections() {
+bool StorageProvider::SaveAllConfigSections() {
     bool allSuccess = true;
     for (const auto& [name, section] : registeredSections_) {
         if (!SaveConfigSection(name)) {
@@ -245,7 +244,7 @@ bool PreferenceManager::SaveAllConfigSections() {
  * registered sections and loads persisted values from their respective NVS namespaces.
  * Called during application startup to restore previous configuration state.
  */
-bool PreferenceManager::LoadAllConfigSections() {
+bool StorageProvider::LoadAllConfigSections() {
     bool allSuccess = true;
     for (const auto& [name, section] : registeredSections_) {
         if (!LoadConfigSection(name)) {
@@ -255,7 +254,7 @@ bool PreferenceManager::LoadAllConfigSections() {
     return allSuccess;
 }
 
-bool PreferenceManager::ValidateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) const {
+bool StorageProvider::ValidateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) const {
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
 
     auto sectionIt = registeredSections_.find(sectionName);
@@ -274,11 +273,11 @@ bool PreferenceManager::ValidateConfigValue(const std::string& fullKey, const Co
     const Config::ConfigItem& item = *itemIt;
 
     // Type validation - ensure types match between new value and existing value
-    if (!Config::ConfigValueHelper::TypesMatch(value, item.value)) {
+    if (!TypesMatch(value, item.value)) {
         log_w("Type mismatch for key %s - expected %s, got %s",
               fullKey.c_str(),
-              Config::ConfigValueHelper::GetTypeName(item.value).c_str(),
-              Config::ConfigValueHelper::GetTypeName(value).c_str());
+              GetTypeName(item.value).c_str(),
+              GetTypeName(value).c_str());
         return false;
     }
 
@@ -310,11 +309,16 @@ bool PreferenceManager::ValidateConfigValue(const std::string& fullKey, const Co
 
 // ========== Live Update Implementation ==========
 
-uint32_t PreferenceManager::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
+uint32_t StorageProvider::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
     SemaphoreGuard lock(configMutex_);
     uint32_t callbackId = nextCallbackId_++;
     changeCallbacks_[callbackId] = std::make_pair(fullKey, callback);
     return callbackId;
+}
+
+bool StorageProvider::IsSchemaRegistered(const std::string& sectionName) const {
+    SemaphoreGuard lock(configMutex_);
+    return registeredSections_.find(sectionName) != registeredSections_.end();
 }
 
 
@@ -325,7 +329,7 @@ uint32_t PreferenceManager::RegisterChangeCallback(const std::string& fullKey, C
 
 // ========== Protected Implementation Methods ==========
 
-std::optional<Config::ConfigValue> PreferenceManager::QueryConfigImpl(const std::string& fullKey) const {
+std::optional<Config::ConfigValue> StorageProvider::QueryConfigValue(const std::string& fullKey) const {
     // Parse dot-separated key into section and item (e.g., "oil_temp_sensor.unit")
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
 
@@ -348,7 +352,7 @@ std::optional<Config::ConfigValue> PreferenceManager::QueryConfigImpl(const std:
     return itemIt->value;
 }
 
-bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) {
+bool StorageProvider::UpdateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) {
     // Parse dot-separated key into section and item components
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
 
@@ -389,7 +393,7 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
 
     if (success) {
         log_i("Updated config %s = %s", fullKey.c_str(),
-              Config::ConfigValueHelper::ToString(value).c_str());
+              ToString(value).c_str());
 
         // Notify all registered callbacks about the configuration change
         // Callbacks can watch specific keys or all changes (empty watchedKey)
@@ -400,12 +404,12 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
             // Check if callback watches this key specifically or all changes
             if (watchedKey.empty() || watchedKey == fullKey) {
                 try {
-                    // Call registered callback with old and new values
+                    // Call registered callback with key, old value, and new value
                     callback(fullKey, oldValue, value);
                     log_t("Notified callback %u for update: %s", callbackId, fullKey.c_str());
                 } catch (const std::exception& e) {
                     log_e("Exception in change callback %u: %s", callbackId, e.what());
-                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+                    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "StorageProvider",
                                                         "Exception in change callback");
                 }
             }
@@ -414,7 +418,7 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
         // Rollback in-memory value on NVS write failure
         itemIt->value = *oldValue;
         log_e("Failed to save config to NVS for key: %s", fullKey.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigurationManager",
                                             "Failed to save config value to NVS");
     }
 
@@ -423,7 +427,7 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
 
 // ========== Private Helper Methods ==========
 
-std::pair<std::string, std::string> PreferenceManager::ParseConfigKey(const std::string& fullKey) const {
+std::pair<std::string, std::string> StorageProvider::ParseConfigKey(const std::string& fullKey) const {
     size_t dotPos = fullKey.find('.');
     if (dotPos == std::string::npos) {
         return {"", fullKey};
@@ -439,7 +443,7 @@ std::pair<std::string, std::string> PreferenceManager::ParseConfigKey(const std:
  * Creates proper NVS namespace by prefixing section name and ensuring
  * it fits within NVS 15-character namespace limit. Truncates if needed.
  */
-std::string PreferenceManager::GetSectionNamespace(const std::string& sectionName) const {
+std::string StorageProvider::GetSectionNamespace(const std::string& sectionName) const {
     std::string ns = SECTION_PREFIX_ + sectionName;
     if (ns.length() > MAX_NAMESPACE_LEN_) {
         ns = ns.substr(0, MAX_NAMESPACE_LEN_);
@@ -458,7 +462,7 @@ std::string PreferenceManager::GetSectionNamespace(const std::string& sectionNam
  * Parses range constraints and validates integer values. Returns true
  * for empty constraints or parsing errors (permissive validation).
  */
-bool PreferenceManager::ValidateIntRange(int value, const std::string& constraints) const {
+bool StorageProvider::ValidateIntRange(int value, const std::string& constraints) const {
     if (constraints.empty()) return true;
 
     size_t dashPos = constraints.find('-');
@@ -482,7 +486,7 @@ bool PreferenceManager::ValidateIntRange(int value, const std::string& constrain
  * Parses range constraints and validates float values. Returns true
  * for empty constraints or parsing errors (permissive validation).
  */
-bool PreferenceManager::ValidateFloatRange(float value, const std::string& constraints) const {
+bool StorageProvider::ValidateFloatRange(float value, const std::string& constraints) const {
     if (constraints.empty()) return true;
 
     size_t dashPos = constraints.find('-');
@@ -506,7 +510,7 @@ bool PreferenceManager::ValidateFloatRange(float value, const std::string& const
  * Parses comma-separated options and checks if value is valid.
  * Used for dropdown/enum configuration validation.
  */
-bool PreferenceManager::ValidateEnumValue(const std::string& value, const std::string& constraints) const {
+bool StorageProvider::ValidateEnumValue(const std::string& value, const std::string& constraints) const {
     if (constraints.empty()) return true;
 
     auto options = ParseOptions(constraints);
@@ -521,7 +525,7 @@ bool PreferenceManager::ValidateEnumValue(const std::string& value, const std::s
  * Splits string by commas, trims whitespace from each option,
  * and filters out empty entries. Used for enum validation.
  */
-std::vector<std::string> PreferenceManager::ParseOptions(const std::string& str) const {
+std::vector<std::string> StorageProvider::ParseOptions(const std::string& str) const {
     std::vector<std::string> options;
     std::stringstream ss(str);
     std::string option;
@@ -549,7 +553,7 @@ std::vector<std::string> PreferenceManager::ParseOptions(const std::string& str)
  * Converts ConfigValue to appropriate NVS type and stores using type-specific
  * putters. Handles type safety by validating ConfigValue content matches expected type.
  */
-bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& key,
+bool StorageProvider::StoreValueToNVS(Preferences& prefs, const std::string& key,
                                                const Config::ConfigValue& value) {
     if (std::holds_alternative<int>(value)) {
         return prefs.putInt(key.c_str(), std::get<int>(value));
@@ -579,7 +583,7 @@ bool PreferenceManager::StoreValueToNVS(Preferences& prefs, const std::string& k
  * Handles both String and Enum types as strings since enums are stored as their string values.
  * Returns std::monostate for unknown types to indicate invalid/unhandled configuration.
  */
-Config::ConfigValue PreferenceManager::LoadValueFromNVS(Preferences& prefs, const std::string& key,
+Config::ConfigValue StorageProvider::LoadValueFromNVS(Preferences& prefs, const std::string& key,
                                                                const Config::ConfigValue& templateValue) {
     if (std::holds_alternative<int>(templateValue)) {
         return prefs.getInt(key.c_str(), std::get<int>(templateValue));
@@ -595,4 +599,102 @@ Config::ConfigValue PreferenceManager::LoadValueFromNVS(Preferences& prefs, cons
     }
 
     return std::monostate{};
+}
+
+// ========== Configuration Value Helper Methods ==========
+// (Moved from ConfigValueHelper class for better encapsulation)
+
+/**
+ * @brief Determine the type category of a ConfigValue
+ * @param value The ConfigValue to check
+ * @return Type name as string for UI/logging
+ */
+std::string StorageProvider::GetTypeName(const Config::ConfigValue& value) const {
+    return std::visit([](const auto& v) -> std::string {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            return ConfigConstants::Types::UNSET;
+        } else if constexpr (std::is_same_v<T, int>) {
+            return ConfigConstants::Types::INTEGER_INTERNAL;
+        } else if constexpr (std::is_same_v<T, float>) {
+            return ConfigConstants::Types::FLOAT_INTERNAL;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return ConfigConstants::Types::BOOLEAN_INTERNAL;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return ConfigConstants::Types::STRING_INTERNAL;
+        }
+        return ConfigConstants::Types::UNKNOWN;
+    }, value);
+}
+
+/**
+ * @brief Check if value type matches another value's type
+ */
+bool StorageProvider::TypesMatch(const Config::ConfigValue& a, const Config::ConfigValue& b) const {
+    return a.index() == b.index();
+}
+
+/**
+ * @brief Convert a ConfigValue to string representation
+ * @param value The ConfigValue to convert
+ * @return String representation of the value
+ */
+std::string StorageProvider::ToString(const Config::ConfigValue& value) const {
+    return std::visit([](const auto& v) -> std::string {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            return ConfigConstants::BooleanValues::EMPTY_STRING;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return v ? ConfigConstants::BooleanValues::TRUE_STRING : ConfigConstants::BooleanValues::FALSE_STRING;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return v;
+        } else {
+            return std::to_string(v);
+        }
+    }, value);
+}
+
+/**
+ * @brief Parse a string into a ConfigValue, inferring type from existing value
+ * @param str The string to parse
+ * @param templateValue Value whose type to match
+ * @return ConfigValue containing the parsed value
+ */
+Config::ConfigValue StorageProvider::FromString(const std::string& str, const Config::ConfigValue& templateValue) const {
+    return std::visit([&str](const auto& v) -> Config::ConfigValue {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            // Try to infer: if it looks like a number, parse as int
+            // Otherwise return as string
+            try {
+                return std::stoi(str);
+            } catch (...) {
+                return str;
+            }
+        } else if constexpr (std::is_same_v<T, int>) {
+            try {
+                return std::stoi(str);
+            } catch (...) {
+                return std::monostate{};
+            }
+        } else if constexpr (std::is_same_v<T, float>) {
+            try {
+                return std::stof(str);
+            } catch (...) {
+                return std::monostate{};
+            }
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return (str == ConfigConstants::BooleanValues::TRUE_STRING || str == ConfigConstants::BooleanValues::TRUE_NUMERIC);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return str;
+        }
+        return std::monostate{};
+    }, templateValue);
+}
+
+/**
+ * @brief Check if a value is numeric (int or float)
+ */
+bool StorageProvider::IsNumeric(const Config::ConfigValue& value) const {
+    return std::holds_alternative<int>(value) || std::holds_alternative<float>(value);
 }

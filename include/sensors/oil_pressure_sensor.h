@@ -7,7 +7,7 @@
 // Project Includes
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_config.h"
 #include "sensors/base_sensor.h"
 #include "definitions/types.h"
@@ -43,7 +43,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
   public:
     // ========== Constructors and Destructor ==========
     OilPressureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
-    OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs = 500);
+    OilPressureSensor(IGpioProvider *gpioProvider, IConfigurationManager *configurationManager, int updateRateMs = 500);
 
     // ========== Public Interface Methods ==========
     // BaseSensor interface implementation
@@ -59,13 +59,16 @@ class OilPressureSensor : public BaseSensor, public IConfig
 
     void LoadConfiguration();
 
-    // IConfig implementation
-    void RegisterConfig(IPreferenceService* preferenceService) override;
+    // IConfig implementation (instance method for backward compatibility)
+    void RegisterConfig(IConfigurationManager* configurationManager) override;
+
+    // Static schema registration for self-registering pattern
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
     void RegisterLiveUpdateCallbacks();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE;
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE_SENSOR;
     static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_PRESSURE_UNIT;
     static constexpr const char* CONFIG_UPDATE_RATE = ConfigConstants::Keys::OIL_PRESSURE_UPDATE_RATE;
     static constexpr const char* CONFIG_OFFSET = ConfigConstants::Keys::OIL_PRESSURE_OFFSET;
@@ -93,7 +96,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
 
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
-    IPreferenceService *preferenceService_ = nullptr;
+    IConfigurationManager *configurationManager_ = nullptr;
     float calibrationOffset_ = 0.0f;
     float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "Bar";

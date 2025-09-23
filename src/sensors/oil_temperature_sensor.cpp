@@ -4,9 +4,16 @@
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
+#include "managers/configuration_manager.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>
+
+// Self-registration at program startup
+static bool oil_temperature_registered = []() {
+    ConfigurationManager::AddSchema(OilTemperatureSensor::RegisterConfigSchema);
+    return true;
+}();
 
 // Constructors and Destructors
 
@@ -31,15 +38,15 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
 /**
  * @brief Constructs an oil temperature sensor with preference service for dynamic configuration
  * @param gpioProvider Pointer to GPIO provider interface for ADC reading
- * @param preferenceService Pointer to preference service for configuration persistence
+ * @param configurationManager Pointer to preference service for configuration persistence
  * @param updateRateMs Default update interval in milliseconds for sensor readings
  *
  * Enhanced constructor that enables dynamic configuration through the preference service.
  * Allows for real-time calibration adjustments and unit changes. The preference service
  * enables live configuration updates and persistent storage of sensor settings.
  */
-OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs)
-    : gpioProvider_(gpioProvider), preferenceService_(preferenceService), updateIntervalMs_(updateRateMs)
+OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IConfigurationManager *configurationManager, int updateRateMs)
+    : gpioProvider_(gpioProvider), configurationManager_(configurationManager), updateIntervalMs_(updateRateMs)
 {
     log_v("OilTemperatureSensor() constructor with preference service called");
     // Set default unit to Celsius
@@ -66,17 +73,11 @@ void OilTemperatureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Register with dynamic config system if available and load configuration
-    if (preferenceService_) {
+    // Load configuration and register callbacks (schema already registered at startup)
+    if (configurationManager_) {
         LoadConfiguration();
-
-        // Register this sensor's configuration section with the preference service
-        // This enables self-registration per docs/plans/dynamic-config-implementation.md
-        RegisterConfig(preferenceService_);
-
-        // Set up live callbacks to respond to configuration changes
         RegisterLiveUpdateCallbacks();
-        log_i("OilTemperatureSensor registered with dynamic config system");
+        log_i("OilTemperatureSensor initialized with configuration");
     }
 
     // Take initial reading to establish baseline
@@ -256,28 +257,28 @@ bool OilTemperatureSensor::HasStateChanged()
  */
 void OilTemperatureSensor::LoadConfiguration()
 {
-    if (!preferenceService_) return;
+    if (!configurationManager_) return;
 
     // Load using type-safe config system with static constants
-    if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
+    if (auto unitValue = configurationManager_->QueryConfig<std::string>(CONFIG_UNIT)) {
         targetUnit_ = *unitValue;
     } else {
         targetUnit_ = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT;
     }
 
-    if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
+    if (auto rateValue = configurationManager_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
         updateIntervalMs_ = *rateValue;
     } else {
         updateIntervalMs_ = 500;
     }
 
-    if (auto offsetValue = preferenceService_->QueryConfig<float>(CONFIG_OFFSET)) {
+    if (auto offsetValue = configurationManager_->QueryConfig<float>(CONFIG_OFFSET)) {
         calibrationOffset_ = *offsetValue;
     } else {
         calibrationOffset_ = 0.0f;
     }
 
-    if (auto scaleValue = preferenceService_->QueryConfig<float>(CONFIG_SCALE)) {
+    if (auto scaleValue = configurationManager_->QueryConfig<float>(CONFIG_SCALE)) {
         calibrationScale_ = *scaleValue;
     } else {
         calibrationScale_ = 1.0f;
@@ -288,16 +289,22 @@ void OilTemperatureSensor::LoadConfiguration()
 }
 
 /**
- * @brief Register configuration with dynamic config system
- * @details Implements component self-registration pattern from dynamic-config-implementation.md
- * This allows the sensor to define its own configuration requirements including:
- * - Temperature unit selection (C/F)
+ * @brief Static method to register configuration schema without instance
+ * @param configurationManager Service to register schema with
+ *
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the oil temperature sensor configuration schema without
+ * requiring a sensor instance to exist.
  */
-/// - Update rate options
-/// - Calibration parameters with validation ranges
-void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
+void OilTemperatureSensor::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceService) return;
+    if (!configurationManager) return;
+
+    // Check if already registered to prevent duplicates
+    if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("Oil temperature sensor schema already registered");
+        return;
+    }
 
     using namespace Config;
 
@@ -310,8 +317,22 @@ void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
     section.AddItem(scaleConfig_);
 
     // Register with preference service for persistence and UI generation
-    preferenceService->RegisterConfigSection(section);
-    log_i("Registered oil temperature sensor configuration");
+    configurationManager->RegisterConfigSection(section);
+    log_i("Registered oil temperature sensor configuration schema (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ * @param configurationManager Service to register schema with
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once all components are migrated.
+ */
+void OilTemperatureSensor::RegisterConfig(IConfigurationManager* configurationManager)
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(configurationManager);
 }
 
 /**
@@ -320,7 +341,7 @@ void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
  * Implements live update system from dynamic-config-implementation.md Phase 4
  */
 void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
-    if (!preferenceService_) return;
+    if (!configurationManager_) return;
 
     // Register callback to watch for changes to oil_temperature section
     // Lambda captures 'this' to allow access to sensor methods
@@ -330,7 +351,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle temperature unit change (C/F) - immediate effect on readings
         if (fullKey == CONFIG_UNIT) {
-            if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
+            if (auto newUnit = configurationManager_->GetValue<std::string>(newValue)) {
                 SetTargetUnit(*newUnit);
                 log_i("Oil temperature unit changed to: %s", newUnit->c_str());
             }
@@ -338,7 +359,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle update rate change - controls sensor reading frequency
         else if (fullKey == CONFIG_UPDATE_RATE) {
-            if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
+            if (auto newRate = configurationManager_->GetValue<int>(newValue)) {
                 SetUpdateRate(*newRate);
                 log_i("Oil temperature update rate changed to: %d ms", *newRate);
             }
@@ -346,7 +367,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle calibration offset change
         else if (fullKey == CONFIG_OFFSET) {
-            if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+            if (auto newOffset = configurationManager_->GetValue<float>(newValue)) {
                 calibrationOffset_ = *newOffset;
                 log_i("Oil temperature calibration offset changed to: %.2f", *newOffset);
             }
@@ -354,7 +375,7 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle calibration scale change
         else if (fullKey == CONFIG_SCALE) {
-            if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+            if (auto newScale = configurationManager_->GetValue<float>(newValue)) {
                 calibrationScale_ = *newScale;
                 log_i("Oil temperature calibration scale changed to: %.2f", *newScale);
             }
@@ -362,5 +383,5 @@ void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
     };
 
     // Register for all oil_temperature section changes
-    configCallbackId_ = preferenceService_->RegisterChangeCallback("oil_temperature", callback);
+    configCallbackId_ = configurationManager_->RegisterChangeCallback("oil_temperature", callback);
 }

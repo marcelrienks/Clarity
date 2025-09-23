@@ -4,9 +4,16 @@
 #include "utilities/logging.h"
 #include "definitions/constants.h"
 #include "utilities/unit_converter.h"
+#include "managers/configuration_manager.h"
 #include <Arduino.h>
 #include <esp32-hal-log.h>
 #include <algorithm>
+
+// Self-registration at program startup
+static bool oil_pressure_registered = []() {
+    ConfigurationManager::AddSchema(OilPressureSensor::RegisterConfigSchema);
+    return true;
+}();
 
 // Constructors and Destructors
 
@@ -31,15 +38,15 @@ OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, int updateRate
 /**
  * @brief Constructs an oil pressure sensor with preference service for dynamic configuration
  * @param gpioProvider Pointer to GPIO provider interface for ADC reading
- * @param preferenceService Pointer to preference service for configuration persistence
+ * @param configurationManager Pointer to preference service for configuration persistence
  * @param updateRateMs Default update interval in milliseconds for sensor readings
  *
  * Enhanced constructor that enables dynamic configuration through the preference service.
  * Allows for real-time calibration adjustments and unit changes. The preference service
  * enables live configuration updates and persistent storage of sensor settings.
  */
-OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs)
-    : gpioProvider_(gpioProvider), preferenceService_(preferenceService), updateIntervalMs_(updateRateMs)
+OilPressureSensor::OilPressureSensor(IGpioProvider *gpioProvider, IConfigurationManager *configurationManager, int updateRateMs)
+    : gpioProvider_(gpioProvider), configurationManager_(configurationManager), updateIntervalMs_(updateRateMs)
 {
     log_v("OilPressureSensor() constructor with preference service called");
     // Set default unit to Bar
@@ -66,14 +73,11 @@ void OilPressureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Register with dynamic config system if available and load configuration
-    if (preferenceService_) {
+    // Load configuration and register callbacks (schema already registered at startup)
+    if (configurationManager_) {
         LoadConfiguration();
-
-        // Use unified preference service interface for dynamic configuration
-        RegisterConfig(preferenceService_);
         RegisterLiveUpdateCallbacks();
-        log_i("OilPressureSensor registered with dynamic config system");
+        log_i("OilPressureSensor initialized with configuration");
     }
 
     // Take initial reading to establish baseline
@@ -259,28 +263,28 @@ bool OilPressureSensor::HasStateChanged()
  */
 void OilPressureSensor::LoadConfiguration()
 {
-    if (!preferenceService_) return;
+    if (!configurationManager_) return;
 
     // Load using type-safe config system with static constants
-    if (auto unitValue = preferenceService_->QueryConfig<std::string>(CONFIG_UNIT)) {
+    if (auto unitValue = configurationManager_->QueryConfig<std::string>(CONFIG_UNIT)) {
         targetUnit_ = *unitValue;
     } else {
         targetUnit_ = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT;
     }
 
-    if (auto rateValue = preferenceService_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
+    if (auto rateValue = configurationManager_->QueryConfig<int>(CONFIG_UPDATE_RATE)) {
         updateIntervalMs_ = *rateValue;
     } else {
         updateIntervalMs_ = 500;
     }
 
-    if (auto offsetValue = preferenceService_->QueryConfig<float>(CONFIG_OFFSET)) {
+    if (auto offsetValue = configurationManager_->QueryConfig<float>(CONFIG_OFFSET)) {
         calibrationOffset_ = *offsetValue;
     } else {
         calibrationOffset_ = 0.0f;
     }
 
-    if (auto scaleValue = preferenceService_->QueryConfig<float>(CONFIG_SCALE)) {
+    if (auto scaleValue = configurationManager_->QueryConfig<float>(CONFIG_SCALE)) {
         calibrationScale_ = *scaleValue;
     } else {
         calibrationScale_ = 1.0f;
@@ -291,16 +295,22 @@ void OilPressureSensor::LoadConfiguration()
 }
 
 /**
- * @brief Registers configuration schema with the dynamic config system
+ * @brief Static method to register configuration schema without instance
+ * @param configurationManager Service to register schema with
  *
- * Defines the configuration options available for the oil pressure sensor
- * including unit selection, update rate, and calibration parameters.
- * Creates a configuration section that appears in the dynamic UI for
- * real-time sensor adjustment and calibration.
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the oil pressure sensor configuration schema without
+ * requiring a sensor instance to exist.
  */
-void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
+void OilPressureSensor::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceService) return;
+    if (!configurationManager) return;
+
+    // Check if already registered to prevent duplicates
+    if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("Oil pressure sensor schema already registered");
+        return;
+    }
 
     using namespace Config;
 
@@ -311,8 +321,22 @@ void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
     section.AddItem(offsetConfig_);
     section.AddItem(scaleConfig_);
 
-    preferenceService->RegisterConfigSection(section);
-    log_i("Registered oil pressure sensor configuration");
+    configurationManager->RegisterConfigSection(section);
+    log_i("Registered oil pressure sensor configuration schema (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ * @param configurationManager Service to register schema with
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once all components are migrated.
+ */
+void OilPressureSensor::RegisterConfig(IConfigurationManager* configurationManager)
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(configurationManager);
 }
 
 /**
@@ -325,7 +349,7 @@ void OilPressureSensor::RegisterConfig(IPreferenceService* preferenceService)
  * sensor calibration and adjustment.
  */
 void OilPressureSensor::RegisterLiveUpdateCallbacks() {
-    if (!preferenceService_) return;
+    if (!configurationManager_) return;
 
     // Register callback for our section changes
     auto callback = [this](const std::string& fullKey,
@@ -334,7 +358,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle unit change
         if (fullKey == CONFIG_UNIT) {
-            if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
+            if (auto newUnit = configurationManager_->GetValue<std::string>(newValue)) {
                 SetTargetUnit(*newUnit);
                 log_i("Oil pressure unit changed to: %s", newUnit->c_str());
             }
@@ -342,7 +366,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle update rate change
         else if (fullKey == CONFIG_UPDATE_RATE) {
-            if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
+            if (auto newRate = configurationManager_->GetValue<int>(newValue)) {
                 SetUpdateRate(*newRate);
                 log_i("Oil pressure update rate changed to: %d ms", *newRate);
             }
@@ -350,7 +374,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle calibration offset change
         else if (fullKey == CONFIG_OFFSET) {
-            if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+            if (auto newOffset = configurationManager_->GetValue<float>(newValue)) {
                 calibrationOffset_ = *newOffset;
                 log_i("Oil pressure calibration offset changed to: %.2f", *newOffset);
             }
@@ -358,7 +382,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle calibration scale change
         else if (fullKey == CONFIG_SCALE) {
-            if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+            if (auto newScale = configurationManager_->GetValue<float>(newValue)) {
                 calibrationScale_ = *newScale;
                 log_i("Oil pressure calibration scale changed to: %.2f", *newScale);
             }
@@ -366,5 +390,5 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
     };
 
     // Register for all oil_pressure section changes
-    configCallbackId_ = preferenceService_->RegisterChangeCallback("oil_pressure", callback);
+    configCallbackId_ = configurationManager_->RegisterChangeCallback("oil_pressure", callback);
 }

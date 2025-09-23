@@ -2,14 +2,16 @@
 
 #include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
+#include "interfaces/i_configuration_manager.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
+#include "definitions/configs.h"
 #include <vector>
 #include <memory>
 
 // Forward declarations for sensors
 class ButtonSensor;
-class IActionService;
+class IActionHandler;
 
 #include "esp32-hal-log.h"
 
@@ -38,13 +40,11 @@ public:
     void Process() override;
 
     // Panel management for direct method calls
-    void SetCurrentPanel(IActionService* panel);
+    void SetCurrentPanel(IActionHandler* panel);
     void ClearCurrentPanel();
 
     // Button event processing
     void ProcessButtonEvents();
-    ButtonAction DetectButtonAction();
-    ButtonAction DetectLongPressDuringHold();
 
     // Sensor access for action context
     ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
@@ -52,6 +52,10 @@ public:
     // Status and diagnostics
     bool HasPendingAction() const;
     void ClearPendingAction();
+
+    // Configuration management
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
+    void SetConfigurationManager(IConfigurationManager* configurationManager);
 
     // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
@@ -72,18 +76,24 @@ private:
     void UpdateButtonState();
     void StartButtonTiming();
     void StopButtonTiming();
-    ButtonAction CalculateButtonAction(unsigned long pressDuration);
+    ButtonAction CalculateButtonAction(unsigned long press_duration);
 
     // Helper methods
     bool IsButtonPressed() const;
     const char* StateToString(ButtonState state) const;
+
+    // Configuration helpers
+    unsigned long GetDebounceMs() const;
+    unsigned long GetLongPressMs() const;
     
     // ========== Private Data Members ==========
-    // Timing constants - based on automotive UI best practices and user testing
-    static constexpr unsigned long MIN_PRESS_DURATION_MS = 500;   // Minimum to avoid accidental presses
-    static constexpr unsigned long SHORT_PRESS_MAX_MS = 1500;     // Optimal for quick actions
-    static constexpr unsigned long LONG_PRESS_MIN_MS = 1500;      // Clear distinction from short press
-    static constexpr unsigned long LONG_PRESS_MAX_MS = 3000;      // Not used for detection, kept for compatibility
+    // Configuration items for button timing
+    inline static Config::ConfigItem debounceConfig_{ConfigConstants::Items::DEBOUNCE_MS, UIStrings::ConfigLabels::DEBOUNCE_MS,
+                                                      ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS,
+                                                      Config::ConfigMetadata("200,400,600", "ms", Config::ConfigItemType::Selection)};
+    inline static Config::ConfigItem longPressConfig_{ConfigConstants::Items::LONG_PRESS_MS, UIStrings::ConfigLabels::LONG_PRESS_MS,
+                                                       ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS,
+                                                       Config::ConfigMetadata("1000,1500,2000,2500", "ms", Config::ConfigItemType::Selection)};
 
     // Single pending action (LIFO with size 1)
     ButtonAction pendingActionType_ = ButtonAction::NONE;
@@ -95,7 +105,10 @@ private:
     unsigned long buttonPressEndTime_ = 0;
 
     // Current panel for direct method calls
-    class IActionService* currentPanel_ = nullptr;
+    class IActionHandler* currentPanel_ = nullptr;
+
+    // Preference service for configuration access
+    IConfigurationManager* configurationManager_ = nullptr;
 
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;

@@ -5,8 +5,15 @@
 #include "managers/style_manager.h"
 #include "definitions/constants.h"
 #include "utilities/logging.h"
+#include "managers/configuration_manager.h"
 #include <algorithm>
 #include <esp32-hal-log.h>
+
+// Self-registration at program startup
+static bool splash_panel_registered = []() {
+    ConfigurationManager::AddSchema(SplashPanel::RegisterConfigSchema);
+    return true;
+}();
 
 // Constructors and Destructors
 
@@ -14,18 +21,17 @@
  * @brief Constructs a splash panel with required dependencies
  * @param gpio GPIO provider interface for hardware interaction
  * @param display Display provider interface for screen creation
- * @param styleService Style service interface for theming
+ * @param styleManager Style service interface for theming
  * @param notificationService Notification service for panel lifecycle events
  *
  * Initializes the splash panel with dependency injection pattern. Creates the
  * splash component and sets up notification service with fallback to default.
  * The component is stack-allocated for better memory management.
  */
-SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
-                         IPanelNotificationService* notificationService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      component_(styleService), componentInitialized_(false),
-      notificationService_(notificationService ? notificationService : &PanelManager::NotificationService())
+SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                         IPanelManager* panelManager, IConfigurationManager* configurationManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(panelManager),
+      configurationManager_(configurationManager), component_(styleManager), componentInitialized_(false)
 {
     log_v("SplashPanel constructor called");
 }
@@ -137,9 +143,9 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeInTimer));
 
     // During display period, no animations are running - set IDLE to allow actions
-    if (panel->panelService_)
+    if (panel->panelManager_)
     {
-        panel->panelService_->SetUiState(UIState::IDLE);
+        panel->panelManager_->SetUiState(UIState::IDLE);
     }
 
     // Create a timer for the callback
@@ -164,9 +170,9 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
     // About to start fade-out animation - set BUSY
-    if (panel->panelService_)
+    if (panel->panelManager_)
     {
-        panel->panelService_->SetUiState(UIState::BUSY);
+        panel->panelManager_->SetUiState(UIState::BUSY);
     }
 
     lv_screen_load_anim(panel->blankScreen_, LV_SCR_LOAD_ANIM_FADE_OUT, panel->GetAnimationTime(), 0, false);
@@ -194,7 +200,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
-    panel->notificationService_->OnPanelLoadComplete(panel);
+    static_cast<PanelManager*>(panel->panelManager_)->OnPanelLoadComplete(panel);
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);
@@ -203,52 +209,44 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
 
 /**
  * @brief Injects manager service dependencies
- * @param panelService Panel service for UI state management and panel operations
- * @param styleService Style service for theme management (updated if different)
+ * @param panelManager Panel service for UI state management and panel operations
+ * @param styleManager Style service for theme management (updated if different)
  *
  * Updates the panel and style service references for runtime services.
  * Style service is already set in constructor but can be updated if a
  * different instance is provided during panel lifecycle.
  */
-void SplashPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
-{
-    log_v("SetManagers() called");
-    panelService_ = panelService;
-    // styleService_ is already set in constructor, but update if different instance provided
-    if (styleService != styleService_)
-    {
-        styleService_ = styleService;
-    }
-    // Managers injected successfully
-}
 
 /**
  * @brief Injects preference service dependency for configurable splash duration
- * @param preferenceService Preference service for reading splash configuration
+ * @param configurationManager Preference service for reading splash configuration
  *
  * Enables the splash panel to read configurable splash duration from
  * preferences. The splash duration determines the total time for fade-in,
  * display, and fade-out animations.
  */
-void SplashPanel::SetPreferenceService(IPreferenceService *preferenceService)
-{
-    log_v("SetPreferenceService() called");
-    preferenceService_ = preferenceService;
-
-    // Register configuration when preference service is available
-    RegisterConfiguration();
-}
 
 /**
- * @brief Register SplashPanel configuration section
+ * @brief Static method to register configuration schema without instance
+ * @param configurationManager Service to register schema with
+ *
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the SplashPanel configuration schema without
+ * requiring a panel instance to exist.
  */
-void SplashPanel::RegisterConfiguration()
+void SplashPanel::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceService_) return;
+    if (!configurationManager) return;
+
+    // Check if already registered to prevent duplicates
+    if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("SplashPanel schema already registered");
+        return;
+    }
 
     using namespace Config;
 
-    ConfigSection section(ConfigConstants::Sections::SPLASH_PANEL, CONFIG_SECTION, TimingConstants::Splash::SECTION_DISPLAY_NAME);
+    ConfigSection section(ConfigConstants::Sections::SPLASH_PANEL, CONFIG_SECTION, ConfigConstants::SectionNames::SPLASH_PANEL);
 
     // Splash duration selection (show_splash is managed by system settings)
     ConfigItem durationItem(ConfigConstants::Items::DURATION, TimingConstants::Splash::DURATION_LABEL, std::string(TimingConstants::Splash::DEFAULT_DURATION),
@@ -256,8 +254,21 @@ void SplashPanel::RegisterConfiguration()
 
     section.AddItem(durationItem);
 
-    preferenceService_->RegisterConfigSection(section);
-    log_i("SplashPanel configuration registered");
+    configurationManager->RegisterConfigSection(section);
+    log_i("SplashPanel configuration schema registered (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once migration is complete.
+ */
+void SplashPanel::RegisterConfiguration()
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(configurationManager_);
 }
 
 /**
@@ -274,8 +285,8 @@ int SplashPanel::GetAnimationTime() const
 
     // Get splash duration using type-safe config system
     int splashDuration = std::stoi(TimingConstants::Splash::DEFAULT_DURATION); // Default value
-    if (preferenceService_) {
-        if (auto durationValue = preferenceService_->QueryConfig<std::string>(CONFIG_DURATION)) {
+    if (configurationManager_) {
+        if (auto durationValue = configurationManager_->QueryConfig<std::string>(CONFIG_DURATION)) {
             splashDuration = std::stoi(*durationValue);
         }
     }
@@ -349,13 +360,13 @@ void SplashPanel::HandleShortPress()
  */
 void SplashPanel::HandleLongPress()
 {
-    if (panelService_)
+    if (panelManager_)
     {
         log_i("SplashPanel long press - loading config panel");
-        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+        panelManager_->CreateAndLoadPanel(PanelNames::CONFIG, true);
     }
     else
     {
-        log_w("SplashPanel: Cannot load config panel - panelService not available");
+        log_w("SplashPanel: Cannot load config panel - panelManager not available");
     }
 }

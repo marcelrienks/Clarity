@@ -2,8 +2,15 @@
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include "definitions/constants.h"
+#include "managers/configuration_manager.h"
 #include <cstring>
 #include <esp32-hal-log.h>
+
+// Self-registration at program startup
+static bool style_manager_registered = []() {
+    ConfigurationManager::AddSchema(StyleManager::RegisterConfigSchema);
+    return true;
+}();
 
 // Static instance for singleton pattern
 static StyleManager* styleInstancePtr_ = nullptr;
@@ -84,7 +91,7 @@ void StyleManager::InitializeStyles()
     initialized_ = true;
 
     // Apply theme from preferences
-    if (preferenceService_) {
+    if (configurationManager_) {
         LoadConfiguration();
     } else {
         SetTheme(theme_.c_str());
@@ -192,7 +199,7 @@ void StyleManager::ApplyCurrentTheme()
 {
     log_i("StyleManager::ApplyCurrentTheme() called");
 
-    if (!preferenceService_) {
+    if (!configurationManager_) {
         log_e("StyleManager: No PreferenceService available - cannot read theme from preferences!");
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "StyleManager",
                                             "No PreferenceService available - cannot persist theme");
@@ -201,8 +208,8 @@ void StyleManager::ApplyCurrentTheme()
     }
 
     // Read theme using type-safe config system
-    std::string preferenceTheme = UIStrings::ThemeNames::DAY; // Default
-    if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+    std::string preferenceTheme = Themes::DAY; // Default
+    if (auto themeValue = configurationManager_->QueryConfig<std::string>(CONFIG_THEME)) {
         preferenceTheme = *themeValue;
     }
     log_v("Read theme from preferences: %s (cached: %s)", preferenceTheme.c_str(), theme_.c_str());
@@ -245,12 +252,12 @@ const ThemeColors &StyleManager::GetColours(const std::string& theme) const
 const std::string& StyleManager::GetCurrentTheme() const
 {
     // Always pull theme using type-safe config system for consistency
-    if (preferenceService_) {
+    if (configurationManager_) {
         static std::string currentTheme;
-        if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+        if (auto themeValue = configurationManager_->QueryConfig<std::string>(CONFIG_THEME)) {
             currentTheme = *themeValue;
         } else {
-            currentTheme = UIStrings::ThemeNames::DAY;
+            currentTheme = Themes::DAY;
         }
         return currentTheme;
     }
@@ -273,12 +280,12 @@ void StyleManager::SwitchTheme(const char* themeName)
 
 /**
  * @brief Inject preference service dependency for theme persistence
- * @param preferenceService Pointer to preference service instance
+ * @param configurationManager Pointer to preference service instance
  */
-void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
+void StyleManager::SetConfigurationManager(IConfigurationManager* configurationManager)
 {
-    log_v("SetPreferenceService() called");
-    preferenceService_ = preferenceService;
+    log_v("SetConfigurationManager() called");
+    configurationManager_ = configurationManager;
 }
 
 // ========== Private Methods ==========
@@ -306,21 +313,46 @@ void StyleManager::ResetStyles()
 }
 
 /**
- * @brief Register StyleManager configuration section
+ * @brief Static method to register configuration schema without instance
+ * @param configurationManager Service to register schema with
+ *
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the StyleManager configuration schema without
+ * requiring a manager instance to exist.
  */
-void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
+void StyleManager::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceService) return;
+    if (!configurationManager) return;
+
+    // Check if already registered to prevent duplicates
+    if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
+        log_d("StyleManager schema already registered");
+        return;
+    }
 
     using namespace Config;
 
-    ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, UIStrings::MenuLabels::DISPLAY_MENU);
+    ConfigSection section(ConfigConstants::Sections::STYLE_MANAGER, CONFIG_SECTION, ConfigConstants::SectionNames::STYLE_MANAGER);
 
     section.AddItem(themeConfig_);
     section.AddItem(brightnessConfig_);
 
-    preferenceService->RegisterConfigSection(section);
-    log_i("StyleManager configuration registered");
+    configurationManager->RegisterConfigSection(section);
+    log_i("StyleManager configuration schema registered (static)");
+}
+
+/**
+ * @brief Instance method for backward compatibility during migration
+ * @param configurationManager Service to register schema with
+ *
+ * This method maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once all components are migrated.
+ */
+void StyleManager::RegisterConfig(IConfigurationManager* configurationManager)
+{
+    // During migration, just delegate to static method
+    RegisterConfigSchema(configurationManager);
 }
 
 /**
@@ -328,16 +360,16 @@ void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
  */
 void StyleManager::LoadConfiguration()
 {
-    if (!preferenceService_) return;
+    if (!configurationManager_) return;
 
     // Register configuration first
-    RegisterConfig(preferenceService_);
+    RegisterConfig(configurationManager_);
 
     // Load theme using type-safe config system
-    if (auto themeValue = preferenceService_->QueryConfig<std::string>(CONFIG_THEME)) {
+    if (auto themeValue = configurationManager_->QueryConfig<std::string>(CONFIG_THEME)) {
         SetTheme(themeValue->c_str());
     } else {
-        SetTheme(UIStrings::ThemeNames::DAY); // Default theme
+        SetTheme(Themes::DAY); // Default theme
     }
 
     log_i("Loaded style configuration: theme=%s", theme_.c_str());

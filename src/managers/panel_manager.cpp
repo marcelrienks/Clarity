@@ -4,7 +4,7 @@
 
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 // Direct panel includes (factory pattern eliminated)
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
@@ -26,7 +26,7 @@ static PanelManager* instancePtr_ = nullptr;
  * @brief Constructs the PanelManager with all required service dependencies
  * @param display Display provider interface for panel rendering
  * @param gpio GPIO provider interface for hardware interaction
- * @param styleService Style service interface for theme management
+ * @param styleManager Style service interface for theme management
  * @param preferenceService Preference service interface for configuration persistence
  * @param interruptManager Interrupt manager for button and trigger handling
  *
@@ -34,20 +34,20 @@ static PanelManager* instancePtr_ = nullptr;
  * required dependencies and sets up the default oil panel as the initial panel.
  * Establishes singleton instance for global access by interrupt system.
  */
-PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IPreferenceService *preferenceService, InterruptManager* interruptManager)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      preferenceService_(preferenceService), interruptManager_(interruptManager),
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleManager,
+                           IConfigurationManager *configurationManager, InterruptManager* interruptManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager),
+      configurationManager_(configurationManager), interruptManager_(interruptManager),
       errorManager_(ErrorManager::Instance())
 {
     log_v("PanelManager() constructor called");
-    if (!display || !gpio || !styleService || !preferenceService)
+    if (!display || !gpio || !styleManager || !configurationManager)
     {
-        log_e("PanelManager requires all dependencies: display, gpio, styleService, and "
+        log_e("PanelManager requires all dependencies: display, gpio, styleManager, and "
               "preferenceService");
         errorManager_.ReportCriticalError(
             "PanelManager",
-            "Missing required dependencies - display, gpio, styleService, or preferenceService is null");
+            "Missing required dependencies - display, gpio, styleManager, or preferenceService is null");
         // In a real embedded system, you might want to handle this more gracefully
         return;
     }
@@ -100,7 +100,7 @@ PanelManager& PanelManager::Instance() {
     return *instancePtr_;
 }
 
-// ========== IPanelService Implementation ==========
+// ========== IPanelManager Implementation ==========
 
 /**
  * @brief Initializes the panel service to control the flow and rendering of all panels
@@ -159,10 +159,10 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
 
     // Check if splash screen should be shown - only if NOT trigger-driven and splash is enabled
     bool showSplash = false;
-    if (preferenceService_ && !isTriggerDriven)
+    if (configurationManager_ && !isTriggerDriven)
     {
         // Query system configuration for splash screen setting
-        if (auto splashValue = preferenceService_->QueryConfig<bool>(ConfigConstants::Keys::SYSTEM_SHOW_SPLASH)) {
+        if (auto splashValue = configurationManager_->QueryConfig<bool>(ConfigConstants::Keys::SYSTEM_SHOW_SPLASH)) {
             showSplash = *splashValue;
         } else {
             showSplash = true; // Default to true
@@ -286,13 +286,13 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     }
 }
 
-// ========== IActionExecutionService Implementation ==========
+// ========== IActionHandler Implementation ==========
 
 /**
  * @brief Handles short button press action (new architecture)
  *
- * Part of the IActionExecutionService interface. Delegates the short press
- * action to the current panel if it implements IActionService. This allows
+ * Part of the IActionHandler interface. Delegates the short press
+ * action to the current panel if it implements IActionHandler. This allows
  * panels to define their own button behavior while maintaining a consistent
  * action handling interface.
  */
@@ -304,8 +304,8 @@ void PanelManager::HandleShortPress() {
         return;
     }
 
-    // Try to cast panel to IActionService to handle press
-    IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
+    // Try to cast panel to IActionHandler to handle press
+    IActionHandler* actionService = dynamic_cast<IActionHandler*>(panel_.get());
     if (actionService) {
         actionService->HandleShortPress();
     } else {
@@ -316,8 +316,8 @@ void PanelManager::HandleShortPress() {
 /**
  * @brief Handles long button press action (new architecture)
  *
- * Part of the IActionExecutionService interface. Delegates the long press
- * action to the current panel if it implements IActionService. This allows
+ * Part of the IActionHandler interface. Delegates the long press
+ * action to the current panel if it implements IActionHandler. This allows
  * panels to define their own button behavior while maintaining a consistent
  * action handling interface.
  */
@@ -329,8 +329,8 @@ void PanelManager::HandleLongPress() {
         return;
     }
 
-    // Try to cast panel to IActionService to handle press
-    IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
+    // Try to cast panel to IActionHandler to handle press
+    IActionHandler* actionService = dynamic_cast<IActionHandler*>(panel_.get());
     if (actionService) {
         actionService->HandleLongPress();
     }
@@ -416,14 +416,6 @@ void PanelManager::UpdateRestorationTracking(const char* panelName, bool isTrigg
  * @brief Injects preference service into panels that support it
  * @param panelName Name of the panel to inject service into
  */
-void PanelManager::InjectPreferenceService(const char* panelName) {
-    if (!preferenceService_ || !panel_) {
-        return;
-    }
-
-    // Simply call the interface method - panels that need it will override it
-    panel_->SetPreferenceService(preferenceService_);
-}
 
 /**
  * @brief Handles panel creation errors
@@ -444,7 +436,7 @@ void PanelManager::HandlePanelCreationError(const char* panelName) {
  * @brief Updates universal button interrupts with current panel's functions
  * @param panel Pointer to the panel whose button functions should be registered
  *
- * Extracts button functions from panels that implement IActionService and
+ * Extracts button functions from panels that implement IActionHandler and
  * registers them with the interrupt manager. This enables dynamic button
  * behavior that changes based on the current panel. Validates all function
  * pointers before registration to ensure system stability.
@@ -462,11 +454,11 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
         return;
     }
 
-    IActionService* actionService = dynamic_cast<IActionService*>(panel);
+    IActionHandler* actionService = dynamic_cast<IActionHandler*>(panel);
     if (!actionService) {
-        log_e("UpdatePanelButtonFunctions: Panel does not implement IActionService");
+        log_e("UpdatePanelButtonFunctions: Panel does not implement IActionHandler");
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
-                                            "Panel does not implement IActionService");
+                                            "Panel does not implement IActionHandler");
         return;
     }
 
@@ -496,27 +488,27 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     // Direct panel instantiation (factory pattern eliminated)
 
     if (strcmp(panelName, PanelNames::SPLASH) == 0) {
-        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleManager_, this, configurationManager_);
     }
 
     if (strcmp(panelName, PanelNames::OIL) == 0) {
-        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleManager_, this, configurationManager_);
     }
 
     if (strcmp(panelName, PanelNames::ERROR) == 0) {
-        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     if (strcmp(panelName, PanelNames::CONFIG) == 0) {
-        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleManager_, this, configurationManager_);
     }
 
     if (strcmp(panelName, PanelNames::KEY) == 0) {
-        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     if (strcmp(panelName, PanelNames::LOCK) == 0) {
-        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     // Unknown panel type
@@ -557,9 +549,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
         return;
     }
 
-    // Inject core dependencies
-    panel_->SetManagers(this, styleService_);
-    InjectPreferenceService(panelName);
+    // Dependencies already injected via constructor
 
     // Initialize panel
     panel_->Init();
@@ -569,9 +559,9 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
 
     // Apply current theme from preferences BEFORE panel is loaded
     // This ensures correct theme is set before any rendering happens
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyCurrentTheme();
+        styleManager_->ApplyCurrentTheme();
     }
 
     // Update universal button interrupts with this panel's functions

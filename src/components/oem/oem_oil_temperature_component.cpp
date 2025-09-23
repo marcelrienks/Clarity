@@ -4,7 +4,7 @@
 
 // ========== Constructors and Destructor ==========
 
-OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleService *styleService) : OemOilComponent(styleService)
+OemOilTemperatureComponent::OemOilTemperatureComponent(IStyleManager *styleManager) : OemOilComponent(styleManager)
 {
     log_v("OemOilTemperatureComponent() constructor called");
     // Constructor delegates initialization to base OemOilComponent

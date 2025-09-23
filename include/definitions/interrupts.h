@@ -36,11 +36,11 @@ inline std::vector<Trigger> GetSystemTriggers(
             .type = TriggerType::PANEL,
             .activateFunc = []() { 
                 log_t("KeyPresentActivate() - Loading KEY panel");
-                PanelManager::TriggerService().LoadPanel(PanelNames::KEY); 
+                PanelManager::Instance().LoadPanel(PanelNames::KEY); 
             },
             .deactivateFunc = []() { 
                 log_t("KeyPresentDeactivate() - Checking for restoration");
-                PanelManager::TriggerService().CheckRestoration(); 
+                PanelManager::Instance().CheckRestoration(); 
             },
             .sensor = keyPresentSensor,
             .isActive = false
@@ -51,11 +51,11 @@ inline std::vector<Trigger> GetSystemTriggers(
             .type = TriggerType::PANEL,
             .activateFunc = []() { 
                 log_t("KeyNotPresentActivate() - Loading KEY panel");
-                PanelManager::TriggerService().LoadPanel(PanelNames::KEY); 
+                PanelManager::Instance().LoadPanel(PanelNames::KEY); 
             },
             .deactivateFunc = []() { 
                 log_t("KeyNotPresentDeactivate() - Checking for restoration");
-                PanelManager::TriggerService().CheckRestoration(); 
+                PanelManager::Instance().CheckRestoration(); 
             },
             .sensor = keyNotPresentSensor,
             .isActive = false
@@ -68,11 +68,11 @@ inline std::vector<Trigger> GetSystemTriggers(
             .type = TriggerType::PANEL,
             .activateFunc = []() { 
                 log_t("LockEngagedActivate() - Loading LOCK panel");
-                PanelManager::TriggerService().LoadPanel(PanelNames::LOCK); 
+                PanelManager::Instance().LoadPanel(PanelNames::LOCK); 
             },
             .deactivateFunc = []() { 
                 log_t("LockDisengagedActivate() - Checking for restoration");
-                PanelManager::TriggerService().CheckRestoration(); 
+                PanelManager::Instance().CheckRestoration(); 
             },
             .sensor = lockSensor,
             .isActive = false

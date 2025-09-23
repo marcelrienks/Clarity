@@ -1,7 +1,7 @@
 #pragma once
 
-#include "interfaces/i_style_service.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_style_manager.h"
+#include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_config.h"
 #include "definitions/styles.h"
 #include "definitions/types.h"
@@ -63,7 +63,7 @@
  * Components get their styles from here to ensure consistency. The night
  * theme uses red accents while day theme uses white/neutral colors.
  */
-class StyleManager : public IStyleService, public IConfig
+class StyleManager : public IStyleManager, public IConfig
 {
 public:
     // ========== Constructors and Destructor ==========
@@ -145,15 +145,18 @@ public:
 
     void SwitchTheme(const char* themeName);
 
-    void SetPreferenceService(IPreferenceService* preferenceService);
+    void SetConfigurationManager(IConfigurationManager* configurationManager);
 
     void LoadConfiguration();
 
-    // IConfig implementation
-    void RegisterConfig(IPreferenceService* preferenceService) override;
+    // IConfig implementation (instance method for backward compatibility)
+    void RegisterConfig(IConfigurationManager* configurationManager) override;
+
+    // Static schema registration for self-registering pattern
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER_LOWER;
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER;
     static constexpr const char* CONFIG_THEME = ConfigConstants::Keys::STYLE_MANAGER_THEME;
     static constexpr const char* CONFIG_BRIGHTNESS = ConfigConstants::Keys::STYLE_MANAGER_BRIGHTNESS;
 
@@ -163,7 +166,7 @@ private:
 
     // ========== Configuration Items (inline definitions) ==========
     inline static Config::ConfigItem themeConfig_{ConfigConstants::Items::THEME, UIStrings::ConfigLabels::THEME,
-                                                   std::string(UIStrings::ThemeNames::DAY),
+                                                   std::string(Themes::DAY),
                                                    Config::ConfigMetadata("Day,Night", Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem brightnessConfig_{ConfigConstants::Items::BRIGHTNESS, UIStrings::ConfigLabels::BRIGHTNESS,
                                                         ConfigConstants::Defaults::DEFAULT_BRIGHTNESS,
@@ -192,5 +195,5 @@ private:
     const ThemeColors& errorThemeColours_ = ThemeDefinitions::ERROR_THEME;
 
     // Direct preference reading support
-    IPreferenceService* preferenceService_ = nullptr;
+    IConfigurationManager* configurationManager_ = nullptr;
 };

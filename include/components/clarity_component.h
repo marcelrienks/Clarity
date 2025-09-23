@@ -2,7 +2,7 @@
 
 // Project Includes
 #include "interfaces/i_component.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_style_manager.h"
 
 /**
  * @class ClarityComponent
@@ -28,7 +28,7 @@ class ClarityComponent : public IComponent
 {
 public:
     // ========== Constructors and Destructor ==========
-    explicit ClarityComponent(IStyleService *styleService);
+    explicit ClarityComponent(IStyleManager *styleManager);
     virtual ~ClarityComponent() = default;
 
     // ========== Public Interface Methods ==========
@@ -36,5 +36,5 @@ public:
 
 private:
     // ========== Private Data Members ==========
-    IStyleService *styleService_;
+    IStyleManager *styleManager_;
 };

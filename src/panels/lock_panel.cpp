@@ -11,15 +11,16 @@
  * @brief Constructs lock panel for vehicle security status display
  * @param gpio GPIO provider for hardware interaction
  * @param display Display provider for screen management
- * @param styleService Style service for theme-based styling
+ * @param styleManager Style service for theme-based styling
  *
  * Creates lock panel that displays vehicle security lock status. Assumes
  * lock engaged state since panel is only loaded when lock state changes.
  * Uses stack-allocated component for efficient memory management.
  */
-LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
-    : BasePanel(gpio, display, styleService),
-      lockComponent_(styleService), componentInitialized_(false)
+LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                     IPanelManager *panelManager)
+    : BasePanel(gpio, display, styleManager, panelManager),
+      lockComponent_(styleManager), componentInitialized_(false)
 {
     // Note: LockPanel is display-only, state comes from interrupt system
     // Since this panel is only loaded when lock state changes, assume engaged
@@ -66,13 +67,13 @@ void LockPanel::UpdateContent()
  */
 void LockPanel::HandleLongPress()
 {
-    if (panelService_)
+    if (panelManager_)
     {
         log_i("LockPanel long press - loading config panel");
-        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+        panelManager_->CreateAndLoadPanel(PanelNames::CONFIG, true);
     }
     else
     {
-        log_w("LockPanel: Cannot load config panel - panelService not available");
+        log_w("LockPanel: Cannot load config panel - panelManager not available");
     }
 }

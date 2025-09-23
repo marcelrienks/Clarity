@@ -7,7 +7,7 @@
 #include <functional>
 
 /**
- * @interface IPreferenceService
+ * @interface IConfigurationManager
  * @brief Modern dynamic configuration interface for component self-registration
  *
  * @details This interface provides a complete dynamic configuration system
@@ -28,10 +28,10 @@
  * - Sectioned storage organization
  * - No backwards compatibility - clean modern design
  */
-class IPreferenceService
+class IConfigurationManager
 {
 public:
-    virtual ~IPreferenceService() = default;
+    virtual ~IConfigurationManager() = default;
 
     // ========== Live Update Callback Types ==========
 
@@ -51,8 +51,8 @@ public:
         auto valueOpt = QueryConfigImpl(fullKey);
         if (!valueOpt) return std::nullopt;
 
-        // Use ConfigValueHelper for type-safe value extraction
-        return Config::ConfigValueHelper::GetValue<T>(*valueOpt);
+        // Use GetValue method for type-safe value extraction
+        return GetValue<T>(*valueOpt);
     }
 
     template<typename T>
@@ -84,6 +84,35 @@ public:
     // ========== Live Update Methods ==========
 
     virtual uint32_t RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) = 0;
+
+    // ========== Schema Query Methods ==========
+
+    /**
+     * @brief Check if a configuration schema is registered
+     * @param sectionName Name of the section to check
+     * @return true if schema is registered, false otherwise
+     *
+     * Used to determine if a schema has already been registered,
+     * useful for backward compatibility during migration.
+     */
+    virtual bool IsSchemaRegistered(const std::string& sectionName) const = 0;
+
+    // ========== Configuration Value Helper Methods ==========
+    // (Moved from ConfigValueHelper class for better encapsulation)
+
+    virtual std::string GetTypeName(const Config::ConfigValue& value) const = 0;
+    virtual bool TypesMatch(const Config::ConfigValue& a, const Config::ConfigValue& b) const = 0;
+    virtual std::string ToString(const Config::ConfigValue& value) const = 0;
+    virtual Config::ConfigValue FromString(const std::string& str, const Config::ConfigValue& templateValue) const = 0;
+    virtual bool IsNumeric(const Config::ConfigValue& value) const = 0;
+
+    template<typename T>
+    std::optional<T> GetValue(const Config::ConfigValue& value) const {
+        if (std::holds_alternative<T>(value)) {
+            return std::get<T>(value);
+        }
+        return std::nullopt;
+    }
 
 protected:
     // ========== Implementation Methods ==========

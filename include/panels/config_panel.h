@@ -1,13 +1,13 @@
 #pragma once
 
 #include "components/config_component.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_preference_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_configuration_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "definitions/configs.h"
 #include "definitions/types.h"
 
@@ -49,7 +49,8 @@ class ConfigPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                IPanelManager *panelManager, IConfigurationManager *configurationManager);
     ~ConfigPanel();
 
     // ========== Public Interface Methods ==========
@@ -58,9 +59,6 @@ class ConfigPanel : public IPanel
     void Load() override;
     void Update() override;
 
-    // Manager injection method
-    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
-    void SetPreferenceService(IPreferenceService *preferenceService);
 
     // IActionService Interface Implementation (inherited through IPanel)
     void HandleShortPress() override;
@@ -127,9 +125,9 @@ class ConfigPanel : public IPanel
     // Instance Data Members
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleService *styleService_;
-    IPanelService *panelService_;
-    IPreferenceService *preferenceService_ = nullptr;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
+    IConfigurationManager *configurationManager_ = nullptr;
     lv_obj_t* screen_ = nullptr;
 
     // Component (View) - static allocation

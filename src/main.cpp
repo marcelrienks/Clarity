@@ -4,7 +4,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "definitions/configs.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
@@ -14,17 +14,24 @@
 #include "utilities/logging.h"
 #include "utilities/ticker.h"
 #include "definitions/types.h"
+#include "managers/configuration_manager.h"
+
+// Self-registration at program startup
+static bool system_config_registered = []() {
+    ConfigurationManager::AddSchema(SystemConfig::RegisterConfigSchema);
+    return true;
+}();
 
 // ========== Global Variables ==========
 
 // Global variable definitions (declarations are in main.h)
-std::unique_ptr<IProviderFactory> providerFactory;
+std::unique_ptr<ProviderFactory> providerFactory;
 std::unique_ptr<ManagerFactory> managerFactory;
 std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
-std::unique_ptr<IPreferenceService> preferenceManager;
+std::unique_ptr<IConfigurationManager> configurationManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
@@ -32,26 +39,44 @@ ErrorManager *errorManager;
 // ========== System Configuration ==========
 
 /**
- * @brief Register system-wide configuration settings
+ * @brief Static method to register system configuration schema without instance
+ * @param configurationManager Service to register schema with
  *
- * Consolidates all system settings (panel selection, update rate, splash screen)
- * into a single configuration section managed directly by main.cpp.
+ * Called automatically at program startup through ConfigRegistry.
+ * Registers the SystemConfig configuration schema without
+ * requiring a manager instance to exist.
  */
-void registerSystemConfiguration()
+void SystemConfig::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceManager) {
-        log_e("Cannot register system configuration - preference manager not available");
+    if (!configurationManager) return;
+
+    // Check if already registered to prevent duplicates
+    if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
+        log_d("SystemConfig schema already registered");
         return;
     }
 
-    Config::ConfigSection section(ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM);
+    Config::ConfigSection section(ConfigConstants::Sections::SYSTEM, ConfigConstants::Sections::SYSTEM, ConfigConstants::SectionNames::SYSTEM);
 
     section.AddItem(defaultPanelConfig);
     section.AddItem(updateRateConfig);
     section.AddItem(showSplashConfig);
 
-    preferenceManager->RegisterConfigSection(section);
-    log_i("System configuration registered");
+    configurationManager->RegisterConfigSection(section);
+    log_i("SystemConfig configuration schema registered (static)");
+}
+
+/**
+ * @brief Legacy function for backward compatibility during migration
+ *
+ * This function maintains backward compatibility during migration.
+ * New code path uses static RegisterConfigSchema instead.
+ * Can be removed once migration is complete.
+ */
+void registerSystemConfiguration()
+{
+    // During migration, just delegate to static method
+    SystemConfig::RegisterConfigSchema(configurationManager.get());
 }
 
 // ========== Private Methods ==========
@@ -70,83 +95,88 @@ bool initializeServices()
 
     providerFactory = std::make_unique<ProviderFactory>();
     if (!providerFactory) {
-        log_e("Failed to create ProviderFactory - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PROVIDER_FACTORY_ALLOCATION_FAILED);
+        log_e("Failed to create ProviderFactory - %s", "allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "ProviderFactory allocation failed");
         return false;
     }
 
     deviceProvider = providerFactory->CreateDeviceProvider();
     if (!deviceProvider) {
         log_e("Failed to create DeviceProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::DEVICE_PROVIDER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "DeviceProvider creation failed");
         return false;
     }
 
     gpioProvider = providerFactory->CreateGpioProvider();
     if (!gpioProvider) {
         log_e("Failed to create GpioProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::GPIO_PROVIDER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "GpioProvider creation failed");
         return false;
     }
 
     displayProvider = providerFactory->CreateDisplayProvider(deviceProvider.get());
     if (!displayProvider) {
         log_e("Failed to create DisplayProvider via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::DISPLAY_PROVIDER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "DisplayProvider creation failed");
         return false;
     }
 
     managerFactory = std::make_unique<ManagerFactory>(std::move(providerFactory));
     if (!managerFactory) {
-        log_e("Failed to create ManagerFactory - %s", ErrorMessages::Generic::ALLOCATION_FAILED);
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::MANAGER_FACTORY_ALLOCATION_FAILED);
+        log_e("Failed to create ManagerFactory - %s", "allocation failed");
+        ErrorManager::Instance().ReportCriticalError("main", "ManagerFactory allocation failed");
         return false;
     }
 
-    preferenceManager = managerFactory->CreatePreferenceManager();
-    if (!preferenceManager) {
-        log_e("Failed to create PreferenceManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PREFERENCE_MANAGER_CREATION_FAILED);
+    // Create ConfigurationManager via factory (sets up singleton)
+    configurationManager = managerFactory->CreateConfigurationManager();
+    if (!configurationManager) {
+        log_e("Failed to create ConfigurationManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager creation failed");
         return false;
     }
-    
+
+
     // Initialize StyleManager with user's theme preference
-    std::string userTheme = UIStrings::ThemeNames::DAY; // Default
-    if (auto themeValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
+    std::string userTheme = Themes::DAY; // Default
+    if (auto themeValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
         userTheme = *themeValue;
     }
     styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
     if (!styleManager) {
         log_e("Failed to create StyleManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::STYLE_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "StyleManager creation failed");
         return false;
     }
  
-    styleManager->SetPreferenceService(preferenceManager.get());
+    styleManager->SetConfigurationManager(configurationManager.get());
     
     // Create InterruptManager with GPIO provider dependency
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
     if (!interruptManager) {
         log_e("Failed to create InterruptManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::INTERRUPT_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "InterruptManager creation failed");
         return false;
     }
-    
+
+    // Set preference service for button configuration
+    interruptManager->SetConfigurationManager(configurationManager.get());
+
     // Create PanelManager with all dependencies
-    panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(), 
-                                                      styleManager.get(), preferenceManager.get(), 
+    panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(),
+                                                      styleManager.get(), configurationManager.get(),
                                                       interruptManager);
 
     if (!panelManager) {
         log_e("Failed to create PanelManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::PANEL_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "PanelManager creation failed");
         return false;
     }
 
     errorManager = managerFactory->CreateErrorManager();
     if (!errorManager) {
         log_e("Failed to create ErrorManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", ErrorMessages::System::ERROR_MANAGER_CREATION_FAILED);
+        ErrorManager::Instance().ReportCriticalError("main", "ErrorManager creation failed");
         return false;
     }
 
@@ -172,8 +202,8 @@ void setup()
         return;
     }
 
-    // Register system configuration after services are initialized
-    registerSystemConfiguration();
+    // Register all configuration schemas from components
+    ConfigurationManager::Instance().RegisterAllSchemas();
 
     Ticker::handleLvTasks();
 
@@ -181,7 +211,7 @@ void setup()
     Ticker::handleLvTasks();
 
     std::string panelName = PanelNames::OIL; // Default
-    if (auto nameValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
+    if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
         panelName = *nameValue;
     }
     panelManager->CreateAndLoadPanel(panelName.c_str());

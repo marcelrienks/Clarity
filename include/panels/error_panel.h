@@ -1,12 +1,12 @@
 #pragma once
 
 #include "components/error_component.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "managers/error_manager.h"
 #include "definitions/types.h"
 
@@ -42,7 +42,8 @@ class ErrorPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+               IPanelManager *panelManager);
     ~ErrorPanel();
 
     // ========== Public Interface Methods ==========
@@ -51,8 +52,6 @@ class ErrorPanel : public IPanel
     void Load() override;
     void Update() override;
 
-    // Manager injection method
-    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
 
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
@@ -72,8 +71,8 @@ class ErrorPanel : public IPanel
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleService *styleService_;
-    IPanelService *panelService_;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
     lv_obj_t* screen_ = nullptr;
     ErrorComponent errorComponent_; // Error component - static allocation
     bool componentInitialized_ = false;

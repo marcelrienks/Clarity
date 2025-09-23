@@ -8,12 +8,12 @@
 
 /**
  * @brief Constructs a key icon component with style service dependency
- * @param styleService Style service for theme-based color management
+ * @param styleManager Style service for theme-based color management
  *
  * Initializes the key component with style service for applying theme colors.
  * Sets key icon pointer to nullptr for later initialization.
  */
-KeyComponent::KeyComponent(IStyleService *styleService) : keyIcon_(nullptr), styleService_(styleService)
+KeyComponent::KeyComponent(IStyleManager *styleManager) : keyIcon_(nullptr), styleManager_(styleManager)
 {
 }
 
@@ -66,7 +66,7 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
 void KeyComponent::SetColor(KeyState keyState)
 {
     
-    if (!styleService_ || !keyIcon_)
+    if (!styleManager_ || !keyIcon_)
     {
         return;
     }
@@ -74,12 +74,12 @@ void KeyComponent::SetColor(KeyState keyState)
     lv_color_t colour;
     if (keyState == KeyState::Present)
     {
-        colour = styleService_->GetThemeColors().keyPresent;
+        colour = styleManager_->GetThemeColors().keyPresent;
         log_t("Key icon color set to GREEN");
     }
     else // KeyState::NotPresent or KeyState::Inactive
     {
-        colour = styleService_->GetThemeColors().keyNotPresent;
+        colour = styleManager_->GetThemeColors().keyNotPresent;
         log_t("Key icon color set to RED");
     }
 

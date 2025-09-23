@@ -69,12 +69,6 @@ namespace UIConstants {
 
 namespace UIStrings {
 
-    // ========== Theme Names ==========
-    namespace ThemeNames {
-        static constexpr const char* DAY = "Day";
-        static constexpr const char* NIGHT = "Night";
-        static constexpr const char* ERROR = "Error";
-    }
 
     // ========== Config Panel Action Types ==========
     namespace ActionTypes {
@@ -103,7 +97,6 @@ namespace UIStrings {
         static constexpr const char* EXIT = "Exit";
         static constexpr const char* BACK = "Back";
         static constexpr const char* CONFIGURATION = "Configuration";
-        static constexpr const char* DISPLAY_MENU = "Display";
     }
 
     // ========== Configuration Keys ==========
@@ -111,38 +104,6 @@ namespace UIStrings {
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
     }
 
-    // ========== Color Constants (frequently used colors) ==========
-    namespace Colors {
-        // Night theme colors
-        static constexpr uint32_t NIGHT_BACKGROUND = 0x1A0000;        // Very dark red
-        static constexpr uint32_t NIGHT_TITLE_TEXT = 0xFF6666;        // Light red
-        static constexpr uint32_t NIGHT_HINT_TEXT = 0x993333;         // Darker red
-        static constexpr uint32_t NIGHT_SELECTED_BG = 0x4D1F1F;       // Dark red background
-        static constexpr uint32_t NIGHT_SELECTED_BORDER = 0x993333;   // Red border
-        static constexpr uint32_t NIGHT_SELECTED_ITEM = 0xFF0000;     // Bright red
-        static constexpr uint32_t NIGHT_BASE_COLOR = 0xB00020;        // Deep red base
-
-        // Day theme colors
-        static constexpr uint32_t DAY_TITLE_TEXT = 0xCCCCCC;          // Light gray
-        static constexpr uint32_t DAY_HINT_TEXT = 0x888888;           // Gray
-        static constexpr uint32_t DAY_SELECTED_BG = 0x555555;         // Dark gray background
-        static constexpr uint32_t DAY_SELECTED_BORDER = 0x888888;     // Gray border
-        static constexpr uint32_t DAY_SELECTED_ITEM = 0xFFFFFF;       // White
-        static constexpr uint32_t DAY_BASE_COLOR = 0xEEEEEE;          // Light gray base
-        static constexpr uint32_t DAY_FALLBACK = 0x888888;            // Gray fallback
-
-        // Common colors
-        static constexpr uint32_t WHITE = 0xFFFFFF;                   // Pure white
-        static constexpr uint32_t BLACK = 0x000000;                   // Pure black
-
-        // Component-specific colors
-        static constexpr uint32_t PIVOT_CIRCLE_CENTER = 0x505050;     // Medium gray for pivot center
-        static constexpr uint32_t PIVOT_CIRCLE_EDGE = 0x2A2A2A;       // Dark gray for pivot edge
-        static constexpr uint32_t PIVOT_CIRCLE_BORDER = 0x1A1A1A;     // Very dark border
-        static constexpr uint32_t PIVOT_CIRCLE_SHADOW = 0x000000;     // Black shadow
-        static constexpr uint32_t NEEDLE_HIGHLIGHT = 0xFFFFFF;        // Pure white needle highlight
-        static constexpr uint32_t PIVOT_HIGHLIGHT = 0x707070;         // Light gray pivot highlight
-    }
 
 
     // ========== Default Hint Text ==========
@@ -162,6 +123,8 @@ namespace UIStrings {
         static constexpr const char* UPDATE_RATE_MS = "Update Rate (ms)";
         static constexpr const char* CALIBRATION_OFFSET = "Calibration Offset";
         static constexpr const char* CALIBRATION_SCALE = "Calibration Scale";
+        static constexpr const char* DEBOUNCE_MS = "Debounce (ms)";
+        static constexpr const char* LONG_PRESS_MS = "Long Press (ms)";
     }
 
     // ========== Config Component UI Text ==========
@@ -191,37 +154,6 @@ namespace UIStrings {
     }
 }
 
-/*============================================================================*/
-/*                            ERROR MESSAGES                                 */
-/*============================================================================*/
-
-namespace ErrorMessages {
-    // System startup errors
-    namespace System {
-        static constexpr const char* PROVIDER_FACTORY_ALLOCATION_FAILED = "ProviderFactory allocation failed";
-        static constexpr const char* MANAGER_FACTORY_ALLOCATION_FAILED = "ManagerFactory allocation failed";
-        static constexpr const char* DEVICE_PROVIDER_CREATION_FAILED = "DeviceProvider creation failed";
-        static constexpr const char* GPIO_PROVIDER_CREATION_FAILED = "GpioProvider creation failed";
-        static constexpr const char* DISPLAY_PROVIDER_CREATION_FAILED = "DisplayProvider creation failed";
-        static constexpr const char* PREFERENCE_MANAGER_CREATION_FAILED = "PreferenceManager creation failed";
-        static constexpr const char* STYLE_MANAGER_CREATION_FAILED = "StyleManager creation failed";
-        static constexpr const char* INTERRUPT_MANAGER_CREATION_FAILED = "InterruptManager creation failed";
-        static constexpr const char* PANEL_MANAGER_CREATION_FAILED = "PanelManager creation failed";
-        static constexpr const char* ERROR_MANAGER_CREATION_FAILED = "ErrorManager creation failed";
-    }
-
-    // Component creation errors
-    namespace Component {
-        static constexpr const char* CONFIG_COMPONENT_ALLOCATION_FAILED = "ConfigComponent allocation failed";
-    }
-
-
-
-    // Generic failure messages
-    namespace Generic {
-        static constexpr const char* ALLOCATION_FAILED = "allocation failed";
-    }
-}
 
 
 /*============================================================================*/
@@ -246,18 +178,12 @@ namespace StorageConstants {
 namespace ConfigConstants {
     // Section Names
     namespace Sections {
-        static constexpr const char* SYSTEM = "System";
-        static constexpr const char* STYLE_MANAGER = "StyleManager";
-        static constexpr const char* OIL_PRESSURE_SENSOR = "OilPressureSensor";
-        static constexpr const char* OIL_TEMPERATURE_SENSOR = "OilTemperatureSensor";
-        static constexpr const char* BUTTON_SENSOR = "ButtonSensor";
-        static constexpr const char* SPLASH_PANEL = "SplashPanel";
-
-        // Section identifiers (lowercase for config keys)
-        static constexpr const char* OIL_PRESSURE = "oil_pressure";
-        static constexpr const char* OIL_TEMPERATURE = "oil_temperature";
-        static constexpr const char* STYLE_MANAGER_LOWER = "style_manager";
-        static constexpr const char* SPLASH_PANEL_LOWER = "splash_panel";
+        static constexpr const char* SYSTEM = "system";
+        static constexpr const char* STYLE_MANAGER = "style_manager";
+        static constexpr const char* OIL_PRESSURE_SENSOR = "oil_pressure_sensor";
+        static constexpr const char* OIL_TEMPERATURE_SENSOR = "oil_temperature_sensor";
+        static constexpr const char* BUTTON_SENSOR = "button_sensor";
+        static constexpr const char* SPLASH_PANEL = "splash_panel";
     }
 
     // Item Keys
@@ -271,6 +197,8 @@ namespace ConfigConstants {
         static constexpr const char* OFFSET = "offset";
         static constexpr const char* SCALE = "scale";
         static constexpr const char* BRIGHTNESS = "brightness";
+        static constexpr const char* DEBOUNCE_MS = "debounce_ms";
+        static constexpr const char* LONG_PRESS_MS = "long_press_ms";
     }
 
     // Configuration Keys (full dotted paths)
@@ -280,17 +208,21 @@ namespace ConfigConstants {
         static constexpr const char* SYSTEM_DEFAULT_PANEL = "system.default_panel";
         static constexpr const char* SYSTEM_SHOW_SPLASH = "system.show_splash";
 
+        // Button sensor configuration keys
+        static constexpr const char* BUTTON_DEBOUNCE_MS = "button_sensor.debounce_ms";
+        static constexpr const char* BUTTON_LONG_PRESS_MS = "button_sensor.long_press_ms";
+
         // Oil pressure sensor configuration keys
-        static constexpr const char* OIL_PRESSURE_UNIT = "oil_pressure.unit";
-        static constexpr const char* OIL_PRESSURE_UPDATE_RATE = "oil_pressure.update_rate";
-        static constexpr const char* OIL_PRESSURE_OFFSET = "oil_pressure.offset";
-        static constexpr const char* OIL_PRESSURE_SCALE = "oil_pressure.scale";
+        static constexpr const char* OIL_PRESSURE_UNIT = "oil_pressure_sensor.unit";
+        static constexpr const char* OIL_PRESSURE_UPDATE_RATE = "oil_pressure_sensor.update_rate";
+        static constexpr const char* OIL_PRESSURE_OFFSET = "oil_pressure_sensor.offset";
+        static constexpr const char* OIL_PRESSURE_SCALE = "oil_pressure_sensor.scale";
 
         // Oil temperature sensor configuration keys
-        static constexpr const char* OIL_TEMPERATURE_UNIT = "oil_temperature.unit";
-        static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature.update_rate";
-        static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature.offset";
-        static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature.scale";
+        static constexpr const char* OIL_TEMPERATURE_UNIT = "oil_temperature_sensor.unit";
+        static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature_sensor.update_rate";
+        static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature_sensor.offset";
+        static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature_sensor.scale";
 
         // Style manager configuration keys
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
@@ -353,12 +285,18 @@ namespace ConfigConstants {
         static constexpr float DEFAULT_CALIBRATION_OFFSET = 0.0f;
         static constexpr float DEFAULT_CALIBRATION_SCALE = 1.0f;
         static constexpr int DEFAULT_BRIGHTNESS = 80;
+        static constexpr int DEFAULT_DEBOUNCE_MS = 400;
+        static constexpr int DEFAULT_LONG_PRESS_MS = 1500;
     }
 
     // Section Display Names
     namespace SectionNames {
-        static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Pressure Sensor";
-        static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temperature Sensor";
+        static constexpr const char* SYSTEM = "System";
+        static constexpr const char* STYLE_MANAGER = "Display";
+        static constexpr const char* SPLASH_PANEL = "Splash Scr.";
+        static constexpr const char* BUTTON_SENSOR = "Button";
+        static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Press.";
+        static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temp.";
     }
 }
 
@@ -373,7 +311,6 @@ namespace TimingConstants {
         static constexpr uint32_t DELAY_TIME_MS = 200;
         static constexpr const char* DEFAULT_DURATION = "1500";
         static constexpr const char* DURATION_OPTIONS = "1500,1750,2000,2500";
-        static constexpr const char* SECTION_DISPLAY_NAME = "Splash Screen";
         static constexpr const char* DURATION_LABEL = "Duration";
         static constexpr const char* DURATION_UNIT = "ms";
     }

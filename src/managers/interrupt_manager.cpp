@@ -133,7 +133,7 @@ bool InterruptManager::RegisterAction(const Action& action)
  * @brief Update panel button handler functions for current panel
  * @details Called when switching panels to update button behavior
  */
-void InterruptManager::SetCurrentPanel(IActionService* panel)
+void InterruptManager::SetCurrentPanel(IActionHandler* panel)
 {
     log_v("SetCurrentPanel() called");
 
@@ -147,6 +147,24 @@ void InterruptManager::SetCurrentPanel(IActionService* panel)
     // Delegate to ActionHandler to set current panel
     actionHandler_->SetCurrentPanel(panel);
     log_i("Set current panel in ActionHandler");
+}
+
+/**
+ * @brief Sets preference service for configuration access
+ * @param preferenceService The preference service to use for configuration
+ */
+void InterruptManager::SetConfigurationManager(IConfigurationManager* configurationManager)
+{
+    log_v("SetConfigurationManager() called");
+
+    if (!actionHandler_) {
+        log_e("Cannot set preference service - ActionHandler not initialized");
+        return;
+    }
+
+    // Delegate to ActionHandler to set preference service
+    actionHandler_->SetConfigurationManager(configurationManager);
+    log_i("Set preference service in ActionHandler");
 }
 
 /**

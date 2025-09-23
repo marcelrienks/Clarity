@@ -2,12 +2,10 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_preference_service.h"
-#include "interfaces/i_style_service.h"
-#include "interfaces/i_panel_notification_service.h"
-#include "interfaces/i_action_execution_service.h"
-#include "interfaces/i_trigger_execution_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_configuration_manager.h"
+#include "interfaces/i_style_manager.h"
+#include "interfaces/i_action_handler.h"
 #include "definitions/types.h"
 
 #include <functional>
@@ -58,15 +56,13 @@
 class StyleManager;
 class InterruptManager;
 
-class PanelManager : public IPanelService,
-                     public IPanelNotificationService,
-                     public IActionExecutionService,
-                     public ITriggerExecutionService
+class PanelManager : public IPanelManager,
+                     public IActionHandler
 {
   public:
     // ========== Constructors/Destructor ==========
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                 IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleManager,
+                 IConfigurationManager *configurationManager, InterruptManager* interruptManager = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -76,11 +72,9 @@ class PanelManager : public IPanelService,
     static PanelManager& Instance();
 
     // Interface accessors for dependency injection (CRITICAL for testability)
-    static IPanelNotificationService& NotificationService() { return Instance(); }
-    static IActionExecutionService& ActionService() { return Instance(); }
-    static ITriggerExecutionService& TriggerService() { return Instance(); }
+    static IActionHandler& ActionService() { return Instance(); }
 
-    // ========== IPanelService Implementation ==========
+    // ========== IPanelManager Implementation ==========
     void Init() override;
     void SetUiState(UIState state) override;
     UIState GetUiState() const override;
@@ -91,16 +85,16 @@ class PanelManager : public IPanelService,
     bool IsCurrentPanelTriggerDriven() const override;
     void TriggerPanelSwitchCallback(const char *triggerId) override;
 
-    // ========== IPanelNotificationService Implementation ==========
-    void OnPanelLoadComplete(IPanel* panel) override;
+    // ========== Panel Notification Methods ==========
+    void OnPanelLoadComplete(IPanel* panel);
 
-    // ========== IActionExecutionService Implementation ==========
+    // ========== IActionHandler Implementation ==========
     void HandleShortPress() override;
     void HandleLongPress() override;
 
-    // ========== ITriggerExecutionService Implementation ==========
-    void LoadPanel(const char* panelName) override;
-    void CheckRestoration() override;
+    // ========== Trigger Execution Methods ==========
+    void LoadPanel(const char* panelName);
+    void CheckRestoration();
 
     // ========== Other Public Methods ==========
     void UpdatePanelButtonFunctions(IPanel* panel);
@@ -115,7 +109,6 @@ class PanelManager : public IPanelService,
 
     // Helper methods for CreateAndLoadPanelDirect
     void UpdateRestorationTracking(const char* panelName, bool isTriggerDriven);
-    void InjectPreferenceService(const char* panelName);
     void HandlePanelCreationError(const char* panelName);
 
     // ========== Panel State Data Members ==========
@@ -132,9 +125,9 @@ class PanelManager : public IPanelService,
     // ========== Service Dependencies ==========
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
-    IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
+    IStyleManager *styleManager_ = nullptr;           ///< Style service for UI theming
     InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
-    IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
+    IConfigurationManager *configurationManager_ = nullptr; ///< Preference service for configuration settings
 
     // ========== Cached Service References ==========
     class ErrorManager& errorManager_;                ///< Cached ErrorManager reference

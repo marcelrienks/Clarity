@@ -2,13 +2,13 @@
 
 #include "components/oem/oem_oil_pressure_component.h"
 #include "components/oem/oem_oil_temperature_component.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_preference_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_configuration_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "definitions/types.h"
@@ -51,7 +51,8 @@ class OemOilPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService);
+    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                IPanelManager *panelManager, IConfigurationManager *configurationManager);
     ~OemOilPanel();
 
     // ========== Public Interface Methods ==========
@@ -60,10 +61,6 @@ class OemOilPanel : public IPanel
     void Load() override;
     void Update() override;
 
-    // Manager injection method
-    void SetManagers(IPanelService *panelService, IStyleService *styleService);
-
-    void SetPreferenceService(IPreferenceService *preferenceService);
     
     void ApplyCurrentSensorSettings();
 
@@ -103,9 +100,9 @@ class OemOilPanel : public IPanel
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleService *styleService_;
-    IPanelService *panelService_;
-    IPreferenceService *preferenceService_ = nullptr;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
+    IConfigurationManager *configurationManager_ = nullptr;
     // Instance Data Members - UI Objects
     lv_obj_t* screen_ = nullptr;
 

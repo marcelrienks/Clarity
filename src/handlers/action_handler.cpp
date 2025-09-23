@@ -1,5 +1,6 @@
 #include "handlers/action_handler.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
+#include "interfaces/i_configuration_manager.h"
 #include "managers/error_manager.h"
 #include "sensors/button_sensor.h"
 #include "hardware/gpio_pins.h"
@@ -10,6 +11,13 @@
 
 #include "esp32-hal-log.h"
 #include "utilities/logging.h"
+#include "managers/configuration_manager.h"
+
+// Self-registration at program startup
+static bool action_handler_config_registered = []() {
+    ConfigurationManager::AddSchema(ActionHandler::RegisterConfigSchema);
+    return true;
+}();
 
 // ========== Constructors and Destructor ==========
 
@@ -321,16 +329,16 @@ void ActionHandler::ExecutePendingAction() {
 //  * diagnostics. Essential for reliable button event detection.
 // */
 void ActionHandler::UpdateButtonState() {
-    bool currentPressed = IsButtonPressed();
-    unsigned long currentTime = millis();
+    bool current_pressed = IsButtonPressed();
+    unsigned long current_time = millis();
 
-    static unsigned long lastDebugTime = 0;
-    ButtonState previousState = buttonState_;
+    static unsigned long last_debug_time = 0;
+    ButtonState previous_state = buttonState_;
 
     // State machine transitions
     switch (buttonState_) {
         case ButtonState::IDLE:
-            if (currentPressed) {
+            if (current_pressed) {
                 buttonState_ = ButtonState::PRESSED;
                 StartButtonTiming();
                 log_t("Button press started");
@@ -338,24 +346,29 @@ void ActionHandler::UpdateButtonState() {
             break;
 
         case ButtonState::PRESSED:
-            if (!currentPressed) {
+            if (!current_pressed) {
                 buttonState_ = ButtonState::RELEASED;
                 StopButtonTiming();
                 log_t("Button press ended");
             } else {
                 // Check for long press during hold
-                unsigned long pressDuration = currentTime - buttonPressStartTime_;
-                if (pressDuration >= LONG_PRESS_MIN_MS) {
+                unsigned long press_duration = current_time - buttonPressStartTime_;
+                unsigned long long_press_threshold = GetLongPressMs();
+                log_v("Checking for long press: duration=%lu ms, threshold=%lu ms", press_duration, long_press_threshold);
+                if (press_duration >= long_press_threshold) {
                     buttonState_ = ButtonState::LONG_PRESS_TRIGGERED;
+                    log_d("Long press triggered after %lu ms (threshold: %lu ms)", press_duration, long_press_threshold);
                     log_t("Long press triggered during hold");
+                    // Immediately set the pending action when long press is detected
+                    SetPendingAction(ButtonAction::LONG_PRESS);
                 }
             }
             break;
 
         case ButtonState::LONG_PRESS_TRIGGERED:
-            if (!currentPressed) {
+            if (!current_pressed) {
                 buttonState_ = ButtonState::IDLE; // Skip RELEASED state for long press
-                buttonPressEndTime_ = currentTime;
+                buttonPressEndTime_ = current_time;
             }
             break;
 
@@ -386,73 +399,29 @@ const char* ActionHandler::StateToString(ButtonState state) const {
 /**
  * @brief Processes button state changes and sets pending action
  *
- * Detects button actions and stores them as pending. Only the most recent
- * action is kept (LIFO with size 1). Called every loop cycle to ensure
- * responsive button handling.
+ * Detects button actions based on state machine transitions and stores them
+ * as pending. Only the most recent action is kept (LIFO with size 1).
+ * Called every loop cycle to ensure responsive button handling.
  */
 void ActionHandler::ProcessButtonEvents() {
-    // ButtonSensor now handles all action detection including long press during hold
-    ButtonAction detectedAction = DetectButtonAction();
+    // Check for short press action on button release
+    if (buttonState_ == ButtonState::RELEASED) {
+        unsigned long press_duration = buttonPressEndTime_ - buttonPressStartTime_;
 
-    // Set pending action (replaces any existing pending action)
-    if (detectedAction != ButtonAction::NONE) {
-        SetPendingAction(detectedAction);
-    }
-}
-
-/**
- * @brief Detects completed button action using ButtonSensor detection
- * @return ButtonAction type (SHORT_PRESS, LONG_PRESS, or NONE)
- *
- * Uses the ButtonSensor's built-in action detection and consumption to avoid
- * duplicate action processing. This ensures actions are only processed once
- * and prevents double-triggering when long press is detected during hold.
- */
-ButtonAction ActionHandler::DetectButtonAction() {
-    if (!buttonSensor_) {
-        return ButtonAction::NONE;
-    }
-
-    // Use the button sensor's action detection and consume the action
-    ButtonAction action = buttonSensor_->GetAndConsumeAction();
-
-    if (action != ButtonAction::NONE) {
-        log_i("DetectButtonAction: ButtonSensor reported action: %s",
-              action == ButtonAction::SHORT_PRESS ? UIStrings::ButtonActionStrings::SHORT_PRESS : UIStrings::ButtonActionStrings::LONG_PRESS);
-    }
-
-    return action;
-}
-
-/**
- * @brief Detects long press action while button is still held
- * @return ButtonAction::LONG_PRESS if detected, otherwise NONE
- *
- * Provides immediate long press detection without waiting for button release.
- * Critical for responsive user interface in automotive applications where
- * immediate feedback is expected for long press actions.
- * Also consumes any pending action from ButtonSensor to prevent double processing.
- */
-ButtonAction ActionHandler::DetectLongPressDuringHold() {
-    // Check for long press during button hold (state machine handles this better now)
-    if (buttonState_ == ButtonState::LONG_PRESS_TRIGGERED) {
-        unsigned long currentTime = millis();
-        unsigned long pressDuration = currentTime - buttonPressStartTime_;
-        log_i("DetectLongPressDuringHold: Long press detected during hold at %lu ms", pressDuration);
-
-        // Consume any pending action from ButtonSensor to prevent double processing
-        if (buttonSensor_) {
-            ButtonAction sensorAction = buttonSensor_->GetAndConsumeAction();
-            if (sensorAction != ButtonAction::NONE) {
-                log_t("DetectLongPressDuringHold: Consumed ButtonSensor action to prevent double processing");
-            }
+        // Only trigger short press if we haven't already triggered a long press
+        if (press_duration >= 50 && press_duration < GetLongPressMs()) {
+            SetPendingAction(ButtonAction::SHORT_PRESS);
+            log_i("Short press detected: duration=%lu ms", press_duration);
         }
 
-        return ButtonAction::LONG_PRESS;
+        // Move to IDLE after processing RELEASED state
+        buttonState_ = ButtonState::IDLE;
     }
-
-    return ButtonAction::NONE;
+    // Long press is already handled in UpdateButtonState when threshold is reached
 }
+
+// Removed DetectLongPressDuringHold - no longer needed as long press
+// is now handled directly in UpdateButtonState when threshold is reached
 
 /**
  * @brief Captures button press start time for duration calculation
@@ -487,21 +456,19 @@ void ActionHandler::StopButtonTiming() {
  * Uses automotive-appropriate timing thresholds: 50-2000ms for short press,
  * 2000ms+ for long press. Handles edge cases and provides diagnostic logging.
  */
-ButtonAction ActionHandler::CalculateButtonAction(unsigned long pressDuration) {
-    if (pressDuration < MIN_PRESS_DURATION_MS) {
+ButtonAction ActionHandler::CalculateButtonAction(unsigned long press_duration) {
+    unsigned long debounce_ms = GetDebounceMs();
+    unsigned long long_press_ms = GetLongPressMs();
+
+    if (press_duration < debounce_ms) {
         return ButtonAction::NONE;
     }
-    else if (pressDuration <= SHORT_PRESS_MAX_MS) {
+    else if (press_duration < long_press_ms) {
         return ButtonAction::SHORT_PRESS;
     }
-    else if (pressDuration >= LONG_PRESS_MIN_MS) {
-        // Any press >= 1500ms is a long press when released
-        return ButtonAction::LONG_PRESS;
-    }
     else {
-        // This should never be reached since we cover all cases above
-        log_w("Unexpected button press duration: %lu ms", pressDuration);
-        return ButtonAction::NONE;
+        // Any press >= longPressMs is a long press when released
+        return ButtonAction::LONG_PRESS;
     }
 }
 
@@ -566,7 +533,7 @@ bool ActionHandler::IsButtonPressed() const {
  * execution. Enables dynamic button behavior changes during panel transitions
  * while maintaining consistent action registration.
  */
-void ActionHandler::SetCurrentPanel(IActionService* panel) {
+void ActionHandler::SetCurrentPanel(IActionHandler* panel) {
     currentPanel_ = panel;
     log_i("Set current panel: %p", (void*)panel);
 }
@@ -610,3 +577,72 @@ void ActionHandler::ClearCurrentPanel() {
 //     ButtonAction currentAction = const_cast<ActionHandler*>(this)->DetectButtonAction();
 //     return currentAction != ButtonAction::NONE;
 // }
+
+/**
+ * @brief Registers button timing configuration schema with preference service
+ * @param configurationManager The preference service to register with
+ *
+ * Registers configurable button press timing values including:
+ * - Debounce timing: 300-700ms (default 500ms)
+ * - Long press threshold: 1000-2000ms (default 1500ms)
+ */
+void ActionHandler::RegisterConfigSchema(IConfigurationManager* configurationManager)
+{
+    if (!configurationManager) return;
+
+    // Check if already registered to prevent duplicates
+    if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::BUTTON_SENSOR)) {
+        log_d("ActionHandler schema already registered");
+        return;
+    }
+
+    using namespace Config;
+
+    ConfigSection section(ConfigConstants::Sections::BUTTON_SENSOR, ConfigConstants::Sections::BUTTON_SENSOR, ConfigConstants::SectionNames::BUTTON_SENSOR);
+
+    section.AddItem(debounceConfig_);
+    section.AddItem(longPressConfig_);
+
+    configurationManager->RegisterConfigSection(section);
+    log_i("ActionHandler configuration schema registered (static)");
+}
+
+/**
+ * @brief Sets preference service for configuration access
+ * @param configurationManager The preference service to use for configuration
+ */
+void ActionHandler::SetConfigurationManager(IConfigurationManager* configurationManager)
+{
+    configurationManager_ = configurationManager;
+}
+
+/**
+ * @brief Gets configured debounce time in milliseconds
+ * @return Debounce time in ms, or default if config unavailable
+ */
+unsigned long ActionHandler::GetDebounceMs() const
+{
+    if (!configurationManager_) {
+        return ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS;
+    }
+
+    auto value = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_DEBOUNCE_MS);
+    return value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS;
+}
+
+/**
+ * @brief Gets configured long press threshold in milliseconds
+ * @return Long press threshold in ms, or default if config unavailable
+ */
+unsigned long ActionHandler::GetLongPressMs() const
+{
+    if (!configurationManager_) {
+        log_w("No preference service, using default long press threshold: %d ms", ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS);
+        return ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
+    }
+
+    auto value = configurationManager_->template QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
+    unsigned long result = value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
+    log_v("GetLongPressMs returning: %lu ms (config key: %s)", result, ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
+    return result;
+}

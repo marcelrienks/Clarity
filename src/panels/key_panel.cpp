@@ -15,15 +15,16 @@
  * @brief Constructs key panel with required service dependencies
  * @param gpio GPIO provider for hardware sensor access
  * @param display Display provider for screen management
- * @param styleService Style service for theme-based icon coloring
+ * @param styleManager Style service for theme-based icon coloring
  *
  * Creates key panel that displays vehicle ignition key status. Determines
  * current key state during construction and initializes stack-allocated
  * key component for efficient memory usage.
  */
-KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
-    : BasePanel(gpio, display, styleService),
-      keyComponent_(styleService), componentInitialized_(false)
+KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                   IPanelManager *panelManager)
+    : BasePanel(gpio, display, styleManager, panelManager),
+      keyComponent_(styleManager), componentInitialized_(false)
 {
     // Determine current key state by checking which sensor is currently active
     currentKeyState_ = DetermineCurrentKeyState();
@@ -75,14 +76,14 @@ void KeyPanel::UpdateContent()
  */
 void KeyPanel::HandleLongPress()
 {
-    if (panelService_)
+    if (panelManager_)
     {
         log_i("KeyPanel long press - loading config panel");
-        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+        panelManager_->CreateAndLoadPanel(PanelNames::CONFIG, true);
     }
     else
     {
-        log_w("KeyPanel: Cannot load config panel - panelService not available");
+        log_w("KeyPanel: Cannot load config panel - panelManager not available");
     }
 }
 
