@@ -61,8 +61,8 @@ class PanelManager : public IPanelManager,
 {
   public:
     // ========== Constructors/Destructor ==========
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleService,
-                 IConfigurationManager *preferenceService, InterruptManager* interruptManager = nullptr);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleManager,
+                 IConfigurationManager *configurationManager, InterruptManager* interruptManager = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -109,7 +109,7 @@ class PanelManager : public IPanelManager,
 
     // Helper methods for CreateAndLoadPanelDirect
     void UpdateRestorationTracking(const char* panelName, bool isTriggerDriven);
-    void InjectPreferenceService(const char* panelName);
+    void InjectConfigurationManager(const char* panelName);
     void HandlePanelCreationError(const char* panelName);
 
     // ========== Panel State Data Members ==========
@@ -126,9 +126,9 @@ class PanelManager : public IPanelManager,
     // ========== Service Dependencies ==========
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
-    IStyleManager *styleService_ = nullptr;           ///< Style service for UI theming
+    IStyleManager *styleManager_ = nullptr;           ///< Style service for UI theming
     InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
-    IConfigurationManager *preferenceService_ = nullptr; ///< Preference service for configuration settings
+    IConfigurationManager *configurationManager_ = nullptr; ///< Preference service for configuration settings
 
     // ========== Cached Service References ==========
     class ErrorManager& errorManager_;                ///< Cached ErrorManager reference

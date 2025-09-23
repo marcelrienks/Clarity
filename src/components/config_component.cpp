@@ -10,14 +10,14 @@
 
 /**
  * @brief Constructs a configuration menu component with service dependencies
- * @param panelService Panel service for navigation control
- * @param styleService Style service for theme management
+ * @param panelManager Panel service for navigation control
+ * @param styleManager Style service for theme management
  *
  * Initializes the configuration component with dependencies for panel navigation
  * and theme styling. These services enable menu interactions and visual theming.
  */
-ConfigComponent::ConfigComponent(IPanelManager* panelService, IStyleManager* styleService)
-    : panelService_(panelService), styleService_(styleService)
+ConfigComponent::ConfigComponent(IPanelManager* panelManager, IStyleManager* styleManager)
+    : panelManager_(panelManager), styleManager_(styleManager)
 {
     log_v("ConfigComponent constructor called");
 }
@@ -75,18 +75,18 @@ void ConfigComponent::ExecuteAction(const std::string& actionType, const std::st
     else if (actionType == UIStrings::ActionTypes::PANEL_EXIT)
     {
         // Exit config panel and return to restoration panel
-        if (panelService_)
+        if (panelManager_)
         {
-            const char *restorationPanel = panelService_->GetRestorationPanel();
-            panelService_->CreateAndLoadPanel(restorationPanel, true);
+            const char *restorationPanel = panelManager_->GetRestorationPanel();
+            panelManager_->CreateAndLoadPanel(restorationPanel, true);
         }
     }
     else if (actionType == UIStrings::ActionTypes::PANEL_LOAD)
     {
         // Load specific panel
-        if (panelService_)
+        if (panelManager_)
         {
-            panelService_->CreateAndLoadPanel(actionParam.c_str(), true);
+            panelManager_->CreateAndLoadPanel(actionParam.c_str(), true);
         }
     }
     else
@@ -128,7 +128,7 @@ void ConfigComponent::Init(lv_obj_t *screen)
     // Apply circular styling to container, not screen
     lv_obj_set_style_radius(container_, 120, LV_PART_MAIN); // Make it circular (half of 240)
     
-    // Default transparent background (will be updated by UpdateThemeColors if styleService is set)
+    // Default transparent background (will be updated by UpdateThemeColors if styleManager is set)
     lv_obj_set_style_bg_opa(container_, LV_OPA_TRANSP, LV_PART_MAIN);
 
     CreateUI();
@@ -200,15 +200,15 @@ void ConfigComponent::SetHintText(const std::string &hint)
 
 /**
  * @brief Sets the style service for theme management
- * @param styleService Pointer to style service
+ * @param styleManager Pointer to style service
  *
  * Updates the style service reference and immediately applies
  * the current theme colors to all UI elements.
  */
-void ConfigComponent::SetStyleService(IStyleManager* styleService)
+void ConfigComponent::SetStyleService(IStyleManager* styleManager)
 {
     log_v("SetStyleService() called");
-    styleService_ = styleService;
+    styleManager_ = styleManager;
     UpdateThemeColors();
 }
 
@@ -223,14 +223,14 @@ void ConfigComponent::UpdateThemeColors()
 {
     log_v("UpdateThemeColors() called");
     
-    if (!styleService_)
+    if (!styleManager_)
     {
         log_w("No style service available for theme update");
         return;
     }
 
     
-    const std::string& theme = styleService_->GetCurrentTheme();
+    const std::string& theme = styleManager_->GetCurrentTheme();
     bool isNightTheme = (theme == Themes::NIGHT);
     
     // Update container background
@@ -278,14 +278,14 @@ void ConfigComponent::UpdateThemeColors()
  */
 lv_color_t ConfigComponent::GetThemeGradientColor(int distanceFromCenter, bool isSelected) const
 {
-    if (!styleService_)
+    if (!styleManager_)
     {
         // Fallback to default colors if no style service
         return isSelected ? lv_color_hex(Colors::WHITE) : lv_color_hex(Colors::DAY_FALLBACK);
     }
 
-    const ThemeColors& colors = styleService_->GetThemeColors();
-    const std::string& theme = styleService_->GetCurrentTheme();
+    const ThemeColors& colors = styleManager_->GetThemeColors();
+    const std::string& theme = styleManager_->GetCurrentTheme();
     
     if (isSelected)
     {
@@ -524,13 +524,13 @@ void ConfigComponent::ApplyCenterItemStyle(lv_obj_t* label)
  */
 void ConfigComponent::ApplyCenterItemBackground(lv_obj_t* label)
 {
-    if (!styleService_)
+    if (!styleManager_)
     {
         ApplyDefaultCenterBackground(label);
         return;
     }
 
-    const std::string& theme = styleService_->GetCurrentTheme();
+    const std::string& theme = styleManager_->GetCurrentTheme();
     if (theme == Themes::NIGHT)
     {
         lv_obj_set_style_bg_color(label, lv_color_hex(Colors::NIGHT_SELECTED_BG), LV_PART_MAIN);

@@ -42,8 +42,8 @@ class SplashPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService,
-                IPanelManager* notificationService = nullptr);
+    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                IPanelManager* panelManager = nullptr);
     ~SplashPanel();
 
     // ========== Public Interface Methods ==========
@@ -53,10 +53,10 @@ class SplashPanel : public IPanel
     void Update() override;
 
     // Manager injection method
-    void SetManagers(IPanelManager *panelService, IStyleManager *styleService) override;
+    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) override;
 
     // Preference service injection
-    void SetPreferenceService(IConfigurationManager *preferenceService);
+    void SetConfigurationManager(IConfigurationManager *configurationManager);
 
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
@@ -69,7 +69,7 @@ class SplashPanel : public IPanel
     void RegisterConfiguration();
 
     // Static schema registration for self-registering pattern
-    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
     // ========== Configuration Constants ==========
     // Note: show_splash is managed by system settings in main.cpp
@@ -93,10 +93,9 @@ class SplashPanel : public IPanel
     // Dependencies
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleManager *styleService_;
-    IPanelManager *panelService_;
-    IConfigurationManager *preferenceService_ = nullptr;
-    IPanelManager *notificationService_;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
+    IConfigurationManager *configurationManager_ = nullptr;
 
     // Components - static allocation
     lv_obj_t* screen_ = nullptr;

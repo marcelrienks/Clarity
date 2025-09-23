@@ -16,14 +16,14 @@
  * @brief Constructs configuration panel with required service dependencies
  * @param gpio GPIO provider for hardware interaction
  * @param display Display provider for screen management
- * @param styleService Style service for theme management
+ * @param styleManager Style service for theme management
  *
  * Creates configuration panel with stack-allocated configuration component.
  * Initializes menu system for automotive settings management including
  * theme selection, calibration, and system configuration options.
  */
-ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
+ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(nullptr),
       currentMenuIndex_(0), configComponent_(), componentInitialized_(false)
 {
     log_v("ConfigPanel constructor called");
@@ -71,10 +71,10 @@ void ConfigPanel::Init()
 
     screen_ = displayProvider_->CreateScreen();
 
-    if (!styleService_)
+    if (!styleManager_)
         return;
 
-    styleService_->ApplyThemeToScreen(screen_);
+    styleManager_->ApplyThemeToScreen(screen_);
     
     log_i("ConfigPanel initialization completed");
 }
@@ -95,12 +95,12 @@ void ConfigPanel::Load()
     currentMenuIndex_ = 0;
 
     // Apply current theme to config panel (don't change the theme, just apply existing)
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyThemeToScreen(screen_);
+        styleManager_->ApplyThemeToScreen(screen_);
         
         // For night theme, override the screen background to use dark red instead of black
-        const std::string& theme = styleService_->GetCurrentTheme();
+        const std::string& theme = styleManager_->GetCurrentTheme();
         if (theme == Themes::NIGHT) {
             lv_obj_set_style_bg_color(screen_, lv_color_hex(Colors::NIGHT_BACKGROUND), LV_PART_MAIN); // Very dark red
             lv_obj_set_style_bg_opa(screen_, LV_OPA_COVER, LV_PART_MAIN);
@@ -115,7 +115,7 @@ void ConfigPanel::Load()
     componentInitialized_ = true;
 
     configComponent_.Init(screen_);
-    configComponent_.SetStyleService(styleService_);
+    configComponent_.SetStyleService(styleManager_);
 
     // Build dynamic menu from registered configuration sections
     BuildDynamicMenus();
@@ -142,33 +142,33 @@ void ConfigPanel::Update()
     log_v("Update() called");
 
     // Config panel is static - no updates needed, but must reset UI state to IDLE
-    if (panelService_) {
-        panelService_->SetUiState(UIState::IDLE);
+    if (panelManager_) {
+        panelManager_->SetUiState(UIState::IDLE);
     }
 }
 
 /**
  * @brief Injects manager service dependencies
- * @param panelService Panel service for UI state management and panel operations
- * @param styleService Style service for theme management
+ * @param panelManager Panel service for UI state management and panel operations
+ * @param styleManager Style service for theme management
  */
-void ConfigPanel::SetManagers(IPanelManager *panelService, IStyleManager *styleService)
+void ConfigPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleManager)
 {
     log_v("SetManagers() called");
-    panelService_ = panelService;
-    if (styleService != styleService_) {
-        styleService_ = styleService;
+    panelManager_ = panelManager;
+    if (styleManager != styleManager_) {
+        styleManager_ = styleManager;
     }
 }
 
 /**
  * @brief Injects preference service dependency for dynamic configuration
- * @param preferenceService Preference service for configuration management
+ * @param configurationManager Preference service for configuration management
  */
-void ConfigPanel::SetPreferenceService(IConfigurationManager *preferenceService)
+void ConfigPanel::SetConfigurationManager(IConfigurationManager *configurationManager)
 {
-    log_v("SetPreferenceService() called");
-    preferenceService_ = preferenceService;
+    log_v("SetConfigurationManager() called");
+    configurationManager_ = configurationManager;
 }
 
 /**
@@ -180,8 +180,8 @@ void ConfigPanel::ShowPanelCompletionCallback(lv_event_t *event)
     log_v("ShowPanelCompletionCallback() called");
     // Get the panel pointer from event user data
     auto *panel = static_cast<ConfigPanel *>(lv_event_get_user_data(event));
-    if (panel && panel->panelService_) {
-        panel->panelService_->SetUiState(UIState::IDLE);
+    if (panel && panel->panelManager_) {
+        panel->panelManager_->SetUiState(UIState::IDLE);
     }
 }
 
@@ -356,7 +356,7 @@ void ConfigPanel::HandleEnterSection(const std::string& sectionName)
 void ConfigPanel::HandleToggleBoolean(const std::string& fullKey)
 {
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
-    if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+    if (auto section = configurationManager_->GetConfigSection(sectionName)) {
         for (const auto& configItem : section->items) {
             if (configItem.key == itemKey) {
                 ShowBooleanToggle(fullKey, configItem);
@@ -376,7 +376,7 @@ void ConfigPanel::HandleToggleBoolean(const std::string& fullKey)
 void ConfigPanel::HandleShowOptions(const std::string& fullKey)
 {
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
-    if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+    if (auto section = configurationManager_->GetConfigSection(sectionName)) {
         for (const auto& configItem : section->items) {
             if (configItem.key == itemKey) {
                 ShowOptionsMenu(fullKey, configItem);
@@ -411,21 +411,21 @@ void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
     auto [sectionName, itemKey] = ParseConfigKey(fullKey);
     log_d("HandleSetConfigValue - Parsed sectionName: %s, itemKey: %s", sectionName.c_str(), itemKey.c_str());
 
-    if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+    if (auto section = configurationManager_->GetConfigSection(sectionName)) {
         log_d("HandleSetConfigValue - Found section, searching for item key: %s", itemKey.c_str());
         for (const auto& configItem : section->items) {
             if (configItem.key == itemKey) {
                 log_d("HandleSetConfigValue - Found config item, type: %s",
-                      preferenceService_->GetTypeName(configItem.value).c_str());
+                      configurationManager_->GetTypeName(configItem.value).c_str());
 
                 // Parse the string value into the correct type based on existing value
-                Config::ConfigValue newValue = preferenceService_->FromString(value, configItem.value);
+                Config::ConfigValue newValue = configurationManager_->FromString(value, configItem.value);
 
                 log_d("HandleSetConfigValue - Parsed value type: %s",
-                      preferenceService_->GetTypeName(newValue).c_str());
+                      configurationManager_->GetTypeName(newValue).c_str());
 
                 // Update the configuration
-                preferenceService_->UpdateConfig(fullKey, newValue);
+                configurationManager_->UpdateConfig(fullKey, newValue);
 
                 // If this was a theme change, update the config component colors
                 if (fullKey == UIStrings::ConfigKeys::STYLE_MANAGER_THEME) {
@@ -477,9 +477,9 @@ void ConfigPanel::HandleBackAction(const std::string& actionParam)
  */
 void ConfigPanel::HandlePanelExit()
 {
-    if (panelService_) {
-        const char *restorationPanel = panelService_->GetRestorationPanel();
-        panelService_->CreateAndLoadPanel(restorationPanel, true);
+    if (panelManager_) {
+        const char *restorationPanel = panelManager_->GetRestorationPanel();
+        panelManager_->CreateAndLoadPanel(restorationPanel, true);
     }
 }
 
@@ -496,20 +496,20 @@ void ConfigPanel::BuildDynamicMenus()
 {
     log_v("BuildDynamicMenus() called");
 
-    if (!preferenceService_) {
+    if (!configurationManager_) {
         log_e("Cannot build dynamic menus - preference service not available");
         return;
     }
 
     // Get all registered sections
-    auto sectionNames = preferenceService_->GetRegisteredSectionNames();
+    auto sectionNames = configurationManager_->GetRegisteredSectionNames();
 
     // Build main menu dynamically
     menuItems_.clear();
 
     // Add sections as menu items
     for (const auto& sectionName : sectionNames) {
-        if (auto section = preferenceService_->GetConfigSection(sectionName)) {
+        if (auto section = configurationManager_->GetConfigSection(sectionName)) {
             ConfigComponent::MenuItem item;
             item.label = section->displayName;
             item.actionType = UIStrings::ActionTypes::ENTER_SECTION;
@@ -544,7 +544,7 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
 {
     log_v("BuildSectionMenu() called for section: %s", sectionName.c_str());
 
-    auto section = preferenceService_->GetConfigSection(sectionName);
+    auto section = configurationManager_->GetConfigSection(sectionName);
     if (!section) {
         log_e("Section not found: %s", sectionName.c_str());
         return;
@@ -593,7 +593,7 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
  */
 std::string ConfigPanel::FormatItemLabel(const Config::ConfigItem& item) const
 {
-    std::string valueStr = preferenceService_->ToString(item.value);
+    std::string valueStr = configurationManager_->ToString(item.value);
     return item.displayName + ": " + valueStr;
 }
 
@@ -621,7 +621,7 @@ void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::Conf
     // Delegate to appropriate specialized method based on data type and available options
     if (!options.empty()) {
         ShowEnumOptionsMenu(keyStr, item, options);
-    } else if (preferenceService_->IsNumeric(item.value)) {
+    } else if (configurationManager_->IsNumeric(item.value)) {
         ShowNumericOptionsMenu(keyStr, item);
     } else {
         ShowStringOptionsMenu(keyStr, item);
@@ -652,9 +652,9 @@ void ConfigPanel::ShowBooleanToggle(const std::string& fullKey, const Config::Co
 {
     log_i("ShowBooleanToggle() for key: %s", fullKey.c_str());
 
-    if (auto currentValue = preferenceService_->GetValue<bool>(item.value)) {
+    if (auto currentValue = configurationManager_->GetValue<bool>(item.value)) {
         bool newValue = !(*currentValue);
-        preferenceService_->UpdateConfig(fullKey, newValue);
+        configurationManager_->UpdateConfig(fullKey, newValue);
 
         // Refresh the section menu to show updated value
         auto [sectionName, itemKey] = ParseConfigKey(fullKey);
@@ -723,7 +723,7 @@ std::pair<std::string, std::string> ConfigPanel::ParseConfigKey(const std::strin
  */
 void ConfigPanel::ShowEnumOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item, const std::vector<std::string>& options)
 {
-    std::string currentValue = preferenceService_->ToString(item.value);
+    std::string currentValue = configurationManager_->ToString(item.value);
 
     for (const auto& option : options) {
         bool isSelected = (option == currentValue);
@@ -770,7 +770,7 @@ void ConfigPanel::ShowStringOptionsMenu(const std::string& fullKey, const Config
 {
     // For string types without options, just show current value
     ConfigComponent::MenuItem currentItem;
-    currentItem.label = UIStrings::ConfigUI::CURRENT_LABEL_PREFIX + preferenceService_->ToString(item.value);
+    currentItem.label = UIStrings::ConfigUI::CURRENT_LABEL_PREFIX + configurationManager_->ToString(item.value);
     currentItem.actionType = UIStrings::ConfigUI::ACTION_TYPE_NONE;
     currentItem.actionParam = UIStrings::ConfigUI::EMPTY_PARAM;
     menuItems_.push_back(currentItem);
@@ -820,7 +820,7 @@ ConfigPanel::NumericRange ConfigPanel::ParseNumericRange(const Config::ConfigIte
     NumericRange range;
     range.minValue = 0;
     range.maxValue = 100;
-    range.currentValue = std::stof(preferenceService_->ToString(item.value));
+    range.currentValue = std::stof(configurationManager_->ToString(item.value));
 
     if (!item.metadata.constraints.empty()) {
         std::string constraints = item.metadata.constraints;

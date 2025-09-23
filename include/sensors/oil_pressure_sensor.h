@@ -43,7 +43,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
   public:
     // ========== Constructors and Destructor ==========
     OilPressureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
-    OilPressureSensor(IGpioProvider *gpioProvider, IConfigurationManager *preferenceService, int updateRateMs = 500);
+    OilPressureSensor(IGpioProvider *gpioProvider, IConfigurationManager *configurationManager, int updateRateMs = 500);
 
     // ========== Public Interface Methods ==========
     // BaseSensor interface implementation
@@ -60,10 +60,10 @@ class OilPressureSensor : public BaseSensor, public IConfig
     void LoadConfiguration();
 
     // IConfig implementation (instance method for backward compatibility)
-    void RegisterConfig(IConfigurationManager* preferenceService) override;
+    void RegisterConfig(IConfigurationManager* configurationManager) override;
 
     // Static schema registration for self-registering pattern
-    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
     void RegisterLiveUpdateCallbacks();
 
@@ -96,7 +96,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
 
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
-    IConfigurationManager *preferenceService_ = nullptr;
+    IConfigurationManager *configurationManager_ = nullptr;
     float calibrationOffset_ = 0.0f;
     float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "Bar";

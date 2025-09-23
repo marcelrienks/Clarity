@@ -9,9 +9,9 @@
 /**
  * @brief Initialize BasePanel with dependency injection of required services
  */
-BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      panelService_(nullptr)
+BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager),
+      panelManager_(nullptr)
 {
     log_v("BasePanel constructor called");
 }
@@ -88,9 +88,9 @@ void BasePanel::Update()
     UpdateContent();
 
     // Reset UI state to IDLE after update (common pattern across all panels)
-    if (panelService_)
+    if (panelManager_)
     {
-        panelService_->SetUiState(UIState::IDLE);
+        panelManager_->SetUiState(UIState::IDLE);
     }
 }
 
@@ -98,16 +98,16 @@ void BasePanel::Update()
  * @brief Inject manager service dependencies
  * @details Updates panel and style service references for runtime services
  */
-void BasePanel::SetManagers(IPanelManager* panelService, IStyleManager* styleService)
+void BasePanel::SetManagers(IPanelManager* panelManager, IStyleManager* styleManager)
 {
     log_v("%s::SetManagers() called", GetPanelName());
 
-    panelService_ = panelService;
+    panelManager_ = panelManager;
 
-    // Update styleService if different instance provided
-    if (styleService != styleService_)
+    // Update styleManager if different instance provided
+    if (styleManager != styleManager_)
     {
-        styleService_ = styleService;
+        styleManager_ = styleManager;
     }
 }
 
@@ -133,9 +133,9 @@ void BasePanel::ShowPanelCompletionCallback(lv_event_t* event)
     log_v("%s::ShowPanelCompletionCallback() called", thisInstance->GetPanelName());
 
     // Set UI state to IDLE after panel loads so triggers can be evaluated again
-    if (thisInstance->panelService_)
+    if (thisInstance->panelManager_)
     {
-        thisInstance->panelService_->SetUiState(UIState::IDLE);
+        thisInstance->panelManager_->SetUiState(UIState::IDLE);
     }
 }
 
@@ -190,9 +190,9 @@ void BasePanel::SetupScreen()
     screen_ = displayProvider_->CreateScreen();
 
     // Apply current theme immediately after screen creation
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyThemeToScreen(screen_);
+        styleManager_->ApplyThemeToScreen(screen_);
     }
 }
 
@@ -205,8 +205,8 @@ void BasePanel::ApplyThemeAndLoadScreen()
     lv_screen_load(screen_);
 
     // Always apply current theme to the screen when loading (ensures theme is current)
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyThemeToScreen(screen_);
+        styleManager_->ApplyThemeToScreen(screen_);
     }
 }

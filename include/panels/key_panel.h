@@ -32,7 +32,7 @@ class KeyPanel : public BasePanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService);
+    KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager);
 
     // ========== Public Interface Methods ==========
     static constexpr const char *NAME = PanelNames::KEY;

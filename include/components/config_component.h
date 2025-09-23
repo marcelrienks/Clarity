@@ -31,7 +31,7 @@
  * - Items fade based on distance from center
  *
  * @context Part of MVP pattern where ConfigPanel (Presenter) manages
- * this component (View) and PreferenceManager acts as the Model.
+ * this component (View) and ConfigurationManager acts as the Model.
  */
 class ConfigComponent : public IComponent
 {
@@ -45,8 +45,8 @@ class ConfigComponent : public IComponent
     };
 
     // ========== Constructors and Destructor ==========
-    ConfigComponent(IPanelManager* panelService = nullptr, 
-                   IStyleManager* styleService = nullptr);
+    ConfigComponent(IPanelManager* panelManager = nullptr, 
+                   IStyleManager* styleManager = nullptr);
     ~ConfigComponent() = default;
     
     // ========== Public Interface Methods ==========
@@ -60,7 +60,7 @@ class ConfigComponent : public IComponent
     void Init(lv_obj_t *screen);
     
     // Set style service for theme-aware colors
-    void SetStyleService(IStyleManager* styleService);
+    void SetStyleService(IStyleManager* styleManager);
     
     // Update colors based on current theme
     void UpdateThemeColors();
@@ -99,8 +99,8 @@ class ConfigComponent : public IComponent
     std::string currentTitle_ = "Configuration";
     
     // Dependency-injected interfaces for direct calls
-    IPanelManager* panelService_ = nullptr;
-    IStyleManager* styleService_ = nullptr;
+    IPanelManager* panelManager_ = nullptr;
+    IStyleManager* styleManager_ = nullptr;
 
     // Constants
     static constexpr int VISIBLE_ITEMS = 5;

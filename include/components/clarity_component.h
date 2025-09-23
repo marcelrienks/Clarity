@@ -28,7 +28,7 @@ class ClarityComponent : public IComponent
 {
 public:
     // ========== Constructors and Destructor ==========
-    explicit ClarityComponent(IStyleManager *styleService);
+    explicit ClarityComponent(IStyleManager *styleManager);
     virtual ~ClarityComponent() = default;
 
     // ========== Public Interface Methods ==========
@@ -36,5 +36,5 @@ public:
 
 private:
     // ========== Private Data Members ==========
-    IStyleManager *styleService_;
+    IStyleManager *styleManager_;
 };

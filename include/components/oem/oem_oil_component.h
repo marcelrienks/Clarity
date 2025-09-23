@@ -47,7 +47,7 @@ class OemOilComponent : public IComponent
 {
   public:
     // ========== Constructors and Destructor ==========
-    OemOilComponent(IStyleManager *styleService);
+    OemOilComponent(IStyleManager *styleManager);
     virtual ~OemOilComponent();
 
     // ========== Public Interface Methods ==========
@@ -70,7 +70,7 @@ class OemOilComponent : public IComponent
     virtual void get_label_angles(int32_t &lAngle, int32_t &hAngle) const = 0;
 
     // ========== Protected Data Members ==========
-    IStyleManager *styleService_;
+    IStyleManager *styleManager_;
 
     // LVGL objects
     lv_obj_t *scale_;

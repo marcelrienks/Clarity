@@ -145,15 +145,15 @@ public:
 
     void SwitchTheme(const char* themeName);
 
-    void SetPreferenceService(IConfigurationManager* preferenceService);
+    void SetConfigurationManager(IConfigurationManager* configurationManager);
 
     void LoadConfiguration();
 
     // IConfig implementation (instance method for backward compatibility)
-    void RegisterConfig(IConfigurationManager* preferenceService) override;
+    void RegisterConfig(IConfigurationManager* configurationManager) override;
 
     // Static schema registration for self-registering pattern
-    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER;
@@ -195,5 +195,5 @@ private:
     const ThemeColors& errorThemeColours_ = ThemeDefinitions::ERROR_THEME;
 
     // Direct preference reading support
-    IConfigurationManager* preferenceService_ = nullptr;
+    IConfigurationManager* configurationManager_ = nullptr;
 };

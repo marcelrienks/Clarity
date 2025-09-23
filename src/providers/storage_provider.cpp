@@ -55,7 +55,7 @@ StorageProvider::StorageProvider() {
     // Load all registered sections
     LoadAllConfigSections();
 
-    log_i("PreferenceManager initialized");
+    log_i("ConfigurationManager initialized");
 }
 
 // ========== Dynamic Configuration Implementation ==========
@@ -175,7 +175,7 @@ bool StorageProvider::SaveConfigSection(const std::string& sectionName) {
     for (const auto& item : section.items) {
         if (!StoreValueToNVS(preferences_, item.key, item.value)) {
             log_e("Failed to store config item: %s.%s", sectionName.c_str(), item.key.c_str());
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigurationManager",
                                                 "Failed to store config item to NVS");
             success = false;
         }
@@ -418,7 +418,7 @@ bool StorageProvider::UpdateConfigValue(const std::string& fullKey, const Config
         // Rollback in-memory value on NVS write failure
         itemIt->value = *oldValue;
         log_e("Failed to save config to NVS for key: %s", fullKey.c_str());
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PreferenceManager",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigurationManager",
                                             "Failed to save config value to NVS");
     }
 

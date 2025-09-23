@@ -30,7 +30,7 @@ class KeyComponent : public IComponent
 {
 public:
     // ========== Constructors and Destructor ==========
-    explicit KeyComponent(IStyleManager *styleService);
+    explicit KeyComponent(IStyleManager *styleManager);
     virtual ~KeyComponent();
 
     // ========== Public Interface Methods ==========
@@ -40,7 +40,7 @@ public:
 protected:
     // ========== Protected Data Members ==========
     lv_obj_t *keyIcon_;
-    IStyleManager *styleService_;
+    IStyleManager *styleManager_;
 
 private:
     // ========== Private Methods ==========

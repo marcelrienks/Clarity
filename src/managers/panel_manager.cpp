@@ -26,7 +26,7 @@ static PanelManager* instancePtr_ = nullptr;
  * @brief Constructs the PanelManager with all required service dependencies
  * @param display Display provider interface for panel rendering
  * @param gpio GPIO provider interface for hardware interaction
- * @param styleService Style service interface for theme management
+ * @param styleManager Style service interface for theme management
  * @param preferenceService Preference service interface for configuration persistence
  * @param interruptManager Interrupt manager for button and trigger handling
  *
@@ -34,20 +34,20 @@ static PanelManager* instancePtr_ = nullptr;
  * required dependencies and sets up the default oil panel as the initial panel.
  * Establishes singleton instance for global access by interrupt system.
  */
-PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleService,
-                           IConfigurationManager *preferenceService, InterruptManager* interruptManager)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
-      preferenceService_(preferenceService), interruptManager_(interruptManager),
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleManager,
+                           IConfigurationManager *configurationManager, InterruptManager* interruptManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager),
+      configurationManager_(configurationManager), interruptManager_(interruptManager),
       errorManager_(ErrorManager::Instance())
 {
     log_v("PanelManager() constructor called");
-    if (!display || !gpio || !styleService || !preferenceService)
+    if (!display || !gpio || !styleManager || !configurationManager)
     {
-        log_e("PanelManager requires all dependencies: display, gpio, styleService, and "
+        log_e("PanelManager requires all dependencies: display, gpio, styleManager, and "
               "preferenceService");
         errorManager_.ReportCriticalError(
             "PanelManager",
-            "Missing required dependencies - display, gpio, styleService, or preferenceService is null");
+            "Missing required dependencies - display, gpio, styleManager, or preferenceService is null");
         // In a real embedded system, you might want to handle this more gracefully
         return;
     }
@@ -159,10 +159,10 @@ void PanelManager::CreateAndLoadPanel(const char *panelName, bool isTriggerDrive
 
     // Check if splash screen should be shown - only if NOT trigger-driven and splash is enabled
     bool showSplash = false;
-    if (preferenceService_ && !isTriggerDriven)
+    if (configurationManager_ && !isTriggerDriven)
     {
         // Query system configuration for splash screen setting
-        if (auto splashValue = preferenceService_->QueryConfig<bool>(ConfigConstants::Keys::SYSTEM_SHOW_SPLASH)) {
+        if (auto splashValue = configurationManager_->QueryConfig<bool>(ConfigConstants::Keys::SYSTEM_SHOW_SPLASH)) {
             showSplash = *splashValue;
         } else {
             showSplash = true; // Default to true
@@ -416,13 +416,13 @@ void PanelManager::UpdateRestorationTracking(const char* panelName, bool isTrigg
  * @brief Injects preference service into panels that support it
  * @param panelName Name of the panel to inject service into
  */
-void PanelManager::InjectPreferenceService(const char* panelName) {
-    if (!preferenceService_ || !panel_) {
+void PanelManager::InjectConfigurationManager(const char* panelName) {
+    if (!configurationManager_ || !panel_) {
         return;
     }
 
     // Simply call the interface method - panels that need it will override it
-    panel_->SetPreferenceService(preferenceService_);
+    panel_->SetConfigurationManager(configurationManager_);
 }
 
 /**
@@ -496,27 +496,27 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     // Direct panel instantiation (factory pattern eliminated)
 
     if (strcmp(panelName, PanelNames::SPLASH) == 0) {
-        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     if (strcmp(panelName, PanelNames::OIL) == 0) {
-        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleManager_);
     }
 
     if (strcmp(panelName, PanelNames::ERROR) == 0) {
-        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleManager_);
     }
 
     if (strcmp(panelName, PanelNames::CONFIG) == 0) {
-        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleManager_);
     }
 
     if (strcmp(panelName, PanelNames::KEY) == 0) {
-        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleManager_);
     }
 
     if (strcmp(panelName, PanelNames::LOCK) == 0) {
-        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleService_);
+        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleManager_);
     }
 
     // Unknown panel type
@@ -558,8 +558,8 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
     }
 
     // Inject core dependencies
-    panel_->SetManagers(this, styleService_);
-    InjectPreferenceService(panelName);
+    panel_->SetManagers(this, styleManager_);
+    InjectConfigurationManager(panelName);
 
     // Initialize panel
     panel_->Init();
@@ -569,9 +569,9 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
 
     // Apply current theme from preferences BEFORE panel is loaded
     // This ensures correct theme is set before any rendering happens
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyCurrentTheme();
+        styleManager_->ApplyCurrentTheme();
     }
 
     // Update universal button interrupts with this panel's functions

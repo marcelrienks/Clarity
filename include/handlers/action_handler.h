@@ -54,8 +54,8 @@ public:
     void ClearPendingAction();
 
     // Configuration management
-    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
-    void SetPreferenceService(IConfigurationManager* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
+    void SetConfigurationManager(IConfigurationManager* configurationManager);
 
     // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
@@ -108,7 +108,7 @@ private:
     class IActionHandler* currentPanel_ = nullptr;
 
     // Preference service for configuration access
-    IConfigurationManager* preferenceService_ = nullptr;
+    IConfigurationManager* configurationManager_ = nullptr;
 
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;

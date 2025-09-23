@@ -44,7 +44,7 @@ public:
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionHandler* panel);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
-    void SetPreferenceService(IConfigurationManager* preferenceService);
+    void SetConfigurationManager(IConfigurationManager* configurationManager);
 
     /**
      * @brief Get total count of registered interrupts (triggers + actions)

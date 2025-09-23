@@ -30,7 +30,7 @@ class LockComponent : public IComponent
 {
   public:
     // ========== Constructors and Destructor ==========
-    explicit LockComponent(IStyleManager *styleService);
+    explicit LockComponent(IStyleManager *styleManager);
     virtual ~LockComponent();
 
     // ========== Public Interface Methods ==========
@@ -39,7 +39,7 @@ class LockComponent : public IComponent
   protected:
     // ========== Protected Data Members ==========
     lv_obj_t *lockIcon_;
-    IStyleManager *styleService_;
+    IStyleManager *styleManager_;
 
   private:
     // ========== Private Methods ==========

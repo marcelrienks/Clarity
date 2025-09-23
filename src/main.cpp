@@ -40,18 +40,18 @@ ErrorManager *errorManager;
 
 /**
  * @brief Static method to register system configuration schema without instance
- * @param preferenceService Service to register schema with
+ * @param configurationManager Service to register schema with
  *
  * Called automatically at program startup through ConfigRegistry.
  * Registers the SystemConfig configuration schema without
  * requiring a manager instance to exist.
  */
-void SystemConfig::RegisterConfigSchema(IConfigurationManager* preferenceService)
+void SystemConfig::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceService) return;
+    if (!configurationManager) return;
 
     // Check if already registered to prevent duplicates
-    if (preferenceService->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
+    if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
         log_d("SystemConfig schema already registered");
         return;
     }
@@ -62,7 +62,7 @@ void SystemConfig::RegisterConfigSchema(IConfigurationManager* preferenceService
     section.AddItem(updateRateConfig);
     section.AddItem(showSplashConfig);
 
-    preferenceService->RegisterConfigSection(section);
+    configurationManager->RegisterConfigSection(section);
     log_i("SystemConfig configuration schema registered (static)");
 }
 
@@ -129,7 +129,7 @@ bool initializeServices()
     }
 
     // Create ConfigurationManager via factory (sets up singleton)
-    configurationManager = managerFactory->CreatePreferenceManager();
+    configurationManager = managerFactory->CreateConfigurationManager();
     if (!configurationManager) {
         log_e("Failed to create ConfigurationManager via factory");
         ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager creation failed");
@@ -149,7 +149,7 @@ bool initializeServices()
         return false;
     }
  
-    styleManager->SetPreferenceService(configurationManager.get());
+    styleManager->SetConfigurationManager(configurationManager.get());
     
     // Create InterruptManager with GPIO provider dependency
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
@@ -160,7 +160,7 @@ bool initializeServices()
     }
 
     // Set preference service for button configuration
-    interruptManager->SetPreferenceService(configurationManager.get());
+    interruptManager->SetConfigurationManager(configurationManager.get());
 
     // Create PanelManager with all dependencies
     panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(),

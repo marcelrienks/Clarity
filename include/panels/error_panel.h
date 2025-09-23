@@ -42,7 +42,7 @@ class ErrorPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService);
+    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager);
     ~ErrorPanel();
 
     // ========== Public Interface Methods ==========
@@ -52,7 +52,7 @@ class ErrorPanel : public IPanel
     void Update() override;
 
     // Manager injection method
-    void SetManagers(IPanelManager *panelService, IStyleManager *styleService) override;
+    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) override;
 
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
@@ -72,8 +72,8 @@ class ErrorPanel : public IPanel
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleManager *styleService_;
-    IPanelManager *panelService_;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
     lv_obj_t* screen_ = nullptr;
     ErrorComponent errorComponent_; // Error component - static allocation
     bool componentInitialized_ = false;

@@ -49,7 +49,7 @@ class ConfigPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService);
+    ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager);
     ~ConfigPanel();
 
     // ========== Public Interface Methods ==========
@@ -59,8 +59,8 @@ class ConfigPanel : public IPanel
     void Update() override;
 
     // Manager injection method
-    void SetManagers(IPanelManager *panelService, IStyleManager *styleService) override;
-    void SetPreferenceService(IConfigurationManager *preferenceService);
+    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) override;
+    void SetConfigurationManager(IConfigurationManager *configurationManager);
 
     // IActionService Interface Implementation (inherited through IPanel)
     void HandleShortPress() override;
@@ -127,9 +127,9 @@ class ConfigPanel : public IPanel
     // Instance Data Members
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleManager *styleService_;
-    IPanelManager *panelService_;
-    IConfigurationManager *preferenceService_ = nullptr;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
+    IConfigurationManager *configurationManager_ = nullptr;
     lv_obj_t* screen_ = nullptr;
 
     // Component (View) - static allocation

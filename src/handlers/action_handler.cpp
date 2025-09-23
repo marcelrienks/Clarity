@@ -580,18 +580,18 @@ void ActionHandler::ClearCurrentPanel() {
 
 /**
  * @brief Registers button timing configuration schema with preference service
- * @param preferenceService The preference service to register with
+ * @param configurationManager The preference service to register with
  *
  * Registers configurable button press timing values including:
  * - Debounce timing: 300-700ms (default 500ms)
  * - Long press threshold: 1000-2000ms (default 1500ms)
  */
-void ActionHandler::RegisterConfigSchema(IConfigurationManager* preferenceService)
+void ActionHandler::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!preferenceService) return;
+    if (!configurationManager) return;
 
     // Check if already registered to prevent duplicates
-    if (preferenceService->IsSchemaRegistered(ConfigConstants::Sections::BUTTON_SENSOR)) {
+    if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::BUTTON_SENSOR)) {
         log_d("ActionHandler schema already registered");
         return;
     }
@@ -603,17 +603,17 @@ void ActionHandler::RegisterConfigSchema(IConfigurationManager* preferenceServic
     section.AddItem(debounceConfig_);
     section.AddItem(longPressConfig_);
 
-    preferenceService->RegisterConfigSection(section);
+    configurationManager->RegisterConfigSection(section);
     log_i("ActionHandler configuration schema registered (static)");
 }
 
 /**
  * @brief Sets preference service for configuration access
- * @param preferenceService The preference service to use for configuration
+ * @param configurationManager The preference service to use for configuration
  */
-void ActionHandler::SetPreferenceService(IConfigurationManager* preferenceService)
+void ActionHandler::SetConfigurationManager(IConfigurationManager* configurationManager)
 {
-    preferenceService_ = preferenceService;
+    configurationManager_ = configurationManager;
 }
 
 /**
@@ -622,11 +622,11 @@ void ActionHandler::SetPreferenceService(IConfigurationManager* preferenceServic
  */
 unsigned long ActionHandler::GetDebounceMs() const
 {
-    if (!preferenceService_) {
+    if (!configurationManager_) {
         return ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS;
     }
 
-    auto value = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_DEBOUNCE_MS);
+    auto value = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_DEBOUNCE_MS);
     return value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS;
 }
 
@@ -636,12 +636,12 @@ unsigned long ActionHandler::GetDebounceMs() const
  */
 unsigned long ActionHandler::GetLongPressMs() const
 {
-    if (!preferenceService_) {
+    if (!configurationManager_) {
         log_w("No preference service, using default long press threshold: %d ms", ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS);
         return ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
     }
 
-    auto value = preferenceService_->template QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
+    auto value = configurationManager_->template QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
     unsigned long result = value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
     log_v("GetLongPressMs returning: %lu ms (config key: %s)", result, ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
     return result;

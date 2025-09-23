@@ -83,5 +83,5 @@ void registerSystemConfiguration();
 // Static schema registration for self-registering pattern
 class SystemConfig {
 public:
-    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 };

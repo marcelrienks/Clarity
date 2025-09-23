@@ -51,7 +51,7 @@ class OemOilPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService);
+    OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager);
     ~OemOilPanel();
 
     // ========== Public Interface Methods ==========
@@ -61,9 +61,9 @@ class OemOilPanel : public IPanel
     void Update() override;
 
     // Manager injection method
-    void SetManagers(IPanelManager *panelService, IStyleManager *styleService);
+    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager);
 
-    void SetPreferenceService(IConfigurationManager *preferenceService);
+    void SetConfigurationManager(IConfigurationManager *configurationManager);
     
     void ApplyCurrentSensorSettings();
 
@@ -103,9 +103,9 @@ class OemOilPanel : public IPanel
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleManager *styleService_;
-    IPanelManager *panelService_;
-    IConfigurationManager *preferenceService_ = nullptr;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
+    IConfigurationManager *configurationManager_ = nullptr;
     // Instance Data Members - UI Objects
     lv_obj_t* screen_ = nullptr;
 

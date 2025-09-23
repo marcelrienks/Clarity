@@ -16,15 +16,15 @@
  * @brief Constructs OEM oil monitoring panel with dual gauge display
  * @param gpio GPIO provider for sensor hardware access
  * @param display Display provider for screen management
- * @param styleService Style service for theme-based styling
+ * @param styleManager Style service for theme-based styling
  *
  * Creates automotive oil monitoring panel with pressure and temperature gauges.
  * Initializes stack-allocated components, creates sensor instances, and sets up
  * LVGL animation structures for smooth needle movements.
  */
-OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      oemOilPressureComponent_(styleService), oemOilTemperatureComponent_(styleService),
+OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(nullptr),
+      oemOilPressureComponent_(styleManager), oemOilTemperatureComponent_(styleManager),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
       componentsInitialized_(false), currentOilPressureValue_(-1),
@@ -111,9 +111,9 @@ void OemOilPanel::Init()
     screen_ = displayProvider_->CreateScreen();
 
     // Apply current theme immediately after screen creation
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyThemeToScreen(screen_);
+        styleManager_->ApplyThemeToScreen(screen_);
     }
 
     oemOilPressureSensor_->Init();
@@ -146,7 +146,7 @@ void OemOilPanel::Load()
 
 
     // Create components for both pressure and temperature
-    if (!styleService_ || !styleService_->IsInitialized())
+    if (!styleManager_ || !styleManager_->IsInitialized())
     {
         log_w("StyleService not properly initialized, skipping component creation");
         return;
@@ -214,11 +214,11 @@ void OemOilPanel::Load()
     
     // Post-load validation
 
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->ApplyThemeToScreen(screen_);
+        styleManager_->ApplyThemeToScreen(screen_);
         // Update lastTheme_ to current theme to sync with theme detection in update()
-        lastTheme_ = String(styleService_->GetCurrentTheme().c_str());
+        lastTheme_ = String(styleManager_->GetCurrentTheme().c_str());
     }
     
     log_t("OemOilPanel loaded successfully");
@@ -237,14 +237,14 @@ void OemOilPanel::Load()
 void OemOilPanel::Update()
 {
     // Check for theme changes and apply immediately
-    const char *currentTheme = styleService_ ? styleService_->GetCurrentTheme().c_str() : "";
+    const char *currentTheme = styleManager_ ? styleManager_->GetCurrentTheme().c_str() : "";
     bool themeChanged = lastTheme_.isEmpty() || !lastTheme_.equals(currentTheme);
     if (themeChanged)
     {
         lastTheme_ = String(currentTheme);
-        if (styleService_ && screen_)
+        if (styleManager_ && screen_)
         {
-            styleService_->ApplyThemeToScreen(screen_);
+            styleManager_->ApplyThemeToScreen(screen_);
         }
     }
 
@@ -263,9 +263,9 @@ void OemOilPanel::Update()
     // If no animations were started, updates complete immediately
     if (animationState_ == AnimationState::IDLE)
     {
-        if (panelService_)
+        if (panelManager_)
         {
-            panelService_->SetUiState(UIState::IDLE);
+            panelManager_->SetUiState(UIState::IDLE);
         }
     }
 }
@@ -366,9 +366,9 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
         animationState_ = AnimationState::PRESSURE_RUNNING;
     }
     // Set ANIMATING state before starting animation
-    if (panelService_)
+    if (panelManager_)
     {
-        panelService_->SetUiState(UIState::BUSY);
+        panelManager_->SetUiState(UIState::BUSY);
     }
     // Start pressure gauge animation
     lv_anim_start(&pressureAnimation_);
@@ -483,9 +483,9 @@ void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
         animationState_ = AnimationState::TEMPERATURE_RUNNING;
     }
     // Set ANIMATING state before starting animation
-    if (panelService_)
+    if (panelManager_)
     {
-        panelService_->SetUiState(UIState::BUSY);
+        panelManager_->SetUiState(UIState::BUSY);
     }
     // Start temperature gauge animation
     lv_anim_start(&temperatureAnimation_);
@@ -510,7 +510,7 @@ Action OemOilPanel::GetLongPressAction()
     log_v("GetLongPressAction() called");
 
     // Return an action that directly calls PanelService interface
-    if (!panelService_)
+    if (!panelManager_)
     {
         log_w("OemOilPanel: PanelService not available, returning no action");
         return Action(nullptr);
@@ -519,37 +519,37 @@ Action OemOilPanel::GetLongPressAction()
     return Action(
         [this]()
         {
-            panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+            panelManager_->CreateAndLoadPanel(PanelNames::CONFIG, true);
         });
 }
 */
 
 /**
  * @brief Manager injection method to prevent circular references
- * @param panelService the panel manager instance
- * @param styleService  the style manager instance
+ * @param panelManager the panel manager instance
+ * @param styleManager  the style manager instance
  */
-void OemOilPanel::SetManagers(IPanelManager *panelService, IStyleManager *styleService)
+void OemOilPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleManager)
 {
     log_v("SetManagers() called");
 
-    panelService_ = panelService;
-    // styleService_ is already set in constructor, but update if different instance provided
-    if (styleService != styleService_)
+    panelManager_ = panelManager;
+    // styleManager_ is already set in constructor, but update if different instance provided
+    if (styleManager != styleManager_)
     {
-        styleService_ = styleService;
+        styleManager_ = styleManager;
     }
 }
 
 /**
  * @brief Set preference service and apply sensor update rate from preferences
- * @param preferenceService The preference service to use for configuration
+ * @param configurationManager The preference service to use for configuration
  */
-void OemOilPanel::SetPreferenceService(IConfigurationManager *preferenceService)
+void OemOilPanel::SetConfigurationManager(IConfigurationManager *configurationManager)
 {
-    log_v("SetPreferenceService() called");
+    log_v("SetConfigurationManager() called");
 
-    preferenceService_ = preferenceService;
+    configurationManager_ = configurationManager;
 
     // Apply sensor configuration from preferences when service is first injected
     ApplyCurrentSensorSettings();
@@ -561,21 +561,21 @@ void OemOilPanel::SetPreferenceService(IConfigurationManager *preferenceService)
 void OemOilPanel::ApplyCurrentSensorSettings()
 {
     // Apply updateRate and units from preferences to sensors if preference service is available
-    if (preferenceService_ && cachedPressureSensor_ && cachedTemperatureSensor_)
+    if (configurationManager_ && cachedPressureSensor_ && cachedTemperatureSensor_)
     {
         // Get individual preferences using type-safe config system
         int updateRate = 500; // Default
-        if (auto rateValue = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::SYSTEM_UPDATE_RATE)) {
+        if (auto rateValue = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::SYSTEM_UPDATE_RATE)) {
             updateRate = *rateValue;
         }
 
         std::string pressureUnit = ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT; // Default
-        if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
+        if (auto unitValue = configurationManager_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
             pressureUnit = *unitValue;
         }
 
         std::string tempUnit = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT; // Default
-        if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
+        if (auto unitValue = configurationManager_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
 
@@ -610,13 +610,13 @@ void OemOilPanel::ApplyCurrentSensorSettings()
                   updateRate, pressureUnit.c_str(), tempUnit.c_str());
         }
     }
-    else if (!preferenceService_)
+    else if (!configurationManager_)
     {
         // Only log this warning once during initialization
         static bool logged = false;
         if (!logged)
         {
-            log_w("ApplyCurrentSensorSettings: No PreferenceService available - using default sensor settings");
+            log_w("ApplyCurrentSensorSettings: No ConfigurationManager available - using default sensor settings");
             logged = true;
         }
     }
@@ -644,9 +644,9 @@ void OemOilPanel::ShowPanelCompletionCallback(lv_event_t *event)
     }
 
     // Set UI state to IDLE so main loop can start calling Update()
-    if (thisInstance->panelService_)
+    if (thisInstance->panelManager_)
     {
-        thisInstance->panelService_->SetUiState(UIState::IDLE);
+        thisInstance->panelManager_->SetUiState(UIState::IDLE);
     }
     
     // Animation completed - no callback needed for interface-based approach
@@ -694,9 +694,9 @@ void OemOilPanel::UpdatePanelCompletionCallback(lv_anim_t *animation)
     if (thisInstance->animationState_ == AnimationState::IDLE)
     {
         // Set IDLE state when all animations are complete
-        if (thisInstance->panelService_)
+        if (thisInstance->panelManager_)
         {
-            thisInstance->panelService_->SetUiState(UIState::IDLE);
+            thisInstance->panelManager_->SetUiState(UIState::IDLE);
         }
     }
 }
@@ -755,7 +755,7 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
 int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
 {
 
-    if (!preferenceService_)
+    if (!configurationManager_)
     {
         int32_t result = MapBarPressure(sensorValue);
         log_v("MapPressureValue() returning (fallback): %d", result);
@@ -763,7 +763,7 @@ int32_t OemOilPanel::MapPressureValue(int32_t sensorValue)
     }
 
     std::string pressureUnit = "Bar"; // Default
-    if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
+    if (auto unitValue = configurationManager_->QueryConfig<std::string>(OilPressureSensor::CONFIG_UNIT)) {
         pressureUnit = *unitValue;
     }
     int32_t mappedValue = MapPressureByUnit(sensorValue, pressureUnit);
@@ -871,10 +871,10 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     // Convert to base unit (Celsius) if needed
     float celsiusValue;
 
-    if (preferenceService_)
+    if (configurationManager_)
     {
         std::string tempUnit = ConfigConstants::Defaults::DEFAULT_TEMPERATURE_UNIT; // Default
-        if (auto unitValue = preferenceService_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
+        if (auto unitValue = configurationManager_->QueryConfig<std::string>(OilTemperatureSensor::CONFIG_UNIT)) {
             tempUnit = *unitValue;
         }
 
@@ -955,13 +955,13 @@ void OemOilPanel::HandleShortPress()
 }
 void OemOilPanel::HandleLongPress()
 {
-    if (panelService_)
+    if (panelManager_)
     {
         log_i("OemOilPanel long press - loading config panel");
-        panelService_->CreateAndLoadPanel(PanelNames::CONFIG, true);
+        panelManager_->CreateAndLoadPanel(PanelNames::CONFIG, true);
     }
     else
     {
-        log_w("OemOilPanel: Cannot load config panel - panelService not available");
+        log_w("OemOilPanel: Cannot load config panel - panelManager not available");
     }
 }

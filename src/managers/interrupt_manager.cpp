@@ -153,9 +153,9 @@ void InterruptManager::SetCurrentPanel(IActionHandler* panel)
  * @brief Sets preference service for configuration access
  * @param preferenceService The preference service to use for configuration
  */
-void InterruptManager::SetPreferenceService(IConfigurationManager* preferenceService)
+void InterruptManager::SetConfigurationManager(IConfigurationManager* configurationManager)
 {
-    log_v("SetPreferenceService() called");
+    log_v("SetConfigurationManager() called");
 
     if (!actionHandler_) {
         log_e("Cannot set preference service - ActionHandler not initialized");
@@ -163,7 +163,7 @@ void InterruptManager::SetPreferenceService(IConfigurationManager* preferenceSer
     }
 
     // Delegate to ActionHandler to set preference service
-    actionHandler_->SetPreferenceService(preferenceService);
+    actionHandler_->SetConfigurationManager(configurationManager);
     log_i("Set preference service in ActionHandler");
 }
 

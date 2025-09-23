@@ -39,7 +39,7 @@ class ErrorComponent : public IComponent
 {
 public:
     // ========== Constructors and Destructor ==========
-    explicit ErrorComponent(IStyleManager *styleService);
+    explicit ErrorComponent(IStyleManager *styleManager);
     virtual ~ErrorComponent();
 
     // ========== Public Interface Methods ==========
@@ -62,7 +62,7 @@ private:
     const char *GetErrorLevelText(ErrorLevel level);
 
     // ========== Private Data Members ==========
-    IStyleManager *styleService_;
+    IStyleManager *styleManager_;
     lv_obj_t *errorContainer_;      // Main container for error display
     lv_obj_t *errorContentArea_;    // Single error content display area
     lv_obj_t *errorCountLabel_;     // Header showing current error position

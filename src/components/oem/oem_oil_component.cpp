@@ -10,13 +10,13 @@
 
 // ========== Constructors and Destructor ==========
 
-OemOilComponent::OemOilComponent(IStyleManager *styleService)
-    : styleService_(styleService), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
+OemOilComponent::OemOilComponent(IStyleManager *styleManager)
+    : styleManager_(styleManager), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
       needleHighlightLine_(nullptr), needleHighlightMiddle_(nullptr), needleHighlightBase_(nullptr), oilIcon_(nullptr),
       lowLabel_(nullptr), highLabel_(nullptr), pivotCircle_(nullptr), pivotHighlight_(nullptr), scaleRotation_(0)
 {
-    // Validate styleService dependency
-    if (!styleService_)
+    // Validate styleManager dependency
+    if (!styleManager_)
     {
         log_e("StyleService is required but was null");
         ErrorManager::Instance().ReportCriticalError("OemOilComponent",
@@ -99,9 +99,9 @@ void OemOilComponent::Render(lv_obj_t *screen, const ComponentLocation &location
 void OemOilComponent::Refresh(const Reading &reading)
 {
     int32_t value = std::get<int32_t>(reading);
-    const ThemeColors &colours = styleService_->GetThemeColors();
+    const ThemeColors &colours = styleManager_->GetThemeColors();
 
-    const std::string& currentTheme = styleService_->GetCurrentTheme();
+    const std::string& currentTheme = styleManager_->GetCurrentTheme();
     // Component refresh completed
 
     // Icon color logic - in night mode, always use gaugeNormal (red)
@@ -241,9 +241,9 @@ void OemOilComponent::update_pivot_styling()
 {
     if (pivotCircle_)
     {
-        const ThemeColors &colours = styleService_->GetThemeColors();
+        const ThemeColors &colours = styleManager_->GetThemeColors();
 
-        if (styleService_->GetCurrentTheme() == Themes::NIGHT)
+        if (styleManager_->GetCurrentTheme() == Themes::NIGHT)
         {
             // Night mode - make pivot completely invisible by matching background exactly
             lv_obj_set_style_bg_color(pivotCircle_, colours.background, MAIN_DEFAULT);
@@ -304,7 +304,7 @@ void OemOilComponent::update_pivot_styling()
  */
 void OemOilComponent::create_icon()
 {
-    const ThemeColors &colours = styleService_->GetThemeColors();
+    const ThemeColors &colours = styleManager_->GetThemeColors();
 
     oilIcon_ = lv_image_create(scale_);
     lv_image_set_src(oilIcon_, get_icon());
@@ -321,23 +321,23 @@ void OemOilComponent::create_icon()
  */
 void OemOilComponent::create_labels()
 {
-    const ThemeColors &colours = styleService_->GetThemeColors();
+    const ThemeColors &colours = styleManager_->GetThemeColors();
 
     // Create "L" label for low end
     lowLabel_ = lv_label_create(scale_);
     lv_label_set_text(lowLabel_, UIConstants::GAUGE_LOW_LABEL);
-    if (styleService_ && styleService_->IsInitialized())
+    if (styleManager_ && styleManager_->IsInitialized())
     {
-        lv_obj_add_style(lowLabel_, &styleService_->GetTextStyle(), MAIN_DEFAULT);
+        lv_obj_add_style(lowLabel_, &styleManager_->GetTextStyle(), MAIN_DEFAULT);
     }
     lv_obj_set_style_text_font(lowLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
     // Create "H" label for high end
     highLabel_ = lv_label_create(scale_);
     lv_label_set_text(highLabel_, UIConstants::GAUGE_HIGH_LABEL);
-    if (styleService_ && styleService_->IsInitialized())
+    if (styleManager_ && styleManager_->IsInitialized())
     {
-        lv_obj_add_style(highLabel_, &styleService_->GetTextStyle(), MAIN_DEFAULT);
+        lv_obj_add_style(highLabel_, &styleManager_->GetTextStyle(), MAIN_DEFAULT);
     }
     lv_obj_set_style_text_font(highLabel_, &lv_font_montserrat_18, MAIN_DEFAULT);
 
@@ -367,7 +367,7 @@ void OemOilComponent::create_labels()
  */
 void OemOilComponent::create_needle()
 {
-    const ThemeColors &colours = styleService_->GetThemeColors();
+    const ThemeColors &colours = styleManager_->GetThemeColors();
 
     // Create realistic 3-section tapered needle (based on actual car dashboard reference)
 
@@ -460,11 +460,11 @@ void OemOilComponent::create_scale(int32_t rotation)
     lv_scale_set_major_tick_every(scale_, 3);
     lv_scale_set_label_show(scale_, false); // Disable built-in labels, use custom L/H positioning
 
-    if (styleService_ && styleService_->IsInitialized())
+    if (styleManager_ && styleManager_->IsInitialized())
     {
-        lv_obj_add_style(scale_, &styleService_->GetGaugeMainStyle(), MAIN_DEFAULT);
-        lv_obj_add_style(scale_, &styleService_->GetGaugeIndicatorStyle(), INDICATOR_DEFAULT);
-        lv_obj_add_style(scale_, &styleService_->GetGaugeItemsStyle(), ITEMS_DEFAULT);
+        lv_obj_add_style(scale_, &styleManager_->GetGaugeMainStyle(), MAIN_DEFAULT);
+        lv_obj_add_style(scale_, &styleManager_->GetGaugeIndicatorStyle(), INDICATOR_DEFAULT);
+        lv_obj_add_style(scale_, &styleManager_->GetGaugeItemsStyle(), ITEMS_DEFAULT);
     }
     else
     {
@@ -477,11 +477,11 @@ void OemOilComponent::create_scale(int32_t rotation)
         return;
     }
 
-    if (styleService_ && styleService_->IsInitialized())
+    if (styleManager_ && styleManager_->IsInitialized())
     {
-        lv_scale_section_set_style(section, MAIN_DEFAULT, &styleService_->GetGaugeMainStyle());
-        lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
-        lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleService_->GetGaugeDangerSectionStyle());
+        lv_scale_section_set_style(section, MAIN_DEFAULT, &styleManager_->GetGaugeMainStyle());
+        lv_scale_section_set_style(section, INDICATOR_DEFAULT, &styleManager_->GetGaugeDangerSectionStyle());
+        lv_scale_section_set_style(section, ITEMS_DEFAULT, &styleManager_->GetGaugeDangerSectionStyle());
     }
     else
     {

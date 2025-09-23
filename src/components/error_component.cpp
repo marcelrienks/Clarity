@@ -8,13 +8,13 @@
 
 /**
  * @brief Constructs an error display component with style service dependency
- * @param styleService Style service for theme management
+ * @param styleManager Style service for theme management
  *
  * Initializes the error component with style service for theming.
  * Sets all UI element pointers to nullptr and initializes counters to zero.
  */
-ErrorComponent::ErrorComponent(IStyleManager *styleService)
-    : styleService_(styleService), errorContainer_(nullptr), errorContentArea_(nullptr), errorCountLabel_(nullptr),
+ErrorComponent::ErrorComponent(IStyleManager *styleManager)
+    : styleManager_(styleManager), errorContainer_(nullptr), errorContentArea_(nullptr), errorCountLabel_(nullptr),
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
       currentErrorIndex_(0)
 {

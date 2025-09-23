@@ -66,7 +66,7 @@ public:
      */
     void RegisterAllSchemas();
 
-    // ========== IPreferenceService Implementation ==========
+    // ========== IConfigurationManager Implementation ==========
 
     // Dynamic Configuration Methods
     bool RegisterConfigSection(const Config::ConfigSection& section) override;

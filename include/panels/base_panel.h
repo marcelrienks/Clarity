@@ -42,7 +42,7 @@
  * class KeyPanel : public BasePanel {
  * protected:
  *     void CreateContent() override {
- *         keyComponent_ = componentFactory_->CreateKeyComponent(styleService_);
+ *         keyComponent_ = componentFactory_->CreateKeyComponent(styleManager_);
  *         keyComponent_->Render(screen_, centerLocation_, displayProvider_);
  *     }
  *
@@ -62,9 +62,9 @@ public:
      * @brief Construct BasePanel with required service dependencies
      * @param gpio GPIO provider for hardware access
      * @param display Display provider for screen management
-     * @param styleService Style service for theming
+     * @param styleManager Style service for theming
      */
-    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleService);
+    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleManager);
     BasePanel(const BasePanel&) = delete;
     BasePanel& operator=(const BasePanel&) = delete;
     /**
@@ -93,10 +93,10 @@ public:
 
     /**
      * @brief Inject panel and style service dependencies
-     * @param panelService Panel management service
-     * @param styleService Style service for theming
+     * @param panelManager Panel management service
+     * @param styleManager Style service for theming
      */
-    void SetManagers(IPanelManager* panelService, IStyleManager* styleService) override;
+    void SetManagers(IPanelManager* panelManager, IStyleManager* styleManager) override;
 
     /**
      * @brief Get function pointer for short button press handling
@@ -163,8 +163,8 @@ protected:
     // ========== Protected Data Members ==========
     IGpioProvider* gpioProvider_;
     IDisplayProvider* displayProvider_;
-    IStyleManager* styleService_;
-    IPanelManager* panelService_;
+    IStyleManager* styleManager_;
+    IPanelManager* panelManager_;
     ComponentLocation centerLocation_;
     lv_obj_t* screen_ = nullptr;
 

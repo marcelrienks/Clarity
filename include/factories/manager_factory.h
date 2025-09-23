@@ -44,13 +44,13 @@ public:
     // ========== Public Interface Methods ==========
     // Factory methods
     std::unique_ptr<PanelManager> CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
-                                                      IStyleManager *styleService,
-                                                      IConfigurationManager *preferenceService,
+                                                      IStyleManager *styleManager,
+                                                      IConfigurationManager *configurationManager,
                                                       InterruptManager *interruptManager);
 
     std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr);
 
-    std::unique_ptr<IConfigurationManager> CreatePreferenceManager();
+    std::unique_ptr<IConfigurationManager> CreateConfigurationManager();
 
     InterruptManager* CreateInterruptManager(IGpioProvider* gpioProvider);
 
@@ -62,13 +62,13 @@ private:
     
     // ========== Static Methods ==========
     static std::unique_ptr<PanelManager> CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                IStyleManager *styleService,
-                                                                IConfigurationManager *preferenceService,
+                                                                IStyleManager *styleManager,
+                                                                IConfigurationManager *configurationManager,
                                                                 InterruptManager *interruptManager);
 
     static std::unique_ptr<StyleManager> CreateStyleManagerImpl(const char *theme = nullptr);
 
-    static std::unique_ptr<IConfigurationManager> CreatePreferenceManagerImpl();
+    static std::unique_ptr<IConfigurationManager> CreateConfigurationManagerImpl();
 
     static InterruptManager* CreateInterruptManagerImpl(IGpioProvider* gpioProvider);
 

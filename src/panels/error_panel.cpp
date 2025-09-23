@@ -13,15 +13,15 @@
  * @brief Constructs error panel with required service dependencies
  * @param gpio GPIO provider for hardware interaction
  * @param display Display provider for screen management
- * @param styleService Style service for theme management
+ * @param styleManager Style service for theme management
  *
  * Creates error panel with stack-allocated error component for memory efficiency.
  * Initializes component state and sets error panel as active in ErrorManager
  * for proper coordination with the trigger system.
  */
-ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
-    : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
-      errorComponent_(styleService), componentInitialized_(false), panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
+ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(nullptr),
+      errorComponent_(styleManager), componentInitialized_(false), panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
 {
     log_v("ErrorPanel constructor called");
 }
@@ -75,9 +75,9 @@ void ErrorPanel::Init()
     screen_ = displayProvider_->CreateScreen();
 
     // Store current theme before switching to ERROR theme (but don't apply it yet)
-    if (styleService_)
+    if (styleManager_)
     {
-        previousTheme_ = styleService_->GetCurrentTheme();
+        previousTheme_ = styleManager_->GetCurrentTheme();
     }
 
     centerLocation_ = ComponentLocation(LV_ALIGN_CENTER, 0, 0);
@@ -134,10 +134,10 @@ void ErrorPanel::Load()
     lv_screen_load(screen_);
 
     // Ensure ERROR theme is applied when panel is loaded
-    if (styleService_)
+    if (styleManager_)
     {
-        styleService_->SetTheme(Themes::ERROR);
-        styleService_->ApplyThemeToScreen(screen_);
+        styleManager_->SetTheme(Themes::ERROR);
+        styleManager_->ApplyThemeToScreen(screen_);
     }
 
     panelLoaded_ = true;
@@ -209,7 +209,7 @@ void ErrorPanel::Update()
         ErrorManager::Instance().SetErrorPanelActive(false);
         
         // Auto-restore using CheckRestoration to handle active triggers
-        if (panelService_)
+        if (panelManager_)
         {
             log_i("ErrorPanel: No errors remaining - checking for active triggers before restoration");
             
@@ -253,15 +253,15 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (thisInstance)
     {
         // Set UI state to IDLE after static panel loads so triggers can be evaluated again
-        if (thisInstance->panelService_)
+        if (thisInstance->panelManager_)
         {
             log_i("ErrorPanel: Setting UI state to IDLE - this unblocks main loop processing");
-            thisInstance->panelService_->SetUiState(UIState::IDLE);
+            thisInstance->panelManager_->SetUiState(UIState::IDLE);
             log_i("ErrorPanel: UI state set to IDLE successfully");
         }
         else
         {
-            log_e("ErrorPanel::ShowPanelCompletionCallback: panelService_ is null!");
+            log_e("ErrorPanel::ShowPanelCompletionCallback: panelManager_ is null!");
             ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
                                                 "PanelService is null in completion callback");
         }
@@ -276,22 +276,22 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
 
 /**
  * @brief Injects manager dependencies for panel operation
- * @param panelService Panel service for navigation control
- * @param styleService Style service for theme management
+ * @param panelManager Panel service for navigation control
+ * @param styleManager Style service for theme management
  *
  * Dependency injection method that provides panel with required manager
  * interfaces. Called during panel creation to establish service dependencies
  * needed for proper panel operation and lifecycle management.
  */
-void ErrorPanel::SetManagers(IPanelManager *panelService, IStyleManager *styleService)
+void ErrorPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleManager)
 {
     log_v("SetManagers() called");
 
-    panelService_ = panelService;
-    // styleService_ is already set in constructor, but update if different instance provided
-    if (styleService != styleService_)
+    panelManager_ = panelManager;
+    // styleManager_ is already set in constructor, but update if different instance provided
+    if (styleManager != styleManager_)
     {
-        styleService_ = styleService;
+        styleManager_ = styleManager;
     }
 }
 
