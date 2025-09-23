@@ -31,7 +31,7 @@ std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
-ConfigurationManager *configurationManager;
+std::unique_ptr<IConfigurationManager> configurationManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
@@ -76,7 +76,7 @@ void SystemConfig::RegisterConfigSchema(IConfigurationManager* preferenceService
 void registerSystemConfiguration()
 {
     // During migration, just delegate to static method
-    SystemConfig::RegisterConfigSchema(configurationManager);
+    SystemConfig::RegisterConfigSchema(configurationManager.get());
 }
 
 // ========== Private Methods ==========
@@ -128,11 +128,11 @@ bool initializeServices()
         return false;
     }
 
-    // Get ConfigurationManager singleton and initialize it
-    configurationManager = &ConfigurationManager::Instance();
-    if (!configurationManager->Initialize()) {
-        log_e("Failed to initialize ConfigurationManager");
-        ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager initialization failed");
+    // Create ConfigurationManager via factory (sets up singleton)
+    configurationManager = managerFactory->CreatePreferenceManager();
+    if (!configurationManager) {
+        log_e("Failed to create ConfigurationManager via factory");
+        ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager creation failed");
         return false;
     }
 
@@ -149,7 +149,7 @@ bool initializeServices()
         return false;
     }
  
-    styleManager->SetPreferenceService(configurationManager);
+    styleManager->SetPreferenceService(configurationManager.get());
     
     // Create InterruptManager with GPIO provider dependency
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
@@ -160,11 +160,11 @@ bool initializeServices()
     }
 
     // Set preference service for button configuration
-    interruptManager->SetPreferenceService(configurationManager);
+    interruptManager->SetPreferenceService(configurationManager.get());
 
     // Create PanelManager with all dependencies
     panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(),
-                                                      styleManager.get(), configurationManager,
+                                                      styleManager.get(), configurationManager.get(),
                                                       interruptManager);
 
     if (!panelManager) {
@@ -203,7 +203,7 @@ void setup()
     }
 
     // Register all configuration schemas from components
-    configurationManager->RegisterAllSchemas();
+    ConfigurationManager::Instance().RegisterAllSchemas();
 
     Ticker::handleLvTasks();
 
