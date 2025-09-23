@@ -178,18 +178,12 @@ namespace StorageConstants {
 namespace ConfigConstants {
     // Section Names
     namespace Sections {
-        static constexpr const char* SYSTEM = "System";
-        static constexpr const char* STYLE_MANAGER = "StyleManager";
-        static constexpr const char* OIL_PRESSURE_SENSOR = "OilPressureSensor";
-        static constexpr const char* OIL_TEMPERATURE_SENSOR = "OilTemperatureSensor";
-        static constexpr const char* BUTTON_SENSOR = "ButtonSensor";
-        static constexpr const char* SPLASH_PANEL = "SplashPanel";
-
-        // Section identifiers (lowercase for config keys)
-        static constexpr const char* OIL_PRESSURE = "oil_pressure";
-        static constexpr const char* OIL_TEMPERATURE = "oil_temperature";
-        static constexpr const char* STYLE_MANAGER_LOWER = "style_manager";
-        static constexpr const char* SPLASH_PANEL_LOWER = "splash_panel";
+        static constexpr const char* SYSTEM = "system";
+        static constexpr const char* STYLE_MANAGER = "style_manager";
+        static constexpr const char* OIL_PRESSURE_SENSOR = "oil_pressure_sensor";
+        static constexpr const char* OIL_TEMPERATURE_SENSOR = "oil_temperature_sensor";
+        static constexpr const char* BUTTON_SENSOR = "button_sensor";
+        static constexpr const char* SPLASH_PANEL = "splash_panel";
     }
 
     // Item Keys
@@ -219,16 +213,16 @@ namespace ConfigConstants {
         static constexpr const char* BUTTON_LONG_PRESS_MS = "button_sensor.long_press_ms";
 
         // Oil pressure sensor configuration keys
-        static constexpr const char* OIL_PRESSURE_UNIT = "oil_pressure.unit";
-        static constexpr const char* OIL_PRESSURE_UPDATE_RATE = "oil_pressure.update_rate";
-        static constexpr const char* OIL_PRESSURE_OFFSET = "oil_pressure.offset";
-        static constexpr const char* OIL_PRESSURE_SCALE = "oil_pressure.scale";
+        static constexpr const char* OIL_PRESSURE_UNIT = "oil_pressure_sensor.unit";
+        static constexpr const char* OIL_PRESSURE_UPDATE_RATE = "oil_pressure_sensor.update_rate";
+        static constexpr const char* OIL_PRESSURE_OFFSET = "oil_pressure_sensor.offset";
+        static constexpr const char* OIL_PRESSURE_SCALE = "oil_pressure_sensor.scale";
 
         // Oil temperature sensor configuration keys
-        static constexpr const char* OIL_TEMPERATURE_UNIT = "oil_temperature.unit";
-        static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature.update_rate";
-        static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature.offset";
-        static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature.scale";
+        static constexpr const char* OIL_TEMPERATURE_UNIT = "oil_temperature_sensor.unit";
+        static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature_sensor.update_rate";
+        static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature_sensor.offset";
+        static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature_sensor.scale";
 
         // Style manager configuration keys
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";

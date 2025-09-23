@@ -68,7 +68,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
     void RegisterLiveUpdateCallbacks();
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE;
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE_SENSOR;
     static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_PRESSURE_UNIT;
     static constexpr const char* CONFIG_UPDATE_RATE = ConfigConstants::Keys::OIL_PRESSURE_UPDATE_RATE;
     static constexpr const char* CONFIG_OFFSET = ConfigConstants::Keys::OIL_PRESSURE_OFFSET;

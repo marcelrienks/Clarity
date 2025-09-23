@@ -358,7 +358,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle unit change
         if (fullKey == CONFIG_UNIT) {
-            if (auto newUnit = Config::ConfigValueHelper::GetValue<std::string>(newValue)) {
+            if (auto newUnit = preferenceService_->GetValue<std::string>(newValue)) {
                 SetTargetUnit(*newUnit);
                 log_i("Oil pressure unit changed to: %s", newUnit->c_str());
             }
@@ -366,7 +366,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle update rate change
         else if (fullKey == CONFIG_UPDATE_RATE) {
-            if (auto newRate = Config::ConfigValueHelper::GetValue<int>(newValue)) {
+            if (auto newRate = preferenceService_->GetValue<int>(newValue)) {
                 SetUpdateRate(*newRate);
                 log_i("Oil pressure update rate changed to: %d ms", *newRate);
             }
@@ -374,7 +374,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle calibration offset change
         else if (fullKey == CONFIG_OFFSET) {
-            if (auto newOffset = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+            if (auto newOffset = preferenceService_->GetValue<float>(newValue)) {
                 calibrationOffset_ = *newOffset;
                 log_i("Oil pressure calibration offset changed to: %.2f", *newOffset);
             }
@@ -382,7 +382,7 @@ void OilPressureSensor::RegisterLiveUpdateCallbacks() {
 
         // Handle calibration scale change
         else if (fullKey == CONFIG_SCALE) {
-            if (auto newScale = Config::ConfigValueHelper::GetValue<float>(newValue)) {
+            if (auto newScale = preferenceService_->GetValue<float>(newValue)) {
                 calibrationScale_ = *newScale;
                 log_i("Oil pressure calibration scale changed to: %.2f", *newScale);
             }

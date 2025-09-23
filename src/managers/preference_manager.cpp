@@ -274,11 +274,11 @@ bool PreferenceManager::ValidateConfigValue(const std::string& fullKey, const Co
     const Config::ConfigItem& item = *itemIt;
 
     // Type validation - ensure types match between new value and existing value
-    if (!Config::ConfigValueHelper::TypesMatch(value, item.value)) {
+    if (!TypesMatch(value, item.value)) {
         log_w("Type mismatch for key %s - expected %s, got %s",
               fullKey.c_str(),
-              Config::ConfigValueHelper::GetTypeName(item.value).c_str(),
-              Config::ConfigValueHelper::GetTypeName(value).c_str());
+              GetTypeName(item.value).c_str(),
+              GetTypeName(value).c_str());
         return false;
     }
 
@@ -394,7 +394,7 @@ bool PreferenceManager::UpdateConfigImpl(const std::string& fullKey, const Confi
 
     if (success) {
         log_i("Updated config %s = %s", fullKey.c_str(),
-              Config::ConfigValueHelper::ToString(value).c_str());
+              ToString(value).c_str());
 
         // Notify all registered callbacks about the configuration change
         // Callbacks can watch specific keys or all changes (empty watchedKey)
@@ -600,4 +600,102 @@ Config::ConfigValue PreferenceManager::LoadValueFromNVS(Preferences& prefs, cons
     }
 
     return std::monostate{};
+}
+
+// ========== Configuration Value Helper Methods ==========
+// (Moved from ConfigValueHelper class for better encapsulation)
+
+/**
+ * @brief Determine the type category of a ConfigValue
+ * @param value The ConfigValue to check
+ * @return Type name as string for UI/logging
+ */
+std::string PreferenceManager::GetTypeName(const Config::ConfigValue& value) const {
+    return std::visit([](const auto& v) -> std::string {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            return ConfigConstants::Types::UNSET;
+        } else if constexpr (std::is_same_v<T, int>) {
+            return ConfigConstants::Types::INTEGER_INTERNAL;
+        } else if constexpr (std::is_same_v<T, float>) {
+            return ConfigConstants::Types::FLOAT_INTERNAL;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return ConfigConstants::Types::BOOLEAN_INTERNAL;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return ConfigConstants::Types::STRING_INTERNAL;
+        }
+        return ConfigConstants::Types::UNKNOWN;
+    }, value);
+}
+
+/**
+ * @brief Check if value type matches another value's type
+ */
+bool PreferenceManager::TypesMatch(const Config::ConfigValue& a, const Config::ConfigValue& b) const {
+    return a.index() == b.index();
+}
+
+/**
+ * @brief Convert a ConfigValue to string representation
+ * @param value The ConfigValue to convert
+ * @return String representation of the value
+ */
+std::string PreferenceManager::ToString(const Config::ConfigValue& value) const {
+    return std::visit([](const auto& v) -> std::string {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            return ConfigConstants::BooleanValues::EMPTY_STRING;
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return v ? ConfigConstants::BooleanValues::TRUE_STRING : ConfigConstants::BooleanValues::FALSE_STRING;
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return v;
+        } else {
+            return std::to_string(v);
+        }
+    }, value);
+}
+
+/**
+ * @brief Parse a string into a ConfigValue, inferring type from existing value
+ * @param str The string to parse
+ * @param templateValue Value whose type to match
+ * @return ConfigValue containing the parsed value
+ */
+Config::ConfigValue PreferenceManager::FromString(const std::string& str, const Config::ConfigValue& templateValue) const {
+    return std::visit([&str](const auto& v) -> Config::ConfigValue {
+        using T = std::decay_t<decltype(v)>;
+        if constexpr (std::is_same_v<T, std::monostate>) {
+            // Try to infer: if it looks like a number, parse as int
+            // Otherwise return as string
+            try {
+                return std::stoi(str);
+            } catch (...) {
+                return str;
+            }
+        } else if constexpr (std::is_same_v<T, int>) {
+            try {
+                return std::stoi(str);
+            } catch (...) {
+                return std::monostate{};
+            }
+        } else if constexpr (std::is_same_v<T, float>) {
+            try {
+                return std::stof(str);
+            } catch (...) {
+                return std::monostate{};
+            }
+        } else if constexpr (std::is_same_v<T, bool>) {
+            return (str == ConfigConstants::BooleanValues::TRUE_STRING || str == ConfigConstants::BooleanValues::TRUE_NUMERIC);
+        } else if constexpr (std::is_same_v<T, std::string>) {
+            return str;
+        }
+        return std::monostate{};
+    }, templateValue);
+}
+
+/**
+ * @brief Check if a value is numeric (int or float)
+ */
+bool PreferenceManager::IsNumeric(const Config::ConfigValue& value) const {
+    return std::holds_alternative<int>(value) || std::holds_alternative<float>(value);
 }

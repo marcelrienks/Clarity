@@ -156,7 +156,7 @@ public:
     static void RegisterConfigSchema(IPreferenceService* preferenceService);
 
     // ========== Configuration Constants ==========
-    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER_LOWER;
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER;
     static constexpr const char* CONFIG_THEME = ConfigConstants::Keys::STYLE_MANAGER_THEME;
     static constexpr const char* CONFIG_BRIGHTNESS = ConfigConstants::Keys::STYLE_MANAGER_BRIGHTNESS;
 

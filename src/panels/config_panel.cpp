@@ -416,13 +416,13 @@ void ConfigPanel::HandleSetConfigValue(const std::string& actionParam)
         for (const auto& configItem : section->items) {
             if (configItem.key == itemKey) {
                 log_d("HandleSetConfigValue - Found config item, type: %s",
-                      Config::ConfigValueHelper::GetTypeName(configItem.value).c_str());
+                      preferenceService_->GetTypeName(configItem.value).c_str());
 
                 // Parse the string value into the correct type based on existing value
-                Config::ConfigValue newValue = Config::ConfigValueHelper::FromString(value, configItem.value);
+                Config::ConfigValue newValue = preferenceService_->FromString(value, configItem.value);
 
                 log_d("HandleSetConfigValue - Parsed value type: %s",
-                      Config::ConfigValueHelper::GetTypeName(newValue).c_str());
+                      preferenceService_->GetTypeName(newValue).c_str());
 
                 // Update the configuration
                 preferenceService_->UpdateConfig(fullKey, newValue);
@@ -593,7 +593,7 @@ void ConfigPanel::BuildSectionMenu(const std::string& sectionName)
  */
 std::string ConfigPanel::FormatItemLabel(const Config::ConfigItem& item) const
 {
-    std::string valueStr = Config::ConfigValueHelper::ToString(item.value);
+    std::string valueStr = preferenceService_->ToString(item.value);
     return item.displayName + ": " + valueStr;
 }
 
@@ -621,7 +621,7 @@ void ConfigPanel::ShowOptionsMenu(const std::string& fullKey, const Config::Conf
     // Delegate to appropriate specialized method based on data type and available options
     if (!options.empty()) {
         ShowEnumOptionsMenu(keyStr, item, options);
-    } else if (Config::ConfigValueHelper::IsNumeric(item.value)) {
+    } else if (preferenceService_->IsNumeric(item.value)) {
         ShowNumericOptionsMenu(keyStr, item);
     } else {
         ShowStringOptionsMenu(keyStr, item);
@@ -652,7 +652,7 @@ void ConfigPanel::ShowBooleanToggle(const std::string& fullKey, const Config::Co
 {
     log_i("ShowBooleanToggle() for key: %s", fullKey.c_str());
 
-    if (auto currentValue = Config::ConfigValueHelper::GetValue<bool>(item.value)) {
+    if (auto currentValue = preferenceService_->GetValue<bool>(item.value)) {
         bool newValue = !(*currentValue);
         preferenceService_->UpdateConfig(fullKey, newValue);
 
@@ -723,7 +723,7 @@ std::pair<std::string, std::string> ConfigPanel::ParseConfigKey(const std::strin
  */
 void ConfigPanel::ShowEnumOptionsMenu(const std::string& fullKey, const Config::ConfigItem& item, const std::vector<std::string>& options)
 {
-    std::string currentValue = Config::ConfigValueHelper::ToString(item.value);
+    std::string currentValue = preferenceService_->ToString(item.value);
 
     for (const auto& option : options) {
         bool isSelected = (option == currentValue);
@@ -770,7 +770,7 @@ void ConfigPanel::ShowStringOptionsMenu(const std::string& fullKey, const Config
 {
     // For string types without options, just show current value
     ConfigComponent::MenuItem currentItem;
-    currentItem.label = UIStrings::ConfigUI::CURRENT_LABEL_PREFIX + Config::ConfigValueHelper::ToString(item.value);
+    currentItem.label = UIStrings::ConfigUI::CURRENT_LABEL_PREFIX + preferenceService_->ToString(item.value);
     currentItem.actionType = UIStrings::ConfigUI::ACTION_TYPE_NONE;
     currentItem.actionParam = UIStrings::ConfigUI::EMPTY_PARAM;
     menuItems_.push_back(currentItem);
@@ -820,7 +820,7 @@ ConfigPanel::NumericRange ConfigPanel::ParseNumericRange(const Config::ConfigIte
     NumericRange range;
     range.minValue = 0;
     range.maxValue = 100;
-    range.currentValue = std::stof(Config::ConfigValueHelper::ToString(item.value));
+    range.currentValue = std::stof(preferenceService_->ToString(item.value));
 
     if (!item.metadata.constraints.empty()) {
         std::string constraints = item.metadata.constraints;

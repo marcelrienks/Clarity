@@ -74,7 +74,7 @@ class SplashPanel : public IPanel
 
     // ========== Configuration Constants ==========
     // Note: show_splash is managed by system settings in main.cpp
-    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::SPLASH_PANEL_LOWER;
+    static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::SPLASH_PANEL;
     static constexpr const char* CONFIG_DURATION = ConfigConstants::Keys::SPLASH_PANEL_DURATION;
 
   private:

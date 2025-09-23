@@ -119,6 +119,13 @@ public:
      */
     bool IsSchemaRegistered(const std::string& sectionName) const override;
 
+    // ========== Configuration Value Helper Methods ==========
+    std::string GetTypeName(const Config::ConfigValue& value) const override;
+    bool TypesMatch(const Config::ConfigValue& a, const Config::ConfigValue& b) const override;
+    std::string ToString(const Config::ConfigValue& value) const override;
+    Config::ConfigValue FromString(const std::string& str, const Config::ConfigValue& templateValue) const override;
+    bool IsNumeric(const Config::ConfigValue& value) const override;
+
 protected:
     /**
      * @brief Internal implementation for querying configuration values
@@ -222,4 +229,5 @@ private:
      */
     Config::ConfigValue LoadValueFromNVS(Preferences& prefs, const std::string& key,
                                          const Config::ConfigValue& templateValue);
+
 };

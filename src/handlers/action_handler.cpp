@@ -357,6 +357,7 @@ void ActionHandler::UpdateButtonState() {
                 log_v("Checking for long press: duration=%lu ms, threshold=%lu ms", press_duration, long_press_threshold);
                 if (press_duration >= long_press_threshold) {
                     buttonState_ = ButtonState::LONG_PRESS_TRIGGERED;
+                    log_d("Long press triggered after %lu ms (threshold: %lu ms)", press_duration, long_press_threshold);
                     log_t("Long press triggered during hold");
                     // Immediately set the pending action when long press is detected
                     SetPendingAction(ButtonAction::LONG_PRESS);
