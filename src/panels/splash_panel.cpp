@@ -29,10 +29,10 @@ static bool splash_panel_registered = []() {
  * The component is stack-allocated for better memory management.
  */
 SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService,
-                         IPanelNotificationService* notificationService)
+                         IPanelManager* notificationService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       component_(styleService), componentInitialized_(false),
-      notificationService_(notificationService ? notificationService : &PanelManager::NotificationService())
+      notificationService_(notificationService)
 {
     log_v("SplashPanel constructor called");
 }
@@ -201,7 +201,7 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
 
-    panel->notificationService_->OnPanelLoadComplete(panel);
+    static_cast<PanelManager*>(panel->notificationService_)->OnPanelLoadComplete(panel);
 
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);

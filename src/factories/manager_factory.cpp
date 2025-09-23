@@ -22,7 +22,7 @@
  * Accepts ownership of a provider factory for dependency injection.
  * Falls back to creating default ProviderFactory if nullptr is provided.
  */
-ManagerFactory::ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory)
+ManagerFactory::ManagerFactory(std::unique_ptr<ProviderFactory> providerFactory)
     : providerFactory_(std::move(providerFactory))
 {
     if (!providerFactory_) {

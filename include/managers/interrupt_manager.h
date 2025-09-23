@@ -42,7 +42,7 @@ public:
     void Process();
     bool RegisterTrigger(const Trigger& trigger);
     bool RegisterAction(const Action& action);
-    void SetCurrentPanel(class IActionService* panel);
+    void SetCurrentPanel(class IActionHandler* panel);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
     void SetPreferenceService(IConfigurationManager* preferenceService);
 

@@ -4,7 +4,7 @@
 
 // Static instance for singleton pattern
 static PanelManager* instancePtr_ = nullptr;
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 // Direct panel includes (factory pattern eliminated)
 #include "panels/splash_panel.h"
 #include "panels/oem_oil_panel.h"
@@ -286,13 +286,13 @@ void PanelManager::OnPanelLoadComplete(IPanel* panel) {
     }
 }
 
-// ========== IActionExecutionService Implementation ==========
+// ========== IActionHandler Implementation ==========
 
 /**
  * @brief Handles short button press action (new architecture)
  *
- * Part of the IActionExecutionService interface. Delegates the short press
- * action to the current panel if it implements IActionService. This allows
+ * Part of the IActionHandler interface. Delegates the short press
+ * action to the current panel if it implements IActionHandler. This allows
  * panels to define their own button behavior while maintaining a consistent
  * action handling interface.
  */
@@ -304,8 +304,8 @@ void PanelManager::HandleShortPress() {
         return;
     }
 
-    // Try to cast panel to IActionService to handle press
-    IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
+    // Try to cast panel to IActionHandler to handle press
+    IActionHandler* actionService = dynamic_cast<IActionHandler*>(panel_.get());
     if (actionService) {
         actionService->HandleShortPress();
     } else {
@@ -316,8 +316,8 @@ void PanelManager::HandleShortPress() {
 /**
  * @brief Handles long button press action (new architecture)
  *
- * Part of the IActionExecutionService interface. Delegates the long press
- * action to the current panel if it implements IActionService. This allows
+ * Part of the IActionHandler interface. Delegates the long press
+ * action to the current panel if it implements IActionHandler. This allows
  * panels to define their own button behavior while maintaining a consistent
  * action handling interface.
  */
@@ -329,8 +329,8 @@ void PanelManager::HandleLongPress() {
         return;
     }
 
-    // Try to cast panel to IActionService to handle press
-    IActionService* actionService = dynamic_cast<IActionService*>(panel_.get());
+    // Try to cast panel to IActionHandler to handle press
+    IActionHandler* actionService = dynamic_cast<IActionHandler*>(panel_.get());
     if (actionService) {
         actionService->HandleLongPress();
     }
@@ -444,7 +444,7 @@ void PanelManager::HandlePanelCreationError(const char* panelName) {
  * @brief Updates universal button interrupts with current panel's functions
  * @param panel Pointer to the panel whose button functions should be registered
  *
- * Extracts button functions from panels that implement IActionService and
+ * Extracts button functions from panels that implement IActionHandler and
  * registers them with the interrupt manager. This enables dynamic button
  * behavior that changes based on the current panel. Validates all function
  * pointers before registration to ensure system stability.
@@ -462,11 +462,11 @@ void PanelManager::UpdatePanelButtonFunctions(IPanel* panel)
         return;
     }
 
-    IActionService* actionService = dynamic_cast<IActionService*>(panel);
+    IActionHandler* actionService = dynamic_cast<IActionHandler*>(panel);
     if (!actionService) {
-        log_e("UpdatePanelButtonFunctions: Panel does not implement IActionService");
+        log_e("UpdatePanelButtonFunctions: Panel does not implement IActionHandler");
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "PanelManager",
-                                            "Panel does not implement IActionService");
+                                            "Panel does not implement IActionHandler");
         return;
     }
 

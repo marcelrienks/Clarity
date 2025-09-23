@@ -35,7 +35,7 @@
 #include <memory>
 
 // ========== Forward Declarations ==========
-class IProviderFactory;
+class ProviderFactory;
 class ManagerFactory;
 class DeviceProvider;
 class IGpioProvider;
@@ -49,7 +49,7 @@ class ConfigurationManager;
 
 // ========== Global Variables ==========
 // Global factories - dual factory pattern implementation
-extern std::unique_ptr<IProviderFactory> providerFactory;
+extern std::unique_ptr<ProviderFactory> providerFactory;
 extern std::unique_ptr<ManagerFactory> managerFactory;
 
 // Global providers - created by ProviderFactory

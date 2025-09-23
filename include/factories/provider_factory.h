@@ -1,7 +1,11 @@
 #pragma once
 
-#include "interfaces/i_provider_factory.h"
 #include <memory>
+
+// Forward declarations
+class IGpioProvider;
+class IDisplayProvider;
+class IStorageProvider;
 
 // Forward declarations
 class DeviceProvider;
@@ -38,17 +42,17 @@ class DeviceProvider;
  * auto managerFactory = std::make_unique<ManagerFactory>(providerFactory.get());
  * @endcode
  */
-class ProviderFactory : public IProviderFactory
+class ProviderFactory
 {
 public:
     // ========== Constructors and Destructor ==========
     ProviderFactory() = default;
-    ~ProviderFactory() override = default;
+    ~ProviderFactory() = default;
     
     // ========== Public Interface Methods ==========
-    // IProviderFactory implementation
-    std::unique_ptr<IGpioProvider> CreateGpioProvider() override;
-    std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider) override;
-    std::unique_ptr<IStorageProvider> CreateStorageProvider() override;
-    std::unique_ptr<DeviceProvider> CreateDeviceProvider() override;
+    // Factory methods
+    std::unique_ptr<IGpioProvider> CreateGpioProvider();
+    std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider);
+    std::unique_ptr<IStorageProvider> CreateStorageProvider();
+    std::unique_ptr<DeviceProvider> CreateDeviceProvider();
 };

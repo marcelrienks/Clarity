@@ -2,12 +2,11 @@
 
 // Project Includes
 #include "components/clarity_component.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
 #include "interfaces/i_panel_manager.h"
-#include "interfaces/i_panel_notification_service.h"
 #include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_style_manager.h"
 #include "definitions/constants.h"
@@ -44,7 +43,7 @@ class SplashPanel : public IPanel
   public:
     // ========== Constructors and Destructor ==========
     SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService,
-                IPanelNotificationService* notificationService = nullptr);
+                IPanelManager* notificationService = nullptr);
     ~SplashPanel();
 
     // ========== Public Interface Methods ==========
@@ -97,7 +96,7 @@ class SplashPanel : public IPanel
     IStyleManager *styleService_;
     IPanelManager *panelService_;
     IConfigurationManager *preferenceService_ = nullptr;
-    IPanelNotificationService *notificationService_;
+    IPanelManager *notificationService_;
 
     // Components - static allocation
     lv_obj_t* screen_ = nullptr;

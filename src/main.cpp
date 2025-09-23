@@ -25,7 +25,7 @@ static bool system_config_registered = []() {
 // ========== Global Variables ==========
 
 // Global variable definitions (declarations are in main.h)
-std::unique_ptr<IProviderFactory> providerFactory;
+std::unique_ptr<ProviderFactory> providerFactory;
 std::unique_ptr<ManagerFactory> managerFactory;
 std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;

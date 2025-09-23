@@ -1,7 +1,5 @@
 #pragma once
 
-#include "interfaces/i_manager_factory.h"
-#include "interfaces/i_provider_factory.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel_manager.h"
@@ -16,7 +14,8 @@ class StyleManager;
 class DeviceProvider;
 class ConfigurationManager;
 class InterruptManager;
-class IProviderFactory;
+class ErrorManager;
+class ProviderFactory;
 
 /**
  * @class ManagerFactory
@@ -34,28 +33,28 @@ class IProviderFactory;
  * @dependency_validation All required dependencies are validated before construction
  * @testability Implements IManagerFactory interface and accepts IProviderFactory for test injection
  */
-class ManagerFactory : public IManagerFactory
+class ManagerFactory
 {
 public:
     // ========== Constructors and Destructor ==========
-    explicit ManagerFactory(std::unique_ptr<IProviderFactory> providerFactory);
+    explicit ManagerFactory(std::unique_ptr<ProviderFactory> providerFactory);
     ManagerFactory();
-    ~ManagerFactory() override = default;
+    ~ManagerFactory() = default;
     
     // ========== Public Interface Methods ==========
-    // IManagerFactory implementation
+    // Factory methods
     std::unique_ptr<PanelManager> CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
                                                       IStyleManager *styleService,
                                                       IConfigurationManager *preferenceService,
-                                                      InterruptManager *interruptManager) override;
+                                                      InterruptManager *interruptManager);
 
-    std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr) override;
+    std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr);
 
-    std::unique_ptr<IConfigurationManager> CreatePreferenceManager() override;
+    std::unique_ptr<IConfigurationManager> CreatePreferenceManager();
 
-    InterruptManager* CreateInterruptManager(IGpioProvider* gpioProvider) override;
+    InterruptManager* CreateInterruptManager(IGpioProvider* gpioProvider);
 
-    ErrorManager* CreateErrorManager() override;
+    ErrorManager* CreateErrorManager();
 
 private:
     // ========== Private Methods ==========
@@ -76,7 +75,7 @@ private:
     static ErrorManager* CreateErrorManagerImpl();
 
     // ========== Private Data Members ==========
-    std::unique_ptr<IProviderFactory> providerFactory_;
+    std::unique_ptr<ProviderFactory> providerFactory_;
     
     std::unique_ptr<IGpioProvider> gpioProvider_;
     std::unique_ptr<IDisplayProvider> displayProvider_;

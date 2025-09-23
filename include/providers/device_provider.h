@@ -4,7 +4,6 @@
 
 #include <LovyanGFX.hpp>
 #include <lvgl.h>
-#include "interfaces/i_device_provider.h"
 #include "definitions/constants.h"
 
 // Screen - use constants from centralized location
@@ -48,7 +47,7 @@
  * @context This is the main hardware interface that all panels and components
  * render to. The display is 240x240 pixels with a round form factor.
  */
-class DeviceProvider : public lgfx::LGFX_Device, public IDeviceProvider
+class DeviceProvider : public lgfx::LGFX_Device
 {
 public:
     // ========== Constructors and Destructor ==========
@@ -58,9 +57,9 @@ public:
     ~DeviceProvider() = default;
 
     // ========== Public Interface Methods ==========
-    void prepare() override;
-    lv_obj_t* GetScreen() const override;
-    bool IsReady() const override;
+    void prepare();
+    lv_obj_t* GetScreen() const;
+    bool IsReady() const;
 
 private:
     // ========== Static Methods ==========

@@ -1,7 +1,5 @@
 #include "panels/error_panel.h"
 #include "components/error_component.h"
-#include "factories/component_factory.h"
-#include "interfaces/i_component_factory.h"
 #include "managers/style_manager.h"
 #include "managers/panel_manager.h"
 #include "utilities/logging.h"
@@ -218,7 +216,7 @@ void ErrorPanel::Update()
             #ifdef CLARITY_DEBUG
             // In debug builds, manually trigger restoration since debug error sensor
             // state is GPIO-controlled, not error-state-controlled
-            PanelManager::TriggerService().CheckRestoration();
+            PanelManager::Instance().CheckRestoration();
             log_i("ErrorPanel: Auto-restoration triggered for debug build");
             #endif
             
@@ -393,7 +391,7 @@ void ErrorPanel::HandleLongPress()
     
     // Use standard restoration logic for all builds
     // This will check for other active triggers and restore appropriately
-    PanelManager::TriggerService().CheckRestoration();
+    PanelManager::Instance().CheckRestoration();
     log_i("ErrorPanel: Triggered restoration check after clearing errors");
 }
 

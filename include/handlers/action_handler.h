@@ -11,7 +11,7 @@
 
 // Forward declarations for sensors
 class ButtonSensor;
-class IActionService;
+class IActionHandler;
 
 #include "esp32-hal-log.h"
 
@@ -40,7 +40,7 @@ public:
     void Process() override;
 
     // Panel management for direct method calls
-    void SetCurrentPanel(IActionService* panel);
+    void SetCurrentPanel(IActionHandler* panel);
     void ClearCurrentPanel();
 
     // Button event processing
@@ -105,7 +105,7 @@ private:
     unsigned long buttonPressEndTime_ = 0;
 
     // Current panel for direct method calls
-    class IActionService* currentPanel_ = nullptr;
+    class IActionHandler* currentPanel_ = nullptr;
 
     // Preference service for configuration access
     IConfigurationManager* preferenceService_ = nullptr;

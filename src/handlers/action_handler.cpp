@@ -1,5 +1,5 @@
 #include "handlers/action_handler.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 #include "interfaces/i_configuration_manager.h"
 #include "managers/error_manager.h"
 #include "sensors/button_sensor.h"
@@ -533,7 +533,7 @@ bool ActionHandler::IsButtonPressed() const {
  * execution. Enables dynamic button behavior changes during panel transitions
  * while maintaining consistent action registration.
  */
-void ActionHandler::SetCurrentPanel(IActionService* panel) {
+void ActionHandler::SetCurrentPanel(IActionHandler* panel) {
     currentPanel_ = panel;
     log_i("Set current panel: %p", (void*)panel);
 }

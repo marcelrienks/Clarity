@@ -133,7 +133,7 @@ bool InterruptManager::RegisterAction(const Action& action)
  * @brief Update panel button handler functions for current panel
  * @details Called when switching panels to update button behavior
  */
-void InterruptManager::SetCurrentPanel(IActionService* panel)
+void InterruptManager::SetCurrentPanel(IActionHandler* panel)
 {
     log_v("SetCurrentPanel() called");
 

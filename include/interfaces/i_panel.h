@@ -8,7 +8,7 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_sensor.h"
-#include "interfaces/i_action_service.h"
+#include "interfaces/i_action_handler.h"
 
 // Forward declarations
 class IPanelManager;
@@ -58,9 +58,9 @@ class IConfigurationManager;
  * - ConfigPanel: Configuration with hierarchical state machine
  *
  * @context All panels coordinate complete screen experiences and provide
- * consistent button handling through IActionService inheritance.
+ * consistent button handling through IActionHandler inheritance.
  */
-class IPanel : public IActionService
+class IPanel : public IActionHandler
 {
   public:
     // Destructors
@@ -71,7 +71,7 @@ class IPanel : public IActionService
     virtual void Load() = 0;
     virtual void Update() = 0;
 
-    // Note: Button handling methods inherited from IActionService
+    // Note: Button handling methods inherited from IActionHandler
     // All panels must implement:
     // - void HandleShortPress()
     // - void HandleLongPress()

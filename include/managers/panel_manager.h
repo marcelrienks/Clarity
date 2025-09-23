@@ -5,9 +5,7 @@
 #include "interfaces/i_panel_manager.h"
 #include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_style_manager.h"
-#include "interfaces/i_panel_notification_service.h"
-#include "interfaces/i_action_execution_service.h"
-#include "interfaces/i_trigger_execution_service.h"
+#include "interfaces/i_action_handler.h"
 #include "definitions/types.h"
 
 #include <functional>
@@ -59,9 +57,7 @@ class StyleManager;
 class InterruptManager;
 
 class PanelManager : public IPanelManager,
-                     public IPanelNotificationService,
-                     public IActionExecutionService,
-                     public ITriggerExecutionService
+                     public IActionHandler
 {
   public:
     // ========== Constructors/Destructor ==========
@@ -76,11 +72,9 @@ class PanelManager : public IPanelManager,
     static PanelManager& Instance();
 
     // Interface accessors for dependency injection (CRITICAL for testability)
-    static IPanelNotificationService& NotificationService() { return Instance(); }
-    static IActionExecutionService& ActionService() { return Instance(); }
-    static ITriggerExecutionService& TriggerService() { return Instance(); }
+    static IActionHandler& ActionService() { return Instance(); }
 
-    // ========== IPanelService Implementation ==========
+    // ========== IPanelManager Implementation ==========
     void Init() override;
     void SetUiState(UIState state) override;
     UIState GetUiState() const override;
@@ -91,16 +85,16 @@ class PanelManager : public IPanelManager,
     bool IsCurrentPanelTriggerDriven() const override;
     void TriggerPanelSwitchCallback(const char *triggerId) override;
 
-    // ========== IPanelNotificationService Implementation ==========
-    void OnPanelLoadComplete(IPanel* panel) override;
+    // ========== Panel Notification Methods ==========
+    void OnPanelLoadComplete(IPanel* panel);
 
-    // ========== IActionExecutionService Implementation ==========
+    // ========== IActionHandler Implementation ==========
     void HandleShortPress() override;
     void HandleLongPress() override;
 
-    // ========== ITriggerExecutionService Implementation ==========
-    void LoadPanel(const char* panelName) override;
-    void CheckRestoration() override;
+    // ========== Trigger Execution Methods ==========
+    void LoadPanel(const char* panelName);
+    void CheckRestoration();
 
     // ========== Other Public Methods ==========
     void UpdatePanelButtonFunctions(IPanel* panel);
