@@ -17,8 +17,9 @@
  * lock engaged state since panel is only loaded when lock state changes.
  * Uses stack-allocated component for efficient memory management.
  */
-LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
-    : BasePanel(gpio, display, styleManager),
+LockPanel::LockPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                     IPanelManager *panelManager)
+    : BasePanel(gpio, display, styleManager, panelManager),
       lockComponent_(styleManager), componentInitialized_(false)
 {
     // Note: LockPanel is display-only, state comes from interrupt system

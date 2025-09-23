@@ -22,8 +22,10 @@
  * Initializes menu system for automotive settings management including
  * theme selection, calibration, and system configuration options.
  */
-ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
-    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(nullptr),
+ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                         IPanelManager *panelManager, IConfigurationManager *configurationManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(panelManager),
+      configurationManager_(configurationManager),
       currentMenuIndex_(0), configComponent_(), componentInitialized_(false)
 {
     log_v("ConfigPanel constructor called");
@@ -147,29 +149,7 @@ void ConfigPanel::Update()
     }
 }
 
-/**
- * @brief Injects manager service dependencies
- * @param panelManager Panel service for UI state management and panel operations
- * @param styleManager Style service for theme management
- */
-void ConfigPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleManager)
-{
-    log_v("SetManagers() called");
-    panelManager_ = panelManager;
-    if (styleManager != styleManager_) {
-        styleManager_ = styleManager;
-    }
-}
-
-/**
- * @brief Injects preference service dependency for dynamic configuration
- * @param configurationManager Preference service for configuration management
- */
-void ConfigPanel::SetConfigurationManager(IConfigurationManager *configurationManager)
-{
-    log_v("SetConfigurationManager() called");
-    configurationManager_ = configurationManager;
-}
+// SetManagers and SetConfigurationManager removed - using constructor injection
 
 /**
  * @brief Static callback for screen loaded event

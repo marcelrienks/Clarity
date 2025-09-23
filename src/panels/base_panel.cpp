@@ -9,9 +9,10 @@
 /**
  * @brief Initialize BasePanel with dependency injection of required services
  */
-BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleManager)
+BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleManager,
+                     IPanelManager* panelManager)
     : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager),
-      panelManager_(nullptr)
+      panelManager_(panelManager)
 {
     log_v("BasePanel constructor called");
 }
@@ -98,18 +99,6 @@ void BasePanel::Update()
  * @brief Inject manager service dependencies
  * @details Updates panel and style service references for runtime services
  */
-void BasePanel::SetManagers(IPanelManager* panelManager, IStyleManager* styleManager)
-{
-    log_v("%s::SetManagers() called", GetPanelName());
-
-    panelManager_ = panelManager;
-
-    // Update styleManager if different instance provided
-    if (styleManager != styleManager_)
-    {
-        styleManager_ = styleManager;
-    }
-}
 
 /**
  * @brief Get short press handler function pointer

@@ -29,9 +29,9 @@ static bool splash_panel_registered = []() {
  * The component is stack-allocated for better memory management.
  */
 SplashPanel::SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
-                         IPanelManager* panelManager)
+                         IPanelManager* panelManager, IConfigurationManager* configurationManager)
     : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(panelManager),
-      component_(styleManager), componentInitialized_(false)
+      configurationManager_(configurationManager), component_(styleManager), componentInitialized_(false)
 {
     log_v("SplashPanel constructor called");
 }
@@ -216,17 +216,6 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
  * Style service is already set in constructor but can be updated if a
  * different instance is provided during panel lifecycle.
  */
-void SplashPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleManager)
-{
-    log_v("SetManagers() called");
-    panelManager_ = panelManager;
-    // styleManager_ is already set in constructor, but update if different instance provided
-    if (styleManager != styleManager_)
-    {
-        styleManager_ = styleManager;
-    }
-    // Managers injected successfully
-}
 
 /**
  * @brief Injects preference service dependency for configurable splash duration
@@ -236,14 +225,6 @@ void SplashPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleM
  * preferences. The splash duration determines the total time for fade-in,
  * display, and fade-out animations.
  */
-void SplashPanel::SetConfigurationManager(IConfigurationManager *configurationManager)
-{
-    log_v("SetConfigurationManager() called");
-    configurationManager_ = configurationManager;
-
-    // Register configuration when preference service is available
-    RegisterConfiguration();
-}
 
 /**
  * @brief Static method to register configuration schema without instance

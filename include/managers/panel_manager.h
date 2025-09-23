@@ -109,7 +109,6 @@ class PanelManager : public IPanelManager,
 
     // Helper methods for CreateAndLoadPanelDirect
     void UpdateRestorationTracking(const char* panelName, bool isTriggerDriven);
-    void InjectConfigurationManager(const char* panelName);
     void HandlePanelCreationError(const char* panelName);
 
     // ========== Panel State Data Members ==========

@@ -416,14 +416,6 @@ void PanelManager::UpdateRestorationTracking(const char* panelName, bool isTrigg
  * @brief Injects preference service into panels that support it
  * @param panelName Name of the panel to inject service into
  */
-void PanelManager::InjectConfigurationManager(const char* panelName) {
-    if (!configurationManager_ || !panel_) {
-        return;
-    }
-
-    // Simply call the interface method - panels that need it will override it
-    panel_->SetConfigurationManager(configurationManager_);
-}
 
 /**
  * @brief Handles panel creation errors
@@ -496,27 +488,27 @@ std::shared_ptr<IPanel> PanelManager::CreatePanel(const char *panelName)
     // Direct panel instantiation (factory pattern eliminated)
 
     if (strcmp(panelName, PanelNames::SPLASH) == 0) {
-        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleManager_, this);
+        return std::make_shared<SplashPanel>(gpioProvider_, displayProvider_, styleManager_, this, configurationManager_);
     }
 
     if (strcmp(panelName, PanelNames::OIL) == 0) {
-        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleManager_);
+        return std::make_shared<OemOilPanel>(gpioProvider_, displayProvider_, styleManager_, this, configurationManager_);
     }
 
     if (strcmp(panelName, PanelNames::ERROR) == 0) {
-        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleManager_);
+        return std::make_shared<ErrorPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     if (strcmp(panelName, PanelNames::CONFIG) == 0) {
-        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleManager_);
+        return std::make_shared<ConfigPanel>(gpioProvider_, displayProvider_, styleManager_, this, configurationManager_);
     }
 
     if (strcmp(panelName, PanelNames::KEY) == 0) {
-        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleManager_);
+        return std::make_shared<KeyPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     if (strcmp(panelName, PanelNames::LOCK) == 0) {
-        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleManager_);
+        return std::make_shared<LockPanel>(gpioProvider_, displayProvider_, styleManager_, this);
     }
 
     // Unknown panel type
@@ -557,9 +549,7 @@ void PanelManager::CreateAndLoadPanelDirect(const char *panelName, bool isTrigge
         return;
     }
 
-    // Inject core dependencies
-    panel_->SetManagers(this, styleManager_);
-    InjectConfigurationManager(panelName);
+    // Dependencies already injected via constructor
 
     // Initialize panel
     panel_->Init();

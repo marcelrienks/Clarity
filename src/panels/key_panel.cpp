@@ -21,8 +21,9 @@
  * current key state during construction and initializes stack-allocated
  * key component for efficient memory usage.
  */
-KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
-    : BasePanel(gpio, display, styleManager),
+KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                   IPanelManager *panelManager)
+    : BasePanel(gpio, display, styleManager, panelManager),
       keyComponent_(styleManager), componentInitialized_(false)
 {
     // Determine current key state by checking which sensor is currently active

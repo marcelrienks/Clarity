@@ -43,7 +43,7 @@ class SplashPanel : public IPanel
   public:
     // ========== Constructors and Destructor ==========
     SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
-                IPanelManager* panelManager = nullptr);
+                IPanelManager* panelManager, IConfigurationManager* configurationManager = nullptr);
     ~SplashPanel();
 
     // ========== Public Interface Methods ==========
@@ -52,11 +52,6 @@ class SplashPanel : public IPanel
     void Load() override;
     void Update() override;
 
-    // Manager injection method
-    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) override;
-
-    // Preference service injection
-    void SetConfigurationManager(IConfigurationManager *configurationManager);
 
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress

@@ -22,8 +22,10 @@
  * Initializes stack-allocated components, creates sensor instances, and sets up
  * LVGL animation structures for smooth needle movements.
  */
-OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager)
-    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(nullptr),
+OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                         IPanelManager *panelManager, IConfigurationManager *configurationManager)
+    : gpioProvider_(gpio), displayProvider_(display), styleManager_(styleManager), panelManager_(panelManager),
+      configurationManager_(configurationManager),
       oemOilPressureComponent_(styleManager), oemOilTemperatureComponent_(styleManager),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
@@ -34,6 +36,9 @@ OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleM
     // Initialize LVGL animation structures to prevent undefined behavior
     lv_anim_init(&pressureAnimation_);
     lv_anim_init(&temperatureAnimation_);
+
+    // Apply sensor configuration from preferences now that we have configurationManager
+    ApplyCurrentSensorSettings();
 }
 
 /**
@@ -524,36 +529,7 @@ Action OemOilPanel::GetLongPressAction()
 }
 */
 
-/**
- * @brief Manager injection method to prevent circular references
- * @param panelManager the panel manager instance
- * @param styleManager  the style manager instance
- */
-void OemOilPanel::SetManagers(IPanelManager *panelManager, IStyleManager *styleManager)
-{
-    log_v("SetManagers() called");
-
-    panelManager_ = panelManager;
-    // styleManager_ is already set in constructor, but update if different instance provided
-    if (styleManager != styleManager_)
-    {
-        styleManager_ = styleManager;
-    }
-}
-
-/**
- * @brief Set preference service and apply sensor update rate from preferences
- * @param configurationManager The preference service to use for configuration
- */
-void OemOilPanel::SetConfigurationManager(IConfigurationManager *configurationManager)
-{
-    log_v("SetConfigurationManager() called");
-
-    configurationManager_ = configurationManager;
-
-    // Apply sensor configuration from preferences when service is first injected
-    ApplyCurrentSensorSettings();
-}
+// SetManagers and SetConfigurationManager removed - using constructor injection
 
 /**
  * @brief Apply current sensor settings from preferences directly

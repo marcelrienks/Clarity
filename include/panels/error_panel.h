@@ -42,7 +42,8 @@ class ErrorPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager);
+    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+               IPanelManager *panelManager);
     ~ErrorPanel();
 
     // ========== Public Interface Methods ==========
@@ -51,8 +52,6 @@ class ErrorPanel : public IPanel
     void Load() override;
     void Update() override;
 
-    // Manager injection method
-    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) override;
 
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress

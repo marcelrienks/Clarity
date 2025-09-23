@@ -64,7 +64,8 @@ public:
      * @param display Display provider for screen management
      * @param styleManager Style service for theming
      */
-    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleManager);
+    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleManager,
+              IPanelManager* panelManager = nullptr);
     BasePanel(const BasePanel&) = delete;
     BasePanel& operator=(const BasePanel&) = delete;
     /**
@@ -96,7 +97,6 @@ public:
      * @param panelManager Panel management service
      * @param styleManager Style service for theming
      */
-    void SetManagers(IPanelManager* panelManager, IStyleManager* styleManager) override;
 
     /**
      * @brief Get function pointer for short button press handling

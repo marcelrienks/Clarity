@@ -76,9 +76,7 @@ class IPanel : public IActionHandler
     // - void HandleShortPress()
     // - void HandleLongPress()
 
-    // Optional dependency injection methods with default no-op implementations
-    virtual void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) {}
-    virtual void SetConfigurationManager(IConfigurationManager *configurationManager) {}
+    // SetManagers and SetConfigurationManager removed - using constructor injection
 
   protected:
     // Protected Data Members

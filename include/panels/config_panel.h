@@ -49,7 +49,8 @@ class ConfigPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager);
+    ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+                IPanelManager *panelManager, IConfigurationManager *configurationManager);
     ~ConfigPanel();
 
     // ========== Public Interface Methods ==========
@@ -58,9 +59,6 @@ class ConfigPanel : public IPanel
     void Load() override;
     void Update() override;
 
-    // Manager injection method
-    void SetManagers(IPanelManager *panelManager, IStyleManager *styleManager) override;
-    void SetConfigurationManager(IConfigurationManager *configurationManager);
 
     // IActionService Interface Implementation (inherited through IPanel)
     void HandleShortPress() override;
