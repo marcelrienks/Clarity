@@ -63,7 +63,7 @@ extern std::unique_ptr<IPreferenceService> preferenceManager;
 extern std::unique_ptr<PanelManager> panelManager;
 extern InterruptManager *interruptManager;
 extern ErrorManager *errorManager;
-extern std::unique_ptr<ConfigurationManager> configurationManager;
+extern ConfigurationManager *configurationManager;
 
 // ========== System Configuration Items ==========
 // Inline definitions (C++17) - global scope configuration

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_storage_provider.h"
 #include "definitions/configs.h"
 #include "definitions/constants.h"
 
@@ -12,31 +12,33 @@
 #include "freertos/semphr.h"
 
 /**
- * @class PreferenceManager
- * @brief Modern dynamic configuration manager
+ * @class StorageProvider
+ * @brief ESP32 NVS storage provider for configuration persistence
  *
- * @details This manager provides:
- * - Component self-registration of configuration requirements
- * - Sectioned NVS storage for better organization
- * - Type-safe configuration access with templates
- * - Live configuration updates with callbacks
- * - Metadata-driven validation and UI generation
+ * @details This provider implements IStorageProvider interface using ESP32's
+ * NVS (Non-Volatile Storage) hardware for configuration persistence:
+ * - Sectioned NVS storage with separate namespace per component
+ * - Thread-safe storage operations with mutex protection
+ * - Type conversion between ConfigValue and NVS storage formats
+ * - Hardware abstraction for configuration storage
  *
- * Based on docs/plans/dynamic-config-implementation.md design.
- * No backwards compatibility - clean modern design.
+ * @design_pattern Provider Pattern - Hardware abstraction layer
+ * @storage_hardware ESP32 NVS (Non-Volatile Storage) flash memory
+ * @thread_safety Thread-safe storage access with FreeRTOS semaphore
+ * @dependency_injection Injectable via IStorageProvider interface
  *
- * @storage_format Sectioned NVS with separate namespace per component
- * @thread_safety Thread-safe configuration access with mutex protection
+ * @context This provider abstracts ESP32 NVS hardware from ConfigurationManager,
+ * enabling hardware-agnostic configuration management and testability.
  */
-class PreferenceManager : public IPreferenceService {
+class StorageProvider : public IStorageProvider {
 public:
     // ========== Constructors and Destructor ==========
-    PreferenceManager();
-    PreferenceManager(const PreferenceManager&) = delete;
-    PreferenceManager& operator=(const PreferenceManager&) = delete;
-    ~PreferenceManager() = default;
+    StorageProvider();
+    StorageProvider(const StorageProvider&) = delete;
+    StorageProvider& operator=(const StorageProvider&) = delete;
+    ~StorageProvider() = default;
 
-    // ========== IPreferenceService Implementation ==========
+    // ========== IStorageProvider Implementation ==========
 
     // ========== Dynamic Configuration Methods ==========
 
@@ -126,23 +128,10 @@ public:
     Config::ConfigValue FromString(const std::string& str, const Config::ConfigValue& templateValue) const override;
     bool IsNumeric(const Config::ConfigValue& value) const override;
 
-protected:
-    /**
-     * @brief Internal implementation for querying configuration values
-     * @param fullKey Full dot-separated configuration key
-     * @return Optional containing ConfigValue if found
-     * @details Protected to allow template methods in interface to access
-     */
-    std::optional<Config::ConfigValue> QueryConfigImpl(const std::string& fullKey) const override;
 
-    /**
-     * @brief Internal implementation for updating configuration values
-     * @param fullKey Full dot-separated configuration key
-     * @param value New value to set
-     * @return true if update successful (validation passed and NVS write succeeded)
-     * @details Protected to allow template methods in interface to access
-     */
-    bool UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) override;
+    // Configuration Value Access Implementation
+    std::optional<Config::ConfigValue> QueryConfigValue(const std::string& fullKey) const override;
+    bool UpdateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) override;
 
 private:
     // ========== Private Data Members ==========

@@ -14,7 +14,7 @@
 class PanelManager;
 class StyleManager;
 class DeviceProvider;
-class PreferenceManager;
+class ConfigurationManager;
 class InterruptManager;
 class IProviderFactory;
 

@@ -31,11 +31,10 @@ std::unique_ptr<DeviceProvider> deviceProvider;
 std::unique_ptr<IGpioProvider> gpioProvider;
 std::unique_ptr<IDisplayProvider> displayProvider;
 std::unique_ptr<StyleManager> styleManager;
-std::unique_ptr<IPreferenceService> preferenceManager;
+ConfigurationManager *configurationManager;
 std::unique_ptr<PanelManager> panelManager;
 InterruptManager *interruptManager;
 ErrorManager *errorManager;
-std::unique_ptr<ConfigurationManager> configurationManager;
 
 // ========== System Configuration ==========
 
@@ -77,7 +76,7 @@ void SystemConfig::RegisterConfigSchema(IPreferenceService* preferenceService)
 void registerSystemConfiguration()
 {
     // During migration, just delegate to static method
-    SystemConfig::RegisterConfigSchema(preferenceManager.get());
+    SystemConfig::RegisterConfigSchema(configurationManager);
 }
 
 // ========== Private Methods ==========
@@ -129,24 +128,18 @@ bool initializeServices()
         return false;
     }
 
-    preferenceManager = managerFactory->CreatePreferenceManager();
-    if (!preferenceManager) {
-        log_e("Failed to create PreferenceManager via factory");
-        ErrorManager::Instance().ReportCriticalError("main", "PreferenceManager creation failed");
+    // Get ConfigurationManager singleton and initialize it
+    configurationManager = &ConfigurationManager::Instance();
+    if (!configurationManager->Initialize()) {
+        log_e("Failed to initialize ConfigurationManager");
+        ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager initialization failed");
         return false;
     }
 
-    // Create ConfigurationManager for schema registration coordination
-    configurationManager = std::make_unique<ConfigurationManager>();
-    if (!configurationManager) {
-        log_e("Failed to create ConfigurationManager");
-        ErrorManager::Instance().ReportCriticalError("main", "Configuration manager allocation failed");
-        return false;
-    }
 
     // Initialize StyleManager with user's theme preference
     std::string userTheme = Themes::DAY; // Default
-    if (auto themeValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
+    if (auto themeValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
         userTheme = *themeValue;
     }
     styleManager = managerFactory->CreateStyleManager(userTheme.c_str());
@@ -156,7 +149,7 @@ bool initializeServices()
         return false;
     }
  
-    styleManager->SetPreferenceService(preferenceManager.get());
+    styleManager->SetPreferenceService(configurationManager);
     
     // Create InterruptManager with GPIO provider dependency
     interruptManager = managerFactory->CreateInterruptManager(gpioProvider.get());
@@ -167,11 +160,11 @@ bool initializeServices()
     }
 
     // Set preference service for button configuration
-    interruptManager->SetPreferenceService(preferenceManager.get());
+    interruptManager->SetPreferenceService(configurationManager);
 
     // Create PanelManager with all dependencies
-    panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(), 
-                                                      styleManager.get(), preferenceManager.get(), 
+    panelManager = managerFactory->CreatePanelManager(displayProvider.get(), gpioProvider.get(),
+                                                      styleManager.get(), configurationManager,
                                                       interruptManager);
 
     if (!panelManager) {
@@ -209,8 +202,8 @@ void setup()
         return;
     }
 
-    // Register all configuration schemas from components via manager
-    configurationManager->RegisterAllSchemas(preferenceManager.get());
+    // Register all configuration schemas from components
+    configurationManager->RegisterAllSchemas();
 
     Ticker::handleLvTasks();
 
@@ -218,7 +211,7 @@ void setup()
     Ticker::handleLvTasks();
 
     std::string panelName = PanelNames::OIL; // Default
-    if (auto nameValue = preferenceManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
+    if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
         panelName = *nameValue;
     }
     panelManager->CreateAndLoadPanel(panelName.c_str());

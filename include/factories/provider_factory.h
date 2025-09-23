@@ -11,8 +11,8 @@ class DeviceProvider;
  * @brief Concrete factory implementation for creating hardware providers
  * 
  * @details This factory creates all hardware abstraction providers used in
- * the Clarity system. It implements the IProviderFactory interface to enable
- * testability through dependency injection.
+ * the Clarity system (GPIO, Display, Storage, Device). It implements the
+ * IProviderFactory interface to enable testability through dependency injection.
  * 
  * @design_pattern Concrete Factory (implements Abstract Factory)
  * @responsibility Hardware provider instantiation and configuration
@@ -31,6 +31,7 @@ class DeviceProvider;
  * auto providerFactory = std::make_unique<ProviderFactory>();
  * auto gpioProvider = providerFactory->CreateGpioProvider();
  * auto displayProvider = providerFactory->CreateDisplayProvider();
+ * auto storageProvider = providerFactory->CreateStorageProvider();
  * auto deviceProvider = providerFactory->CreateDeviceProvider();
  * 
  * // Pass to ManagerFactory
@@ -48,5 +49,6 @@ public:
     // IProviderFactory implementation
     std::unique_ptr<IGpioProvider> CreateGpioProvider() override;
     std::unique_ptr<IDisplayProvider> CreateDisplayProvider(DeviceProvider* deviceProvider) override;
+    std::unique_ptr<IStorageProvider> CreateStorageProvider() override;
     std::unique_ptr<DeviceProvider> CreateDeviceProvider() override;
 };

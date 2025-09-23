@@ -3,7 +3,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "managers/preference_manager.h"
+#include "managers/configuration_manager.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "sensors/button_sensor.h"
@@ -175,24 +175,33 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
 
 /**
- * @brief Internal implementation for creating PreferenceManager
+ * @brief Internal implementation for creating ConfigurationManager
  * @return Unique pointer to IPreferenceService or nullptr on failure
  *
- * Creates PreferenceManager for modern configuration capabilities.
+ * Creates ConfigurationManager as the unified configuration interface.
  * Returns as IPreferenceService interface for abstraction.
  */
 std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManagerImpl()
 {
-    // Create PreferenceManager for modern configuration capabilities
-    auto manager = std::make_unique<PreferenceManager>();
+    // Create ConfigurationManager as the unified configuration interface
+    auto manager = std::make_unique<ConfigurationManager>();
     if (!manager)
     {
-        log_e("ManagerFactory: Failed to create PreferenceManager - allocation failed");
+        log_e("ManagerFactory: Failed to create ConfigurationManager - allocation failed");
         ErrorManager::Instance().ReportCriticalError("ManagerFactory",
-                                                     "PreferenceManager allocation failed - out of memory");
+                                                     "ConfigurationManager allocation failed - out of memory");
         return nullptr;
     }
 
+    // Initialize the configuration manager with storage backend
+    if (!manager->Initialize()) {
+        log_e("ManagerFactory: Failed to initialize ConfigurationManager");
+        ErrorManager::Instance().ReportCriticalError("ManagerFactory",
+                                                     "ConfigurationManager initialization failed");
+        return nullptr;
+    }
+
+    log_d("ManagerFactory: ConfigurationManager created and initialized successfully");
     return manager;
 }
 

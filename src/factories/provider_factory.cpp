@@ -1,6 +1,7 @@
 #include "factories/provider_factory.h"
 #include "providers/gpio_provider.h"
 #include "providers/lvgl_display_provider.h"
+#include "providers/storage_provider.h"
 #include "providers/device_provider.h"
 #include "managers/error_manager.h"
 #include <Arduino.h>
@@ -98,5 +99,28 @@ std::unique_ptr<DeviceProvider> ProviderFactory::CreateDeviceProvider()
         return nullptr;
     }
 
+    return provider;
+}
+
+/**
+ * @brief Creates a storage provider for configuration persistence
+ * @return Unique pointer to IStorageProvider interface or nullptr on failure
+ *
+ * Instantiates StorageProvider for ESP32 NVS-based configuration storage.
+ * Provides hardware abstraction for persistent configuration data with
+ * thread-safe operations and sectioned storage organization.
+ */
+std::unique_ptr<IStorageProvider> ProviderFactory::CreateStorageProvider()
+{
+    auto provider = std::make_unique<StorageProvider>();
+    if (!provider)
+    {
+        log_e("ProviderFactory: Failed to create StorageProvider - allocation failed");
+        ErrorManager::Instance().ReportCriticalError("ProviderFactory",
+                                                     "StorageProvider allocation failed - out of memory");
+        return nullptr;
+    }
+
+    log_d("ProviderFactory: StorageProvider created successfully");
     return provider;
 }

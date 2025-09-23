@@ -1,4 +1,5 @@
 #include "managers/configuration_manager.h"
+#include "providers/storage_provider.h"
 #include "managers/error_manager.h"
 #include "utilities/logging.h"
 #include <esp32-hal-log.h>
@@ -10,7 +11,7 @@ static ConfigurationManager* configManagerInstancePtr_ = nullptr;
 
 /**
  * @brief Construct ConfigurationManager and set singleton pointer
- * @details Initializes the manager but does not execute schemas yet
+ * @details Initializes the manager but does not create storage yet
  */
 ConfigurationManager::ConfigurationManager() : initialized_(false)
 {
@@ -21,7 +22,7 @@ ConfigurationManager::ConfigurationManager() : initialized_(false)
 }
 
 /**
- * @brief Destructor - clean up singleton pointer
+ * @brief Destructor - clean up singleton pointer and storage
  */
 ConfigurationManager::~ConfigurationManager()
 {
@@ -80,38 +81,169 @@ void ConfigurationManager::AddSchema(void(*func)(IPreferenceService*)) {
 // ========== Public Interface Methods ==========
 
 /**
+ * @brief Initialize the configuration manager with storage
+ * @return true if initialization successful
+ *
+ * Creates the internal StorageProvider backend for storage operations.
+ */
+bool ConfigurationManager::Initialize() {
+    if (storageProvider_) {
+        log_w("ConfigurationManager already initialized");
+        return true;
+    }
+
+    storageProvider_ = std::make_unique<StorageProvider>();
+    if (!storageProvider_) {
+        log_e("Failed to create StorageProvider");
+        ErrorManager::Instance().ReportCriticalError("ConfigurationManager",
+                                                     "Failed to create storage backend");
+        return false;
+    }
+
+    log_i("ConfigurationManager initialized with storage backend");
+    return true;
+}
+
+/**
  * @brief Execute all registered schema functions
- * @param service Preference service to register schemas with
  *
  * Called once during application setup to register all component schemas.
- * This is the main coordination point for configuration registration.
+ * Uses this instance as the service, delegating to internal storage.
  */
-void ConfigurationManager::RegisterAllSchemas(IPreferenceService* service) {
-    if (!service) {
-        log_e("ConfigurationManager: Cannot register schemas - preference service is null");
-        ErrorManager::Instance().ReportCriticalError("ConfigurationManager",
-                                                     "Cannot register schemas - preference service is null");
+void ConfigurationManager::RegisterAllSchemas() {
+    if (!EnsureStorageReady()) {
+        log_e("Cannot register schemas - storage not initialized");
         return;
     }
 
     if (initialized_) {
-        log_w("ConfigurationManager: Schemas already registered - skipping duplicate registration");
+        log_w("Schemas already registered - skipping duplicate registration");
         return;
     }
 
     auto& functions = GetSchemaFunctions();
-    log_i("ConfigurationManager: Registering %zu configuration schemas", functions.size());
+    size_t totalFunctions = functions.size();
 
+    log_i("Registering %zu configuration schemas", totalFunctions);
+
+    size_t successCount = 0;
     for (auto func : functions) {
-        try {
-            func(service);
-        } catch (...) {
-            log_e("ConfigurationManager: Exception occurred during schema registration");
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ConfigurationManager",
-                                                "Exception during schema registration");
+        if (func) {
+            // Pass this ConfigurationManager as the IPreferenceService
+            func(this);
+            successCount++;
         }
     }
 
     initialized_ = true;
-    log_i("ConfigurationManager: All configuration schemas registered successfully");
+    log_i("Configuration registration complete: %zu/%zu schemas registered successfully",
+          successCount, totalFunctions);
+
+    // Load all configuration sections from NVS after registration
+    if (!LoadAllConfigSections()) {
+        log_w("Some configuration sections failed to load from storage");
+    }
+}
+
+// ========== IPreferenceService Implementation ==========
+
+bool ConfigurationManager::RegisterConfigSection(const Config::ConfigSection& section) {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->RegisterConfigSection(section);
+}
+
+std::vector<std::string> ConfigurationManager::GetRegisteredSectionNames() const {
+    if (!EnsureStorageReady()) return {};
+    return storageProvider_->GetRegisteredSectionNames();
+}
+
+std::optional<Config::ConfigSection> ConfigurationManager::GetConfigSection(const std::string& sectionName) const {
+    if (!EnsureStorageReady()) return std::nullopt;
+    return storageProvider_->GetConfigSection(sectionName);
+}
+
+bool ConfigurationManager::SaveConfigSection(const std::string& sectionName) {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->SaveConfigSection(sectionName);
+}
+
+bool ConfigurationManager::LoadConfigSection(const std::string& sectionName) {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->LoadConfigSection(sectionName);
+}
+
+bool ConfigurationManager::SaveAllConfigSections() {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->SaveAllConfigSections();
+}
+
+bool ConfigurationManager::LoadAllConfigSections() {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->LoadAllConfigSections();
+}
+
+bool ConfigurationManager::ValidateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) const {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->ValidateConfigValue(fullKey, value);
+}
+
+uint32_t ConfigurationManager::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
+    if (!EnsureStorageReady()) return 0;
+    return storageProvider_->RegisterChangeCallback(fullKey, callback);
+}
+
+bool ConfigurationManager::IsSchemaRegistered(const std::string& sectionName) const {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->IsSchemaRegistered(sectionName);
+}
+
+// Configuration Value Helper Methods
+std::string ConfigurationManager::GetTypeName(const Config::ConfigValue& value) const {
+    if (!EnsureStorageReady()) return "unknown";
+    return storageProvider_->GetTypeName(value);
+}
+
+bool ConfigurationManager::TypesMatch(const Config::ConfigValue& a, const Config::ConfigValue& b) const {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->TypesMatch(a, b);
+}
+
+std::string ConfigurationManager::ToString(const Config::ConfigValue& value) const {
+    if (!EnsureStorageReady()) return "";
+    return storageProvider_->ToString(value);
+}
+
+Config::ConfigValue ConfigurationManager::FromString(const std::string& str, const Config::ConfigValue& templateValue) const {
+    if (!EnsureStorageReady()) return std::monostate{};
+    return storageProvider_->FromString(str, templateValue);
+}
+
+bool ConfigurationManager::IsNumeric(const Config::ConfigValue& value) const {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->IsNumeric(value);
+}
+
+// Protected Implementation Methods
+std::optional<Config::ConfigValue> ConfigurationManager::QueryConfigImpl(const std::string& fullKey) const {
+    if (!EnsureStorageReady()) return std::nullopt;
+    return storageProvider_->QueryConfigValue(fullKey);
+}
+
+bool ConfigurationManager::UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) {
+    if (!EnsureStorageReady()) return false;
+    return storageProvider_->UpdateConfigValue(fullKey, value);
+}
+
+// ========== Private Methods ==========
+
+/**
+ * @brief Ensure storage is initialized before operations
+ * @return true if storage is ready
+ */
+bool ConfigurationManager::EnsureStorageReady() const {
+    if (!storageProvider_) {
+        log_e("Storage provider not initialized - call Initialize() first");
+        return false;
+    }
+    return true;
 }
