@@ -90,10 +90,10 @@ private:
     // Configuration items for button timing
     inline static Config::ConfigItem debounceConfig_{ConfigConstants::Items::DEBOUNCE_MS, UIStrings::ConfigLabels::DEBOUNCE_MS,
                                                       ConfigConstants::Defaults::DEFAULT_DEBOUNCE_MS,
-                                                      Config::ConfigMetadata("200,400,600", "ms", Config::ConfigItemType::Selection)};
+                                                      Config::ConfigMetadata(ConfigConstants::Options::DEBOUNCE_OPTIONS, "ms", Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem longPressConfig_{ConfigConstants::Items::LONG_PRESS_MS, UIStrings::ConfigLabels::LONG_PRESS_MS,
                                                        ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS,
-                                                       Config::ConfigMetadata("1000,1500,2000,2500", "ms", Config::ConfigItemType::Selection)};
+                                                       Config::ConfigMetadata(ConfigConstants::Options::LONG_PRESS_OPTIONS, "ms", Config::ConfigItemType::Selection)};
 
     // Single pending action (LIFO with size 1)
     ButtonAction pendingActionType_ = ButtonAction::NONE;

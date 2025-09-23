@@ -83,16 +83,16 @@ class OilPressureSensor : public BaseSensor, public IConfig
     // ========== Configuration Items (inline definitions) ==========
     inline static Config::ConfigItem unitConfig_{ConfigConstants::Items::UNIT, UIStrings::ConfigLabels::PRESSURE_UNIT,
                                                   std::string(ConfigConstants::Defaults::DEFAULT_PRESSURE_UNIT),
-                                                  Config::ConfigMetadata("PSI,Bar,kPa", Config::ConfigItemType::Selection)};
+                                                  Config::ConfigMetadata(ConfigConstants::Options::PRESSURE_UNITS, Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem updateRateConfig_{ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE_MS,
                                                         ConfigConstants::Defaults::DEFAULT_UPDATE_RATE,
-                                                        Config::ConfigMetadata("250,500,1000,2000", Config::ConfigItemType::Selection)};
+                                                        Config::ConfigMetadata(ConfigConstants::Options::UPDATE_RATES, Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem offsetConfig_{ConfigConstants::Items::OFFSET, UIStrings::ConfigLabels::CALIBRATION_OFFSET,
                                                     ConfigConstants::Defaults::DEFAULT_CALIBRATION_OFFSET,
-                                                    Config::ConfigMetadata("-1.0,-0.5,-0.2,-0.1,0.0,0.1,0.2,0.5,1.0", Config::ConfigItemType::Selection)};
+                                                    Config::ConfigMetadata(ConfigConstants::Options::CALIBRATION_OFFSETS, Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem scaleConfig_{ConfigConstants::Items::SCALE, UIStrings::ConfigLabels::CALIBRATION_SCALE,
                                                    ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
-                                                   Config::ConfigMetadata("0.9,0.95,1.0,1.05,1.1", Config::ConfigItemType::Selection)};
+                                                   Config::ConfigMetadata(ConfigConstants::Options::CALIBRATION_SCALES, Config::ConfigItemType::Selection)};
 
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;

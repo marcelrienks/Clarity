@@ -69,10 +69,10 @@ extern std::unique_ptr<IConfigurationManager> configurationManager;
 // Inline definitions (C++17) - global scope configuration
 inline Config::ConfigItem defaultPanelConfig(ConfigConstants::Items::DEFAULT_PANEL, UIStrings::ConfigLabels::DEFAULT_PANEL,
                                              std::string(ConfigConstants::Panels::OEM_OIL_PANEL),
-                                             Config::ConfigMetadata("OemOilPanel,ConfigPanel,DiagnosticPanel", Config::ConfigItemType::Selection));
+                                             Config::ConfigMetadata(ConfigConstants::Options::PANEL_OPTIONS, Config::ConfigItemType::Selection));
 
 inline Config::ConfigItem updateRateConfig(ConfigConstants::Items::UPDATE_RATE, UIStrings::ConfigLabels::UPDATE_RATE,
-                                           500, Config::ConfigMetadata("100,250,500,750,1000,1500,2000", ConfigConstants::Units::MILLISECONDS, Config::ConfigItemType::Selection));
+                                           500, Config::ConfigMetadata(ConfigConstants::Options::SYSTEM_UPDATE_RATES, ConfigConstants::Units::MILLISECONDS, Config::ConfigItemType::Selection));
 
 inline Config::ConfigItem showSplashConfig(ConfigConstants::Items::SHOW_SPLASH, UIStrings::ConfigLabels::SHOW_SPLASH,
                                            true, Config::ConfigMetadata());

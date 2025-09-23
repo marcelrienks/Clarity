@@ -298,6 +298,38 @@ namespace ConfigConstants {
         static constexpr const char* OIL_PRESSURE_SENSOR = "Oil Press.";
         static constexpr const char* OIL_TEMPERATURE_SENSOR = "Oil Temp.";
     }
+
+    // Configuration Option Values (metadata options)
+    namespace Options {
+        // Pressure unit options
+        static constexpr const char* PRESSURE_UNITS = "Bar,PSI,kPa";
+
+        // Temperature unit options
+        static constexpr const char* TEMPERATURE_UNITS = "C,F";
+
+        // Theme options
+        static constexpr const char* THEMES = "Day,Night";
+
+        // Panel options
+        static constexpr const char* PANEL_OPTIONS = "OemOilPanel,ConfigPanel,DiagnosticPanel";
+
+        // Update rate options (milliseconds)
+        static constexpr const char* UPDATE_RATES = "250,500,1000,2000";
+        static constexpr const char* SYSTEM_UPDATE_RATES = "100,250,500,750,1000,1500,2000";
+
+        // Calibration offset options
+        static constexpr const char* CALIBRATION_OFFSETS = "-5.0,-2.0,-1.0,-0.5,0.0,0.5,1.0,2.0,5.0";
+
+        // Calibration scale options
+        static constexpr const char* CALIBRATION_SCALES = "0.9,0.95,1.0,1.05,1.1";
+
+        // Brightness options (percentage)
+        static constexpr const char* BRIGHTNESS_LEVELS = "0,10,20,30,40,50,60,70,80,90,100";
+
+        // Button timing options
+        static constexpr const char* DEBOUNCE_OPTIONS = "200,400,600";
+        static constexpr const char* LONG_PRESS_OPTIONS = "1000,1500,2000,3000";
+    }
 }
 
 /*============================================================================*/

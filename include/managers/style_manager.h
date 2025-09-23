@@ -167,10 +167,10 @@ private:
     // ========== Configuration Items (inline definitions) ==========
     inline static Config::ConfigItem themeConfig_{ConfigConstants::Items::THEME, UIStrings::ConfigLabels::THEME,
                                                    std::string(Themes::DAY),
-                                                   Config::ConfigMetadata("Day,Night", Config::ConfigItemType::Selection)};
+                                                   Config::ConfigMetadata(ConfigConstants::Options::THEMES, Config::ConfigItemType::Selection)};
     inline static Config::ConfigItem brightnessConfig_{ConfigConstants::Items::BRIGHTNESS, UIStrings::ConfigLabels::BRIGHTNESS,
                                                         ConfigConstants::Defaults::DEFAULT_BRIGHTNESS,
-                                                        Config::ConfigMetadata("0,10,20,30,40,50,60,70,80,90,100", "%", Config::ConfigItemType::Selection)};
+                                                        Config::ConfigMetadata(ConfigConstants::Options::BRIGHTNESS_LEVELS, "%", Config::ConfigItemType::Selection)};
 
     // ========== Private Data Members ==========
     std::string theme_ = Themes::NIGHT;

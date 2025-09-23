@@ -71,6 +71,13 @@ class SplashPanel : public IPanel
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::SPLASH_PANEL;
     static constexpr const char* CONFIG_DURATION = ConfigConstants::Keys::SPLASH_PANEL_DURATION;
 
+    // ========== Configuration Items ==========
+    inline static Config::ConfigItem durationConfig_{ConfigConstants::Items::DURATION, TimingConstants::Splash::DURATION_LABEL,
+                                                      std::string(TimingConstants::Splash::DEFAULT_DURATION),
+                                                      Config::ConfigMetadata(TimingConstants::Splash::DURATION_OPTIONS,
+                                                                            TimingConstants::Splash::DURATION_UNIT,
+                                                                            Config::ConfigItemType::Selection)};
+
   private:
     // ========== Private Methods ==========
     int GetAnimationTime() const;
