@@ -11,7 +11,7 @@
 #include "esp32-hal-log.h"
 
 // Forward declarations
-class IPreferenceService;
+class IConfigurationManager;
 
 /**
  * @class InterruptManager
@@ -44,7 +44,7 @@ public:
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionService* panel);
     void RegisterHandler(std::shared_ptr<IHandler> handler);
-    void SetPreferenceService(IPreferenceService* preferenceService);
+    void SetPreferenceService(IConfigurationManager* preferenceService);
 
     /**
      * @brief Get total count of registered interrupts (triggers + actions)

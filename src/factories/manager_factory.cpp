@@ -100,8 +100,8 @@ bool ManagerFactory::InitializeProviders()
  * and initializes it before returning. Reports critical errors on failure.
  */
 std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                      IStyleService *styleService,
-                                                                      IPreferenceService *preferenceService,
+                                                                      IStyleManager *styleService,
+                                                                      IConfigurationManager *preferenceService,
                                                                       InterruptManager *interruptManager)
 {
 
@@ -122,7 +122,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
     }
     if (!styleService)
     {
-        log_e("ManagerFactory: Cannot create PanelManager - IStyleService is null");
+        log_e("ManagerFactory: Cannot create PanelManager - IStyleManager is null");
         ErrorManager::Instance().ReportCriticalError("ManagerFactory",
                                                      "Cannot create PanelManager - StyleService dependency is null");
         return nullptr;
@@ -130,7 +130,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
     
     if (!preferenceService)
     {
-        log_e("ManagerFactory: Cannot create PanelManager - IPreferenceService is null");
+        log_e("ManagerFactory: Cannot create PanelManager - IConfigurationManager is null");
         ErrorManager::Instance().ReportCriticalError(
             "ManagerFactory", "Cannot create PanelManager - PreferenceService dependency is null");
         return nullptr;
@@ -176,12 +176,12 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
 /**
  * @brief Internal implementation for creating ConfigurationManager
- * @return Unique pointer to IPreferenceService or nullptr on failure
+ * @return Unique pointer to IConfigurationManager or nullptr on failure
  *
  * Creates ConfigurationManager as the unified configuration interface.
- * Returns as IPreferenceService interface for abstraction.
+ * Returns as IConfigurationManager interface for abstraction.
  */
-std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManagerImpl()
+std::unique_ptr<IConfigurationManager> ManagerFactory::CreatePreferenceManagerImpl()
 {
     // Create ConfigurationManager as the unified configuration interface
     auto manager = std::make_unique<ConfigurationManager>();
@@ -271,8 +271,8 @@ ErrorManager *ManagerFactory::CreateErrorManagerImpl()
  * through provider factory if not supplied. Delegates to implementation method.
  */
 std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                  IStyleService *styleService,
-                                                                  IPreferenceService *preferenceService,
+                                                                  IStyleManager *styleService,
+                                                                  IConfigurationManager *preferenceService,
                                                                   InterruptManager *interruptManager)
 {
     
@@ -307,11 +307,11 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManager(const char *the
 
 /**
  * @brief Creates PreferenceManager for configuration management
- * @return Unique pointer to IPreferenceService interface
+ * @return Unique pointer to IConfigurationManager interface
  *
  * Public interface method that delegates to implementation.
  */
-std::unique_ptr<IPreferenceService> ManagerFactory::CreatePreferenceManager()
+std::unique_ptr<IConfigurationManager> ManagerFactory::CreatePreferenceManager()
 {
     return CreatePreferenceManagerImpl();
 }

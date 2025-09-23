@@ -22,7 +22,7 @@
  * Initializes menu system for automotive settings management including
  * theme selection, calibration, and system configuration options.
  */
-ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+ConfigPanel::ConfigPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       currentMenuIndex_(0), configComponent_(), componentInitialized_(false)
 {
@@ -152,7 +152,7 @@ void ConfigPanel::Update()
  * @param panelService Panel service for UI state management and panel operations
  * @param styleService Style service for theme management
  */
-void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
+void ConfigPanel::SetManagers(IPanelManager *panelService, IStyleManager *styleService)
 {
     log_v("SetManagers() called");
     panelService_ = panelService;
@@ -165,7 +165,7 @@ void ConfigPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
  * @brief Injects preference service dependency for dynamic configuration
  * @param preferenceService Preference service for configuration management
  */
-void ConfigPanel::SetPreferenceService(IPreferenceService *preferenceService)
+void ConfigPanel::SetPreferenceService(IConfigurationManager *preferenceService)
 {
     log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;

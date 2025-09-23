@@ -45,7 +45,7 @@ OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, int upda
  * Allows for real-time calibration adjustments and unit changes. The preference service
  * enables live configuration updates and persistent storage of sensor settings.
  */
-OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs)
+OilTemperatureSensor::OilTemperatureSensor(IGpioProvider *gpioProvider, IConfigurationManager *preferenceService, int updateRateMs)
     : gpioProvider_(gpioProvider), preferenceService_(preferenceService), updateIntervalMs_(updateRateMs)
 {
     log_v("OilTemperatureSensor() constructor with preference service called");
@@ -296,7 +296,7 @@ void OilTemperatureSensor::LoadConfiguration()
  * Registers the oil temperature sensor configuration schema without
  * requiring a sensor instance to exist.
  */
-void OilTemperatureSensor::RegisterConfigSchema(IPreferenceService* preferenceService)
+void OilTemperatureSensor::RegisterConfigSchema(IConfigurationManager* preferenceService)
 {
     if (!preferenceService) return;
 
@@ -329,7 +329,7 @@ void OilTemperatureSensor::RegisterConfigSchema(IPreferenceService* preferenceSe
  * New code path uses static RegisterConfigSchema instead.
  * Can be removed once all components are migrated.
  */
-void OilTemperatureSensor::RegisterConfig(IPreferenceService* preferenceService)
+void OilTemperatureSensor::RegisterConfig(IConfigurationManager* preferenceService)
 {
     // During migration, just delegate to static method
     RegisterConfigSchema(preferenceService);

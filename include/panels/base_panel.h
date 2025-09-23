@@ -3,8 +3,8 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "definitions/types.h"
 
 
@@ -64,7 +64,7 @@ public:
      * @param display Display provider for screen management
      * @param styleService Style service for theming
      */
-    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService);
+    BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleService);
     BasePanel(const BasePanel&) = delete;
     BasePanel& operator=(const BasePanel&) = delete;
     /**
@@ -96,7 +96,7 @@ public:
      * @param panelService Panel management service
      * @param styleService Style service for theming
      */
-    void SetManagers(IPanelService* panelService, IStyleService* styleService) override;
+    void SetManagers(IPanelManager* panelService, IStyleManager* styleService) override;
 
     /**
      * @brief Get function pointer for short button press handling
@@ -163,8 +163,8 @@ protected:
     // ========== Protected Data Members ==========
     IGpioProvider* gpioProvider_;
     IDisplayProvider* displayProvider_;
-    IStyleService* styleService_;
-    IPanelService* panelService_;
+    IStyleManager* styleService_;
+    IPanelManager* panelService_;
     ComponentLocation centerLocation_;
     lv_obj_t* screen_ = nullptr;
 

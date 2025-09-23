@@ -13,7 +13,7 @@
  * Initializes the error component with style service for theming.
  * Sets all UI element pointers to nullptr and initializes counters to zero.
  */
-ErrorComponent::ErrorComponent(IStyleService *styleService)
+ErrorComponent::ErrorComponent(IStyleManager *styleService)
     : styleService_(styleService), errorContainer_(nullptr), errorContentArea_(nullptr), errorCountLabel_(nullptr),
       errorLevelLabel_(nullptr), errorSourceLabel_(nullptr), errorMessageLabel_(nullptr), navigationIndicator_(nullptr),
       currentErrorIndex_(0)

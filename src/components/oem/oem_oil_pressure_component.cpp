@@ -3,7 +3,7 @@
 
 // ========== Constructors and Destructor ==========
 
-OemOilPressureComponent::OemOilPressureComponent(IStyleService *styleService) : OemOilComponent(styleService)
+OemOilPressureComponent::OemOilPressureComponent(IStyleManager *styleService) : OemOilComponent(styleService)
 {
     // Constructor delegates initialization to base OemOilComponent
 }

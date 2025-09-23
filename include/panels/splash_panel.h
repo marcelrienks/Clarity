@@ -6,10 +6,10 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
+#include "interfaces/i_panel_manager.h"
 #include "interfaces/i_panel_notification_service.h"
-#include "interfaces/i_preference_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_configuration_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "definitions/constants.h"
 #include <memory>
 
@@ -43,7 +43,7 @@ class SplashPanel : public IPanel
 {
   public:
     // ========== Constructors and Destructor ==========
-    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService,
+    SplashPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService,
                 IPanelNotificationService* notificationService = nullptr);
     ~SplashPanel();
 
@@ -54,10 +54,10 @@ class SplashPanel : public IPanel
     void Update() override;
 
     // Manager injection method
-    void SetManagers(IPanelService *panelService, IStyleService *styleService) override;
+    void SetManagers(IPanelManager *panelService, IStyleManager *styleService) override;
 
     // Preference service injection
-    void SetPreferenceService(IPreferenceService *preferenceService);
+    void SetPreferenceService(IConfigurationManager *preferenceService);
 
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
@@ -70,7 +70,7 @@ class SplashPanel : public IPanel
     void RegisterConfiguration();
 
     // Static schema registration for self-registering pattern
-    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
 
     // ========== Configuration Constants ==========
     // Note: show_splash is managed by system settings in main.cpp
@@ -94,9 +94,9 @@ class SplashPanel : public IPanel
     // Dependencies
     IGpioProvider *gpioProvider_;
     IDisplayProvider *displayProvider_;
-    IStyleService *styleService_;
-    IPanelService *panelService_;
-    IPreferenceService *preferenceService_ = nullptr;
+    IStyleManager *styleService_;
+    IPanelManager *panelService_;
+    IConfigurationManager *preferenceService_ = nullptr;
     IPanelNotificationService *notificationService_;
 
     // Components - static allocation

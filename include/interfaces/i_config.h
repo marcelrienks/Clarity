@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 
 /**
  * @interface IConfig
@@ -18,5 +18,5 @@ public:
      * @brief Register configuration items with the preference service
      * @param preferenceService The preference service to register configs with
      */
-    virtual void RegisterConfig(IPreferenceService* preferenceService) = 0;
+    virtual void RegisterConfig(IConfigurationManager* preferenceService) = 0;
 };

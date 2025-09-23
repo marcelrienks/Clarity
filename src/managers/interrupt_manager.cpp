@@ -153,7 +153,7 @@ void InterruptManager::SetCurrentPanel(IActionService* panel)
  * @brief Sets preference service for configuration access
  * @param preferenceService The preference service to use for configuration
  */
-void InterruptManager::SetPreferenceService(IPreferenceService* preferenceService)
+void InterruptManager::SetPreferenceService(IConfigurationManager* preferenceService)
 {
     log_v("SetPreferenceService() called");
 

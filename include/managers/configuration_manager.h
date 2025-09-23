@@ -1,6 +1,6 @@
 #pragma once
 
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_storage_provider.h"
 #include <vector>
 #include <memory>
@@ -27,7 +27,7 @@
  * @context This manager is the single interface for configuration. Components
  * should use ConfigurationManager exclusively, never PreferenceStorage directly.
  */
-class ConfigurationManager : public IPreferenceService {
+class ConfigurationManager : public IConfigurationManager {
 public:
     // ========== Constructors and Destructor ==========
     ConfigurationManager();
@@ -45,7 +45,7 @@ public:
      * Called automatically during static initialization by components.
      * The registered functions are executed later by RegisterAllSchemas().
      */
-    static void AddSchema(void(*func)(IPreferenceService*));
+    static void AddSchema(void(*func)(IConfigurationManager*));
 
     // ========== Public Interface Methods ==========
 
@@ -102,7 +102,7 @@ private:
      * This pattern avoids the static initialization order fiasco by
      * ensuring the vector exists before any component tries to register.
      */
-    static std::vector<void(*)(IPreferenceService*)>& GetSchemaFunctions();
+    static std::vector<void(*)(IConfigurationManager*)>& GetSchemaFunctions();
 
     /**
      * @brief Ensure storage is initialized before operations

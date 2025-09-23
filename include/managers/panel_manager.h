@@ -2,9 +2,9 @@
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_panel.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_preference_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_configuration_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "interfaces/i_panel_notification_service.h"
 #include "interfaces/i_action_execution_service.h"
 #include "interfaces/i_trigger_execution_service.h"
@@ -58,15 +58,15 @@
 class StyleManager;
 class InterruptManager;
 
-class PanelManager : public IPanelService,
+class PanelManager : public IPanelManager,
                      public IPanelNotificationService,
                      public IActionExecutionService,
                      public ITriggerExecutionService
 {
   public:
     // ========== Constructors/Destructor ==========
-    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                 IPreferenceService *preferenceService, InterruptManager* interruptManager = nullptr);
+    PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleService,
+                 IConfigurationManager *preferenceService, InterruptManager* interruptManager = nullptr);
     PanelManager(const PanelManager &) = delete;
     PanelManager &operator=(const PanelManager &) = delete;
     ~PanelManager();
@@ -132,9 +132,9 @@ class PanelManager : public IPanelService,
     // ========== Service Dependencies ==========
     IGpioProvider *gpioProvider_ = nullptr;           ///< GPIO provider for hardware access
     IDisplayProvider *displayProvider_ = nullptr;     ///< Display provider for UI operations
-    IStyleService *styleService_ = nullptr;           ///< Style service for UI theming
+    IStyleManager *styleService_ = nullptr;           ///< Style service for UI theming
     InterruptManager *interruptManager_ = nullptr;    ///< Interrupt manager for button function injection
-    IPreferenceService *preferenceService_ = nullptr; ///< Preference service for configuration settings
+    IConfigurationManager *preferenceService_ = nullptr; ///< Preference service for configuration settings
 
     // ========== Cached Service References ==========
     class ErrorManager& errorManager_;                ///< Cached ErrorManager reference

@@ -1,7 +1,7 @@
 #pragma once
 
-#include "interfaces/i_style_service.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_style_manager.h"
+#include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_config.h"
 #include "definitions/styles.h"
 #include "definitions/types.h"
@@ -63,7 +63,7 @@
  * Components get their styles from here to ensure consistency. The night
  * theme uses red accents while day theme uses white/neutral colors.
  */
-class StyleManager : public IStyleService, public IConfig
+class StyleManager : public IStyleManager, public IConfig
 {
 public:
     // ========== Constructors and Destructor ==========
@@ -145,15 +145,15 @@ public:
 
     void SwitchTheme(const char* themeName);
 
-    void SetPreferenceService(IPreferenceService* preferenceService);
+    void SetPreferenceService(IConfigurationManager* preferenceService);
 
     void LoadConfiguration();
 
     // IConfig implementation (instance method for backward compatibility)
-    void RegisterConfig(IPreferenceService* preferenceService) override;
+    void RegisterConfig(IConfigurationManager* preferenceService) override;
 
     // Static schema registration for self-registering pattern
-    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
 
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER;
@@ -195,5 +195,5 @@ private:
     const ThemeColors& errorThemeColours_ = ThemeDefinitions::ERROR_THEME;
 
     // Direct preference reading support
-    IPreferenceService* preferenceService_ = nullptr;
+    IConfigurationManager* preferenceService_ = nullptr;
 };

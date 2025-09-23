@@ -16,7 +16,7 @@
  * Initializes the configuration component with dependencies for panel navigation
  * and theme styling. These services enable menu interactions and visual theming.
  */
-ConfigComponent::ConfigComponent(IPanelService* panelService, IStyleService* styleService)
+ConfigComponent::ConfigComponent(IPanelManager* panelService, IStyleManager* styleService)
     : panelService_(panelService), styleService_(styleService)
 {
     log_v("ConfigComponent constructor called");
@@ -205,7 +205,7 @@ void ConfigComponent::SetHintText(const std::string &hint)
  * Updates the style service reference and immediately applies
  * the current theme colors to all UI elements.
  */
-void ConfigComponent::SetStyleService(IStyleService* styleService)
+void ConfigComponent::SetStyleService(IStyleManager* styleService)
 {
     log_v("SetStyleService() called");
     styleService_ = styleService;

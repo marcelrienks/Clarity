@@ -56,8 +56,8 @@ ConfigurationManager& ConfigurationManager::Instance() {
  * This pattern ensures the vector exists before any static initialization
  * tries to register schemas, avoiding the static initialization order fiasco.
  */
-std::vector<void(*)(IPreferenceService*)>& ConfigurationManager::GetSchemaFunctions() {
-    static std::vector<void(*)(IPreferenceService*)> functions;
+std::vector<void(*)(IConfigurationManager*)>& ConfigurationManager::GetSchemaFunctions() {
+    static std::vector<void(*)(IConfigurationManager*)> functions;
     return functions;
 }
 
@@ -68,7 +68,7 @@ std::vector<void(*)(IPreferenceService*)>& ConfigurationManager::GetSchemaFuncti
  * Called during static initialization by components.
  * Functions are stored and executed later when RegisterAllSchemas() is called.
  */
-void ConfigurationManager::AddSchema(void(*func)(IPreferenceService*)) {
+void ConfigurationManager::AddSchema(void(*func)(IConfigurationManager*)) {
     if (!func) {
         log_e("ConfigurationManager: Cannot add null schema function");
         return;
@@ -129,7 +129,7 @@ void ConfigurationManager::RegisterAllSchemas() {
     size_t successCount = 0;
     for (auto func : functions) {
         if (func) {
-            // Pass this ConfigurationManager as the IPreferenceService
+            // Pass this ConfigurationManager as the IConfigurationManager
             func(this);
             successCount++;
         }
@@ -145,7 +145,7 @@ void ConfigurationManager::RegisterAllSchemas() {
     }
 }
 
-// ========== IPreferenceService Implementation ==========
+// ========== IConfigurationManager Implementation ==========
 
 bool ConfigurationManager::RegisterConfigSection(const Config::ConfigSection& section) {
     if (!EnsureStorageReady()) return false;

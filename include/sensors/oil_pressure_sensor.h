@@ -7,7 +7,7 @@
 // Project Includes
 #include "hardware/gpio_pins.h"
 #include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "interfaces/i_config.h"
 #include "sensors/base_sensor.h"
 #include "definitions/types.h"
@@ -43,7 +43,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
   public:
     // ========== Constructors and Destructor ==========
     OilPressureSensor(IGpioProvider *gpioProvider, int updateRateMs = 500);
-    OilPressureSensor(IGpioProvider *gpioProvider, IPreferenceService *preferenceService, int updateRateMs = 500);
+    OilPressureSensor(IGpioProvider *gpioProvider, IConfigurationManager *preferenceService, int updateRateMs = 500);
 
     // ========== Public Interface Methods ==========
     // BaseSensor interface implementation
@@ -60,10 +60,10 @@ class OilPressureSensor : public BaseSensor, public IConfig
     void LoadConfiguration();
 
     // IConfig implementation (instance method for backward compatibility)
-    void RegisterConfig(IPreferenceService* preferenceService) override;
+    void RegisterConfig(IConfigurationManager* preferenceService) override;
 
     // Static schema registration for self-registering pattern
-    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
 
     void RegisterLiveUpdateCallbacks();
 
@@ -96,7 +96,7 @@ class OilPressureSensor : public BaseSensor, public IConfig
 
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
-    IPreferenceService *preferenceService_ = nullptr;
+    IConfigurationManager *preferenceService_ = nullptr;
     float calibrationOffset_ = 0.0f;
     float calibrationScale_ = 1.0f;
     std::string targetUnit_ = "Bar";

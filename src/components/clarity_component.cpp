@@ -12,7 +12,7 @@
  * Initializes the clarity component with the provided style service for
  * applying themes and visual styling to the splash screen display.
  */
-ClarityComponent::ClarityComponent(IStyleService *styleService) : styleService_(styleService)
+ClarityComponent::ClarityComponent(IStyleManager *styleService) : styleService_(styleService)
 {
     log_v("ClarityComponent constructor called");
 }

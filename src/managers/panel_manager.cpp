@@ -34,8 +34,8 @@ static PanelManager* instancePtr_ = nullptr;
  * required dependencies and sets up the default oil panel as the initial panel.
  * Establishes singleton instance for global access by interrupt system.
  */
-PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleService *styleService,
-                           IPreferenceService *preferenceService, InterruptManager* interruptManager)
+PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyleManager *styleService,
+                           IConfigurationManager *preferenceService, InterruptManager* interruptManager)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       preferenceService_(preferenceService), interruptManager_(interruptManager),
       errorManager_(ErrorManager::Instance())
@@ -100,7 +100,7 @@ PanelManager& PanelManager::Instance() {
     return *instancePtr_;
 }
 
-// ========== IPanelService Implementation ==========
+// ========== IPanelManager Implementation ==========
 
 /**
  * @brief Initializes the panel service to control the flow and rendering of all panels

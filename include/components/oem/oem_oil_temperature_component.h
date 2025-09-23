@@ -49,7 +49,7 @@ class OemOilTemperatureComponent : public OemOilComponent
 {
   public:
     // ========== Constructors and Destructor ==========
-    OemOilTemperatureComponent(IStyleService *styleService);
+    OemOilTemperatureComponent(IStyleManager *styleService);
     ~OemOilTemperatureComponent() = default;
 
   protected:

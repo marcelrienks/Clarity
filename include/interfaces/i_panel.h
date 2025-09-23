@@ -11,9 +11,9 @@
 #include "interfaces/i_action_service.h"
 
 // Forward declarations
-class IPanelService;
-class IStyleService;
-class IPreferenceService;
+class IPanelManager;
+class IStyleManager;
+class IConfigurationManager;
 
 /**
  * @interface IPanel
@@ -77,8 +77,8 @@ class IPanel : public IActionService
     // - void HandleLongPress()
 
     // Optional dependency injection methods with default no-op implementations
-    virtual void SetManagers(IPanelService *panelService, IStyleService *styleService) {}
-    virtual void SetPreferenceService(IPreferenceService *preferenceService) {}
+    virtual void SetManagers(IPanelManager *panelService, IStyleManager *styleService) {}
+    virtual void SetPreferenceService(IConfigurationManager *preferenceService) {}
 
   protected:
     // Protected Data Members

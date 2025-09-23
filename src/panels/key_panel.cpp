@@ -21,7 +21,7 @@
  * current key state during construction and initializes stack-allocated
  * key component for efficient memory usage.
  */
-KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+KeyPanel::KeyPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
     : BasePanel(gpio, display, styleService),
       keyComponent_(styleService), componentInitialized_(false)
 {

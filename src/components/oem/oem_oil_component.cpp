@@ -10,7 +10,7 @@
 
 // ========== Constructors and Destructor ==========
 
-OemOilComponent::OemOilComponent(IStyleService *styleService)
+OemOilComponent::OemOilComponent(IStyleManager *styleService)
     : styleService_(styleService), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
       needleHighlightLine_(nullptr), needleHighlightMiddle_(nullptr), needleHighlightBase_(nullptr), oilIcon_(nullptr),
       lowLabel_(nullptr), highLabel_(nullptr), pivotCircle_(nullptr), pivotHighlight_(nullptr), scaleRotation_(0)

@@ -21,7 +21,7 @@
  * Initializes component state and sets error panel as active in ErrorManager
  * for proper coordination with the trigger system.
  */
-ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+ErrorPanel::ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       errorComponent_(styleService), componentInitialized_(false), panelLoaded_(false), previousTheme_(), currentErrorIndex_(0)
 {
@@ -285,7 +285,7 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
  * interfaces. Called during panel creation to establish service dependencies
  * needed for proper panel operation and lifecycle management.
  */
-void ErrorPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
+void ErrorPanel::SetManagers(IPanelManager *panelService, IStyleManager *styleService)
 {
     log_v("SetManagers() called");
 

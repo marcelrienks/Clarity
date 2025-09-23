@@ -5,8 +5,8 @@
 // Forward declarations
 class IGpioProvider;
 class IDisplayProvider;
-class IStyleService;
-class IPreferenceService;
+class IStyleManager;
+class IConfigurationManager;
 class PanelManager;
 class StyleManager;
 class PreferenceManager;
@@ -46,13 +46,13 @@ public:
     
     virtual std::unique_ptr<PanelManager> CreatePanelManager(IDisplayProvider *display, 
                                                               IGpioProvider *gpio,
-                                                              IStyleService *styleService, 
-                                                              IPreferenceService *preferenceService,
+                                                              IStyleManager *styleService,
+                                                              IConfigurationManager *preferenceService,
                                                               InterruptManager *interruptManager) = 0;
 
     virtual std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr) = 0;
 
-    virtual std::unique_ptr<IPreferenceService> CreatePreferenceManager() = 0;
+    virtual std::unique_ptr<IConfigurationManager> CreatePreferenceManager() = 0;
 
     virtual InterruptManager* CreateInterruptManager(IGpioProvider* gpioProvider) = 0;
 

@@ -8,7 +8,7 @@
 #include "definitions/types.h"
 
 /**
- * @interface IStyleService
+ * @interface IStyleManager
  * @brief Interface for style management and theme operations
  *
  * @details This interface abstracts theme management functionality,
@@ -20,10 +20,10 @@
  * @testability Enables mocking for unit tests
  * @dependency_injection Replaces direct StyleManager singleton access
  */
-class IStyleService
+class IStyleManager
 {
   public:
-    virtual ~IStyleService() = default;
+    virtual ~IStyleManager() = default;
 
     // Core Functionality Methods
 

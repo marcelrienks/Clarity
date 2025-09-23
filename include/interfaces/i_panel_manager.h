@@ -11,7 +11,7 @@
 #include "definitions/types.h"
 
 /**
- * @interface IPanelService
+ * @interface IPanelManager
  * @brief Interface for panel lifecycle management and transitions
  *
  * @details This interface abstracts panel management functionality,
@@ -24,10 +24,10 @@
  * @dependency_injection Replaces direct PanelManager singleton access
  * @hardware_dependencies Requires IGpioProvider and IDisplayProvider
  */
-class IPanelService
+class IPanelManager
 {
   public:
-    virtual ~IPanelService() = default;
+    virtual ~IPanelManager() = default;
 
     // Core Functionality Methods
     virtual void Init() = 0;

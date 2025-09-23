@@ -5,7 +5,7 @@
 
 // Project Includes
 #include "interfaces/i_component.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_style_manager.h"
 #include "definitions/types.h"
 
 /**
@@ -47,7 +47,7 @@ class OemOilComponent : public IComponent
 {
   public:
     // ========== Constructors and Destructor ==========
-    OemOilComponent(IStyleService *styleService);
+    OemOilComponent(IStyleManager *styleService);
     virtual ~OemOilComponent();
 
     // ========== Public Interface Methods ==========
@@ -70,7 +70,7 @@ class OemOilComponent : public IComponent
     virtual void get_label_angles(int32_t &lAngle, int32_t &hAngle) const = 0;
 
     // ========== Protected Data Members ==========
-    IStyleService *styleService_;
+    IStyleManager *styleService_;
 
     // LVGL objects
     lv_obj_t *scale_;

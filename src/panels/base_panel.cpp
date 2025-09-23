@@ -9,7 +9,7 @@
 /**
  * @brief Initialize BasePanel with dependency injection of required services
  */
-BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleService* styleService)
+BasePanel::BasePanel(IGpioProvider* gpio, IDisplayProvider* display, IStyleManager* styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService),
       panelService_(nullptr)
 {
@@ -98,7 +98,7 @@ void BasePanel::Update()
  * @brief Inject manager service dependencies
  * @details Updates panel and style service references for runtime services
  */
-void BasePanel::SetManagers(IPanelService* panelService, IStyleService* styleService)
+void BasePanel::SetManagers(IPanelManager* panelService, IStyleManager* styleService)
 {
     log_v("%s::SetManagers() called", GetPanelName());
 

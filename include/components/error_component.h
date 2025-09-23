@@ -1,7 +1,7 @@
 #pragma once
 
 #include "interfaces/i_component.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_style_manager.h"
 #include "managers/error_manager.h"
 #include "definitions/styles.h"
 #include "definitions/types.h"
@@ -39,7 +39,7 @@ class ErrorComponent : public IComponent
 {
 public:
     // ========== Constructors and Destructor ==========
-    explicit ErrorComponent(IStyleService *styleService);
+    explicit ErrorComponent(IStyleManager *styleService);
     virtual ~ErrorComponent();
 
     // ========== Public Interface Methods ==========
@@ -62,7 +62,7 @@ private:
     const char *GetErrorLevelText(ErrorLevel level);
 
     // ========== Private Data Members ==========
-    IStyleService *styleService_;
+    IStyleManager *styleService_;
     lv_obj_t *errorContainer_;      // Main container for error display
     lv_obj_t *errorContentArea_;    // Single error content display area
     lv_obj_t *errorCountLabel_;     // Header showing current error position

@@ -13,7 +13,7 @@
  * Initializes the key component with style service for applying theme colors.
  * Sets key icon pointer to nullptr for later initialization.
  */
-KeyComponent::KeyComponent(IStyleService *styleService) : keyIcon_(nullptr), styleService_(styleService)
+KeyComponent::KeyComponent(IStyleManager *styleService) : keyIcon_(nullptr), styleService_(styleService)
 {
 }
 

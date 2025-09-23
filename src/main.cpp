@@ -4,7 +4,7 @@
 #include "managers/error_manager.h"
 #include "managers/interrupt_manager.h"
 #include "managers/panel_manager.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "definitions/configs.h"
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
@@ -46,7 +46,7 @@ ErrorManager *errorManager;
  * Registers the SystemConfig configuration schema without
  * requiring a manager instance to exist.
  */
-void SystemConfig::RegisterConfigSchema(IPreferenceService* preferenceService)
+void SystemConfig::RegisterConfigSchema(IConfigurationManager* preferenceService)
 {
     if (!preferenceService) return;
 

@@ -22,7 +22,7 @@
  * Initializes stack-allocated components, creates sensor instances, and sets up
  * LVGL animation structures for smooth needle movements.
  */
-OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleService *styleService)
+OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleService)
     : gpioProvider_(gpio), displayProvider_(display), styleService_(styleService), panelService_(nullptr),
       oemOilPressureComponent_(styleService), oemOilTemperatureComponent_(styleService),
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
@@ -529,7 +529,7 @@ Action OemOilPanel::GetLongPressAction()
  * @param panelService the panel manager instance
  * @param styleService  the style manager instance
  */
-void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleService)
+void OemOilPanel::SetManagers(IPanelManager *panelService, IStyleManager *styleService)
 {
     log_v("SetManagers() called");
 
@@ -545,7 +545,7 @@ void OemOilPanel::SetManagers(IPanelService *panelService, IStyleService *styleS
  * @brief Set preference service and apply sensor update rate from preferences
  * @param preferenceService The preference service to use for configuration
  */
-void OemOilPanel::SetPreferenceService(IPreferenceService *preferenceService)
+void OemOilPanel::SetPreferenceService(IConfigurationManager *preferenceService)
 {
     log_v("SetPreferenceService() called");
 

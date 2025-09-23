@@ -4,9 +4,9 @@
 #include "interfaces/i_provider_factory.h"
 #include "interfaces/i_display_provider.h"
 #include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_preference_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_configuration_manager.h"
+#include "interfaces/i_style_manager.h"
 #include <Arduino.h>
 #include <memory>
 
@@ -45,13 +45,13 @@ public:
     // ========== Public Interface Methods ==========
     // IManagerFactory implementation
     std::unique_ptr<PanelManager> CreatePanelManager(IDisplayProvider *display, IGpioProvider *gpio,
-                                                      IStyleService *styleService, 
-                                                      IPreferenceService *preferenceService,
+                                                      IStyleManager *styleService,
+                                                      IConfigurationManager *preferenceService,
                                                       InterruptManager *interruptManager) override;
 
     std::unique_ptr<StyleManager> CreateStyleManager(const char *theme = nullptr) override;
 
-    std::unique_ptr<IPreferenceService> CreatePreferenceManager() override;
+    std::unique_ptr<IConfigurationManager> CreatePreferenceManager() override;
 
     InterruptManager* CreateInterruptManager(IGpioProvider* gpioProvider) override;
 
@@ -63,13 +63,13 @@ private:
     
     // ========== Static Methods ==========
     static std::unique_ptr<PanelManager> CreatePanelManagerImpl(IDisplayProvider *display, IGpioProvider *gpio,
-                                                                IStyleService *styleService, 
-                                                                IPreferenceService *preferenceService,
+                                                                IStyleManager *styleService,
+                                                                IConfigurationManager *preferenceService,
                                                                 InterruptManager *interruptManager);
 
     static std::unique_ptr<StyleManager> CreateStyleManagerImpl(const char *theme = nullptr);
 
-    static std::unique_ptr<IPreferenceService> CreatePreferenceManagerImpl();
+    static std::unique_ptr<IConfigurationManager> CreatePreferenceManagerImpl();
 
     static InterruptManager* CreateInterruptManagerImpl(IGpioProvider* gpioProvider);
 

@@ -1,6 +1,6 @@
 #include "handlers/action_handler.h"
 #include "interfaces/i_action_service.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "managers/error_manager.h"
 #include "sensors/button_sensor.h"
 #include "hardware/gpio_pins.h"
@@ -586,7 +586,7 @@ void ActionHandler::ClearCurrentPanel() {
  * - Debounce timing: 300-700ms (default 500ms)
  * - Long press threshold: 1000-2000ms (default 1500ms)
  */
-void ActionHandler::RegisterConfigSchema(IPreferenceService* preferenceService)
+void ActionHandler::RegisterConfigSchema(IConfigurationManager* preferenceService)
 {
     if (!preferenceService) return;
 
@@ -611,7 +611,7 @@ void ActionHandler::RegisterConfigSchema(IPreferenceService* preferenceService)
  * @brief Sets preference service for configuration access
  * @param preferenceService The preference service to use for configuration
  */
-void ActionHandler::SetPreferenceService(IPreferenceService* preferenceService)
+void ActionHandler::SetPreferenceService(IConfigurationManager* preferenceService)
 {
     preferenceService_ = preferenceService;
 }
@@ -641,7 +641,7 @@ unsigned long ActionHandler::GetLongPressMs() const
         return ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
     }
 
-    auto value = preferenceService_->QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
+    auto value = preferenceService_->template QueryConfig<int>(ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
     unsigned long result = value ? static_cast<unsigned long>(*value) : ConfigConstants::Defaults::DEFAULT_LONG_PRESS_MS;
     log_v("GetLongPressMs returning: %lu ms (config key: %s)", result, ConfigConstants::Keys::BUTTON_LONG_PRESS_MS);
     return result;

@@ -5,7 +5,7 @@
 
 // ========== Constructors and Destructor ==========
 
-LockComponent::LockComponent(IStyleService *styleService) : lockIcon_(nullptr), styleService_(styleService)
+LockComponent::LockComponent(IStyleManager *styleService) : lockIcon_(nullptr), styleService_(styleService)
 {
     log_v("LockComponent constructor called");
 }

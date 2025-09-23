@@ -3,7 +3,7 @@
 #include <memory>
 #include "interfaces/i_component_factory.h"
 
-class IStyleService;
+class IStyleManager;
 class ClarityComponent;
 class OilPressureComponent;
 class OilTemperatureComponent;
@@ -23,7 +23,7 @@ class ConfigComponent;
  * 
  * @design_pattern Singleton Factory Pattern
  * @architectural_role Component creation for MVP architecture Views layer
- * @dependency_injection Components receive IStyleService for theme management
+ * @dependency_injection Components receive IStyleManager for theme management
  * @testability Implements IComponentFactory interface for test injection
  * 
  * @architecture_note
@@ -47,13 +47,13 @@ public:
     
     // ========== Public Interface Methods ==========
     // IComponentFactory implementation
-    std::unique_ptr<ClarityComponent> CreateClarityComponent(IStyleService* style) override;
-    std::unique_ptr<IComponent> CreateOilPressureComponent(IStyleService* style) override;
-    std::unique_ptr<IComponent> CreateOilTemperatureComponent(IStyleService* style) override;
-    std::unique_ptr<ErrorComponent> CreateErrorComponent(IStyleService* style) override;
-    std::unique_ptr<KeyComponent> CreateKeyComponent(IStyleService* style) override;
-    std::unique_ptr<LockComponent> CreateLockComponent(IStyleService* style) override;
-    std::unique_ptr<ConfigComponent> CreateConfigComponent(IStyleService* style) override;
+    std::unique_ptr<ClarityComponent> CreateClarityComponent(IStyleManager* style) override;
+    std::unique_ptr<IComponent> CreateOilPressureComponent(IStyleManager* style) override;
+    std::unique_ptr<IComponent> CreateOilTemperatureComponent(IStyleManager* style) override;
+    std::unique_ptr<ErrorComponent> CreateErrorComponent(IStyleManager* style) override;
+    std::unique_ptr<KeyComponent> CreateKeyComponent(IStyleManager* style) override;
+    std::unique_ptr<LockComponent> CreateLockComponent(IStyleManager* style) override;
+    std::unique_ptr<ConfigComponent> CreateConfigComponent(IStyleManager* style) override;
     
 private:
     // ========== Constructors and Destructor ==========

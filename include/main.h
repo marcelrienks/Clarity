@@ -41,7 +41,7 @@ class DeviceProvider;
 class IGpioProvider;
 class IDisplayProvider;
 class StyleManager;
-class IPreferenceService;
+class IConfigurationManager;
 class PanelManager;
 class InterruptManager;
 class ErrorManager;
@@ -59,7 +59,7 @@ extern std::unique_ptr<IDisplayProvider> displayProvider;
 
 // Global managers - created by ManagerFactory
 extern std::unique_ptr<StyleManager> styleManager;
-extern std::unique_ptr<IPreferenceService> preferenceManager;
+extern std::unique_ptr<IConfigurationManager> preferenceManager;
 extern std::unique_ptr<PanelManager> panelManager;
 extern InterruptManager *interruptManager;
 extern ErrorManager *errorManager;
@@ -83,5 +83,5 @@ void registerSystemConfiguration();
 // Static schema registration for self-registering pattern
 class SystemConfig {
 public:
-    static void RegisterConfigSchema(IPreferenceService* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
 };

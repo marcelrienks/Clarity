@@ -282,7 +282,7 @@ void StyleManager::SwitchTheme(const char* themeName)
  * @brief Inject preference service dependency for theme persistence
  * @param preferenceService Pointer to preference service instance
  */
-void StyleManager::SetPreferenceService(IPreferenceService* preferenceService)
+void StyleManager::SetPreferenceService(IConfigurationManager* preferenceService)
 {
     log_v("SetPreferenceService() called");
     preferenceService_ = preferenceService;
@@ -320,7 +320,7 @@ void StyleManager::ResetStyles()
  * Registers the StyleManager configuration schema without
  * requiring a manager instance to exist.
  */
-void StyleManager::RegisterConfigSchema(IPreferenceService* preferenceService)
+void StyleManager::RegisterConfigSchema(IConfigurationManager* preferenceService)
 {
     if (!preferenceService) return;
 
@@ -349,7 +349,7 @@ void StyleManager::RegisterConfigSchema(IPreferenceService* preferenceService)
  * New code path uses static RegisterConfigSchema instead.
  * Can be removed once all components are migrated.
  */
-void StyleManager::RegisterConfig(IPreferenceService* preferenceService)
+void StyleManager::RegisterConfig(IConfigurationManager* preferenceService)
 {
     // During migration, just delegate to static method
     RegisterConfigSchema(preferenceService);

@@ -2,7 +2,7 @@
 
 #include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
-#include "interfaces/i_preference_service.h"
+#include "interfaces/i_configuration_manager.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
 #include "definitions/configs.h"
@@ -54,8 +54,8 @@ public:
     void ClearPendingAction();
 
     // Configuration management
-    static void RegisterConfigSchema(IPreferenceService* preferenceService);
-    void SetPreferenceService(IPreferenceService* preferenceService);
+    static void RegisterConfigSchema(IConfigurationManager* preferenceService);
+    void SetPreferenceService(IConfigurationManager* preferenceService);
 
     // ========== Public Data Members ==========
     // Button state machine (moved to public for StateToString access)
@@ -108,7 +108,7 @@ private:
     class IActionService* currentPanel_ = nullptr;
 
     // Preference service for configuration access
-    IPreferenceService* preferenceService_ = nullptr;
+    IConfigurationManager* preferenceService_ = nullptr;
 
     // Handler-owned sensor
     IGpioProvider* gpioProvider_;

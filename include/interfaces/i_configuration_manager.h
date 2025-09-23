@@ -7,7 +7,7 @@
 #include <functional>
 
 /**
- * @interface IPreferenceService
+ * @interface IConfigurationManager
  * @brief Modern dynamic configuration interface for component self-registration
  *
  * @details This interface provides a complete dynamic configuration system
@@ -28,10 +28,10 @@
  * - Sectioned storage organization
  * - No backwards compatibility - clean modern design
  */
-class IPreferenceService
+class IConfigurationManager
 {
 public:
-    virtual ~IPreferenceService() = default;
+    virtual ~IConfigurationManager() = default;
 
     // ========== Live Update Callback Types ==========
 

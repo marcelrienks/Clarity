@@ -6,7 +6,7 @@
 #include "components/key_component.h"
 #include "components/lock_component.h"
 #include "components/config_component.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_style_manager.h"
 #include "managers/error_manager.h"
 #include "definitions/constants.h"
 
@@ -37,7 +37,7 @@ ComponentFactory& ComponentFactory::Instance()
  * Instantiates a ClarityComponent with style service dependency.
  * Logs error and returns nullptr if allocation fails.
  */
-std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyleService* style)
+std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyleManager* style)
 {
     auto component = std::make_unique<ClarityComponent>(style);
     if (!component) {
@@ -57,7 +57,7 @@ std::unique_ptr<ClarityComponent> ComponentFactory::CreateClarityComponent(IStyl
  * Instantiates an OemOilPressureComponent for displaying oil pressure readings.
  * Returns as IComponent interface for polymorphic usage.
  */
-std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleService* style)
+std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleManager* style)
 {
     auto component = std::make_unique<OemOilPressureComponent>(style);
     if (!component) {
@@ -77,7 +77,7 @@ std::unique_ptr<IComponent> ComponentFactory::CreateOilPressureComponent(IStyleS
  * Instantiates an OemOilTemperatureComponent for displaying oil temperature readings.
  * Returns as IComponent interface for polymorphic usage.
  */
-std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(IStyleService* style)
+std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(IStyleManager* style)
 {
     auto component = std::make_unique<OemOilTemperatureComponent>(style);
     if (!component) {
@@ -97,7 +97,7 @@ std::unique_ptr<IComponent> ComponentFactory::CreateOilTemperatureComponent(ISty
  * Instantiates an ErrorComponent for displaying system errors.
  * Provides full error display functionality with navigation.
  */
-std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleService* style)
+std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleManager* style)
 {
     auto component = std::make_unique<ErrorComponent>(style);
     if (!component) {
@@ -117,7 +117,7 @@ std::unique_ptr<ErrorComponent> ComponentFactory::CreateErrorComponent(IStyleSer
  * Instantiates a KeyComponent for displaying key presence status.
  * Shows colored key icon based on ignition key state.
  */
-std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleService* style)
+std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleManager* style)
 {
     auto component = std::make_unique<KeyComponent>(style);
     if (!component) {
@@ -137,7 +137,7 @@ std::unique_ptr<KeyComponent> ComponentFactory::CreateKeyComponent(IStyleService
  * Instantiates a LockComponent for displaying security lock status.
  * Shows lock icon to indicate system security state.
  */
-std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleService* style)
+std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleManager* style)
 {
     auto component = std::make_unique<LockComponent>(style);
     if (!component) {
@@ -157,7 +157,7 @@ std::unique_ptr<LockComponent> ComponentFactory::CreateLockComponent(IStyleServi
  * Instantiates a ConfigComponent for configuration menu display.
  * Note: ConfigComponent doesn't use style service in constructor.
  */
-std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleService* style)
+std::unique_ptr<ConfigComponent> ComponentFactory::CreateConfigComponent(IStyleManager* style)
 {
     // ConfigComponent doesn't use style service in constructor
     auto component = std::make_unique<ConfigComponent>();

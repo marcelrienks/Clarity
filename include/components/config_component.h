@@ -1,8 +1,8 @@
 #pragma once
 
 #include "interfaces/i_component.h"
-#include "interfaces/i_panel_service.h"
-#include "interfaces/i_style_service.h"
+#include "interfaces/i_panel_manager.h"
+#include "interfaces/i_style_manager.h"
 #include "definitions/types.h"
 #include <functional>
 #include <string>
@@ -45,8 +45,8 @@ class ConfigComponent : public IComponent
     };
 
     // ========== Constructors and Destructor ==========
-    ConfigComponent(IPanelService* panelService = nullptr, 
-                   IStyleService* styleService = nullptr);
+    ConfigComponent(IPanelManager* panelService = nullptr, 
+                   IStyleManager* styleService = nullptr);
     ~ConfigComponent() = default;
     
     // ========== Public Interface Methods ==========
@@ -60,7 +60,7 @@ class ConfigComponent : public IComponent
     void Init(lv_obj_t *screen);
     
     // Set style service for theme-aware colors
-    void SetStyleService(IStyleService* styleService);
+    void SetStyleService(IStyleManager* styleService);
     
     // Update colors based on current theme
     void UpdateThemeColors();
@@ -99,8 +99,8 @@ class ConfigComponent : public IComponent
     std::string currentTitle_ = "Configuration";
     
     // Dependency-injected interfaces for direct calls
-    IPanelService* panelService_ = nullptr;
-    IStyleService* styleService_ = nullptr;
+    IPanelManager* panelService_ = nullptr;
+    IStyleManager* styleService_ = nullptr;
 
     // Constants
     static constexpr int VISIBLE_ITEMS = 5;
