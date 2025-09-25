@@ -28,13 +28,7 @@
  */
 
 // Include ESP32 logging system
-#if defined(ARDUINO_ARCH_ESP32)
     #include <esp32-hal-log.h>
-#else
-    // Fallback for non-ESP32 builds (testing/simulation)
-    #include <stdio.h>
-    #define log_i(format, ...) printf("[I] " format "\n", ##__VA_ARGS__)
-#endif
 
 //=============================================================================
 // TEST LOGGING

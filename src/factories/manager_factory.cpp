@@ -7,9 +7,7 @@
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "sensors/button_sensor.h"
-#ifdef CLARITY_DEBUG
 #include "sensors/gpio_sensor.h"
-#endif
 #include "definitions/types.h"
 #include <esp32-hal-log.h>
 

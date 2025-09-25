@@ -12,11 +12,7 @@
  */
 
 // System/Library Includes
-#ifdef LVGL_MOCK
-    #include "lvgl_mock.h"
-#else
     #include <lvgl.h>
-#endif
 
 #include <cstdint>
 
