@@ -73,10 +73,9 @@ void OilTemperatureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Load configuration and register callbacks (schema already registered at startup)
+    // Load configuration (schema already registered at startup)
     if (configurationManager_) {
         LoadConfiguration();
-        RegisterLiveUpdateCallbacks();
         log_i("OilTemperatureSensor initialized with configuration");
     }
 
@@ -335,53 +334,3 @@ void OilTemperatureSensor::RegisterConfig(IConfigurationManager* configurationMa
     RegisterConfigSchema(configurationManager);
 }
 
-/**
- * @brief Register callbacks for live configuration updates
- * @details Sets up real-time response to configuration changes without requiring restart
- * Implements live update system from dynamic-config-implementation.md Phase 4
- */
-void OilTemperatureSensor::RegisterLiveUpdateCallbacks() {
-    if (!configurationManager_) return;
-
-    // Register callback to watch for changes to oil_temperature section
-    // Lambda captures 'this' to allow access to sensor methods
-    auto callback = [this](const std::string& fullKey,
-                          const std::optional<Config::ConfigValue>& oldValue,
-                          const Config::ConfigValue& newValue) {
-
-        // Handle temperature unit change (C/F) - immediate effect on readings
-        if (fullKey == CONFIG_UNIT) {
-            if (auto newUnit = configurationManager_->GetValue<std::string>(newValue)) {
-                SetTargetUnit(*newUnit);
-                log_i("Oil temperature unit changed to: %s", newUnit->c_str());
-            }
-        }
-
-        // Handle update rate change - controls sensor reading frequency
-        else if (fullKey == CONFIG_UPDATE_RATE) {
-            if (auto newRate = configurationManager_->GetValue<int>(newValue)) {
-                SetUpdateRate(*newRate);
-                log_i("Oil temperature update rate changed to: %d ms", *newRate);
-            }
-        }
-
-        // Handle calibration offset change
-        else if (fullKey == CONFIG_OFFSET) {
-            if (auto newOffset = configurationManager_->GetValue<float>(newValue)) {
-                calibrationOffset_ = *newOffset;
-                log_i("Oil temperature calibration offset changed to: %.2f", *newOffset);
-            }
-        }
-
-        // Handle calibration scale change
-        else if (fullKey == CONFIG_SCALE) {
-            if (auto newScale = configurationManager_->GetValue<float>(newValue)) {
-                calibrationScale_ = *newScale;
-                log_i("Oil temperature calibration scale changed to: %.2f", *newScale);
-            }
-        }
-    };
-
-    // Register for all oil_temperature section changes
-    configCallbackId_ = configurationManager_->RegisterChangeCallback("oil_temperature", callback);
-}

@@ -65,8 +65,6 @@ class OilPressureSensor : public BaseSensor, public IConfig
     // Static schema registration for self-registering pattern
     static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
-    void RegisterLiveUpdateCallbacks();
-
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE_SENSOR;
     static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_PRESSURE_UNIT;
@@ -105,5 +103,4 @@ class OilPressureSensor : public BaseSensor, public IConfig
     int32_t previousChangeReading_ = 0;  // For HasStateChanged() separate tracking
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
-    uint32_t configCallbackId_ = 0;  // For live update callback management
 };

@@ -73,10 +73,9 @@ void OilPressureSensor::Init()
     analogReadResolution(12);       // 12-bit resolution (0-4095)
     analogSetAttenuation(ADC_11db); // 0-3.3V range
 
-    // Load configuration and register callbacks (schema already registered at startup)
+    // Load configuration (schema already registered at startup)
     if (configurationManager_) {
         LoadConfiguration();
-        RegisterLiveUpdateCallbacks();
         log_i("OilPressureSensor initialized with configuration");
     }
 
@@ -339,56 +338,3 @@ void OilPressureSensor::RegisterConfig(IConfigurationManager* configurationManag
     RegisterConfigSchema(configurationManager);
 }
 
-/**
- * @brief Registers live update callbacks for real-time configuration changes
- *
- * Sets up callback handlers that respond immediately to configuration changes
- * in the dynamic UI. Enables real-time tuning of sensor parameters including
- * unit changes, update rate adjustments, and calibration modifications without
- * requiring a system restart. This provides a seamless user experience for
- * sensor calibration and adjustment.
- */
-void OilPressureSensor::RegisterLiveUpdateCallbacks() {
-    if (!configurationManager_) return;
-
-    // Register callback for our section changes
-    auto callback = [this](const std::string& fullKey,
-                          const std::optional<Config::ConfigValue>& oldValue,
-                          const Config::ConfigValue& newValue) {
-
-        // Handle unit change
-        if (fullKey == CONFIG_UNIT) {
-            if (auto newUnit = configurationManager_->GetValue<std::string>(newValue)) {
-                SetTargetUnit(*newUnit);
-                log_i("Oil pressure unit changed to: %s", newUnit->c_str());
-            }
-        }
-
-        // Handle update rate change
-        else if (fullKey == CONFIG_UPDATE_RATE) {
-            if (auto newRate = configurationManager_->GetValue<int>(newValue)) {
-                SetUpdateRate(*newRate);
-                log_i("Oil pressure update rate changed to: %d ms", *newRate);
-            }
-        }
-
-        // Handle calibration offset change
-        else if (fullKey == CONFIG_OFFSET) {
-            if (auto newOffset = configurationManager_->GetValue<float>(newValue)) {
-                calibrationOffset_ = *newOffset;
-                log_i("Oil pressure calibration offset changed to: %.2f", *newOffset);
-            }
-        }
-
-        // Handle calibration scale change
-        else if (fullKey == CONFIG_SCALE) {
-            if (auto newScale = configurationManager_->GetValue<float>(newValue)) {
-                calibrationScale_ = *newScale;
-                log_i("Oil pressure calibration scale changed to: %.2f", *newScale);
-            }
-        }
-    };
-
-    // Register for all oil_pressure section changes
-    configCallbackId_ = configurationManager_->RegisterChangeCallback("oil_pressure", callback);
-}
