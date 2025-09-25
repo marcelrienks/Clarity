@@ -1,6 +1,5 @@
 #pragma once
 
-#include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
@@ -25,7 +24,7 @@ class GpioSensor;
  * @priority_system Implements priority-based blocking with same-type restoration
  * @memory_optimization Fixed-size trigger array for ESP32 safety
  */
-class TriggerHandler : public IHandler
+class TriggerHandler
 {
 public:
     // ========== Constructors and Destructor ==========
@@ -33,9 +32,9 @@ public:
     ~TriggerHandler();
     
     // ========== Public Interface Methods ==========
-    // IHandler interface - new interrupt system only
-    void Process() override;
-    
+    // Main trigger processing method
+    void ProcessTriggers();
+
     // New Trigger system interface
     bool RegisterTrigger(const Trigger& trigger);
     
@@ -56,7 +55,9 @@ public:
     
 private:
     // ========== Private Methods ==========
-    void EvaluateTriggers();  // Called during UI idle only (by Process)
+    void ValidateTriggers();  // Evaluate trigger state changes
+    void ExecutePendingTriggers();  // Execute triggered actions
+
     // Core trigger processing
     void EvaluateIndividualTrigger(Trigger& trigger);
     void HandleTriggerActivation(Trigger& trigger);

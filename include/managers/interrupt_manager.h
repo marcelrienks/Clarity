@@ -1,6 +1,5 @@
 #pragma once
 
-#include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
@@ -43,7 +42,6 @@ public:
     bool RegisterTrigger(const Trigger& trigger);
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionHandler* panel);
-    void RegisterHandler(std::shared_ptr<IHandler> handler);
     void SetConfigurationManager(IConfigurationManager* configurationManager);
 
     /**
@@ -107,12 +105,7 @@ private:
     bool IsUIIdle() const;
 
     // ========== Private Data Members ==========
-    static constexpr size_t MAX_HANDLERS = 8;
-
-    // Handler management - Legacy and new handlers
-    std::vector<std::shared_ptr<IHandler>> handlers_;
-
-    // New Trigger/Action architecture handlers
+    // Trigger/Action architecture handlers
     std::shared_ptr<class TriggerHandler> triggerHandler_;
     std::shared_ptr<class ActionHandler> actionHandler_;
 

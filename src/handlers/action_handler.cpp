@@ -63,24 +63,19 @@ ActionHandler::~ActionHandler() {
 // ========== Public Interface Methods ==========
 
 /**
- * @brief Main processing loop for action detection and execution
+ * @brief Validate actions by processing button events continuously
  *
  * Called every main loop cycle to provide continuous button monitoring.
- * Updates button state machine, processes button events, detects button
- * actions, and executes any pending action.
+ * Updates button state machine and processes button events to detect actions.
+ * Does NOT execute pending actions - that is done by ExecutePendingActions() during UI IDLE only.
  * Designed for real-time responsiveness in automotive applications.
  */
-void ActionHandler::Process() {
+void ActionHandler::ValidateActions() {
     // Update button state machine
     UpdateButtonState();
 
     // Process button events and detect action type
     ProcessButtonEvents();
-
-    // Execute any pending action immediately
-    if (hasPendingAction_) {
-        ExecutePendingAction();
-    }
 }
 
 // REMOVED: RegisterAction method - no longer using action registry
@@ -126,12 +121,12 @@ bool ActionHandler::HasPendingAction() const {
  * we always execute the most recent user input. Clears the pending
  * action after execution.
  */
-void ActionHandler::ExecutePendingAction() {
+void ActionHandler::ExecutePendingActions() {
     if (!hasPendingAction_ || !currentPanel_) {
         return;
     }
 
-    log_i("ExecutePendingAction: Executing %s press",
+    log_i("ExecutePendingActions: Executing %s press",
           pendingActionType_ == ButtonAction::SHORT_PRESS ? UIStrings::ButtonActionStrings::SHORT : UIStrings::ButtonActionStrings::LONG);
 
     // Execute through panel methods

@@ -46,8 +46,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
     // Store GPIO provider reference
     gpioProvider_ = gpioProvider;
 
-    // Clear any existing handler storage
-    handlers_.clear();
 
     // Create new Trigger/Action architecture handlers
     triggerHandler_ = std::make_shared<TriggerHandler>(gpioProvider);
@@ -61,9 +59,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
         return;
     }
 
-    // Register handlers in legacy system
-    RegisterHandler(triggerHandler_);
-    RegisterHandler(actionHandler_);
 
     // Register all system-level triggers and actions
     RegisterSystemInterrupts();
@@ -84,14 +79,22 @@ void InterruptManager::Process()
         return;
     }
 
-    // Process Actions continuously for immediate responsiveness (button presses)
+    // Process Action validation continuously for immediate responsiveness (button event detection)
     if (actionHandler_) {
-        actionHandler_->Process();
+        actionHandler_->ValidateActions();
     }
 
-    // Process Triggers only during UI idle to avoid interfering with animations
-    if (IsUIIdle() && triggerHandler_) {
-        triggerHandler_->Process();
+    // Process execution only during UI idle to avoid interfering with animations
+    if (IsUIIdle()) {
+        // Execute pending Actions first
+        if (actionHandler_) {
+            actionHandler_->ExecutePendingActions();
+        }
+
+        // Then process Triggers
+        if (triggerHandler_) {
+            triggerHandler_->ProcessTriggers();
+        }
     }
 }
 
@@ -167,20 +170,6 @@ void InterruptManager::SetConfigurationManager(IConfigurationManager* configurat
     log_i("Set preference service in ActionHandler");
 }
 
-/**
- * @brief Register legacy interrupt handler (for backward compatibility)
- */
-void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
-{
-    if (!handler) {
-        log_e("Cannot register null handler");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
-                                            "Cannot register null handler");
-        return;
-    }
-
-    handlers_.push_back(handler);
-}
 
 /**
  * @brief Get total count of registered interrupts (triggers + actions)
