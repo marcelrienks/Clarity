@@ -127,8 +127,6 @@ public:
     std::string ToString(const Config::ConfigValue& value) const override;
     Config::ConfigValue FromString(const std::string& str, const Config::ConfigValue& templateValue) const override;
     bool IsNumeric(const Config::ConfigValue& value) const override;
-
-
     // Configuration Value Access Implementation
     std::optional<Config::ConfigValue> QueryConfigValue(const std::string& fullKey) const override;
     bool UpdateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) override;
@@ -164,8 +162,6 @@ private:
      * @return NVS namespace string (truncated if necessary)
      */
     std::string GetSectionNamespace(const std::string& sectionName) const;
-
-
 
     /**
      * @brief Validate integer value against range constraints

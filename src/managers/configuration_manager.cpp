@@ -75,7 +75,6 @@ void ConfigurationManager::AddSchema(void(*func)(IConfigurationManager*)) {
     }
 
     GetSchemaFunctions().push_back(func);
-    log_d("ConfigurationManager: Schema function added (total: %zu)", GetSchemaFunctions().size());
 }
 
 // ========== Public Interface Methods ==========

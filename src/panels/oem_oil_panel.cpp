@@ -206,14 +206,6 @@ void OemOilPanel::Load()
     
     // Final validation before the critical call
     
-    // Memory pattern check - write and verify a pattern
-    static const uint32_t MEMORY_PATTERN = 0xDEADBEEF;
-    uint32_t test_pattern = MEMORY_PATTERN;
-    if (test_pattern != MEMORY_PATTERN) {
-        log_e("Pattern changed from 0x%08X to 0x%08X!", MEMORY_PATTERN, test_pattern);
-        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
-                                                     "Memory corruption detected - pattern mismatch");
-    }
 
     lv_screen_load(screen_);
     

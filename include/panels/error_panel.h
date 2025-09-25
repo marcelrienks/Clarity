@@ -9,8 +9,6 @@
 #include "interfaces/i_style_manager.h"
 #include "managers/error_manager.h"
 #include "definitions/types.h"
-
-
 /**
  * @class ErrorPanel
  * @brief Application error display and management panel
@@ -51,8 +49,6 @@ class ErrorPanel : public IPanel
     void Init() override;
     void Load() override;
     void Update() override;
-
-
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     

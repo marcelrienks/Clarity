@@ -68,8 +68,6 @@ namespace UIConstants {
 }
 
 namespace UIStrings {
-
-
     // ========== Config Panel Action Types ==========
     namespace ActionTypes {
         static constexpr const char* ENTER_SECTION = "enter_section";
@@ -103,8 +101,6 @@ namespace UIStrings {
     namespace ConfigKeys {
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
     }
-
-
 
     // ========== Default Hint Text ==========
     namespace HintText {
@@ -153,8 +149,6 @@ namespace UIStrings {
         static constexpr const char* LEVEL_UNKNOWN = "UNKN";
     }
 }
-
-
 
 /*============================================================================*/
 /*                            STORAGE CONSTANTS                              */
@@ -361,8 +355,6 @@ namespace SensorConstants {
     static constexpr int32_t TEMPERATURE_MIN_CELSIUS = 0;   // 0°C minimum
     static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // 120°C maximum for oil temp
 }
-
-
 /*============================================================================*/
 /*                           HARDWARE CONSTANTS                              */
 /*============================================================================*/
@@ -398,4 +390,3 @@ namespace HardwareConstants {
         static constexpr const char* KEY_PRESENT = "key_present";
     }
 }
-

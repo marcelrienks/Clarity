@@ -3,8 +3,6 @@
 #include "panels/base_panel.h"
 #include "components/key_component.h"
 #include "definitions/constants.h"
-
-
 /**
  * @class KeyPanel
  * @brief Key status monitoring panel

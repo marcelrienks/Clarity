@@ -50,4 +50,3 @@ using Reading = std::variant<std::monostate, int32_t, double, std::string, bool>
 #include "definitions/enums.h"
 #include "definitions/ui_types.h"
 #include "definitions/state_types.h"
-

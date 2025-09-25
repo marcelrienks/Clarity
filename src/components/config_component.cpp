@@ -38,8 +38,6 @@ void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location
     log_v("Render() called");
     Init(screen);
 }
-
-
 /**
  * @brief Sets component value (not used for configuration menu)
  * @param value Integer value to set
@@ -116,8 +114,6 @@ void ConfigComponent::Init(lv_obj_t *screen)
                                                      "Screen object is null - cannot display configuration menu");
         return;
     }
-
-
     screen_ = screen;
     
     // Create main container using full 240x240 screen size (like ErrorComponent)
@@ -413,8 +409,6 @@ void ConfigComponent::UpdateMenuDisplay()
         log_w("Cannot update menu display - empty menu items or labels");
         return;
     }
-
-
     // Update menu items with scrolling effect
     for (int i = 0; i < VISIBLE_ITEMS && i < static_cast<int>(menuLabels_.size()); ++i)
     {

@@ -196,4 +196,3 @@ void ErrorManager::AutoDismissOldWarnings()
         }
     }
 }
-

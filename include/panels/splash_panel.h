@@ -11,8 +11,6 @@
 #include "interfaces/i_style_manager.h"
 #include "definitions/constants.h"
 #include <memory>
-
-
 /**
  * @class SplashPanel
  * @brief Startup splash screen with animated Clarity branding
@@ -51,8 +49,6 @@ class SplashPanel : public IPanel
     void Init() override;
     void Load() override;
     void Update() override;
-
-
     // IActionService Interface Implementation (inherited through IPanel)
     // Old function pointer methods removed - using direct HandleShortPress/HandleLongPress
     

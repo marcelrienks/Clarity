@@ -35,8 +35,6 @@ void ClarityComponent::Render(lv_obj_t *screen, const ComponentLocation &locatio
                                              "Cannot render - display provider is null");
         return;
     }
-
-
     lv_obj_t *splash = display->CreateLabel(screen);
     lv_label_set_text(splash, UIConstants::APP_NAME);
 

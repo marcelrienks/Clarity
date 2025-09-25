@@ -121,6 +121,5 @@ std::unique_ptr<IStorageProvider> ProviderFactory::CreateStorageProvider()
         return nullptr;
     }
 
-    log_d("ProviderFactory: StorageProvider created successfully");
     return provider;
 }

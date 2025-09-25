@@ -172,8 +172,6 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
     return manager;
 }
-
-
 /**
  * @brief Internal implementation for creating ConfigurationManager
  * @return Unique pointer to IConfigurationManager or nullptr on failure
@@ -201,7 +199,6 @@ std::unique_ptr<IConfigurationManager> ManagerFactory::CreateConfigurationManage
         return nullptr;
     }
 
-    log_d("ManagerFactory: ConfigurationManager created and initialized successfully");
     return manager;
 }
 
@@ -350,4 +347,3 @@ ErrorManager* ManagerFactory::CreateErrorManager()
 {
     return CreateErrorManagerImpl();
 }
-

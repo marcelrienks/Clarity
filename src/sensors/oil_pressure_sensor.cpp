@@ -307,7 +307,6 @@ void OilPressureSensor::RegisterConfigSchema(IConfigurationManager* configuratio
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
-        log_d("Oil pressure sensor schema already registered");
         return;
     }
 
@@ -337,4 +336,3 @@ void OilPressureSensor::RegisterConfig(IConfigurationManager* configurationManag
     // During migration, just delegate to static method
     RegisterConfigSchema(configurationManager);
 }
-

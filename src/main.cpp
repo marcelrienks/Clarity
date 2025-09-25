@@ -52,7 +52,6 @@ void SystemConfig::RegisterConfigSchema(IConfigurationManager* configurationMana
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
-        log_d("SystemConfig schema already registered");
         return;
     }
 
@@ -135,8 +134,6 @@ bool initializeServices()
         ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager creation failed");
         return false;
     }
-
-
     // Initialize StyleManager with user's theme preference
     std::string userTheme = Themes::DAY; // Default
     if (auto themeValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {

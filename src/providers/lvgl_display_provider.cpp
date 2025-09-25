@@ -105,4 +105,3 @@ lv_obj_t *LvglDisplayProvider::CreateImage(lv_obj_t *parent)
     return lv_image_create(parent);
 #endif
 }
-

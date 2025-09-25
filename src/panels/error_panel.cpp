@@ -101,8 +101,6 @@ void ErrorPanel::Init()
 void ErrorPanel::Load()
 {
     log_v("Load() called");
-
-
     // Component is now stack-allocated and initialized in constructor
     componentInitialized_ = true;
 
@@ -157,8 +155,6 @@ void ErrorPanel::Load()
 void ErrorPanel::Update()
 {
     log_v("Update() called");
-
-
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
@@ -225,8 +221,6 @@ void ErrorPanel::Update()
             return; // Exit early to prevent callback execution on replaced panel
         }
     }
-
-
     // Error panel updates are handled internally - no notification needed
 }
 
@@ -405,8 +399,6 @@ void ErrorPanel::SortErrorsBySeverity()
         });
     
 }
-
-
 /**
  * @brief Advances to the next error in the current error list
  *

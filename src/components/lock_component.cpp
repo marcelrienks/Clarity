@@ -38,8 +38,6 @@ void LockComponent::Render(lv_obj_t *screen, const ComponentLocation &location, 
                                              "Cannot render - display provider is null");
         return;
     }
-
-
     lockIcon_ = display->CreateImage(screen);
     lv_image_set_src(lockIcon_, &lock_alt_solid);
 

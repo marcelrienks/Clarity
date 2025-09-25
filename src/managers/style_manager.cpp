@@ -111,8 +111,6 @@ void StyleManager::SetTheme(const char *theme)
     {
         return;
     }
-
-
     // Note: THEME member is no longer updated here - it serves only as a fallback
     // The source of truth is always the preference service
 
@@ -327,7 +325,6 @@ void StyleManager::RegisterConfigSchema(IConfigurationManager* configurationMana
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
-        log_d("StyleManager schema already registered");
         return;
     }
 

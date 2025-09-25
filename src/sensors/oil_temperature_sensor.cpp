@@ -301,7 +301,6 @@ void OilTemperatureSensor::RegisterConfigSchema(IConfigurationManager* configura
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
-        log_d("Oil temperature sensor schema already registered");
         return;
     }
 
@@ -333,4 +332,3 @@ void OilTemperatureSensor::RegisterConfig(IConfigurationManager* configurationMa
     // During migration, just delegate to static method
     RegisterConfigSchema(configurationManager);
 }
-

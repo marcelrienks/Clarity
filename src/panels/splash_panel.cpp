@@ -205,8 +205,6 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);
 }
-
-
 /**
  * @brief Injects manager service dependencies
  * @param panelManager Panel service for UI state management and panel operations
@@ -240,7 +238,6 @@ void SplashPanel::RegisterConfigSchema(IConfigurationManager* configurationManag
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
-        log_d("SplashPanel schema already registered");
         return;
     }
 
