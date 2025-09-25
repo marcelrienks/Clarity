@@ -93,6 +93,7 @@ void StyleManager::InitializeStyles()
     // Apply theme from preferences
     if (configurationManager_) {
         LoadConfiguration();
+        RegisterConfigCallback();
     } else {
         SetTheme(theme_.c_str());
     }
@@ -373,4 +374,31 @@ void StyleManager::LoadConfiguration()
     }
 
     log_i("Loaded style configuration: theme=%s", theme_.c_str());
+}
+
+/**
+ * @brief Refresh configuration in response to live config changes
+ */
+void StyleManager::RefreshConfig()
+{
+    log_i("StyleManager: Refreshing config due to live update");
+    LoadConfiguration();
+}
+
+/**
+ * @brief Register callback for live configuration updates
+ */
+void StyleManager::RegisterConfigCallback()
+{
+    if (!configurationManager_) return;
+
+    // Register callback that calls RefreshConfig when our section changes
+    auto callback = [this](const std::string& fullKey,
+                          const std::optional<Config::ConfigValue>& oldValue,
+                          const Config::ConfigValue& newValue) {
+        RefreshConfig();
+    };
+
+    configurationManager_->RegisterChangeCallback(CONFIG_SECTION, callback);
+    log_i("StyleManager: Registered config callback for section: %s", CONFIG_SECTION);
 }
