@@ -262,7 +262,12 @@ bool OilPressureSensor::HasStateChanged()
  */
 void OilPressureSensor::LoadConfiguration()
 {
-    if (!configurationManager_) return;
+    if (!configurationManager_) {
+        log_e("OilPressureSensor::LoadConfiguration: ConfigurationManager is null - cannot load sensor configuration!");
+        ErrorManager::Instance().ReportCriticalError("OilPressureSensor",
+                                                     "ConfigManager null - using default settings");
+        return;
+    }
 
     // Load using type-safe config system with static constants
     if (auto unitValue = configurationManager_->QueryConfig<std::string>(CONFIG_UNIT)) {
@@ -303,7 +308,12 @@ void OilPressureSensor::LoadConfiguration()
  */
 void OilPressureSensor::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("OilPressureSensor::RegisterConfigSchema: ConfigurationManager is null - sensor config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("OilPressureSensor",
+                                                     "ConfigManager null - pressure sensor config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {

@@ -256,7 +256,12 @@ bool OilTemperatureSensor::HasStateChanged()
  */
 void OilTemperatureSensor::LoadConfiguration()
 {
-    if (!configurationManager_) return;
+    if (!configurationManager_) {
+        log_e("OilTemperatureSensor::LoadConfiguration: ConfigurationManager is null - cannot load sensor configuration!");
+        ErrorManager::Instance().ReportCriticalError("OilTemperatureSensor",
+                                                     "ConfigManager null - using default settings");
+        return;
+    }
 
     // Load using type-safe config system with static constants
     if (auto unitValue = configurationManager_->QueryConfig<std::string>(CONFIG_UNIT)) {
@@ -297,7 +302,12 @@ void OilTemperatureSensor::LoadConfiguration()
  */
 void OilTemperatureSensor::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("OilTemperatureSensor::RegisterConfigSchema: ConfigurationManager is null - sensor config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("OilTemperatureSensor",
+                                                     "ConfigManager null - temp sensor config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {

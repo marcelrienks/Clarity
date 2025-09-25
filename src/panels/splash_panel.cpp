@@ -77,7 +77,7 @@ void SplashPanel::Init()
     if (!displayProvider_)
     {
         log_e("SplashPanel requires display provider");
-        ErrorManager::Instance().ReportCriticalError("SplashPanel", "Cannot initialize - display provider is null");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::SPLASH, "Cannot initialize - display provider is null");
         return;
     }
 
@@ -142,6 +142,14 @@ void SplashPanel::fade_in_timer_callback(lv_timer_t *fadeInTimer)
     // Get the screen pointer that was added to the user data
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeInTimer));
 
+    if (!panel) {
+        log_e("SplashPanel::fade_in_timer_callback: Panel is null from timer user data!");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::SPLASH,
+                                                     "Timer callback received null panel - splash fade-in broken");
+        lv_timer_del(fadeInTimer);
+        return;
+    }
+
     // During display period, no animations are running - set IDLE to allow actions
     if (panel->panelManager_)
     {
@@ -168,6 +176,14 @@ void SplashPanel::display_timer_callback(lv_timer_t *fadeOutTimer)
     log_v("display_timer_callback() called");
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
+
+    if (!panel) {
+        log_e("SplashPanel::display_timer_callback: Panel is null from timer user data!");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::SPLASH,
+                                                     "Timer callback received null panel - splash display broken");
+        lv_timer_del(fadeOutTimer);
+        return;
+    }
 
     // About to start fade-out animation - set BUSY
     if (panel->panelManager_)
@@ -199,6 +215,22 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     log_v("fade_out_timer_callback() called");
     // Get the splash panel instance
     auto *panel = static_cast<SplashPanel *>(lv_timer_get_user_data(fadeOutTimer));
+
+    if (!panel) {
+        log_e("SplashPanel::fade_out_timer_callback: Panel is null from timer user data!");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::SPLASH,
+                                                     "Timer callback received null panel - splash animation broken");
+        lv_timer_del(fadeOutTimer);
+        return;
+    }
+
+    if (!panel->panelManager_) {
+        log_e("SplashPanel::fade_out_timer_callback: PanelManager is null!");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::SPLASH,
+                                                     "PanelManager is null - cannot complete splash transition");
+        lv_timer_del(fadeOutTimer);
+        return;
+    }
 
     static_cast<PanelManager*>(panel->panelManager_)->OnPanelLoadComplete(panel);
 
@@ -234,7 +266,12 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
  */
 void SplashPanel::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("SplashPanel::RegisterConfigSchema: ConfigurationManager is null - splash config registration failed!");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::SPLASH,
+                                                     "ConfigurationManager is null - splash panel configuration cannot be registered");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {

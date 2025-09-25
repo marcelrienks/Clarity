@@ -82,6 +82,10 @@ void InterruptManager::Process()
     // Process Action validation continuously for immediate responsiveness (button event detection)
     if (actionHandler_) {
         actionHandler_->ValidateActions();
+    } else {
+        log_e("InterruptManager::Process: ActionHandler is null - button input is non-functional!");
+        ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                     "ActionHandler is null - button input system is broken");
     }
 
     // Process execution only during UI idle to avoid interfering with animations
@@ -89,11 +93,19 @@ void InterruptManager::Process()
         // Execute pending Actions first
         if (actionHandler_) {
             actionHandler_->ExecutePendingActions();
+        } else {
+            log_e("InterruptManager::Process: ActionHandler is null during execution phase!");
+            ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                         "ActionHandler is null - cannot execute button actions");
         }
 
         // Then process Triggers
         if (triggerHandler_) {
             triggerHandler_->ProcessTriggers();
+        } else {
+            log_e("InterruptManager::Process: TriggerHandler is null - trigger system is non-functional!");
+            ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                         "TriggerHandler is null - trigger system is broken");
         }
     }
 }

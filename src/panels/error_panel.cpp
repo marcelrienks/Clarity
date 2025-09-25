@@ -68,7 +68,7 @@ void ErrorPanel::Init()
     if (!displayProvider_ || !gpioProvider_)
     {
         log_e("ErrorPanel requires display and gpio providers");
-        ErrorManager::Instance().ReportCriticalError("ErrorPanel",
+        ErrorManager::Instance().ReportCriticalError(PanelNames::ERROR,
                                                      "Missing required providers - display or gpio provider is null");
         return;
     }
@@ -107,7 +107,7 @@ void ErrorPanel::Load()
     if (!displayProvider_)
     {
         log_e("ErrorPanel load requires display provider");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                              "Cannot render component - display provider is null");
         return;
     }
@@ -125,7 +125,7 @@ void ErrorPanel::Load()
     if (!screen_)
     {
         log_e("Screen is null, cannot load error panel");
-        ErrorManager::Instance().ReportCriticalError("ErrorPanel", "Cannot load panel - screen creation failed");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::ERROR, "Cannot load panel - screen creation failed");
         // Error condition - no callback needed
         return;
     }
@@ -239,7 +239,7 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!event)
     {
         log_e("ShowPanelCompletionCallback: event is null!");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "ShowPanelCompletionCallback received null event");
         return;
     }
@@ -257,14 +257,14 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
         else
         {
             log_e("ErrorPanel::ShowPanelCompletionCallback: panelManager_ is null!");
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                                 "PanelService is null in completion callback");
         }
     }
     else
     {
         log_e("ErrorPanel::ShowPanelCompletionCallback: thisInstance is null!");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Instance is null in completion callback");
     }
 }
@@ -294,7 +294,7 @@ static void ErrorPanelShortPress(void* panelContext)
     else
     {
         log_e("ErrorPanel: Cannot cycle errors - invalid context (null panel)");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Cannot cycle errors - invalid context");
     }
 }
@@ -312,7 +312,7 @@ static void ErrorPanelLongPress(void* panelContext)
     else
     {
         log_e("ErrorPanel: Cannot execute long press - invalid context (null panel)");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Cannot execute long press - invalid context");
     }
 }
@@ -325,7 +325,7 @@ static void ErrorPanelLongPress(void* panelContext)
  * button press is detected while this panel is active. The returned function
  * takes a panel context pointer and handles error cycling through the list.
  */
-// REMOVED: 
+ 
 /**
  * @brief Handles short button press events for error cycling
  *
@@ -434,7 +434,7 @@ void ErrorPanel::AdvanceToNextError()
     else
     {
         log_e("AdvanceToNextError: Error component is null - cannot update display");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Error component is null - cannot update display");
     }
     

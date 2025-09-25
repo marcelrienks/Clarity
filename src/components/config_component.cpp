@@ -493,7 +493,12 @@ void ConfigComponent::UpdateMenuDisplay()
  */
 void ConfigComponent::ApplyCenterItemStyle(lv_obj_t* label)
 {
-    if (!label) return;
+    if (!label) {
+        log_e("ConfigComponent::ApplyCenterItemStyle: Label is null - cannot apply center item styling!");
+        ErrorManager::Instance().ReportCriticalError("ConfigComponent",
+                                                     "Label object is null - config menu styling is broken");
+        return;
+    }
     
     // Center item - fully highlighted with bold styling
     lv_obj_set_style_text_color(label, GetThemeGradientColor(0, true), LV_PART_MAIN);

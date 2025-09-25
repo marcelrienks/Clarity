@@ -48,7 +48,12 @@ ErrorManager *errorManager;
  */
 void SystemConfig::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("SystemConfig::RegisterConfigSchema: ConfigurationManager is null - system config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("SystemConfig",
+                                                     "ConfigManager null - system config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
@@ -263,4 +268,3 @@ void loop()
     Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
 }
-//CLEANED

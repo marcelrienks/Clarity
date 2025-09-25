@@ -321,7 +321,12 @@ void StyleManager::ResetStyles()
  */
 void StyleManager::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("StyleManager::RegisterConfigSchema: ConfigurationManager is null - style config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "ConfigManager null - style config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
@@ -358,7 +363,12 @@ void StyleManager::RegisterConfig(IConfigurationManager* configurationManager)
  */
 void StyleManager::LoadConfiguration()
 {
-    if (!configurationManager_) return;
+    if (!configurationManager_) {
+        log_e("StyleManager::LoadConfiguration: ConfigurationManager is null - cannot load style configuration!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "ConfigManager null - using default styles");
+        return;
+    }
 
     // Register configuration first
     RegisterConfig(configurationManager_);
@@ -387,7 +397,12 @@ void StyleManager::RefreshConfig()
  */
 void StyleManager::RegisterConfigCallback()
 {
-    if (!configurationManager_) return;
+    if (!configurationManager_) {
+        log_e("StyleManager::RegisterConfigCallback: ConfigurationManager is null - cannot register config callbacks!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "ConfigurationManager is null - style updates will not work");
+        return;
+    }
 
     // Register callback that calls RefreshConfig when our section changes
     auto callback = [this](const std::string& fullKey,

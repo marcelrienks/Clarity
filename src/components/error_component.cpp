@@ -293,8 +293,6 @@ void ErrorComponent::DisplayCurrentError()
     lv_label_set_text(navigationIndicator_, UIStrings::ErrorUI::NAVIGATION_INSTRUCTIONS);
 }
 
-// Note: Deprecated methods CycleToNextError() and HandleCycleButtonPress() removed.
-// ErrorPanel now handles all cycling logic via HandleShortPress() -> AdvanceToNextError()
 
 // ========== Helper Methods ==========
 

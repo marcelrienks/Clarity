@@ -269,6 +269,13 @@ void PanelManager::TriggerPanelSwitchCallback(const char *triggerId)
  * proper panel lifecycle management and transition coordination.
  */
 void PanelManager::OnPanelLoadComplete(IPanel* panel) {
+    if (!panel) {
+        log_e("PanelManager::OnPanelLoadComplete: Panel is null!");
+        ErrorManager::Instance().ReportCriticalError("PanelManager",
+                                                     "OnPanelLoadComplete called with null panel - transition broken");
+        return;
+    }
+
     log_i("Panel load completed for panel: %p", panel);
 
     // Check if this is a splash panel completion that should trigger target panel load

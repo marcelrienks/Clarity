@@ -78,8 +78,6 @@ void ActionHandler::ValidateActions() {
     ProcessButtonEvents();
 }
 
-// REMOVED: RegisterAction method - no longer using action registry
-// Actions are now handled directly through panel methods
 
 /**
  * @brief Sets the pending action, replacing any existing one
@@ -122,7 +120,14 @@ bool ActionHandler::HasPendingAction() const {
  * action after execution.
  */
 void ActionHandler::ExecutePendingActions() {
-    if (!hasPendingAction_ || !currentPanel_) {
+    if (!hasPendingAction_) {
+        return;  // No pending action is normal
+    }
+
+    if (!currentPanel_) {
+        log_e("ExecutePendingActions: No current panel set - button actions cannot be executed!");
+        ErrorManager::Instance().ReportCriticalError("ActionHandler",
+                                                     "No current panel set - button input is non-functional");
         return;
     }
 
@@ -140,14 +145,6 @@ void ActionHandler::ExecutePendingActions() {
     ClearPendingAction();
 }
 
-// /**
-//  * @brief Updates button state machine based on current GPIO reading
-//  *
-//  * Core state machine that tracks button press lifecycle from IDLE through
-//  * PRESSED to RELEASED or LONG_PRESS_TRIGGERED. Handles timing capture for
-//  * press duration calculation and provides debug logging for automotive
-//  * diagnostics. Essential for reliable button event detection.
-// */
 void ActionHandler::UpdateButtonState() {
     bool current_pressed = IsButtonPressed();
     unsigned long current_time = millis();
@@ -240,8 +237,6 @@ void ActionHandler::ProcessButtonEvents() {
     // Long press is already handled in UpdateButtonState when threshold is reached
 }
 
-// Removed DetectLongPressDuringHold - no longer needed as long press
-// is now handled directly in UpdateButtonState when threshold is reached
 
 /**
  * @brief Captures button press start time for duration calculation
@@ -362,7 +357,12 @@ void ActionHandler::ClearCurrentPanel() {
  */
 void ActionHandler::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("ActionHandler::RegisterConfigSchema: ConfigurationManager is null - button config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("ActionHandler",
+                                                     "ConfigManager null - button config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::BUTTON_SENSOR)) {

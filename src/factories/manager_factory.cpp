@@ -132,7 +132,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
     {
         log_e("ManagerFactory: Cannot create PanelManager - IConfigurationManager is null");
         ErrorManager::Instance().ReportCriticalError(
-            "ManagerFactory", "Cannot create PanelManager - PreferenceService dependency is null");
+            "ManagerFactory", "Cannot create PanelManager - ConfigManager null");
         return nullptr;
     }
 

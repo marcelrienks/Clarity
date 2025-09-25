@@ -83,10 +83,6 @@
 // are controlled by CORE_DEBUG_LEVEL and remain unchanged.
 // Only log_t() is controlled by the TEST_LOGS flag.
 
-// Optional: With ESP32-style timestamp (uncomment to use instead of above)
-// #ifdef TEST_LOGS
-//     #define log_t(format, ...) printf("[%7u][T] " format "\n", (unsigned)millis(), ##__VA_ARGS__)
-// #endif
 
 //=============================================================================
 // USAGE EXAMPLES

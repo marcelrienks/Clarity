@@ -67,7 +67,7 @@ void ConfigPanel::Init()
     if (!displayProvider_)
     {
         log_e("ConfigPanel requires display provider");
-        ErrorManager::Instance().ReportCriticalError("ConfigPanel", "Missing required display provider");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::CONFIG, "Missing required display provider");
         return;
     }
 

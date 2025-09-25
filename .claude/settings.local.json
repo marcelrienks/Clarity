@@ -62,7 +62,8 @@
       "Read(//mnt/c/Users/marcelr/OneDrive - Network International LLC/Pictures/Screenshots/**)",
       "Bash(./remove_duplicates.sh)",
       "Bash(do echo \"=== $interface ===\")",
-      "Bash(do echo \"=== $iface ===\")"
+      "Bash(do echo \"=== $iface ===\")",
+      "Bash(while read line)"
     ],
     "deny": [],
     "ask": []
