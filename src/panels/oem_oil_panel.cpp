@@ -85,12 +85,8 @@ OemOilPanel::~OemOilPanel()
     }
 }
 
-// Core Functionality Methods
+// ========== Public Interface Methods ==========
 
-/**
- * @brief Initialize the panel for showing Oil related information
- * Creates screen and initializes sensors with sentinel values
- */
 /**
  * @brief Initializes OEM oil panel UI structure and sensor configuration
  *
@@ -142,10 +138,6 @@ void OemOilPanel::Init()
     log_i("OemOilPanel initialization completed");
 }
 
-/**
- * @brief Load the panel with component rendering and screen display
- * @param callbackFunction to be called when the panel load is completed
- */
 /**
  * @brief Loads OEM oil panel UI components and starts sensor monitoring
  *
@@ -230,9 +222,6 @@ void OemOilPanel::Load()
 }
 
 /**
- * @brief Update the reading on the screen
- */
-/**
  * @brief Updates OEM oil panel with current sensor readings and animations
  *
  * Monitors for theme changes, applies sensor settings periodically, and updates
@@ -275,7 +264,7 @@ void OemOilPanel::Update()
     }
 }
 
-// Private Methods
+// ========== Private Methods ==========
 
 /**
  * @brief Update the oil pressure reading on the screen
@@ -574,7 +563,7 @@ Action OemOilPanel::GetLongPressAction()
 }
 */
 
-// SetManagers and SetConfigurationManager removed - using constructor injection
+// ========== Configuration Methods ==========
 
 /**
  * @brief Apply current sensor settings from preferences directly
@@ -643,7 +632,7 @@ void OemOilPanel::ApplyCurrentSensorSettings()
     }
 }
 
-// Static Callback Methods
+// ========== Static Callback Methods ==========
 
 /**
  * @brief The callback to be run once show panel has completed
@@ -766,7 +755,7 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
     thisInstance->oemOilTemperatureComponent_.SetValue(value);
 }
 
-// Value mapping methods
+// ========== Value Mapping Methods ==========
 
 /**
  * @brief Map oil pressure sensor value to display scale
@@ -925,14 +914,30 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     return mappedValue;
 }
 
-// IActionService Interface Implementation
+// ========== IActionService Interface Implementation ==========
 
+/**
+ * @brief Static function for handling short button press during oil monitoring
+ * @param panelContext Pointer to the oil panel instance (unused)
+ *
+ * Currently provides no action for short button presses during oil monitoring.
+ * The OEM oil panel is primarily a monitoring display without direct short press
+ * interaction functionality.
+ */
 static void OemOilPanelShortPress(void* panelContext)
 {
     log_v("OemOilPanelShortPress() called");
     // No action for short press on oil panel
 }
 
+/**
+ * @brief Static function for handling long button press during oil monitoring
+ * @param panelContext Pointer to the oil panel instance
+ *
+ * Handles long button press events by navigating to the configuration panel.
+ * Provides safe casting and null pointer checking before delegating to the
+ * instance method for panel navigation and settings access.
+ */
 static void OemOilPanelLongPress(void* panelContext)
 {
     log_v("OemOilPanelLongPress() called");
@@ -945,23 +950,7 @@ static void OemOilPanelLongPress(void* panelContext)
     }
 }
 
-/**
- * @brief Gets the short press callback function for this panel
- * @return Function pointer to the short press handler
- *
- * Returns the static callback function for short button presses. Currently
- * the oil panel does not respond to short presses, so this returns a no-op
- * function that maintains the interface contract.
- */
- 
-/**
- * @brief Handles long button press events for panel navigation
- *
- * Processes long button press events by navigating to the configuration panel.
- * This provides users with access to system settings and calibration options
- * from the main oil monitoring display. Includes error handling for cases where
- * the panel service is not available.
- */
+// ========== Action Handler Methods ==========
 
 /**
  * @brief Handles short button press during oil monitoring display
@@ -986,6 +975,8 @@ void OemOilPanel::HandleLongPress()
         log_w("OemOilPanel: Cannot load config panel - panelManager not available");
     }
 }
+
+// ========== Helper Methods ==========
 
 /**
  * @brief Calculate deadband values from configuration percentiles

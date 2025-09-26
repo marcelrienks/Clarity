@@ -148,6 +148,7 @@ std::optional<Config::ConfigSection> StorageProvider::GetConfigSection(const std
 
     return std::nullopt;
 }
+
 /**
  * @brief Save a specific configuration section to NVS storage
  * @param sectionName Name of the section to persist

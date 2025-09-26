@@ -15,7 +15,7 @@ static bool splash_panel_registered = []() {
     return true;
 }();
 
-// Constructors and Destructors
+// ========== Constructors and Destructor ==========
 
 /**
  * @brief Constructs a splash panel with required dependencies
@@ -60,7 +60,7 @@ SplashPanel::~SplashPanel()
     // Component is now stack-allocated and will be automatically destroyed
 }
 
-// Core Functionality Methods
+// ========== Public Interface Methods ==========
 
 /**
  * @brief Initializes the screen with component and creates blank screens for animation transitions
@@ -126,7 +126,7 @@ void SplashPanel::Update()
     // Splash panel doesn't need regular updates - animation handles its own state
 }
 
-// Static Callback Methods
+// ========== Static Callback Methods ==========
 
 /**
  * @brief Callback function for fade-in animation completion
@@ -237,24 +237,8 @@ void SplashPanel::fade_out_timer_callback(lv_timer_t *fadeOutTimer)
     // Remove the fade_out_timer after transition, this replaces having to set a repeat on the animation_timer
     lv_timer_del(fadeOutTimer);
 }
-/**
- * @brief Injects manager service dependencies
- * @param panelManager Panel service for UI state management and panel operations
- * @param styleManager Style service for theme management (updated if different)
- *
- * Updates the panel and style service references for runtime services.
- * Style service is already set in constructor but can be updated if a
- * different instance is provided during panel lifecycle.
- */
 
-/**
- * @brief Injects preference service dependency for configurable splash duration
- * @param configurationManager Preference service for reading splash configuration
- *
- * Enables the splash panel to read configurable splash duration from
- * preferences. The splash duration determines the total time for fade-in,
- * display, and fade-out animations.
- */
+// ========== Configuration Methods ==========
 
 /**
  * @brief Static method to register configuration schema without instance
@@ -327,7 +311,7 @@ int SplashPanel::GetAnimationTime() const
     return animTime;
 }
 
-// IActionService Interface Implementation
+// ========== IActionService Interface Implementation ==========
 
 /**
  * @brief Static function for handling short button press during splash
@@ -363,14 +347,8 @@ static void SplashPanelLongPress(void* panelContext)
     }
 }
 
-/**
- * @brief Gets the short press handler function pointer
- * @return Function pointer for short press handling
- *
- * Part of the IActionService interface. Returns the static function that
- * handles short press events for this panel. Short press is disabled during
- * splash screen to maintain animation integrity.
- */
+// ========== Action Handler Methods ==========
+
 /**
  * @brief Handles short button press during splash screen display
  *

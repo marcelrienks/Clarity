@@ -38,6 +38,7 @@ void ConfigComponent::Render(lv_obj_t *screen, const ComponentLocation &location
     log_v("Render() called");
     Init(screen);
 }
+
 /**
  * @brief Sets component value (not used for configuration menu)
  * @param value Integer value to set

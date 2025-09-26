@@ -146,88 +146,228 @@ void ConfigurationManager::RegisterAllSchemas() {
 
 // ========== IConfigurationManager Implementation ==========
 
+/**
+ * @brief Register a configuration section with the manager
+ * @param section Configuration section containing items and metadata
+ * @return true if registration successful, false otherwise
+ *
+ * Delegates to the storage provider to register the section schema.
+ * This defines the available configuration items and their constraints.
+ */
 bool ConfigurationManager::RegisterConfigSection(const Config::ConfigSection& section) {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->RegisterConfigSection(section);
 }
 
+/**
+ * @brief Get list of all registered configuration section names
+ * @return Vector of section names, empty if no sections registered
+ *
+ * Returns the names of all configuration sections that have been registered
+ * with the manager. Used by UI components to enumerate available sections.
+ */
 std::vector<std::string> ConfigurationManager::GetRegisteredSectionNames() const {
     if (!EnsureStorageReady()) return {};
     return storageProvider_->GetRegisteredSectionNames();
 }
 
+/**
+ * @brief Retrieve a specific configuration section by name
+ * @param sectionName Name of the section to retrieve
+ * @return Optional containing the section if found, nullopt otherwise
+ *
+ * Returns the complete configuration section including all items and metadata.
+ * Used by UI components to build configuration interfaces.
+ */
 std::optional<Config::ConfigSection> ConfigurationManager::GetConfigSection(const std::string& sectionName) const {
     if (!EnsureStorageReady()) return std::nullopt;
     return storageProvider_->GetConfigSection(sectionName);
 }
 
+/**
+ * @brief Save a configuration section to persistent storage
+ * @param sectionName Name of the section to save
+ * @return true if save successful, false otherwise
+ *
+ * Persists the current values of all items in the specified section to NVS.
+ * This ensures configuration changes survive device restarts.
+ */
 bool ConfigurationManager::SaveConfigSection(const std::string& sectionName) {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->SaveConfigSection(sectionName);
 }
 
+/**
+ * @brief Load a configuration section from persistent storage
+ * @param sectionName Name of the section to load
+ * @return true if load successful, false otherwise
+ *
+ * Restores saved values for all items in the specified section from NVS.
+ * Uses default values for any items not found in storage.
+ */
 bool ConfigurationManager::LoadConfigSection(const std::string& sectionName) {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->LoadConfigSection(sectionName);
 }
 
+/**
+ * @brief Save all registered configuration sections to persistent storage
+ * @return true if all sections saved successfully, false otherwise
+ *
+ * Persists the current values of all registered configuration sections to NVS.
+ * Provides a convenient way to save the entire configuration state at once.
+ */
 bool ConfigurationManager::SaveAllConfigSections() {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->SaveAllConfigSections();
 }
 
+/**
+ * @brief Load all registered configuration sections from persistent storage
+ * @return true if all sections loaded successfully, false otherwise
+ *
+ * Restores saved values for all registered configuration sections from NVS.
+ * Called during initialization to restore the complete configuration state.
+ */
 bool ConfigurationManager::LoadAllConfigSections() {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->LoadAllConfigSections();
 }
 
+/**
+ * @brief Validate a configuration value against its schema constraints
+ * @param fullKey Fully qualified key (section.item) to validate
+ * @param value Configuration value to validate
+ * @return true if value is valid for the key, false otherwise
+ *
+ * Checks if the provided value meets the constraints defined in the schema
+ * for the specified configuration item. Used to prevent invalid values.
+ */
 bool ConfigurationManager::ValidateConfigValue(const std::string& fullKey, const Config::ConfigValue& value) const {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->ValidateConfigValue(fullKey, value);
 }
 
+/**
+ * @brief Register a callback function for configuration value changes
+ * @param fullKey Fully qualified key (section.item) to monitor
+ * @param callback Function to call when the value changes
+ * @return Callback ID for later removal, 0 if registration failed
+ *
+ * Enables components to be notified when specific configuration values change.
+ * The callback receives the old and new values for processing.
+ */
 uint32_t ConfigurationManager::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
     if (!EnsureStorageReady()) return 0;
     return storageProvider_->RegisterChangeCallback(fullKey, callback);
 }
 
+/**
+ * @brief Check if a configuration schema is registered
+ * @param sectionName Name of the section to check
+ * @return true if schema is registered, false otherwise
+ *
+ * Verifies whether a configuration section schema has been registered.
+ * Used to prevent duplicate registrations and validate section existence.
+ */
 bool ConfigurationManager::IsSchemaRegistered(const std::string& sectionName) const {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->IsSchemaRegistered(sectionName);
 }
 
 // Configuration Value Helper Methods
+
+/**
+ * @brief Get the type name of a configuration value
+ * @param value Configuration value to examine
+ * @return String representation of the value's type
+ *
+ * Returns a human-readable type name for the configuration value.
+ * Used for debugging and validation messages.
+ */
 std::string ConfigurationManager::GetTypeName(const Config::ConfigValue& value) const {
     if (!EnsureStorageReady()) return "unknown";
     return storageProvider_->GetTypeName(value);
 }
 
+/**
+ * @brief Check if two configuration values have matching types
+ * @param a First configuration value to compare
+ * @param b Second configuration value to compare
+ * @return true if both values have the same type, false otherwise
+ *
+ * Compares the types of two configuration values without comparing their content.
+ * Used for type validation during configuration updates.
+ */
 bool ConfigurationManager::TypesMatch(const Config::ConfigValue& a, const Config::ConfigValue& b) const {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->TypesMatch(a, b);
 }
 
+/**
+ * @brief Convert a configuration value to its string representation
+ * @param value Configuration value to convert
+ * @return String representation of the value
+ *
+ * Converts any supported configuration value type to a string format.
+ * Used for displaying values in UI and for storage serialization.
+ */
 std::string ConfigurationManager::ToString(const Config::ConfigValue& value) const {
     if (!EnsureStorageReady()) return "";
     return storageProvider_->ToString(value);
 }
 
+/**
+ * @brief Convert a string to a configuration value of the specified type
+ * @param str String representation to convert
+ * @param templateValue Template value providing the target type information
+ * @return Configuration value of the same type as template, or monostate if conversion fails
+ *
+ * Parses a string and converts it to the same type as the template value.
+ * Used for deserializing values from storage and processing user input.
+ */
 Config::ConfigValue ConfigurationManager::FromString(const std::string& str, const Config::ConfigValue& templateValue) const {
     if (!EnsureStorageReady()) return std::monostate{};
     return storageProvider_->FromString(str, templateValue);
 }
 
+/**
+ * @brief Check if a configuration value is numeric
+ * @param value Configuration value to check
+ * @return true if value is numeric (int, float, etc.), false otherwise
+ *
+ * Determines whether a configuration value contains numeric data.
+ * Used for validation and UI formatting decisions.
+ */
 bool ConfigurationManager::IsNumeric(const Config::ConfigValue& value) const {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->IsNumeric(value);
 }
 
 // Protected Implementation Methods
+
+/**
+ * @brief Internal implementation for querying configuration values
+ * @param fullKey Fully qualified key (section.item) to query
+ * @return Optional containing the value if found, nullopt otherwise
+ *
+ * Protected implementation method for the template QueryConfig method.
+ * Handles the actual storage query and returns the raw ConfigValue.
+ */
 std::optional<Config::ConfigValue> ConfigurationManager::QueryConfigImpl(const std::string& fullKey) const {
     if (!EnsureStorageReady()) return std::nullopt;
     return storageProvider_->QueryConfigValue(fullKey);
 }
 
+/**
+ * @brief Internal implementation for updating configuration values
+ * @param fullKey Fully qualified key (section.item) to update
+ * @param value New configuration value to set
+ * @return true if update successful, false otherwise
+ *
+ * Protected implementation method for the template UpdateConfig method.
+ * Handles validation, storage update, and change notification callbacks.
+ */
 bool ConfigurationManager::UpdateConfigImpl(const std::string& fullKey, const Config::ConfigValue& value) {
     if (!EnsureStorageReady()) return false;
     return storageProvider_->UpdateConfigValue(fullKey, value);

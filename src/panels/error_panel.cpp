@@ -279,8 +279,16 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
  * needed for proper panel operation and lifecycle management.
  */
 
-// IActionService Interface Implementation
+// ========== IActionService Interface Implementation ==========
 
+/**
+ * @brief Static function for handling short button press during error display
+ * @param panelContext Pointer to the error panel instance
+ *
+ * Handles short button press events by cycling through error messages.
+ * Provides safe casting and null pointer checking before delegating to
+ * the instance method for error navigation.
+ */
 static void ErrorPanelShortPress(void* panelContext)
 {
     log_i("ErrorPanelShortPress() called with context=%p", panelContext);
@@ -299,6 +307,14 @@ static void ErrorPanelShortPress(void* panelContext)
     }
 }
 
+/**
+ * @brief Static function for handling long button press during error display
+ * @param panelContext Pointer to the error panel instance
+ *
+ * Handles long button press events by dismissing the error panel and returning
+ * to the previous panel. Provides safe casting and null pointer checking before
+ * delegating to the instance method for panel navigation.
+ */
 static void ErrorPanelLongPress(void* panelContext)
 {
     log_i("ErrorPanelLongPress() called with context=%p", panelContext);
@@ -317,15 +333,8 @@ static void ErrorPanelLongPress(void* panelContext)
     }
 }
 
-/**
- * @brief Gets the short press callback function for this panel
- * @return Function pointer to the short press handler
- *
- * Returns the static callback function that will be invoked when a short
- * button press is detected while this panel is active. The returned function
- * takes a panel context pointer and handles error cycling through the list.
- */
- 
+// ========== Action Handler Methods ==========
+
 /**
  * @brief Handles short button press events for error cycling
  *
@@ -379,7 +388,8 @@ void ErrorPanel::HandleLongPress()
     log_i("ErrorPanel: Triggered restoration check after clearing errors");
 }
 
-// Auto-cycling implementation
+// ========== Private Methods ==========
+
 /**
  * @brief Sorts the current error list by severity level
  *
@@ -399,6 +409,7 @@ void ErrorPanel::SortErrorsBySeverity()
         });
     
 }
+
 /**
  * @brief Advances to the next error in the current error list
  *
