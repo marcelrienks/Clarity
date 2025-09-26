@@ -25,6 +25,9 @@
  * @model_role Provides oil pressure data to OemOilPressureComponent
  * @supported_units: Bar, PSI, kPa
  * @range 0-10 Bar (0-145 PSI, 0-1000 kPa) typical automotive range
+ * @display_scale Component expects 0-60 scale representing 0.0-6.0 Bar
+ *               Sensor readings are mapped: actual_bar * 10 = display_value
+ *               Example: 2.5 Bar reading becomes value 25 for display
  * @update_frequency Configurable via constructor
  *
  * @unit_conversion:

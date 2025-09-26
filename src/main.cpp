@@ -175,6 +175,9 @@ bool initializeServices()
         return false;
     }
 
+    // Set panel manager reference for UI state checking in interrupt processing
+    interruptManager->SetPanelManager(panelManager.get());
+
     errorManager = managerFactory->CreateErrorManager();
     if (!errorManager) {
         log_e("Failed to create ErrorManager via factory");

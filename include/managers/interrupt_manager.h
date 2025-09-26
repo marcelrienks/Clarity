@@ -11,6 +11,7 @@
 
 // Forward declarations
 class IConfigurationManager;
+class IPanelManager;
 
 /**
  * @class InterruptManager
@@ -43,6 +44,7 @@ public:
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionHandler* panel);
     void SetConfigurationManager(IConfigurationManager* configurationManager);
+    void SetPanelManager(IPanelManager* panelManager);
 
     /**
      * @brief Get total count of registered interrupts (triggers + actions)
@@ -99,8 +101,8 @@ private:
 
     /**
      * @brief Check if UI is idle for trigger processing optimization
-     * @return true if UI has been idle for sufficient time
-     * @details Uses cached result with 5ms timeout to reduce LVGL query overhead
+     * @return true if UI state is IDLE (no animations running)
+     * @details Checks application-level UIState instead of LVGL idle time
      */
     bool IsUIIdle() const;
 
@@ -113,6 +115,7 @@ private:
     bool initialized_ = false;
     unsigned long lastEvaluationTime_ = 0;
 
-    // GPIO provider reference
+    // Provider references
     IGpioProvider* gpioProvider_ = nullptr;
+    IPanelManager* panelManager_ = nullptr;
 };

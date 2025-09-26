@@ -211,12 +211,14 @@ namespace ConfigConstants {
         static constexpr const char* OIL_PRESSURE_UPDATE_RATE = "oil_pressure_sensor.update_rate";
         static constexpr const char* OIL_PRESSURE_OFFSET = "oil_pressure_sensor.offset";
         static constexpr const char* OIL_PRESSURE_SCALE = "oil_pressure_sensor.scale";
+        static constexpr const char* OIL_PRESSURE_DEADBAND_PERCENT = "oil_pressure_sensor.deadband_percent";
 
         // Oil temperature sensor configuration keys
         static constexpr const char* OIL_TEMPERATURE_UNIT = "oil_temperature_sensor.unit";
         static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature_sensor.update_rate";
         static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature_sensor.offset";
         static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature_sensor.scale";
+        static constexpr const char* OIL_TEMPERATURE_DEADBAND_PERCENT = "oil_temperature_sensor.deadband_percent";
 
         // Style manager configuration keys
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";

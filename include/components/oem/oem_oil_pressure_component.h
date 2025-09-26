@@ -14,9 +14,10 @@
  *
  * @specialization Oil Pressure Monitoring
  * @measurement_unit Bar (100 Kpa)
- * @range 0-6 Bar
- * @scale 0-60 mapping values for decimal precision
- * @danger_zone Below 2 Bar (low pressure warning)
+ * @range 0-6.0 Bar (displayed range)
+ * @scale 0-60 internal scale with one decimal place precision
+ *        Example: value 0 = 0.0 Bar, value 25 = 2.5 Bar, value 55 = 5.5 Bar, value 60 = 6.0 Bar
+ * @danger_zone Below 2.0 Bar (value 20) triggers low pressure warning
  * @icon Oil can icon (oil_can_regular.h)
  *
  * @position Intention: Only one half of the screen
@@ -25,9 +26,13 @@
  * @data_source OilPressureSensor with delta-based updates
  *
  * @gauge_configuration:
- * - Scale: 0-60 mapping values for decimal precision
+ * - Scale: 0-60 internal units representing 0.0-6.0 Bar (divide by 10 for display)
  * - Rotation: Standard circular gauge
  * - Angle range: Full circle coverage
+ * - Hysteresis: Configurable percentile-based deadband (1%, 3%, or 5% of scale range)
+ *   • 1% = 0.6 scale units = 0.06 Bar threshold
+ *   • 3% = 1.8 scale units = 0.18 Bar threshold (default)
+ *   • 5% = 3.0 scale units = 0.30 Bar threshold
  * - Danger zone: 0-2 Bar highlighted in red
  *
  * @visual_feedback:

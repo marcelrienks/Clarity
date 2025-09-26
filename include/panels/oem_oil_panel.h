@@ -12,6 +12,8 @@
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
 #include "definitions/types.h"
+#include "definitions/configs.h"
+#include "definitions/constants.h"
 #include <Arduino.h>
 
 // Forward declarations
@@ -116,6 +118,48 @@ class OemOilPanel : public IPanel
     // Instance Data Members - State Variables
     int32_t currentOilPressureValue_;
     int32_t currentOilTemperatureValue_;
+
+    // Hysteresis/Deadband configuration - Percentile-based
+    // PRESSURE SCALE: 0-60 represents 0.0-6.0 Bar (one decimal place precision)
+    // Example: value 55 = 5.5 Bar, value 23 = 2.3 Bar
+    // TEMPERATURE SCALE: 0-120 represents 0-120°C
+    // Deadband percentages (1%, 3%, 5%) are configurable and applied to component scales
+
+    // Default deadband percentiles (can be overridden by configuration)
+    static constexpr int32_t DEFAULT_PRESSURE_DEADBAND_PERCENT = 3;    // 3% of component scale range
+    static constexpr int32_t DEFAULT_TEMPERATURE_DEADBAND_PERCENT = 3;  // 3% of component scale range
+
+    // Runtime deadband values (calculated from percentiles and scale ranges)
+    int32_t pressureDeadband_;     // Calculated: (percent * PRESSURE_SCALE_RANGE) / 100
+    int32_t temperatureDeadband_;  // Calculated: (percent * TEMPERATURE_SCALE_RANGE) / 100
+
+    // Track last animated values for hysteresis
+    int32_t lastAnimatedPressureValue_;
+    int32_t lastAnimatedTemperatureValue_;
+
+    // Helper methods for deadband calculation
+    void calculateDeadbands();
+
+    // Configuration registration
+    static void RegisterConfigSchema(class IConfigurationManager* configurationManager);
+
+private:
+    // Configuration items for deadband percentiles
+    static inline Config::ConfigItem pressureDeadbandConfig_{
+        ConfigConstants::Keys::OIL_PRESSURE_DEADBAND_PERCENT,
+        "Pressure Deadband",
+        "Percentage of pressure scale range for hysteresis filtering",
+        3, // Default 3%
+        Config::ConfigMetadata{Config::ConfigItemType::Selection, "1,3,5"}
+    };
+
+    static inline Config::ConfigItem temperatureDeadbandConfig_{
+        ConfigConstants::Keys::OIL_TEMPERATURE_DEADBAND_PERCENT,
+        "Temperature Deadband",
+        "Percentage of temperature scale range for hysteresis filtering",
+        3, // Default 3%
+        Config::ConfigMetadata{Config::ConfigItemType::Selection, "1,3,5"}
+    };
     String lastTheme_;                   // Track last theme to force refresh when theme changes
 
     // Cache settings to avoid redundant updates

@@ -2,8 +2,10 @@
 #include "managers/error_manager.h"
 #include "handlers/trigger_handler.h"
 #include "handlers/action_handler.h"
+#include "interfaces/i_panel_manager.h"
 #include "definitions/interrupts.h"
 #include "definitions/constants.h"
+#include "definitions/enums.h"
 #include "sensors/gpio_sensor.h"
 #include <Arduino.h>
 #include <cstring>
@@ -89,7 +91,9 @@ void InterruptManager::Process()
     }
 
     // Process execution only during UI idle to avoid interfering with animations
-    if (IsUIIdle()) {
+    // Check application-level UI state instead of LVGL idle time
+    // This ensures interrupts are processed between animations, not during them
+    if (panelManager_ && panelManager_->GetUiState() == UIState::IDLE) {
         // Execute pending Actions first
         if (actionHandler_) {
             actionHandler_->ExecutePendingActions();
@@ -180,6 +184,17 @@ void InterruptManager::SetConfigurationManager(IConfigurationManager* configurat
     // Delegate to ActionHandler to set preference service
     actionHandler_->SetConfigurationManager(configurationManager);
     log_i("Set preference service in ActionHandler");
+}
+
+/**
+ * @brief Sets panel manager for UI state access
+ * @param panelManager The panel manager to use for UI state checks
+ */
+void InterruptManager::SetPanelManager(IPanelManager* panelManager)
+{
+    log_v("SetPanelManager() called");
+    panelManager_ = panelManager;
+    log_i("Set panel manager for UI state access");
 }
 
 
@@ -324,17 +339,3 @@ void InterruptManager::RegisterSystemInterrupts()
           systemTriggers.size(), systemActions.size());
 }
 
-bool InterruptManager::IsUIIdle() const
-{
-    // Cache UI idle state with timeout to reduce LVGL query frequency
-    static bool cached_idle = false;
-    static unsigned long last_check = 0;
-
-    unsigned long current_time = millis();
-    if (current_time - last_check >= 5) { // Check every 5ms max (was checking every main loop cycle)
-        cached_idle = lv_disp_get_inactive_time(nullptr) > 10; // 10ms idle threshold
-        last_check = current_time;
-    }
-
-    return cached_idle;
-}
