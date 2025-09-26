@@ -137,29 +137,10 @@ class OemOilPanel : public IPanel
     int32_t lastAnimatedPressureValue_;
     int32_t lastAnimatedTemperatureValue_;
 
+private:
     // Helper methods for deadband calculation
     void calculateDeadbands();
 
-    // Configuration registration
-    static void RegisterConfigSchema(class IConfigurationManager* configurationManager);
-
-private:
-    // Configuration items for deadband percentiles
-    static inline Config::ConfigItem pressureDeadbandConfig_{
-        ConfigConstants::Keys::OIL_PRESSURE_DEADBAND_PERCENT,
-        "Pressure Deadband",
-        "Percentage of pressure scale range for hysteresis filtering",
-        3, // Default 3%
-        Config::ConfigMetadata{Config::ConfigItemType::Selection, "1,3,5"}
-    };
-
-    static inline Config::ConfigItem temperatureDeadbandConfig_{
-        ConfigConstants::Keys::OIL_TEMPERATURE_DEADBAND_PERCENT,
-        "Temperature Deadband",
-        "Percentage of temperature scale range for hysteresis filtering",
-        3, // Default 3%
-        Config::ConfigMetadata{Config::ConfigItemType::Selection, "1,3,5"}
-    };
     String lastTheme_;                   // Track last theme to force refresh when theme changes
 
     // Cache settings to avoid redundant updates

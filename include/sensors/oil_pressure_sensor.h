@@ -95,6 +95,12 @@ class OilPressureSensor : public BaseSensor, public IConfig
                                                    ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
                                                    Config::ConfigMetadata(ConfigConstants::Options::CALIBRATION_SCALES, Config::ConfigItemType::Selection)};
 
+    // Display behavior configuration (deadband for animation filtering)
+    inline static Config::ConfigItem deadbandConfig_{ConfigConstants::Keys::OIL_PRESSURE_DEADBAND_PERCENT,
+                                                      "Pressure Display Deadband",
+                                                      3, // Default 3%
+                                                      Config::ConfigMetadata{"1,3,5", Config::ConfigItemType::Selection}};
+
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IConfigurationManager *configurationManager_ = nullptr;

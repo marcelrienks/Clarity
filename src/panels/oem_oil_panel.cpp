@@ -11,11 +11,6 @@
 #include "utilities/logging.h"
 #include "managers/configuration_manager.h"
 
-// Self-registration at program startup
-static bool oem_oil_panel_config_registered = []() {
-    ConfigurationManager::AddSchema(OemOilPanel::RegisterConfigSchema);
-    return true;
-}();
 
 // ========== Constructors and Destructor ==========
 
@@ -343,11 +338,11 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
     // Determine animation start value
     // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
     int32_t animationStartValue = currentOilPressureValue_;
-    // Get pressure scale from component to ensure accuracy
-    // PRESSURE SCALE: Component manages 0-60 representing 0.0-6.0 Bar with one decimal place precision
+    // PRESSURE SCALE: Component manages scale representing 0.0-6.0 Bar with one decimal place precision
     // Scale unit 1 = 0.1 Bar, so value 55 = 5.5 Bar, value 23 = 2.3 Bar
-    const int32_t scaleMin = oemOilPressureComponent_.get_scale_min();  // Pressure scale minimum: 0.0 Bar
-    const int32_t scaleMax = oemOilPressureComponent_.get_scale_max();  // Pressure scale maximum: 6.0 Bar
+    // Using same constants that components use to ensure consistency
+    const int32_t scaleMin = SensorConstants::PRESSURE_DISPLAY_SCALE_MIN;  // Pressure scale minimum: 0.0 Bar
+    const int32_t scaleMax = SensorConstants::PRESSURE_DISPLAY_SCALE_MAX;  // Pressure scale maximum: 6.0 Bar
     
     if (currentOilPressureValue_ == -1)
     {
@@ -482,9 +477,10 @@ void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
     // Determine animation start value
     // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
     int32_t animationStartValue = currentOilTemperatureValue_;
-    // Get temperature scale from component to ensure accuracy
-    const int32_t scaleMin = oemOilTemperatureComponent_.get_scale_min();   // Temperature scale minimum
-    const int32_t scaleMax = oemOilTemperatureComponent_.get_scale_max();   // Temperature scale maximum
+    // TEMPERATURE SCALE: Component manages scale representing 0-120°C
+    // Using same constants that components use to ensure consistency
+    const int32_t scaleMin = SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN;   // Temperature scale minimum
+    const int32_t scaleMax = SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX;   // Temperature scale maximum
     
     if (currentOilTemperatureValue_ == -1)
     {
@@ -1007,7 +1003,7 @@ void OemOilPanel::HandleLongPress()
  */
 void OemOilPanel::calculateDeadbands()
 {
-    // Get pressure deadband percentage from configuration (default: 3%)
+    // Get pressure deadband percentage from pressure component configuration (default: 3%)
     int32_t pressurePercent = DEFAULT_PRESSURE_DEADBAND_PERCENT;
     if (configurationManager_) {
         if (auto configValue = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::OIL_PRESSURE_DEADBAND_PERCENT)) {
@@ -1018,7 +1014,7 @@ void OemOilPanel::calculateDeadbands()
         }
     }
 
-    // Get temperature deadband percentage from configuration (default: 3%)
+    // Get temperature deadband percentage from temperature component configuration (default: 3%)
     int32_t temperaturePercent = DEFAULT_TEMPERATURE_DEADBAND_PERCENT;
     if (configurationManager_) {
         if (auto configValue = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::OIL_TEMPERATURE_DEADBAND_PERCENT)) {
@@ -1029,10 +1025,10 @@ void OemOilPanel::calculateDeadbands()
         }
     }
 
-    // Calculate actual deadband values from percentiles using component scale ranges
-    // Get scale ranges from components to ensure accuracy
-    int32_t pressureScaleRange = oemOilPressureComponent_.get_scale_max() - oemOilPressureComponent_.get_scale_min();
-    int32_t temperatureScaleRange = oemOilTemperatureComponent_.get_scale_max() - oemOilTemperatureComponent_.get_scale_min();
+    // Calculate actual deadband values from percentiles using component scale constants
+    // Reference the same constants that components use to ensure consistency
+    const int32_t pressureScaleRange = SensorConstants::PRESSURE_DISPLAY_SCALE_MAX - SensorConstants::PRESSURE_DISPLAY_SCALE_MIN;
+    const int32_t temperatureScaleRange = SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX - SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN;
 
     // Pressure: (percent * component_scale_range) / 100
     pressureDeadband_ = (pressurePercent * pressureScaleRange) / 100;
@@ -1042,43 +1038,12 @@ void OemOilPanel::calculateDeadbands()
     temperatureDeadband_ = (temperaturePercent * temperatureScaleRange) / 100;
     if (temperatureDeadband_ < 1) temperatureDeadband_ = 1; // Minimum 1 scale unit
 
-    log_i("Calculated deadbands from component scales:");
+    log_i("Calculated deadbands from component scale constants:");
     log_i("  Pressure: %d-%d range (%d units), %d%% = %d scale units (%.1f Bar threshold)",
-          oemOilPressureComponent_.get_scale_min(), oemOilPressureComponent_.get_scale_max(),
+          SensorConstants::PRESSURE_DISPLAY_SCALE_MIN, SensorConstants::PRESSURE_DISPLAY_SCALE_MAX,
           pressureScaleRange, pressurePercent, pressureDeadband_, pressureDeadband_ / 10.0f);
     log_i("  Temperature: %d-%d range (%d units), %d%% = %d scale units (%d°C threshold)",
-          oemOilTemperatureComponent_.get_scale_min(), oemOilTemperatureComponent_.get_scale_max(),
+          SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN, SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX,
           temperatureScaleRange, temperaturePercent, temperatureDeadband_, temperatureDeadband_);
 }
 
-/**
- * @brief Register configuration schema for OEM Oil Panel deadband settings
- * @param configurationManager Service to register schema with
- *
- * Registers deadband percentage configuration for both pressure and temperature
- * sensors. Allows selection between 1%, 3%, or 5% of scale range for hysteresis
- * filtering to prevent jittery animations from sensor noise.
- */
-void OemOilPanel::RegisterConfigSchema(IConfigurationManager* configurationManager)
-{
-    if (!configurationManager) {
-        log_e("OemOilPanel::RegisterConfigSchema: ConfigurationManager is null - oil panel config registration failed!");
-        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
-                                                     "ConfigManager null - oil panel config failed");
-        return;
-    }
-
-    // Check if already registered to prevent duplicates
-    if (configurationManager->IsSchemaRegistered("OemOilPanel")) {
-        return;
-    }
-
-    Config::ConfigSection section("OemOilPanel", "OemOilPanel", "OEM Oil Monitoring Panel");
-
-    // Add deadband configuration items
-    section.AddItem(pressureDeadbandConfig_);
-    section.AddItem(temperatureDeadbandConfig_);
-
-    configurationManager->RegisterConfigSection(section);
-    log_i("OemOilPanel configuration schema registered with deadband settings (1%, 3%, 5% options)");
-}

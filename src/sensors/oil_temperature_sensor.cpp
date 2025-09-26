@@ -323,6 +323,7 @@ void OilTemperatureSensor::RegisterConfigSchema(IConfigurationManager* configura
     section.AddItem(updateRateConfig_);
     section.AddItem(offsetConfig_);
     section.AddItem(scaleConfig_);
+    section.AddItem(deadbandConfig_);
 
     // Register with preference service for persistence and UI generation
     configurationManager->RegisterConfigSection(section);

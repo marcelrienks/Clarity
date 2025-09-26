@@ -328,6 +328,7 @@ void OilPressureSensor::RegisterConfigSchema(IConfigurationManager* configuratio
     section.AddItem(updateRateConfig_);
     section.AddItem(offsetConfig_);
     section.AddItem(scaleConfig_);
+    section.AddItem(deadbandConfig_);
 
     configurationManager->RegisterConfigSection(section);
     log_i("Registered oil pressure sensor configuration schema (static)");
