@@ -99,12 +99,6 @@ private:
      */
     void RegisterSystemInterrupts();
 
-    /**
-     * @brief Check if UI is idle for trigger processing optimization
-     * @return true if UI state is IDLE (no animations running)
-     * @details Checks application-level UIState instead of LVGL idle time
-     */
-    bool IsUIIdle() const;
 
     // ========== Private Data Members ==========
     // Trigger/Action architecture handlers
