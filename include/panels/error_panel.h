@@ -79,4 +79,5 @@ class ErrorPanel : public IPanel
     
     // Error cycling functionality
     size_t currentErrorIndex_;                       // Index of currently displayed error
+    std::vector<ErrorInfo> viewedErrors_;            // Track errors that have been viewed and removed
 };

@@ -164,13 +164,16 @@ void ErrorPanel::Update()
 {
     log_v("Update() called");
 
-    // Get fresh errors from ErrorManager and merge with any new ones
+    // Check for any NEW errors from ErrorManager (but don't re-add removed ones)
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
-    // Add any new errors to our unviewed list, maintaining sort order
+    log_i("Update(): Checking for new errors. ErrorManager has %zu errors, currentErrors_ has %zu, viewedErrors_ has %zu",
+          newErrors.size(), currentErrors_.size(), viewedErrors_.size());
+
+    // Add any new errors that weren't in our original unviewed list
     for (const auto& newError : newErrors)
     {
-        // Check if this error is already in our unviewed list (by content, not timestamp)
+        // Check if this error is already in our unviewed list OR was in our original list
         bool alreadyExists = false;
         for (const auto& existingError : currentErrors_)
         {
@@ -183,16 +186,33 @@ void ErrorPanel::Update()
             }
         }
 
-        // Add new error if not already present
+        // Also check if it was in our original list (but viewed and removed)
+        if (!alreadyExists)
+        {
+            for (const auto& viewedError : viewedErrors_)
+            {
+                if (viewedError.level == newError.level &&
+                    strcmp(viewedError.source, newError.source) == 0 &&
+                    strcmp(viewedError.message, newError.message) == 0)
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+        }
+
+        // Add new error if not already present and not previously viewed
         if (!alreadyExists)
         {
             currentErrors_.push_back(newError);
+            SortErrorsBySeverity();
             log_i("Added new error to unviewed list: %s - %s", newError.source, newError.message);
         }
+        else
+        {
+            log_i("Skipping error (already exists): %s - %s", newError.source, newError.message);
+        }
     }
-
-    // Sort the unviewed errors by severity (CRITICAL first, WARNING last)
-    SortErrorsBySeverity();
 
     // Update display with current error if we have any
     if (componentInitialized_ && !currentErrors_.empty())
@@ -442,12 +462,18 @@ void ErrorPanel::AdvanceToNextError()
 
     size_t oldIndex = currentErrorIndex_;
 
-    // Remove the current error from the unviewed list (it has been viewed)
+    // Remove the current error from both our local list AND the ErrorManager
     if (currentErrorIndex_ < currentErrors_.size())
     {
-        log_i("Removing viewed error: %s - %s",
-              currentErrors_[currentErrorIndex_].source,
-              currentErrors_[currentErrorIndex_].message);
+        ErrorInfo viewedError = currentErrors_[currentErrorIndex_];
+        log_i("Removing viewed error: %s - %s", viewedError.source, viewedError.message);
+
+        // Track this error as viewed
+        viewedErrors_.push_back(viewedError);
+
+        // Note: We cannot remove individual errors from ErrorManager, only clear all
+
+        // Remove from our local list
         currentErrors_.erase(currentErrors_.begin() + currentErrorIndex_);
     }
 
@@ -472,7 +498,7 @@ void ErrorPanel::AdvanceToNextError()
     else if (currentErrors_.empty())
     {
         log_i("AdvanceToNextError: No more errors to display - all have been viewed");
-        // Clear all errors from ErrorManager since we've viewed them all
+        // Clear all remaining errors from ErrorManager since we've viewed them all
         ErrorManager::Instance().ClearAllErrors();
     }
     else
