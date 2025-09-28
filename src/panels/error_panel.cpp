@@ -167,8 +167,6 @@ void ErrorPanel::Update()
     // Check for any NEW errors from ErrorManager (but don't re-add removed ones)
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
-    log_i("Update(): Checking for new errors. ErrorManager has %zu errors, currentErrors_ has %zu, viewedErrors_ has %zu",
-          newErrors.size(), currentErrors_.size(), viewedErrors_.size());
 
     // Add any new errors that weren't in our original unviewed list
     for (const auto& newError : newErrors)
@@ -207,10 +205,6 @@ void ErrorPanel::Update()
             currentErrors_.push_back(newError);
             SortErrorsBySeverity();
             log_i("Added new error to unviewed list: %s - %s", newError.source, newError.message);
-        }
-        else
-        {
-            log_i("Skipping error (already exists): %s - %s", newError.source, newError.message);
         }
     }
 

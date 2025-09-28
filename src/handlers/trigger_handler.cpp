@@ -217,7 +217,8 @@ void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
     }
 
     // Early return if error panel is active - suppress trigger execution but keep state
-    if (ErrorManager::Instance().IsErrorPanelActive()) {
+    // Exception: Allow error trigger to execute during error panel to support dynamic error addition
+    if (ErrorManager::Instance().IsErrorPanelActive() && strcmp(trigger.id, "error") != 0) {
         return;
     }
 

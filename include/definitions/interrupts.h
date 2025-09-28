@@ -7,6 +7,7 @@
 #include "managers/style_manager.h"
 #ifdef CLARITY_DEBUG
 #include "managers/error_manager.h"
+#include <Arduino.h>
 #endif
 
 /**
@@ -108,15 +109,16 @@ inline std::vector<Trigger> GetSystemTriggers(
                 log_t("ErrorActivate() - Debug error button pressed, generating test errors");
 
 #ifdef CLARITY_DEBUG
-                // Generate three test errors for error panel testing
+                // Generate three test errors for error panel testing (unique timestamps)
+                uint32_t timestamp = millis();
                 ErrorManager::Instance().ReportWarning("DebugTest",
-                                                       "Test warning from debug error trigger");
+                                                       "Test warning from debug error trigger @" + std::to_string(timestamp));
 
                 ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
-                                                     "Test error from debug error trigger");
+                                                     "Test error from debug error trigger @" + std::to_string(timestamp));
 
                 ErrorManager::Instance().ReportCriticalError("DebugTest",
-                                                             "Test critical error from debug error trigger");
+                                                             "Test critical error from debug error trigger @" + std::to_string(timestamp));
 
                 log_t("Debug errors generated: 1 WARNING, 1 ERROR, 1 CRITICAL - error panel will load automatically");
 #else
