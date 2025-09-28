@@ -68,7 +68,7 @@ void ErrorPanel::Init()
     if (!displayProvider_ || !gpioProvider_)
     {
         log_e("ErrorPanel requires display and gpio providers");
-        ErrorManager::Instance().ReportCriticalError("ErrorPanel",
+        ErrorManager::Instance().ReportCriticalError(PanelNames::ERROR,
                                                      "Missing required providers - display or gpio provider is null");
         return;
     }
@@ -101,15 +101,13 @@ void ErrorPanel::Init()
 void ErrorPanel::Load()
 {
     log_v("Load() called");
-
-
     // Component is now stack-allocated and initialized in constructor
     componentInitialized_ = true;
 
     if (!displayProvider_)
     {
         log_e("ErrorPanel load requires display provider");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                              "Cannot render component - display provider is null");
         return;
     }
@@ -117,9 +115,17 @@ void ErrorPanel::Load()
     // Render the component
     errorComponent_.Render(screen_, centerLocation_, displayProvider_);
 
-    // Get current errors and refresh component
-    std::vector<ErrorInfo> currentErrors = ErrorManager::Instance().GetErrorQueue();
-    errorComponent_.Refresh(Reading{}); // Component will fetch errors internally
+    // Initialize our unviewed error list with all current errors
+    currentErrors_ = ErrorManager::Instance().GetErrorQueue();
+    SortErrorsBySeverity();
+    currentErrorIndex_ = 0;
+
+    // Initialize component with the first error
+    if (!currentErrors_.empty())
+    {
+        errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+        log_i("Initialized error panel with %zu unviewed errors", currentErrors_.size());
+    }
 
     lv_obj_add_event_cb(screen_, ErrorPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -127,7 +133,7 @@ void ErrorPanel::Load()
     if (!screen_)
     {
         log_e("Screen is null, cannot load error panel");
-        ErrorManager::Instance().ReportCriticalError("ErrorPanel", "Cannot load panel - screen creation failed");
+        ErrorManager::Instance().ReportCriticalError(PanelNames::ERROR, "Cannot load panel - screen creation failed");
         // Error condition - no callback needed
         return;
     }
@@ -158,49 +164,61 @@ void ErrorPanel::Update()
 {
     log_v("Update() called");
 
-
-    // Get current errors from ErrorManager
+    // Check for any NEW errors from ErrorManager (but don't re-add removed ones)
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
-    // Check if error list has changed
-    bool errorsChanged = false;
-    if (newErrors.size() != currentErrors_.size())
+
+    // Add any new errors that weren't in our original unviewed list
+    for (const auto& newError : newErrors)
     {
-        errorsChanged = true;
-    }
-    else
-    {
-        // Compare timestamps to detect changes
-        for (size_t i = 0; i < newErrors.size() && !errorsChanged; i++)
+        // Check if this error is already in our unviewed list OR was in our original list
+        bool alreadyExists = false;
+        for (const auto& existingError : currentErrors_)
         {
-            if (newErrors[i].timestamp != currentErrors_[i].timestamp ||
-                newErrors[i].acknowledged != currentErrors_[i].acknowledged)
+            if (existingError.level == newError.level &&
+                strcmp(existingError.source, newError.source) == 0 &&
+                strcmp(existingError.message, newError.message) == 0)
             {
-                errorsChanged = true;
+                alreadyExists = true;
+                break;
             }
+        }
+
+        // Also check if it was in our original list (but viewed and removed)
+        if (!alreadyExists)
+        {
+            for (const auto& viewedError : viewedErrors_)
+            {
+                if (viewedError.level == newError.level &&
+                    strcmp(viewedError.source, newError.source) == 0 &&
+                    strcmp(viewedError.message, newError.message) == 0)
+                {
+                    alreadyExists = true;
+                    break;
+                }
+            }
+        }
+
+        // Add new error if not already present and not previously viewed
+        if (!alreadyExists)
+        {
+            currentErrors_.push_back(newError);
+            SortErrorsBySeverity();
+            log_i("Added new error to unviewed list: %s - %s", newError.source, newError.message);
         }
     }
 
-    // Update display if errors have changed
-    if (errorsChanged)
+    // Update display with current error if we have any
+    if (componentInitialized_ && !currentErrors_.empty())
     {
-        currentErrors_ = newErrors;
-        
-        // Sort errors by severity (CRITICAL first, WARNING last)
-        SortErrorsBySeverity();
-        
-        // Start from first error (highest severity)
-        currentErrorIndex_ = 0;
-        
-        // Tell component to display all errors with current index
-        if (componentInitialized_)
+        // Ensure current index is valid
+        if (currentErrorIndex_ >= currentErrors_.size())
         {
-            // Direct access to concrete component (no casting needed)
-            if (!currentErrors_.empty())
-            {
-                errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
-            }
+            currentErrorIndex_ = 0;
         }
+
+        errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+        log_i("Displaying error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
     }
 
     // If no errors remain, trigger auto-restoration to previous panel
@@ -208,25 +226,29 @@ void ErrorPanel::Update()
     {
         log_i("ErrorPanel: No errors remaining - triggering auto-restoration");
         ErrorManager::Instance().SetErrorPanelActive(false);
-        
+
         // Auto-restore using CheckRestoration to handle active triggers
         if (panelManager_)
         {
             log_i("ErrorPanel: No errors remaining - checking for active triggers before restoration");
-            
+
             #ifdef CLARITY_DEBUG
             // In debug builds, manually trigger restoration since debug error sensor
             // state is GPIO-controlled, not error-state-controlled
             PanelManager::Instance().CheckRestoration();
             log_i("ErrorPanel: Auto-restoration triggered for debug build");
             #endif
-            
+
             // In production, error triggers would naturally deactivate when errors are resolved
             return; // Exit early to prevent callback execution on replaced panel
         }
     }
 
-
+    // Reset UI state to IDLE to allow interrupt processing (similar to ConfigPanel pattern)
+    if (panelManager_)
+    {
+        panelManager_->SetUiState(UIState::IDLE);
+    }
     // Error panel updates are handled internally - no notification needed
 }
 
@@ -245,7 +267,7 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
     if (!event)
     {
         log_e("ShowPanelCompletionCallback: event is null!");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "ShowPanelCompletionCallback received null event");
         return;
     }
@@ -263,14 +285,14 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
         else
         {
             log_e("ErrorPanel::ShowPanelCompletionCallback: panelManager_ is null!");
-            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+            ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                                 "PanelService is null in completion callback");
         }
     }
     else
     {
         log_e("ErrorPanel::ShowPanelCompletionCallback: thisInstance is null!");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Instance is null in completion callback");
     }
 }
@@ -285,8 +307,16 @@ void ErrorPanel::ShowPanelCompletionCallback(lv_event_t *event)
  * needed for proper panel operation and lifecycle management.
  */
 
-// IActionService Interface Implementation
+// ========== IActionService Interface Implementation ==========
 
+/**
+ * @brief Static function for handling short button press during error display
+ * @param panelContext Pointer to the error panel instance
+ *
+ * Handles short button press events by cycling through error messages.
+ * Provides safe casting and null pointer checking before delegating to
+ * the instance method for error navigation.
+ */
 static void ErrorPanelShortPress(void* panelContext)
 {
     log_i("ErrorPanelShortPress() called with context=%p", panelContext);
@@ -300,11 +330,19 @@ static void ErrorPanelShortPress(void* panelContext)
     else
     {
         log_e("ErrorPanel: Cannot cycle errors - invalid context (null panel)");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Cannot cycle errors - invalid context");
     }
 }
 
+/**
+ * @brief Static function for handling long button press during error display
+ * @param panelContext Pointer to the error panel instance
+ *
+ * Handles long button press events by dismissing the error panel and returning
+ * to the previous panel. Provides safe casting and null pointer checking before
+ * delegating to the instance method for panel navigation.
+ */
 static void ErrorPanelLongPress(void* panelContext)
 {
     log_i("ErrorPanelLongPress() called with context=%p", panelContext);
@@ -318,20 +356,13 @@ static void ErrorPanelLongPress(void* panelContext)
     else
     {
         log_e("ErrorPanel: Cannot execute long press - invalid context (null panel)");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Cannot execute long press - invalid context");
     }
 }
 
-/**
- * @brief Gets the short press callback function for this panel
- * @return Function pointer to the short press handler
- *
- * Returns the static callback function that will be invoked when a short
- * button press is detected while this panel is active. The returned function
- * takes a panel context pointer and handles error cycling through the list.
- */
-// REMOVED: 
+// ========== Action Handler Methods ==========
+
 /**
  * @brief Handles short button press events for error cycling
  *
@@ -385,7 +416,8 @@ void ErrorPanel::HandleLongPress()
     log_i("ErrorPanel: Triggered restoration check after clearing errors");
 }
 
-// Auto-cycling implementation
+// ========== Private Methods ==========
+
 /**
  * @brief Sorts the current error list by severity level
  *
@@ -406,7 +438,6 @@ void ErrorPanel::SortErrorsBySeverity()
     
 }
 
-
 /**
  * @brief Advances to the next error in the current error list
  *
@@ -422,29 +453,52 @@ void ErrorPanel::AdvanceToNextError()
         log_w("AdvanceToNextError: No errors to advance through");
         return;
     }
-    
+
     size_t oldIndex = currentErrorIndex_;
-    
-    // Move to next error
-    currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-    
-    log_i("AdvanceToNextError: Moving from error %zu to %zu (total: %zu)", 
-          oldIndex, currentErrorIndex_, currentErrors_.size());
-    
+
+    // Remove the current error from both our local list AND the ErrorManager
+    if (currentErrorIndex_ < currentErrors_.size())
+    {
+        ErrorInfo viewedError = currentErrors_[currentErrorIndex_];
+        log_i("Removing viewed error: %s - %s", viewedError.source, viewedError.message);
+
+        // Track this error as viewed
+        viewedErrors_.push_back(viewedError);
+
+        // Note: We cannot remove individual errors from ErrorManager, only clear all
+
+        // Remove from our local list
+        currentErrors_.erase(currentErrors_.begin() + currentErrorIndex_);
+    }
+
+    // Adjust index for the removal - stay at same position (which now shows next error)
+    // or wrap to beginning if we were at the end
+    if (currentErrorIndex_ >= currentErrors_.size())
+    {
+        currentErrorIndex_ = 0;
+    }
+
+    log_i("AdvanceToNextError: Removed viewed error %zu, now showing error %zu/%zu",
+          oldIndex, currentErrorIndex_ + 1, currentErrors_.size());
+
     // Update the component to display the new current error
-    if (componentInitialized_)
+    if (componentInitialized_ && !currentErrors_.empty())
     {
         // Direct access to concrete component
         log_i("AdvanceToNextError: Updating error component display");
         errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
         log_i("AdvanceToNextError: Error component updated successfully");
     }
+    else if (currentErrors_.empty())
+    {
+        log_i("AdvanceToNextError: No more errors to display - all have been viewed");
+        // Clear all remaining errors from ErrorManager since we've viewed them all
+        ErrorManager::Instance().ClearAllErrors();
+    }
     else
     {
         log_e("AdvanceToNextError: Error component is null - cannot update display");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "ErrorPanel",
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Error component is null - cannot update display");
     }
-    
-    log_i("AdvanceToNextError: Successfully advanced to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
 }

@@ -28,13 +28,7 @@
  */
 
 // Include ESP32 logging system
-#if defined(ARDUINO_ARCH_ESP32)
     #include <esp32-hal-log.h>
-#else
-    // Fallback for non-ESP32 builds (testing/simulation)
-    #include <stdio.h>
-    #define log_i(format, ...) printf("[I] " format "\n", ##__VA_ARGS__)
-#endif
 
 //=============================================================================
 // TEST LOGGING
@@ -83,10 +77,6 @@
 // are controlled by CORE_DEBUG_LEVEL and remain unchanged.
 // Only log_t() is controlled by the TEST_LOGS flag.
 
-// Optional: With ESP32-style timestamp (uncomment to use instead of above)
-// #ifdef TEST_LOGS
-//     #define log_t(format, ...) printf("[%7u][T] " format "\n", (unsigned)millis(), ##__VA_ARGS__)
-// #endif
 
 //=============================================================================
 // USAGE EXAMPLES

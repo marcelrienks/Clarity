@@ -64,8 +64,6 @@ class OilTemperatureSensor : public BaseSensor, public IConfig
     // Static schema registration for self-registering pattern
     static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
-    void RegisterLiveUpdateCallbacks();
-
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_TEMPERATURE_SENSOR;
     static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_TEMPERATURE_UNIT;
@@ -93,6 +91,12 @@ class OilTemperatureSensor : public BaseSensor, public IConfig
                                                    ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
                                                    Config::ConfigMetadata(ConfigConstants::Options::CALIBRATION_SCALES, Config::ConfigItemType::Selection)};
 
+    // Display behavior configuration (deadband for animation filtering)
+    inline static Config::ConfigItem deadbandConfig_{ConfigConstants::Keys::OIL_TEMPERATURE_DEADBAND_PERCENT,
+                                                      "Temperature Display Deadband",
+                                                      3, // Default 3%
+                                                      Config::ConfigMetadata{"1,3,5", Config::ConfigItemType::Selection}};
+
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IConfigurationManager *configurationManager_ = nullptr;
@@ -104,5 +108,4 @@ class OilTemperatureSensor : public BaseSensor, public IConfig
     int32_t previousChangeReading_ = 0;  // For HasStateChanged() separate tracking
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
-    uint32_t configCallbackId_ = 0;  // For live update callback management
 };

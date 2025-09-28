@@ -1,4 +1,5 @@
 #include "components/oem/oem_oil_pressure_component.h"
+#include "definitions/constants.h"
 #include <esp32-hal-log.h>
 
 // ========== Constructors and Destructor ==========
@@ -25,7 +26,7 @@ const lv_image_dsc_t *OemOilPressureComponent::get_icon() const
  */
 int32_t OemOilPressureComponent::get_scale_min() const
 {
-    return 0;
+    return SensorConstants::PRESSURE_DISPLAY_SCALE_MIN;
 }
 
 /**
@@ -34,7 +35,7 @@ int32_t OemOilPressureComponent::get_scale_min() const
  */
 int32_t OemOilPressureComponent::get_scale_max() const
 {
-    return 60;
+    return SensorConstants::PRESSURE_DISPLAY_SCALE_MAX;
 }
 
 /**

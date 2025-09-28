@@ -74,4 +74,3 @@ void GpioProvider::DetachInterrupt(int pin)
         ::detachInterrupt(digitalPinToInterrupt(pin));
     }
 }
-

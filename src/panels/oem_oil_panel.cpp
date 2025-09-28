@@ -3,12 +3,14 @@
 #include "components/oem/oem_oil_temperature_component.h"
 #include "sensors/oil_pressure_sensor.h"
 #include "sensors/oil_temperature_sensor.h"
+#include "definitions/constants.h"
 #include "managers/error_manager.h"
 #include "managers/panel_manager.h"
 #include "managers/style_manager.h"
-#include "definitions/constants.h"
 #include "utilities/unit_converter.h"
 #include "utilities/logging.h"
+#include "managers/configuration_manager.h"
+
 
 // ========== Constructors and Destructor ==========
 
@@ -30,7 +32,8 @@ OemOilPanel::OemOilPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleM
       oemOilPressureSensor_(std::make_shared<OilPressureSensor>(gpio)),
       oemOilTemperatureSensor_(std::make_shared<OilTemperatureSensor>(gpio)),
       componentsInitialized_(false), currentOilPressureValue_(-1),
-      currentOilTemperatureValue_(-1), lastTheme_("")
+      currentOilTemperatureValue_(-1), pressureDeadband_(0), temperatureDeadband_(0),
+      lastAnimatedPressureValue_(-1), lastAnimatedTemperatureValue_(-1), lastTheme_("")
 {
     log_v("OemOilPanel constructor called");
     // Initialize LVGL animation structures to prevent undefined behavior
@@ -82,12 +85,8 @@ OemOilPanel::~OemOilPanel()
     }
 }
 
-// Core Functionality Methods
+// ========== Public Interface Methods ==========
 
-/**
- * @brief Initialize the panel for showing Oil related information
- * Creates screen and initializes sensors with sentinel values
- */
 /**
  * @brief Initializes OEM oil panel UI structure and sensor configuration
  *
@@ -123,9 +122,14 @@ void OemOilPanel::Init()
 
     oemOilPressureSensor_->Init();
     currentOilPressureValue_ = -1; // Sentinel value to ensure first update
+    lastAnimatedPressureValue_ = -1; // Reset hysteresis tracking
 
     oemOilTemperatureSensor_->Init();
     currentOilTemperatureValue_ = -1; // Sentinel value to ensure first update
+    lastAnimatedTemperatureValue_ = -1; // Reset hysteresis tracking
+
+    // Calculate deadbands from configuration percentiles
+    calculateDeadbands();
 
     // Cache sensor references to avoid repeated static_pointer_cast operations
     cachedPressureSensor_ = std::static_pointer_cast<OilPressureSensor>(oemOilPressureSensor_);
@@ -134,10 +138,6 @@ void OemOilPanel::Init()
     log_i("OemOilPanel initialization completed");
 }
 
-/**
- * @brief Load the panel with component rendering and screen display
- * @param callbackFunction to be called when the panel load is completed
- */
 /**
  * @brief Loads OEM oil panel UI components and starts sensor monitoring
  *
@@ -206,14 +206,6 @@ void OemOilPanel::Load()
     
     // Final validation before the critical call
     
-    // Memory pattern check - write and verify a pattern
-    static const uint32_t MEMORY_PATTERN = 0xDEADBEEF;
-    uint32_t test_pattern = MEMORY_PATTERN;
-    if (test_pattern != MEMORY_PATTERN) {
-        log_e("Pattern changed from 0x%08X to 0x%08X!", MEMORY_PATTERN, test_pattern);
-        ErrorManager::Instance().ReportCriticalError("OemOilPanel",
-                                                     "Memory corruption detected - pattern mismatch");
-    }
 
     lv_screen_load(screen_);
     
@@ -229,9 +221,6 @@ void OemOilPanel::Load()
     log_t("OemOilPanel loaded successfully");
 }
 
-/**
- * @brief Update the reading on the screen
- */
 /**
  * @brief Updates OEM oil panel with current sensor readings and animations
  *
@@ -275,7 +264,7 @@ void OemOilPanel::Update()
     }
 }
 
-// Private Methods
+// ========== Private Methods ==========
 
 /**
  * @brief Update the oil pressure reading on the screen
@@ -301,24 +290,48 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
     auto sensorValue = std::get<int32_t>(oemOilPressureSensor_->GetReading());
     auto value = MapPressureValue(sensorValue);
 
-    // Handle forced refresh (theme changes) or skip if unchanged
-    if (value == currentOilPressureValue_)
-    {
-        if (forceRefresh)
-        {
-            oemOilPressureComponent_.Refresh(Reading{value});
-        }
-        return; // No animation needed since value didn't change
+    // Apply hysteresis/deadband to prevent jittery updates from sensor noise
+    // Only animate if change exceeds deadband threshold or this is the first reading
+    bool shouldAnimate = false;
+    if (lastAnimatedPressureValue_ == -1) {
+        // First reading - always animate
+        shouldAnimate = true;
+    } else {
+        // Check if change exceeds deadband threshold
+        int32_t changeMagnitude = abs(value - lastAnimatedPressureValue_);
+        shouldAnimate = changeMagnitude >= pressureDeadband_;
     }
 
-    log_i("Updating pressure from %d to %d", currentOilPressureValue_, value);
+    // Handle forced refresh (theme changes) or skip if no significant change
+    if (!shouldAnimate && !forceRefresh)
+    {
+        // Update current value for tracking but don't animate
+        currentOilPressureValue_ = value;
+        return; // No animation needed - change within deadband
+    }
+
+    if (forceRefresh && value == currentOilPressureValue_)
+    {
+        oemOilPressureComponent_.Refresh(Reading{value});
+        return; // Theme refresh but no value change
+    }
+
+    log_i("Updating pressure from %d to %d (exceeds deadband of %d) [%.1f to %.1f Bar]",
+          currentOilPressureValue_, value, pressureDeadband_,
+          currentOilPressureValue_ / 10.0f, value / 10.0f);
     oemOilPressureComponent_.Refresh(Reading{value});
+
+    // Track this value as the last animated value for hysteresis
+    lastAnimatedPressureValue_ = value;
 
     // Determine animation start value
     // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
     int32_t animationStartValue = currentOilPressureValue_;
-    const int32_t scaleMin = 0;  // Pressure scale minimum
-    const int32_t scaleMax = 60; // Pressure scale maximum
+    // PRESSURE SCALE: Component manages scale representing 0.0-6.0 Bar with one decimal place precision
+    // Scale unit 1 = 0.1 Bar, so value 55 = 5.5 Bar, value 23 = 2.3 Bar
+    // Using same constants that components use to ensure consistency
+    const int32_t scaleMin = SensorConstants::PRESSURE_DISPLAY_SCALE_MIN;  // Pressure scale minimum: 0.0 Bar
+    const int32_t scaleMax = SensorConstants::PRESSURE_DISPLAY_SCALE_MAX;  // Pressure scale maximum: 6.0 Bar
     
     if (currentOilPressureValue_ == -1)
     {
@@ -334,8 +347,8 @@ void OemOilPanel::UpdateOilPressure(bool forceRefresh)
         else
         {
             // Value is within scale bounds
-            // For pressure, always start from minimum (0) for initial animation
-            // This represents the engine starting up and building pressure
+            // For pressure, always start from minimum (0.0 Bar) for initial animation
+            // This represents the engine starting up and building pressure from 0
             animationStartValue = scaleMin;
         }
         log_i("Initial pressure animation: starting from %d to %d", animationStartValue, value);
@@ -418,24 +431,45 @@ void OemOilPanel::UpdateOilTemperature(bool forceRefresh)
     auto sensorValue = std::get<int32_t>(oemOilTemperatureSensor_->GetReading());
     auto value = MapTemperatureValue(sensorValue);
 
-    // Handle forced refresh (theme changes) or skip if unchanged
-    if (value == currentOilTemperatureValue_)
-    {
-        if (forceRefresh)
-        {
-            oemOilTemperatureComponent_.Refresh(Reading{value});
-        }
-        return; // No animation needed since value didn't change
+    // Apply hysteresis/deadband to prevent jittery updates from sensor noise
+    // Only animate if change exceeds deadband threshold or this is the first reading
+    bool shouldAnimate = false;
+    if (lastAnimatedTemperatureValue_ == -1) {
+        // First reading - always animate
+        shouldAnimate = true;
+    } else {
+        // Check if change exceeds deadband threshold
+        int32_t changeMagnitude = abs(value - lastAnimatedTemperatureValue_);
+        shouldAnimate = changeMagnitude >= temperatureDeadband_;
     }
 
-    log_i("Updating temperature from %d to %d", currentOilTemperatureValue_, value);
+    // Handle forced refresh (theme changes) or skip if no significant change
+    if (!shouldAnimate && !forceRefresh)
+    {
+        // Update current value for tracking but don't animate
+        currentOilTemperatureValue_ = value;
+        return; // No animation needed - change within deadband
+    }
+
+    if (forceRefresh && value == currentOilTemperatureValue_)
+    {
+        oemOilTemperatureComponent_.Refresh(Reading{value});
+        return; // Theme refresh but no value change
+    }
+
+    log_i("Updating temperature from %d to %d (exceeds deadband of %d°C)", currentOilTemperatureValue_, value, temperatureDeadband_);
     oemOilTemperatureComponent_.Refresh(Reading{value});
+
+    // Track this value as the last animated value for hysteresis
+    lastAnimatedTemperatureValue_ = value;
 
     // Determine animation start value
     // If current value is -1 (initial state) or outside scale bounds, start from appropriate boundary
     int32_t animationStartValue = currentOilTemperatureValue_;
-    const int32_t scaleMin = 0;   // Temperature scale minimum
-    const int32_t scaleMax = 120; // Temperature scale maximum
+    // TEMPERATURE SCALE: Component manages scale representing 0-120°C
+    // Using same constants that components use to ensure consistency
+    const int32_t scaleMin = SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN;   // Temperature scale minimum
+    const int32_t scaleMax = SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX;   // Temperature scale maximum
     
     if (currentOilTemperatureValue_ == -1)
     {
@@ -529,7 +563,7 @@ Action OemOilPanel::GetLongPressAction()
 }
 */
 
-// SetManagers and SetConfigurationManager removed - using constructor injection
+// ========== Configuration Methods ==========
 
 /**
  * @brief Apply current sensor settings from preferences directly
@@ -598,7 +632,7 @@ void OemOilPanel::ApplyCurrentSensorSettings()
     }
 }
 
-// Static Callback Methods
+// ========== Static Callback Methods ==========
 
 /**
  * @brief The callback to be run once show panel has completed
@@ -721,7 +755,7 @@ void OemOilPanel::ExecuteTemperatureAnimationCallback(void *target, int32_t valu
     thisInstance->oemOilTemperatureComponent_.SetValue(value);
 }
 
-// Value mapping methods
+// ========== Value Mapping Methods ==========
 
 /**
  * @brief Map oil pressure sensor value to display scale
@@ -880,14 +914,30 @@ int32_t OemOilPanel::MapTemperatureValue(int32_t sensorValue)
     return mappedValue;
 }
 
-// IActionService Interface Implementation
+// ========== IActionService Interface Implementation ==========
 
+/**
+ * @brief Static function for handling short button press during oil monitoring
+ * @param panelContext Pointer to the oil panel instance (unused)
+ *
+ * Currently provides no action for short button presses during oil monitoring.
+ * The OEM oil panel is primarily a monitoring display without direct short press
+ * interaction functionality.
+ */
 static void OemOilPanelShortPress(void* panelContext)
 {
     log_v("OemOilPanelShortPress() called");
     // No action for short press on oil panel
 }
 
+/**
+ * @brief Static function for handling long button press during oil monitoring
+ * @param panelContext Pointer to the oil panel instance
+ *
+ * Handles long button press events by navigating to the configuration panel.
+ * Provides safe casting and null pointer checking before delegating to the
+ * instance method for panel navigation and settings access.
+ */
 static void OemOilPanelLongPress(void* panelContext)
 {
     log_v("OemOilPanelLongPress() called");
@@ -900,23 +950,7 @@ static void OemOilPanelLongPress(void* panelContext)
     }
 }
 
-/**
- * @brief Gets the short press callback function for this panel
- * @return Function pointer to the short press handler
- *
- * Returns the static callback function for short button presses. Currently
- * the oil panel does not respond to short presses, so this returns a no-op
- * function that maintains the interface contract.
- */
- 
-/**
- * @brief Handles long button press events for panel navigation
- *
- * Processes long button press events by navigating to the configuration panel.
- * This provides users with access to system settings and calibration options
- * from the main oil monitoring display. Includes error handling for cases where
- * the panel service is not available.
- */
+// ========== Action Handler Methods ==========
 
 /**
  * @brief Handles short button press during oil monitoring display
@@ -941,3 +975,66 @@ void OemOilPanel::HandleLongPress()
         log_w("OemOilPanel: Cannot load config panel - panelManager not available");
     }
 }
+
+// ========== Helper Methods ==========
+
+/**
+ * @brief Calculate deadband values from configuration percentiles
+ *
+ * @details Reads deadband percentile configuration (1%, 3%, or 5%) and calculates
+ * the actual deadband values based on component scale ranges retrieved dynamically:
+ * - Pressure: Component-managed scale representing 0.0-6.0 Bar
+ * - Temperature: Component-managed scale representing 0-120°C
+ *
+ * Scale ranges are obtained from components to ensure accuracy and maintainability.
+ * Examples (assuming pressure component returns 0-60 range):
+ * - 1% = 0.6 scale units = 0.06 Bar threshold
+ * - 3% = 1.8 scale units = 0.18 Bar threshold
+ * - 5% = 3.0 scale units = 0.30 Bar threshold
+ */
+void OemOilPanel::calculateDeadbands()
+{
+    // Get pressure deadband percentage from pressure component configuration (default: 3%)
+    int32_t pressurePercent = DEFAULT_PRESSURE_DEADBAND_PERCENT;
+    if (configurationManager_) {
+        if (auto configValue = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::OIL_PRESSURE_DEADBAND_PERCENT)) {
+            pressurePercent = *configValue;
+            log_i("Using configured pressure deadband: %d%%", pressurePercent);
+        } else {
+            log_i("No pressure deadband config found, using default: %d%%", pressurePercent);
+        }
+    }
+
+    // Get temperature deadband percentage from temperature component configuration (default: 3%)
+    int32_t temperaturePercent = DEFAULT_TEMPERATURE_DEADBAND_PERCENT;
+    if (configurationManager_) {
+        if (auto configValue = configurationManager_->QueryConfig<int>(ConfigConstants::Keys::OIL_TEMPERATURE_DEADBAND_PERCENT)) {
+            temperaturePercent = *configValue;
+            log_i("Using configured temperature deadband: %d%%", temperaturePercent);
+        } else {
+            log_i("No temperature deadband config found, using default: %d%%", temperaturePercent);
+        }
+    }
+
+    // Calculate actual deadband values from percentiles using component scale constants
+    // Reference the same constants that components use to ensure consistency
+    const int32_t pressureScaleRange = SensorConstants::PRESSURE_DISPLAY_SCALE_MAX - SensorConstants::PRESSURE_DISPLAY_SCALE_MIN;
+    const int32_t temperatureScaleRange = SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX - SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN;
+
+    // Pressure: (percent * component_scale_range) / 100
+    pressureDeadband_ = (pressurePercent * pressureScaleRange) / 100;
+    if (pressureDeadband_ < 1) pressureDeadband_ = 1; // Minimum 1 scale unit
+
+    // Temperature: (percent * component_scale_range) / 100
+    temperatureDeadband_ = (temperaturePercent * temperatureScaleRange) / 100;
+    if (temperatureDeadband_ < 1) temperatureDeadband_ = 1; // Minimum 1 scale unit
+
+    log_i("Calculated deadbands from component scale constants:");
+    log_i("  Pressure: %d-%d range (%d units), %d%% = %d scale units (%.1f Bar threshold)",
+          SensorConstants::PRESSURE_DISPLAY_SCALE_MIN, SensorConstants::PRESSURE_DISPLAY_SCALE_MAX,
+          pressureScaleRange, pressurePercent, pressureDeadband_, pressureDeadband_ / 10.0f);
+    log_i("  Temperature: %d-%d range (%d units), %d%% = %d scale units (%d°C threshold)",
+          SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN, SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX,
+          temperatureScaleRange, temperaturePercent, temperatureDeadband_, temperatureDeadband_);
+}
+

@@ -1,5 +1,6 @@
 #include "components/oem/oem_oil_temperature_component.h"
 #include "managers/error_manager.h"
+#include "definitions/constants.h"
 #include <esp32-hal-log.h>
 
 // ========== Constructors and Destructor ==========
@@ -28,7 +29,7 @@ const lv_image_dsc_t *OemOilTemperatureComponent::get_icon() const
  */
 int32_t OemOilTemperatureComponent::get_scale_min() const
 {
-    return 0;
+    return SensorConstants::TEMPERATURE_DISPLAY_SCALE_MIN;
 }
 
 /**
@@ -37,7 +38,7 @@ int32_t OemOilTemperatureComponent::get_scale_min() const
  */
 int32_t OemOilTemperatureComponent::get_scale_max() const
 {
-    return 120;
+    return SensorConstants::TEMPERATURE_DISPLAY_SCALE_MAX;
 }
 
 /**

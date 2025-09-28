@@ -93,6 +93,7 @@ void StyleManager::InitializeStyles()
     // Apply theme from preferences
     if (configurationManager_) {
         LoadConfiguration();
+        RegisterConfigCallback();
     } else {
         SetTheme(theme_.c_str());
     }
@@ -110,8 +111,6 @@ void StyleManager::SetTheme(const char *theme)
     {
         return;
     }
-
-
     // Note: THEME member is no longer updated here - it serves only as a fallback
     // The source of truth is always the preference service
 
@@ -322,11 +321,15 @@ void StyleManager::ResetStyles()
  */
 void StyleManager::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("StyleManager::RegisterConfigSchema: ConfigurationManager is null - style config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "ConfigManager null - style config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(CONFIG_SECTION)) {
-        log_d("StyleManager schema already registered");
         return;
     }
 
@@ -360,7 +363,12 @@ void StyleManager::RegisterConfig(IConfigurationManager* configurationManager)
  */
 void StyleManager::LoadConfiguration()
 {
-    if (!configurationManager_) return;
+    if (!configurationManager_) {
+        log_e("StyleManager::LoadConfiguration: ConfigurationManager is null - cannot load style configuration!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "ConfigManager null - using default styles");
+        return;
+    }
 
     // Register configuration first
     RegisterConfig(configurationManager_);
@@ -373,4 +381,36 @@ void StyleManager::LoadConfiguration()
     }
 
     log_i("Loaded style configuration: theme=%s", theme_.c_str());
+}
+
+/**
+ * @brief Refresh configuration in response to live config changes
+ */
+void StyleManager::RefreshConfig()
+{
+    log_i("StyleManager: Refreshing config due to live update");
+    LoadConfiguration();
+}
+
+/**
+ * @brief Register callback for live configuration updates
+ */
+void StyleManager::RegisterConfigCallback()
+{
+    if (!configurationManager_) {
+        log_e("StyleManager::RegisterConfigCallback: ConfigurationManager is null - cannot register config callbacks!");
+        ErrorManager::Instance().ReportCriticalError("StyleManager",
+                                                     "ConfigurationManager is null - style updates will not work");
+        return;
+    }
+
+    // Register callback that calls RefreshConfig when our section changes
+    auto callback = [this](const std::string& fullKey,
+                          const std::optional<Config::ConfigValue>& oldValue,
+                          const Config::ConfigValue& newValue) {
+        RefreshConfig();
+    };
+
+    configurationManager_->RegisterChangeCallback(CONFIG_SECTION, callback);
+    log_i("StyleManager: Registered config callback for section: %s", CONFIG_SECTION);
 }

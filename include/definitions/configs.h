@@ -145,6 +145,4 @@ struct ConfigSection {
         return nullptr;
     }
 };
-
-
 } // namespace Config

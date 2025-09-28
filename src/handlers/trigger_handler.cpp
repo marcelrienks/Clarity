@@ -79,9 +79,12 @@ TriggerHandler::~TriggerHandler() {
  * for state changes. Ensures trigger processing doesn't interfere
  * with UI responsiveness in automotive applications.
  */
-void TriggerHandler::Process() {
-    // Only evaluate triggers during UI idle - this is called from InterruptManager
-    EvaluateTriggers();
+void TriggerHandler::ProcessTriggers() {
+    // Validate triggers to detect state changes
+    ValidateTriggers();
+
+    // Execute any pending trigger actions
+    ExecutePendingTriggers();
 }
 
 /**
@@ -119,17 +122,29 @@ bool TriggerHandler::RegisterTrigger(const Trigger& trigger) {
 }
 
 /**
- * @brief Evaluates all registered triggers for state changes
+ * @brief Validates all registered triggers for state changes
  *
- * Core trigger processing that examines each registered trigger
- * for sensor state changes and executes appropriate responses.
- * Implements priority-based execution and same-type restoration.
+ * Examines each registered trigger for sensor state changes but does not execute.
+ * State change detection is performed to prepare for execution phase.
  */
-void TriggerHandler::EvaluateTriggers() {
+void TriggerHandler::ValidateTriggers() {
     // Process each trigger for state changes
     for (size_t i = 0; i < triggerCount_; i++) {
         EvaluateIndividualTrigger(triggers_[i]);
     }
+}
+
+/**
+ * @brief Executes any triggers that need activation/deactivation
+ *
+ * For triggers, execution happens immediately upon state change detection
+ * within ValidateTriggers. This method is kept for interface consistency
+ * but doesn't perform additional work as trigger execution is immediate.
+ */
+void TriggerHandler::ExecutePendingTriggers() {
+    // Triggers execute immediately upon state change detection in ValidateTriggers()
+    // This method exists for interface consistency with ActionHandler pattern
+    // but trigger execution is not deferred like button actions
 }
 
 /**
@@ -202,7 +217,8 @@ void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
     }
 
     // Early return if error panel is active - suppress trigger execution but keep state
-    if (ErrorManager::Instance().IsErrorPanelActive()) {
+    // Exception: Allow error trigger to execute during error panel to support dynamic error addition
+    if (ErrorManager::Instance().IsErrorPanelActive() && strcmp(trigger.id, "error") != 0) {
         return;
     }
 

@@ -70,8 +70,6 @@ class ConfigComponent : public IComponent
     void SetMenuItems(const std::vector<MenuItem> &items);
     void SetCurrentIndex(size_t index);
     void SetHintText(const std::string &hint);
-
-
   private:
     // ========== Private Methods ==========
     void CreateUI();

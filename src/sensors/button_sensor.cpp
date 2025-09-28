@@ -95,7 +95,6 @@ bool ButtonSensor::ReadDebouncedState()
     if ((current_time - last_debounce_time_) > DEBOUNCE_MS) {
         if (raw_state != current_state_) {
             current_state_ = raw_state;
-            log_d("Button debounced state: %s", current_state_ ? "PRESSED" : "RELEASED");
         }
     }
 

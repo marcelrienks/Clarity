@@ -149,7 +149,6 @@ std::optional<Config::ConfigSection> StorageProvider::GetConfigSection(const std
     return std::nullopt;
 }
 
-
 /**
  * @brief Save a specific configuration section to NVS storage
  * @param sectionName Name of the section to persist
@@ -305,8 +304,6 @@ bool StorageProvider::ValidateConfigValue(const std::string& fullKey, const Conf
     return false;
 }
 
-
-
 // ========== Live Update Implementation ==========
 
 uint32_t StorageProvider::RegisterChangeCallback(const std::string& fullKey, ConfigChangeCallback callback) {
@@ -320,12 +317,6 @@ bool StorageProvider::IsSchemaRegistered(const std::string& sectionName) const {
     SemaphoreGuard lock(configMutex_);
     return registeredSections_.find(sectionName) != registeredSections_.end();
 }
-
-
-
-
-
-
 
 // ========== Protected Implementation Methods ==========
 
@@ -450,8 +441,6 @@ std::string StorageProvider::GetSectionNamespace(const std::string& sectionName)
     }
     return ns;
 }
-
-
 
 /**
  * @brief Validate integer value against range constraints

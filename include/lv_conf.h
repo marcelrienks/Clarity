@@ -38,8 +38,6 @@
 #define LV_USE_STDLIB_MALLOC    LV_STDLIB_CLIB
 #define LV_USE_STDLIB_STRING    LV_STDLIB_CLIB
 #define LV_USE_STDLIB_SPRINTF   LV_STDLIB_CLIB
-
-
 #if LV_USE_STDLIB_MALLOC == LV_STDLIB_BUILTIN
     /*Size of the memory available for `lv_malloc()` in bytes (>= 2kB)*/
     #define LV_MEM_SIZE (64 * 1024U)          /*[bytes]*/
@@ -661,8 +659,6 @@
 /*GIF decoder accelerate*/
 #define LV_GIF_CACHE_DECODE_DATA 0
 #endif
-
-
 /*Decode bin images to RAM*/
 #define LV_BIN_DECODER_RAM_LOAD 0
 

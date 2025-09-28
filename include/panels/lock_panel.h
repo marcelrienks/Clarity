@@ -3,8 +3,6 @@
 #include "panels/base_panel.h"
 #include "components/lock_component.h"
 #include "definitions/constants.h"
-
-
 /**
  * @class LockPanel
  * @brief Lock status monitoring panel

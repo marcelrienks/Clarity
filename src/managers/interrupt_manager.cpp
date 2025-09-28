@@ -2,8 +2,10 @@
 #include "managers/error_manager.h"
 #include "handlers/trigger_handler.h"
 #include "handlers/action_handler.h"
+#include "interfaces/i_panel_manager.h"
 #include "definitions/interrupts.h"
 #include "definitions/constants.h"
+#include "definitions/enums.h"
 #include "sensors/gpio_sensor.h"
 #include <Arduino.h>
 #include <cstring>
@@ -46,8 +48,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
     // Store GPIO provider reference
     gpioProvider_ = gpioProvider;
 
-    // Clear any existing handler storage
-    handlers_.clear();
 
     // Create new Trigger/Action architecture handlers
     triggerHandler_ = std::make_shared<TriggerHandler>(gpioProvider);
@@ -61,9 +61,6 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
         return;
     }
 
-    // Register handlers in legacy system
-    RegisterHandler(triggerHandler_);
-    RegisterHandler(actionHandler_);
 
     // Register all system-level triggers and actions
     RegisterSystemInterrupts();
@@ -84,14 +81,36 @@ void InterruptManager::Process()
         return;
     }
 
-    // Process Actions continuously for immediate responsiveness (button presses)
+    // Process Action validation continuously for immediate responsiveness (button event detection)
     if (actionHandler_) {
-        actionHandler_->Process();
+        actionHandler_->ValidateActions();
+    } else {
+        log_e("InterruptManager::Process: ActionHandler is null - button input is non-functional!");
+        ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                     "ActionHandler is null - button input system is broken");
     }
 
-    // Process Triggers only during UI idle to avoid interfering with animations
-    if (IsUIIdle() && triggerHandler_) {
-        triggerHandler_->Process();
+    // Process execution only during UI idle to avoid interfering with animations
+    // Check application-level UI state instead of LVGL idle time
+    // This ensures interrupts are processed between animations, not during them
+    if (panelManager_ && panelManager_->GetUiState() == UIState::IDLE) {
+        // Execute pending Actions first
+        if (actionHandler_) {
+            actionHandler_->ExecutePendingActions();
+        } else {
+            log_e("InterruptManager::Process: ActionHandler is null during execution phase!");
+            ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                         "ActionHandler is null - cannot execute button actions");
+        }
+
+        // Then process Triggers
+        if (triggerHandler_) {
+            triggerHandler_->ProcessTriggers();
+        } else {
+            log_e("InterruptManager::Process: TriggerHandler is null - trigger system is non-functional!");
+            ErrorManager::Instance().ReportCriticalError("InterruptManager",
+                                                         "TriggerHandler is null - trigger system is broken");
+        }
     }
 }
 
@@ -168,19 +187,16 @@ void InterruptManager::SetConfigurationManager(IConfigurationManager* configurat
 }
 
 /**
- * @brief Register legacy interrupt handler (for backward compatibility)
+ * @brief Sets panel manager for UI state access
+ * @param panelManager The panel manager to use for UI state checks
  */
-void InterruptManager::RegisterHandler(std::shared_ptr<IHandler> handler)
+void InterruptManager::SetPanelManager(IPanelManager* panelManager)
 {
-    if (!handler) {
-        log_e("Cannot register null handler");
-        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "InterruptManager",
-                                            "Cannot register null handler");
-        return;
-    }
-
-    handlers_.push_back(handler);
+    log_v("SetPanelManager() called");
+    panelManager_ = panelManager;
+    log_i("Set panel manager for UI state access");
 }
+
 
 /**
  * @brief Get total count of registered interrupts (triggers + actions)
@@ -323,17 +339,3 @@ void InterruptManager::RegisterSystemInterrupts()
           systemTriggers.size(), systemActions.size());
 }
 
-bool InterruptManager::IsUIIdle() const
-{
-    // Cache UI idle state with timeout to reduce LVGL query frequency
-    static bool cached_idle = false;
-    static unsigned long last_check = 0;
-
-    unsigned long current_time = millis();
-    if (current_time - last_check >= 5) { // Check every 5ms max (was checking every main loop cycle)
-        cached_idle = lv_disp_get_inactive_time(nullptr) > 10; // 10ms idle threshold
-        last_check = current_time;
-    }
-
-    return cached_idle;
-}

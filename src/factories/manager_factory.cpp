@@ -7,9 +7,7 @@
 #include "managers/style_manager.h"
 #include "providers/device_provider.h"
 #include "sensors/button_sensor.h"
-#ifdef CLARITY_DEBUG
 #include "sensors/gpio_sensor.h"
-#endif
 #include "definitions/types.h"
 #include <esp32-hal-log.h>
 
@@ -132,7 +130,7 @@ std::unique_ptr<PanelManager> ManagerFactory::CreatePanelManagerImpl(IDisplayPro
     {
         log_e("ManagerFactory: Cannot create PanelManager - IConfigurationManager is null");
         ErrorManager::Instance().ReportCriticalError(
-            "ManagerFactory", "Cannot create PanelManager - PreferenceService dependency is null");
+            "ManagerFactory", "Cannot create PanelManager - ConfigManager null");
         return nullptr;
     }
 
@@ -172,8 +170,6 @@ std::unique_ptr<StyleManager> ManagerFactory::CreateStyleManagerImpl(const char 
 
     return manager;
 }
-
-
 /**
  * @brief Internal implementation for creating ConfigurationManager
  * @return Unique pointer to IConfigurationManager or nullptr on failure
@@ -201,7 +197,6 @@ std::unique_ptr<IConfigurationManager> ManagerFactory::CreateConfigurationManage
         return nullptr;
     }
 
-    log_d("ManagerFactory: ConfigurationManager created and initialized successfully");
     return manager;
 }
 
@@ -350,4 +345,3 @@ ErrorManager* ManagerFactory::CreateErrorManager()
 {
     return CreateErrorManagerImpl();
 }
-

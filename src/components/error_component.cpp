@@ -201,7 +201,7 @@ void ErrorComponent::CreateSingleErrorUI(lv_obj_t *parent)
 {
     log_v("CreateSingleErrorUI() called");
 
-    // Create error position indicator at top
+    // Create error count indicator at top
     errorCountLabel_ = lv_label_create(parent);
     lv_obj_align(errorCountLabel_, LV_ALIGN_TOP_MID, 0, 8); // Near top with minimal margin
     lv_obj_set_style_text_font(errorCountLabel_, &lv_font_montserrat_12, 0);
@@ -272,9 +272,9 @@ void ErrorComponent::DisplayCurrentError()
 
     const ErrorInfo &currentError = currentErrors_[currentErrorIndex_];
 
-    // Update position indicator
+    // Update error count indicator
     char positionText[16];
-    snprintf(positionText, sizeof(positionText), "%zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
+    snprintf(positionText, sizeof(positionText), "errors: %zu", currentErrors_.size());
     lv_label_set_text(errorCountLabel_, positionText);
 
     // Update error level with color
@@ -293,8 +293,6 @@ void ErrorComponent::DisplayCurrentError()
     lv_label_set_text(navigationIndicator_, UIStrings::ErrorUI::NAVIGATION_INSTRUCTIONS);
 }
 
-// Note: Deprecated methods CycleToNextError() and HandleCycleButtonPress() removed.
-// ErrorPanel now handles all cycling logic via HandleShortPress() -> AdvanceToNextError()
 
 // ========== Helper Methods ==========
 

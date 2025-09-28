@@ -48,11 +48,15 @@ ErrorManager *errorManager;
  */
 void SystemConfig::RegisterConfigSchema(IConfigurationManager* configurationManager)
 {
-    if (!configurationManager) return;
+    if (!configurationManager) {
+        log_e("SystemConfig::RegisterConfigSchema: ConfigurationManager is null - system config registration failed!");
+        ErrorManager::Instance().ReportCriticalError("SystemConfig",
+                                                     "ConfigManager null - system config failed");
+        return;
+    }
 
     // Check if already registered to prevent duplicates
     if (configurationManager->IsSchemaRegistered(ConfigConstants::Sections::SYSTEM)) {
-        log_d("SystemConfig schema already registered");
         return;
     }
 
@@ -135,8 +139,6 @@ bool initializeServices()
         ErrorManager::Instance().ReportCriticalError("main", "ConfigurationManager creation failed");
         return false;
     }
-
-
     // Initialize StyleManager with user's theme preference
     std::string userTheme = Themes::DAY; // Default
     if (auto themeValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_THEME)) {
@@ -172,6 +174,9 @@ bool initializeServices()
         ErrorManager::Instance().ReportCriticalError("main", "PanelManager creation failed");
         return false;
     }
+
+    // Set panel manager reference for UI state checking in interrupt processing
+    interruptManager->SetPanelManager(panelManager.get());
 
     errorManager = managerFactory->CreateErrorManager();
     if (!errorManager) {
@@ -266,4 +271,3 @@ void loop()
     Ticker::handleLvTasks();
     Ticker::handleDynamicDelay(millis());
 }
-//CLEANED

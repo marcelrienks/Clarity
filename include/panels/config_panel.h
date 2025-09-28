@@ -58,8 +58,6 @@ class ConfigPanel : public IPanel
     void Init() override;
     void Load() override;
     void Update() override;
-
-
     // IActionService Interface Implementation (inherited through IPanel)
     void HandleShortPress() override;
     void HandleLongPress() override;

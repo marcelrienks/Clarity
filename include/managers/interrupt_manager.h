@@ -1,6 +1,5 @@
 #pragma once
 
-#include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
 #include "definitions/types.h"
 #include "definitions/constants.h"
@@ -12,6 +11,7 @@
 
 // Forward declarations
 class IConfigurationManager;
+class IPanelManager;
 
 /**
  * @class InterruptManager
@@ -43,8 +43,8 @@ public:
     bool RegisterTrigger(const Trigger& trigger);
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionHandler* panel);
-    void RegisterHandler(std::shared_ptr<IHandler> handler);
     void SetConfigurationManager(IConfigurationManager* configurationManager);
+    void SetPanelManager(IPanelManager* panelManager);
 
     /**
      * @brief Get total count of registered interrupts (triggers + actions)
@@ -99,20 +99,9 @@ private:
      */
     void RegisterSystemInterrupts();
 
-    /**
-     * @brief Check if UI is idle for trigger processing optimization
-     * @return true if UI has been idle for sufficient time
-     * @details Uses cached result with 5ms timeout to reduce LVGL query overhead
-     */
-    bool IsUIIdle() const;
 
     // ========== Private Data Members ==========
-    static constexpr size_t MAX_HANDLERS = 8;
-
-    // Handler management - Legacy and new handlers
-    std::vector<std::shared_ptr<IHandler>> handlers_;
-
-    // New Trigger/Action architecture handlers
+    // Trigger/Action architecture handlers
     std::shared_ptr<class TriggerHandler> triggerHandler_;
     std::shared_ptr<class ActionHandler> actionHandler_;
 
@@ -120,6 +109,7 @@ private:
     bool initialized_ = false;
     unsigned long lastEvaluationTime_ = 0;
 
-    // GPIO provider reference
+    // Provider references
     IGpioProvider* gpioProvider_ = nullptr;
+    IPanelManager* panelManager_ = nullptr;
 };

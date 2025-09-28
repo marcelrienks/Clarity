@@ -1,6 +1,5 @@
 #pragma once
 
-#include "interfaces/i_handler.h"
 #include "interfaces/i_gpio_provider.h"
 #include "interfaces/i_configuration_manager.h"
 #include "definitions/types.h"
@@ -28,7 +27,7 @@ class IActionHandler;
  * @timing_detection Precise press duration measurement for action classification
  * @function_injection Receives current panel functions dynamically
  */
-class ActionHandler : public IHandler
+class ActionHandler
 {
 public:
     // ========== Constructors and Destructor ==========
@@ -36,15 +35,13 @@ public:
     ~ActionHandler();
     
     // ========== Public Interface Methods ==========
-    // IHandler interface - new interrupt system only
-    void Process() override;
+    // Main action processing methods
+    void ValidateActions();
+    void ExecutePendingActions();
 
     // Panel management for direct method calls
     void SetCurrentPanel(IActionHandler* panel);
     void ClearCurrentPanel();
-
-    // Button event processing
-    void ProcessButtonEvents();
 
     // Sensor access for action context
     ButtonSensor* GetButtonSensor() const { return buttonSensor_.get(); }
@@ -69,7 +66,7 @@ public:
 private:
     // ========== Private Methods ==========
     // Core action processing
-    void ExecutePendingAction();
+    void ProcessButtonEvents();
     void SetPendingAction(ButtonAction actionType);
 
     // Button timing detection

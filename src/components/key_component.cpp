@@ -48,8 +48,6 @@ void KeyComponent::Render(lv_obj_t *screen, const ComponentLocation &location, I
                                              "Cannot render - display provider is null");
         return;
     }
-
-
     keyIcon_ = display->CreateImage(screen);
     lv_image_set_src(keyIcon_, &key_solid);
 

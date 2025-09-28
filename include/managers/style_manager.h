@@ -155,6 +155,10 @@ public:
     // Static schema registration for self-registering pattern
     static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
+    // Live config update methods
+    void RefreshConfig();
+    void RegisterConfigCallback();
+
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::STYLE_MANAGER;
     static constexpr const char* CONFIG_THEME = ConfigConstants::Keys::STYLE_MANAGER_THEME;

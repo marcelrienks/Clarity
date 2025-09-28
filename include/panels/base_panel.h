@@ -6,8 +6,6 @@
 #include "interfaces/i_panel_manager.h"
 #include "interfaces/i_style_manager.h"
 #include "definitions/types.h"
-
-
 /**
  * @class BasePanel
  * @brief Base class providing common panel functionality and lifecycle management

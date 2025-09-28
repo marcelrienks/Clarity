@@ -68,8 +68,6 @@ namespace UIConstants {
 }
 
 namespace UIStrings {
-
-
     // ========== Config Panel Action Types ==========
     namespace ActionTypes {
         static constexpr const char* ENTER_SECTION = "enter_section";
@@ -103,8 +101,6 @@ namespace UIStrings {
     namespace ConfigKeys {
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
     }
-
-
 
     // ========== Default Hint Text ==========
     namespace HintText {
@@ -153,8 +149,6 @@ namespace UIStrings {
         static constexpr const char* LEVEL_UNKNOWN = "UNKN";
     }
 }
-
-
 
 /*============================================================================*/
 /*                            STORAGE CONSTANTS                              */
@@ -223,6 +217,12 @@ namespace ConfigConstants {
         static constexpr const char* OIL_TEMPERATURE_UPDATE_RATE = "oil_temperature_sensor.update_rate";
         static constexpr const char* OIL_TEMPERATURE_OFFSET = "oil_temperature_sensor.offset";
         static constexpr const char* OIL_TEMPERATURE_SCALE = "oil_temperature_sensor.scale";
+
+        // Oil pressure component configuration keys (display behavior)
+        static constexpr const char* OIL_PRESSURE_DEADBAND_PERCENT = "oil_pressure_component.deadband_percent";
+
+        // Oil temperature component configuration keys (display behavior)
+        static constexpr const char* OIL_TEMPERATURE_DEADBAND_PERCENT = "oil_temperature_component.deadband_percent";
 
         // Style manager configuration keys
         static constexpr const char* STYLE_MANAGER_THEME = "style_manager.theme";
@@ -357,12 +357,17 @@ namespace SensorConstants {
     static constexpr int32_t PRESSURE_MIN_BAR = 0;  // 0 Bar minimum
     static constexpr int32_t PRESSURE_MAX_BAR = 10; // 10 Bar maximum
 
+    // Component Display Scale Constants
+    // These define the internal scale ranges used by gauge components
+    static constexpr int32_t PRESSURE_DISPLAY_SCALE_MIN = 0;   // Pressure gauge minimum scale value
+    static constexpr int32_t PRESSURE_DISPLAY_SCALE_MAX = 60;  // Pressure gauge maximum scale value (represents 6.0 Bar)
+    static constexpr int32_t TEMPERATURE_DISPLAY_SCALE_MIN = 0; // Temperature gauge minimum scale value
+    static constexpr int32_t TEMPERATURE_DISPLAY_SCALE_MAX = 120; // Temperature gauge maximum scale value (120°C)
+
     // Base temperature values (Celsius)
     static constexpr int32_t TEMPERATURE_MIN_CELSIUS = 0;   // 0°C minimum
     static constexpr int32_t TEMPERATURE_MAX_CELSIUS = 120; // 120°C maximum for oil temp
 }
-
-
 /*============================================================================*/
 /*                           HARDWARE CONSTANTS                              */
 /*============================================================================*/
@@ -398,4 +403,3 @@ namespace HardwareConstants {
         static constexpr const char* KEY_PRESENT = "key_present";
     }
 }
-

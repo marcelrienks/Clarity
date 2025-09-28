@@ -64,8 +64,6 @@ void KeyPanel::UpdateContent()
     // State changes are handled by the interrupt system loading different panels
 }
 
-
-
 // Panel-specific button handling
 /**
  * @brief Handles long button press events for panel navigation

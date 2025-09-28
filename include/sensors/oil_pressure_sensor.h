@@ -25,6 +25,9 @@
  * @model_role Provides oil pressure data to OemOilPressureComponent
  * @supported_units: Bar, PSI, kPa
  * @range 0-10 Bar (0-145 PSI, 0-1000 kPa) typical automotive range
+ * @display_scale Component expects 0-60 scale representing 0.0-6.0 Bar
+ *               Sensor readings are mapped: actual_bar * 10 = display_value
+ *               Example: 2.5 Bar reading becomes value 25 for display
  * @update_frequency Configurable via constructor
  *
  * @unit_conversion:
@@ -65,8 +68,6 @@ class OilPressureSensor : public BaseSensor, public IConfig
     // Static schema registration for self-registering pattern
     static void RegisterConfigSchema(IConfigurationManager* configurationManager);
 
-    void RegisterLiveUpdateCallbacks();
-
     // ========== Configuration Constants ==========
     static constexpr const char* CONFIG_SECTION = ConfigConstants::Sections::OIL_PRESSURE_SENSOR;
     static constexpr const char* CONFIG_UNIT = ConfigConstants::Keys::OIL_PRESSURE_UNIT;
@@ -94,6 +95,12 @@ class OilPressureSensor : public BaseSensor, public IConfig
                                                    ConfigConstants::Defaults::DEFAULT_CALIBRATION_SCALE,
                                                    Config::ConfigMetadata(ConfigConstants::Options::CALIBRATION_SCALES, Config::ConfigItemType::Selection)};
 
+    // Display behavior configuration (deadband for animation filtering)
+    inline static Config::ConfigItem deadbandConfig_{ConfigConstants::Keys::OIL_PRESSURE_DEADBAND_PERCENT,
+                                                      "Pressure Display Deadband",
+                                                      3, // Default 3%
+                                                      Config::ConfigMetadata{"1,3,5", Config::ConfigItemType::Selection}};
+
     // ========== Private Data Members ==========
     IGpioProvider *gpioProvider_;
     IConfigurationManager *configurationManager_ = nullptr;
@@ -105,5 +112,4 @@ class OilPressureSensor : public BaseSensor, public IConfig
     int32_t previousChangeReading_ = 0;  // For HasStateChanged() separate tracking
     unsigned long lastUpdateTime_ = 0;
     unsigned long updateIntervalMs_;
-    uint32_t configCallbackId_ = 0;  // For live update callback management
 };

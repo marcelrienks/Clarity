@@ -82,11 +82,7 @@ lv_obj_t *LvglDisplayProvider::CreateArc(lv_obj_t *parent)
  */
 lv_obj_t *LvglDisplayProvider::CreateScale(lv_obj_t *parent)
 {
-#ifdef UNIT_TESTING
-    return lv_arc_create(parent); // Use arc as substitute in tests
-#else
     return lv_scale_create(parent);
-#endif
 }
 
 /**
@@ -99,10 +95,5 @@ lv_obj_t *LvglDisplayProvider::CreateScale(lv_obj_t *parent)
  */
 lv_obj_t *LvglDisplayProvider::CreateImage(lv_obj_t *parent)
 {
-#ifdef UNIT_TESTING
-    return lv_img_create(parent); // Use available img_create function
-#else
     return lv_image_create(parent);
-#endif
 }
-

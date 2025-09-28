@@ -262,6 +262,50 @@ bool initializeServices() {
 - Visible on other panels when errors exist but error panel not active
 - Color-coded by highest severity level
 
+#### Display Constraints and Message Length Limits
+
+The Clarity system uses a **240x240 pixel round display** with specific constraints for error message display:
+
+**Error Message Display Area:**
+- **Message area**: 180x100 pixels within the circular display
+- **Font**: Montserrat 12pt with text wrapping enabled (`LV_LABEL_LONG_WRAP`)
+- **Layout**: Center-aligned, multi-line text support
+- **Available lines**: ~7-8 lines of text (100px height ÷ 14px line height)
+- **Characters per line**: ~25-30 characters (varies by character width)
+
+**Message Length Guidelines:**
+- **Optimal length**: 60-80 characters (fits cleanly without excessive wrapping)
+- **Maximum reasonable**: ~100 characters (acceptable with wrapping)
+- **Hard limit**: 128 characters (enforced by `DataConstants::ErrorInfo::MAX_MESSAGE_LENGTH`)
+
+**Message Optimization Examples:**
+```cpp
+// TOO LONG (89 chars) - Poor display formatting:
+"ConfigurationManager is null - oil temperature sensor configuration cannot be registered"
+
+// OPTIMIZED (46 chars) - Clean display:
+"ConfigManager null - temp sensor config failed"
+
+// TOO LONG (75 chars) - Causes excessive wrapping:
+"ConfigurationManager is null - system cannot register configuration schema"
+
+// OPTIMIZED (41 chars) - Fits comfortably:
+"ConfigManager null - system config failed"
+```
+
+**Implementation Guidelines:**
+- Use abbreviated component names (e.g., "ConfigManager" vs "ConfigurationManager")
+- Focus on essential information: what failed and impact
+- Prefer active voice and concise phrasing
+- Test message display on actual hardware when possible
+- All 108 error reporting locations have been reviewed for optimal display
+
+**Technical Details:**
+- Error message buffer: Fixed 128-byte char array for embedded optimization
+- Text truncation: Automatic via `strncpy()` with null termination
+- Thread safety: Error messages copied to avoid pointer invalidation
+- Memory efficiency: No dynamic allocation for error strings
+
 ### 7. Error Recovery and Restoration
 
 #### Automatic Panel Restoration

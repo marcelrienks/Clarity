@@ -202,24 +202,6 @@ void OemOilComponent::SetValue(int32_t value)
     lv_scale_set_line_needle_value(scale_, needleHighlightBase_, (NEEDLE_LENGTH / 3) - 2,
                                    mappedValue); // 1/3 length highlight
     
-    
-    
-    // Validate critical object pointers after LVGL operations
-    
-    // Check if LVGL objects are still valid
-    if (scale_) {
-        lv_coord_t scale_x = lv_obj_get_x(scale_);
-        lv_coord_t scale_y = lv_obj_get_y(scale_);
-    }
-    
-    // Memory pattern check in component context
-    static const uint32_t COMPONENT_PATTERN = 0xBEEFCAFE;
-    uint32_t component_test = COMPONENT_PATTERN;
-    if (component_test != COMPONENT_PATTERN) {
-        log_e("Pattern 0x%08X != 0x%08X!", component_test, COMPONENT_PATTERN);
-        ErrorManager::Instance().ReportCriticalError("OemOilComponent",
-                                                     "Memory corruption detected - component pattern mismatch");
-    }
 }
 
 /**
