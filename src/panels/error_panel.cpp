@@ -158,20 +158,35 @@ void ErrorPanel::Update()
     // Get current errors from ErrorManager
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
-    // Check if error list has changed
+    // Check if error list has meaningfully changed for display purposes
     bool errorsChanged = false;
     if (newErrors.size() != currentErrors_.size())
     {
+        log_i("Error count changed: %zu -> %zu", currentErrors_.size(), newErrors.size());
         errorsChanged = true;
     }
     else
     {
-        // Compare timestamps to detect changes
+        // Compare actual error content (ignore timestamps and acknowledgment status)
         for (size_t i = 0; i < newErrors.size() && !errorsChanged; i++)
         {
-            if (newErrors[i].timestamp != currentErrors_[i].timestamp ||
-                newErrors[i].acknowledged != currentErrors_[i].acknowledged)
+            log_t("Comparing error %zu: new[level=%d, source='%s', msg='%s'] vs current[level=%d, source='%s', msg='%s']",
+                  i, newErrors[i].level, newErrors[i].source, newErrors[i].message,
+                  currentErrors_[i].level, currentErrors_[i].source, currentErrors_[i].message);
+
+            if (newErrors[i].level != currentErrors_[i].level)
             {
+                log_i("Error %zu level changed: %d -> %d", i, currentErrors_[i].level, newErrors[i].level);
+                errorsChanged = true;
+            }
+            else if (strcmp(newErrors[i].source, currentErrors_[i].source) != 0)
+            {
+                log_i("Error %zu source changed: '%s' -> '%s'", i, currentErrors_[i].source, newErrors[i].source);
+                errorsChanged = true;
+            }
+            else if (strcmp(newErrors[i].message, currentErrors_[i].message) != 0)
+            {
+                log_i("Error %zu message changed: '%s' -> '%s'", i, currentErrors_[i].message, newErrors[i].message);
                 errorsChanged = true;
             }
         }
@@ -180,14 +195,39 @@ void ErrorPanel::Update()
     // Update display if errors have changed
     if (errorsChanged)
     {
+        // Only reset index if the number of errors changed (preserve manual cycling)
+        bool errorCountChanged = (newErrors.size() != currentErrors_.size());
+
         currentErrors_ = newErrors;
-        
+
         // Sort errors by severity (CRITICAL first, WARNING last)
         SortErrorsBySeverity();
-        
-        // Start from first error (highest severity)
-        currentErrorIndex_ = 0;
-        
+
+        // Adjust current index when error count changes
+        if (errorCountChanged)
+        {
+            // If current index is still valid, preserve position
+            if (currentErrorIndex_ >= currentErrors_.size())
+            {
+                // Index out of bounds - adjust to last valid position or 0
+                currentErrorIndex_ = currentErrors_.empty() ? 0 : currentErrors_.size() - 1;
+                log_i("Error removal: adjusted index to %zu (total: %zu)", currentErrorIndex_, currentErrors_.size());
+            }
+            else
+            {
+                // Index still valid - preserve user's current position
+                log_i("Error count changed but index %zu still valid (total: %zu)", currentErrorIndex_, currentErrors_.size());
+            }
+        }
+        else
+        {
+            // Ensure current index is still valid after sorting
+            if (currentErrorIndex_ >= currentErrors_.size())
+            {
+                currentErrorIndex_ = 0;
+            }
+        }
+
         // Tell component to display all errors with current index
         if (componentInitialized_)
         {
@@ -220,6 +260,12 @@ void ErrorPanel::Update()
             // In production, error triggers would naturally deactivate when errors are resolved
             return; // Exit early to prevent callback execution on replaced panel
         }
+    }
+
+    // Reset UI state to IDLE to allow interrupt processing (similar to ConfigPanel pattern)
+    if (panelManager_)
+    {
+        panelManager_->SetUiState(UIState::IDLE);
     }
     // Error panel updates are handled internally - no notification needed
 }
