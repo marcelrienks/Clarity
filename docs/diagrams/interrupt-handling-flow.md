@@ -331,4 +331,58 @@ bool KeyPresentSensor::HasStateChanged() {
 - **Maintainable Code**: Interface-based design with clear responsibilities
 - **Testable Components**: Individual handler testing with mock sensors
 
+## Recent Architecture Enhancements
+
+### Dynamic Error Addition During ErrorPanel Sessions
+
+**Enhancement Overview**:
+Recent improvements enable dynamic error generation while the ErrorPanel is active, supporting real-time error addition during error handling sessions.
+
+**Implementation Details**:
+```cpp
+// In src/handlers/trigger_handler.cpp - HandleTriggerActivation()
+void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
+    // ... existing priority logic ...
+
+    // Early return if error panel is active - suppress trigger execution but keep state
+    // Exception: Allow error trigger to execute during error panel to support dynamic error addition
+    if (ErrorManager::Instance().IsErrorPanelActive() && strcmp(trigger.id, "error") != 0) {
+        return;  // Block non-error triggers during ErrorPanel sessions
+    }
+
+    // Execute activation function if available
+    if (trigger.activateFunc) {
+        trigger.activateFunc();
+    }
+}
+```
+
+**Key Benefits**:
+- **Dynamic Error Support**: New errors can be generated while ErrorPanel is active
+- **Defensive Architecture**: All other triggers remain blocked during error handling
+- **Debug Error Testing**: Enables real-time error generation for testing dynamic addition
+- **Session Independence**: ErrorPanel can maintain its own error state separately
+
+**Error Trigger Enhancement**:
+The error trigger now supports unique timestamped error generation to prevent duplicate filtering:
+
+```cpp
+// In include/definitions/interrupts.h - Error trigger definition
+{
+    .id = TriggerIds::ERROR,
+    .priority = Priority::CRITICAL,
+    .type = TriggerType::PANEL,
+    .activateFunc = []() {
+        // Generate test errors with unique timestamps
+        uint32_t timestamp = millis();
+        ErrorManager::Instance().ReportWarning("DebugTest",
+                                               "Test warning @" + std::to_string(timestamp));
+        // ... additional test errors with unique timestamps
+    },
+    .deactivateFunc = nullptr,  // One-shot trigger
+    .sensor = errorSensor,
+    .isActive = false
+}
+```
+
 For complete implementation details, see: **[Architecture Document](../architecture.md)**
