@@ -43,28 +43,34 @@ DeviceProvider → PanelManager → Panels → Components
 
 ### 1. Error Data Structures
 
-Defined in `include/utilities/types.h`:
+Defined in `include/definitions/state_types.h`:
 
 ```cpp
-/// @enum ErrorLevel
-/// @brief Severity levels for application errors
-enum class ErrorLevel { 
-    WARNING,   ///< Non-critical issues that don't affect core functionality
-    ERROR,     ///< Significant issues that may impact features
-    CRITICAL   ///< Critical issues requiring immediate attention
+/// @enum ErrorLevel (in enums.h)
+/// @brief Severity levels for application errors with auto-dismiss support
+enum class ErrorLevel : uint8_t {
+    WARNING = 0,   ///< Non-critical issues (auto-dismissible after timeout)
+    ERROR = 1,     ///< Significant issues (removable on acknowledgment)
+    CRITICAL = 2   ///< Critical issues (highest priority, manual dismiss only)
 };
 
 /// @struct ErrorInfo
-/// @brief Complete error information structure
+/// @brief Complete error information structure optimized for embedded systems
 struct ErrorInfo {
-    ErrorLevel level;           ///< Severity level of the error
-    const char* source;         ///< Component/manager that reported the error
-    std::string message;        ///< Human-readable error description
-    unsigned long timestamp;    ///< millis() timestamp when error occurred
-    bool acknowledged;          ///< Whether user has acknowledged the error
+    ErrorLevel level;        ///< Severity level of the error
+    const char *source;      ///< Component/manager that reported the error (static string)
+    char message[128];       ///< Fixed-size message buffer for embedded optimization
+    unsigned long timestamp; ///< millis() timestamp when error occurred
+    bool acknowledged;       ///< Whether user has acknowledged the error
+
+    // Helper method to set message safely
+    void SetMessage(const std::string& msg) {
+        strncpy(message, msg.c_str(), 127);
+        message[127] = '\0'; // Ensure null termination
+    }
 };
 
-/// @struct PanelNames - Add error panel constant
+/// @struct PanelNames (in constants.h)
 struct PanelNames {
     // ... existing panel constants ...
     static constexpr const char* ERROR = "ErrorPanel";  ///< Error display panel
@@ -89,7 +95,7 @@ public:
     bool HasPendingErrors() const;
     bool HasCriticalErrors() const;
     std::vector<ErrorInfo> GetErrorQueue() const;
-    void AcknowledgeError(size_t errorIndex);
+    void AcknowledgeError(size_t errorIndex);  // Auto-removes non-critical errors
     void ClearAllErrors();
     
     // Integration with trigger system
@@ -158,22 +164,42 @@ Implemented in `include/panels/error_panel.h`:
 ```cpp
 class ErrorPanel : public IPanel {
 public:
-    ErrorPanel() = default;
-    ~ErrorPanel() = default;
-    
+    // Dependency injection constructor
+    ErrorPanel(IGpioProvider *gpio, IDisplayProvider *display, IStyleManager *styleManager,
+               IPanelManager *panelManager);
+    ~ErrorPanel();
+
     // IPanel interface implementation
-    void Init(IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Load(std::function<void()> completionCallback, IGpioProvider *gpio, IDisplayProvider *display) override;
-    void Update(std::function<void()> completionCallback, IGpioProvider *gpio, IDisplayProvider *display) override;
+    void Init() override;
+    void Load() override;
+    void Update() override;
+
+    // Action handling for button events
+    void HandleShortPress();  // Cycle to next error (view-once system)
+    void HandleLongPress();   // Clear all errors and exit panel
 
 private:
-    void CreateErrorList(lv_obj_t* parent);
-    void UpdateErrorDisplay();
-    void HandleErrorAcknowledgment(size_t errorIndex);
-    
-    lv_obj_t* errorContainer_ = nullptr;
-    lv_obj_t* errorList_ = nullptr;
-    lv_obj_t* errorCountLabel_ = nullptr;
+    void SortErrorsBySeverity();
+    void AdvanceToNextError();
+    static void ShowPanelCompletionCallback(lv_event_t *event);
+
+    // Dependencies
+    IGpioProvider *gpioProvider_;
+    IDisplayProvider *displayProvider_;
+    IStyleManager *styleManager_;
+    IPanelManager *panelManager_;
+
+    // UI components
+    lv_obj_t* screen_ = nullptr;
+    ErrorComponent errorComponent_;  // Stack-allocated component
+    ComponentLocation centerLocation_;
+
+    // Error management state
+    std::vector<ErrorInfo> currentErrors_;       // Current unviewed errors
+    std::vector<ErrorInfo> viewedErrors_;        // Errors that have been viewed
+    size_t currentErrorIndex_;                   // Index in current error list
+    std::string previousTheme_;                  // Theme to restore on exit
+    bool componentInitialized_ = false;
     bool panelLoaded_ = false;
 };
 ```
@@ -246,21 +272,27 @@ bool initializeServices() {
 ### 6. Error Panel UI Design
 
 #### Error Display Features
-- **Error List**: Scrollable list showing all pending errors
-- **Error Details**: Level, source, timestamp, and message for each error
-- **Visual Indicators**: 
-  - Red background for critical errors
-  - Orange background for regular errors
-  - Yellow background for warnings
+- **Single Error Display**: Shows one error at a time with full message visibility
+- **Error Details**: Large, readable display of level, source, and complete message
+- **Visual Indicators**:
+  - Circular colored border matching error severity (red/orange/yellow)
+  - Large error level text (CRIT/ERR/WARN) with severity color
+  - Responsive layout optimized for 240x240 round display
 - **User Actions**:
-  - Touch/button to acknowledge individual errors
-  - Auto-dismiss warnings after configurable timeout (e.g., 10 seconds)
-  - Manual dismiss for errors and critical errors
+  - **Short Press**: Advance to next error (view-once system - viewed errors are removed)
+  - **Long Press**: Clear all remaining errors and exit panel
 
-#### Error Count Indicator
-- Small badge showing total pending error count
-- Visible on other panels when errors exist but error panel not active
-- Color-coded by highest severity level
+#### Error Count Display
+- Shows remaining error count as "errors: N" (decreases as errors are viewed)
+- Navigation instructions displayed at bottom of screen
+- Real-time count updates as new errors are added during active session
+
+#### View-Once System Design
+- **Dynamic Error Addition**: New errors can be added during an active error session
+- **View-Once Removal**: Each error is removed from display when navigated to
+- **Severity Sorting**: Errors automatically sorted by severity (CRITICAL → ERROR → WARNING)
+- **Session Independence**: ErrorPanel maintains its own error list separate from ErrorManager
+- **Auto-restoration**: Panel automatically exits when no errors remain
 
 #### Display Constraints and Message Length Limits
 
@@ -313,22 +345,51 @@ The Clarity system uses a **240x240 pixel round display** with specific constrai
 - Leverages existing trigger system's `restoreTarget` mechanism
 - No manual intervention required for normal operation
 
-#### Error Persistence
-- Errors persist until explicitly acknowledged by user
-- Critical errors cannot be auto-dismissed
-- Warning and error levels can have configurable auto-dismiss timers
+#### Error Persistence and Acknowledgment Policy
+- **Warnings and Errors**: Automatically removed when acknowledged via `AcknowledgeError()`
+- **Critical Errors**: Remain visible after acknowledgment until explicitly cleared via `ClearAllErrors()`
+- **Auto-dismiss**: Warnings auto-dismiss after 10 seconds (configurable)
+- **View-Once System**: ErrorPanel implements independent removal on navigation
 
-### 8. Memory Management
+### 8. Trigger System Integration Improvements
+
+#### Dynamic Error Generation During Error Panel
+Recent improvements to the trigger system now support dynamic error addition during active error sessions:
+
+```cpp
+// In src/handlers/trigger_handler.cpp - HandleTriggerActivation()
+// Early return if error panel is active - suppress trigger execution but keep state
+// Exception: Allow error trigger to execute during error panel to support dynamic error addition
+if (ErrorManager::Instance().IsErrorPanelActive() && strcmp(trigger.id, "error") != 0) {
+    return;
+}
+```
+
+#### Error Trigger Execution
+- **Normal triggers**: Blocked during error panel display to prevent interference
+- **Error trigger**: Allowed to execute during error panel to support dynamic error addition
+- **Debug error generation**: Generates unique timestamped errors for testing
+
+#### Error Trigger Constants (in definitions/constants.h)
+```cpp
+namespace TriggerIds {
+    static constexpr const char* ERROR = "error";  // Debug error trigger ID
+}
+```
+
+### 9. Memory Management
 
 #### Bounded Error Queue
 - Maximum 10 errors in queue (configurable via `MAX_ERROR_QUEUE_SIZE`)
 - Oldest errors automatically removed when queue is full
-- Priority given to higher severity errors
+- Priority given to higher severity errors (CRITICAL → ERROR → WARNING)
+- Auto-dismiss warnings after 10 seconds
 
 #### Efficient String Handling
-- Use string views where possible for component names
-- Avoid dynamic allocation in critical error paths
-- Pre-allocate error message buffers where feasible
+- Fixed 128-byte char arrays instead of std::string for embedded optimization
+- Safe string copying with null termination
+- No dynamic allocation in error reporting paths
+- Thread-safe error message handling
 
 ## System Benefits
 

@@ -84,7 +84,7 @@ The Clarity system implements a comprehensive sensor architecture with single ow
 - **PanelManager**: Creates panels on demand, manages switching and lifecycle
 - **PreferenceManager**: Persistent settings storage
 - **StyleManager**: LVGL themes (Day/Night) controlled by LightsSensor
-- **ErrorManager**: Error collection (basic implementation, no trigger integration yet)
+- **ErrorManager**: Advanced error collection with trigger integration and dynamic error addition support
 
 ## Main Loop Processing Flow
 
@@ -138,10 +138,13 @@ void loop() {
   - Short Press: No action
   - Long Press: Load config panel
   
-- **Error Panel**: System error management
-  - Basic error display functionality
-  - Short Press: Navigate errors
-  - Long Press: Clear errors
+- **Error Panel**: Advanced error management with view-once system
+  - Single error display with full message visibility
+  - Dynamic error addition during active sessions
+  - Severity-based sorting (CRITICAL → ERROR → WARNING)
+  - Short Press: Navigate to next error (removes viewed error)
+  - Long Press: Clear all errors and exit panel
+  - Auto-restoration when no errors remain
   
 - **Config Panel**: System configuration
   - Menu navigation for settings
@@ -321,5 +324,6 @@ The project follows Google C++ Style Guide with project-specific preferences:
 - Priority-based override logic for complex scenarios
 - Smart restoration with last user panel tracking
 - Memory-optimized design for ESP32 constraints
-- Advanced error handling integration
+- Advanced error handling with view-once system and dynamic error addition
+- Trigger system enhancements for error panel compatibility
 - Extended sensor support architecture

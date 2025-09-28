@@ -52,6 +52,9 @@ flowchart TD
         DeactivateFlow["Deactivation Flow"]
   end
  subgraph ActivationFlow["Trigger Activation Flow"]
+        ErrorPanelCheck{"ErrorPanel<br>Active?"}
+        ErrorTriggerCheck{"Is Error<br>Trigger?"}
+        BlockTrigger["Block Trigger<br>Execution<br>(Keep State)"]
         PriorityCheck{"Higher Priority<br>Active Trigger?"}
         ExecuteActivate["Execute Trigger<br>activateFunc<br>isActive = true"]
         SetActiveOnly["Set isActive = true<br>No Function Execution"]
@@ -90,7 +93,11 @@ flowchart TD
     TriggerChanged -- Yes --> StateDirection
     StateDirection -- HIGH --> ActivateFlow
     StateDirection -- LOW --> DeactivateFlow
-    ActivateFlow --> PriorityCheck
+    ActivateFlow --> ErrorPanelCheck
+    ErrorPanelCheck -- Yes --> ErrorTriggerCheck
+    ErrorPanelCheck -- No --> PriorityCheck
+    ErrorTriggerCheck -- No --> BlockTrigger
+    ErrorTriggerCheck -- Yes --> PriorityCheck
     PriorityCheck -- No --> ExecuteActivate
     PriorityCheck -- Yes --> SetActiveOnly
     DeactivateFlow --> ExecuteDeactivate
@@ -122,6 +129,9 @@ flowchart TD
      ActivateFlow:::trigger
      DeactivateFlow:::trigger
      PriorityCheck:::decision
+     ErrorPanelCheck:::decision
+     ErrorTriggerCheck:::decision
+     BlockTrigger:::trigger
      ExecuteActivate:::trigger
      SetActiveOnly:::trigger
      ExecuteDeactivate:::trigger
@@ -231,8 +241,12 @@ void Action::Execute() {
 5. **Function Execution**: Execute appropriate activate/deactivate function
 
 **Activation Flow with Priority Logic**:
-1. **Priority Check**: Find any higher-priority active Triggers
-2. **Activation Decision**:
+1. **ErrorPanel Blocking Check**: Check if ErrorPanel is currently active
+2. **Error Trigger Exception**: If ErrorPanel is active:
+   - **Non-Error Triggers**: Block execution but maintain state (allows dynamic error addition)
+   - **Error Trigger**: Allow execution to support new errors during ErrorPanel sessions
+3. **Priority Check**: Find any higher-priority active Triggers (if not blocked)
+4. **Activation Decision**:
    - **No Higher Priority**: Execute `activateFunc()`, set `isActive = true`
    - **Higher Priority Exists**: Only set `isActive = true` (no function execution)
 
