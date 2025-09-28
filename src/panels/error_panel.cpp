@@ -115,9 +115,17 @@ void ErrorPanel::Load()
     // Render the component
     errorComponent_.Render(screen_, centerLocation_, displayProvider_);
 
-    // Get current errors and refresh component
-    std::vector<ErrorInfo> currentErrors = ErrorManager::Instance().GetErrorQueue();
-    errorComponent_.Refresh(Reading{}); // Component will fetch errors internally
+    // Initialize our unviewed error list with all current errors
+    currentErrors_ = ErrorManager::Instance().GetErrorQueue();
+    SortErrorsBySeverity();
+    currentErrorIndex_ = 0;
+
+    // Initialize component with the first error
+    if (!currentErrors_.empty())
+    {
+        errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+        log_i("Initialized error panel with %zu unviewed errors", currentErrors_.size());
+    }
 
     lv_obj_add_event_cb(screen_, ErrorPanel::ShowPanelCompletionCallback, LV_EVENT_SCREEN_LOADED, this);
 
@@ -155,88 +163,48 @@ void ErrorPanel::Load()
 void ErrorPanel::Update()
 {
     log_v("Update() called");
-    // Get current errors from ErrorManager
+
+    // Get fresh errors from ErrorManager and merge with any new ones
     std::vector<ErrorInfo> newErrors = ErrorManager::Instance().GetErrorQueue();
 
-    // Check if error list has meaningfully changed for display purposes
-    bool errorsChanged = false;
-    if (newErrors.size() != currentErrors_.size())
+    // Add any new errors to our unviewed list, maintaining sort order
+    for (const auto& newError : newErrors)
     {
-        log_i("Error count changed: %zu -> %zu", currentErrors_.size(), newErrors.size());
-        errorsChanged = true;
-    }
-    else
-    {
-        // Compare actual error content (ignore timestamps and acknowledgment status)
-        for (size_t i = 0; i < newErrors.size() && !errorsChanged; i++)
+        // Check if this error is already in our unviewed list (by content, not timestamp)
+        bool alreadyExists = false;
+        for (const auto& existingError : currentErrors_)
         {
-            log_t("Comparing error %zu: new[level=%d, source='%s', msg='%s'] vs current[level=%d, source='%s', msg='%s']",
-                  i, newErrors[i].level, newErrors[i].source, newErrors[i].message,
-                  currentErrors_[i].level, currentErrors_[i].source, currentErrors_[i].message);
+            if (existingError.level == newError.level &&
+                strcmp(existingError.source, newError.source) == 0 &&
+                strcmp(existingError.message, newError.message) == 0)
+            {
+                alreadyExists = true;
+                break;
+            }
+        }
 
-            if (newErrors[i].level != currentErrors_[i].level)
-            {
-                log_i("Error %zu level changed: %d -> %d", i, currentErrors_[i].level, newErrors[i].level);
-                errorsChanged = true;
-            }
-            else if (strcmp(newErrors[i].source, currentErrors_[i].source) != 0)
-            {
-                log_i("Error %zu source changed: '%s' -> '%s'", i, currentErrors_[i].source, newErrors[i].source);
-                errorsChanged = true;
-            }
-            else if (strcmp(newErrors[i].message, currentErrors_[i].message) != 0)
-            {
-                log_i("Error %zu message changed: '%s' -> '%s'", i, currentErrors_[i].message, newErrors[i].message);
-                errorsChanged = true;
-            }
+        // Add new error if not already present
+        if (!alreadyExists)
+        {
+            currentErrors_.push_back(newError);
+            log_i("Added new error to unviewed list: %s - %s", newError.source, newError.message);
         }
     }
 
-    // Update display if errors have changed
-    if (errorsChanged)
+    // Sort the unviewed errors by severity (CRITICAL first, WARNING last)
+    SortErrorsBySeverity();
+
+    // Update display with current error if we have any
+    if (componentInitialized_ && !currentErrors_.empty())
     {
-        // Only reset index if the number of errors changed (preserve manual cycling)
-        bool errorCountChanged = (newErrors.size() != currentErrors_.size());
-
-        currentErrors_ = newErrors;
-
-        // Sort errors by severity (CRITICAL first, WARNING last)
-        SortErrorsBySeverity();
-
-        // Adjust current index when error count changes
-        if (errorCountChanged)
+        // Ensure current index is valid
+        if (currentErrorIndex_ >= currentErrors_.size())
         {
-            // If current index is still valid, preserve position
-            if (currentErrorIndex_ >= currentErrors_.size())
-            {
-                // Index out of bounds - adjust to last valid position or 0
-                currentErrorIndex_ = currentErrors_.empty() ? 0 : currentErrors_.size() - 1;
-                log_i("Error removal: adjusted index to %zu (total: %zu)", currentErrorIndex_, currentErrors_.size());
-            }
-            else
-            {
-                // Index still valid - preserve user's current position
-                log_i("Error count changed but index %zu still valid (total: %zu)", currentErrorIndex_, currentErrors_.size());
-            }
-        }
-        else
-        {
-            // Ensure current index is still valid after sorting
-            if (currentErrorIndex_ >= currentErrors_.size())
-            {
-                currentErrorIndex_ = 0;
-            }
+            currentErrorIndex_ = 0;
         }
 
-        // Tell component to display all errors with current index
-        if (componentInitialized_)
-        {
-            // Direct access to concrete component (no casting needed)
-            if (!currentErrors_.empty())
-            {
-                errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
-            }
-        }
+        errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
+        log_i("Displaying error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
     }
 
     // If no errors remain, trigger auto-restoration to previous panel
@@ -244,19 +212,19 @@ void ErrorPanel::Update()
     {
         log_i("ErrorPanel: No errors remaining - triggering auto-restoration");
         ErrorManager::Instance().SetErrorPanelActive(false);
-        
+
         // Auto-restore using CheckRestoration to handle active triggers
         if (panelManager_)
         {
             log_i("ErrorPanel: No errors remaining - checking for active triggers before restoration");
-            
+
             #ifdef CLARITY_DEBUG
             // In debug builds, manually trigger restoration since debug error sensor
             // state is GPIO-controlled, not error-state-controlled
             PanelManager::Instance().CheckRestoration();
             log_i("ErrorPanel: Auto-restoration triggered for debug build");
             #endif
-            
+
             // In production, error triggers would naturally deactivate when errors are resolved
             return; // Exit early to prevent callback execution on replaced panel
         }
@@ -471,22 +439,41 @@ void ErrorPanel::AdvanceToNextError()
         log_w("AdvanceToNextError: No errors to advance through");
         return;
     }
-    
+
     size_t oldIndex = currentErrorIndex_;
-    
-    // Move to next error
-    currentErrorIndex_ = (currentErrorIndex_ + 1) % currentErrors_.size();
-    
-    log_i("AdvanceToNextError: Moving from error %zu to %zu (total: %zu)", 
-          oldIndex, currentErrorIndex_, currentErrors_.size());
-    
+
+    // Remove the current error from the unviewed list (it has been viewed)
+    if (currentErrorIndex_ < currentErrors_.size())
+    {
+        log_i("Removing viewed error: %s - %s",
+              currentErrors_[currentErrorIndex_].source,
+              currentErrors_[currentErrorIndex_].message);
+        currentErrors_.erase(currentErrors_.begin() + currentErrorIndex_);
+    }
+
+    // Adjust index for the removal - stay at same position (which now shows next error)
+    // or wrap to beginning if we were at the end
+    if (currentErrorIndex_ >= currentErrors_.size())
+    {
+        currentErrorIndex_ = 0;
+    }
+
+    log_i("AdvanceToNextError: Removed viewed error %zu, now showing error %zu/%zu",
+          oldIndex, currentErrorIndex_ + 1, currentErrors_.size());
+
     // Update the component to display the new current error
-    if (componentInitialized_)
+    if (componentInitialized_ && !currentErrors_.empty())
     {
         // Direct access to concrete component
         log_i("AdvanceToNextError: Updating error component display");
         errorComponent_.UpdateErrorDisplay(currentErrors_, currentErrorIndex_);
         log_i("AdvanceToNextError: Error component updated successfully");
+    }
+    else if (currentErrors_.empty())
+    {
+        log_i("AdvanceToNextError: No more errors to display - all have been viewed");
+        // Clear all errors from ErrorManager since we've viewed them all
+        ErrorManager::Instance().ClearAllErrors();
     }
     else
     {
@@ -494,6 +481,4 @@ void ErrorPanel::AdvanceToNextError()
         ErrorManager::Instance().ReportError(ErrorLevel::ERROR, PanelNames::ERROR,
                                             "Error component is null - cannot update display");
     }
-    
-    log_i("AdvanceToNextError: Successfully advanced to error %zu/%zu", currentErrorIndex_ + 1, currentErrors_.size());
 }
