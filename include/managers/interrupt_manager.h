@@ -40,6 +40,7 @@ public:
     // ========== Public Interface Methods ==========
     void Init(IGpioProvider* gpioProvider = nullptr);
     void Process();
+    void ProcessInitialTriggerStates();
     bool RegisterTrigger(const Trigger& trigger);
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionHandler* panel);

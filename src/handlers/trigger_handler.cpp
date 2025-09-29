@@ -148,6 +148,45 @@ void TriggerHandler::ExecutePendingTriggers() {
 }
 
 /**
+ * @brief Processes initial trigger states after registration
+ *
+ * This method evaluates all triggers based on their current sensor states
+ * and activates any that should be active at startup. This ensures proper
+ * system state (e.g., night theme when lights are on) even when the
+ * application starts with triggers already in their active state.
+ */
+void TriggerHandler::ProcessInitialTriggerStates() {
+    log_i("Processing initial trigger states for startup conditions");
+
+    // Process each trigger to check initial state
+    for (size_t i = 0; i < triggerCount_; i++) {
+        Trigger& trigger = triggers_[i];
+
+        if (!trigger.sensor) {
+            continue; // No sensor associated
+        }
+
+        // Get current sensor state
+        bool sensorActive = IsSensorActive(trigger);
+
+        // If sensor is active at startup, handle activation
+        if (sensorActive) {
+            log_i("Trigger '%s' is active at startup - processing activation", trigger.id);
+
+            // Mark trigger as active
+            trigger.isActive = true;
+
+            // Check if this trigger should execute based on priority
+            if (ShouldActivate(trigger)) {
+                HandleTriggerActivation(trigger);
+            } else {
+                log_i("Trigger '%s' blocked by higher priority at startup", trigger.id);
+            }
+        }
+    }
+}
+
+/**
  * @brief Evaluates single trigger for state change and priority-based execution
  * @param trigger Trigger to evaluate
  *

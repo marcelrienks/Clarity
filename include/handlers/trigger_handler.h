@@ -35,6 +35,9 @@ public:
     // Main trigger processing method
     void ProcessTriggers();
 
+    // Process initial trigger states after registration
+    void ProcessInitialTriggerStates();
+
     // New Trigger system interface
     bool RegisterTrigger(const Trigger& trigger);
     

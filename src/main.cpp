@@ -215,6 +215,10 @@ void setup()
     styleManager->InitializeStyles();
     Ticker::handleLvTasks();
 
+    // Process initial trigger states to ensure correct system state at startup
+    // This must happen after initialization but before loading the first panel
+    interruptManager->ProcessInitialTriggerStates();
+
     std::string panelName = PanelNames::OIL; // Default
     if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
         panelName = *nameValue;
