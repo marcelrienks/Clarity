@@ -220,19 +220,28 @@ void setup()
     // If a PANEL trigger is active, it will load its panel and we should skip default panel load
     interruptManager->ProcessInitialTriggerStates();
 
+    // Check for startup errors before loading any panel
+    // If errors occurred during initialization, show error panel immediately
+    if (errorManager->ShouldTriggerErrorPanel()) {
+        log_i("Errors detected during startup - loading error panel");
+        panelManager->CreateAndLoadPanel(PanelNames::ERROR, true);  // Mark as trigger-driven
+        errorManager->SetErrorPanelActive(true);
+    }
     // Only load default panel if no PANEL triggers are currently active
-    // Check if any panel was already loaded by an active trigger
-    const char* currentPanel = panelManager->GetCurrentPanel();
-    if (!currentPanel || strcmp(currentPanel, PanelNames::OIL) == 0) {
-        // No trigger-driven panel loaded, proceed with configured default
-        std::string panelName = PanelNames::OIL; // Default
-        if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
-            panelName = *nameValue;
+    else {
+        // Check if any panel was already loaded by an active trigger
+        const char* currentPanel = panelManager->GetCurrentPanel();
+        if (!currentPanel || strcmp(currentPanel, PanelNames::OIL) == 0) {
+            // No trigger-driven panel loaded, proceed with configured default
+            std::string panelName = PanelNames::OIL; // Default
+            if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
+                panelName = *nameValue;
+            }
+            log_i("No active PANEL triggers at startup - loading configured default: %s", panelName.c_str());
+            panelManager->CreateAndLoadPanel(panelName.c_str());
+        } else {
+            log_i("PANEL trigger active at startup - using trigger-loaded panel: %s", currentPanel);
         }
-        log_i("No active PANEL triggers at startup - loading configured default: %s", panelName.c_str());
-        panelManager->CreateAndLoadPanel(panelName.c_str());
-    } else {
-        log_i("PANEL trigger active at startup - using trigger-loaded panel: %s", currentPanel);
     }
     Ticker::handleLvTasks();
     
