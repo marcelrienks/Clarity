@@ -52,9 +52,19 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
         return;
     }
 
+    // Initialize restoration panel from configuration (used when triggers deactivate)
+    std::string defaultPanel = PanelNames::OIL; // Fallback default
+    if (configurationManager_) {
+        if (auto panelValue = configurationManager_->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
+            defaultPanel = *panelValue;
+        }
+    }
+
     // Panel names are already const char* constants, no conversion needed
     currentPanel_ = PanelNames::OIL;
-    restorationPanel_ = PanelNames::OIL;
+    restorationPanel_ = defaultPanel;
+
+    log_i("PanelManager initialized with restoration panel: %s", restorationPanel_.c_str());
 
     // Set singleton instance
     instancePtr_ = this;
