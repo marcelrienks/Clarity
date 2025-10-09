@@ -27,6 +27,7 @@
 ### **Implementation Details**
 - **[Hardware Configuration](docs/hardware.md)** - ESP32 setup, GPIO mapping, input system architecture, and button behaviors
 - **[System Requirements](docs/requirements.md)** - Comprehensive specifications with actual optimization results (30.7KB saved)
+- **[Configuration System](docs/config.md)** - Dynamic self-registering configuration with IConfig interface and alphabetical organization
 - **[Error Handling](docs/error.md)** - Error management, reporting, and panel integration
 - **[Performance Logging](docs/log_t.md)** - Custom timing measurement system for optimization
 
@@ -34,6 +35,7 @@
 - **[Testing Guide](docs/test.md)** - Complete Wokwi simulation setup, GitHub Actions CI/CD, and debugging procedures
 - **[Coding Standards](docs/standards.md)** - Naming conventions, file organization, and code quality guidelines
 - **[Usage Scenarios](docs/scenarios.md)** - User workflows, panel behaviors, and system interactions
+- **[TODO List](docs/todo.md)** - Remaining tasks and future improvements
 
 ### **System Diagrams**
 - **[Architecture Overview](docs/diagrams/architecture-overview.md)** - Complete component relationships and dependencies
