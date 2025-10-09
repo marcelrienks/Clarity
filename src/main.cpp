@@ -215,18 +215,6 @@ void setup()
     styleManager->InitializeStyles();
     Ticker::handleLvTasks();
 
-    // ========== TEMPORARY TEST ERROR FOR VALIDATION ==========
-    // TODO: Remove this after verifying error panel displays before splash/default panel
-    log_i("=== GENERATING TEST STARTUP ERROR ===");
-    ErrorManager::Instance().ReportCriticalError("StartupTest",
-        "Test startup error - verifying error panel loads before splash/default panel");
-    ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "StartupTest",
-        "Secondary test error for multi-error display validation");
-    ErrorManager::Instance().ReportWarning("StartupTest",
-        "Warning level test for error panel sorting verification");
-    log_i("=== TEST ERRORS GENERATED - Error panel should load next ===");
-    // ========== END TEMPORARY TEST ==========
-
     // Process initial trigger states to ensure correct system state at startup
     // This must happen after initialization but before loading the first panel
     // If a PANEL trigger is active, it will load its panel and we should skip default panel load
