@@ -35,6 +35,9 @@ public:
     // Main trigger processing method
     void ProcessTriggers();
 
+    // Process initial trigger states after registration
+    void ProcessInitialTriggerStates();
+
     // New Trigger system interface
     bool RegisterTrigger(const Trigger& trigger);
     
@@ -50,6 +53,7 @@ public:
     // Status and diagnostics
     size_t GetTriggerCount() const;
     bool HasActiveTriggers() const;
+    bool HasActivePanelTriggers() const;  // Check if any PANEL type triggers are active
     // Find highest priority trigger of given type (public for InterruptManager)
     Trigger* FindHighestPrioritySameType(TriggerType type);
     

@@ -432,6 +432,65 @@ void loop() {
 }
 ```
 
+## Recent Architecture Improvements
+
+### Dynamic Error Generation During Error Sessions
+
+Recent improvements enable dynamic error addition during active error panel sessions:
+
+```cpp
+// In src/handlers/trigger_handler.cpp - HandleTriggerActivation()
+void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
+    // ... existing priority logic ...
+
+    // Early return if error panel is active - suppress trigger execution but keep state
+    // Exception: Allow error trigger to execute during error panel to support dynamic error addition
+    if (ErrorManager::Instance().IsErrorPanelActive() && strcmp(trigger.id, "error") != 0) {
+        return;
+    }
+
+    // Execute activation function if available
+    if (trigger.activateFunc) {
+        trigger.activateFunc();
+    }
+}
+```
+
+**Key Benefits:**
+- **Dynamic Error Support**: New errors can be generated while error panel is active
+- **Defensive Architecture**: All other triggers remain blocked during error handling
+- **Debug Error Testing**: Enables real-time error generation for testing dynamic addition
+- **Session Independence**: ErrorPanel can maintain its own error state separately
+
+### Error Trigger Enhancement
+
+The error trigger now supports unique timestamped error generation:
+
+```cpp
+// In include/definitions/interrupts.h - Error trigger definition
+{
+    .id = TriggerIds::ERROR,
+    .priority = Priority::CRITICAL,
+    .type = TriggerType::PANEL,
+    .activateFunc = []() {
+        log_t("ErrorActivate() - Debug error button pressed, generating test errors");
+#ifdef CLARITY_DEBUG
+        // Generate three test errors with unique timestamps
+        uint32_t timestamp = millis();
+        ErrorManager::Instance().ReportWarning("DebugTest",
+                                               "Test warning from debug error trigger @" + std::to_string(timestamp));
+        ErrorManager::Instance().ReportError(ErrorLevel::ERROR, "DebugTest",
+                                             "Test error from debug error trigger @" + std::to_string(timestamp));
+        ErrorManager::Instance().ReportCriticalError("DebugTest",
+                                                     "Test critical error from debug error trigger @" + std::to_string(timestamp));
+#endif
+    },
+    .deactivateFunc = nullptr,  // One-shot trigger
+    .sensor = errorSensor,
+    .isActive = false
+}
+```
+
 ## Key Architecture Benefits
 
 1. **Clear Separation**: Triggers (state-based) vs Actions (event-based)
@@ -440,6 +499,7 @@ void loop() {
 4. **Simple Override Logic**: Only Triggers can block, only on activation
 5. **Clean Error Handling**: Standard try-catch with error panel fallback
 6. **Smart Restoration**: Automatic return to last user panel
+7. **Dynamic Error Support**: Real-time error addition during error handling sessions
 
 ## Implementation Benefits
 

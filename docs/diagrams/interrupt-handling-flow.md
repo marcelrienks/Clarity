@@ -52,6 +52,9 @@ flowchart TD
         DeactivateFlow["Deactivation Flow"]
   end
  subgraph ActivationFlow["Trigger Activation Flow"]
+        ErrorPanelCheck{"ErrorPanel<br>Active?"}
+        ErrorTriggerCheck{"Is Error<br>Trigger?"}
+        BlockTrigger["Block Trigger<br>Execution<br>(Keep State)"]
         PriorityCheck{"Higher Priority<br>Active Trigger?"}
         ExecuteActivate["Execute Trigger<br>activateFunc<br>isActive = true"]
         SetActiveOnly["Set isActive = true<br>No Function Execution"]
@@ -90,7 +93,11 @@ flowchart TD
     TriggerChanged -- Yes --> StateDirection
     StateDirection -- HIGH --> ActivateFlow
     StateDirection -- LOW --> DeactivateFlow
-    ActivateFlow --> PriorityCheck
+    ActivateFlow --> ErrorPanelCheck
+    ErrorPanelCheck -- Yes --> ErrorTriggerCheck
+    ErrorPanelCheck -- No --> PriorityCheck
+    ErrorTriggerCheck -- No --> BlockTrigger
+    ErrorTriggerCheck -- Yes --> PriorityCheck
     PriorityCheck -- No --> ExecuteActivate
     PriorityCheck -- Yes --> SetActiveOnly
     DeactivateFlow --> ExecuteDeactivate
@@ -122,6 +129,9 @@ flowchart TD
      ActivateFlow:::trigger
      DeactivateFlow:::trigger
      PriorityCheck:::decision
+     ErrorPanelCheck:::decision
+     ErrorTriggerCheck:::decision
+     BlockTrigger:::trigger
      ExecuteActivate:::trigger
      SetActiveOnly:::trigger
      ExecuteDeactivate:::trigger
@@ -231,8 +241,12 @@ void Action::Execute() {
 5. **Function Execution**: Execute appropriate activate/deactivate function
 
 **Activation Flow with Priority Logic**:
-1. **Priority Check**: Find any higher-priority active Triggers
-2. **Activation Decision**:
+1. **ErrorPanel Blocking Check**: Check if ErrorPanel is currently active
+2. **Error Trigger Exception**: If ErrorPanel is active:
+   - **Non-Error Triggers**: Block execution but maintain state (allows dynamic error addition)
+   - **Error Trigger**: Allow execution to support new errors during ErrorPanel sessions
+3. **Priority Check**: Find any higher-priority active Triggers (if not blocked)
+4. **Activation Decision**:
    - **No Higher Priority**: Execute `activateFunc()`, set `isActive = true`
    - **Higher Priority Exists**: Only set `isActive = true` (no function execution)
 
@@ -316,5 +330,59 @@ bool KeyPresentSensor::HasStateChanged() {
 - **Predictable Behavior**: Clear evaluation and execution timing rules
 - **Maintainable Code**: Interface-based design with clear responsibilities
 - **Testable Components**: Individual handler testing with mock sensors
+
+## Recent Architecture Enhancements
+
+### Dynamic Error Addition During ErrorPanel Sessions
+
+**Enhancement Overview**:
+Recent improvements enable dynamic error generation while the ErrorPanel is active, supporting real-time error addition during error handling sessions.
+
+**Implementation Details**:
+```cpp
+// In src/handlers/trigger_handler.cpp - HandleTriggerActivation()
+void TriggerHandler::HandleTriggerActivation(Trigger& trigger) {
+    // ... existing priority logic ...
+
+    // Early return if error panel is active - suppress trigger execution but keep state
+    // Exception: Allow error trigger to execute during error panel to support dynamic error addition
+    if (ErrorManager::Instance().IsErrorPanelActive() && strcmp(trigger.id, "error") != 0) {
+        return;  // Block non-error triggers during ErrorPanel sessions
+    }
+
+    // Execute activation function if available
+    if (trigger.activateFunc) {
+        trigger.activateFunc();
+    }
+}
+```
+
+**Key Benefits**:
+- **Dynamic Error Support**: New errors can be generated while ErrorPanel is active
+- **Defensive Architecture**: All other triggers remain blocked during error handling
+- **Debug Error Testing**: Enables real-time error generation for testing dynamic addition
+- **Session Independence**: ErrorPanel can maintain its own error state separately
+
+**Error Trigger Enhancement**:
+The error trigger now supports unique timestamped error generation to prevent duplicate filtering:
+
+```cpp
+// In include/definitions/interrupts.h - Error trigger definition
+{
+    .id = TriggerIds::ERROR,
+    .priority = Priority::CRITICAL,
+    .type = TriggerType::PANEL,
+    .activateFunc = []() {
+        // Generate test errors with unique timestamps
+        uint32_t timestamp = millis();
+        ErrorManager::Instance().ReportWarning("DebugTest",
+                                               "Test warning @" + std::to_string(timestamp));
+        // ... additional test errors with unique timestamps
+    },
+    .deactivateFunc = nullptr,  // One-shot trigger
+    .sensor = errorSensor,
+    .isActive = false
+}
+```
 
 For complete implementation details, see: **[Architecture Document](../architecture.md)**

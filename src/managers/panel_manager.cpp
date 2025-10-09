@@ -52,9 +52,21 @@ PanelManager::PanelManager(IDisplayProvider *display, IGpioProvider *gpio, IStyl
         return;
     }
 
-    // Panel names are already const char* constants, no conversion needed
+    // Set defaults
     currentPanel_ = PanelNames::OIL;
     restorationPanel_ = PanelNames::OIL;
+
+    // Initialize restoration panel from configuration so startup trigger-driven loads
+    // can restore to the user's configured default panel without main() intervention.
+    if (configurationManager_)
+    {
+        std::string defaultPanel = PanelNames::OIL;
+        if (auto nameValue = configurationManager_->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
+            defaultPanel = *nameValue;
+        }
+        restorationPanel_ = defaultPanel;
+        log_i("PanelManager: restoration panel initialized to '%s' from configuration", restorationPanel_.c_str());
+    }
 
     // Set singleton instance
     instancePtr_ = this;

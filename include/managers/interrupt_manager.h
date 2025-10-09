@@ -40,6 +40,7 @@ public:
     // ========== Public Interface Methods ==========
     void Init(IGpioProvider* gpioProvider = nullptr);
     void Process();
+    void ProcessInitialTriggerStates();
     bool RegisterTrigger(const Trigger& trigger);
     bool RegisterAction(const Action& action);
     void SetCurrentPanel(class IActionHandler* panel);
@@ -87,6 +88,12 @@ public:
      * @details Handles theme and styling triggers separately from panel triggers
      */
     void CheckAndExecuteActiveStyleTriggers();
+
+    /**
+     * @brief Check if any PANEL type triggers are currently active
+     * @return true if any panel triggers are active, false otherwise
+     */
+    bool HasActivePanelTriggers() const;
 
 private:
     // ========== Constructors and Destructor ==========

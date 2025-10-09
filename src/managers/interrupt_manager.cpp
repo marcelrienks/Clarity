@@ -72,6 +72,27 @@ void InterruptManager::Init(IGpioProvider* gpioProvider)
 }
 
 /**
+ * @brief Process initial trigger states after system initialization
+ * @details This should be called once after all triggers are registered but before
+ * the initial panel is loaded to ensure proper system state at startup
+ */
+void InterruptManager::ProcessInitialTriggerStates()
+{
+    if (!initialized_) {
+        log_e("Cannot process initial trigger states - InterruptManager not initialized");
+        return;
+    }
+
+    if (!triggerHandler_) {
+        log_e("Cannot process initial trigger states - TriggerHandler not initialized");
+        return;
+    }
+
+    // Delegate to trigger handler to process initial states
+    triggerHandler_->ProcessInitialTriggerStates();
+}
+
+/**
  * @brief Process all interrupts based on UI state and responsiveness requirements
  * @details Actions are processed continuously, triggers only during UI idle periods
  */
@@ -287,6 +308,15 @@ void InterruptManager::CheckAndExecuteActiveStyleTriggers()
               styleTrigger->id, static_cast<int>(styleTrigger->priority));
         styleTrigger->activateFunc();
     }
+}
+
+bool InterruptManager::HasActivePanelTriggers() const
+{
+    if (!triggerHandler_) {
+        return false;
+    }
+
+    return triggerHandler_->HasActivePanelTriggers();
 }
 
 // ========== Private Methods ==========

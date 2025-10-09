@@ -10,6 +10,13 @@
 
 // ========== Constructors and Destructor ==========
 
+/**
+ * @brief Constructs an OEM oil component with style service dependency
+ * @param styleManager Style service for theme and styling management
+ *
+ * Initializes all LVGL object pointers to nullptr and validates the required
+ * style service dependency. Reports critical error if style service is missing.
+ */
 OemOilComponent::OemOilComponent(IStyleManager *styleManager)
     : styleManager_(styleManager), scale_(nullptr), needleLine_(nullptr), needleMiddle_(nullptr), needleBase_(nullptr),
       needleHighlightLine_(nullptr), needleHighlightMiddle_(nullptr), needleHighlightBase_(nullptr), oilIcon_(nullptr),
@@ -24,6 +31,12 @@ OemOilComponent::OemOilComponent(IStyleManager *styleManager)
     }
 }
 
+/**
+ * @brief Destructor that cleans up all LVGL objects created by the component
+ *
+ * Explicitly deletes all LVGL objects (scale, needle, icon, labels, pivot) to prevent
+ * memory leaks. Styles are managed by StyleManager and don't require cleanup here.
+ */
 OemOilComponent::~OemOilComponent()
 {
     // LVGL objects are managed by parent screen - explicit cleanup for safety
@@ -158,9 +171,11 @@ void OemOilComponent::Refresh(const Reading &reading)
 }
 
 /**
- * @brief Sets the value of the oil component.
- * This method updates the needle position based on the provided value.
- * @param value
+ * @brief Sets the value of the oil component and updates needle position
+ * @param value Oil pressure or temperature value to display
+ *
+ * Clamps the input value to scale boundaries and maps it to needle rotation angle.
+ * Updates the needle rotation to visually represent the new value on the gauge.
  */
 void OemOilComponent::SetValue(int32_t value)
 {
