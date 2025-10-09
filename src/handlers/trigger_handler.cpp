@@ -480,3 +480,12 @@ bool TriggerHandler::HasActiveTriggers() const {
     return false;
 }
 
+bool TriggerHandler::HasActivePanelTriggers() const {
+    for (size_t i = 0; i < triggerCount_; i++) {
+        if (triggers_[i].isActive && triggers_[i].type == TriggerType::PANEL) {
+            return true;
+        }
+    }
+    return false;
+}
+

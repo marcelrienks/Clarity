@@ -216,15 +216,23 @@ void setup()
     Ticker::handleLvTasks();
 
     // Process initial trigger states to ensure correct system state at startup
-    // This must happen after initialization but before loading the first panel
+    // PanelManager sets restoration panel from configuration during construction,
+    // so triggers at startup know where to restore to when they deactivate
     interruptManager->ProcessInitialTriggerStates();
 
-    std::string panelName = PanelNames::OIL; // Default
-    if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
-        panelName = *nameValue;
+    // Only load default panel if no panel triggers are currently active
+    // If a trigger was active at startup, it has already loaded its panel
+    if (!interruptManager->HasActivePanelTriggers()) {
+        // Determine the default panel from configuration
+        std::string defaultPanelName = PanelNames::OIL; // Default
+        if (auto nameValue = configurationManager->QueryConfig<std::string>(ConfigConstants::Keys::SYSTEM_DEFAULT_PANEL)) {
+            defaultPanelName = *nameValue;
+        }
+        panelManager->CreateAndLoadPanel(defaultPanelName.c_str());
+        Ticker::handleLvTasks();
+    } else {
+        log_i("Panel trigger active at startup - skipping default panel load");
     }
-    panelManager->CreateAndLoadPanel(panelName.c_str());
-    Ticker::handleLvTasks();
     
     log_i("Clarity application started successfully");
 }

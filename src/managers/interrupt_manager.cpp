@@ -310,6 +310,15 @@ void InterruptManager::CheckAndExecuteActiveStyleTriggers()
     }
 }
 
+bool InterruptManager::HasActivePanelTriggers() const
+{
+    if (!triggerHandler_) {
+        return false;
+    }
+
+    return triggerHandler_->HasActivePanelTriggers();
+}
+
 // ========== Private Methods ==========
 
 /**

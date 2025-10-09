@@ -89,6 +89,12 @@ public:
      */
     void CheckAndExecuteActiveStyleTriggers();
 
+    /**
+     * @brief Check if any PANEL type triggers are currently active
+     * @return true if any panel triggers are active, false otherwise
+     */
+    bool HasActivePanelTriggers() const;
+
 private:
     // ========== Constructors and Destructor ==========
     InterruptManager() = default;
