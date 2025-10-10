@@ -1,6 +1,3 @@
-[![Wokwi Basic Hardware Test](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-basic-test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-basic-test.yml)
-[![Wokwi Full System Test](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-full-test.yml/badge.svg)](https://github.com/marcelrienks/Clarity/actions/workflows/wokwi-full-test.yml)
-
 # Clarity Digital Gauge System
 
 **Clarity is an ESP32-based automotive digital gauge system featuring a 1.28" round LCD display (240x240 GC9A01 driver). The system provides real-time engine monitoring, security status display, and system configuration through an advanced interrupt-driven architecture optimized for automotive environments.**
