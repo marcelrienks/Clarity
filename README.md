@@ -115,7 +115,6 @@ cd test/wokwi && ./wokwi_run.sh
 - **Basic Hardware Test**: GPIO, sensors, timing validation (5 test phases)
 - **Full System Test**: Complete integration with panels, triggers, themes (7 test phases)
 - **Wokwi Simulation**: Hardware emulation with automated pass/fail validation
-- **Performance Monitoring**: Custom `log_t()` timing measurements throughout
 
 ### **Test Coverage**
 - **Hardware Integration**: GPIO interrupt handling, ADC readings, button debouncing
