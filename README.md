@@ -16,8 +16,6 @@ Digital gauge cluster for vehicles, architected to manage any display via GPIO s
 - **Comprehensive Testing**: Automated CI/CD with Wokwi simulation and integration testing
 - **Multiple Panels**: Oil monitoring, error handling, configuration, and trigger-driven displays
 
----
-
 ## 📚 **Complete Documentation**
 
 ### **Core Architecture**
@@ -46,8 +44,6 @@ Digital gauge cluster for vehicles, architected to manage any display via GPIO s
 
 ### **CI/CD & Workflows**
 - **[GitHub Actions Setup](.github/workflows/README.md)** - Automated testing configuration with Wokwi integration
-
----
 
 ## 🚀 **Quick Start**
 
@@ -99,8 +95,6 @@ cd test/wokwi && ./wokwi_run.sh
 - **Config Panel**: Settings management with persistent storage
 - **Splash Panel**: Startup animation with skip functionality
 
----
-
 ## 🛠️ **Hardware Configuration**
 
 ### **Target Hardware**
@@ -108,8 +102,6 @@ cd test/wokwi && ./wokwi_run.sh
 - **Display**: Waveshare 1.28" Round LCD (GC9A01, 240x240, SPI interface)
 - **Sensors**: Oil pressure/temperature (ADC), GPIO triggers (Key, Lock, Lights)
 - **Input**: Single button navigation (GPIO 32) with short/long press detection
-
----
 
 ## 🧪 **Testing & Quality Assurance**
 
@@ -123,8 +115,6 @@ cd test/wokwi && ./wokwi_run.sh
 - **System Integration**: Panel switching, trigger priorities, error handling
 - **Performance Testing**: Memory usage validation, timing benchmarks
 - **Regression Testing**: Automated on every commit and pull request
-
----
 
 ## 📦 **Dependencies**
 
@@ -140,8 +130,6 @@ cd test/wokwi && ./wokwi_run.sh
 - **[Wokwi](https://wokwi.com/)** - ESP32 hardware simulation platform
 - **[GitHub Actions](https://github.com/features/actions)** - Automated CI/CD pipeline
 
----
-
 ## 🏆 **Credits & Inspiration**
 
 ### **Commercial Inspiration**
@@ -153,8 +141,6 @@ cd test/wokwi && ./wokwi_run.sh
 
 ### **Development Contributions**
 - **[Eugene Petersen](https://github.com/gino247)** - Code review and architectural feedback
-
----
 
 ## 📝 **Project Philosophy**
 
