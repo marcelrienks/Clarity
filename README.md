@@ -1,6 +1,8 @@
 # Clarity
-Embedded display manager currently functioning as a Digital Gauge Cluster for a vehicle. But architecturally generic to be used for managing any type of displays based off of GPIO sensor inputs.
 
+**Embedded display manager**
+
+Embedded display manager currently functioning as a Digital Gauge Cluster for a vehicle. But architecturally generic to be used for managing any type of displays based off of GPIO sensor inputs.
 Built for ESP32 system featuring a 1.28" round LCD display (240x240 GC9A01 driver). The application currently provides real-time engine monitoring, security status display, and system configuration through an advanced interrupt-driven architecture for automotive environments.
 
 ## 🌟 **System Highlights**
