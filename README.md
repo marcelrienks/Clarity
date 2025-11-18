@@ -4,6 +4,8 @@
 
 Digital gauge cluster for vehicles, architected to manage any display via GPIO sensor inputs.
 
+_Partially vibe coded with claude a learning excercise._
+
 ![Status](https://img.shields.io/badge/status-testing-yellow)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
